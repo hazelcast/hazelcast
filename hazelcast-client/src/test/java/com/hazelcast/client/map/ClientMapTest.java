@@ -18,15 +18,9 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.stress.AtomicLongUpdateStressTest;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.PartitionAware;
+import com.hazelcast.core.*;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
@@ -35,6 +29,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -45,17 +41,13 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -806,4 +798,137 @@ public class ClientMapTest {
         assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
         assertTrue("remove latency", 0 < localMapStats.getTotalRemoveLatency());
     }
+
+
+    @Test
+    public void concurrent_MapTryLockTest() throws InterruptedException {
+        final IMap<String, Integer> map = client.getMap("concurrent_MapTryLockTest");
+        final String upKey = "upKey";
+        final String downKey = "downKey";
+
+        map.put(upKey, 0);
+        map.put(downKey, 0);
+
+        Thread threads[] = new Thread[8];
+        for ( int i=0; i< threads.length; i++ ) {
+            Thread t = new MapTryLockThread(map, upKey, downKey);
+            t.start();
+            threads[i] = t;
+        }
+
+        assertJoinable(threads);
+
+        int upTotal = map.get(upKey);
+        int downTotal = map.get(downKey);
+
+        assertTrue("concurrent access to locked code caused wrong total", upTotal + downTotal == 0);
+    }
+
+    static class MapTryLockThread extends Thread {
+        private Random random = new Random();
+        private IMap<String, Integer> map;
+        private String upKey;
+        private String downKey;
+
+        public MapTryLockThread(IMap map, String upKey, String downKey){
+            this.map = map;
+            this.upKey = upKey;
+            this.downKey = downKey;
+        }
+
+        public void run() {
+            for ( int i=0; i<1000*10; i++ ) {
+                if(map.tryLock(upKey)){
+                    try{
+                        if(map.tryLock(downKey)){
+                            try {
+                                int upTotal = map.get(upKey);
+                                int downTotal = map.get(downKey);
+
+                                int dif = random.nextInt(1000);
+                                upTotal += dif;
+                                downTotal -= dif;
+
+                                map.put(upKey, upTotal);
+                                map.put(downKey, downTotal);
+                            }finally {
+                                map.unlock(downKey);
+                            }
+                        }
+                    }finally {
+                        map.unlock(upKey);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void concurrent_MapTryLockTimeOutTest() throws InterruptedException {
+        final IMap<String, Integer> map = client.getMap("concurrent_MapTryLockTimeOutTest");
+        final String upKey = "upKey";
+        final String downKey = "downKey";
+
+        map.put(upKey, 0);
+        map.put(downKey, 0);
+
+        Thread threads[] = new Thread[8];
+        for ( int i=0; i< threads.length; i++ ) {
+            Thread t = new MapTryLockTimeOutThread(map, upKey, downKey);
+            t.start();
+            threads[i] = t;
+        }
+
+        assertJoinable(threads);
+
+        int upTotal = map.get(upKey);
+        int downTotal = map.get(downKey);
+
+        assertEquals("concurrent access to locked code caused wrong total ", 0, upTotal + downTotal);
+    }
+
+    static class MapTryLockTimeOutThread extends Thread {
+        private Random random = new Random();
+        private IMap<String, Integer> map;
+        private String upKey;
+        private String downKey;
+
+        public MapTryLockTimeOutThread(IMap map, String upKey, String downKey){
+            this.map = map;
+            this.upKey = upKey;
+            this.downKey = downKey;
+        }
+
+        public void run() {
+            try {
+                for ( int i=0; i<1000*10; i++ ) {
+                    if(map.tryLock(upKey, 1, TimeUnit.MILLISECONDS)){
+                        try{
+                            if(map.tryLock(downKey, 1, TimeUnit.MILLISECONDS )){
+                                try {
+                                    int upTotal = map.get(upKey);
+                                    int downTotal = map.get(downKey);
+
+                                    int dif = random.nextInt(1000);
+                                    upTotal += dif;
+                                    downTotal -= dif;
+
+                                    map.put(upKey, upTotal);
+                                    map.put(downKey, downTotal);
+                                }finally {
+                                    map.unlock(downKey);
+                                }
+                            }
+                        }finally {
+                            map.unlock(upKey);
+                        }
+                    }
+                }
+            }catch(InterruptedException e){
+            }
+        }
+    }
+
 }
+

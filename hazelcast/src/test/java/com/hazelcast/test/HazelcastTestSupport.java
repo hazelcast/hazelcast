@@ -83,6 +83,12 @@ public abstract class HazelcastTestSupport {
                 t.join(remainingTimeoutMs);
 
                 if (t.isAlive()) {
+
+                    System.err.println("Could not join Thread:" + t.getName() + ", it is still alive");
+                    for (StackTraceElement e : t.getStackTrace()) {
+                        System.err.println("\tat " + e);
+                    }
+
                     fail("Timeout waiting for thread " + t.getName() + " to terminate");
                 }
 
