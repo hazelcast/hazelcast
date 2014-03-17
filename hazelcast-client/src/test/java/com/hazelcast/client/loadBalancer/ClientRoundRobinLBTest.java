@@ -14,26 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map;
+package com.hazelcast.client.loadBalancer;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.util.AbstractLoadBalancer;
-import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.client.util.StaticLB;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientLoadBalTest {
+public class ClientRoundRobinLBTest {
 
     @After
     public void destroy() {
@@ -42,52 +45,27 @@ public class ClientLoadBalTest {
     }
 
     @Test
-    public void randomLB_NextTest() {
-        RandomLB lb = new RandomLB();
-        Member m = lb.next();
-        assertNull(m);
-    }
-
-    @Test
-    public void RoundRobinLB_NextTest() {
+    public void testRoundRobinLB_withoutMembers() {
         RoundRobinLB lb = new RoundRobinLB();
         Member m = lb.next();
         assertNull(m);
     }
 
     @Test
-    public void StaticLBi_nitNextTest() {
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
-        HazelcastInstance server = factory.newHazelcastInstance();
-        Member member = server.getCluster().getLocalMember();
-        StaticLB lb = new StaticLB(member);
-        Member nextMember = lb.next();
-        assertEquals(member, nextMember);
-    }
-
-    @Test
-    public void randomLB_initNextTest() {
-        loadBalTest(new RandomLB());
-    }
-
-    @Test
-    public void RoundRobinLB_initNextTest() {
-        loadBalTest(new RoundRobinLB());
-    }
-
-    private void loadBalTest(AbstractLoadBalancer lb){
+    public void testRoundRobinLB_withMembers() {
+        RoundRobinLB roundRobinLB = new RoundRobinLB();
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
         final HazelcastInstance server = factory.newHazelcastInstance();
 
         Cluster cluster = server.getCluster();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setLoadBalancer(lb);
+        clientConfig.setLoadBalancer(roundRobinLB);
 
-        lb.init(cluster, clientConfig);
+        roundRobinLB.init(cluster, clientConfig);
 
         Member member = cluster.getLocalMember();
-        Member nextMember = lb.next();
+        Member nextMember = roundRobinLB.next();
 
         assertEquals(member, nextMember);
     }

@@ -160,7 +160,7 @@ public class ClientNearCacheTest {
 
     @Test
     @Category(ProblematicTest.class)
-    public void nearCashWithMaxSizeSet() {
+    public void nearCacheWithMaxSizeSet() {
         final String mapName = "nearCashWithMaxSizeSet";
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
@@ -168,21 +168,21 @@ public class ClientNearCacheTest {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
 
-        final int cashSize = 2;
+        final int cacheSize = 2;
 
         NearCacheConfig cashConfig = new NearCacheConfig();
         cashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        cashConfig.setMaxSize(cashSize);
+        cashConfig.setMaxSize(cacheSize);
         clientConfig.addNearCacheConfig(mapName, cashConfig);
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final IMap map = client.getMap(mapName);
 
-        for (int i = 0; i < cashSize * 100; i++) {
+        for (int i = 0; i < cacheSize * 100; i++) {
             map.put("key" + i, "value" + i);
         }
         //populate near cache
-        for (int i = 0; i < cashSize * 100; i++) {
+        for (int i = 0; i < cacheSize * 100; i++) {
             map.get(i);
         }
 
@@ -190,26 +190,24 @@ public class ClientNearCacheTest {
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(cashSize, stats.getOwnedEntryCount());
+                assertEquals(cacheSize, stats.getOwnedEntryCount());
             }
         });
     }
 
     @Test
-    @Category(ProblematicTest.class)
-    public void getNearCashStatsBeforePopulation() {
+    public void getNearCacheStatsBeforePopulation() {
         final String mapName = "getNearCashStatsBeforePopulation";
 
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
 
+        NearCacheConfig cacheConfig = new NearCacheConfig();
+        cacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
-
-        NearCacheConfig cashConfig = new NearCacheConfig();
-        cashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-
-        clientConfig.addNearCacheConfig(mapName, cashConfig);
+        clientConfig.addNearCacheConfig(mapName, cacheConfig);
 
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 

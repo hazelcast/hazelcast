@@ -55,47 +55,46 @@ public class PartitionServiceProxyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void addMigrationListener_test() throws Exception {
+    public void testAddMigrationListener() throws Exception {
         PartitionService p = client.getPartitionService();
         p.addMigrationListener(new DumMigrationListener());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void removeMigrationListener_test() throws Exception {
+    public void testRemoveMigrationListener() throws Exception {
         PartitionService p = client.getPartitionService();
         p.removeMigrationListener("");
     }
 
     @Test
-    public void randomPartitionKey_notNullTest() {
+    public void testRandomPartitionKeyNotNull() {
         PartitionService p = client.getPartitionService();
         String key = p.randomPartitionKey();
         assertNotNull(key);
     }
 
     @Test
-    public void getPartition_test() {
+    public void testGetPartition() {
         String key = "Key";
 
-        PartitionService client_ps = client.getPartitionService();
-        Partition client_p  = client_ps.getPartition(key);
+        PartitionService clientPartitionService = client.getPartitionService();
+        Partition clientPartition  = clientPartitionService.getPartition(key);
 
-        PartitionService server_ps = server.getPartitionService();
-        Partition server_p = server_ps.getPartition(key);
+        PartitionService serverPartitionService = server.getPartitionService();
+        Partition serverPartition = serverPartitionService.getPartition(key);
 
-        assertEquals(client_p.getPartitionId(), server_p.getPartitionId());
+        assertEquals(clientPartition.getPartitionId(), serverPartition.getPartitionId());
     }
 
     @Test
-    public void getPartitions_test() {
+    public void testGetPartitions() {
         String key = "Key";
 
-        PartitionService client_ps = client.getPartitionService();
-        Set<Partition> clientPartitions = client_ps.getPartitions();
+        PartitionService clientPartitionService = client.getPartitionService();
+        Set<Partition> clientPartitions = clientPartitionService.getPartitions();
 
-        PartitionService server_ps = server.getPartitionService();
-        Set<Partition> serverPartitions = server_ps.getPartitions();
-
+        PartitionService serverPartitionService = server.getPartitionService();
+        Set<Partition> serverPartitions = serverPartitionService.getPartitions();
 
         assertEquals(clientPartitions.size(), serverPartitions.size());
     }
