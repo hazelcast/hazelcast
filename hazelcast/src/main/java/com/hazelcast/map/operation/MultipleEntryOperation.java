@@ -63,8 +63,9 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
                 continue;
             Object objectKey = mapService.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
-            final Object valueBeforeProcess = mapService.toObject(mapEntry.getValue());
-            entry = new MapEntrySimple(objectKey, valueBeforeProcess);
+            final Object valueBeforeProcess = mapEntry.getValue();
+            final Object valueBeforeProcessObject = mapService.toObject(valueBeforeProcess);
+            entry = new MapEntrySimple(objectKey, valueBeforeProcessObject);
             final Object result = entryProcessor.process(entry);
             final Object valueAfterProcess = entry.getValue();
             Data dataValue = null;
@@ -77,7 +78,7 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
                 recordStore.remove(key);
                 eventType = EntryEventType.REMOVED;
             } else {
-                if (valueBeforeProcess == null) {
+                if (valueBeforeProcessObject == null) {
                     eventType = EntryEventType.ADDED;
                 }
                 // take this case as a read so no need to fire an event.
@@ -93,8 +94,9 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
             }
 
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                Data dataOldValue = mapService.toData(mapEntry.getValue());
-                mapService.publishEvent(getCallerAddress(), name, eventType, key, dataOldValue, dataValue);
+                final Data oldValue = mapService.toData(valueBeforeProcess);
+                final Data value = mapService.toData(valueAfterProcess);
+                mapService.publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
                 if (mapService.isNearCacheAndInvalidationEnabled(name)) {
                     mapService.invalidateAllNearCaches(name, key);
                 }

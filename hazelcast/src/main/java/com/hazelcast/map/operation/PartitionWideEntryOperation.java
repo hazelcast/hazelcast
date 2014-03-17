@@ -18,8 +18,8 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.RecordStore;
@@ -69,15 +69,16 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
         for (final Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             final Data dataKey = recordEntry.getKey();
             final Record record = recordEntry.getValue();
-            final Object valueBeforeProcess = mapService.toObject(record.getValue());
+            final Object valueBeforeProcess = record.getValue();
+            final Object valueBeforeProcessObject = mapService.toObject(valueBeforeProcess);
             Object objectKey = mapService.toObject(record.getKey());
             if (getPredicate() != null) {
-                QueryEntry queryEntry = new QueryEntry(getNodeEngine().getSerializationService(), dataKey, objectKey, valueBeforeProcess);
+                QueryEntry queryEntry = new QueryEntry(getNodeEngine().getSerializationService(), dataKey, objectKey, valueBeforeProcessObject);
                 if (!getPredicate().apply(queryEntry)) {
                     continue;
                 }
             }
-            entry = new MapEntrySimple(objectKey, valueBeforeProcess);
+            entry = new MapEntrySimple(objectKey, valueBeforeProcessObject);
             final Object result = entryProcessor.process(entry);
             final Object valueAfterProcess = entry.getValue();
             Data dataValue = null;
@@ -91,7 +92,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                 recordStore.remove(dataKey);
                 eventType = EntryEventType.REMOVED;
             } else {
-                if (valueBeforeProcess == null) {
+                if (valueBeforeProcessObject == null) {
                     eventType = EntryEventType.ADDED;
                 }
                 // take this case as a read so no need to fire an event.
@@ -106,7 +107,9 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                 }
             }
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(record.getValue()), dataValue);
+                final Data oldValue = mapService.toData(valueBeforeProcess);
+                final Data value = mapService.toData(valueAfterProcess);
+                mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, value);
                 if (mapService.isNearCacheAndInvalidationEnabled(name)) {
                     mapService.invalidateAllNearCaches(name, dataKey);
                 }
@@ -115,7 +118,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                         mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
                     } else {
                         Record r = recordStore.getRecord(dataKey);
-                        SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), r.getStatistics(), r.getCost(), r.getVersion());
+                        SimpleEntryView entryView = new SimpleEntryView(dataKey, dataValue, r.getStatistics(), r.getCost(), r.getVersion());
                         mapService.publishWanReplicationUpdate(name, entryView);
                     }
                 }
