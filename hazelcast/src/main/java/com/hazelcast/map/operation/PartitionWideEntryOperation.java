@@ -28,6 +28,7 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -42,7 +43,8 @@ import java.util.Map;
 /**
  * GOTCHA : This operation does not load missing keys from mapstore for now.
  */
-public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
+public class PartitionWideEntryOperation extends AbstractMapOperation
+        implements BackupAwareOperation, PartitionAwareOperation {
 
     private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
     EntryProcessor entryProcessor;
@@ -73,7 +75,8 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
             final Object valueBeforeProcessObject = mapService.toObject(valueBeforeProcess);
             Object objectKey = mapService.toObject(record.getKey());
             if (getPredicate() != null) {
-                QueryEntry queryEntry = new QueryEntry(getNodeEngine().getSerializationService(), dataKey, objectKey, valueBeforeProcessObject);
+                final SerializationService ss = getNodeEngine().getSerializationService();
+                QueryEntry queryEntry = new QueryEntry(ss, dataKey, objectKey, valueBeforeProcessObject);
                 if (!getPredicate().apply(queryEntry)) {
                     continue;
                 }
@@ -118,7 +121,8 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                         mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
                     } else {
                         Record r = recordStore.getRecord(dataKey);
-                        SimpleEntryView entryView = new SimpleEntryView(dataKey, dataValue, r.getStatistics(), r.getCost(), r.getVersion());
+                        SimpleEntryView entryView = new SimpleEntryView(dataKey,
+                                dataValue, r.getStatistics(), r.getCost(), r.getVersion());
                         mapService.publishWanReplicationUpdate(name, entryView);
                     }
                 }

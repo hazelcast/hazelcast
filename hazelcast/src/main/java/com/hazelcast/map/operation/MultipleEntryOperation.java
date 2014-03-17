@@ -29,7 +29,8 @@ import java.util.Set;
  * date: 19/12/13
  * author: eminn
  */
-public class MultipleEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
+public class MultipleEntryOperation extends AbstractMapOperation
+        implements BackupAwareOperation, PartitionAwareOperation {
 
     private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
     private EntryProcessor entryProcessor;
