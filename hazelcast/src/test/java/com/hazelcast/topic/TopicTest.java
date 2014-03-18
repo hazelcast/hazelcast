@@ -491,11 +491,11 @@ public class TopicTest extends HazelcastTestSupport {
         final String id1 = topic.addMessageListener(messageListener1);
         topic.addMessageListener(messageListener2);
         topic.publish(message);
-        assertTrue(cp.await(30, TimeUnit.SECONDS));
+        assertOpenEventually(cp);
         topic.removeMessageListener(id1);
         topic.publish(message);
 
-        assertTrue(latch.await(30, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertEquals(3, atomicInteger.get());
     }
 
