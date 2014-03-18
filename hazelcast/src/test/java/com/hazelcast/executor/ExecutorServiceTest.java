@@ -655,6 +655,57 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testStatsIssue2039() throws InterruptedException {
+        final Config config = new Config();
+        final String name = "testStatsIssue2039";
+        config.addExecutorConfig(new ExecutorConfig(name).setQueueCapacity(1).setPoolSize(1));
+        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+        final IExecutorService executorService = instance.getExecutorService(name);
+
+        final CountDownLatch sleepLatch = new CountDownLatch(1);
+        final CountDownLatch secondLatch = new CountDownLatch(1);
+
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    assertTrue(sleepLatch.await(60, TimeUnit.SECONDS));
+                } catch (InterruptedException ignored) {
+                }
+            }
+        });
+
+        final Future submit = executorService.submit(new Runnable() {
+            public void run() {
+                secondLatch.countDown();
+            }
+        });
+
+        final Future rejected = executorService.submit(new Runnable() {
+            public void run() {
+            }
+        });
+
+        try {
+            rejected.get();
+        } catch (ExecutionException ignored) {
+        } finally {
+            sleepLatch.countDown();
+        }
+
+        assertTrue(sleepLatch.await(60, TimeUnit.SECONDS));
+
+        try {
+            submit.get();
+        } catch (ExecutionException ignored) {
+        }
+
+        final LocalExecutorStats stats = executorService.getLocalExecutorStats();
+        assertEquals(2, stats.getStartedTaskCount());
+        assertEquals(0, stats.getPendingTaskCount());
+    }
+
+    @Test
     public void testExecutorServiceStats() throws InterruptedException, ExecutionException {
         final IExecutorService executorService = createSingleNodeExecutorService("testExecutorServiceStats");
         final int k = 10;
