@@ -16,16 +16,14 @@
 
 package com.hazelcast.executor.client;
 
-import com.hazelcast.client.TargetClientRequest;
+import com.hazelcast.client.PartitionClientRequest;
+import com.hazelcast.executor.CallableTaskOperation;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.ExecutorPortableHook;
-import com.hazelcast.executor.MemberCallableTaskOperation;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -33,38 +31,33 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 /**
- * This class is used for sending the task to a particular target
+ * This class is used for sending the task to a particular partition
  */
-public final class TargetCallableRequest extends TargetClientRequest {
+public class PartitionCallableRequest extends PartitionClientRequest {
 
     private String name;
     private String uuid;
     private Callable callable;
-    private Address target;
+    private int partitionId;
 
-    public TargetCallableRequest() {
+    public PartitionCallableRequest() {
     }
 
-    public TargetCallableRequest(String name, String uuid, Callable callable, Address target) {
+    public PartitionCallableRequest(String name, String uuid, Callable callable, int partitionId) {
         this.name = name;
         this.uuid = uuid;
         this.callable = callable;
-        this.target = target;
+        this.partitionId = partitionId;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected Operation prepareOperation() {
-        SecurityContext securityContext = getClientEngine().getSecurityContext();
-        if (securityContext != null) {
-            callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
-        }
-        return new MemberCallableTaskOperation(name, uuid, callable);
+        return new CallableTaskOperation(name, uuid, callable);
     }
 
     @Override
-    public Address getTarget() {
-        return target;
+    protected int getPartition() {
+        return partitionId;
     }
 
     @Override
@@ -79,30 +72,29 @@ public final class TargetCallableRequest extends TargetClientRequest {
 
     @Override
     public int getClassId() {
-        return ExecutorPortableHook.TARGET_CALLABLE_REQUEST;
+        return ExecutorPortableHook.PARTITION_CALLABLE_REQUEST;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 
     @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeUTF("u", uuid);
+        writer.writeInt("p", partitionId);
         ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
         rawDataOutput.writeObject(callable);
-        target.writeData(rawDataOutput);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         uuid = reader.readUTF("u");
+        partitionId = reader.readInt("p");
         ObjectDataInput rawDataInput = reader.getRawDataInput();
         callable = rawDataInput.readObject();
-        target = new Address();
-        target.readData(rawDataInput);
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return null;
     }
 }

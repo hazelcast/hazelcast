@@ -1,10 +1,10 @@
 
 
-## Native Client
+## Native Clients
 
-Native Client enables you to perform almost all Hazelcast operations without being a member of the cluster. It connects to one of the cluster members and delegates all cluster wide operations to it (*dummy client*) or connects to all of them and delegate operations smartly (*smart client*). When the relied cluster member dies, client will transparently switch to another live member.
+Native Clients enable you to perform almost all Hazelcast operations without being a member of the cluster. It connects to one of the cluster members and delegates all cluster wide operations to it (*dummy client*) or connects to all of them and delegate operations smartly (*smart client*). When the relied cluster member dies, client will transparently switch to another live member.
 
-There can be hundreds, even thousands of clients connected to the cluster. But, by default there are *core count * 10* threads on the server side that will handle all the requests (e.g. if the server has 4 cores, it will be 40).
+There can be hundreds, even thousands of clients connected to the cluster. But, by default there are ***core count*** \* ***10*** threads on the server side that will handle all the requests (e.g. if the server has 4 cores, it will be 40).
 
 Imagine a trading application where all the trading data stored and managed in a Hazelcast cluster with tens of nodes. Swing/Web applications at traders' desktops can use Native  Clients to access and modify the data in the Hazelcast cluster.
 
@@ -334,6 +334,95 @@ Assume that you have the following two classes in Java and you want to use it wi
 Now, you can use class `Foo` and `Bar` in distributed structures. For example as Key or Value of `IMap` or as an Item in `IQueue`.
 	
 
-### CSharp Client - Enterprise Edition Only
+### C Sharp Client - Enterprise Edition Only
 
-Not yet implemented as of version 3.
+You can use native C# client to connect to running Hazelcast instances. All you need is to add `HazelcastClient3x.dll` into your C# project references. The API is very similar to Java native client. Sample code is shown below.
+
+```
+using Hazelcast.Config;
+using Hazelcast.Client;
+using Hazelcast.Core;
+using Hazelcast.IO.Serialization;
+
+using System.Collections.Generic;
+
+namespace Hazelcast.Client.Example
+{
+    public class SimpleExample
+    {
+
+        public static void Test()
+        {
+            var clientConfig = new ClientConfig();
+            clientConfig.GetNetworkConfig().AddAddress("10.0.0.1");
+            clientConfig.GetNetworkConfig().AddAddress("10.0.0.2:5702");
+
+            //Portable Serialization setup up for Customer CLass
+            clientConfig.GetSerializationConfig().AddPortableFactory(MyPortableFactory.FactoryId, new MyPortableFactory());
+
+            IHazelcastInstance client = HazelcastClient.NewHazelcastClient(clientConfig);
+            //All cluster operations that you can do with ordinary HazelcastInstance
+            IMap<string, Customer> mapCustomers = client.GetMap<string, Customer>("customers");
+            mapCustomers.Put("1", new Customer("Joe", "Smith"));
+            mapCustomers.Put("2", new Customer("Ali", "Selam"));
+            mapCustomers.Put("3", new Customer("Avi", "Noyan"));
+
+            ICollection<Customer> customers = mapCustomers.Values();
+            foreach (var customer in customers)
+            {
+                //process customer
+            }
+        }
+    }
+
+    public class MyPortableFactory : IPortableFactory
+    {
+        public const int FactoryId = 1;
+
+        public IPortable Create(int classId) {
+            if (Customer.Id == classId)
+                return new Customer();
+            else return null;
+        }
+    }
+
+    public class Customer: IPortable
+    {
+        private string name;
+        private string surname;
+
+        public const int Id = 5;
+
+        public Customer(string name, string surname)
+        {
+            this.name = name;
+            this.surname = surname;
+        }
+
+        public Customer(){}
+
+        public int GetFactoryId()
+        {
+            return MyPortableFactory.FactoryId;
+        }
+
+        public int GetClassId()
+        {
+            return Id;
+        }
+
+        public void WritePortable(IPortableWriter writer)
+        {
+            writer.WriteUTF("n", name);
+            writer.WriteUTF("s", surname);
+        }
+
+        public void ReadPortable(IPortableReader reader)
+        {
+            name = reader.ReadUTF("n");
+            surname = reader.ReadUTF("s");
+        }
+    }
+}```
+
+***Note***: *C# and Java clients are similar in terms of configuration. Therefore, you can refer to [Java Client](#java-client) section for configuration aspects. For information on C# API documentation, please refer to ???*

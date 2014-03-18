@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -80,8 +81,6 @@ public class ClientTxnMultiMapTest {
         tx.commitTransaction();
 
         assertEquals(Collections.EMPTY_LIST, hz.getMultiMap(NAME).get(KEY));
-
-
     }
 
     @Test
@@ -142,5 +141,22 @@ public class ClientTxnMultiMapTest {
         } finally {
             ex.shutdownNow();
         }
+    }
+
+    @Test
+    public void testPutAndRoleBack() throws Exception {
+        final String name = randomString();
+        final String key = "key";
+        final String value = "value";
+        final MultiMap multiMap = hz.getMultiMap(name);
+
+        TransactionContext tx = hz.newTransactionContext();
+        tx.beginTransaction();
+        TransactionalMultiMap mulitMapTxn = tx.getMultiMap(name);
+        mulitMapTxn.put(key, value);
+        mulitMapTxn.put(key, value);
+        tx.rollbackTransaction();
+
+        assertEquals(Collections.EMPTY_LIST, multiMap.get(key));
     }
 }

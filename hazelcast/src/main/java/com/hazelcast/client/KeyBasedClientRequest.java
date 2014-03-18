@@ -33,7 +33,4 @@ public abstract class KeyBasedClientRequest extends PartitionClientRequest {
         return partitionService.getPartitionId(key);
     }
 
-    protected int getReplicaIndex() {
-        return 0;
-    }
 }

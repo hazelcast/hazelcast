@@ -265,26 +265,20 @@ public class WanReplicationTest extends HazelcastTestSupport{
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
 
-        configA.getMapConfig("default").setTimeToLiveSeconds(2);
-        configB.getMapConfig("default").setTimeToLiveSeconds(2);
-        configC.getMapConfig("default").setTimeToLiveSeconds(2);
+        configA.getMapConfig("default").setTimeToLiveSeconds(10);
+        configB.getMapConfig("default").setTimeToLiveSeconds(10);
+        configC.getMapConfig("default").setTimeToLiveSeconds(10);
 
 
         initAllClusters();
 
-        createDataIn(clusterA, "map", 0,  10);
+        createDataIn(clusterA, "map", 0, 10);
         assertDataInFrom(clusterC, "map", 0,  10, clusterA);
 
         createDataIn(clusterB, "map", 10, 20);
         assertDataInFrom(clusterC, "map", 10, 20, clusterB);
 
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
+        sleepSeconds(10);
         assertKeysNotIn(clusterA, "map",  0, 10);
         assertKeysNotIn(clusterB, "map", 10, 20);
         assertKeysNotIn(clusterC, "map",  0, 20);

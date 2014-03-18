@@ -17,16 +17,19 @@
 package com.hazelcast.ascii;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,6 +42,8 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -55,25 +60,39 @@ public class RestTest {
 
     final static Config config = new XmlConfigBuilder().build();
 
-    @BeforeClass
-    @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    @Before
+    @After
+    public void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testTtl_issue1783() throws IOException, InterruptedException {
         final Config conf = new Config();
-        final MapConfig mapConfig = conf.getMapConfig("map");
+        String name = "map";
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final MapConfig mapConfig = conf.getMapConfig(name);
         mapConfig.setTimeToLiveSeconds(3);
+        mapConfig.addEntryListenerConfig(new EntryListenerConfig()
+                .setImplementation(new EntryAdapter() {
+                    @Override
+                    public void entryEvicted(EntryEvent event) {
+                        latch.countDown();
+                    }
+                }));
+
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(conf);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        communicator.put("map", "key", "value");
-        String value = communicator.get("map", "key");
+
+        communicator.put(name, "key", "value");
+        String value = communicator.get(name, "key");
+
         assertNotNull(value);
         assertEquals("value", value);
-        Thread.sleep(4000);
-        value = communicator.get("map", "key");
+
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
+        value = communicator.get(name, "key");
         assertTrue(value.isEmpty());
     }
 

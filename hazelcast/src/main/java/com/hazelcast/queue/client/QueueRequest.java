@@ -56,10 +56,6 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
         return getClientEngine().getPartitionService().getPartitionId(partitionKey);
     }
 
-    protected int getReplicaIndex() {
-        return 0;
-    }
-
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
     }

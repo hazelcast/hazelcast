@@ -1,8 +1,9 @@
 # You can now add comments using a hash-sign upfront the line :)
 src/Introduction.md
 	src/GettingStarted.md
+src/Whats_new_3.2.md
 	src/MigrationTo3.md
-	src/Whats_new_3.2.md
+	src/RevisionHistory.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/MapBackup.md

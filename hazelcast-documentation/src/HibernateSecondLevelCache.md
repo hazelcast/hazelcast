@@ -111,7 +111,8 @@ public class Cat implements Serializable {
      ...
 }
 ```
-The last thing you should be aware of is to drop hazelcast-hibernate-\<version\>.jar into your classpath.
+
+The last thing you should be aware of is to drop hazelcast-hibernate-*version*.jar into your classpath.
 
 -   **Accessing underlying `HazelcastInstance`**
 

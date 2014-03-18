@@ -810,7 +810,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    //todo: dead code??
+    /**
+     * {@link IMap#executeOnEntries(EntryProcessor)}
+     */
     public Map executeOnEntries(EntryProcessor entryProcessor) {
         Map result = new HashMap();
         try {
@@ -834,7 +836,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
-    //todo: dead code??
+    /**
+     * {@link IMap#executeOnEntries(EntryProcessor, Predicate)}
+     */
     public Map executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         Map result = new HashMap();
         try {

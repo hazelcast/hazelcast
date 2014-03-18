@@ -48,7 +48,9 @@ public abstract class PartitionClientRequest extends ClientRequest {
 
     protected abstract int getPartition();
 
-    protected abstract int getReplicaIndex();
+    protected int getReplicaIndex() {
+        return 0;
+    }
 
     protected Object filter(Object response) {
         return response;
