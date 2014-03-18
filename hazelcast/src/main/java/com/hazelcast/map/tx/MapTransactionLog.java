@@ -79,7 +79,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
 
     public Future rollback(NodeEngine nodeEngine) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        TxnRollbackOperation operation = new TxnRollbackOperation(name, key);
+        TxnRollbackOperation operation = new TxnRollbackOperation(name, key, ownerUuid);
         operation.setThreadId(threadId);
         try {
             return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
