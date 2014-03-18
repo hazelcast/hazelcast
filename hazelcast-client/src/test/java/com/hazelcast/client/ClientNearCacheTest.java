@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -178,7 +179,7 @@ public class ClientNearCacheTest {
         final IMap map = client.getMap(mapName);
 
         for (int i = 0; i < cacheSize+1; i++) {
-            map.put("key" + i, "value" + i);
+            map.put(i, i);
         }
         //populate near cache
         for (int i = 0; i < cacheSize+1; i++) {
@@ -190,6 +191,43 @@ public class ClientNearCacheTest {
             @Override
             public void run() throws Exception {
                 final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+                assertEquals(expetedSize, stats.getOwnedEntryCount());
+            }
+        });
+    }
+
+    @Test
+    public void nearCacheTTLCleanup() {
+        final String mapName = "nearCacheTTLCleanup";
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        NearCacheConfig cashConfig = new NearCacheConfig();
+        cashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        cashConfig.setTimeToLiveSeconds(1);
+
+        clientConfig.addNearCacheConfig(mapName, cashConfig);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final IMap map = client.getMap(mapName);
+
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < 100; i++) {
+            map.get(i);
+        }
+        //5 sec is the cleanupInterval set in clientNearCache
+        sleepSeconds(6);
+        //this get trigers the ttl cleanup,
+        map.get(0);
+        final int expetedSize = 1;
+
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+                System.out.println(stats.getOwnedEntryCount());
                 assertEquals(expetedSize, stats.getOwnedEntryCount());
             }
         });
