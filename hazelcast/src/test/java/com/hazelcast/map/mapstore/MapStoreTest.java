@@ -16,12 +16,31 @@
 
 package com.hazelcast.map.mapstore;
 
-import com.hazelcast.config.*;
-import com.hazelcast.core.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.MapLoaderLifecycleSupport;
+import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.map.*;
+import com.hazelcast.map.MapContainer;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapStoreWrapper;
+import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -29,21 +48,40 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.Collection;
+import java.util.Random;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.TreeSet;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.query.SampleObjects.Employee;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -1346,7 +1384,6 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Repeat(10)
     public void testMapStoreWriteRemoveOrder() {
         final String mapName = randomMapName("testMapStoreWriteDeleteOrder");
         final int numIterations = 40;
