@@ -159,8 +159,7 @@ public class ClientNearCacheTest {
     }
 
     @Test
-    @Category(ProblematicTest.class)
-    public void nearCacheWithMaxSizeSet() {
+    public void nearCacheEvect_withMaxSize() {
         final String mapName = "nearCashWithMaxSizeSet";
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
@@ -168,7 +167,7 @@ public class ClientNearCacheTest {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
 
-        final int cacheSize = 2;
+        final int cacheSize = 100;
 
         NearCacheConfig cashConfig = new NearCacheConfig();
         cashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -178,19 +177,19 @@ public class ClientNearCacheTest {
 
         final IMap map = client.getMap(mapName);
 
-        for (int i = 0; i < cacheSize * 100; i++) {
+        for (int i = 0; i < cacheSize+1; i++) {
             map.put("key" + i, "value" + i);
         }
         //populate near cache
-        for (int i = 0; i < cacheSize * 100; i++) {
+        for (int i = 0; i < cacheSize+1; i++) {
             map.get(i);
         }
 
-        final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(cacheSize, stats.getOwnedEntryCount());
+                final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+                assertEquals(80, stats.getOwnedEntryCount());
             }
         });
     }
