@@ -2,7 +2,7 @@
 
 ## Spring Managed Context
 
-It's often desired to access Spring managed beans, to apply bean properties or to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware` or to apply bean post-processing such as `InitializingBean`, `@PostConstruct` like annotations while using Hazelcast distributed `ExecutorService` or more generally any Hazelcast managed object. Achieving those features are as simple as adding `@SpringAware` annotation to your distributed object types. Once you have configured HazelcastInstance as explained in [Spring configuration](#spring-integration), just mark any distributed type with `@SpringAware` annotation.
+It  is often desired to access Spring managed beans, to apply bean properties or to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware` or to apply bean post-processing such as `InitializingBean`, `@PostConstruct` like annotations while using Hazelcast distributed `ExecutorService` or more generally any Hazelcast managed object. Achieving those features are as simple as adding `@SpringAware` annotation to your distributed object types. Once you have configured HazelcastInstance as explained in [Spring Configuration](#spring-configuration) section, just mark any distributed type with `@SpringAware` annotation.
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -37,6 +37,7 @@ It's often desired to access Spring managed beans, to apply bean properties or t
     ...
 </beans>
 ```
+
 **ExecutorService example:**
 
 ```java
@@ -76,6 +77,7 @@ Future<Long> f2 = (Future<Long>) hazelcast.getExecutorService()
     .submitToMember(new SomeTask(), member);
 Assert.assertEquals(bean.value, f2.get().longValue());
 ```
+
 **Distributed Map value example:**
 
 ```java
@@ -108,6 +110,7 @@ public class SomeValue implements Serializable, ApplicationContextAware {
     ...
 }
 ```
+
 On Node-1;
 
 ```java
@@ -116,6 +119,7 @@ SomeValue value = (SomeValue) context.getBean("someValue")
 IMap<String, SomeValue> map = hazelcast.getMap("values");
 map.put("key", value);
 ```
+
 On Node-2;
 
 ```java

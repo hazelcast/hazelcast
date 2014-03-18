@@ -10,7 +10,7 @@ For the operations to be performed, standard REST conventions for HTTP calls are
 
 ---
 
-Let's say your cluster's members are as shown below.
+Assume that your cluster members are as shown below.
 
 ```
 Members [5] {

@@ -2,33 +2,34 @@
 
 # Monitoring with JMX
 
--   Add the following system properties to enable [jmx agent](http://download.oracle.com/javase/1.5.0/docs/guide/management/agent.html)
+-   Add the following system properties to enable [JMX agent](http://download.oracle.com/javase/1.5.0/docs/guide/management/agent.html):
 
-    -   -Dcom.sun.management.jmxremote
+    - `-Dcom.sun.management.jmxremote`
 
-    -   -Dcom.sun.management.jmxremote.port=\_portNo\_ (to specify jmx port) *optional*
+    - `-Dcom.sun.management.jmxremote.port=\_portNo\_` (to specify JMX port) (*optional*)
 
-    -   -Dcom.sun.management.jmxremote.authenticate=false (to disable jmx auth) *optional*
+    - `-Dcom.sun.management.jmxremote.authenticate=false` (to disable JMX auth) (*optional*)
 
--   Enable Hazelcast property *hazelcast.jmx*
 
-    -   using Hazelcast configuration (api, xml, spring)
+-   Enable Hazelcast property `hazelcast.jmx` (refer to [System Property](#system-property));
 
-    -   or set system property -Dhazelcast.jmx=true
+    -   using Hazelcast configuration (API, XML, Spring)
 
--   Use jconsole, jvisualvm (with mbean plugin) or another jmx-compliant monitoring tool.
+    -   or set system property `-Dhazelcast.jmx=true`
+
+-   Use jconsole, jvisualvm (with mbean plugin) or another JMX compliant monitoring tool.
 
 **Following attributes can be monitored:**
 
 -   Cluster
 
-    -   config
+    -   configuration
 
     -   group name
 
-    -   count of members and their addresses (host:port)
+    -   count of members and their addresses (*host:port*)
 
-    -   operations: restart, shutdown cluster
+    -   operations: cluster restart, shutdown
 
 -   Member
 
@@ -36,15 +37,14 @@
 
     -   port
 
-    -   lite member state
 
 -   Statistics
 
     -   count of instances
 
-    -   number of instances created, destroyed since startup
+    -   number of instances created/destroyed since startup
 
-    -   max instances created, destroyed per second
+    -   maximum instances created/destroyed per second
 
 -   AtomicLong
 
@@ -88,6 +88,6 @@
 
     -   number of messages dispatched since creation, in last second
 
-    -   max messages dispatched per second
+    -   maximum messages dispatched per second
 
 
