@@ -185,11 +185,12 @@ public class ClientNearCacheTest {
             map.get(i);
         }
 
+        final int expetedSize = (int) ( cacheSize - (cacheSize * 0.2));
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
-                assertEquals(80, stats.getOwnedEntryCount());
+                assertEquals(expetedSize, stats.getOwnedEntryCount());
             }
         });
     }
