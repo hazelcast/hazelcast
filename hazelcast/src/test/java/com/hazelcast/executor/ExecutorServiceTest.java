@@ -57,15 +57,15 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testManagedContextAndLocal()throws Exception{
+    public void testManagedContextAndLocal() throws Exception {
         final Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
-        config.setManagedContext(new ManagedContext(){
+        config.setManagedContext(new ManagedContext() {
             @Override
             public Object initialize(Object obj) {
-                if(obj instanceof RunnableWithManagedContext){
-                    RunnableWithManagedContext task = (RunnableWithManagedContext)obj;
-                    task.initializeCalled=true;
+                if (obj instanceof RunnableWithManagedContext) {
+                    RunnableWithManagedContext task = (RunnableWithManagedContext) obj;
+                    task.initializeCalled = true;
                 }
                 return obj;
             }
@@ -76,10 +76,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         RunnableWithManagedContext task = new RunnableWithManagedContext();
         executor.submit(task).get();
-        assertTrue("The task should have been initialized by the ManagedContext",task.initializeCalled);
+        assertTrue("The task should have been initialized by the ManagedContext", task.initializeCalled);
     }
 
-    static class RunnableWithManagedContext implements Runnable{
+    static class RunnableWithManagedContext implements Runnable {
         private volatile boolean initializeCalled = false;
 
         @Override
@@ -88,7 +88,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void hazelcastInstanceAwareAndLocal()throws Exception{
+    public void hazelcastInstanceAwareAndLocal() throws Exception {
         final Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
         final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
@@ -96,10 +96,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
         executor.submit(task).get();
-        assertTrue("The setHazelcastInstance should have been called",task.initializeCalled);
+        assertTrue("The setHazelcastInstance should have been called", task.initializeCalled);
     }
 
-    static class HazelcastInstanceAwareRunnable implements Runnable,HazelcastInstanceAware{
+    static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware {
         private volatile boolean initializeCalled = false;
 
         @Override
