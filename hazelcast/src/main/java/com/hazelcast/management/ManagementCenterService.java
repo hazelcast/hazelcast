@@ -33,6 +33,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.*;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -487,13 +488,16 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         connection.setConnectTimeout(1000);
                         connection.setReadTimeout(1000);
                         final OutputStream outputStream = connection.getOutputStream();
-                        identifier.write(outputStream);
-                        final ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
-                        TimedMemberState ts = getTimedMemberState();
-                        ts.writeData(out);
-                        out.flush();
-                        connection.getInputStream();
-
+                        try{
+                            identifier.write(outputStream);
+                            final ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
+                            TimedMemberState ts = getTimedMemberState();
+                            ts.writeData(out);
+                            outputStream.flush();
+                            connection.getResponseCode();
+                        }finally{
+                            IOUtil.closeResource(outputStream);
+                        }
                     } catch (Exception e) {
                         logger.finest(e);
                     }
