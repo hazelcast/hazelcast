@@ -67,7 +67,10 @@ public final class Data implements IdentifiedDataSerializable {
             classDefinition = context.lookup(factoryId, classId, version);
             int classDefSize = in.readInt();
             if (classDefinition != null) {
-                in.skipBytes(classDefSize);
+                final int skipped = in.skipBytes(classDefSize);
+                if (skipped != classDefSize) {
+                    throw new HazelcastSerializationException("Not able to skip " + classDefSize + " bytes");
+                }
             } else {
                 byte[] classDefBytes = new byte[classDefSize];
                 in.readFully(classDefBytes);

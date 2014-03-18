@@ -1,7 +1,9 @@
+# You can now add comments using a hash-sign upfront the line :)
 src/Introduction.md
 	src/GettingStarted.md
+src/Whats_new_3.2.md
 	src/MigrationTo3.md
-	src/Whats_new_3.2.md
+	src/RevisionHistory.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/MapBackup.md
@@ -44,9 +46,12 @@ src/ExecutorService.md
 	src/DistributedExecution.md
 	src/ExecutionCancellation.md
 	src/ExecutionCallback.md
+src/mapreduce/Map-Reduce-Index.md
+    src/mapreduce/MapReduce-Essentials.md
+    src/mapreduce/MR-API-Introduction.md
+    src/mapreduce/MR-Architecture.md
 src/HttpSessionClustering.md
 src/WanReplication.md
-src/SPI.md
 src/Config.md
 	src/ConfigGroup.md
 	src/NetworkConfig.md
@@ -82,11 +87,15 @@ src/ManagementCenter.md
 	src/Maps.md
 	src/Queues.md
 	src/Topics.md
+	src/MultiMaps.md
+	src/Executors.md
 	src/Members.md
-	src/Logs.md
 	src/Scripting.md
-	src/TimeTravel.md
 	src/Console.md
+	src/Alerts.md
+	src/Administration.md
+	src/TimeTravel.md
+	src/Documentation.md
 src/Misc.md
 	src/CommonGotchas.md
 	src/ClusterTestHowTo.md

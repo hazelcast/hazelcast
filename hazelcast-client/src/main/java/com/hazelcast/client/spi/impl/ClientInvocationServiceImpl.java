@@ -30,13 +30,13 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
-/**
- * @author mdogan 5/16/13
- */
 public final class ClientInvocationServiceImpl implements ClientInvocationService {
 
     private final HazelcastClient client;
@@ -44,6 +44,8 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     private final ConcurrentMap<String, Integer> registrationMap = new ConcurrentHashMap<String, Integer>();
     private final ConcurrentMap<String, String> registrationAliasMap = new ConcurrentHashMap<String, String>();
+
+    private final Set<ClientCallFuture> failedListeners = Collections.newSetFromMap(new ConcurrentHashMap<ClientCallFuture, Boolean>());
 
     public ClientInvocationServiceImpl(HazelcastClient client) {
         this.client = client;
@@ -94,6 +96,19 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         final ClientConnection connection = connectionManager.tryToConnect(null);
         _send(future, connection);
         return future;
+    }
+
+    public void registerFailedListener(ClientCallFuture future){
+        failedListeners.add(future);
+    }
+
+    public void triggerFailedListeners() {
+        final Iterator<ClientCallFuture> iterator = failedListeners.iterator();
+        while (iterator.hasNext()) {
+            final ClientCallFuture failedListener = iterator.next();
+            iterator.remove();
+            failedListener.resend();
+        }
     }
 
     public void registerListener(String uuid, Integer callId) {
@@ -157,10 +172,10 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         final SerializationService ss = client.getSerializationService();
         final Data data = ss.toData(future.getRequest());
         if (!connection.write(new DataAdapter(data))) {
-            future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
             final int callId = future.getRequest().getCallId();
             connection.deRegisterCallId(callId);
             connection.deRegisterEventHandler(callId);
+            future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
         }
     }
 

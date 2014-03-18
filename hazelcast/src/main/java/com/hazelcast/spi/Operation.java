@@ -46,10 +46,8 @@ public abstract class Operation implements DataSerializable {
     private boolean validateTarget = true;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
+    private long waitTimeout = -1;
     private String callerUuid;
-    // not used anymore, keeping just for serialization compatibility
-    @Deprecated
-    private boolean async = false;
     private String executorName;
 
     // injected
@@ -225,6 +223,14 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
+    public final long getWaitTimeout() {
+        return waitTimeout;
+    }
+
+    public final void setWaitTimeout(long timeout) {
+        this.waitTimeout = timeout;
+    }
+
     public ExceptionAction onException(Throwable throwable) {
         return (throwable instanceof RetryableException)
                 ? ExceptionAction.RETRY_INVOCATION : ExceptionAction.THROW_EXCEPTION;
@@ -272,8 +278,8 @@ public abstract class Operation implements DataSerializable {
         out.writeBoolean(validateTarget);
         out.writeLong(invocationTime);
         out.writeLong(callTimeout);
+        out.writeLong(waitTimeout);
         out.writeUTF(callerUuid);
-        out.writeBoolean(async);  // not used anymore
         out.writeUTF(executorName);
         writeInternal(out);
     }
@@ -286,8 +292,8 @@ public abstract class Operation implements DataSerializable {
         validateTarget = in.readBoolean();
         invocationTime = in.readLong();
         callTimeout = in.readLong();
+        waitTimeout = in.readLong();
         callerUuid = in.readUTF();
-        async = in.readBoolean();  // not used anymore
         executorName = in.readUTF();
         readInternal(in);
     }

@@ -35,7 +35,7 @@ import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
@@ -55,6 +55,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
@@ -99,7 +100,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.nodeEngine = node.nodeEngine;
         int coreSize = Runtime.getRuntime().availableProcessors();
         this.executor = nodeEngine.getExecutionService().register(ExecutionService.CLIENT_EXECUTOR,
-                coreSize * THREADS_PER_CORE, coreSize * RIDICULOUS_THREADS_PER_CORE);
+                coreSize * THREADS_PER_CORE, coreSize * RIDICULOUS_THREADS_PER_CORE,
+                ExecutorType.CONCRETE);
         this.logger = node.getLogger(ClientEngine.class);
     }
 
@@ -128,7 +130,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public PartitionService getPartitionService() {
+    public InternalPartitionService getPartitionService() {
         return nodeEngine.getPartitionService();
     }
 
@@ -306,7 +308,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     private void sendClientEvent(ClientEndpoint endpoint) {
-        if (endpoint.isFirstConnection()) {
+        if (!endpoint.isFirstConnection()) {
             final EventService eventService = nodeEngine.getEventService();
             final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
             eventService.publishEvent(SERVICE_NAME, regs, endpoint, endpoint.getUuid().hashCode());
@@ -361,7 +363,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     String addClientListener(ClientListener clientListener) {
         EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
+        EventRegistration registration = eventService
+                .registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
         return registration.getId();
     }
 
@@ -498,8 +501,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
         private void checkPermissions(ClientEndpoint endpoint, ClientRequest request) {
             SecurityContext securityContext = getSecurityContext();
-            if (securityContext != null && request instanceof SecureRequest) {
-                Permission permission = ((SecureRequest) request).getRequiredPermission();
+            if (securityContext != null) {
+                Permission permission = request.getRequiredPermission();
                 if (permission != null) {
                     securityContext.checkPermission(endpoint.getSubject(), permission);
                 }

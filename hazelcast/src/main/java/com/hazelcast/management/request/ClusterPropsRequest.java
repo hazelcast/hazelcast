@@ -19,7 +19,7 @@ package com.hazelcast.management.request;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.InternalPartitionService;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -53,7 +53,7 @@ public class ClusterPropsRequest implements ConsoleRequest {
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        final PartitionServiceImpl partitionService = mcs.getHazelcastInstance().node.getPartitionService();
+        InternalPartitionService partitionService = mcs.getHazelcastInstance().node.getPartitionService();
 
         Map<String, String> properties = new LinkedHashMap<String, String>();
         properties.put("hazelcast.cl_version", mcs.getHazelcastInstance().node.getBuildInfo().getVersion());
@@ -62,7 +62,7 @@ public class ClusterPropsRequest implements ConsoleRequest {
         properties.put("memory.cl_freeMemory", Long.toString(runtime.freeMemory()));
         properties.put("memory.cl_totalMemory", Long.toString(runtime.totalMemory()));
         properties.put("memory.cl_maxMemory", Long.toString(runtime.maxMemory()));
-        properties.put("return.hasOngoingMigration" , Boolean.toString(partitionService.hasOnGoingMigration()));
+        properties.put("return.hasOngoingMigration", Boolean.toString(partitionService.hasOnGoingMigration()));
         properties.put("data.cl_migrationTasksCount", Long.toString(partitionService.getMigrationQueueSize()));
 
         dos.writeInt(properties.size());

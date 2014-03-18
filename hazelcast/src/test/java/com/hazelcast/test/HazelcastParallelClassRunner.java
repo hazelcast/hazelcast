@@ -29,7 +29,9 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     static {
         int cores = Runtime.getRuntime().availableProcessors();
-        if (cores < 8) {
+        if (!TestEnvironment.isMockNetwork()) {
+            MAX_THREADS = 1;
+        } else if (cores < 8) {
             MAX_THREADS = 8;
         } else {
             MAX_THREADS = cores;
@@ -45,17 +47,17 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     @Override
     protected void runChild(final FrameworkMethod method, final RunNotifier notifier) {
-        while (numThreads.get() > MAX_THREADS) {
+        while (numThreads.get() >= MAX_THREADS) {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException e) {
-                System.err.println ("Interrupted: " + method.getName());
+                System.err.println("Interrupted: " + method.getName());
                 e.printStackTrace();
                 return; // The user may have interrupted us; this won't happen normally
             }
         }
         numThreads.incrementAndGet();
-        new Thread (new TestRunner(method, notifier)).start();
+        new Thread(new TestRunner(method, notifier)).start();
     }
 
     @Override
@@ -82,7 +84,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         }
 
         @Override
-        public void run () {
+        public void run() {
             long start = System.currentTimeMillis();
             String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
             System.out.println("Started Running Test: " + testName);

@@ -18,13 +18,19 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -35,18 +41,19 @@ import java.util.Arrays;
  */
 final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
-    private Operation backupOp;
+    private Data backupOpData;
     private Address originalCaller;
     private long[] replicaVersions;
     private boolean sync;
 
+    private Operation backupOp;
     private boolean valid = true;
 
     Backup() {
     }
 
-    Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
-        this.backupOp = backupOp;
+    Backup(Data backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
+        this.backupOpData = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
         this.replicaVersions = replicaVersions;
@@ -75,11 +82,12 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         if (!valid) {
             return;
         }
-        final NodeEngine nodeEngine = getNodeEngine();
-        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        NodeEngine nodeEngine = getNodeEngine();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
 
-        if (backupOp != null) {
+        if (backupOpData != null) {
+            backupOp = nodeEngine.getSerializationService().toObject(backupOpData);
             backupOp.setNodeEngine(nodeEngine);
             backupOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
             backupOp.setCallerUuid(getCallerUuid());
@@ -93,7 +101,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     @Override
     public void afterRun() throws Exception {
-        if (sync && getCallId() != 0 && originalCaller != null) {
+        if (valid && sync && getCallId() != 0 && originalCaller != null) {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             final long callId = getCallId();
             final InternalOperationService operationService = nodeEngine.operationService;
@@ -129,7 +137,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeObject(backupOp);
+        IOUtil.writeNullableData(out, backupOpData);
         if (originalCaller != null) {
             out.writeBoolean(true);
             originalCaller.writeData(out);
@@ -142,7 +150,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        backupOp = in.readObject();
+        backupOpData = IOUtil.readNullableData(in);
         if (in.readBoolean()) {
             originalCaller = new Address();
             originalCaller.readData(in);

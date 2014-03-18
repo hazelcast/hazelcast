@@ -32,10 +32,6 @@ public abstract class InstancePermission extends ClusterPermission {
     protected final int mask;
     protected final String actions;
 
-    public InstancePermission(String name) {
-        this(name, new String[0]);
-    }
-
     public InstancePermission(String name, String... actions) {
         super(name);
         if (name == null || "".equals(name)) {

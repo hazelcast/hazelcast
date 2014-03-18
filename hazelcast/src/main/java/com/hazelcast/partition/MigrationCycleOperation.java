@@ -17,11 +17,6 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.annotation.PrivateApi;
 
-/**
- * @author mdogan 12/6/12
- */
-@PrivateApi
 public interface MigrationCycleOperation extends UrgentSystemOperation {
 }

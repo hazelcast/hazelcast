@@ -69,6 +69,13 @@ public interface TextCommandService {
 
     long incrementTouchCount();
 
+    /**
+     * Returns the size of the distributed queue instance with the specified name
+     * @param queueName name of the distributed queue
+     * @return the size of the distributed queue instance with the specified name
+     */
+    int size(String queueName);
+
     Object delete(String mapName, String key);
 
     void deleteAll(String mapName);

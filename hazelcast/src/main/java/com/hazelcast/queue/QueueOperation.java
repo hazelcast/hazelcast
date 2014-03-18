@@ -34,8 +34,6 @@ public abstract class QueueOperation extends Operation implements PartitionAware
 
     protected String name;
 
-    protected long timeoutMillis;
-
     protected transient Object response;
 
     private transient QueueContainer container;
@@ -49,7 +47,7 @@ public abstract class QueueOperation extends Operation implements PartitionAware
 
     protected QueueOperation(String name, long timeoutMillis) {
         this.name = name;
-        this.timeoutMillis = timeoutMillis;
+        setWaitTimeout(timeoutMillis);
     }
 
     protected final QueueContainer getOrCreateContainer() {
@@ -86,10 +84,6 @@ public abstract class QueueOperation extends Operation implements PartitionAware
         return true;
     }
 
-    public final long getWaitTimeoutMillis() {
-        return timeoutMillis;
-    }
-
     public boolean hasListener() {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
@@ -108,12 +102,10 @@ public abstract class QueueOperation extends Operation implements PartitionAware
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeLong(timeoutMillis);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        timeoutMillis = in.readLong();
     }
 
     protected QueueService getQueueService(){

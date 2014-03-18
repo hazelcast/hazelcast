@@ -22,6 +22,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
 
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +43,7 @@ public final class SimpleMultiMapTest {
     private static int valueSize = 1000;
     private static int getPercentage = 40;
     private static int putPercentage = 40;
+    private static final Random RANDOM = new Random();
 
     private SimpleMultiMapTest() {
     }
@@ -58,8 +60,8 @@ public final class SimpleMultiMapTest {
             es.execute(new Runnable() {
                 public void run() {
                     while (true) {
-                        int key = (int) (Math.random() * entryCount);
-                        int operation = ((int) (Math.random() * 100));
+                        int key = (int) (RANDOM.nextFloat() * entryCount);
+                        int operation = ((int) (RANDOM.nextFloat() * 100));
                         if (operation < getPercentage) {
                             map.get(String.valueOf(key));
                             gets.incrementAndGet();

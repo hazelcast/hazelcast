@@ -151,14 +151,14 @@ public class HealthMonitor extends Thread {
             systemCpuLoad = get(osMxBean, "getSystemCpuLoad", -1L);
             threadCount = threadMxBean.getThreadCount();
             peakThreadCount = threadMxBean.getPeakThreadCount();
-            asyncExecutorQueueSize = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR).queueSize();
-            clientExecutorQueueSize = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR).queueSize();
-            operationExecutorQueueSize = executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR).queueSize();
-            queryExecutorQueueSize = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR).queueSize();
-            scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).queueSize();
-            systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).queueSize();
-            ioExecutorQueueSize = executionService.getExecutor(ExecutionService.IO_EXECUTOR).queueSize();
-            eventQueueSize = eventService.getEventQueueSize();
+            asyncExecutorQueueSize = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR).getQueueSize();
+            clientExecutorQueueSize = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR).getQueueSize();
+            operationExecutorQueueSize = executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR).getQueueSize();
+            queryExecutorQueueSize = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR).getQueueSize();
+            scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).getQueueSize();
+            systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).getQueueSize();
+            ioExecutorQueueSize = executionService.getExecutor(ExecutionService.IO_EXECUTOR).getQueueSize();
+             eventQueueSize = eventService.getEventQueueSize();
             operationServiceOperationExecutorQueueSize = operationService.getOperationExecutorQueueSize();
             operationServiceOperationPriorityExecutorQueueSize = operationService.getPriorityOperationExecutorQueueSize();
             operationServiceOperationResponseQueueSize = operationService.getResponseQueueSize();
@@ -251,6 +251,8 @@ public class HealthMonitor extends Thread {
             }
 
             return defaultValue;
+        } catch (RuntimeException re) {
+            throw re;
         } catch (Exception e) {
             return defaultValue;
         }

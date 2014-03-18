@@ -5,6 +5,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -121,94 +122,6 @@ public class ClientConditionTest extends HazelcastTestSupport{
         assertEquals(k * 2, count.get());
     }
 
-    @Test
-    public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
-        final String name = "testLockConditionSignalAllShutDownKeyOwner";
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final AtomicInteger count = new AtomicInteger(0);
-        final int size = 50;
-        int k = 0;
-        final HazelcastInstance keyOwner = Hazelcast.newHazelcastInstance();
-        final Member keyOwnerMember = keyOwner.getCluster().getLocalMember();
-        final PartitionService partitionService = instance.getPartitionService();
-        while (!keyOwnerMember.equals(partitionService.getPartition(++k).getOwner())) {
-            Thread.sleep(10);
-        }
-
-        final ILock lock = client.getLock(k);
-        final ICondition condition = lock.newCondition(name);
-
-        final CountDownLatch awaitLatch = new CountDownLatch(size);
-        final CountDownLatch finalLatch = new CountDownLatch(size);
-        for (int i = 0; i < size; i++) {
-            new Thread(new Runnable() {
-                public void run() {
-                    lock.lock();
-                    try {
-                        awaitLatch.countDown();
-                        condition.await();
-                        Thread.sleep(5);
-                        if (lock.isLockedByCurrentThread()) {
-                            count.incrementAndGet();
-                        }
-                    } catch (InterruptedException ignored) {
-                    } finally {
-                        lock.unlock();
-                        finalLatch.countDown();
-                    }
-
-                }
-            }).start();
-        }
-
-        awaitLatch.await(1, TimeUnit.MINUTES);
-        lock.lock();
-        condition.signalAll();
-        lock.unlock();
-        keyOwner.shutdown();
-
-        finalLatch.await(2, TimeUnit.MINUTES);
-        assertEquals(size, count.get());
-    }
-
-    @Test(timeout = 100000)
-    public void testKeyOwnerDiesOnCondition() throws Exception {
-        final HazelcastInstance keyOwner = Hazelcast.newHazelcastInstance();
-
-        final AtomicInteger signalCounter = new AtomicInteger(0);
-
-        final String key = generateKeyOwnedBy(hz);
-        final ILock lock1 = client.getLock(key);
-        final String conditionName = randomString();
-        final ICondition condition1 = lock1.newCondition(conditionName);
-
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                final ILock lock = client.getLock(key);
-                final ICondition condition = lock.newCondition(conditionName);
-                lock.lock();
-                try {
-                    condition.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    lock.unlock();
-                }
-                signalCounter.incrementAndGet();
-            }
-        });
-        t.start();
-        Thread.sleep(1000);
-        lock1.lock();
-        keyOwner.shutdown();
-
-        condition1.signal();
-
-        lock1.unlock();
-        Thread.sleep(1000);
-        t.join();
-        assertEquals(1, signalCounter.get());
-    }
 
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testDestroyLockWhenOtherWaitingOnConditionAwait() {

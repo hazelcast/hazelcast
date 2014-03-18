@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public abstract class ClientRequest implements Portable {
+public abstract class ClientRequest implements Portable, SecureRequest {
 
     protected int callId = -1;
     protected transient ClientEngineImpl clientEngine;

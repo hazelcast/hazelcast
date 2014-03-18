@@ -30,6 +30,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.concurrent.ExecutionException;
 
 public class CancellationRequest extends InvocationClientRequest {
@@ -39,6 +40,7 @@ public class CancellationRequest extends InvocationClientRequest {
 
     private String uuid;
     private Address target;
+    private int partitionId = -1;
     private boolean interrupt;
 
     public CancellationRequest() {
@@ -50,23 +52,37 @@ public class CancellationRequest extends InvocationClientRequest {
         this.interrupt = interrupt;
     }
 
+    public CancellationRequest(String uuid, int partitionId, boolean interrupt) {
+        this.uuid = uuid;
+        this.partitionId = partitionId;
+        this.interrupt = interrupt;
+    }
+
     @Override
     protected void invoke() {
         CancellationOperation op = new CancellationOperation(uuid, interrupt);
-        InvocationBuilder builder = createInvocationBuilder(getServiceName(), op, target);
+        InvocationBuilder builder;
+        if (target != null) {
+            builder = createInvocationBuilder(getServiceName(), op, target);
+        } else {
+            builder = createInvocationBuilder(getServiceName(), op, partitionId);
+        }
         builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);
         InternalCompletableFuture future = builder.invoke();
         boolean result = false;
         try {
             result = (Boolean) future.get();
         } catch (InterruptedException e) {
-            ILogger logger = getClientEngine().getLogger(CancellationRequest.class);
-            logger.warning(e);
+            logException(e);
         } catch (ExecutionException e) {
-            ILogger logger = getClientEngine().getLogger(CancellationRequest.class);
-            logger.warning(e);
+            logException(e);
         }
         getEndpoint().sendResponse(result, getCallId());
+    }
+
+    private void logException(Exception e) {
+        ILogger logger = getClientEngine().getLogger(CancellationRequest.class);
+        logger.warning(e);
     }
 
     @Override
@@ -87,17 +103,23 @@ public class CancellationRequest extends InvocationClientRequest {
     @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("u", uuid);
+        writer.writeInt("p", partitionId);
         writer.writeBoolean("i", interrupt);
         ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
-        target.writeData(rawDataOutput);
+        rawDataOutput.writeObject(target);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         uuid = reader.readUTF("u");
+        partitionId = reader.readInt("p");
         interrupt = reader.readBoolean("i");
         ObjectDataInput rawDataInput = reader.getRawDataInput();
-        target = new Address();
-        target.readData(rawDataInput);
+        target = rawDataInput.readObject();
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 }

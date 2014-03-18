@@ -28,4 +28,5 @@ networkConfig.addOutboundPort(37000);
 networkConfig.addOutboundPort(37001);
 ...
 ```
-*\* You can use port ranges and/or comma separated ports.*
+
+***Note:*** *You can use port ranges and/or comma separated ports.*

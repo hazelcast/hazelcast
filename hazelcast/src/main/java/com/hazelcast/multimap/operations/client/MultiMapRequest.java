@@ -43,10 +43,6 @@ public abstract class MultiMapRequest extends PartitionClientRequest implements 
         this.name = name;
     }
 
-    protected int getReplicaIndex() {
-        return 0;
-    }
-
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;
     }

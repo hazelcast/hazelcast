@@ -1,5 +1,5 @@
 
-### Network Partitioning (Split-Brain Syndrome)
+### Network Partitioning - Split Brain Syndrome
 
 Imagine that you have 10-node cluster and for some reason the network is divided into two in a way that 4 servers cannot see the other 6. As a result you ended up having two separate clusters; 4-node cluster and 6-node cluster. Members in each sub-cluster are thinking that the other nodes are dead even though they are not. This situation is called Network Partitioning (aka Split-Brain Syndrome).
 

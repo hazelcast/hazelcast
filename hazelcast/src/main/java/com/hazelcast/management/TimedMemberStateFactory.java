@@ -158,6 +158,8 @@ public class TimedMemberStateFactory {
             }
 
             return defaultValue;
+        } catch (RuntimeException re) {
+            throw re;
         } catch (Exception e) {
             return defaultValue;
         }

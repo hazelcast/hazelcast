@@ -8,6 +8,7 @@ import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -309,28 +310,19 @@ public class ConditionTest extends HazelcastTestSupport {
         lock.unlock();
     }
 
-    //todo: this functionality is broken because the machine that owns the key isn't the key-owning machine.
-    //I have verified this by reading out the owner of the key and the keyOwner hazelcast instance. So because
-    //the keyowner is not the expected machine, this test doesn't reveal the error within the lock/condition.
-    @Test(timeout = 60000)
+
+    @Test
+    @Category(ProblematicTest.class)
     public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final String name = randomString();
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final AtomicInteger count = new AtomicInteger(0);
         final int size = 50;
-        int k = 0;
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance();
         warmUpPartitions(instance, keyOwner);
 
-        //todo: what is this, we are trying to find the 'not keyowner'????
-
-        while (!keyOwner.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++k).getOwner())) {
-            Thread.sleep(10);
-        }
-
-        final int key = k;
-
+        final String key = generateKeyOwnedBy(keyOwner);
 
         final ILock lock = instance.getLock(key);
         final ICondition condition = lock.newCondition(name);
@@ -344,7 +336,6 @@ public class ConditionTest extends HazelcastTestSupport {
                     try {
                         awaitLatch.countDown();
                         condition.await();
-                        Thread.sleep(5);
                         if (lock.isLockedByCurrentThread()) {
                             count.incrementAndGet();
                         }
@@ -364,7 +355,7 @@ public class ConditionTest extends HazelcastTestSupport {
         lock1.lock();
         condition1.signalAll();
         lock1.unlock();
-        //keyOwner.shutdown();
+        keyOwner.shutdown();
 
         finalLatch.await(2, TimeUnit.MINUTES);
         assertEquals(size, count.get());

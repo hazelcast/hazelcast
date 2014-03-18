@@ -18,6 +18,7 @@ package com.hazelcast.executor;
 
 import com.hazelcast.executor.client.CancellationRequest;
 import com.hazelcast.executor.client.IsShutdownRequest;
+import com.hazelcast.executor.client.PartitionCallableRequest;
 import com.hazelcast.executor.client.TargetCallableRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
@@ -34,6 +35,7 @@ public final class ExecutorPortableHook implements PortableHook {
     public static final int IS_SHUTDOWN_REQUEST = 1;
     public static final int CANCELLATION_REQUEST = 2;
     public static final int TARGET_CALLABLE_REQUEST = 3;
+    public static final int PARTITION_CALLABLE_REQUEST = 4;
 
     @Override
     public int getFactoryId() {
@@ -52,6 +54,8 @@ public final class ExecutorPortableHook implements PortableHook {
                         return new CancellationRequest();
                     case TARGET_CALLABLE_REQUEST:
                         return new TargetCallableRequest();
+                    case PARTITION_CALLABLE_REQUEST:
+                        return new PartitionCallableRequest();
                     default:
                         return null;
                 }

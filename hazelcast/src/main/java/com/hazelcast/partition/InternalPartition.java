@@ -21,7 +21,7 @@ import com.hazelcast.nio.Address;
 /**
  * Represents a Partition. It is comparable to the {@link com.hazelcast.core.Partition} but it is optimized for internal
  * usage, so it exposes method not meant for regular Hazelcast users.
- *
+ * <p/>
  * The InternalPartition provides access to information about a partition, most importantly the addresses of the
  * replica's and this information will be updated. So one can cache the InternalPartition and keep asking for
  * partition information.
@@ -42,9 +42,9 @@ public interface InternalPartition {
 
     /**
      * Returns the Address of the owner of this partition.
-     *
+     * <p/>
      * If no owner has been set yet, null is returned. So be careful with assuming that a non null value is returned.
-     *
+     * <p/>
      * The value could be stale when returned.
      *
      * @return the owner.
@@ -53,7 +53,7 @@ public interface InternalPartition {
 
     /**
      * Checks if there currently is a migration going on in this partition.
-     *
+     * <p/>
      * The returned value could be stale when it is returned.
      *
      * @return true if there is a migration going on, false otherwise.
@@ -62,13 +62,13 @@ public interface InternalPartition {
 
     /**
      * Returns Address of the replica.
-     *
+     * <p/>
      * The owner has replica index 0.
-     *
+     * <p/>
      * The returned value could be null if the owner/replica has not yet been set.
-     *
+     * <p/>
      * todo: what to do when index is out of bounds.
-     *
+     * <p/>
      * The returned value could be stale when it is returned.
      *
      * @param replicaIndex the index of the replica.

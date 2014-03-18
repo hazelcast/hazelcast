@@ -29,7 +29,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class RoundRobinLB extends AbstractLoadBalancer {
 
-    private final AtomicInteger indexRef = new AtomicInteger(0);
+    private final AtomicInteger indexRef;
+
+    public RoundRobinLB() {
+        this((int)System.nanoTime());
+    }
+
+    public RoundRobinLB(int seed) {
+        indexRef  = new AtomicInteger(seed);
+    }
 
     @Override
     public Member next() {

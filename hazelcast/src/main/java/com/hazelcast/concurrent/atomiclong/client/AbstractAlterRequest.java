@@ -58,11 +58,6 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
     }
 
     @Override
-    protected int getReplicaIndex() {
-        return 0;
-    }
-
-    @Override
     public String getServiceName() {
         return AtomicLongService.SERVICE_NAME;
     }

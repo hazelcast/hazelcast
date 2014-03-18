@@ -26,15 +26,12 @@ import com.hazelcast.instance.TestUtil;
 import org.junit.After;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public abstract class HazelcastTestSupport {
 
@@ -48,6 +45,23 @@ public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
+    public static void assertJoinable(Thread... threads) {
+        assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
+    }
+
+    public static void assertIterableEquals(Iterable iter, Object... values) {
+        int counter = 0;
+        for (Object o : iter) {
+            if (values.length < counter + 1) {
+                throw new AssertionError("Iterator and values sizes are not equal");
+            }
+            assertEquals(values[counter], o);
+            counter++;
+        }
+
+        assertEquals("Iterator and values sizes are not equal", values.length, counter);
+    }
+
     public static void assertSizeEventually(int expectedSize, Collection c){
         assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
@@ -56,13 +70,9 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-               assertEquals("the size of the collection is correct",expectedSize, c.size());
+                assertEquals("the size of the collection is correct",expectedSize, c.size());
             }
         },timeoutSeconds);
-    }
-
-    public static void assertJoinable(Thread... threads) {
-        assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
     }
 
     public static void assertJoinable(long timeoutSeconds, Thread... threads) {
@@ -91,7 +101,7 @@ public abstract class HazelcastTestSupport {
     public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
-            assertTrue("CountDownLatch failed to complete within " + timeoutSeconds + " seconds", completed);
+            assertTrue("CountDownLatch failed to complete within " + timeoutSeconds + " seconds , count left:" + latch.getCount(), completed);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -106,6 +116,14 @@ public abstract class HazelcastTestSupport {
 
     public static String randomString(){
         return UUID.randomUUID().toString();
+    }
+
+    public static String randomMapName(String mapNamePrefix){
+        return mapNamePrefix + randomString();
+    }
+
+    public static String randomMapName(){
+        return randomString();
     }
 
 
@@ -197,7 +215,7 @@ public abstract class HazelcastTestSupport {
         return TestUtil.getNode(hz);
     }
 
-    protected static void warmUpPartitions(HazelcastInstance... instances)  {
+    protected static void warmUpPartitions(HazelcastInstance... instances){
         try {
             TestUtil.warmUpPartitions(instances);
         } catch (InterruptedException e) {

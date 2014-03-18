@@ -18,15 +18,15 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class GetDistributedObjectsRequest extends ClientRequest implements Portable {
+public class GetDistributedObjectsRequest extends ClientRequest {
     @Override
     void process() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
@@ -57,4 +57,8 @@ public class GetDistributedObjectsRequest extends ClientRequest implements Porta
         return ClientPortableHook.GET_DISTRIBUTED_OBJECT_INFO;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

@@ -20,8 +20,9 @@ import com.hazelcast.core.PartitioningStrategy;
 
 public class StringPartitioningStrategy implements PartitioningStrategy {
 
-    public final static StringPartitioningStrategy INSTANCE = new StringPartitioningStrategy();
+    public static final StringPartitioningStrategy INSTANCE = new StringPartitioningStrategy();
 
+    @Override
     public Object getPartitionKey(Object key) {
         if (key instanceof String) {
             return getPartitionKey((String) key);
@@ -29,20 +30,27 @@ public class StringPartitioningStrategy implements PartitioningStrategy {
         return null;
     }
 
-    public static String getBaseName(String name){
-        if(name == null)return null;
+    public static String getBaseName(String name) {
+        if (name == null) {
+            return null;
+        }
         int indexOf = name.indexOf('@');
-        if(indexOf == -1) return name;
-        return name.substring(0,indexOf);
+        if (indexOf == -1) {
+            return name;
+        }
+        return name.substring(0, indexOf);
     }
 
     public static String getPartitionKey(String key) {
-        if (key == null) return null;
+        if (key == null) {
+            return null;
+        }
 
         int firstIndexOf = key.indexOf('@');
-        if (firstIndexOf > -1) {
-            key = key.substring(firstIndexOf + 1);
+        if (firstIndexOf == -1) {
+            return key;
+        } else {
+            return key.substring(firstIndexOf + 1);
         }
-        return key;
     }
 }

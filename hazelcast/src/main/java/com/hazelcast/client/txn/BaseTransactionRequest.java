@@ -17,14 +17,13 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.util.ThreadUtil;
 
 import java.io.IOException;
 
-public abstract class BaseTransactionRequest extends CallableClientRequest implements Portable {
+public abstract class BaseTransactionRequest extends CallableClientRequest {
 
     protected String txnId;
     protected long clientThreadId;

@@ -171,7 +171,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     }
 
     public void andThen(ExecutionCallback<V> callback) {
-        andThen(callback, executionService.getExecutor());
+        andThen(callback, executionService.getAsyncExecutor());
     }
 
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
@@ -196,8 +196,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         return connection;
     }
 
-    private boolean resend() {
-        if (reSendCount.incrementAndGet() > MAX_RESEND_COUNT) {
+    public boolean resend() {
+        if (handler == null && reSendCount.incrementAndGet() > MAX_RESEND_COUNT) {
             return false;
         }
         executionService.execute(new ReSendTask());
@@ -225,7 +225,11 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             try {
                 invocationService.reSend(ClientCallFuture.this);
             } catch (Exception e) {
-                setResponse(e);
+                if (handler != null) {
+                    invocationService.registerFailedListener(ClientCallFuture.this);
+                } else {
+                    setResponse(e);
+                }
             }
         }
     }

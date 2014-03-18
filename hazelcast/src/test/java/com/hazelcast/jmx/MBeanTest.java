@@ -16,10 +16,14 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
@@ -31,6 +35,8 @@ import java.util.Hashtable;
 
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class MBeanTest extends HazelcastTestSupport {
 
     private static HazelcastInstance hz;

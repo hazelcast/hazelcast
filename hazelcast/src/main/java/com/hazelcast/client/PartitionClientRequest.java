@@ -30,13 +30,16 @@ public abstract class PartitionClientRequest extends ClientRequest {
     protected void afterResponse() {
     }
 
+    @Override
     final void process() {
         beforeProcess();
-        final ClientEndpoint endpoint = getEndpoint();
+        ClientEndpoint endpoint = getEndpoint();
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
         InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, getPartition())
-                .setReplicaIndex(getReplicaIndex()).setTryCount(TRY_COUNT)
+                .setReplicaIndex(getReplicaIndex())
+                .setTryCount(TRY_COUNT)
+                .setResultDeserialized(false)
                 .setCallback(new CallbackImpl(endpoint));
         builder.invoke();
     }
@@ -45,7 +48,9 @@ public abstract class PartitionClientRequest extends ClientRequest {
 
     protected abstract int getPartition();
 
-    protected abstract int getReplicaIndex();
+    protected int getReplicaIndex() {
+        return 0;
+    }
 
     protected Object filter(Object response) {
         return response;
@@ -58,6 +63,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
             this.endpoint = endpoint;
         }
 
+        @Override
         public void notify(Object object) {
             endpoint.sendResponse(filter(object), getCallId());
             afterResponse();

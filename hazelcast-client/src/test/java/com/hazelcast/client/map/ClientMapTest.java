@@ -19,6 +19,7 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -26,6 +27,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
@@ -38,7 +40,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,22 +51,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-/**
- * @author ali 5/22/13
- */
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -74,9 +67,16 @@ public class ClientMapTest {
     static HazelcastInstance client;
     static HazelcastInstance server;
 
+    static TestMapStore mapStore = new TestMapStore();
+
     @BeforeClass
     public static void init() {
         Config config = new Config();
+        config.getMapConfig("mapstore").
+                setMapStoreConfig(new MapStoreConfig()
+                        .setWriteDelaySeconds(1000)
+                        .setImplementation(mapStore));
+
         server = Hazelcast.newHazelcastInstance(config);
         client = HazelcastClient.newHazelcastClient(null);
     }
@@ -178,9 +178,12 @@ public class ClientMapTest {
 
 
     @Test
-    @Ignore("TODO empty Test")
-    public void flush() {
-        //TODO map store
+    public void testFlush() throws InterruptedException {
+        mapStore.latch = new CountDownLatch(1);
+        IMap<Object, Object> map = client.getMap("mapstore");
+        map.put(1l, "value");
+        map.flush();
+        assertOpenEventually(mapStore.latch, 5);
     }
 
     @Test
@@ -334,9 +337,12 @@ public class ClientMapTest {
     }
 
     @Test
-    @Ignore("TODO empty Test")
-    public void testPutTransient() throws Exception {
-        //TODO mapstore
+    public void testPutTransient() throws InterruptedException {
+        mapStore.latch = new CountDownLatch(1);
+        IMap<Object, Object> map = client.getMap("mapstore");
+        map.putTransient(3l, "value1", 100, TimeUnit.SECONDS);
+        map.flush();
+        assertFalse(mapStore.latch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
@@ -679,7 +685,7 @@ public class ClientMapTest {
         final CountDownLatch gateEvict = new CountDownLatch(1);
         final CountDownLatch gateUpdate = new CountDownLatch(1);
 
-        final String mapName =  randomString();
+        final String mapName = randomString();
 
         final IMap<Object, Object> serverMap = server.getMap(mapName);
         serverMap.put(3, new Deal(3));
@@ -805,5 +811,38 @@ public class ClientMapTest {
         assertTrue("put latency", 0 < localMapStats.getTotalPutLatency());
         assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
         assertTrue("remove latency", 0 < localMapStats.getTotalRemoveLatency());
+    }
+
+    static class TestMapStore extends MapStoreAdapter<Long, String> {
+
+        public volatile CountDownLatch latch;
+
+        @Override
+        public void store(Long key, String value) {
+            if (latch != null) {
+                latch.countDown();
+            }
+        }
+
+        @Override
+        public void storeAll(Map<Long, String> map) {
+            if (latch != null) {
+                latch.countDown();
+            }
+        }
+
+        @Override
+        public void deleteAll(Collection<Long> keys) {
+            if (latch != null) {
+                latch.countDown();
+            }
+        }
+
+        @Override
+        public void delete(Long key) {
+            if (latch != null) {
+                latch.countDown();
+            }
+        }
     }
 }

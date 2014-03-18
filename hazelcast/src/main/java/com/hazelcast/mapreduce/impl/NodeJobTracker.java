@@ -21,9 +21,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.task.KeyValueJob;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.executor.ExecutorType;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -40,7 +41,7 @@ class NodeJobTracker
         super(name, jobTrackerConfig, nodeEngine, mapReduceService);
 
         ExecutionService es = nodeEngine.getExecutionService();
-        PartitionService ps = nodeEngine.getPartitionService();
+        InternalPartitionService ps = nodeEngine.getPartitionService();
         int maxThreadSize = jobTrackerConfig.getMaxThreadSize();
         if (maxThreadSize <= 0) {
             maxThreadSize = Runtime.getRuntime().availableProcessors();
@@ -52,7 +53,7 @@ class NodeJobTracker
 
         try {
             String executorName = MapReduceUtil.buildExecutorName(name);
-            es.register(executorName, maxThreadSize, queueSize);
+            es.register(executorName, maxThreadSize, queueSize, ExecutorType.CACHED);
         } catch (Exception ignore) {
             // After destroying the proxy and recreating it the executor
             // might already be registered, so we can ignore this exception.

@@ -24,35 +24,34 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.InternalPartitionService;
 
+import java.security.Permission;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author mdogan 5/13/13
- */
 public final class GetPartitionsRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
+    @Override
     public Object call() throws Exception {
-        final PartitionServiceImpl service = getService();
+        InternalPartitionService service = getService();
         service.firstArrangement();
-        final ClusterService clusterService = getClientEngine().getClusterService();
-        final Collection<MemberImpl> memberList = clusterService.getMemberList();
-        final Address[] addresses = new Address[memberList.size()];
-        final Map<Address, Integer> addressMap = new HashMap<Address, Integer>(memberList.size());
+        ClusterService clusterService = getClientEngine().getClusterService();
+        Collection<MemberImpl> memberList = clusterService.getMemberList();
+        Address[] addresses = new Address[memberList.size()];
+        Map<Address, Integer> addressMap = new HashMap<Address, Integer>(memberList.size());
         int k = 0;
         for (MemberImpl member : memberList) {
-            final Address address = member.getAddress();
+            Address address = member.getAddress();
             addresses[k] = address;
             addressMap.put(address, k);
             k++;
         }
-        final InternalPartition[] partitions = service.getPartitions();
-        final int[] indexes = new int[partitions.length];
+        InternalPartition[] partitions = service.getPartitions();
+        int[] indexes = new int[partitions.length];
         for (int i = 0; i < indexes.length; i++) {
-            final Address owner = partitions[i].getOwner();
+            Address owner = partitions[i].getOwner();
             int index = -1;
             if (owner != null) {
                 final Integer idx = addressMap.get(owner);
@@ -66,16 +65,23 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
         return new PartitionsResponse(addresses, indexes);
     }
 
+    @Override
     public String getServiceName() {
-        return PartitionServiceImpl.SERVICE_NAME;
+        return InternalPartitionService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientPortableHook.GET_PARTITIONS;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
+    }
 }

@@ -5,6 +5,7 @@ function delete {
 	$(rm -rf "./$COPYRIGHT_FILE_NAME")
 	$(rm -rf "./title.txt")
 	$(rm -rf "./src/images")
+	$(rm -rf "./src/hostedmancenter/images")
 }
 
 function createMultiHTML {
@@ -206,9 +207,9 @@ function init {
 	COPYRIGHT_FILE_NAME="copyright.txt"
 	date=`date +%b\ %d\,\ %Y`
 	year=`date +%Y`
-	INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' documentation.index`
-	MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' mancenter.index`
-	HOSTED_MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|[ \t]+\$/,""); print;}' hostedmancenter.index`
+	INDEX=`awk '{gsub(/^[ \t]+|^([#]+.*)|[ \t]+([#]+.*)\$/,""); print;}' documentation.index`
+	MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|([#]+.*)|[ \t]+([#]+.*)\$/,""); print;}' mancenter.index`
+	HOSTED_MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|^([#]+.*)|[ \t]+([#]+.*)\$/,""); print;}' hostedmancenter.index`
 }
 
 function cleanIfExists {
@@ -242,20 +243,27 @@ mv $MERGED_FILE_NAME ./src/$MERGED_FILE_NAME
 #########
 mkdir ./src/images
 cp -a ./images/*.jpg ./src/images/
+cp -a ./images/*.png ./src/images/
+mkdir ./src/hostedmancenter/images
+cp -a ./images/*.jpg ./src/hostedmancenter/images/
+cp -a ./images/*.png ./src/hostedmancenter/images/
 mkdir ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
 mkdir ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
 mkdir ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
 createSingleHTML
-createMancenterDocumentation "mancenter" $MANCENTER_OUTPUT_DIR
 createMancenterDocumentation "hostedmancenter" $HOSTED_MANCENTER_OUTPUT_DIR
+createMancenterDocumentation "mancenter" $MANCENTER_OUTPUT_DIR
 
 # Move images manually, BeautifulDocs is not working reliable when copying images. Bug reported about that.
 cp -a ./images/*.jpg ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
 cp -a ./images/*.jpg ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
 cp -a ./images/*.jpg ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
 cp -a ./images/*.jpg ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
+cp -a ./images/*.png ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
+cp -a ./images/*.png ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
+cp -a ./images/*.png ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
+cp -a ./images/*.png ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
 delete
-
 echo "Done"
 
 

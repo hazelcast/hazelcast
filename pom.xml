@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.2-RC2-SNAPSHOT</version>
+    <version>3.2-RC3-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -68,6 +68,7 @@
         <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
         <main.basedir>${project.basedir}</main.basedir>
+        <jacoco.version>0.6.5.201403032054</jacoco.version>
     </properties>
     <licenses>
         <license>
@@ -135,6 +136,17 @@
 
         <plugins>
             <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>com/hazelcast/examples/**/*.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven.assembly.plugin.version}</version>
@@ -180,7 +192,7 @@
                         -Dhazelcast.test.use.network=false
                     </argLine>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
-                    <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>
+                    <excludedGroups>com.hazelcast.test.annotation.NightlyTest</excludedGroups>
                     <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                 </configuration>
             </plugin>
@@ -196,12 +208,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.6.4.201312101107</version>
-                        <configuration>
-                            <excludes>
-                                <exclude>com/hazelcast/examples/**/*.class</exclude>
-                            </excludes>
-                        </configuration>
+                        <version>${jacoco.version}</version>
                         <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
@@ -211,10 +218,15 @@
                             </execution>
                             <execution>
                                 <id>default-report</id>
-                                <phase>prepare-package</phase>
+                                <phase>test</phase>
                                 <goals>
                                     <goal>report</goal>
                                 </goals>
+                                <configuration>
+                                    <excludes>
+                                        <exclude>**/ClientTestApp.class</exclude>
+                                    </excludes>
+                                </configuration>
                             </execution>
                             <!-- execution>
                                 <id>default-check</id>
@@ -246,16 +258,17 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                          <!--       ${argLine} -->
+
                             <argLine>
-                                ${argLine}
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>
+                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
+                            <excludedGroups>com.hazelcast.test.annotation.NightlyTest</excludedGroups>
                             <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
                     </plugin>
@@ -513,7 +526,7 @@
         </profile>
 
         <profile>
-            <id>slow-test</id>
+            <id>nightly-build</id>
             <build>
                 <plugins>
                     <plugin>
@@ -529,7 +542,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.SlowTest</groups>
+                            <groups>com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.SlowTest</groups>
                             <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
                     </plugin>
@@ -554,7 +567,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest
+                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
                             </groups>
                             <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
@@ -586,37 +599,6 @@
                 </plugins>
             </build>
         </profile>
-
-        <!-- use this profile if you only want to run the benchmarks-->
-        <profile>
-            <id>benchmark-jenkins</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven.surefire.plugin.version}</version>
-                        <configuration>
-                            <parallel>none</parallel>
-                            <systemPropertyVariables>
-                                <jub.consumers>CONSOLE,H2</jub.consumers>
-                                <jub.db.file>/data/benchmarks/benchmarks</jub.db.file>
-                                <jub.charts.dir>/usr/share/tomcat7/webapps/benchmarks</jub.charts.dir>
-                                <jub.rounds.warmup>2</jub.rounds.warmup>
-                                <jub.rounds.benchmark>10</jub.rounds.benchmark>
-                                <hazelcast.version.check.enabled>false</hazelcast.version.check.enabled>
-                                <hazelcast.mancenter.enabled>false</hazelcast.mancenter.enabled>
-                                <hazelcast.logging.type>none</hazelcast.logging.type>
-                            </systemPropertyVariables>
-                            <includes>
-                                <include>**/*Benchmark.java</include>
-                            </includes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
     </profiles>
 
     <distributionManagement>

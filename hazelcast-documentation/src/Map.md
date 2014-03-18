@@ -53,8 +53,6 @@ All `ConcurrentMap` operations such as `put` and `remove` might wait if the key 
 
 Also see:
 
--   Distributed Map internals.
-
 -   [Data Affinity](#data-affinity).
 
 -   [Map Configuration with wildcards.](#wildcard-configuration).

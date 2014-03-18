@@ -74,14 +74,17 @@ public class AwaitOperation extends BaseLockOperation
 
     @Override
     public boolean shouldWait() {
-        boolean shouldWait = firstRun || !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
+        LockStoreImpl lockStore = getLockStore();
+        boolean canAcquireLock = lockStore.canAcquireLock(key, getCallerUuid(), threadId);
+
+        ConditionKey signalKey = lockStore.getSignalKey(key);
+        if (signalKey != null && conditionId.equals(signalKey.getConditionId()) && canAcquireLock) {
+            return false;
+        }
+
+        boolean shouldWait = firstRun || !canAcquireLock;
         firstRun = false;
         return shouldWait;
-    }
-
-    @Override
-    public long getWaitTimeoutMillis() {
-        return timeout;
     }
 
     @Override

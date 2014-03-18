@@ -29,8 +29,12 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.concurrent.Callable;
 
+/**
+ * This class is used for sending the task to a particular target
+ */
 public final class TargetCallableRequest extends TargetClientRequest {
 
     private String name;
@@ -95,5 +99,10 @@ public final class TargetCallableRequest extends TargetClientRequest {
         callable = rawDataInput.readObject();
         target = new Address();
         target.readData(rawDataInput);
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return null;
     }
 }

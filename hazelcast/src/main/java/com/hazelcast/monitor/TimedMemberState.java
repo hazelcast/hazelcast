@@ -27,7 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class TimedMemberState implements DataSerializable, Cloneable {
+public final class TimedMemberState implements DataSerializable, Cloneable {
 
     long time;
     MemberState memberState;

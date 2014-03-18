@@ -24,12 +24,11 @@ import java.io.IOException;
 
 public class TryRemoveOperation extends BaseRemoveOperation {
 
-    private long timeout;
     private boolean successful = false;
 
     public TryRemoveOperation(String name, Data dataKey, long timeout) {
         super(name, dataKey);
-        this.timeout = timeout;
+        setWaitTimeout(timeout);
     }
 
     public TryRemoveOperation() {
@@ -52,17 +51,11 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(timeout);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        timeout = in.readLong();
-    }
-
-    public long getWaitTimeoutMillis() {
-        return timeout;
     }
 
     public boolean shouldBackup() {

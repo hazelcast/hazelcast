@@ -25,7 +25,11 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryResultEntry;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.newSetFromMap;
@@ -47,6 +51,10 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         this.iterationType = iterationType;
     }
 
+    public Iterator<Map.Entry> rawIterator(){
+        return new QueryResultIterator(IterationType.ENTRY);
+    }
+
     public boolean add(QueryResultEntry entry) {
         return entries.add(entry);
     }
@@ -56,12 +64,18 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
     }
 
     public Iterator iterator() {
-        return new QueryResultIterator();
+        return new QueryResultIterator(iterationType);
     }
 
     private class QueryResultIterator implements Iterator {
 
         final Iterator<QueryResultEntry> iter = entries.iterator();
+
+        final IterationType iterType;
+
+        private QueryResultIterator(IterationType iterType) {
+            this.iterType = iterType;
+        }
 
         public boolean hasNext() {
             return iter.hasNext();
@@ -69,10 +83,10 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
 
         public Object next() {
             QueryResultEntry entry = iter.next();
-            if (iterationType == IterationType.VALUE) {
+            if (iterType == IterationType.VALUE) {
                 Data valueData = entry.getValueData();
                 return (data) ? valueData : serializationService.toObject(valueData);
-            } else if (iterationType == IterationType.KEY) {
+            } else if (iterType == IterationType.KEY) {
                 Data keyData = entry.getKeyData();
                 return (data) ? keyData : serializationService.toObject(keyData);
             } else {

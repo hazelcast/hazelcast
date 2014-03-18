@@ -33,7 +33,8 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -41,7 +42,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.*;
 
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -72,7 +72,7 @@ public class Node {
 
     public final ClientEngineImpl clientEngine;
 
-    public final PartitionServiceImpl partitionService;
+    public final InternalPartitionService partitionService;
 
     public final ClusterServiceImpl clusterService;
 
@@ -168,7 +168,7 @@ public class Node {
         nodeEngine = new NodeEngineImpl(this);
         clientEngine = new ClientEngineImpl(this);
         connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
-        partitionService = new PartitionServiceImpl(this);
+        partitionService = new InternalPartitionServiceImpl(this);
         clusterService = new ClusterServiceImpl(this);
         textCommandService = new TextCommandServiceImpl(this);
         initializer.printNodeInfo(this);
@@ -276,7 +276,7 @@ public class Node {
         return clusterService;
     }
 
-    public PartitionServiceImpl getPartitionService() {
+    public InternalPartitionService getPartitionService() {
         return partitionService;
     }
 

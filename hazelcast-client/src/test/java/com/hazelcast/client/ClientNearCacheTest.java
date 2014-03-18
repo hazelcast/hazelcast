@@ -17,13 +17,20 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastTest;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -35,6 +42,7 @@ import java.util.HashSet;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -47,6 +55,7 @@ public class ClientNearCacheTest {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
+
     @Test
     public void testNearCache() {
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
@@ -80,7 +89,6 @@ public class ClientNearCacheTest {
         long secondRead = System.currentTimeMillis() - begin;
 
         assertTrue(secondRead < firstRead);
-
     }
 
     @Test
@@ -135,6 +143,83 @@ public class ClientNearCacheTest {
         NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
         assertEquals(1000, stats.getHits());
 
+    }
+
+    @Test
+    public void testIssue2009() throws Exception {
+        final String mapName = "testIssue2009";
+        ClientConfig config = new ClientConfig();
+        config.addNearCacheConfig(mapName, new NearCacheConfig());
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+        IMap map = client.getMap(mapName);
+        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        assertNotNull(stats);
+    }
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void nearCacheWithMaxSizeSet() {
+        final String mapName = "nearCashWithMaxSizeSet";
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false);
+
+        final int cacheSize = 2;
+
+        NearCacheConfig cashConfig = new NearCacheConfig();
+        cashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        cashConfig.setMaxSize(cacheSize);
+        clientConfig.addNearCacheConfig(mapName, cashConfig);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap map = client.getMap(mapName);
+
+        for (int i = 0; i < cacheSize * 100; i++) {
+            map.put("key" + i, "value" + i);
+        }
+        //populate near cache
+        for (int i = 0; i < cacheSize * 100; i++) {
+            map.get(i);
+        }
+
+        final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(cacheSize, stats.getOwnedEntryCount());
+            }
+        });
+    }
+
+    @Test
+    public void getNearCacheStatsBeforePopulation() {
+        final String mapName = "getNearCashStatsBeforePopulation";
+
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+
+        NearCacheConfig cacheConfig = new NearCacheConfig();
+        cacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.addNearCacheConfig(mapName, cacheConfig);
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap map = client.getMap(mapName);
+
+        for (int i = 0; i < 300; i++) {
+            map.put("key" + i, "value" + i);
+        }
+
+        final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        //This Test throws a NullPointerException
+        assertEquals(0, stats.getOwnedEntryCount());
     }
 
 }

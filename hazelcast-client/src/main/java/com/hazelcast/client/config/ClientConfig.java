@@ -17,8 +17,11 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.*;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.security.Credentials;
 
@@ -50,7 +53,7 @@ public class ClientConfig {
     /**
      * Used to distribute the operations to multiple Endpoints.
      */
-    private LoadBalancer loadBalancer = new RoundRobinLB();
+    private LoadBalancer loadBalancer;
 
     /**
      * List of listeners that Hazelcast will automatically add as a part of initialization process.

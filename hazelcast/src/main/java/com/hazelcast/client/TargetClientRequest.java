@@ -32,6 +32,7 @@ public abstract class TargetClientRequest extends ClientRequest {
         op.setCallerUuid(endpoint.getUuid());
         final InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, getTarget())
                 .setTryCount(TRY_COUNT)
+                .setResultDeserialized(false)
                 .setCallback(new Callback<Object>() {
                     public void notify(Object object) {
                         endpoint.sendResponse(filter(object), getCallId());

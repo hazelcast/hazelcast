@@ -26,4 +26,4 @@ Then you can set this as mapstore for maps that you want to persist into MongoDB
     </hz:map-store>
 </hz:map>
 ```
-By default, the key is set as id of the MongoDB object. You can override MongoMapStore class for you custom needs. *For more info see [Spring Data MongoDB Reference](http://static.springsource.org/spring-data/data-mongodb/docs/current/reference/html/).*
+By default, the key is set as id of the MongoDB object. You can override MongoMapStore class for you custom needs. *For more information please see [Spring Data MongoDB Reference](http://static.springsource.org/spring-data/data-mongodb/docs/current/reference/html/).*

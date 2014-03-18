@@ -3,9 +3,16 @@
 
     <!--comment out packages as they pass findbugs. e.g. examples now passes-->
 
+    <!--Examples Package is now turned on.-->
+    <!--<Match>-->
+    <!--<Package name="com.hazelcast.examples" />-->
+    <!--</Match>-->
     <Match>
-        <Package name="com.hazelcast.examples" />
+        <Class name="com.hazelcast.examples.TestApp"/>
+        <!--System.exit()-->
+        <Bug code="Dm" />
     </Match>
+
 
     <Match>
         <Package name="com.hazelcast.ascii.rest" />
@@ -30,9 +37,6 @@
     </Match>
     <Match>
         <Package name="com.hazelcast.nio.ssl" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.nio.partition" />
     </Match>
     <Match>
         <Package name="com.hazelcast.spi.impl" />
@@ -62,12 +66,6 @@
         <Package name="com.hazelcast.nio.ascii" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.partition" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.partition.client" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.management" />
     </Match>
     <Match>
@@ -77,10 +75,30 @@
         <Package name="com.hazelcast.ascii" />
     </Match>
 
+    <Match>
+        <Package name="com.hazelcast.nio.partition" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.partition" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.partition.client" />
+    </Match>
+    <Match>
+        <Package name="com.hazelcast.partition.impl" />
+    </Match>
+
+    <Match>
+        <Package name="com.hazelcast.client.examples" />
+    </Match>
+
     <!-- todo: these findbugs warnings needs to be fixed -->
     <Match>
         <Package name="com.hazelcast.jca" />
     </Match>
+
+
+
 
 
 </FindBugsFilter>

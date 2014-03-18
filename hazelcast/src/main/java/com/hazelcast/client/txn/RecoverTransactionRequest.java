@@ -19,15 +19,16 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
+import java.security.Permission;
 
-public class RecoverTransactionRequest extends CallableClientRequest implements Portable {
+public class RecoverTransactionRequest extends CallableClientRequest {
 
     private boolean commit;
     private SerializableXID sXid;
@@ -75,5 +76,10 @@ public class RecoverTransactionRequest extends CallableClientRequest implements 
         ObjectDataInput in = reader.getRawDataInput();
         sXid = new SerializableXID();
         sXid.readData(in);
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new TransactionPermission();
     }
 }
