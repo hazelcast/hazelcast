@@ -17,7 +17,10 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -33,9 +36,8 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static org.junit.Assert.*;
 
 /**
  * @author ali 6/10/13
@@ -63,11 +65,24 @@ public class ClientTxnMapTest {
     }
 
     @Test
+
+    public void testUnlockAfterRollback() {
+        final String name = randomString();
+        final String key = randomString();
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> map = context.getMap(name);
+        map.put(key, "value");
+        context.rollbackTransaction();
+        assertFalse(client.getMap(name).isLocked(key));
+    }
+
+    @Test
     public void testDeadLockFromClientInstance() throws InterruptedException {
         final AtomicBoolean running = new AtomicBoolean(true);
-        Thread t = new Thread(){
+        Thread t = new Thread() {
             public void run() {
-                while (running.get()){
+                while (running.get()) {
                     client.getMap("mapChildTransaction").get("3");
                 }
             }
