@@ -29,6 +29,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1345,26 +1346,19 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapStoreWriteDeleteOrder() {
+    @Repeat(10)
+    public void testMapStoreWriteRemoveOrder() {
         final String mapName = randomMapName("testMapStoreWriteDeleteOrder");
         final int numIterations = 40;
         final int writeDelaySeconds = 10;
-        // create hazelcast config
-        Config config = new Config();
         // create map store implementation
-        RecordingMapStore store = new RecordingMapStore();
-        // configure map store
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
-        mapStoreConfig.setClassName(null);
-        mapStoreConfig.setImplementation(store);
-        MapConfig mapConfig = config.getMapConfig(mapName);
-        mapConfig.setMapStoreConfig(mapStoreConfig);
+        final RecordingMapStore store = new RecordingMapStore(numIterations,numIterations);
+        // create hazelcast config
+        final Config config = newConfig(mapName, store, writeDelaySeconds);
         // start hazelcast instance
-        HazelcastInstance hzInstance = createHazelcastInstance(config);
+        final HazelcastInstance hzInstance = createHazelcastInstance(config);
         // loop over num iterations
-        IMap<String, String> map = hzInstance.getMap(mapName);
+        final IMap<String, String> map = hzInstance.getMap(mapName);
         for (int k = 0; k < numIterations; k++) {
             String key = String.valueOf(k + 10); // 2 digits for sorting in output
             String value = "v:" + key;
@@ -1376,14 +1370,27 @@ public class MapStoreTest extends HazelcastTestSupport {
             map.remove(key);
         }
         // wait for store to finish
-        sleepMillis(2 * 1000 * writeDelaySeconds);
-        // print store content
+        store.awaitStores();
+        // wait for remove to finish
+        store.awaitRemoves();
+
         assertEquals(0, store.getStore().keySet().size());
     }
 
     public static class RecordingMapStore implements MapStore<String, String> {
+
         private static final boolean DEBUG = false;
-        private ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
+
+        private final CountDownLatch expectedStore;
+        private final CountDownLatch expectedRemove;
+
+        private final ConcurrentHashMap<String, String> store;
+
+        public RecordingMapStore(int expectedStore, int expectedRemove) {
+            this.expectedStore = new CountDownLatch(expectedStore);
+            this.expectedRemove = new CountDownLatch(expectedRemove);
+            this.store = new ConcurrentHashMap<String, String>();
+        }
 
         public ConcurrentHashMap<String, String> getStore() {
             return store;
@@ -1397,9 +1404,11 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         @Override
         public Map<String, String> loadAll(Collection<String> keys) {
-            List<String> keysList = new ArrayList<String>(keys);
-            Collections.sort(keysList);
-            log("loadAll(" + keysList + ") called.");
+            if (DEBUG) {
+                List<String> keysList = new ArrayList<String>(keys);
+                Collections.sort(keysList);
+                log("loadAll(" + keysList + ") called.");
+            }
             Map<String, String> result = new HashMap<String, String>();
             for (String key : keys) {
                 String value = store.get(key);
@@ -1422,6 +1431,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         public void store(String key, String value) {
             log("store(" + key + ") called.");
             String valuePrev = store.put(key, value);
+            expectedStore.countDown();
             if (valuePrev != null) {
                 log("- Unexpected Update (operations reordered?): " + key);
             }
@@ -1429,15 +1439,22 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         @Override
         public void storeAll(Map<String, String> map) {
-            TreeSet<String> setSorted = new TreeSet<String>(map.keySet());
-            log("storeAll(" + setSorted + ") called.");
+            if (DEBUG) {
+                TreeSet<String> setSorted = new TreeSet<String>(map.keySet());
+                log("storeAll(" + setSorted + ") called.");
+            }
             store.putAll(map);
+            final int size = map.keySet().size();
+            for (int i = 0; i < size; i++) {
+                expectedStore.countDown();
+            }
         }
 
         @Override
         public void delete(String key) {
             log("delete(" + key + ") called.");
             String valuePrev = store.remove(key);
+            expectedRemove.countDown();
             if (valuePrev == null) {
                 log("- Unnecessary delete (operations reordered?): " + key);
             }
@@ -1445,18 +1462,28 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         @Override
         public void deleteAll(Collection<String> keys) {
-            List<String> keysList = new ArrayList<String>(keys);
-            Collections.sort(keysList);
-            log("deleteAll(" + keysList + ") called.");
+            if (DEBUG) {
+                List<String> keysList = new ArrayList<String>(keys);
+                Collections.sort(keysList);
+                log("deleteAll(" + keysList + ") called.");
+            }
             for (String key : keys) {
                 String valuePrev = store.remove(key);
+                expectedRemove.countDown();
                 if (valuePrev == null) {
                     log("- Unnecessary delete (operations reordered?): " + key);
                 }
             }
         }
 
-        void log(String msg) {
+        public void awaitStores() {
+            assertOpenEventually(expectedStore);
+        }
+        public void awaitRemoves() {
+            assertOpenEventually(expectedRemove);
+        }
+
+        private void log(String msg) {
             if (DEBUG) {
                 System.out.println(msg);
             }
