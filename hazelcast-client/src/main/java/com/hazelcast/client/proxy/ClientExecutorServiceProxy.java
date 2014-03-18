@@ -399,7 +399,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private <T> Future<T> _submitToRandom(Callable<T> task, T defaultValue, boolean preventSync) {
         checkIfNotNull(task);
-        checkIfNotNull(task);
         final String uuid = getUUID();
         final int partitionId = randomPartitionId();
         final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
