@@ -50,51 +50,11 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(WaitNotifyService.class.getName());
 
+        String threadNamePrefix = node.getThreadNamePrefix("wait-notify");
         expirationService = Executors.newSingleThreadExecutor(
-                new SingleExecutorThreadFactory(node.threadGroup, node.getConfigClassLoader(), node.getThreadNamePrefix("wait-notify")));
+                new SingleExecutorThreadFactory(node.threadGroup, node.getConfigClassLoader(), threadNamePrefix));
 
-        expirationTask = expirationService.submit(new Runnable() {
-            public void run() {
-                while (true) {
-                    if (Thread.interrupted()) {
-                        return;
-                    }
-                    try {
-                        long waitTime = 1000;
-                        while (waitTime > 0) {
-                            long begin = System.currentTimeMillis();
-                            WaitingOp waitingOp = (WaitingOp) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
-                            if (waitingOp != null) {
-                                if (waitingOp.isValid()) {
-                                    invalidate(waitingOp);
-                                }
-                            }
-                            long end = System.currentTimeMillis();
-                            waitTime -= (end - begin);
-                            if (waitTime > 1000) {
-                                waitTime = 1000;
-                            }
-                        }
-                        for (Queue<WaitingOp> q : mapWaitingOps.values()) {
-                            for (WaitingOp waitingOp : q) {
-                                if (Thread.interrupted()) {
-                                    return;
-                                }
-                                if (waitingOp.isValid()) {
-                                    if (waitingOp.needsInvalidation()) {
-                                        invalidate(waitingOp);
-                                    }
-                                }
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        return;
-                    } catch (Throwable t) {
-                        logger.warning(t);
-                    }
-                }
-            }
-        });
+        expirationTask = expirationService.submit(new ExpirationTask());
     }
 
     private void invalidate(final WaitingOp waitingOp) throws Exception {
@@ -115,10 +75,10 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         long timeout = waitSupport.getWaitTimeoutMillis();
         WaitingOp waitingOp = new WaitingOp(q, waitSupport);
         waitingOp.setNodeEngine(nodeEngine);
+        q.offer(waitingOp);
         if (timeout > -1 && timeout < 1500) {
             delayQueue.offer(waitingOp);
         }
-        q.offer(waitingOp);
     }
 
     // runs after queue lock
@@ -248,9 +208,20 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             this.op = (Operation) waitSupport;
             this.waitSupport = waitSupport;
             this.queue = queue;
-            this.expirationTime = waitSupport.getWaitTimeoutMillis() < 0 ? -1
-                    : Clock.currentTimeMillis() + waitSupport.getWaitTimeoutMillis();
+            this.expirationTime = getExpirationTime(waitSupport);
             this.setPartitionId(op.getPartitionId());
+        }
+
+        private long getExpirationTime(WaitSupport waitSupport) {
+            long waitTimeout = waitSupport.getWaitTimeoutMillis();
+            if (waitTimeout < 0) {
+                return -1;
+            }
+            long expirationTime = Clock.currentTimeMillis() + waitTimeout;
+            if (expirationTime < 0) {
+                return -1;
+            }
+            return expirationTime;
         }
 
         public Operation getOperation() {
@@ -305,12 +276,33 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         @Override
         public void run() throws Exception {
             if (valid) {
-                if (isCancelled() && queue.remove(this)) {
-                    op.getResponseHandler().sendResponse(error);
-                } else if (isExpired() && queue.remove(this)) {
-                    waitSupport.onWaitExpire();
+                boolean expired = isExpired();
+                boolean cancelled = isCancelled();
+                if (expired || cancelled) {
+                    if (queue.remove(this)) {
+                        valid = false;
+                        if (expired) {
+                            waitSupport.onWaitExpire();
+                        } else {
+                            op.getResponseHandler().sendResponse(error);
+                        }
+                    }
                 }
             }
+        }
+
+        //If you don't think instances of this class will ever be inserted into a HashMap/HashTable,
+        // the recommended hashCode implementation to use is:
+        @Override
+        public int hashCode() {
+            assert false : "hashCode not designed";
+            return 42; // any arbitrary constant will do
+        }
+
+        @Override
+        // use object.equals
+        public boolean equals(Object obj) {
+            return super.equals(obj);
         }
 
         public void logError(Throwable e) {
@@ -349,7 +341,6 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("WaitingOp");
-            sb.append("[").append(hashCode()).append("] ");
             sb.append("{op=").append(op);
             sb.append(", expirationTime=").append(expirationTime);
             sb.append(", valid=").append(valid);
@@ -369,5 +360,48 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         }
         sb.append("]\n}");
         return sb.toString();
+    }
+
+    private class ExpirationTask implements Runnable {
+        public void run() {
+            while (true) {
+                if (Thread.interrupted()) {
+                    return;
+                }
+                try {
+                    long waitTime = 1000;
+                    while (waitTime > 0) {
+                        long begin = System.currentTimeMillis();
+                        WaitingOp waitingOp = (WaitingOp) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
+                        if (waitingOp != null) {
+                            if (waitingOp.isValid()) {
+                                invalidate(waitingOp);
+                            }
+                        }
+                        long end = System.currentTimeMillis();
+                        waitTime -= (end - begin);
+                        if (waitTime > 1000) {
+                            waitTime = 1000;
+                        }
+                    }
+                    for (Queue<WaitingOp> q : mapWaitingOps.values()) {
+                        for (WaitingOp waitingOp : q) {
+                            if (Thread.interrupted()) {
+                                return;
+                            }
+                            if (waitingOp.isValid()) {
+                                if (waitingOp.needsInvalidation()) {
+                                    invalidate(waitingOp);
+                                }
+                            }
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    return;
+                } catch (Throwable t) {
+                    logger.warning(t);
+                }
+            }
+        }
     }
 }
