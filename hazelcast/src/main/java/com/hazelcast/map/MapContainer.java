@@ -62,8 +62,7 @@ public class MapContainer {
     private final boolean nearCacheEnabled;
     private final EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
-    private final EntryTaskScheduler mapStoreWriteScheduler;
-    private final EntryTaskScheduler mapStoreDeleteScheduler;
+    private final EntryTaskScheduler mapStoreScheduler;
     private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
     private final SizeEstimator nearCacheSizeEstimator;
@@ -128,21 +127,18 @@ public class MapContainer {
             loadInitialKeys();
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
-                final ExecutionService executionService =  nodeEngine.getExecutionService();
+                final ExecutionService executionService = nodeEngine.getExecutionService();
                 executionService.register(mapStoreScheduledExecutorName, 1, 100000, ExecutorType.CACHED);
                 ScheduledExecutorService scheduledExecutor = executionService
                         .getScheduledExecutor(mapStoreScheduledExecutorName);
-                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor,
-                        new MapStoreWriteProcessor(this, mapService), ScheduleType.FOR_EACH);
-                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor,
-                        new MapStoreDeleteProcessor(this, mapService), ScheduleType.SCHEDULE_IF_NEW);
+                mapStoreScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor,
+                        new MapStoreProcessor(this, mapService),
+                        ScheduleType.FOR_EACH);
             } else {
-                mapStoreDeleteScheduler = null;
-                mapStoreWriteScheduler = null;
+                mapStoreScheduler = null;
             }
         } else {
-            mapStoreDeleteScheduler = null;
-            mapStoreWriteScheduler = null;
+            mapStoreScheduler = null;
         }
         ScheduledExecutorService defaultScheduledExecutor = nodeEngine.getExecutionService()
                 .getDefaultScheduledExecutor();
@@ -202,10 +198,11 @@ public class MapContainer {
             }
         }, 20, TimeUnit.MINUTES);
     }
-    public void shutDownMapStoreScheduledExecutor()
-    {
+
+    public void shutDownMapStoreScheduledExecutor() {
         mapService.getNodeEngine().getExecutionService().shutdownExecutor(mapStoreScheduledExecutorName);
     }
+
     public Map<Data, Object> getInitialKeys() {
         return initialKeys;
     }
@@ -218,12 +215,8 @@ public class MapContainer {
         return ttlEvictionScheduler;
     }
 
-    public EntryTaskScheduler getMapStoreWriteScheduler() {
-        return mapStoreWriteScheduler;
-    }
-
-    public EntryTaskScheduler getMapStoreDeleteScheduler() {
-        return mapStoreDeleteScheduler;
+    public EntryTaskScheduler getMapStoreScheduler() {
+        return mapStoreScheduler;
     }
 
     public IndexService getIndexService() {
@@ -303,7 +296,7 @@ public class MapContainer {
         return partitioningStrategy;
     }
 
-    public SizeEstimator getNearCacheSizeEstimator(){
+    public SizeEstimator getNearCacheSizeEstimator() {
         return nearCacheSizeEstimator;
     }
 
