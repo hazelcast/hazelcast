@@ -403,5 +403,27 @@ class DefaultAddressPicker implements AddressPicker {
             this.inetAddress = inetAddress;
             this.port = port;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            AddressDefinition that = (AddressDefinition) o;
+
+            if (port != that.port) return false;
+            if (inetAddress != null ? !inetAddress.equals(that.inetAddress) : that.inetAddress != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = super.hashCode();
+            result = 31 * result + (inetAddress != null ? inetAddress.hashCode() : 0);
+            result = 31 * result + port;
+            return result;
+        }
     }
 }
