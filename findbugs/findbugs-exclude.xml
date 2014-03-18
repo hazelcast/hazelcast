@@ -24,9 +24,6 @@
         <Package name="com.hazelcast.util" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.transaction.impl" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.management.request" />
     </Match>
     <Match>
