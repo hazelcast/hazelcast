@@ -9,9 +9,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Date: 3/17/14
- */
 public class MapStoreProcessor implements ScheduledEntryProcessor<Data, Object> {
 
     private final ScheduledEntryProcessor writeProcessor;
