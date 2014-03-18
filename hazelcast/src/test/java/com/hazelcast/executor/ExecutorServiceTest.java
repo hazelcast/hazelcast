@@ -68,11 +68,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -87,21 +83,21 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     private IExecutorService createSingleNodeExecutorService(String name, int poolSize) {
         final Config config = new Config();
-        config.addExecutorConfig(new ExecutorConfig(name, poolSize));
+        config.addExecutorConfig(new ExecutorConfig(name, poolSize).setQueueCapacity(1));
         final HazelcastInstance instance = createHazelcastInstance(config);
         return instance.getExecutorService(name);
     }
 
     @Test
-    public void testManagedContextAndLocal()throws Exception{
+    public void testManagedContextAndLocal() throws Exception {
         final Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
-        config.setManagedContext(new ManagedContext(){
+        config.setManagedContext(new ManagedContext() {
             @Override
             public Object initialize(Object obj) {
-                if(obj instanceof RunnableWithManagedContext){
-                    RunnableWithManagedContext task = (RunnableWithManagedContext)obj;
-                    task.initializeCalled=true;
+                if (obj instanceof RunnableWithManagedContext) {
+                    RunnableWithManagedContext task = (RunnableWithManagedContext) obj;
+                    task.initializeCalled = true;
                 }
                 return obj;
             }
@@ -112,10 +108,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         RunnableWithManagedContext task = new RunnableWithManagedContext();
         executor.submit(task).get();
-        assertTrue("The task should have been initialized by the ManagedContext",task.initializeCalled);
+        assertTrue("The task should have been initialized by the ManagedContext", task.initializeCalled);
     }
 
-    static class RunnableWithManagedContext implements Runnable{
+    static class RunnableWithManagedContext implements Runnable {
         private volatile boolean initializeCalled = false;
 
         @Override
@@ -124,7 +120,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void hazelcastInstanceAwareAndLocal()throws Exception{
+    public void hazelcastInstanceAwareAndLocal() throws Exception {
         final Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
         final HazelcastInstance instance = createHazelcastInstance(config);
@@ -132,10 +128,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
         executor.submit(task).get();
-        assertTrue("The setHazelcastInstance should have been called",task.initializeCalled);
+        assertTrue("The setHazelcastInstance should have been called", task.initializeCalled);
     }
 
-    static class HazelcastInstanceAwareRunnable implements Runnable,HazelcastInstanceAware{
+    static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware {
         private volatile boolean initializeCalled = false;
 
         @Override
@@ -641,6 +637,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
         }
     }
+
     @Test
     public void testInvokeAllTimeoutCancelled() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
@@ -672,6 +669,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         }
     }
+
     @Test
     public void testInvokeAllTimeoutSuccess() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
@@ -738,6 +736,49 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         // New tasks must be rejected
         Callable<String> task = new BasicTestTask();
         executor.submit(task);
+    }
+
+    @Test
+    public void testStatsIssue2039() throws InterruptedException {
+        final Config config = new Config();
+        final String name = "testStatsIssue2039";
+        config.addExecutorConfig(new ExecutorConfig(name).setQueueCapacity(1).setPoolSize(1));
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        final IExecutorService executorService = instance.getExecutorService(name);
+
+        final CountDownLatch sleepLatch = new CountDownLatch(1);
+        final CountDownLatch secondLatch = new CountDownLatch(1);
+
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                assertOpenEventually(sleepLatch);
+            }
+        });
+
+        executorService.execute(new Runnable() {
+            public void run() {
+                secondLatch.countDown();
+            }
+        });
+
+        final Future rejected = executorService.submit(new Runnable() {
+            public void run() {
+            }
+        });
+
+        try {
+            rejected.get();
+        } catch (ExecutionException ignored) {
+        } finally {
+            sleepLatch.countDown();
+        }
+
+        assertOpenEventually(secondLatch);
+
+        final LocalExecutorStats stats = executorService.getLocalExecutorStats();
+        assertEquals(2, stats.getStartedTaskCount());
+        assertEquals(0, stats.getPendingTaskCount());
     }
 
     @Test
@@ -1056,7 +1097,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testManagedMultiPreregisteredExecutionCallbackCompletableFuture() throws Exception {
-        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy)createHazelcastInstance();
+        HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) createHazelcastInstance();
         Field originalField = HazelcastInstanceProxy.class.getDeclaredField("original");
         originalField.setAccessible(true);
         HazelcastInstanceImpl hz = (HazelcastInstanceImpl) originalField.get(proxy);
