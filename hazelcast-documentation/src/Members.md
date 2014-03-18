@@ -1,7 +1,7 @@
 
 ## Members
 
-This menu item is used to monitor each cluster member (node) and also perform operations like running garbage colletion (GC) and taking a thread dump. Once a member is selected form the menu, a new tab for monitoring that member is opened on the right, as shown below.
+This menu item is used to monitor each cluster member (node) and also perform operations like running garbage colletion (GC) and taking a thread dump. Once a member is selected from the menu, a new tab for monitoring that member is opened on the right, as shown below.
 
 ![](images/MembersHome.jpg)
 

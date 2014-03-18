@@ -336,7 +336,7 @@ Now, you can use class `Foo` and `Bar` in distributed structures. For example as
 
 ### C Sharp Client - Enterprise Edition Only
 
-You can use native C# client to connect to running Hazelcast instances. All you need is to add `HazelcastClient3x.dll` into your C# project references. The API is very similar to Java native client. Sample code is shown below.
+You can use native C# client to connect to Hazelcast nodes. All you need is to add `HazelcastClient3x.dll` into your C# project references. The API is very similar to Java native client. Sample code is shown below.
 
 ```
 using Hazelcast.Config;
@@ -423,6 +423,62 @@ namespace Hazelcast.Client.Example
             surname = reader.ReadUTF("s");
         }
     }
-}```
+}
+```
 
-***Note***: *C# and Java clients are similar in terms of configuration. Therefore, you can refer to [Java Client](#java-client) section for configuration aspects. For information on C# API documentation, please refer to ???*
+
+#### Client Configuration
+Hazelcast C# client can be configured via API or XML. To start the client, a configuration can be passed or can be left empty to use default values.
+
+***Note***: *C# and Java clients are similar in terms of configuration. Therefore, you can refer to [Java Client](#java-client) section for configuration aspects. For information on C# API documentation, please refer to ???*.
+
+
+#### Client Startup
+After configuration, one can obtain a client using one of the static methods of Hazelcast like as shown below.
+
+
+```
+IHazelcastInstance client = HazelcastClient.NewHazelcastClient(clientConfig);
+
+...
+
+
+IHazelcastInstance defaultClient = HazelcastClient.NewHazelcastClient();
+
+...
+
+IHazelcastInstance xmlConfClient = Hazelcast.NewHazelcastClient(@"..\Hazelcast.Net\Resources\hazelcast-client.xml");
+```
+
+IHazelcastInstance interface is the starting point where all distributed objects can be obtained using it.
+
+```
+var map = client.GetMap<int,string>("mapName");
+
+...
+
+var lock= client.GetLock("thelock");
+```
+
+C# Client has following distributed objects:
+
+* `IMap<K,V>`
+* `IMultiMap<K,V>`
+* `IQueue<E>`
+* `ITopic<E>`
+* `IHList<E>`
+* `IHSet<E>`
+* `IIdGenerator`
+* `ILock`
+* `ISemaphore`
+* `ICountDownLatch`
+* `IAtomicLong`
+* `ITransactionContext`
+	
+	ITransactionContext can be used to obtain;
+
+	* `ITransactionalMap<K,V>`
+	* `ITransactionalMultiMap<K,V>`
+	* `ITransactionalList<E>`
+	* `ITransactionalSet<E>`
+

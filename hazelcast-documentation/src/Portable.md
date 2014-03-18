@@ -1,19 +1,19 @@
 
 ## Portable Serialization
 
-As an alternative to the existing serialization methods, Hazelcast offers a Portable serialization that have the following advantages
+As an alternative to the existing serialization methods, Hazelcast offers a Portable serialization that have the following advantages:
 
 -   Support multiversion of the same object type.
--   Fetching individual fields without having to rely on reflection
--   Querying and indexing support without de-serialization and/or reflection
+-   Fetching individual fields without having to rely on reflection.
+-   Querying and indexing support without de-serialization and/or reflection.
 
-In order to support these features, a serialized Portable object contains meta information like the version and the concrete location of the each field in the binary data. This way Hazelcast is able to navigate in the byte[] and de-serialize only the required field without actually de-serializing the whole object which improves the Query performance.
+In order to support these features, a serialized Portable object is offered containing meta information like the version and the concrete location of the each field in the binary data. This way Hazelcast is able to navigate in the byte[] and de-serialize only the required field without actually de-serializing the whole object which improves the Query performance.
 
-With multiversion support, you can have two nodes where each of them having different versions of the same Object and Hazelcast will store both meta information and use the correct one to serialize and de-serialize Portable objects depending on the node. This is very helpfull when you are doing a rolling upgrade without shutting down the cluster.
+With multiversion support, you can have two nodes where each of them having different versions of the same object and Hazelcast will store both meta information and use the correct one to serialize and de-serialize Portable objects depending on the node. This is very helpful when you are doing a rolling upgrade without shutting down the cluster.
 
-Also note that Portable serialization is totally language independent and is used as the binary protocol between Hazelcast server and clients.
+Also note that, Portable serialization is totally language independent and is used as the binary protocol between Hazelcast server and clients.
 
-A sample Portable implementation of a Foo class will look like the following.
+A sample Portable implementation of a Foo class would look like the following.
 
 ```java
 public class Foo implements Portable{
@@ -48,9 +48,9 @@ public class Foo implements Portable{
     public void readPortable(PortableReader reader) throws IOException {
         foo = reader.readUTF("foo");
     }
-}
-        
+}        
 ```
+
 Similar to `IdentifiedDataSerializable`, a Portable Class must provide `classId` and`factoryId`. The Factory object will be used to create the Portable object given the `classId`.
 
 A sample `Factory` could be implemented as following:
@@ -64,21 +64,21 @@ public class MyPortableFactory implements PortableFactory {
             return new Foo();
         else return null;
      }
-}
-            
+}            
 ```
+
 The last step is to register the `Factory` to the `SerializationConfig`.
 
-Programmatic Configuration
+-	**Programmatic Configuration**
 
-```java
+	```java
 Config config = new Config();
 config.getSerializationConfig().addPortableFactory(1, new MyPortableFactory());
-                
-```
-XML Configuration
+                ```
 
-```xml
+-	**XML Configuration**
+
+	```xml
 <hazelcast>
     <serialization>
         <portable-version>0</portable-version>
@@ -86,7 +86,7 @@ XML Configuration
             <portable-factory factory-id="1">com.hazelcast.nio.serialization.MyPortableFactory</portable-factory>
         </portable-factories>
     </serialization>
-</hazelcast>
-                
+</hazelcast>               
 ```
+
 Note that the `id` that is passed to the `SerializationConfig` is same as the `factoryId` that `Foo` class returns.

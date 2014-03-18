@@ -3,7 +3,7 @@
 
 Hazelcast supports IPv6 addresses seamlessly (This support is switched off by default, please see the note at the end of this section).
 
-All you need is to define IPv6 addresses or interfaces in [network configuration](#network-configuration). Only limitation at the moment is you can not define wildcard IPv6 addresses in [TCP-IP](#configuring-tcp-ip-cluster) join configuration. [Interfaces](#specifying-network-interfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces same as IPv4 interfaces.
+All you need is to define IPv6 addresses or interfaces in [network configuration](#network-configuration). Only limitation at the moment is that you cannot define wildcard IPv6 addresses in [TCP-IP](#configuring-tcp-ip-cluster) join configuration. [Interfaces](#specifying-network-interfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces same as IPv4 interfaces.
 
 ```xml
 <hazelcast>
@@ -33,10 +33,9 @@ All you need is to define IPv6 addresses or interfaces in [network configuration
     ...
 </hazelcast>
 ```
-JVM has two system properties for setting the preferred protocol stack —IPv4 or IPv6— as well as the preferred address family types —inet4 or inet6. On a dual stack machine IPv6 stack is preferred by default, this can be changed through `java.net.preferIPv4Stack=<true|false>` system property. And when querying name services JVM prefers IPv4 addressed over IPv6 addresses and will return an IPv4 address if possible. This can be changed through `java.net.preferIPv6Addresses=<true|false>` system property.
+
+JVM has two system properties for setting the preferred protocol stack (IPv4 or IPv6) as well as the preferred address family types (inet4 or inet6). On a dual stack machine, IPv6 stack is preferred by default, this can be changed through `java.net.preferIPv4Stack=<true|false>` system property. And when querying name services, JVM prefers IPv4 addressed over IPv6 addresses and will return an IPv4 address if possible. This can be changed through `java.net.preferIPv6Addresses=<true|false>` system property.
 
 Also see additional [details on IPv6 support in Java](http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/query.html#details).
 
-**Note:**
-
-IPv6 support has been switched off by default, since some platforms have issues in use of IPv6 stack. And some other platforms such as Amazon AWS have no support at all. To enable IPv6 support, just set configuration property `hazelcast.prefer.ipv4.stack` to false. See [Configuration Properties.](#advanced-configuration-properties)
+***Note***: *IPv6 support has been switched off by default, since some platforms have issues in use of IPv6 stack. Some other platforms such as Amazon AWS have no support at all. To enable IPv6 support, just set configuration property `hazelcast.prefer.ipv4.stack` to *false*. See [Advanced Configuration Properties](#advanced-configuration-properties).*

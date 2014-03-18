@@ -1,7 +1,7 @@
 
 ## Administration
 
-***Note:*** *This toolbar item is available only to admin users, i.e. the users who initally have ***admin*** as their both usernames and passwords.*
+***Note:*** *This toolbar item is available only to admin users, i.e. the users who initially have ***admin*** as their both usernames and passwords.*
 
 **Admin** user can add, edit, remove users and specify the permissions for the users of Management Center. To perform these operations, click on **Administration** button located at the toolbar. The page shown below appears.
 

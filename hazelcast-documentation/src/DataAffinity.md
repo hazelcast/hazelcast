@@ -1,6 +1,7 @@
 
 
 # Data Affinity
+
 **Co-location of related data and computation**
 
 Hazelcast has a standard way of finding out which member owns/manages each key object. Following operations will be routed to the same member, since all of them are operating based on the same key, "key1".
@@ -27,7 +28,7 @@ instance.getExecutorService().executeOnKeyOwner(runnable, "key1");
 // since "key1" is passed as the key.   
 ```
 
-So when the keys are the same then entries are stored on the same node. But we sometimes want to have related entries stored on the same node. Consider customer and his/her order entries. We would have customers map with customerId as the key and orders map with orderId as the key. Since customerId and orderIds are different keys, customer and his/her orders may fall into different members/nodes in your cluster. So how can we have them stored on the same node? The trick here is to create an affinity between customer and orders. If we can somehow make them part of the same partition then these entries will be co-located. We achieve this by making orderIds `PartitionAware`
+So, when the keys are the same, then entries are stored on the same node. But we sometimes want to have related entries stored on the same node. Consider customer and his/her order entries. We would have customers map with customerId as the key and orders map with orderId as the key. Since customerId and orderIds are different keys, customer and his/her orders may fall into different members/nodes in your cluster. So how can we have them stored on the same node? The trick here is to create an affinity between customer and orders. If we can somehow make them part of the same partition then these entries will be co-located. We achieve this by making orderIds `PartitionAware`.
 
 ```java
 public class OrderKey implements Serializable, PartitionAware {
@@ -77,7 +78,7 @@ mapOrders.put(new OrderKey(23, 1), order);
 ```
 
 
-Let say you have a customers map where `customerId` is the key and the customer object is the value. and customer object contains the customer's orders. and let say you want to remove one of the orders of a customer and return the number of remaining orders. Here is how you would normally do it:
+Assume that you have a customers map where `customerId` is the key and the customer object is the value, customer object contains the customer's orders, and you want to remove one of the orders of a customer and return the number of remaining orders. Here is how you would normally do it:
 
 ```java
 public static int removeOrder(long customerId, long orderId) throws Exception {
@@ -91,11 +92,11 @@ public static int removeOrder(long customerId, long orderId) throws Exception {
 }
 ```
 
-There are couple of things we should consider:
+There are couple of things you should consider:
 
-1.  There are four distributed operations there.. lock, get, put, unlock.. Can we reduce the number of distributed operations?
+1.  There are four distributed operations there: lock, get, put, unlock. Can you reduce the number of distributed operations?
 
-2.  Customer object may not be that big but can we not have to pass that object through the wire? Notice that, we are actually passing customer object through the wire twice; get and put.
+2.  Customer object may not be that big, but can you not have to pass that object through the wire? Notice that, customer object is being passed through the wire twice; get and put.
 
 So instead, why not moving the computation over to the member (JVM) where your customer data actually is. Here is how you can do this with distributed executor service:
 
@@ -103,7 +104,7 @@ So instead, why not moving the computation over to the member (JVM) where your c
 
 2.  `Callable` does the deletion of the order right there and returns with the remaining order count.
 
-3.  Upon completion of the `Callable` task, return the result (remaining order count). Plus you do not have to wait until the the task complete; since distributed executions are asynchronous, you can do other things in the meantime.
+3.  Upon completion of the `Callable` task, return the result (remaining order count). Plus, you do not have to wait until the task is completed; since distributed executions are asynchronous, you can do other things in the meantime.
 
 Here is a sample code:
 
@@ -150,6 +151,6 @@ Benefits of doing the same operation with distributed `ExecutorService` based on
 
 -   Less data is sent over the wire.
 
--   Since lock/update/unlock cycle is done locally (local to the customer data), lock duration for the `Customer` entry is much less so enabling higher concurrency.
+-   Since lock/update/unlock cycle is done locally (local to the customer data), lock duration for the `Customer` entry is much less, so enabling higher concurrency.
 
 

@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.map.operation.KeyBasedMapOperation;
@@ -27,10 +29,15 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
+import java.io.IOException;
+
 public class TxnRollbackOperation extends KeyBasedMapOperation implements BackupAwareOperation, Notifier {
 
-    protected TxnRollbackOperation(String name, Data dataKey) {
+    String ownerUuid;
+
+    protected TxnRollbackOperation(String name, Data dataKey, String ownerUuid) {
         super(name, dataKey);
+        this.ownerUuid = ownerUuid;
     }
 
     public TxnRollbackOperation() {
@@ -38,7 +45,7 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void run() throws Exception {
-        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), getCallerUuid(), getThreadId())) {
+        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), ownerUuid, getThreadId())) {
             throw new TransactionException("Lock is not owned by the transaction! Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }
     }
@@ -53,7 +60,7 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
     }
 
     public final Operation getBackupOperation() {
-        return new TxnRollbackBackupOperation(name, dataKey, getCallerUuid(), getThreadId());
+        return new TxnRollbackBackupOperation(name, dataKey, ownerUuid, getThreadId());
     }
 
     public final int getAsyncBackupCount() {
@@ -72,5 +79,17 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
     @Override
     public WaitNotifyKey getNotifiedKey() {
         return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeUTF(ownerUuid);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        ownerUuid = in.readUTF();
     }
 }

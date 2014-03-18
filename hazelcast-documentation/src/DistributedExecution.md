@@ -1,14 +1,16 @@
 ## Distributed Execution
 
-Distributed executor service is a distributed implementation of java.util.concurrent.ExecutorService. It allows you to execute your code in cluster. In this chapter, all the code samples are based on the Echo class above. Please note that Echo class is `Serializable` . You can ask Hazelcast to execute your code (`Runnable, Callable`):
+Distributed executor service is a distributed implementation of `java.util.concurrent.ExecutorService`. It allows you to execute your code in the cluster. In this chapter, all the code samples are based on the Echo class above. Please note that Echo class is `Serializable` . You can ask Hazelcast to execute your code (`Runnable, Callable`);
 
--   on a specific cluster member you choose.
+-   on a specific cluster member you choose,
 
--   on the member owning the key you choose.
+-   on the member owning the key you choose,
 
--   on the member Hazelcast will pick.
+-   on the member Hazelcast will pick, and
 
 -   on all or subset of the cluster members.
+
+
 
 ```java
 import com.hazelcast.core.Member;
@@ -50,6 +52,7 @@ public void echoOnMembers(String input, Set<Member> members) throws Exception {
         String echoResult = future.get();
         // ...
    }
-}
-```
+}```
+
+
 Note that you can obtain the set of cluster members via `Hazelcast.getCluster().getMembers()` call.

@@ -19,6 +19,7 @@ public class MySocketInterceptor implements MemberSocketInterceptor {
     }
 }
 ```
+
 ```xml
 <hazelcast>
     ...
@@ -35,6 +36,7 @@ public class MySocketInterceptor implements MemberSocketInterceptor {
     ...
 </hazelcast>
 ```
+
 ```java
 public class MyClientSocketInterceptor implements SocketInterceptor {
     void onConnect(Socket connectedSocket) throws IOException {

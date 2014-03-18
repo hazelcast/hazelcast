@@ -3,7 +3,7 @@
 ## Getting Started (Tutorial)
 
 
-In this short tutorial, we will create simple Java application using Hazelcast distributed map and queue. Then we will run our application twice to have two nodes (JVMs) clustered and finalize this tutorial with connecting to our cluster from another Java application by using Hazelcast Native Java Client API.
+In this short tutorial, we will create simple Java application using Hazelcast distributed map and queue. Then, we will run our application twice to have two nodes (JVMs) clustered and finalize this tutorial with connecting to our cluster from another Java application by using Hazelcast Native Java Client API.
 
 -   Download the latest [Hazelcast ZIP](http://www.hazelcast.org/download/).
 
@@ -87,7 +87,7 @@ public class GettingStartedClient {
 
 **What is Next?**
 
--   You can browse [documentation](http://www.hazelcast.com/docs.jsp) and resources for detailed features and examples.
+-   You can browse [documentation](http://www.hazelcast.com/docs.jsp) and [resources](http://hazelcast.com/resources/) for detailed features and examples.
 
 -   You can email your questions to Hazelcast [mail group](http://groups.google.com/group/hazelcast).
 

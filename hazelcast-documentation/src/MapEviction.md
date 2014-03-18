@@ -1,11 +1,9 @@
 ### Eviction
 
-Hazelcast also supports policy based eviction for distributed map. Currently supported eviction policies are
-LRU (Least Recently Used) and LFU (Least Frequently Used). This feature enables Hazelcast to be used as
-a distributed cache. If `time-to-live-seconds` is not 0 then entries older than `time-to-live-seconds` value will get evicted,
+Hazelcast also supports policy based eviction for distributed map. Currently supported eviction policies are LRU (Least Recently Used) and LFU (Least Frequently Used). This feature enables Hazelcast to be used as a distributed cache. If `time-to-live-seconds` is not 0, entries older than `time-to-live-seconds` value will get evicted,
 regardless of the eviction policy set. Here is a sample configuration for eviction:
 
-Note that LRU/LFU evictions work when statistics enabled.
+Note that, LRU/LFU evictions work if statistics are enabled.
 
 ```xml
 <hazelcast>
@@ -63,7 +61,8 @@ Note that LRU/LFU evictions work when statistics enabled.
     </map>
 </hazelcast>
 ```
-**Max-Size Policies**
+
+**`max-size` Policies**
 
 There are 4 defined policies can be used in max-size configuration.
 
@@ -72,16 +71,19 @@ There are 4 defined policies can be used in max-size configuration.
     ```
     <max-size policy="PER_NODE">5000</max-size>
     ```
+    
 2.  **PER\_PARTITION:** Max map size per each partition.
 
     ```
     <max-size policy="PER_PARTITION">27100</max-size>
     ```
+    
 3.  **USED\_HEAP\_SIZE:** Max used heap size in MB (mega-bytes) per JVM.
 
     ```
     <max-size policy="USED_HEAP_SIZE">4096</max-size>
     ```
+    
 4.  **USED\_HEAP\_PERCENTAGE:** Max used heap size percentage per JVM.
 
     ```

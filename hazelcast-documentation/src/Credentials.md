@@ -2,7 +2,7 @@
 
 ## Credentials
 
-One of the key elements in Hazelcast security is `Credentials` object. It is used to carry all credentials of an endpoint (member or client). Credentials is an interface which extends `Serializable` and has three methods to be implemented. Users, according to their needs, can either implement `Credentials` interface or extend `AbstractCredentials` class which is an abstract implementation of `Credentials`.
+One of the key elements in Hazelcast security is `Credentials` object. It is used to carry all credentials of an endpoint (member or client). Credentials is an interface which extends `Serializable` and has three methods to be implemented. The users can either implement `Credentials` interface or extend `AbstractCredentials` class, which is an abstract implementation of `Credentials`, according to their needs.
 
 ```java
 package com.hazelcast.security;
@@ -13,7 +13,7 @@ public interface Credentials extends Serializable {
 }
 ```
 
-`Credentials.setEndpoint()` method is called by Hazelcast when auth request arrives to node before authentication takes place.
+`Credentials.setEndpoint()` method is called by Hazelcast when authentication request arrives to node before authentication takes place.
 
 ```java
 package com.hazelcast.security;
