@@ -27,13 +27,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.*;
 
 /**
@@ -186,7 +182,4 @@ public class ClientLockTest {
         }.start();
         assertTrue(latch.await(1, TimeUnit.MINUTES));
     }
-
-
-
 }

@@ -100,6 +100,7 @@ public class ClientConcurrentLockTest {
     }
 
     static abstract class LockTestThread extends Thread{
+        private static final int ITERATIONS = 1000*10;
         private final Random random = new Random();
         protected final ILock lock;
         protected final AtomicInteger upTotal;
@@ -113,7 +114,7 @@ public class ClientConcurrentLockTest {
 
         public void run()  {
             try{
-                for ( int i=0; i<1000*10; i++ ) {
+                for ( int i=0; i<ITERATIONS; i++ ) {
                     doRun();
                 }
             }catch (Exception e){
