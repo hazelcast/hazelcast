@@ -476,16 +476,16 @@ public class TopicTest extends HazelcastTestSupport {
         final String message = "Hazelcast Rocks!";
         MessageListener<String> messageListener1 = new MessageListener<String>() {
             public void onMessage(Message<String> msg) {
+                atomicInteger.incrementAndGet();
                 latch.countDown();
                 cp.countDown();
-                atomicInteger.incrementAndGet();
             }
         };
         MessageListener<String> messageListener2 = new MessageListener<String>() {
             public void onMessage(Message<String> msg) {
+                atomicInteger.incrementAndGet();
                 latch.countDown();
                 cp.countDown();
-                atomicInteger.incrementAndGet();
             }
         };
         final String id1 = topic.addMessageListener(messageListener1);
