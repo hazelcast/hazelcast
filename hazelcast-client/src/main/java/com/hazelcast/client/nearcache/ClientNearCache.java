@@ -198,12 +198,14 @@ public class ClientNearCache<K> {
         fireTtlCleanup();
         CacheRecord<K> record = cache.get(key);
         if (record != null) {
-            record.access();
+
             if (record.expired()) {
                 cache.remove(key);
                 stats.incrementMisses();
                 return null;
             }
+            record.access();
+
             if (record.value.equals(NULL_OBJECT)){
                 stats.incrementMisses();
                 return NULL_OBJECT;
