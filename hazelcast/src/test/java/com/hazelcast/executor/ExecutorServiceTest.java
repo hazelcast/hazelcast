@@ -83,7 +83,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     private IExecutorService createSingleNodeExecutorService(String name, int poolSize) {
         final Config config = new Config();
-        config.addExecutorConfig(new ExecutorConfig(name, poolSize).setQueueCapacity(1));
+        config.addExecutorConfig(new ExecutorConfig(name, poolSize));
         final HazelcastInstance instance = createHazelcastInstance(config);
         return instance.getExecutorService(name);
     }
