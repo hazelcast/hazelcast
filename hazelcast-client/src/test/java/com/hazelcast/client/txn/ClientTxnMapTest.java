@@ -24,6 +24,7 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -266,4 +267,18 @@ public class ClientTxnMapTest {
 
     }
 
+    @Test
+    public void testPutAndRoleBack() throws Exception {
+        final String mapName = randomString();
+        final String key = "key1";
+        final IMap map = client.getMap(mapName);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> mapTxn = context.getMap(mapName);
+        mapTxn.put(key, "value1");
+        context.rollbackTransaction();
+
+        assertNull(map.get(key));
+    }
 }
