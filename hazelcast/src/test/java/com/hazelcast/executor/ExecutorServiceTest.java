@@ -756,7 +756,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        executorService.execute(new Runnable() {
+        final Future submit = executorService.submit(new Runnable() {
             public void run() {
                 secondLatch.countDown();
             }
@@ -775,6 +775,11 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
 
         assertOpenEventually(secondLatch);
+
+        try {
+            submit.get();
+        } catch (ExecutionException ignored) {
+        }
 
         final LocalExecutorStats stats = executorService.getLocalExecutorStats();
         assertEquals(2, stats.getStartedTaskCount());
