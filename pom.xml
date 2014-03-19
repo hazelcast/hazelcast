@@ -282,6 +282,7 @@
                         <version>${jacoco.version}</version>
                         <configuration>
                             <destFile>${basedir}/target/coverage-reports/jacoco-it.exec</destFile>
+                            <dataFile>${basedir}/target/coverage-reports/jacoco-it.exec</dataFile>
                         </configuration>
                         <executions>
                             <execution>
@@ -307,6 +308,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
+                                -destfile=
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
