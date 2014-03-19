@@ -41,4 +41,6 @@ public interface Record<V> {
     long getCost();
 
     long getVersion();
+
+    void setVersion(long version);
 }
