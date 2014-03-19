@@ -261,7 +261,6 @@
                 <!-- no idea why the reportPath for it doesn't work.. so lets hack it in like this -->
                 <!-- sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-banana.exec</sonar.jacoco.reportPath -->
                 <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
-                <sonar.jacoco.jar>${basedir}/lib/org.jacoco.agent-${jacoco.version}-runtime.jar</sonar.jacoco.jar>
             </properties>
             <build>
                 <plugins>
@@ -269,6 +268,9 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
+                        <configuration>
+                            <destFile>${sonar.jacoco.itReportPath}</destFile>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
