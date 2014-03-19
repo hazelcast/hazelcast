@@ -262,6 +262,7 @@
                 <!-- no idea why the reportPath for it doesn't work.. so lets hack it in like this -->
                 <!-- sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-banana.exec</sonar.jacoco.reportPath -->
                 <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
+                <sonar.jacoco.jar>${basedir}/lib/org.jacoco.agent-${jacoco.version}-runtime.jar</sonar.jacoco.jar>
             </properties>
             <build>
                 <plugins>
@@ -293,7 +294,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                               ${argLine}=destfile='${sonar.jacoco.itReportPath}'
+                                -javaagent:${sonar.jacoco.jar}=destfile=${sonar.jacoco.itReportPath},append=false
                                 -Xms129m -Xmx1G -XX:MaxPermSize=129M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
