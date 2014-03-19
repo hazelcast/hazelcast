@@ -49,7 +49,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore("will be enabled, need to find cause of failing jenkins")
 @SuppressWarnings("unused")
 public class MapReduceTest
         extends HazelcastTestSupport {
