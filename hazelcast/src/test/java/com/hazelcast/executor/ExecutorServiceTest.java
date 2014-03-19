@@ -751,7 +751,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final IExecutorService executorService = instance.getExecutorService(name);
 
         final CountDownLatch sleepLatch = new CountDownLatch(1);
-        final CountDownLatch secondLatch = new CountDownLatch(1);
 
         executorService.execute(new Runnable() {
             @Override
@@ -762,7 +761,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         final Future submit = executorService.submit(new Runnable() {
             public void run() {
-                secondLatch.countDown();
             }
         });
 
@@ -777,8 +775,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         } finally {
             sleepLatch.countDown();
         }
-
-        assertOpenEventually(secondLatch);
 
         try {
             submit.get();
