@@ -270,18 +270,16 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
-                         <executions>
+                        <configuration>
+                            <propertyName>jacoco.agent.argLine</propertyName>
+                            <destFile>${sonar.jacoco.itReportPath}</destFile>
+                            <append>true</append>
+                        </configuration>
+                        <executions>
                             <execution>
-                                <id>pre-test</id>
+                                <id>agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>post-test</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>report</goal>
                                 </goals>
                             </execution>
                         </executions>
@@ -325,8 +323,10 @@
                             </dependency>
                         </dependencies>
                         <configuration combine.self="override">
+                            <argLine></argLine>
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
+                                ${jacoco.agent.argLine}
                                 -Xms129m -Xmx1G -XX:MaxPermSize=129M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
