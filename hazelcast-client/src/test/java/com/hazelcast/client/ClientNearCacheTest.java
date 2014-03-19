@@ -219,15 +219,15 @@ public class ClientNearCacheTest {
         }
         //5 sec is the cleanupInterval set in clientNearCache
         sleepSeconds(6);
-        //this get trigers the ttl cleanup,
+        //this get triggers the ttl cleanup,
         map.get(0);
-        final int expetedSize = 1;
+        final int expectedSize = 1;
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
                 final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
                 System.out.println(stats.getOwnedEntryCount());
-                assertEquals(expetedSize, stats.getOwnedEntryCount());
+                assertEquals(expectedSize, stats.getOwnedEntryCount());
             }
         });
     }
@@ -250,31 +250,28 @@ public class ClientNearCacheTest {
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
         }
-        //populate near cache
+        //populate near cache and generate some cache hits
         for (int i = 0; i < 100; i++) {
             map.get(i);
-        }
-        //this will be from near cache
-        for (int i = 0; i < 100; i++) {
             map.get(i);
         }
 
         NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
-        assertEquals(100, stats.getHits());
+        long hitsBeforeIdleExpire = stats.getHits();
 
         sleepSeconds(2);
-
          for (int i = 0; i < 100; i++) {
             map.get(i);
         }
 
         stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(100, stats.getHits());
+
+        assertEquals("as the hits are not equal, the entries were not cleared from near cash after MaxIdleSeconds", hitsBeforeIdleExpire, stats.getHits());
     }
 
 
     @Test
-    public void getNullTest() {
+    public void neachCacheMissesTest() {
         final String mapName = "getNullTest";
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
@@ -287,25 +284,14 @@ public class ClientNearCacheTest {
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final IMap map = client.getMap(mapName);
 
-
         //this will be from near cache
         for (int i = 0; i < 100; i++) {
-            map.get(i);
+            map.get(0);
         }
 
         NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
 
-        assertEquals(0, stats.getMisses());
-        //assertEquals(100, stats.getHits());
-
-        sleepSeconds(2);
-
-        for (int i = 0; i < 100; i++) {
-            map.get(i);
-        }
-
-        stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(100, stats.getHits());
+        assertEquals(100, stats.getMisses());
     }
 
 
