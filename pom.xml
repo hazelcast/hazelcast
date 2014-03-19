@@ -163,31 +163,31 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven.surefire.plugin.version}</version>
-                <configuration combine.self="override">
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                    <!-- 1C means 1 process per cpu core -->
-                    <!-- forkCount>1C</forkCount>
-                    <reuseForks>true</reuseForks>
+            <!--<plugin>-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <!--<artifactId>maven-surefire-plugin</artifactId>-->
+                <!--<version>${maven.surefire.plugin.version}</version>-->
+                <!--<configuration combine.self="override">-->
+                    <!--<redirectTestOutputToFile>true</redirectTestOutputToFile>-->
+                    <!--&lt;!&ndash; 1C means 1 process per cpu core &ndash;&gt;-->
+                    <!--&lt;!&ndash; forkCount>1C</forkCount>-->
+                    <!--<reuseForks>true</reuseForks>-->
 
-                    <threadCount>1</threadCount>
-                    <perCoreThreadCount>true</perCoreThreadCount>
-                    <parallel>methods</parallel -->
-        <argLine>
-                        -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                        -Dhazelcast.version.check.enabled=false
-                        -Dhazelcast.mancenter.enabled=false
-                        -Dhazelcast.logging.type=none
-                        -Dhazelcast.test.use.network=false
-                    </argLine>
-                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
-                    <excludedGroups>com.hazelcast.test.annotation.NightlyTest</excludedGroups>
-                    <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
-                </configuration>
-            </plugin>
+                    <!--<threadCount>1</threadCount>-->
+                    <!--<perCoreThreadCount>true</perCoreThreadCount>-->
+                    <!--<parallel>methods</parallel &ndash;&gt;-->
+                    <!--<argLine>-->
+                        <!---Xms128m -Xmx1G -XX:MaxPermSize=128M-->
+                        <!---Dhazelcast.version.check.enabled=false-->
+                        <!---Dhazelcast.mancenter.enabled=false-->
+                        <!---Dhazelcast.logging.type=none-->
+                        <!---Dhazelcast.test.use.network=false-->
+                    <!--</argLine>-->
+                    <!--<groups>com.hazelcast.test.annotation.QuickTest</groups>-->
+                    <!--<excludedGroups>com.hazelcast.test.annotation.NightlyTest</excludedGroups>-->
+                    <!--<excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>-->
+                <!--</configuration>-->
+            <!--</plugin>-->
 
         </plugins>
     </build>
@@ -266,30 +266,6 @@
             </properties>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>${jacoco.version}</version>
-                        <configuration>
-                            <destFile>${sonar.jacoco.itReportPath}</destFile>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>default-prepare-agent</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration/>
-                            </execution>
-                            <execution>
-                                <id>default-report</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
 
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -307,8 +283,8 @@
 
                             <includes>
                                 <include>**/ExecutorConfigTest*.java</include>
-                                <include>**/TopicTest*.java</include>
-                                <include>**/LockTest*.java</include>
+                                <!-- include>**/TopicTest*.java</include>
+                                <include>**/LockTest*.java</include -->
                             </includes>
 
                             <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
@@ -317,21 +293,17 @@
                         </configuration>
                     </plugin>
 
-                     <plugin>
-                         <groupId>org.apache.maven.plugins</groupId>
-                         <artifactId>maven-failsafe-plugin</artifactId>
-                         <version>2.17</version>
-                         <executions>
-                             <execution>
-                                 <id>surefire-it</id>
-                                 <phase>integration-test</phase>
-                                 <goals>
-                                     <goal>test</goal>
-                                 </goals>
-                             </execution>
-                         </executions>
-
-                         <configuration combine.self="override">
+                    <plugin>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>2.17</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.maven.surefire</groupId>
+                                <artifactId>surefire-junit47</artifactId>
+                                <version>2.17</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 -Xms129m -Xmx1G -XX:MaxPermSize=129M
@@ -349,8 +321,14 @@
                             <!--groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest</groups>
                             <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups -->
                         </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
-
                 </plugins>
             </build>
         </profile>
