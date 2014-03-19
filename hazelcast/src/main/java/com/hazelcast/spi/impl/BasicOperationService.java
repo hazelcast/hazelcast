@@ -385,12 +385,20 @@ final class BasicOperationService implements InternalOperationService {
                 responseHandler.sendResponse(response);
             }
 
-            op.afterRun();
-            if (op instanceof Notifier) {
-                final Notifier notifier = (Notifier) op;
-                if (notifier.shouldNotify()) {
-                    nodeEngine.waitNotifyService.notify(notifier);
+            try {
+                op.afterRun();
+
+                if (op instanceof Notifier) {
+                    final Notifier notifier = (Notifier) op;
+                    if (notifier.shouldNotify()) {
+                        nodeEngine.waitNotifyService.notify(notifier);
+                    }
                 }
+            } catch (Throwable e) {
+                // passed the response phase
+                // `afterRun` and `notifier` errors cannot be sent to the caller anymore
+                // just log the error
+                logOperationError(op, e);
             }
         } catch (Throwable e) {
             handleOperationError(op, e);
@@ -523,9 +531,16 @@ final class BasicOperationService implements InternalOperationService {
                     responseHandler.sendResponse(new HazelcastInstanceNotActiveException());
                 }
             } catch (Throwable t) {
-                logger.warning("While sending op error...", t);
+                logger.warning("While sending op error... op: " + op + ", error: " + e, t);
             }
         }
+    }
+
+    private void logOperationError(Operation op, Throwable e) {
+        if (e instanceof OutOfMemoryError) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
+        }
+        op.logError(e);
     }
 
     @Override
