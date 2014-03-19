@@ -252,6 +252,8 @@
 
                             <includes>
                                 <include>**/ExecutorConfigTest*.java</include>
+                                <include>**/TopicTest*.java</include>
+                                <include>**/LockTest*.java</include>
                             </includes>
 
                             <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
