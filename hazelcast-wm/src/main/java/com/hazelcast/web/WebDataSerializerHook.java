@@ -4,9 +4,6 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 
-/**
- * Created by mesutcelik on 3/19/14.
- */
 public class WebDataSerializerHook implements DataSerializerHook{
 
 
