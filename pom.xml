@@ -206,13 +206,19 @@
 
         <profile>
             <id>test-coverage</id>
-
+            <properties>
+                <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
+                <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco.exec</sonar.jacoco.reportPath>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
+                        <configuration>
+                            <destFile>${sonar.jacoco.reportPath}</destFile>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
@@ -259,14 +265,14 @@
         </profile>
 
         <profile>
+             <id>test-coverage-nightly</id>
             <properties>
                 <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
                 <!-- no idea why the reportPath for it doesn't work.. so lets hack it in like this -->
-                <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.reportPath>
+                <!-- sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.reportPath -->
                 <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
             </properties>
-            <id>test-coverage-nightly</id>
-               <build>
+            <build>
                 <plugins>
                     <plugin>
                         <groupId>org.jacoco</groupId>
