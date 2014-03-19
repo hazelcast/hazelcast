@@ -47,6 +47,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
@@ -1257,7 +1258,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
+    @Category(NightlyTest.class)
     public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() throws InterruptedException {
         final int size = 1000;
         Config config = new Config();
@@ -1282,7 +1283,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
+    @Category(NightlyTest.class)
     public void testIssue1085WriteBehindBackupTransactional() throws InterruptedException {
         Config config = new Config();
         String name = "testIssue1085WriteBehindBackupTransactional";

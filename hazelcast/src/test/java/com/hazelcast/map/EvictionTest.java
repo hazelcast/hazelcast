@@ -29,6 +29,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -571,7 +572,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
+    @Category(NightlyTest.class)
     public void testMapRecordIdleEvictionOnMigration() {
         Config cfg = new Config();
         final String name = "testMapRecordIdleEvictionOnMigration";
@@ -684,7 +685,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(SlowTest.class)
+    @Category(NightlyTest.class)
     public void testIssue1085EvictionBackup() throws InterruptedException {
         Config config = new Config();
         config.getMapConfig("testIssue1085EvictionBackup").setTimeToLiveSeconds(3);
