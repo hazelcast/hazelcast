@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -663,7 +664,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final IExecutorService executorService = instance.getExecutorService(name);
 
         final CountDownLatch sleepLatch = new CountDownLatch(1);
-        final CountDownLatch secondLatch = new CountDownLatch(1);
 
         executorService.execute(new Runnable() {
             @Override
@@ -677,7 +677,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         final Future submit = executorService.submit(new Runnable() {
             public void run() {
-                secondLatch.countDown();
             }
         });
 
@@ -692,8 +691,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         } finally {
             sleepLatch.countDown();
         }
-
-        assertTrue(sleepLatch.await(60, TimeUnit.SECONDS));
 
         try {
             submit.get();
