@@ -157,12 +157,12 @@ public class NearCache {
         fireTtlCleanup();
         CacheRecord record = cache.get(key);
         if (record != null) {
-            record.access();
             if (record.expired()) {
                 cache.remove(key);
                 updateSizeEstimator(-calculateCost(record));
                 return null;
             }
+            record.access();
             return record.value;
         } else {
             return null;
