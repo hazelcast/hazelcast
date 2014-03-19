@@ -68,7 +68,8 @@
         <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
         <main.basedir>${project.basedir}</main.basedir>
-        <jacoco.version>0.7.0.201403182114</jacoco.version>
+        <!-- jacoco.version>0.7.0.201403182114</jacoco.version -->
+        <jacoco.version>0.6.2.201302030002</jacoco.version>
 
          <!-- sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar -->
     </properties>
@@ -173,9 +174,7 @@
                     <threadCount>1</threadCount>
                     <perCoreThreadCount>true</perCoreThreadCount>
                     <parallel>methods</parallel -->
-
-                    <!-- the argLine variable is needed for jacoco-->
-                    <argLine>
+        <argLine>
                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
                         -Dhazelcast.version.check.enabled=false
                         -Dhazelcast.mancenter.enabled=false
@@ -266,7 +265,7 @@
             </properties>
             <build>
                 <plugins>
-                    <!--plugin>
+                    <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
@@ -285,7 +284,7 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin -->
+                    </plugin>
 
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -294,7 +293,6 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                                -javaagent:${sonar.jacoco.jar}=destfile=${sonar.jacoco.itReportPath}
                                 -Xms129m -Xmx1G -XX:MaxPermSize=129M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
