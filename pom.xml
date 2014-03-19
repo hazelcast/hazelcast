@@ -234,15 +234,12 @@
                         </executions>
                     </plugin>
 
-                    <!-- we need to copy the sure-fire plugin because we need to add a argLine variable for jacoco-->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                            <!--       ${argLine} -->
-
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
@@ -250,6 +247,11 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                             </argLine>
+
+                            <includes>
+                                <include>**/ExecutorConfigTest*.java</include>
+                            </includes>
+
                             <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
                             <excludedGroups>com.hazelcast.test.annotation.NightlyTest</excludedGroups>
                             <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
@@ -288,15 +290,12 @@
                         </executions>
                     </plugin>
 
-                    <!-- we need to copy the sure-fire plugin because we need to add a argLine variable for jacoco-->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                            <!--       ${argLine} -->
-
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
@@ -306,6 +305,7 @@
                             </argLine>
                             <includes>
                                 <include>**/AtomicLongTest*.java</include>
+                                <include>**/AtomicReferenceTest*.java</include>
                             </includes>
                             <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest</groups>
 
