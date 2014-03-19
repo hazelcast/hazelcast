@@ -48,10 +48,6 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
         return getPrincipal();
     }
 
-    public byte[] getRawPassword() {
-        return password;
-    }
-
     public String getPassword() {
         if (password == null) {
             return "";
