@@ -269,9 +269,6 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
-                        <configuration>
-                            <destFile>${sonar.jacoco.itReportPath}</destFile>
-                        </configuration>
                         <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
@@ -296,6 +293,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
+                                destfile=${sonar.jacoco.itReportPath}
                                 -Xms129m -Xmx1G -XX:MaxPermSize=129M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
