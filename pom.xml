@@ -242,6 +242,10 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                             </argLine>
+                            <includes>
+                                <include>**/AtomicLongTest*.java</include>
+                            </includes>
+
                             <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
                             <excludedGroups>com.hazelcast.test.annotation.NightlyTest</excludedGroups>
                             <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
