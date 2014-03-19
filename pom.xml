@@ -280,16 +280,16 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
-                        <configuration>
-                            <destFile>${basedir}/target/coverage-reports/jacoco-it.exec</destFile>
-                            <dataFile>${basedir}/target/coverage-reports/jacoco-it.exec</dataFile>
-                        </configuration>
-                        <executions>
+                          <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
+                                <configuration>
+                                    <destFile>${basedir}/target/coverage-reports/jacoco-it.exec</destFile>
+                                    <dataFile>${basedir}/target/coverage-reports/jacoco-it.exec</dataFile>
+                                </configuration>
                             </execution>
                             <execution>
                                 <id>default-report</id>
