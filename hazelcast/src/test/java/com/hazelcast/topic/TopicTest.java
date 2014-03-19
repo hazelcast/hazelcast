@@ -33,9 +33,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.UuidUtil;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -60,7 +58,7 @@ import static org.junit.Assert.*;
 public class TopicTest extends HazelcastTestSupport {
 
     @Test
-   public void testDestroyTopicRemovesStatistics(){
+    public void testDestroyTopicRemovesStatistics() {
         HazelcastInstance instance = createHazelcastInstance();
         final ITopic topic = instance.getTopic("foo");
         topic.publish("foobar");
@@ -471,37 +469,34 @@ public class TopicTest extends HazelcastTestSupport {
     @Test
     public void add2listenerAndRemoveOne() throws InterruptedException {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
-        final CountDownLatch latch = new CountDownLatch(4);
+        ITopic<String> topic = hazelcastInstance.getTopic("add2listenerAndRemoveOne");
+        final CountDownLatch latch = new CountDownLatch(3);
         final CountDownLatch cp = new CountDownLatch(2);
+        final AtomicInteger atomicInteger = new AtomicInteger();
         final String message = "Hazelcast Rocks!";
         MessageListener<String> messageListener1 = new MessageListener<String>() {
             public void onMessage(Message<String> msg) {
-                if (msg.getMessageObject().startsWith(message)) {
-                    latch.countDown();
-                    cp.countDown();
-                }
+                atomicInteger.incrementAndGet();
+                latch.countDown();
+                cp.countDown();
             }
         };
-        MessageListener<String> messageListener2 = new
-
-                MessageListener<String>() {
-                    public void onMessage(Message<String> msg) {
-                        if (msg.getMessageObject().startsWith(message)) {
-                            latch.countDown();
-                            cp.countDown();
-                        }
-                    }
-                };
+        MessageListener<String> messageListener2 = new MessageListener<String>() {
+            public void onMessage(Message<String> msg) {
+                atomicInteger.incrementAndGet();
+                latch.countDown();
+                cp.countDown();
+            }
+        };
         final String id1 = topic.addMessageListener(messageListener1);
         topic.addMessageListener(messageListener2);
-        topic.publish(message + "1");
-        Thread.sleep(50);
+        topic.publish(message);
+        assertOpenEventually(cp);
         topic.removeMessageListener(id1);
-        cp.await();
-        topic.publish(message + "2");
-        Thread.sleep(100);
-        assertEquals(1, latch.getCount());
+        topic.publish(message);
+
+        assertOpenEventually(latch);
+        assertEquals(3, atomicInteger.get());
     }
 
     /**
