@@ -85,7 +85,7 @@ public class PartitionStateGeneratorTest {
     @Test
     public void testCustomPartitionStateGenerator() throws Exception {
         final MemberGroupFactory memberGroupFactory = new MemberGroupFactory() {
-            public Collection<MemberGroup> createMemberGroups(Collection<Member> members) {
+            public Collection<MemberGroup> createMemberGroups(Collection<? extends Member> members) {
                 MemberGroup[] g = new MemberGroup[4];
                 for (int i = 0; i < g.length; i++) {
                     g[i] = new DefaultMemberGroup();

@@ -480,10 +480,40 @@ public class MapService implements ManagedService, MigrationAwareService,
         invalidateNearCache(mapName, key);
     }
 
+
+    public void invalidateLocalNearCache(String mapName, Data key) {
+        if (!isNearCacheLocalEntryCachingEnabled(mapName)) {
+            return;
+        }
+        invalidateNearCache(mapName, key);
+    }
+
+    public void invalidateLocalNearCache(String mapName, Set<Data> keys) {
+        if (!isNearCacheLocalEntryCachingEnabled(mapName)) {
+            return;
+        }
+        invalidateNearCache(mapName, keys);
+    }
+
+
     public boolean isNearCacheAndInvalidationEnabled(String mapName) {
         final MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled()
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
+    }
+
+    private boolean isNearCacheLocalEntryCachingEnabled(String mapName) {
+        final MapContainer mapContainer = getMapContainer(mapName);
+        final MapConfig config = mapContainer.getMapConfig();
+        final boolean nearCacheEnabled = config.isNearCacheEnabled();
+        if (!nearCacheEnabled) {
+            return false;
+        }
+        final boolean cacheLocalEntries = config.getNearCacheConfig().isCacheLocalEntries();
+        if (!cacheLocalEntries) {
+            return false;
+        }
+        return true;
     }
 
     public void invalidateAllNearCaches(String mapName, Set<Data> keys) {
@@ -731,14 +761,12 @@ public class MapService implements ManagedService, MigrationAwareService,
         ScheduledEntry ttlScheduledEntry = mapContainer.getTtlEvictionScheduler() == null ? null : mapContainer.getTtlEvictionScheduler().get(key);
         long ttlDelay = ttlScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(ttlScheduledEntry);
 
-        ScheduledEntry writeScheduledEntry = mapContainer.getMapStoreWriteScheduler() == null ? null : mapContainer.getMapStoreWriteScheduler().get(key);
-        long writeDelay = writeScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(writeScheduledEntry);
+        final RecordReplicationInfo recordReplicationInfo = new RecordReplicationInfo(record.getKey(),
+                toData(record.getValue()), record.getStatistics(),
+                idleDelay, ttlDelay);
+        setDelays(recordReplicationInfo, replicaWaitSecondsForScheduledTasks, mapContainer, key);
 
-        ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().get(key);
-        long deleteDelay = deleteScheduledEntry == null ? -1 : replicaWaitSecondsForScheduledTasks + findDelayMillis(deleteScheduledEntry);
-
-        return new RecordReplicationInfo(record.getKey(), toData(record.getValue()), record.getStatistics(),
-                idleDelay, ttlDelay, writeDelay, deleteDelay);
+        return recordReplicationInfo;
     }
 
     public RecordInfo createRecordInfo(MapContainer mapContainer, Record record, Data key) {
@@ -751,14 +779,27 @@ public class MapService implements ManagedService, MigrationAwareService,
         ScheduledEntry ttlScheduledEntry = mapContainer.getTtlEvictionScheduler() == null ? null : mapContainer.getTtlEvictionScheduler().get(key);
         long ttlDelay = ttlScheduledEntry == null ? -1 : backupDelay + findDelayMillis(ttlScheduledEntry);
 
-        ScheduledEntry writeScheduledEntry = mapContainer.getMapStoreWriteScheduler() == null ? null : mapContainer.getMapStoreWriteScheduler().get(key);
-        long writeDelay = writeScheduledEntry == null ? -1 : backupDelay + findDelayMillis(writeScheduledEntry);
+        final RecordInfo recordInfo = new RecordInfo(record.getStatistics(), idleDelay, ttlDelay);
+        setDelays(recordInfo, backupDelay, mapContainer, key);
 
-        ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().get(key);
-        long deleteDelay = deleteScheduledEntry == null ? -1 : backupDelay + findDelayMillis(deleteScheduledEntry);
+        return recordInfo;
+    }
 
-        return new RecordInfo(record.getStatistics(),
-                idleDelay, ttlDelay, writeDelay, deleteDelay);
+    private void setDelays(RecordInfo recordInfo, int extraDelay, MapContainer mapContainer, Data key) {
+        long deleteDelay = -1;
+        long writeDelay = -1;
+        if (mapContainer.getMapStoreScheduler() != null) {
+            final ScheduledEntry scheduledEntry = mapContainer.getMapStoreScheduler().get(key);
+            if (scheduledEntry != null) {
+                if (scheduledEntry.getValue() == null) {
+                    deleteDelay = extraDelay + findDelayMillis(scheduledEntry);
+                } else {
+                    writeDelay = extraDelay + findDelayMillis(scheduledEntry);
+                }
+            }
+        }
+        recordInfo.setMapStoreDeleteDelayMillis(deleteDelay);
+        recordInfo.setMapStoreWriteDelayMillis(writeDelay);
     }
 
     public long findDelayMillis(ScheduledEntry entry) {
@@ -850,11 +891,11 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void scheduleMapStoreWrite(String mapName, Data key, Object value, long delay) {
-        getMapContainer(mapName).getMapStoreWriteScheduler().schedule(delay, key, value);
+        getMapContainer(mapName).getMapStoreScheduler().schedule(delay, key, value);
     }
 
     public void scheduleMapStoreDelete(String mapName, Data key, long delay) {
-        getMapContainer(mapName).getMapStoreDeleteScheduler().schedule(delay, key, null);
+        getMapContainer(mapName).getMapStoreScheduler().schedule(delay, key, null);
     }
 
     public SerializationService getSerializationService() {
@@ -1192,8 +1233,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
         }
 
-        if (mapContainer.getMapStoreWriteScheduler() != null && mapContainer.getMapStoreDeleteScheduler() != null) {
-            dirtyCount = mapContainer.getMapStoreWriteScheduler().size() + mapContainer.getMapStoreDeleteScheduler().size();
+        if (mapContainer.getMapStoreScheduler() != null) {
+            dirtyCount = mapContainer.getMapStoreScheduler().size();
         }
         localMapStats.setBackupCount(backupCount);
         localMapStats.setDirtyEntryCount(zeroOrPositive(dirtyCount));

@@ -49,11 +49,6 @@ public abstract class SemaphoreRequest extends PartitionClientRequest
     }
 
     @Override
-    protected int getReplicaIndex() {
-        return 0;
-    }
-
-    @Override
     public String getServiceName() {
         return SemaphoreService.SERVICE_NAME;
     }

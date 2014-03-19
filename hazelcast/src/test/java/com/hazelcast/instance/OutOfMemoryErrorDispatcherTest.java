@@ -31,7 +31,7 @@ public class OutOfMemoryErrorDispatcherTest {
         HazelcastInstance hz1 = mock(HazelcastInstance.class);
 
         OutOfMemoryErrorDispatcher.register(hz1);
-        OutOfMemoryErrorDispatcher.addHandler(handler);
+        OutOfMemoryErrorDispatcher.setHandler(handler);
 
         HazelcastInstance[] registeredInstances = OutOfMemoryErrorDispatcher.current();
 

@@ -2,7 +2,12 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.map.*;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.MapEntrySimple;
+import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.SimpleEntryView;
+import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,7 +29,8 @@ import java.util.Set;
  * date: 19/12/13
  * author: eminn
  */
-public class MultipleEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
+public class MultipleEntryOperation extends AbstractMapOperation
+        implements BackupAwareOperation, PartitionAwareOperation {
 
     private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
     private EntryProcessor entryProcessor;
@@ -32,7 +38,7 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
     MapEntrySet response;
 
 
-    public MultipleEntryOperation(){
+    public MultipleEntryOperation() {
     }
 
     public MultipleEntryOperation(String name, Set<Data> keys, EntryProcessor entryProcessor) {
@@ -50,17 +56,17 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
     public void run() throws Exception {
         response = new MapEntrySet();
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
-        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(),name);
+        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         MapEntrySimple entry;
 
-        for(Data key:keys)
-        {
-            if(partitionService.getPartitionId(key) != getPartitionId())
+        for (Data key : keys) {
+            if (partitionService.getPartitionId(key) != getPartitionId())
                 continue;
             Object objectKey = mapService.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
-            final Object valueBeforeProcess = mapService.toObject(mapEntry.getValue());
-            entry = new MapEntrySimple(objectKey,valueBeforeProcess);
+            final Object valueBeforeProcess = mapEntry.getValue();
+            final Object valueBeforeProcessObject = mapService.toObject(valueBeforeProcess);
+            entry = new MapEntrySimple(objectKey, valueBeforeProcessObject);
             final Object result = entryProcessor.process(entry);
             final Object valueAfterProcess = entry.getValue();
             Data dataValue = null;
@@ -73,7 +79,7 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
                 recordStore.remove(key);
                 eventType = EntryEventType.REMOVED;
             } else {
-                if (valueBeforeProcess == null) {
+                if (valueBeforeProcessObject == null) {
                     eventType = EntryEventType.ADDED;
                 }
                 // take this case as a read so no need to fire an event.
@@ -89,10 +95,10 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
             }
 
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                Data dataOldValue = mapService.toData(mapEntry.getValue());
-                mapService.publishEvent(getCallerAddress(), name, eventType, key, dataOldValue, dataValue);
-                if (mapContainer.isNearCacheEnabled()
-                        && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
+                final Data oldValue = mapService.toData(valueBeforeProcess);
+                final Data value = mapService.toData(valueAfterProcess);
+                mapService.publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
+                if (mapService.isNearCacheAndInvalidationEnabled(name)) {
                     mapService.invalidateAllNearCaches(name, key);
                 }
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
@@ -149,7 +155,7 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
     @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null ? new MultipleEntryBackupOperation(name,keys, backupProcessor) : null;
+        return backupProcessor != null ? new MultipleEntryBackupOperation(name, keys, backupProcessor) : null;
     }
 
     @Override
@@ -171,8 +177,7 @@ public class MultipleEntryOperation extends AbstractMapOperation implements Back
         super.writeInternal(out);
         out.writeObject(entryProcessor);
         out.writeInt(keys.size());
-        for(Data key:keys)
-        {
+        for (Data key : keys) {
             key.writeData(out);
         }
 

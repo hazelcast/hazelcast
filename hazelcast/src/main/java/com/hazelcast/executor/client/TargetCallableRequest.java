@@ -32,6 +32,9 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.Callable;
 
+/**
+ * This class is used for sending the task to a particular target
+ */
 public final class TargetCallableRequest extends TargetClientRequest {
 
     private String name;

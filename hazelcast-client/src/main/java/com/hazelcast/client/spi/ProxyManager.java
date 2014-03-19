@@ -196,14 +196,14 @@ public final class ProxyManager {
     }
 
     private void initialize(ClientProxy clientProxy) {
-        final ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
+        ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
         try {
             client.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
-        clientProxy.setContext(new ClientContext(client.getSerializationService(), client.getClientClusterService(),
-                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig()));
+        final ClientContext clientContext = new ClientContext(client, this);
+        clientProxy.setContext(clientContext);
     }
 
     public Collection<? extends DistributedObject> getDistributedObjects(){
@@ -211,14 +211,14 @@ public final class ProxyManager {
     }
 
     public void destroy() {
+        for (ClientProxy proxy : proxies.values()) {
+            proxy.onShutdown();
+        }
         proxies.clear();
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
         final DistributedObjectListenerRequest request = new DistributedObjectListenerRequest();
-        ClientContext context = new ClientContext(client.getSerializationService(), client.getClientClusterService(),
-                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig());
-
         final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>(){
             public void handle(PortableDistributedObjectEvent e) {
                 final ObjectNamespace ns = new DefaultObjectNamespace(e.getServiceName(), e.getName());
@@ -226,7 +226,7 @@ public final class ProxyManager {
                 if (proxy == null){
                     proxy = getProxy(e.getServiceName(), e.getName());
                 }
-                final DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
+                DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
                 if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())){
                     listener.distributedObjectCreated(event);
                 } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.getEventType())){
@@ -234,14 +234,13 @@ public final class ProxyManager {
                 }
             }
         };
-
-        return ListenerUtil.listen(context, request, null, eventHandler);
+        final ClientContext clientContext = new ClientContext(client, this);
+        return ListenerUtil.listen(clientContext, request, null, eventHandler);
     }
 
     public boolean removeDistributedObjectListener(String id) {
         final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
-        ClientContext context = new ClientContext(client.getSerializationService(), client.getClientClusterService(),
-                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig());
-        return ListenerUtil.stopListening(context, request, id);
+        final ClientContext clientContext = new ClientContext(client, this);
+        return ListenerUtil.stopListening(clientContext, request, id);
     }
 }

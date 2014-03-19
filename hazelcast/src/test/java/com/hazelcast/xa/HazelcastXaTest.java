@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jca;
+package com.hazelcast.xa;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.TransactionAccessor;
@@ -42,15 +44,16 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class HazelcastXaTest {
 
     static final Random random = new Random(System.currentTimeMillis());
+    static final ILogger logger = Logger.getLogger(HazelcastXaTest.class);
 
     UserTransactionManager tm = null;
 
@@ -89,7 +92,31 @@ public class HazelcastXaTest {
     }
 
     @Test
-    public void testCommit() throws InterruptedException {
+    public void testRollbackAfterNodeShutdown() throws Exception {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        tm.begin();
+
+        final TransactionContext context = instance.newTransactionContext();
+        final XAResource xaResource = context.getXaResource();
+        final Transaction transaction = tm.getTransaction();
+        transaction.enlistResource(xaResource);
+
+        boolean error = false;
+        try {
+            final TransactionalMap m = context.getMap("m");
+            m.put("key", "value");
+            throw new RuntimeException("Exception for rolling back");
+        } catch (Exception e) {
+            error = true;
+        } finally {
+            close(error, xaResource);
+        }
+
+        assertNull(instance.getMap("m").get("key"));
+    }
+
+    @Test
+    public void testCommitAfterNodeShutdown() throws InterruptedException {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
 
@@ -164,7 +191,7 @@ public class HazelcastXaTest {
     public void testParallel() throws Exception {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 
-        final int size = 300;
+        final int size = 20;
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         final CountDownLatch latch = new CountDownLatch(size);
         for (int i = 0; i < size; i++) {
@@ -173,14 +200,14 @@ public class HazelcastXaTest {
                     try {
                         txn(instance);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.severe("Exception during txn", e);
                     } finally {
                         latch.countDown();
                     }
                 }
             });
         }
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch, 20);
         final IMap m = instance.getMap("m");
         for (int i = 0; i < 10; i++) {
             assertFalse(m.isLocked(i));
@@ -208,7 +235,7 @@ public class HazelcastXaTest {
             final TransactionalMap m = context.getMap("m");
             m.put(random.nextInt(10), "value");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe("Exception during transaction", e);
             error = true;
         } finally {
             close(error, xaResource);

@@ -35,6 +35,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
@@ -45,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class MapContainer {
@@ -60,8 +62,7 @@ public class MapContainer {
     private final boolean nearCacheEnabled;
     private final EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
-    private final EntryTaskScheduler mapStoreWriteScheduler;
-    private final EntryTaskScheduler mapStoreDeleteScheduler;
+    private final EntryTaskScheduler mapStoreScheduler;
     private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
     private final SizeEstimator nearCacheSizeEstimator;
@@ -86,7 +87,8 @@ public class MapContainer {
                 recordFactory = new ObjectRecordFactory(mapConfig, nodeEngine.getSerializationService());
                 break;
             case OFFHEAP:
-                recordFactory = new OffHeapRecordFactory(mapConfig, nodeEngine.getOffHeapStorage(), nodeEngine.getSerializationService(), partitioningStrategy);
+                recordFactory = new OffHeapRecordFactory(mapConfig, nodeEngine.getOffHeapStorage(),
+                        nodeEngine.getSerializationService(), partitioningStrategy);
                 break;
 
             default:
@@ -119,29 +121,36 @@ public class MapContainer {
 
         if (storeWrapper != null) {
             if (store instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapStoreConfig.getProperties(), name);
+                ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(),
+                        mapStoreConfig.getProperties(), name);
             }
             loadInitialKeys();
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
-                final ExecutionService executionService =  nodeEngine.getExecutionService();
-                executionService.register(mapStoreScheduledExecutorName, 1, 100000);
-                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(mapStoreScheduledExecutorName), new MapStoreWriteProcessor(this, mapService), ScheduleType.FOR_EACH);
-                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(executionService.getScheduledExecutor(mapStoreScheduledExecutorName), new MapStoreDeleteProcessor(this, mapService), ScheduleType.SCHEDULE_IF_NEW);
+                final ExecutionService executionService = nodeEngine.getExecutionService();
+                executionService.register(mapStoreScheduledExecutorName, 1, 100000, ExecutorType.CACHED);
+                ScheduledExecutorService scheduledExecutor = executionService
+                        .getScheduledExecutor(mapStoreScheduledExecutorName);
+                mapStoreScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor,
+                        new MapStoreProcessor(this, mapService),
+                        ScheduleType.FOR_EACH);
             } else {
-                mapStoreDeleteScheduler = null;
-                mapStoreWriteScheduler = null;
+                mapStoreScheduler = null;
             }
         } else {
-            mapStoreDeleteScheduler = null;
-            mapStoreWriteScheduler = null;
+            mapStoreScheduler = null;
         }
-        ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
-        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
+        ScheduledExecutorService defaultScheduledExecutor = nodeEngine.getExecutionService()
+                .getDefaultScheduledExecutor();
+        ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(defaultScheduledExecutor,
+                new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
+        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(defaultScheduledExecutor,
+                new EvictionProcessor(nodeEngine, mapService, name), ScheduleType.POSTPONE);
 
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef != null) {
-            this.wanReplicationPublisher = nodeEngine.getWanReplicationService().getWanReplicationListener(wanReplicationRef.getName());
+            this.wanReplicationPublisher = nodeEngine.getWanReplicationService().getWanReplicationListener(
+                    wanReplicationRef.getName());
             this.wanMergePolicy = mapService.getMergePolicy(wanReplicationRef.getMergePolicy());
         } else {
             wanMergePolicy = null;
@@ -161,7 +170,8 @@ public class MapContainer {
             strategy = partitioningStrategyConfig.getPartitioningStrategy();
             if (strategy == null && partitioningStrategyConfig.getPartitioningStrategyClass() != null) {
                 try {
-                    strategy = ClassLoaderUtil.newInstance(mapService.getNodeEngine().getConfigClassLoader(), partitioningStrategyConfig.getPartitioningStrategyClass());
+                    strategy = ClassLoaderUtil.newInstance(mapService.getNodeEngine().getConfigClassLoader(),
+                            partitioningStrategyConfig.getPartitioningStrategyClass());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
@@ -188,10 +198,11 @@ public class MapContainer {
             }
         }, 20, TimeUnit.MINUTES);
     }
-    public void shutDownMapStoreScheduledExecutor()
-    {
+
+    public void shutDownMapStoreScheduledExecutor() {
         mapService.getNodeEngine().getExecutionService().shutdownExecutor(mapStoreScheduledExecutorName);
     }
+
     public Map<Data, Object> getInitialKeys() {
         return initialKeys;
     }
@@ -204,12 +215,8 @@ public class MapContainer {
         return ttlEvictionScheduler;
     }
 
-    public EntryTaskScheduler getMapStoreWriteScheduler() {
-        return mapStoreWriteScheduler;
-    }
-
-    public EntryTaskScheduler getMapStoreDeleteScheduler() {
-        return mapStoreDeleteScheduler;
+    public EntryTaskScheduler getMapStoreScheduler() {
+        return mapStoreScheduler;
     }
 
     public IndexService getIndexService() {
@@ -289,7 +296,7 @@ public class MapContainer {
         return partitioningStrategy;
     }
 
-    public SizeEstimator getNearCacheSizeEstimator(){
+    public SizeEstimator getNearCacheSizeEstimator() {
         return nearCacheSizeEstimator;
     }
 

@@ -1,12 +1,13 @@
 ## Custom Serialization
 
-Hazelcast lets you to plug a custom serializer to be used for serialization of objects.
+Hazelcast lets you plug a custom serializer to be used for serialization of objects.
 
-Let's say you have a class
+Assume that you have a class
 Foo
 and you would like to customize the serialization. The reasons could be
 Foo
 is not Serializable or you are not happy with the default serialization.
+
 ```java
 public class Foo {
     private String foo;
@@ -18,11 +19,12 @@ public class Foo {
     }
 }
 ```
-Let's say our custom serialization will serialize
+
+Assume that our custom serialization will serialize
 Foo
 into XML. First we need to implement a
-com.hazelcast.nio.serialization.StreamSerializer
-. A very simple one that uses XMLEncoder and XMLDecoder, would look like the following:
+`com.hazelcast.nio.serialization.StreamSerializer`. A very simple one that uses XMLEncoder and XMLDecoder, would look like the following:
+
 ```java
 public static class FooXmlSerializer implements StreamSerializer<Foo> {
 
@@ -52,9 +54,12 @@ public static class FooXmlSerializer implements StreamSerializer<Foo> {
     }
 }
 ```
-Note that the
-typeId
-must be unique as Hazelcast will use it to lookup the StreamSerializer while it de-serializes the object. Now the last required step is to register the StreamSerializer to the Configuration
+
+Note that
+`typeId`
+must be unique as Hazelcast will use it to lookup the StreamSerializer while it de-serializes the object. Now, the last required step is to register the StreamSerializer to the Configuration.
+
+
 Programmatic Configuration
 
 ```java
@@ -76,7 +81,7 @@ XML Configuration
 </hazelcast>
 ```
 From now on, Hazelcast will use
-FooXmlSerializer
+`FooXmlSerializer`
 to serialize Foo objects. This way one can write an adapter (
 StreamSerializer
 ) for any Serialization framework and plug it into Hazelcast.

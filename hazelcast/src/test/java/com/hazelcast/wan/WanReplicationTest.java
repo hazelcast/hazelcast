@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
@@ -15,13 +14,12 @@ import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.BrokenBarrierException;
@@ -35,8 +33,10 @@ import static org.junit.Assert.*;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class WanReplicationTest extends HazelcastTestSupport{
+
+    private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE= 3 * 60;
 
     private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
 
@@ -63,6 +63,11 @@ public class WanReplicationTest extends HazelcastTestSupport{
         configC = new Config();
         configC.getGroupConfig().setName("C");
         configC.getNetworkConfig().setPort(5901);
+    }
+
+    @After
+    public void cleanup() {
+        HazelcastInstanceFactory.shutdownAll();
     }
 
 
@@ -114,10 +119,12 @@ public class WanReplicationTest extends HazelcastTestSupport{
     }
 
 
-
-    private void setupReplicateFrom(Config fromConfig, Config toConfig, int clusterSz, String setupName, String policy){
-        WanReplicationConfig wanConfig = new WanReplicationConfig();
-        wanConfig.setName(setupName);
+    private void setupReplicateFrom(Config fromConfig, Config toConfig, int clusterSz, String setupName, String policy) {
+        WanReplicationConfig wanConfig = fromConfig.getWanReplicationConfig(setupName);
+        if (wanConfig == null) {
+            wanConfig = new WanReplicationConfig();
+            wanConfig.setName(setupName);
+        }
         wanConfig.addTargetClusterConfig(targetCluster(toConfig, clusterSz));
 
         WanReplicationRef wanRef = new WanReplicationRef();
@@ -133,6 +140,14 @@ public class WanReplicationTest extends HazelcastTestSupport{
         IMap m = node.getMap(mapName);
         for(; start<end; start++)
             m.put(start, node.getConfig().getGroupConfig().getName()+start);
+    }
+
+    private void increaseHitCount(HazelcastInstance[] cluster, String mapName, int start, int end, int repeat) {
+        HazelcastInstance node = getNode(cluster);
+        IMap m = node.getMap(mapName);
+        for(; start<end; start++)
+            for(int i=0; i<repeat; i++)
+            m.get(start);
     }
 
     private void removeDataIn(HazelcastInstance[] cluster, String mapName, int start, int end){
@@ -187,7 +202,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
             public void run() {
                 assertTrue(checkKeysIn(cluster, mapName, start, end) );
             }
-        });
+        },ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
     }
 
     private void assertDataInFrom(final HazelcastInstance[] cluster, final String mapName, final int start, final int end, final HazelcastInstance[] sourceCluster){
@@ -195,7 +210,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
             public void run() {
                 assertTrue(checkDataInFrom(cluster, mapName, start, end, sourceCluster) );
             }
-        });
+        },ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
     }
 
     private void assertKeysNotIn(final HazelcastInstance[] cluster, final String mapName, final int start, final int end){
@@ -203,7 +218,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
             public void run() {
                 assertTrue(checkKeysNotIn(cluster, mapName, start, end) );
             }
-        });
+        },ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
     }
 
 
@@ -250,26 +265,20 @@ public class WanReplicationTest extends HazelcastTestSupport{
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
 
-        configA.getMapConfig("default").setTimeToLiveSeconds(2);
-        configB.getMapConfig("default").setTimeToLiveSeconds(2);
-        configC.getMapConfig("default").setTimeToLiveSeconds(2);
+        configA.getMapConfig("default").setTimeToLiveSeconds(10);
+        configB.getMapConfig("default").setTimeToLiveSeconds(10);
+        configC.getMapConfig("default").setTimeToLiveSeconds(10);
 
 
         initAllClusters();
 
-        createDataIn(clusterA, "map", 0,  10);
+        createDataIn(clusterA, "map", 0, 10);
         assertDataInFrom(clusterC, "map", 0,  10, clusterA);
 
         createDataIn(clusterB, "map", 10, 20);
         assertDataInFrom(clusterC, "map", 10, 20, clusterB);
 
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
+        sleepSeconds(10);
         assertKeysNotIn(clusterA, "map",  0, 10);
         assertKeysNotIn(clusterB, "map", 10, 20);
         assertKeysNotIn(clusterC, "map",  0, 20);
@@ -279,7 +288,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     //"Issue #1371 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
     @Test
-    @Category(ProblematicTest.class)
+    @Ignore //replica of replica is not supported
     public void VTopo_1activeActiveReplicar_2producers_Test_PassThroughMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -373,8 +382,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
         assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
 
-        createDataIn(clusterB, "map", 0, 1000);
-        createDataIn(clusterB, "map", 0, 1000);
+        increaseHitCount(clusterB, "map", 0, 1000, 10);
         createDataIn(clusterB, "map", 0, 1000);
 
 
@@ -388,8 +396,9 @@ public class WanReplicationTest extends HazelcastTestSupport{
     @Category(ProblematicTest.class)
     public void VTopo_2passiveReplicar_1producer_Test(){
 
-        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
+        String replicaName="multiReplica";
+        setupReplicateFrom(configA, configB, clusterB.length, replicaName, PassThroughMergePolicy.class.getName());
+        setupReplicateFrom(configA, configC, clusterC.length, replicaName, PassThroughMergePolicy.class.getName());
         initAllClusters();
 
 
@@ -501,13 +510,14 @@ public class WanReplicationTest extends HazelcastTestSupport{
         createDataIn(clusterA, "map", 0, 1000);
         assertDataInFrom(clusterB, "map", 0, 1000, clusterA);
 
+        increaseHitCount(clusterB, "map", 0, 500, 10);
         createDataIn(clusterB, "map", 0, 500);
         assertDataInFrom(clusterA, "map", 0, 500, clusterB);
     }
 
     //("Issue #1372  is a chain of replicars a valid topology")//TODO
     @Test
-    @Category(ProblematicTest.class)
+    @Ignore // replica of replica is not supported
     public void chainTopo_2passiveReplicars_1producer(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -525,9 +535,8 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
 
-    //("Issue #1372 is a ring topology valid")//TODO
     @Test
-    @Category(ProblematicTest.class)
+    @Ignore // currently Ring is not supported!
     public void replicationRing(){
 
         setupReplicateFrom(configA, configB, clusterB.length,"atob", PassThroughMergePolicy.class.getName());

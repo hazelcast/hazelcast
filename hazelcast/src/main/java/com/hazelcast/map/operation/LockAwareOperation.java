@@ -44,10 +44,6 @@ public abstract class LockAwareOperation extends KeyBasedMapOperation implements
         return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
     }
 
-    public long getWaitTimeoutMillis() {
-        return -1;
-    }
-
     public abstract void onWaitExpire();
 
     public final WaitNotifyKey getWaitKey() {

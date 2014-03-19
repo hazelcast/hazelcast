@@ -246,6 +246,13 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         return hazelcast.getQueue(queueName).poll();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public int size(String queueName) {
+        return hazelcast.getQueue(queueName).size();
+    }
+
     public void sendResponse(TextCommand textCommand) {
         if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
             throw new RuntimeException("Shouldn't reply " + textCommand);

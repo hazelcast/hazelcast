@@ -17,13 +17,13 @@
 package com.hazelcast.client.executor;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -34,15 +34,19 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ExecutionDelayTest extends HazelcastTestSupport{
+public class ExecutionDelayTest extends HazelcastTestSupport {
 
     private static final int NODES = 3;
     private final List<HazelcastInstance> hzs = new ArrayList<HazelcastInstance>(NODES);
@@ -51,7 +55,6 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
     @Before
     public void init() {
         counter.set(0);
-
         for (int i = 0; i < NODES; i++) {
             hzs.add(Hazelcast.newHazelcastInstance());
         }
@@ -59,13 +62,12 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
 
     @After
     public void destroy() throws InterruptedException {
-        Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
-    @Category(ProblematicTest.class)
-    public void testExecutorOneNodeFailsUnexpectedly() throws InterruptedException {
+    public void testExecutorOneNodeFailsUnexpectedly() throws InterruptedException, ExecutionException {
         final int executions = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
@@ -90,8 +92,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
     }
 
     @Test
-    @Category(ProblematicTest.class)
-    public void testExecutorOneNodeShutdown() throws InterruptedException {
+    public void testExecutorOneNodeShutdown() throws InterruptedException, ExecutionException {
         final int executions = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
@@ -116,39 +117,23 @@ public class ExecutionDelayTest extends HazelcastTestSupport{
         }
     }
 
-    private void runClient(Task task, int executions) throws InterruptedException {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+    private void runClient(Task task, int executions) throws InterruptedException, ExecutionException {
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IExecutorService executor = client.getExecutorService("executor");
-
-        for (int executionIteration = 0; executionIteration < executions; executionIteration++) {
-            boolean stop = false;
-            do {
-                try {
-                    Future<Long> future = executor.submitToKeyOwner(task, executionIteration);
-                    future.get();
-                    stop = true;
-                } catch (Exception exception) {
-                }
-            } while (!stop);
-
-            //System.out.println(execution + ": " + time + " mls");
+        for (int i = 0; i < executions; i++) {
+            Future future = executor.submitToKeyOwner(task, i);
+            future.get();
             Thread.sleep(100);
         }
-        client.shutdown();
     }
 
-    private static class Task implements Serializable, Callable<Long> {
+    private static class Task implements Serializable, Callable {
         @Override
-        public Long call() throws Exception {
-            long start = System.currentTimeMillis();
-            //do something
-            try {
-                Thread.sleep(100);
-                counter.incrementAndGet();
-            } catch (InterruptedException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
-            return System.currentTimeMillis() - start;
+        public Object call() throws Exception {
+            counter.incrementAndGet();
+            return null;
         }
     }
 }

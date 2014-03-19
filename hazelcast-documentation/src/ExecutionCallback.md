@@ -1,7 +1,7 @@
 
 ## Execution Callback
 
-`ExecutionCallback` allows you to asynchronously get notified when the execution is done.
+`ExecutionCallback` allows you to asynchronously get notified when the execution is done. Below is a sample code.
 
 ```java
 public class Fibonacci<Long> implements Callable<Long>, Serializable {

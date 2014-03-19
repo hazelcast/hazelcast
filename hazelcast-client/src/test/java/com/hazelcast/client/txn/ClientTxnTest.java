@@ -23,12 +23,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -48,30 +47,30 @@ public class ClientTxnTest {
     static HazelcastInstance server;
     static HazelcastInstance second;
 
-    @BeforeClass
-    public static void init(){
+    @Before
+    public void init(){
         server = Hazelcast.newHazelcastInstance();
         final ClientConfig config = new ClientConfig();
-        config.setRedoOperation(true);
+        config.getNetworkConfig().setRedoOperation(true);
         hz = HazelcastClient.newHazelcastClient(config);
         second = Hazelcast.newHazelcastInstance();
     }
 
-    @AfterClass
-    public static void destroy() {
+    @After
+    public void destroy() {
         hz.shutdown();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testTxnRollback() throws Exception {
-
+        final String queueName = "testTxnRollback";
         final TransactionContext context = hz.newTransactionContext();
         CountDownLatch latch = new CountDownLatch(1);
         try {
             context.beginTransaction();
             assertNotNull(context.getTxnId());
-            final TransactionalQueue queue = context.getQueue("testTxnRollback");
+            final TransactionalQueue queue = context.getQueue(queueName);
             queue.offer("item");
 
             server.shutdown();
@@ -83,10 +82,38 @@ public class ClientTxnTest {
             latch.countDown();
         }
 
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+        final IQueue<Object> q = hz.getQueue(queueName);
+        assertNull(q.poll());
+        assertEquals(0, q.size());
+    }
+
+    @Test
+    public void testTxnRollbackOnServerCrash() throws Exception {
+        final String queueName = "testTxnRollbackOnServerCrash";
+        final TransactionContext context = hz.newTransactionContext();
+        CountDownLatch latch = new CountDownLatch(1);
+
+        context.beginTransaction();
+
+        final TransactionalQueue queue = context.getQueue(queueName);
+
+        String key = HazelcastTestSupport.generateKeyOwnedBy(server);
+        queue.offer(key);
+        server.getLifecycleService().terminate();
+
+        try{
+            context.commitTransaction();
+            fail("commit should throw exception !");
+        } catch (TransactionException e){
+            context.rollbackTransaction();
+            latch.countDown();
+        }
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-//
-        final IQueue<Object> q = hz.getQueue("testTxnRollback");
+
+        final IQueue<Object> q = hz.getQueue(queueName);
         assertNull(q.poll());
         assertEquals(0, q.size());
     }

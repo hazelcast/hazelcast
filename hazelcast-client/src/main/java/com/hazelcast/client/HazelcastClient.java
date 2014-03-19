@@ -78,6 +78,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -104,7 +105,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class HazelcastClient implements HazelcastInstance {
 
-    private final static ClientOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new ClientOutOfMemoryHandler();
+    static {
+        OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
+    }
+
     private final static AtomicInteger CLIENT_ID = new AtomicInteger();
     private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private final int id = CLIENT_ID.getAndIncrement();
@@ -112,7 +116,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationService serializationService;
+    private final SerializationServiceImpl serializationService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -129,6 +133,7 @@ public final class HazelcastClient implements HazelcastInstance {
         instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
+        SerializationService ss;
         try {
             String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
             final PartitioningStrategy partitioningStrategy;
@@ -137,7 +142,7 @@ public final class HazelcastClient implements HazelcastInstance {
             } else {
                 partitioningStrategy = new DefaultPartitioningStrategy();
             }
-            serializationService = new SerializationServiceBuilder()
+            ss = new SerializationServiceBuilder()
                     .setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
                     .setClassLoader(config.getClassLoader())
                     .setConfig(config.getSerializationConfig())
@@ -146,6 +151,7 @@ public final class HazelcastClient implements HazelcastInstance {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        serializationService = (SerializationServiceImpl) ss;
         proxyManager = new ProxyManager(this);
         executionService = new ClientExecutionServiceImpl(instanceName, threadGroup,
                 Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
@@ -178,7 +184,6 @@ public final class HazelcastClient implements HazelcastInstance {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             final HazelcastClient client = new HazelcastClient(config);
             client.start();
-            OutOfMemoryErrorDispatcher.addHandler(OUT_OF_MEMORY_HANDLER);
             OutOfMemoryErrorDispatcher.register(client);
             proxy = new HazelcastClientProxy(client);
             CLIENTS.put(client.id, proxy);
@@ -444,5 +449,6 @@ public final class HazelcastClient implements HazelcastInstance {
         transactionManager.shutdown();
         connectionManager.shutdown();
         proxyManager.destroy();
+        serializationService.destroy();
     }
 }

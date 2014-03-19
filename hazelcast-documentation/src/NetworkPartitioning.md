@@ -1,39 +1,39 @@
 
 ### Network Partitioning - Split Brain Syndrome
 
-Imagine that you have 10-node cluster and for some reason the network is divided into two in a way that 4 servers cannot see the other 6. As a result you ended up having two separate clusters; 4-node cluster and 6-node cluster. Members in each sub-cluster are thinking that the other nodes are dead even though they are not. This situation is called Network Partitioning (aka Split-Brain Syndrome).
+Imagine that you have 10-node cluster and for some reason the network is divided into two in a way that 4 servers cannot see the other 6. As a result you ended up having two separate clusters; 4-node cluster and 6-node cluster. Members in each sub-cluster are thinking that the other nodes are dead even though they are not. This situation is called Network Partitioning (a.k.a. Split-Brain Syndrome).
 
-Since it is a network failure, there is no way to avoid it programatically and your application will run as two separate independent clusters but we should be able to answer the following questions: "What will happen after the network failure is fixed and connectivity is restored between these two clusters? Will these two clusters merge into one again? If they do, how are the data conflicts resolved, because you might end up having two different values for the same key in the same map?"
+Since it is a network failure, there is no way to avoid it programatically and your application will run as two separate independent clusters. But we should be able to answer the following questions: "What will happen after the network failure is fixed and connectivity is restored between these two clusters? Will these two clusters merge into one again? If they do, how are the data conflicts resolved, because you might end up having two different values for the same key in the same map?"
 
 Here is how Hazelcast deals with it:
 
 1.  The oldest member of the cluster checks if there is another cluster with the same group-name and group-password in the network.
 
-2.  If the oldest member founds such cluster, then figures out which cluster should merge to the other.
+2.  If the oldest member finds such cluster, then it figures out which cluster should merge to the other.
 
 3.  Each member of the merging cluster will do the following:
 
--   pause
+	-   pause
 
--   take locally owned map entries
+	-   take locally owned map entries
 
--   close all its network connections (detach from its cluster)
+	-   close all of its network connections (detach from its cluster)
 
--   join to the new cluster
+	-   join to the new cluster
 
--   send merge request for each its locally owned map entry
+	-   send merge request for each of its locally owned map entry
 
--   resume
+	-   resume
 
-So each member of the merging cluster is actually rejoining to the new cluster and sending merge request for each its locally owned map entry.
+So each member of the merging cluster is actually rejoining to the new cluster and sending merge request for each of its locally owned map entry.
 
-***Q: Which cluster will merge into the other?***
+***Question***: Which cluster will merge into the other?
 
-A. Smaller cluster will merge into the bigger one. If they have equal number of members then a hashing algorithm determines the merging cluster.
+***Answer***: Smaller cluster will merge into the bigger one. If they have equal number of members then a hashing algorithm determines the merging cluster.
 
-***Q. Each cluster may have different versions of the same key in the same map. How is the conflict resolved?***
+***Question***: Each cluster may have different versions of the same key in the same map. How is the conflict resolved?
 
-A. Destination cluster will decide how to handle merging entry based on the `MergePolicy` set for that map. There are built-in merge policies such as `PassThroughMergePolicy, PutIfAbsentMapMergePolicy, HigherHitsMapMergePolicy and LatestUpdateMapMergePolicy` but you can develop your own merge policy by implementing `com.hazelcast.map.merge.MapMergePolicy`. You should set the full class name of your implementation to the merge-policy configuration.
+***Answer***: Destination cluster will decide how to handle merging entry based on the `MergePolicy` set for that map. There are built-in merge policies such as `PassThroughMergePolicy`, `PutIfAbsentMapMergePolicy`, `HigherHitsMapMergePolicy` and `LatestUpdateMapMergePolicy`. But you can develop your own merge policy by implementing `com.hazelcast.map.merge.MapMergePolicy`. You should set the full class name of your implementation to the merge-policy configuration.
 
 ```java
 public interface MergePolicy {
@@ -50,7 +50,8 @@ public interface MergePolicy {
     Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry);
 }
 ```
-Here is how merge policies are specified per map.
+
+Here is how merge policies are specified per map:
 
 ```xml
 <hazelcast>

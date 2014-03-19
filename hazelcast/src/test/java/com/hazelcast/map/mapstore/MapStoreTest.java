@@ -16,14 +16,30 @@
 
 package com.hazelcast.map.mapstore;
 
-import com.hazelcast.config.*;
-import com.hazelcast.core.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.MapLoaderLifecycleSupport;
+import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
+import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
@@ -38,14 +54,34 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.Collection;
+import java.util.Random;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.TreeSet;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.query.SampleObjects.Employee;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -1317,6 +1353,192 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(2, keys.size());
         assertEquals("true", mapStoreWrapper.load("my-prop-1"));
         assertEquals("foo", mapStoreWrapper.load("my-prop-2"));
+    }
+
+    @Test
+    public void testMapStoreNotCalledFromEntryProcessorBackup() throws Exception {
+        final String mapName = "testMapStoreNotCalledFromEntryProcessorBackup_" + randomString();
+        final int instanceCount = 2;
+        Config config = new Config();
+        // Configure map with one backup and dummy map store
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setBackupCount(1);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(1, 120);
+        mapStoreConfig.setImplementation(mapStore);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final IMap<String, String> map = instance1.getMap(mapName);
+        final String key = "key";
+        final String value = "value";
+        //executeOnKey
+        map.executeOnKey(key, new ValueSetterEntryProcessor(value));
+        mapStore.awaitStores();
+
+        assertEquals(value, map.get(key));
+        assertEquals(1, mapStore.count.intValue());
+    }
+
+    @Test
+    public void testMapStoreWriteRemoveOrder() {
+        final String mapName = randomMapName("testMapStoreWriteDeleteOrder");
+        final int numIterations = 40;
+        final int writeDelaySeconds = 10;
+        // create map store implementation
+        final RecordingMapStore store = new RecordingMapStore(numIterations,numIterations);
+        // create hazelcast config
+        final Config config = newConfig(mapName, store, writeDelaySeconds);
+        // start hazelcast instance
+        final HazelcastInstance hzInstance = createHazelcastInstance(config);
+        // loop over num iterations
+        final IMap<String, String> map = hzInstance.getMap(mapName);
+        for (int k = 0; k < numIterations; k++) {
+            String key = String.valueOf(k + 10); // 2 digits for sorting in output
+            String value = "v:" + key;
+            // add entry
+            map.put(key, value);
+            // sleep 300ms
+            sleepMillis(300);
+            // remove entry
+            map.remove(key);
+        }
+        // wait for store to finish
+        store.awaitStores();
+        // wait for remove to finish
+        store.awaitRemoves();
+
+        assertEquals(0, store.getStore().keySet().size());
+    }
+
+    public static class RecordingMapStore implements MapStore<String, String> {
+
+        private static final boolean DEBUG = false;
+
+        private final CountDownLatch expectedStore;
+        private final CountDownLatch expectedRemove;
+
+        private final ConcurrentHashMap<String, String> store;
+
+        public RecordingMapStore(int expectedStore, int expectedRemove) {
+            this.expectedStore = new CountDownLatch(expectedStore);
+            this.expectedRemove = new CountDownLatch(expectedRemove);
+            this.store = new ConcurrentHashMap<String, String>();
+        }
+
+        public ConcurrentHashMap<String, String> getStore() {
+            return store;
+        }
+
+        @Override
+        public String load(String key) {
+            log("load(" + key + ") called.");
+            return store.get(key);
+        }
+
+        @Override
+        public Map<String, String> loadAll(Collection<String> keys) {
+            if (DEBUG) {
+                List<String> keysList = new ArrayList<String>(keys);
+                Collections.sort(keysList);
+                log("loadAll(" + keysList + ") called.");
+            }
+            Map<String, String> result = new HashMap<String, String>();
+            for (String key : keys) {
+                String value = store.get(key);
+                if (value != null) {
+                    result.put(key, value);
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public Set<String> loadAllKeys() {
+            log("loadAllKeys() called.");
+            Set<String> result = new HashSet<String>(store.keySet());
+            log("loadAllKeys result = " + result);
+            return result;
+        }
+
+        @Override
+        public void store(String key, String value) {
+            log("store(" + key + ") called.");
+            String valuePrev = store.put(key, value);
+            expectedStore.countDown();
+            if (valuePrev != null) {
+                log("- Unexpected Update (operations reordered?): " + key);
+            }
+        }
+
+        @Override
+        public void storeAll(Map<String, String> map) {
+            if (DEBUG) {
+                TreeSet<String> setSorted = new TreeSet<String>(map.keySet());
+                log("storeAll(" + setSorted + ") called.");
+            }
+            store.putAll(map);
+            final int size = map.keySet().size();
+            for (int i = 0; i < size; i++) {
+                expectedStore.countDown();
+            }
+        }
+
+        @Override
+        public void delete(String key) {
+            log("delete(" + key + ") called.");
+            String valuePrev = store.remove(key);
+            expectedRemove.countDown();
+            if (valuePrev == null) {
+                log("- Unnecessary delete (operations reordered?): " + key);
+            }
+        }
+
+        @Override
+        public void deleteAll(Collection<String> keys) {
+            if (DEBUG) {
+                List<String> keysList = new ArrayList<String>(keys);
+                Collections.sort(keysList);
+                log("deleteAll(" + keysList + ") called.");
+            }
+            for (String key : keys) {
+                String valuePrev = store.remove(key);
+                expectedRemove.countDown();
+                if (valuePrev == null) {
+                    log("- Unnecessary delete (operations reordered?): " + key);
+                }
+            }
+        }
+
+        public void awaitStores() {
+            assertOpenEventually(expectedStore);
+        }
+        public void awaitRemoves() {
+            assertOpenEventually(expectedRemove);
+        }
+
+        private void log(String msg) {
+            if (DEBUG) {
+                System.out.println(msg);
+            }
+        }
+
+    }
+
+    private static class ValueSetterEntryProcessor extends AbstractEntryProcessor<String, String> {
+        private final String value;
+
+        ValueSetterEntryProcessor(String value) {
+            this.value = value;
+        }
+
+        public Object process(Map.Entry entry) {
+            entry.setValue(value);
+            return null;
+        }
     }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {

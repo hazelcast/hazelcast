@@ -33,9 +33,9 @@ public final class StripedExecutor implements Executor {
 
     private final Random rand = new Random();
 
-    private volatile boolean live = true;
+    private final int maximumQueueSize;
 
-    private int maximumQueueSize;
+    private volatile boolean live = true;
 
     public StripedExecutor(Executor executor, int workerCount) {
         this(executor, workerCount, Integer.MAX_VALUE);

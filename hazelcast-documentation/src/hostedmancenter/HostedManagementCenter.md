@@ -7,7 +7,7 @@
 
 # Introduction
 
-Hazelcast Hosted Management Center enables you to monitor and manage your nodes running Hazelcast. In addition to monitoring overall state of your clusters, you can also analyze and browse your data structures in detail, update map configurations and take thread dump from nodes. With its scripting and console module, you can run scripts (JavaScript, Groovy etc.) and commands on your nodes. It is a web based tool and you can deploy it into your internal server and serve your users.
+Hazelcast Hosted Management Center enables you to monitor and manage your nodes running Hazelcast. In addition to monitoring overall state of your clusters, you can also analyze and browse your data structures in detail, update map configurations and take thread dump from nodes. With its scripting and console module, you can run scripts (JavaScript, Groovy, etc.) and commands on your nodes. It is a web based tool and you can deploy it into your internal server and serve your users. ^super^script 
 
 To be able to use Hosted Management Center to monitor your cluster:
 
@@ -249,7 +249,7 @@ Using the menu item **Queues**, you can monitor your queues data structure. When
 ![](images/Queues-Home.jpg)
 
 
-On top of the page, there are small charts to monitor the size, offers and polls of the selected queue in real-time. All charts' X-axis shows the current system time. and a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart. Below monitoring charts are available:
+On top of the page, there are small charts to monitor the size, offers and polls of the selected queue in real-time. All charts' X-axis shows the current system time. And a chart can be opened as a separate dialog by clicking on the ![](images/Maximizechart.jpg) button placed at top right of each chart. Below monitoring charts are available:
 
 -	**Size**: Monitors the size of the queue. Y-axis is the entry count (should be multiplied by 1000).
 -	**Offers**: Monitors the offers sent to the selected queue. Y-axis is the offer count.
@@ -278,15 +278,20 @@ You can navigate through the pages using the buttons placed at the bottom right 
 
 You can monitor your topics' metrics by clicking the topic name listed on the left panel under **Topics** menu item. A new tab for monitoring that topic instance is opened on the right, as shown below.
 
-**??? No Topics seen on the HMC Test Cluster ???**
+![](images/ManCenter-Topics.jpg)
 
-There are two charts which reflects live data, and a data table lists the live data distributed among members.
+On top of the page, there are two charts to monitor the **Publishes** and **Receives** in real-time. They show the published and received message counts of the cluster, nodes of which are subscribed to the selected topic. Both charts' X-axis shows the current system time. and a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart.
+
+Under these charts, there is Topic Operation Statistics table. From left to right, this table lists the IP addresses and ports of each node, and counts of message published and receives per second in real-time. You can select the period in the combo box placed at top right corner of the table, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**. 
+
+You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
+
 
 
 ---
 
 # MultiMaps
-This monitoring option is similar to the **Maps** one. Same monitoring charts and data tables are used to monitor MultiMaps. Differences are not being able to browse the MultiMaps and to re-configure it. Please see [Maps](#maps).
+This monitoring option is similar to the **Maps** one. Same monitoring charts and data tables are used to monitor MultiMaps. Differences are; not being able to browse the MultiMaps and to re-configure it. Please see [Maps](#maps).
 
 ---
 
@@ -301,7 +306,7 @@ On top of the page, there are small charts to monitor the pending, started, comp
 
 When you click on a desired monitoring, the chart is loaded with the selected option. Also, a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart. Below monitoring charts are available:
 
--	**Pending**: Monitors the pending executors. Y-axis is the ???.
+-	**Pending**: Monitors the pending executors. Y-axis is the executor count.
 -	**Started**: Monitors the started executors. Y-axis is the executor count.
 -	**Start Lat. (msec)**: Shows the latency when executors are started. Y-axis is the duration in milliseconds.
 -	**Completed**: Monitors the completed executors. Y-axis is the executor count.

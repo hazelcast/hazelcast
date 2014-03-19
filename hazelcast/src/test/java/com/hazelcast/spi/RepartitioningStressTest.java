@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +49,7 @@ import static org.junit.Assert.fail;
  * are send to the wrong machine.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class RepartitioningStressTest extends HazelcastTestSupport {
 
     private BlockingQueue<HazelcastInstance> queue = new LinkedBlockingQueue<HazelcastInstance>();

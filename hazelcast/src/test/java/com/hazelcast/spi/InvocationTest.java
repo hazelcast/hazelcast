@@ -24,28 +24,20 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.io.Serializable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -64,8 +56,8 @@ public class InvocationTest extends HazelcastTestSupport {
         OperationService service = localNode.nodeEngine.getOperationService();
         Operation op = new PartitionTargetOperation();
         String partitionKey = generateKeyOwnedBy(remote);
-        int partitionid = localNode.nodeEngine.getPartitionService().getPartitionId(partitionKey);
-        Future f = service.createInvocationBuilder(null, op, partitionid).setCallTimeout(30000).invoke();
+        int partitionId = localNode.nodeEngine.getPartitionService().getPartitionId(partitionKey);
+        Future f = service.createInvocationBuilder(null, op, partitionId).setCallTimeout(30000).invoke();
         sleepSeconds(1);
 
         remote.shutdown();
@@ -107,7 +99,6 @@ public class InvocationTest extends HazelcastTestSupport {
         }
     }
 
-
     /**
      * Operation send to a specific target partition.
      */
@@ -119,7 +110,6 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp1() throws InterruptedException {
         HazelcastInstance hz = createHazelcastInstance();
         final IQueue<Object> q = hz.getQueue("queue");
@@ -150,12 +140,17 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testWaitingIndefinitely() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "2000");
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
+
+        // need to warm-up partitions,
+        // since waiting for lock backup can take up to 5 seconds
+        // and that may cause OperationTimeoutException with "No response for 4000 ms" error.
+        warmUpPartitions(instances);
 
         instances[0].getLock("testWaitingIndefinitely").lock();
 
@@ -182,7 +177,6 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testWaitingInfinitelyForTryLock() throws InterruptedException {
        final Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "2000");
@@ -206,7 +200,6 @@ public class InvocationTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testInterruptionDuringBlockingOp2() throws InterruptedException {
         HazelcastInstance hz = createHazelcastInstance();
         final ILock lock = hz.getLock("lock");

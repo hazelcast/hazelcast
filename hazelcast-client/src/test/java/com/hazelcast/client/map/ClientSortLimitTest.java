@@ -101,6 +101,31 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGoTo_previousPage_BeforeTheStart() {
+        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        predicate.previousPage();
+
+        Collection<Integer> values = map.values(predicate);
+        values = map.values(predicate);
+        assertIterableEquals(values, 0, 1, 2, 3, 4);
+    }
+
+    @Test
+    public void testGoTo_NextPage_AfterTheEnd() {
+        final PagingPredicate predicate = new PagingPredicate(pageSize);
+
+        for ( int i=0; i < size/pageSize; i++ ) {
+            predicate.nextPage();
+        }
+
+        Collection<Integer> values = map.values(predicate);
+        values = map.values(predicate);
+
+        assertEquals( size/pageSize - 1, predicate.getPage());
+        assertIterableEquals(values, 45, 46, 47, 48, 49);
+    }
+
+    @Test
     public void testPagingWithoutFilteringAndComparator() {
         Set<Integer> set = new HashSet<Integer>();
         final PagingPredicate predicate = new PagingPredicate(pageSize);

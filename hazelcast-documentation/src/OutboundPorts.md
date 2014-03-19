@@ -2,7 +2,7 @@
 
 ### Restricting Outbound Ports
 
-By default Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports.
+By default, Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports.
 
 ```xml
 <hazelcast>
@@ -28,4 +28,5 @@ networkConfig.addOutboundPort(37000);
 networkConfig.addOutboundPort(37001);
 ...
 ```
-*\* You can use port ranges and/or comma separated ports.*
+
+***Note:*** *You can use port ranges and/or comma separated ports.*

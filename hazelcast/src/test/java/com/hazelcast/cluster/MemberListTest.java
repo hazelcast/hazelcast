@@ -27,12 +27,9 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,7 +48,7 @@ import static org.junit.Assert.assertEquals;
  * Tests for issue #274
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class MemberListTest {
 
     @Before
@@ -71,11 +68,11 @@ public class MemberListTest {
         Config c2 = buildConfig(false);
         Config c3 = buildConfig(false);
 
-        c1.getNetworkConfig().setPort(35701);
-        c2.getNetworkConfig().setPort(35702);
-        c3.getNetworkConfig().setPort(35703);
+        c1.getNetworkConfig().setPort(25701);
+        c2.getNetworkConfig().setPort(25702);
+        c3.getNetworkConfig().setPort(25703);
 
-        List<String> allMembers = Arrays.asList("127.0.0.1:35701, 127.0.0.1:35702, 127.0.0.1:35703");
+        List<String> allMembers = Arrays.asList("127.0.0.1:25701, 127.0.0.1:25702, 127.0.0.1:25703");
         c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
         c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
         c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
@@ -160,11 +157,11 @@ public class MemberListTest {
         Config c2 = buildConfig(false);
         Config c3 = buildConfig(false);
 
-        c1.getNetworkConfig().setPort(45701);
-        c2.getNetworkConfig().setPort(45702);
-        c3.getNetworkConfig().setPort(45703);
+        c1.getNetworkConfig().setPort(35701);
+        c2.getNetworkConfig().setPort(35702);
+        c3.getNetworkConfig().setPort(35703);
 
-        List<String> allMembers = Arrays.asList("127.0.0.1:45701, 127.0.0.1:45702, 127.0.0.1:45703");
+        List<String> allMembers = Arrays.asList("127.0.0.1:35701, 127.0.0.1:35702, 127.0.0.1:35703");
         c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
         c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
         c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
@@ -214,11 +211,11 @@ public class MemberListTest {
         Config c2 = buildConfig(false);
         Config c3 = buildConfig(false);
 
-        c1.getNetworkConfig().setPort(55701);
-        c2.getNetworkConfig().setPort(55702);
-        c3.getNetworkConfig().setPort(55703);
+        c1.getNetworkConfig().setPort(45701);
+        c2.getNetworkConfig().setPort(45702);
+        c3.getNetworkConfig().setPort(45703);
 
-        List<String> allMembers = Arrays.asList("127.0.0.1:55701, 127.0.0.1:55702, 127.0.0.1:55703");
+        List<String> allMembers = Arrays.asList("127.0.0.1:45701, 127.0.0.1:45702, 127.0.0.1:45703");
         c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
         c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
         c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
@@ -268,7 +265,8 @@ public class MemberListTest {
         c4.getNetworkConfig().setPort(55704);
         c5.getNetworkConfig().setPort(55705);
 
-        List<String> allMembers = Arrays.asList("127.0.0.1:55701", "127.0.0.1:55702", "127.0.0.1:55703", "127.0.0.1:55704", "127.0.0.1:55705");
+        List<String> allMembers = Arrays.asList("127.0.0.1:55701", "127.0.0.1:55702",
+                "127.0.0.1:55703", "127.0.0.1:55704", "127.0.0.1:55705");
         c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
         c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
         c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);

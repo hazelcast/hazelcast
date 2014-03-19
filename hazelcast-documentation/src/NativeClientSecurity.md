@@ -31,7 +31,7 @@ Authentication mechanism just works the same as cluster member authentication. I
 </security>
 ```
 
-You can define as many as `LoginModules` you wanted in configuration. Those are executed in given order. Usage attribute has 4 values; 'required', 'requisite', 'sufficient' and 'optional' as defined in `javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag`.
+You can define as many as `LoginModules` you want in configuration. Those are executed in the given order. Usage attribute has 4 values; 'required', 'requisite', 'sufficient' and 'optional' as defined in `javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag`.
 
 ```java
 final Credentials credentials = new UsernamePasswordCredentials("dev", "dev-pass");
@@ -40,7 +40,7 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient(credentials, "loca
 
 ### Authorization
 
-Hazelcast client authorization is configured by a client permission policy. Hazelcast has a default permission policy implementation that uses permission configurations defined in Hazelcast security configuration. Default policy permission checks are done against instance types (map, queue...), instance names (map, queue etc. name), instance actions (put, read, remove, add...), client endpoint addresses and client principal defined by Credentials object. Instance and principal names and endpoint addresses can be defined as wildcards(*). Take a look at Wildcard Name Configuration and Network Configuration pages.
+Hazelcast client authorization is configured by a client permission policy. Hazelcast has a default permission policy implementation that uses permission configurations defined in Hazelcast security configuration. Default policy permission checks are done against instance types (map, queue, etc.), instance names (map, queue, etc. name), instance actions (put, read, remove, add, etc.), client endpoint addresses and client principal defined by Credentials object. Instance and principal names and endpoint addresses can be defined as wildcards(*). Please see [Network Configuration](#network-configuration) and [Wildcard Configuration](#wildcard-configuration) sections.
 
 ```xml
 <security enabled="true">
@@ -99,7 +99,7 @@ Hazelcast client authorization is configured by a client permission policy. Haze
 </security>
 ```
 
-Users also can define their own policy by implementing `com.hazelcast.security.IPermissionPolicy`.
+The users also can define their own policy by implementing `com.hazelcast.security.IPermissionPolicy`.
 
 ```java
 package com.hazelcast.security;
@@ -117,13 +117,17 @@ public interface IPermissionPolicy {
 }
 ```
 
-Permission policy implementations can access client-permissions in configuration by using `SecurityConfig.getClientPermissionConfigs()` during `configure(SecurityConfig securityConfig, Properties properties)` method is called by Hazelcast. `IPermissionPolicy.getPermissions(Subject subject, Class<? extends Permission> type)` method is used to determine a client request has been granted permission to do a security-sensitive operation. Permission policy should return a `PermissionCollection` containing permissions of given type for given `Subject`. Hazelcast access controller will call `PermissionCollection.implies(Permission)` on returning `PermissionCollection` and will decide if current `Subject` has permitted to access to requested resources or not.
+Permission policy implementations can access client-permissions in configuration by using `SecurityConfig.getClientPermissionConfigs()` during `configure(SecurityConfig securityConfig, Properties properties)` method is called by Hazelcast.
+
+`IPermissionPolicy.getPermissions(Subject subject, Class<? extends Permission> type)` method is used to determine a client request has been granted permission to do a security-sensitive operation. 
+
+Permission policy should return a `PermissionCollection` containing permissions of given type for given `Subject`. Hazelcast access controller will call `PermissionCollection.implies(Permission)` on returning `PermissionCollection` and will decide if current `Subject` has permitted to access to requested resources or not.
 
 ### Permissions
 
 - All Permission
 
-```xml
+	```xml
 <all-permissions principal="principal">
     <endpoints>
         ...
@@ -133,7 +137,7 @@ Permission policy implementations can access client-permissions in configuration
 
 - Map Permission
 
-```xml
+	```xml
 <map-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -143,11 +147,11 @@ Permission policy implementations can access client-permissions in configuration
     </actions>
 </map-permission>
 ```
-Actions: all, create, destroy, put, read, remove, lock, intercept, index, listen
+	Actions: all, create, destroy, put, read, remove, lock, intercept, index, listen
 
 - Queue Permission
 
-```xml
+	```xml
 <queue-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -158,11 +162,11 @@ Actions: all, create, destroy, put, read, remove, lock, intercept, index, listen
 </queue-permission>
 ```
 
-Actions: all, create, destroy, add, remove, read, listen
+	Actions: all, create, destroy, add, remove, read, listen
 
 - Multimap Permission
 
-```xml
+	```xml
 <multimap-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -172,11 +176,11 @@ Actions: all, create, destroy, add, remove, read, listen
     </actions>
 </multimap-permission>
 ```
-Actions: all, create, destroy, put, read, remove, listen, lock
+	Actions: all, create, destroy, put, read, remove, listen, lock
 
 - Topic Permission
 
-```xml
+	```xml
 <topic-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -186,11 +190,11 @@ Actions: all, create, destroy, put, read, remove, listen, lock
     </actions>
 </topic-permission>
 ```
-Actions: create, destroy, publish, listen
+	Actions: create, destroy, publish, listen
 
 - List Permission
 
-```xml
+	```xml
 <list-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -200,11 +204,11 @@ Actions: create, destroy, publish, listen
     </actions>
 </list-permission>
 ```
-Actions: all, create, destroy, add, read, remove, listen
+	Actions: all, create, destroy, add, read, remove, listen
 
 - Set Permission
 
-```xml
+	```xml
 <set-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -214,11 +218,11 @@ Actions: all, create, destroy, add, read, remove, listen
     </actions>
 </set-permission>
 ```
-Actions: all, create, destroy, add, read, remove, listen
+	Actions: all, create, destroy, add, read, remove, listen
 
 - Lock Permission
 
-```xml
+	```xml
 <lock-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -228,11 +232,11 @@ Actions: all, create, destroy, add, read, remove, listen
     </actions>
 </lock-permission>
 ```
-Actions: all, create, destroy, lock, read
+	Actions: all, create, destroy, lock, read
 
 - AtomicLong Permission
 
-```xml
+	```xml
 <atomic-long-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -242,11 +246,11 @@ Actions: all, create, destroy, lock, read
     </actions>
 </atomic-long-permission>
 ```
-Actions: all, create, destroy, read, modify
+	Actions: all, create, destroy, read, modify
 
 - CountDownLatch Permission
 
-```xml
+	```xml
 <countdown-latch-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -256,11 +260,11 @@ Actions: all, create, destroy, read, modify
     </actions>
 </countdown-latch-permission>
 ```
-Actions: all, create, destroy, modify, read
+	Actions: all, create, destroy, modify, read
 
 - Semaphore Permission
 
-```xml
+	```xml
 <semaphore-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -270,11 +274,11 @@ Actions: all, create, destroy, modify, read
     </actions>
 </semaphore-permission>
 ```
-Actions: all, create, destroy, acquire, release, read
+	Actions: all, create, destroy, acquire, release, read
 
 - Executor Service Permission
 
-```xml
+	```xml
 <executor-service-permission name="name" principal="principal">
     <endpoints>
         ...
@@ -284,11 +288,11 @@ Actions: all, create, destroy, acquire, release, read
     </actions>
 </executor-service-permission>
 ```
-Actions: all, create, destroy
+	Actions: all, create, destroy
 
 - Transaction Permission
 
-```xml
+	```xml
 <transaction-permission principal="principal">
     <endpoints>
         ...

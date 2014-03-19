@@ -18,6 +18,8 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
@@ -29,7 +31,10 @@ import java.util.concurrent.*;
  */
 public final class ClientExecutionServiceImpl implements ClientExecutionService {
 
+    private static final ILogger logger = Logger.getLogger(ClientExecutionService.class);
+
     private final ExecutorService executor;
+    private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
@@ -37,14 +42,34 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
             final int cores = Runtime.getRuntime().availableProcessors();
             poolSize = cores * 5;
         }
-        executor = Executors.newFixedThreadPool(poolSize, new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader));
-//        executor = Executors.newCachedThreadPool(new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader));
+        internalExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new PoolExecutorThreadFactory(threadGroup, name + ".internal-", classLoader),
+                new RejectedExecutionHandler() {
+                    public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+                        String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
+                        logger.finest(message);
+                        throw new RejectedExecutionException(message);
+                    }
+                });
+        executor = new ThreadPoolExecutor(poolSize, poolSize, 0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(),
+                new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader),
+                new RejectedExecutionHandler() {
+                    public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+                        String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
+                        logger.finest(message);
+                        throw new RejectedExecutionException(message);
+                    }
+                });
 
-        scheduledExecutor = Executors.newSingleThreadScheduledExecutor(new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
+
+        scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
+                new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
     }
 
-    public ExecutorService getExecutor() {
-        return executor;
+    public void executeInternal(Runnable command) {
+        internalExecutor.execute(command);
     }
 
     @Override
@@ -70,7 +95,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
         return scheduledExecutor.schedule(new Runnable() {
             public void run() {
-                execute(command);
+                executeInternal(command);
             }
         }, delay, unit);
     }
@@ -79,7 +104,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                execute(command);
+                executeInternal(command);
             }
         }, initialDelay, period, unit);
     }
@@ -88,7 +113,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                execute(command);
+                executeInternal(command);
             }
         }, initialDelay, period, unit);
     }

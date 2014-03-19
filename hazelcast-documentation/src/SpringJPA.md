@@ -2,7 +2,7 @@
 
 ## Spring Data - JPA
 
-Hazelcast supports JPA persistence integrated with [Spring Data-JPA](http://www.springsource.org/spring-data/jpa) module. Your POJOs are mapped and persisted to your relational database. To use JPA persistence first you should create a Repository interface extending CrudRepository class with object type that you want to persist..
+Hazelcast supports JPA persistence integrated with [Spring Data-JPA](http://www.springsource.org/spring-data/jpa) module. Your POJOs are mapped and persisted to your relational database. To use JPA persistence, first you should create a Repository interface extending `CrudRepository` class with object type that you want to persist.
 
 ```java
 package com.hazelcast.jpa.repository;
@@ -14,7 +14,8 @@ public interface ProductRepository extends CrudRepository<Product, Long> {
 
 }
 ```
-Then you should add your data source and repository definition to you Spring configuration,
+
+Then you should add your data source and repository definition to your Spring configuration, as shown below.
 
 ```xml
 <jpa:repositories
@@ -53,7 +54,8 @@ Then you should add your data source and repository definition to you Spring con
     </bean>
     
 ```
-In the example configuration above, Hibernate and MYSQL is configured, you change them according your ORM and database selection. Also you should define your persistence unit with persistence.xml under META-INF directory.
+
+In the example configuration above, Hibernate and MySQL is configured. You change them according to your ORM and database selection. Also, you should define your persistence unit with `persistence.xml` under META-INF directory.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -61,4 +63,9 @@ In the example configuration above, Hibernate and MYSQL is configured, you chang
     <persistence-unit name="jpa.sample" />
 </persistence>
 ```
-By default, the key is expected to be the same with id of the JPA object. You can change this behaviour and customize MapStore implementation extending SpringJPAMapStore class. *For more information please see [Spring Data JPA Reference](http://static.springsource.org/spring-data/data-jpa/docs/current/reference/html/).*
+
+By default, the key is expected to be the same with ID of the JPA object. You can change this behavior and customize MapStore implementation extending `SpringJPAMapStore` class. 
+
+**Related Information**
+
+For more information please see [Spring Data JPA Reference](http://static.springsource.org/spring-data/data-jpa/docs/current/reference/html/).

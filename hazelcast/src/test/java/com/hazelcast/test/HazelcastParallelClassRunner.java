@@ -47,7 +47,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     @Override
     protected void runChild(final FrameworkMethod method, final RunNotifier notifier) {
-        while (numThreads.get() > MAX_THREADS) {
+        while (numThreads.get() >= MAX_THREADS) {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException e) {

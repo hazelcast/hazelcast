@@ -669,6 +669,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public LocalMapStats getLocalMapStats() {
+        initNearCache();
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         if (nearCache != null) {
             localMapStats.setNearCacheStats(nearCache.getNearCacheStats());
@@ -788,9 +789,18 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     protected void onDestroy() {
+        destroyNearCache();
+    }
+
+    private void destroyNearCache() {
         if (nearCache != null) {
             nearCache.destroy();
         }
+    }
+
+    @Override
+    protected void onShutdown() {
+        destroyNearCache();
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {

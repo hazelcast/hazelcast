@@ -32,6 +32,7 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.NonThreadSafe;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
@@ -44,6 +45,7 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -130,11 +132,30 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         }
     }
 
-    private void spawnMigrationRequestTask(Address destination, long[] replicaVersions, Collection<Operation> tasks) {
+    private void spawnMigrationRequestTask(Address destination, long[] replicaVersions, Collection<Operation> tasks)
+            throws IOException {
         NodeEngine nodeEngine = getNodeEngine();
+
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        BufferObjectDataOutput out = createDataOutput(serializationService);
+
+        out.writeInt(tasks.size());
+        Iterator<Operation> iter = tasks.iterator();
+        while (iter.hasNext()) {
+            Operation task = iter.next();
+            if (task instanceof NonThreadSafe) {
+                serializationService.writeObject(out, task);
+                iter.remove();
+            }
+        }
+
         ManagedExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
-        MigrationRequestTask task = new MigrationRequestTask(tasks, replicaVersions, destination);
+        MigrationRequestTask task = new MigrationRequestTask(tasks, out, replicaVersions, destination);
         executor.execute(task);
+    }
+
+    private BufferObjectDataOutput createDataOutput(SerializationService serializationService) {
+        return serializationService.createObjectDataOutput(1024 * 32);
     }
 
     private void verifyGoodMaster(NodeEngine nodeEngine) {
@@ -207,14 +228,17 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
     private class MigrationRequestTask implements Runnable {
         private final SerializationService serializationService;
         private final Collection<Operation> tasks;
+        private final BufferObjectDataOutput out;
         private final long[] replicaVersions;
         private final Address destination;
         private final long timeout;
         private final ResponseHandler responseHandler;
         private final boolean compress;
 
-        public MigrationRequestTask(Collection<Operation> tasks, long[] replicaVersions, Address destination) {
+        public MigrationRequestTask(Collection<Operation> tasks, BufferObjectDataOutput out,
+                long[] replicaVersions, Address destination) {
             this.tasks = tasks;
+            this.out = out;
             this.replicaVersions = replicaVersions;
             this.destination = destination;
             this.responseHandler = getResponseHandler();
@@ -230,7 +254,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             try {
                 byte[] data = getTaskData();
                 MigrationOperation operation = new MigrationOperation(
-                        migrationInfo, replicaVersions, data, tasks.size(), compress);
+                        migrationInfo, replicaVersions, data, compress);
                 Future future = nodeEngine.getOperationService()
                         .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
                         .setTryPauseMillis(TRY_PAUSE_MILLIS)
@@ -260,9 +284,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         }
 
         private byte[] getTaskData() throws IOException {
-            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
             try {
-                out.writeInt(tasks.size());
                 for (Operation task : tasks) {
                     serializationService.writeObject(out, task);
                 }

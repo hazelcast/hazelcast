@@ -174,7 +174,7 @@ public class WebFilter implements Filter {
             }, false);
         }
 
-        if(logger.isLoggable(Level.FINEST)){
+        if (logger.isLoggable(Level.FINEST)) {
             logger.finest("sticky:" + stickySession + ", shutdown-on-destroy: " + shutdownOnDestroy
                     + ", map-name: " + clusterMapName);
         }
@@ -202,7 +202,7 @@ public class WebFilter implements Filter {
         HazelcastHttpSession hazelSession = mapSessions.remove(sessionId);
         if (hazelSession != null) {
             mapOriginalSessions.remove(hazelSession.originalSession.getId());
-            if(logger.isLoggable(Level.FINEST)){
+            if (logger.isLoggable(Level.FINEST)) {
                 logger.finest("Destroying session locally " + hazelSession);
             }
             hazelSession.destroy();
@@ -219,7 +219,7 @@ public class WebFilter implements Filter {
         }
     }
 
-       private String extractAttributeKey(String key) {
+    private String extractAttributeKey(String key) {
         return key.substring(key.indexOf(HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR) + HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR.length());
     }
 
@@ -233,11 +233,11 @@ public class WebFilter implements Filter {
         mapSessions.put(hazelcastSession.getId(), hazelcastSession);
         String oldHazelcastSessionId = mapOriginalSessions.put(originalSession.getId(), hazelcastSession.getId());
         if (oldHazelcastSessionId != null) {
-            if(logger.isFinestEnabled()){
+            if (logger.isFinestEnabled()) {
                 logger.finest("!!! Overriding an existing hazelcastSessionId " + oldHazelcastSessionId);
             }
         }
-        if(logger.isFinestEnabled()){
+        if (logger.isFinestEnabled()) {
             logger.finest("Created new session with id: " + id);
             logger.finest(mapSessions.size() + " is sessions.size and originalSessions.size: " + mapOriginalSessions.size());
         }
@@ -258,7 +258,7 @@ public class WebFilter implements Filter {
                 cacheEntry = new LocalCacheEntry();
                 cache.put(attributeKey, cacheEntry);
             }
-            if(logger.isFinestEnabled()){
+            if (logger.isFinestEnabled()) {
                 logger.finest("Storing " + attributeKey + " on session " + hazelcastSession.getId());
             }
             cacheEntry.value = entry.getValue();
@@ -282,14 +282,14 @@ public class WebFilter implements Filter {
      * @param removeGlobalSession boolean value - true if the session should be destroyed irrespective of active time
      */
     private void destroySession(HazelcastHttpSession session, boolean removeGlobalSession) {
-        if(logger.isFinestEnabled()){
+        if (logger.isFinestEnabled()) {
             logger.finest("Destroying local session: " + session.getId());
         }
         mapSessions.remove(session.getId());
         mapOriginalSessions.remove(session.originalSession.getId());
         session.destroy();
         if (removeGlobalSession) {
-            if(logger.isFinestEnabled()){
+            if (logger.isFinestEnabled()) {
                 logger.finest("Destroying cluster session: " + session.getId() + " => Ignore-timeout: true");
             }
             IMap<String, Object> clusterMap = getClusterMap();
@@ -339,11 +339,11 @@ public class WebFilter implements Filter {
             final ServletRequest original = getRequest();
             return new RequestDispatcher() {
                 public void forward(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
-                    original.getRequestDispatcher(path).forward(RequestWrapper.this, servletResponse);
+                    original.getRequestDispatcher(path).forward(servletRequest, servletResponse);
                 }
 
                 public void include(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
-                    original.getRequestDispatcher(path).include(RequestWrapper.this, servletResponse);
+                    original.getRequestDispatcher(path).include(servletRequest, servletResponse);
                 }
             };
         }
@@ -385,8 +385,9 @@ public class WebFilter implements Filter {
                     }
                 }
             }
-            if (hazelcastSession != null)
+            if (hazelcastSession != null) {
                 return hazelcastSession;
+            }
             final String requestedSessionId = fetchHazelcastSessionId();
             if (requestedSessionId != null) {
                 hazelcastSession = getSessionWithId(requestedSessionId);
@@ -456,7 +457,7 @@ public class WebFilter implements Filter {
                         cacheEntry.value = value;
                         cacheEntry.reload = false;
                     }
-                    localCache.put(name, NULL_ENTRY);
+                    localCache.put(name, cacheEntry);
                 }
                 return cacheEntry != NULL_ENTRY ? cacheEntry.value : null;
             }
@@ -597,7 +598,7 @@ public class WebFilter implements Filter {
             IMap<String, Object> clusterMap = getClusterMap();
             if (deferredWrite) {
                 Iterator<Entry<String, LocalCacheEntry>> iterator = localCache.entrySet().iterator();
-                while(iterator.hasNext()) {
+                while (iterator.hasNext()) {
                     Entry<String, LocalCacheEntry> entry = iterator.next();
                     if (entry.getValue().dirty) {
                         LocalCacheEntry cacheEntry = entry.getValue();
@@ -617,15 +618,16 @@ public class WebFilter implements Filter {
         }
 
         private Set<String> selectKeys() {
-            if (!deferredWrite) {
-                return getClusterMap().keySet(new SessionAttributePredicate(id));
-            }
             Set<String> keys = new HashSet<String>();
-            Iterator<Entry<String, LocalCacheEntry>> iterator = localCache.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Entry<String, LocalCacheEntry> entry = iterator.next();
-                if (!entry.getValue().removed) {
-                    keys.add(entry.getKey());
+            if (!deferredWrite) {
+                for (String qualifiedAttributeKey : getClusterMap().keySet(new SessionAttributePredicate(id))) {
+                    keys.add(extractAttributeKey(qualifiedAttributeKey));
+                }
+            } else {
+                for (Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
+                    if (!entry.getValue().removed) {
+                        keys.add(entry.getKey());
+                    }
                 }
             }
             return keys;
@@ -640,8 +642,9 @@ public class WebFilter implements Filter {
             if (c != '-') {
                 if (Character.isLetter(c)) {
                     sb.append(Character.toUpperCase(c));
-                } else
+                } else {
                     sb.append(c);
+                }
             }
         }
         return sb.toString();
@@ -699,11 +702,13 @@ public class WebFilter implements Filter {
                 reqWrapper.setHazelcastSession(existingReq.hazelcastSession, existingReq.requestedSessionId);
             }
             chain.doFilter(reqWrapper, resWrapper);
-            if (existingReq != null) return;
+            if (existingReq != null) {
+                return;
+            }
             HazelcastHttpSession session = reqWrapper.getSession(false);
             if (session != null && session.isValid()) {
                 if (session.sessionChanged() || !deferredWrite) {
-                    if(logger.isFinestEnabled()){
+                    if (logger.isFinestEnabled()) {
                         logger.finest("PUTTING SESSION " + session.getId());
                     }
                     session.sessionDeferredWrite();
@@ -736,4 +741,3 @@ public class WebFilter implements Filter {
         }
     }
 }// END of WebFilter
-
