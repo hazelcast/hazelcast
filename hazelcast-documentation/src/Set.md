@@ -2,7 +2,7 @@
 
 ## Distributed Set
 
-Distributed Set is distributed and concurrent implementation of`java.util.Set`. Set does not allow duplicate elements, so elements in the set should have proper hashCode and equals methods.
+Distributed Set is distributed and concurrent implementation of`java.util.Set`. Set does not allow duplicate elements.
 
 ```java
 import com.hazelcast.core.Hazelcast;

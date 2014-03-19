@@ -85,12 +85,13 @@ public class GettingStartedClient {
 ```
 -   When you run it, you will see the client properly connecting to the cluster and printing the map size as **3**.
 
-**What is Next?**
+## Resources
 
--   You can browse [documentation](http://www.hazelcast.com/docs.jsp) and [resources](http://hazelcast.com/resources/) for detailed features and examples.
 
--   You can email your questions to Hazelcast [mail group](http://groups.google.com/group/hazelcast).
+-	Hazelcast source code can be found at [Github/Hazelcast](https://github.com/hazelcast/hazelcast).
+-	Hazelcast API can be found at [Hazelcast.org](http://www.hazelcast.org/docs/latest/javadoc/).
+-	More use cases and resources can be found at [Hazelcast.com](http://www.hazelcast.com).
+-	Questions and discussions can be post in [Hazelcast mail group](https://groups.google.com/forum/#!forum/hazelcast).
 
--   You can browse Hazelcast [source code](https://github.com/hazelcast/hazelcast).
 
 

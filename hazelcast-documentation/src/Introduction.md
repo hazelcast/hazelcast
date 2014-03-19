@@ -29,7 +29,7 @@ Hazelcast is a clustering and highly scalable data distribution platform for Jav
 
 -   Super fast; thousands of operations per sec.
 
--   Super small; less than a MB
+-   Super small; only 3 MB
 
 -   Super efficient; very nice to CPU and RAM
 
