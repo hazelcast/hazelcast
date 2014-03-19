@@ -178,7 +178,6 @@ public class ClientNearCache {
         fireTtlCleanup();
         CacheRecord record = cache.get(key);
         if (record != null) {
-            record.access();
             if (record.expired()) {
                 cache.remove(key);
                 return null;
@@ -186,6 +185,7 @@ public class ClientNearCache {
             if (record.value.equals(NULL_OBJECT)){
                 return NULL_OBJECT;
             }
+            record.access();
             return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
         } else {
             return null;
