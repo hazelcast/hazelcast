@@ -133,8 +133,7 @@ public final class Hazelcast {
     }
 
     /**
-     * Should be renamed to addOutOfMemoryHandler
-     * Adds <tt>OutOfMemoryHandler</tt> to be used when an <tt>OutOfMemoryError</tt>
+     * Sets <tt>OutOfMemoryHandler</tt> to be used when an <tt>OutOfMemoryError</tt>
      * is caught by Hazelcast threads.
      *
      * <p>
@@ -149,7 +148,6 @@ public final class Hazelcast {
      * @see OutOfMemoryError
      * @see OutOfMemoryHandler
      */
-    @Deprecated
     public static void setOutOfMemoryHandler(OutOfMemoryHandler outOfMemoryHandler) {
         OutOfMemoryErrorDispatcher.setHandler(outOfMemoryHandler);
     }
