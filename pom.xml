@@ -69,6 +69,9 @@
         <slf4j.api.version>1.6.0</slf4j.api.version>
         <main.basedir>${project.basedir}</main.basedir>
         <jacoco.version>0.7.0.201403182114</jacoco.version>
+        <sonar.jacoco.jar>
+            ${basedir}/lib/jacocoagent.jar
+        </sonar.jacoco.jar>
 
          <!-- sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar -->
     </properties>
@@ -203,15 +206,16 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
-                        <configuration>
-                            <destFile>blaaaaaaaaaaaaaaaaaaaaaa</destFile>
-                        </configuration>
-                        <executions>
+                          <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
+                                <configuration>
+                                    <destFile>blaaaaaaaaaaaaaaaaaaaaaa</destFile>
+                                </configuration>
+
                             </execution>
                             <execution>
                                 <id>default-report</id>
