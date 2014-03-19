@@ -323,7 +323,6 @@
                             </dependency>
                         </dependencies>
                         <configuration combine.self="override">
-                            <argLine></argLine>
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 ${jacoco.agent.argLine}
