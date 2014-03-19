@@ -80,8 +80,8 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         int j = str.indexOf('\'', i + 1);
         //ignore doubles
         while(i == j-1){
-            i = str.indexOf("'", j+1);
-            j = str.indexOf("'", i+1);
+            i = str.indexOf('\'', j+1);
+            j = str.indexOf('\'', i+1);
         }
         return i;
     }
