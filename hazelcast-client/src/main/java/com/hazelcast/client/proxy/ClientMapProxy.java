@@ -462,6 +462,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
+        initNearCache();
         Set<Data> keySet = new HashSet(keys.size());
         Map<K, V> result = new HashMap<K, V>();
         for (Object key : keys) {
