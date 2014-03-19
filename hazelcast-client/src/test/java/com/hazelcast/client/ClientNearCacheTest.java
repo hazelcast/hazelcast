@@ -189,7 +189,7 @@ public class ClientNearCacheTest {
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 assertEquals(expetedSize, stats.getOwnedEntryCount());
             }
         });
@@ -253,6 +253,9 @@ public class ClientNearCacheTest {
         //populate near cache
         for (int i = 0; i < 100; i++) {
             map.get(i);
+        }
+        //this will be from near cache
+        for (int i = 0; i < 100; i++) {
             map.get(i);
         }
 
@@ -261,12 +264,12 @@ public class ClientNearCacheTest {
 
         sleepSeconds(2);
 
-        for (int i = 0; i < 100; i++) {
+         for (int i = 0; i < 100; i++) {
             map.get(i);
         }
 
         stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(0, stats.getHits());
+        assertEquals(100, stats.getHits());
     }
 
 
