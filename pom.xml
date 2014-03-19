@@ -137,18 +137,7 @@
         </resources>
 
         <plugins>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco.version}</version>
-                <configuration>
-                    <excludes>
-                        <exclude>com/hazelcast/examples/**/*.class</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-
-            <plugin>
+              <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven.assembly.plugin.version}</version>
@@ -279,12 +268,9 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <!-- version>${jacoco.version}</version -->
-                        <version>0.6.0.201210061924</version>
+                        <version>${jacoco.version}</version>
                         <configuration>
-                            <propertyName>jacoco.agent.argLine</propertyName>
                             <destFile>${sonar.jacoco.itReportPath}</destFile>
-                            <append>true</append>
                         </configuration>
                         <executions>
                             <execution>
@@ -292,10 +278,6 @@
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
-                                <!-- configuration>
-                                    <destFile>${basedir}/target/coverage-reports/jacoco-it.exec</destFile>
-                                    <dataFile>${basedir}/target/coverage-reports/jacoco-it.exec</dataFile>
-                                </configuration -->
                             </execution>
                             <execution>
                                 <id>default-report</id>
