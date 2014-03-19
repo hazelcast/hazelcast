@@ -204,7 +204,7 @@
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
                         <configuration>
-                            <destFile>${sonar.jacoco.reportPath}</destFile>
+                            <destFile>blaaaaaaaaaaaaaaaaaaaaaa</destFile>
                         </configuration>
                         <executions>
                             <execution>
