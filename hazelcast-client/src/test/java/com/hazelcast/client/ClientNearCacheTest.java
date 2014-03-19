@@ -274,6 +274,43 @@ public class ClientNearCacheTest {
 
 
     @Test
+    public void getNullTest() {
+        final String mapName = "getNullTest";
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        NearCacheConfig cashConfig = new NearCacheConfig();
+        cashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        clientConfig.addNearCacheConfig(mapName, cashConfig);
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final IMap map = client.getMap(mapName);
+
+
+        //this will be from near cache
+        for (int i = 0; i < 100; i++) {
+            map.get(i);
+        }
+
+        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+
+        assertEquals(0, stats.getMisses());
+        //assertEquals(100, stats.getHits());
+
+        sleepSeconds(2);
+
+        for (int i = 0; i < 100; i++) {
+            map.get(i);
+        }
+
+        stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(100, stats.getHits());
+    }
+
+
+
+    @Test
     public void getNearCacheStatsBeforePopulation() {
         final String mapName = "getNearCashStatsBeforePopulation";
 
