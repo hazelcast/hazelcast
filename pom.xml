@@ -256,9 +256,9 @@
             <id>test-coverage-nightly</id>
             <properties>
                 <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
-                <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.reportPath>
+                <!-- sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.reportPath -->
                 <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
-                <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
+                <!-- sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar -->
             </properties>
             <build>
                 <plugins>
@@ -303,8 +303,10 @@
                                 -Dhazelcast.test.use.network=true
                             </argLine>
                             <includes>
-                                <include>com.hazelcast.concurrent.atomiclong.AtomicLongTest</include>
+                                <include>**/AtomicLongTest*.java</include>
                             </includes>
+                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest</groups>
+
                             <!--groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest</groups>
                             <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups -->
                         </configuration>
