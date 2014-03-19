@@ -70,10 +70,7 @@
         <main.basedir>${project.basedir}</main.basedir>
         <jacoco.version>0.6.5.201403032054</jacoco.version>
 
-        <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
-        <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco.exec</sonar.jacoco.reportPath>
-        <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
-        <!-- sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar -->
+         <!-- sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar -->
     </properties>
     <licenses>
         <license>
@@ -206,8 +203,16 @@
     </build>
 
     <profiles>
+
         <profile>
             <id>test-coverage</id>
+            <properties>
+                <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
+                <!-- no idea why the reportPath for it doesn't work.. so lets hack it in like this -->
+                <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco.exec</sonar.jacoco.reportPath>
+                <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco.exec</sonar.jacoco.itReportPath>
+            </properties>
+
             <build>
                 <plugins>
                     <plugin>
@@ -263,6 +268,12 @@
         </profile>
 
         <profile>
+            <properties>
+                <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
+                <!-- no idea why the reportPath for it doesn't work.. so lets hack it in like this -->
+                <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.reportPath>
+                <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
+            </properties>
             <id>test-coverage-nightly</id>
                <build>
                 <plugins>
