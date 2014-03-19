@@ -28,22 +28,12 @@ public class RecordReplicationInfo extends RecordInfo implements DataSerializabl
     private Data key;
     private Data value;
 
-    public RecordReplicationInfo(Data key, Data value, RecordStatistics statistics,
-                                 long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis,
-                                 long mapStoreDeleteDelayMillis) {
+    public RecordReplicationInfo(Data key, Data value, RecordInfo recordInfo) {
+        super(recordInfo);
         this.key = key;
         this.value = value;
-        this.statistics = statistics;
-        this.idleDelayMillis = idleDelayMillis;
-        this.ttlDelayMillis = ttlDelayMillis;
-        this.mapStoreWriteDelayMillis = mapStoreWriteDelayMillis;
-        this.mapStoreDeleteDelayMillis = mapStoreDeleteDelayMillis;
     }
 
-    public RecordReplicationInfo(Data key, Data value, RecordStatistics statistics,
-                                 long idleDelayMillis, long ttlDelayMillis) {
-        this(key,value,statistics,idleDelayMillis,ttlDelayMillis,-1,-1);
-    }
 
     public RecordReplicationInfo() {
     }
