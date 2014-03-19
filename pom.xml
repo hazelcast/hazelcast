@@ -69,11 +69,11 @@
         <slf4j.api.version>1.6.0</slf4j.api.version>
         <main.basedir>${project.basedir}</main.basedir>
         <jacoco.version>0.7.0.201403182114</jacoco.version>
-        <sonar.jacoco.jar>
-            ${basedir}/lib/jacocoagent.jar
-        </sonar.jacoco.jar>
+        <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <sonar.phase>post-integration-test</sonar.phase>
-         <!-- sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar -->
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.language>java</sonar.language>
+        <sonar.verbose>true</sonar.verbose>
     </properties>
     <licenses>
         <license>
@@ -193,7 +193,6 @@
     </build>
 
     <profiles>
-
         <profile>
             <id>test-coverage</id>
             <properties>
@@ -261,11 +260,32 @@
             <properties>
                 <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
                 <!-- no idea why the reportPath for it doesn't work.. so lets hack it in like this -->
-                <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-banana.exec</sonar.jacoco.reportPath>
+                <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco.exec</sonar.jacoco.reportPath>
                 <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
             </properties>
             <build>
                 <plugins>
+
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco.version}</version>
+                         <executions>
+                            <execution>
+                                <id>pre-test</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>post-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                </plugin>
 
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -283,8 +303,8 @@
 
                             <includes>
                                 <include>**/ExecutorConfigTest*.java</include>
-                                <!-- include>**/TopicTest*.java</include>
-                                <include>**/LockTest*.java</include -->
+                                <include>**/TopicTest*.java</include>
+                                <include>**/LockTest*.java</include>
                             </includes>
 
                             <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
