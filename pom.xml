@@ -68,7 +68,7 @@
         <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
         <main.basedir>${project.basedir}</main.basedir>
-        <jacoco.version>0.6.5.201403032054</jacoco.version>
+        <jacoco.version>0.7.0.201403182114</jacoco.version>
 
          <!-- sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar -->
     </properties>
@@ -308,7 +308,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                -Xms129m -Xmx1G -XX:MaxPermSize=129M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
