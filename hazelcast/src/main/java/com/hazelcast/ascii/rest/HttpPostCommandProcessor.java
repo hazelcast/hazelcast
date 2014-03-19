@@ -59,7 +59,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         } else {
             suffix = uri.substring(URI_QUEUES.length(), uri.length());
         }
-        int indexSlash = suffix.lastIndexOf("/");
+        int indexSlash = suffix.lastIndexOf('/');
 
         String queueName;
         if (indexSlash == -1) {

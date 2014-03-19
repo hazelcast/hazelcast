@@ -1175,6 +1175,39 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIfWeCarryRecordVersionInfoToReplicas() {
+        final String mapName = randomMapName();
+        final int mapSize = 1000;
+        final int nodeCount = 3;
+        final int expectedRecordVersion = 3;
+        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(nodeCount);
+        final Config config = new Config();
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+
+        final IMap<Integer, Integer> map1 = node1.getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            map1.put(i, 0);//version 0.
+            map1.put(i, 1);//version 1.
+            map1.put(i, 2);//version 2.
+            map1.put(i, 3);//version 3.
+        }
+
+        final HazelcastInstance node3 = factory.newHazelcastInstance(config);
+
+        node1.shutdown();
+        node2.shutdown();
+
+        final IMap<Integer, Integer> map3 = node3.getMap(mapName);
+
+        for (int i = 0; i < mapSize; i++) {
+            final EntryView<Integer, Integer> entryView = map3.getEntryView(i);
+            assertEquals(expectedRecordVersion, entryView.getVersion());
+        }
+
+    }
+
+    @Test
     public void testNullChecks() {
         final IMap<String, String> map = getInstance().getMap("testNullChecks");
 

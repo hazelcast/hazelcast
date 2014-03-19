@@ -22,34 +22,25 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-/**
- * @author enesakar 11/25/13
- */
 public class RecordInfo implements DataSerializable {
     protected RecordStatistics statistics;
     protected long idleDelayMillis = -1;
     protected long ttlDelayMillis = -1;
     protected long mapStoreWriteDelayMillis = -1;
     protected long mapStoreDeleteDelayMillis = -1;
+    protected long version;
 
     public RecordInfo() {
     }
 
-    public RecordInfo(RecordStatistics statistics,
-                      long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis,
-                      long mapStoreDeleteDelayMillis) {
-        this.statistics = statistics;
-        this.idleDelayMillis = idleDelayMillis;
-        this.ttlDelayMillis = ttlDelayMillis;
-        this.mapStoreWriteDelayMillis = mapStoreWriteDelayMillis;
-        this.mapStoreDeleteDelayMillis = mapStoreDeleteDelayMillis;
+    public RecordInfo(RecordInfo recordInfo) {
+        this.statistics = recordInfo.statistics;
+        this.idleDelayMillis = recordInfo.idleDelayMillis;
+        this.ttlDelayMillis = recordInfo.ttlDelayMillis;
+        this.mapStoreWriteDelayMillis = recordInfo.mapStoreWriteDelayMillis;
+        this.mapStoreDeleteDelayMillis = recordInfo.mapStoreDeleteDelayMillis;
+        this.version = recordInfo.version;
     }
-
-    public RecordInfo(RecordStatistics statistics,
-                      long idleDelayMillis, long ttlDelayMillis) {
-        this(statistics, idleDelayMillis, ttlDelayMillis, -1, -1);
-    }
-
 
     public RecordStatistics getStatistics() {
         return statistics;
@@ -91,6 +82,14 @@ public class RecordInfo implements DataSerializable {
         this.mapStoreDeleteDelayMillis = mapStoreDeleteDelayMillis;
     }
 
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         if (statistics != null) {
@@ -103,6 +102,7 @@ public class RecordInfo implements DataSerializable {
         out.writeLong(ttlDelayMillis);
         out.writeLong(mapStoreWriteDelayMillis);
         out.writeLong(mapStoreDeleteDelayMillis);
+        out.writeLong(version);
 
     }
 
@@ -117,6 +117,7 @@ public class RecordInfo implements DataSerializable {
         ttlDelayMillis = in.readLong();
         mapStoreWriteDelayMillis = in.readLong();
         mapStoreDeleteDelayMillis = in.readLong();
+        version = in.readLong();
     }
 
     @Override
@@ -127,6 +128,7 @@ public class RecordInfo implements DataSerializable {
                 ", ttlDelayMillis=" + ttlDelayMillis +
                 ", mapStoreWriteDelayMillis=" + mapStoreWriteDelayMillis +
                 ", mapStoreDeleteDelayMillis=" + mapStoreDeleteDelayMillis +
+                ", version=" + version +
                 '}';
     }
 }

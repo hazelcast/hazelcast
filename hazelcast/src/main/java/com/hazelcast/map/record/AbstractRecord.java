@@ -53,6 +53,10 @@ public abstract class AbstractRecord<V> implements Record<V> {
         return version;
     }
 
+    public final void setVersion(long version) {
+        this.version = version;
+    }
+
     public final void onAccess() {
         if (statistics != null)
             statistics.access();

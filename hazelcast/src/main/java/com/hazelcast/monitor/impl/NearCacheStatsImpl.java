@@ -67,6 +67,10 @@ public class NearCacheStatsImpl implements NearCacheStats {
         misses.incrementAndGet();
     }
 
+    public void incrementHits() {
+        hits.incrementAndGet();
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(ownedEntryCount);
@@ -94,4 +98,5 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 + ", ratio=" + getRatio()
                 + '}';
     }
+
 }

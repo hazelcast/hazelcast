@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -54,7 +53,7 @@ public class NearCache {
     private final AtomicBoolean canEvict;
     private final ConcurrentMap<Data, CacheRecord> cache;
     private final MapContainer mapContainer;
-    private final NearCacheStatsImpl stats;
+    private final NearCacheStatsImpl nearCacheStats;
 
     public NearCache(String mapName, MapService mapService) {
         this.mapService = mapService;
@@ -70,7 +69,7 @@ public class NearCache {
         cache = new ConcurrentHashMap<Data, CacheRecord>();
         canCleanUp = new AtomicBoolean(true);
         canEvict = new AtomicBoolean(true);
-        stats = new NearCacheStatsImpl();
+        nearCacheStats = new NearCacheStatsImpl();
         lastCleanup = Clock.currentTimeMillis();
     }
 
@@ -104,17 +103,14 @@ public class NearCache {
     private NearCacheStatsImpl createNearCacheStats() {
         long ownedEntryCount = 0;
         long ownedEntryMemoryCost = 0;
-        long hits = 0;
         for (CacheRecord record : cache.values())
         {
             ownedEntryCount++;
             ownedEntryMemoryCost += record.getCost();
-            hits += record.hit.get();
         }
-        stats.setOwnedEntryCount(ownedEntryCount);
-        stats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
-        stats.setHits(hits);
-        return stats;
+        nearCacheStats.setOwnedEntryCount(ownedEntryCount);
+        nearCacheStats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
+        return nearCacheStats;
     }
 
     private void fireEvictCache() {
@@ -182,16 +178,16 @@ public class NearCache {
         fireTtlCleanup();
         CacheRecord record = cache.get(key);
         if (record != null) {
-            record.access();
             if (record.expired()) {
                 cache.remove(key);
                 updateSizeEstimator(-calculateCost(record));
-                stats.incrementMisses();
+                nearCacheStats.incrementMisses();
                 return null;
             }
+            record.access();
             return record.value;
         } else {
-            stats.incrementMisses();
+            nearCacheStats.incrementMisses();
             return null;
         }
     }
@@ -243,6 +239,7 @@ public class NearCache {
 
         void access() {
             hit.incrementAndGet();
+            nearCacheStats.incrementHits();
             lastAccessTime = Clock.currentTimeMillis();
         }
 

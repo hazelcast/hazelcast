@@ -76,7 +76,8 @@ public class MergeOperation extends BasePutOperation {
             return new RemoveBackupOperation(name, dataKey);
         }
         else {
-            RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer, recordStore.getRecord(dataKey), dataKey);
+            RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer,
+                    recordStore.getRecord(dataKey));
             return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
         }
     }

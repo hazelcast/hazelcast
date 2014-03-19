@@ -242,7 +242,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         int endIndex = -1;
         int startIndex = value.indexOf("${");
         while (startIndex > -1) {
-            endIndex = value.indexOf("}", startIndex);
+            endIndex = value.indexOf('}', startIndex);
             if (endIndex == -1) {
                 logger.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
                 break;
