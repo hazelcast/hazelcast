@@ -45,7 +45,6 @@ public class ClientMapTryLockTests {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void concurrent_MapTryLockTimeOutTest() throws InterruptedException {
         concurrent_MapTryLock(true);
     }
