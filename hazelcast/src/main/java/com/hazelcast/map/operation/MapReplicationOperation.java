@@ -69,7 +69,7 @@ public class MapReplicationOperation extends AbstractOperation {
                 Data key = recordEntry.getKey();
                 Record record = recordEntry.getValue();
                 RecordReplicationInfo recordReplicationInfo;
-                recordReplicationInfo = mapService.createRecordReplicationInfo(mapContainer, record, key);
+                recordReplicationInfo = mapService.createRecordReplicationInfo(mapContainer, record);
                 recordSet.add(recordReplicationInfo);
             }
             data.put(name, recordSet);

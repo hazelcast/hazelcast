@@ -757,25 +757,25 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
-    public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record, Data key) {
-        final RecordInfo info = constructRecordInfo(mapContainer, record, key, replicaWaitSecondsForScheduledTasks);
+    public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record) {
+        final RecordInfo info = constructRecordInfo(mapContainer, record, replicaWaitSecondsForScheduledTasks);
         final RecordReplicationInfo replicationInfo
                 = new RecordReplicationInfo(record.getKey(), toData(record.getValue()), info);
         return replicationInfo;
     }
 
-    public RecordInfo createRecordInfo(MapContainer mapContainer, Record record, Data key) {
+    public RecordInfo createRecordInfo(MapContainer mapContainer, Record record) {
         // this info is created to be used in backups.
         // we added following latency (10 seconds) to be sure the ongoing promotion is completed if the owner of the record could not complete task before promotion
         final int backupDelay = getNodeEngine().getGroupProperties().MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
-        return constructRecordInfo(mapContainer, record, key, backupDelay);
+        return constructRecordInfo(mapContainer, record, backupDelay);
     }
 
-    private RecordInfo constructRecordInfo(MapContainer mapContainer, Record record, Data key, int extraDelay) {
+    private RecordInfo constructRecordInfo(MapContainer mapContainer, Record record, int extraDelay) {
         final RecordInfo info = new RecordInfo();
         info.setStatistics(record.getStatistics());
         info.setVersion(record.getVersion());
-        setDelays(mapContainer, info, key, extraDelay);
+        setDelays(mapContainer, info, record.getKey(), extraDelay);
         return info;
     }
 
