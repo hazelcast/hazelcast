@@ -94,6 +94,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         try {
             executionService.execute(name, processor);
         } catch (RejectedExecutionException e) {
+            rejectExecution(name);
             logger.warning("While executing " + callable + " on Executor[" + name + "]", e);
             if (uuid != null) {
                 submittedTasks.remove(uuid);
@@ -146,6 +147,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private void startPending(String name) {
         getLocalExecutorStats(name).startPending();
+    }
+
+    private void rejectExecution(String name){
+        getLocalExecutorStats(name).rejectExecution();
     }
 
     @Override
