@@ -277,6 +277,7 @@
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
+                                <configuration/>
                             </execution>
                             <execution>
                                 <id>default-report</id>
