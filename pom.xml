@@ -72,7 +72,7 @@
         <sonar.jacoco.jar>
             ${basedir}/lib/jacocoagent.jar
         </sonar.jacoco.jar>
-
+        <sonar.phase>post-integration-test</sonar.phase>
          <!-- sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar -->
     </properties>
     <licenses>
