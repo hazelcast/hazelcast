@@ -281,7 +281,7 @@
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
                         <configuration>
-                            <destfile>${sonar.jacoco.itReportPath}</destfile>
+                            <destFile>${basedir}/target/coverage-reports/jacoco-it.exec</destFile>
                         </configuration>
                         <executions>
                             <execution>
