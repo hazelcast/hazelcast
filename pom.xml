@@ -266,16 +266,16 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
+                        <configuration>
+                            <destFile>${coverage.reports.dir}/jacoco-it.exec</destFile>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
-                                <configuration>
-                                    <destFile>${coverage.reports.dir}/jacoco-it.exec</destFile>
-                                </configuration>
-                            </execution>
+                              </execution>
                             <execution>
                                 <id>default-report</id>
                                 <phase>test</phase>
