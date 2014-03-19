@@ -257,6 +257,7 @@
             <properties>
                 <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
                 <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.reportPath>
+                <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
                 <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
             </properties>
             <build>
