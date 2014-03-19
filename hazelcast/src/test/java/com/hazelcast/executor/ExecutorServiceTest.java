@@ -743,23 +743,26 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testStatsIssue2039() throws InterruptedException {
+    public void testStatsIssue2039() throws InterruptedException, ExecutionException, TimeoutException {
         final Config config = new Config();
         final String name = "testStatsIssue2039";
         config.addExecutorConfig(new ExecutorConfig(name).setQueueCapacity(1).setPoolSize(1));
         final HazelcastInstance instance = createHazelcastInstance(config);
         final IExecutorService executorService = instance.getExecutorService(name);
 
+        final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch sleepLatch = new CountDownLatch(1);
 
         executorService.execute(new Runnable() {
             @Override
             public void run() {
+                startLatch.countDown();
                 assertOpenEventually(sleepLatch);
             }
         });
 
-        final Future submit = executorService.submit(new Runnable() {
+        assertTrue(startLatch.await(30, TimeUnit.SECONDS));
+        final Future waitingInQueue = executorService.submit(new Runnable() {
             public void run() {
             }
         });
@@ -770,21 +773,23 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         });
 
         try {
-            rejected.get();
-        } catch (ExecutionException ignored) {
+            rejected.get(1, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            boolean isRejected = e.getCause() instanceof RejectedExecutionException;
+            if (!isRejected) {
+                fail(e.toString());
+            }
         } finally {
             sleepLatch.countDown();
         }
 
-        try {
-            submit.get();
-        } catch (ExecutionException ignored) {
-        }
+        waitingInQueue.get(1, TimeUnit.MINUTES);
 
         final LocalExecutorStats stats = executorService.getLocalExecutorStats();
         assertEquals(2, stats.getStartedTaskCount());
         assertEquals(0, stats.getPendingTaskCount());
     }
+
 
     @Test
     public void testExecutorServiceStats() throws InterruptedException, ExecutionException {
