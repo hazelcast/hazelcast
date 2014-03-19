@@ -294,7 +294,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                                -javaagent:${sonar.jacoco.jar}=destfile=${sonar.jacoco.itReportPath},append=false
+                                -javaagent:${sonar.jacoco.jar}=destfile=${sonar.jacoco.itReportPath}
                                 -Xms129m -Xmx1G -XX:MaxPermSize=129M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
