@@ -72,7 +72,7 @@
         <!-- jacoco properties -->
         <jacoco.version>0.6.5.201403032054</jacoco.version>
         <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
-        <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.reportPath>
+        <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco.exec</sonar.jacoco.reportPath>
         <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
     </properties>
     <licenses>
