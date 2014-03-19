@@ -1,19 +1,21 @@
 
-# Http Session Clustering with HazelcastWM
+# HTTP Session Clustering with Hazelcast WM
 
-Say you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down then your users on that server will be directed to one of the live servers (B or C) but their sessions will be lost! So we have to have all these sessions backed up somewhere if we don't want to lose the sessions upon server crashes. Hazelcast WM allows you to cluster user http sessions automatically. The following are required for enabling Hazelcast Session Clustering:
+Assume that you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down, your users on that server will be directed to one of the live servers (B or C), but their sessions will be lost! 
 
--   Target application or web server should support Java 1.5+
+So we have to have all these sessions backed up somewhere if we do not want to lose the sessions upon server crashes. Hazelcast WM allows you to cluster user HTTP sessions automatically. The following are required for enabling Hazelcast Session Clustering:
 
--   Target application or web server should support Servlet 2.4+ spec
+-   Target application or web server should support Java 1.5 or higher
 
--   Session objects that needs to be clustered have to be Serializable
+-   Target application or web server should support Servlet 2.4 or higher spec
+
+-   Session objects that need to be clustered have to be Serializable
 
 Here are the steps to setup Hazelcast Session Clustering:
 
-1.  Put the `hazelcast` and `hazelcast-wm` jars in your `WEB-INF/lib` directory. Optionally if you wish to connect to a cluster as a client add `hazelcast-client` as well.
+-	Put the `hazelcast` and `hazelcast-wm` jars in your `WEB-INF/lib` directory. Optionally, if you wish to connect to a cluster as a client, add `hazelcast-client` as well.
 
-2.  Put the following xml into `web.xml` file. Make sure Hazelcast filter is placed before all the other filters if any; put it at the top for example.
+-	Put the following XML into `web.xml` file. Make sure Hazelcast filter is placed before all the other filters if any; put it at the top for example.
 
 ```xml             
 <filter>
@@ -137,14 +139,15 @@ Here are the steps to setup Hazelcast Session Clustering:
     <listener-class>com.hazelcast.web.SessionListener</listener-class>
 </listener>
 ```
-3.  Package and deploy your war file as you would normally do.
 
-It is that easy! All http requests will go through Hazelcast `WebFilter` and it will put the session objects into Hazelcast distributed map if needed.
+-	Package and deploy your war file as you would normally do.
 
-**Info about sticky-sessions:**
+It is that easy! All HTTP requests will go through Hazelcast `WebFilter` and it will put the session objects into Hazelcast distributed map if needed.
 
-Hazelcast holds whole session attributes in a distributed map and in local http session. Local session is required for fast access to data and distributed map is needed for fail-safety.
+**Information about sticky-sessions:**
 
--   *If sticky-session is not used, whenever a session a attribute is updated in a node (in both node local session and clustered cache), that attribute should be invalidated in all other nodes' local sessions, because now they have dirty value. So when a request arrives one of those other nodes that attribute value is fetched from clustered cache.*
+Hazelcast holds whole session attributes in a distributed map and in local HTTP session. Local session is required for fast access to data and distributed map is needed for fail-safety.
 
--   *To overcome performance penalty of sending invalidation messages during updates, sticky-sessions can be used. If Hazelcast knows sessions are sticky, invalidation will not be send, because Hazelcast assumes there is no other local session at the moment. When a server is down, requests belonging to a session hold in that server will routed to other one and that server will fetch session data from clustered cache. That means using sticky-sessions, one will not suffer performance penalty of accessing clustered data and can benefit recover from a server failure.*
+-   *If sticky-session is not used, whenever a session attribute is updated in a node (in both node local session and clustered cache), that attribute should be invalidated in all other nodes' local sessions, because now they have dirty value. So, when a request arrives to one of those other nodes, that attribute value is fetched from clustered cache.*
+
+-   *To overcome performance penalty of sending invalidation messages during updates, sticky-sessions can be used. If Hazelcast knows sessions are sticky, invalidation will not be send, because Hazelcast assumes there is no other local session at the moment. When a server is down, requests belonging to a session hold in that server will routed to other one and that server will fetch session data from clustered cache. That means, using sticky-sessions, one will not suffer performance penalty of accessing clustered data and can benefit recover from a server failure.*

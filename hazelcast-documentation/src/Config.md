@@ -1,7 +1,7 @@
 
 
 # Configuration
-Hazelcast can be configured through xml or using configuration api or even mix of both.
+Hazelcast can be configured through XML or using configuration API or even mix of both.
 
 1.**XML Configuration**
 
@@ -29,7 +29,7 @@ If you want to specify your own configuration file to create `Config`, Hazelcast
 
 2.**Programmatic Configuration**
 
-To configure Hazelcast programatically, just instantiate a `Config` object and set/change its properties/attributes due to your needs.
+To configure Hazelcast programmatically, just instantiate a `Config` object and set/change its properties/attributes due to your needs.
 
 ```java
 Config cfg = new Config();

@@ -40,6 +40,11 @@ public class RecordReplicationInfo extends RecordInfo implements DataSerializabl
         this.mapStoreDeleteDelayMillis = mapStoreDeleteDelayMillis;
     }
 
+    public RecordReplicationInfo(Data key, Data value, RecordStatistics statistics,
+                                 long idleDelayMillis, long ttlDelayMillis) {
+        this(key,value,statistics,idleDelayMillis,ttlDelayMillis,-1,-1);
+    }
+
     public RecordReplicationInfo() {
     }
 

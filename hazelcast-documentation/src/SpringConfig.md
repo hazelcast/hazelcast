@@ -1,7 +1,9 @@
 
 ## Configuration
 
-You can declare Hazelcast beans for Spring context using *beans* namespace (default spring *beans* namespace) as well to declare hazelcast maps, queues and others. **Hazelcast-Spring integration requires either hazelcast-spring jar or hazelcast-all jar in the classpath.**
+***Note***: *Hazelcast-Spring integration requires either *`hazelcast-spring-`*version*`.jar`* or *`hazelcast-all-`*version*`.jar`* in the classpath.*
+
+You can declare Hazelcast beans for Spring context using *beans* namespace (default Spring *beans* namespace) as well to declare Hazelcast maps, queues and others. 
 
 ```xml
 <bean id="instance" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance">
@@ -22,11 +24,12 @@ You can declare Hazelcast beans for Spring context using *beans* namespace (defa
     <constructor-arg value="map"/>
 </bean>
 ```
+
 Hazelcast has Spring integration (requires version 2.5 or greater) since 1.9.1 using *hazelcast* namespace.
 
--   Add namespace *xmlns:hz="http://www.hazelcast.com/schema/spring"* to beans tag in context file:
+-   Add namespace *xmlns:hz="http://www.hazelcast.com/schema/spring"* to `beans` tag in context file:
 
-```xml
+	```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
@@ -35,9 +38,10 @@ Hazelcast has Spring integration (requires version 2.5 or greater) since 1.9.1 u
                 http://www.hazelcast.com/schema/spring
                 http://www.hazelcast.com/schema/spring/hazelcast-spring-3.0.xsd">
 ```
+
 -   Use *hz* namespace shortcuts to declare cluster, its items and so on.
 
-After that you can configure Hazelcast instance (node):
+After that you can configure Hazelcast instance (node) as shown below.
 
 ```xml
 <hz:hazelcast id="instance">
@@ -64,7 +68,8 @@ After that you can configure Hazelcast instance (node):
     </hz:config>
 </hz:hazelcast>
 ```
-You can easily configure map-store and near-cache too. (For map-store you should set either *class-name* or *implementation* attribute.)
+
+You can easily configure `map-store` and `near-cache`, too. For map-store, you should set either *class-name* or *implementation* attribute.)
 
 ```xml
 <hz:config>
@@ -84,7 +89,8 @@ You can easily configure map-store and near-cache too. (For map-store you should
     <bean id="dummyMapStore" class="com.foo.DummyStore" />
 </hz:config>
 ```
-It's possible to use placeholders instead of concrete values. For instance, use property file *app-default.properties* for group configuration:
+
+It is possible to use placeholders instead of concrete values. For instance, use property file *app-default.properties* for group configuration:
 
 ```xml
 <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -104,7 +110,8 @@ It's possible to use placeholders instead of concrete values. For instance, use 
     </hz:config>
 </hz:hazelcast>
 ```
-Similar for client
+
+Similar for client:
 
 ```xml
 <hz:client id="client"
@@ -113,6 +120,7 @@ Similar for client
     <hz:member>10.10.1.3:5701</hz:member>
 </hz:client>
 ```
+
 Hazelcast also supports `lazy-init`, `scope` and `depends-on` bean attributes.
 
 ```xml
@@ -124,31 +132,21 @@ Hazelcast also supports `lazy-init`, `scope` and `depends-on` bean attributes.
     ...
 </hz:client>
 ```
+
 You can declare beans for the following Hazelcast objects:
 
--   map
-
--   multiMap
-
--   queue
-
--   topic
-
--   set
-
--   list
-
--   executorService
-
--   idGenerator
-
--   atomicLong
-
--   semaphore
-
--   countDownLatch
-
--   lock
+-   `map`
+-   `multiMap`
+-   `queue`
+-   `topic`
+-   `set`
+-   `list`
+-   `executorService`
+-   `idGenerator`
+-   `atomicLong`
+-   `semaphore`
+-   `countDownLatch`
+-   `lock`
 
 Example:
 
@@ -169,11 +167,11 @@ Example:
 
 
 
-Spring tries to create a new `Map`/`Collection` instance and fill the new instance by iterating and converting values of the original `Map`/`Collection` (`IMap`, `IQueue` etc.) to required types when generic type parameters of the original `Map`/`Collection` and the target property/attribute do not match.
+Spring tries to create a new `Map`/`Collection` instance and fill the new instance by iterating and converting values of the original `Map`/`Collection` (`IMap`, `IQueue`, etc.) to required types when generic type parameters of the original `Map`/`Collection` and the target property/attribute do not match.
 
-Since Hazelcast `Map`s/`Collection`s are designed to hold very large data which a single machine can not carry, iterating through whole values can cause out of memory errors.
+Since Hazelcast `Map`s/`Collection`s are designed to hold very large data which a single machine cannot carry, iterating through whole values can cause out of memory errors.
 
-To avoid this issue either target property/attribute can be declared as un-typed `Map`/`Collection`
+To avoid this issue, either target property/attribute can be declared as un-typed `Map`/`Collection` as shown below:
 
 ```java
 public class SomeBean {
@@ -186,7 +184,8 @@ public class SomeBean {
     ...
 }
 ```
-or parameters of injection methods (constructor, setter) can be un-typed.
+
+Or, parameters of injection methods (constructor, setter) can be un-typed as shown below:
 
 ```java
 public class SomeBean {

@@ -20,9 +20,10 @@ if (task != null) {
     //process task
 }
 ```
-FIFO ordering will apply to all queue operations cluster-wide. User objects (such as `MyTask` in the example above), that are (en/de)queued have to be `Serializable`. By configuring max-size for queue one can obtain a bounded queue.
 
-Sample configuration:
+FIFO ordering will apply to all queue operations cluster wide. User objects (such as `MyTask` in the example above), that are (en/de)queued have to be `Serializable`. By configuring `max-size` for queue, one can obtain a bounded queue.
+
+A sample configuration is shown below.
 
 ```xml
 <hazelcast>
@@ -66,19 +67,22 @@ Sample configuration:
     </queue>
 </hazelcast>
 ```
+
 ### Persistence
 
 
-Hazelcast allows you to load and store the distributed queue entries from/to a persistent datastore such as relational database via a queue-store. If queue store is enabled then each entry added to queue will also be stored to configured queue store. When the number of items in queue exceed the memory limit, items will only persisted to queue store, they will not stored in queue memory. Here the queue store configuration options:
+Hazelcast allows you to load and store the distributed queue entries from/to a persistent datastore such as relational database via a queue-store. If queue store is enabled, each entry added to queue will also be stored at the configured queue store. When the number of items in queue exceeds the memory limit, items will only persisted to queue store, they will not stored in queue memory. Below are the queue store configuration options:
 
--   Binary:
-    By default Hazelcast stores queue items in serialized form in memory and before inserting into datastore deserializes them. But if you will not reach the queue store from an external application you can prefer the items to be inserted in binary form. So you get rid of de-serialization step that is a performance optimization. By default binary feature is not enabled.
--   Memory Limit:
-    This is the number of items after which Hazelcast will just store items to datastore. For example if memory limit is 1000, then 1001st item will be just put into datastore. This feature is useful when you want to avoid out-of-memory conditions. Default number for memory limit is 1000. If you want to always use memory you can set it to Integer.MAX\_VALUE.
--   Bulk Load:
-    At initialization of queue, items are loaded from QueueStore in bulks. Bulk load is the size these bulks. By default it is 250.
+-   **Binary**:
+    By default, Hazelcast stores queue items in serialized form in memory and before inserting into datastore, deserializes them. But if you will not reach the queue store from an external application, you can prefer the items to be inserted in binary form. So you get rid of de-serialization step which is a performance optimization. Binary feature is disabled by default.
+    
+-   **Memory Limit**:
+    This is the number of items after which Hazelcast will just store items to datastore. For example, if memory limit is 1000, then 1001st item will be just put into datastore. This feature is useful when you want to avoid out-of-memory conditions. Default number for memory limit is 1000. If you want to always use memory, you can set it to `Integer.MAX\_VALUE`.
+    
+-   **Bulk Load**:
+    At initialization of queue, items are loaded from QueueStore in bulks. Bulk load is the size of these bulks. By default it is 250.
 
-Here an example queue store configuration:
+Below is an example queue store configuration:
 
 ```xml
 <queue-store>

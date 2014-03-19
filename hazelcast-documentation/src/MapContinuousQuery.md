@@ -1,7 +1,7 @@
 
 ### Continuous Query
 
-One of the new features of version 3.0 is the continuous query. You can listen map entry events providing a predicate and so event will be fired for each entry validated by your query. IMap has a single method for listening map providing query.
+You can listen map entry events providing a predicate and so, event will be fired for each entry validated by your query. IMap has a single method for listening map providing query.
 
 ```java
 /**

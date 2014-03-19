@@ -30,4 +30,5 @@ if (lock.tryLock (5000, TimeUnit.MILLISECONDS)) {
     }   
 } 
 ```
+
 Locks are fail-safe. If a member holds a lock and some of the members go down, cluster will keep your locks safe and available. Moreover, when a member leaves the cluster, all the locks acquired by this dead member will be removed so that these locks can be available for live members immediately.

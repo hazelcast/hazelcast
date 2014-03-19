@@ -1,7 +1,7 @@
 
 ## Alerts
 
-Alerts feature of this tool is used to receive alerts by creating filters. In these filters, criteria can be specified for cluster, nodes or data structues. When the specified criteria are met for a filter, related alert is shown as a pop-up message on top right of the page. 
+Alerts feature of this tool is used to receive alerts by creating filters. In these filters, criteria can be specified for cluster, nodes or data structures. When the specified criteria are met for a filter, related alert is shown as a pop-up message on top right of the page. 
 
 Once the **Alerts** button located at the toolbar is clicked, the page shown below appears. 
 

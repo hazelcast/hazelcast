@@ -1,7 +1,7 @@
 
 ## Planned Features
 
-Random order of planned features.
+Below is the randomly ordered list of planned features.
 
 -   Ready-to-go Hazelcast Cache Server Image for Amazon EC2
 

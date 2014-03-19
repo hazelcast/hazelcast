@@ -5,13 +5,13 @@ Hazelcast Management Center enables you to monitor and manage your nodes running
 
 ### Installation
 
-It is important to understand how it actually works. Basically you will deploy `mancenter`-*version*`.war` application into your Java web server and then tell Hazelcast nodes to talk to that web application. That means, your Hazelcast nodes should know the URL of `mancenter` application before they start.
+Basically you will deploy `mancenter`-*version*`.war` application into your Java web server and then tell Hazelcast nodes to talk to that web application. That means, your Hazelcast nodes should know the URL of `mancenter` application before they start.
 
 Here are the steps:
 
 -   Download the latest Hazelcast ZIP from [hazelcast.org](http://www.hazelcast.org/download/).
 
--   ZIP contains `mancenter`-*version*`.war` file. Deploy it to your web server (Tomcat, Jetty etc.) Let's say it is running at `http://localhost:8080/mancenter`.
+-   ZIP contains `mancenter`-*version*`.war` file. Deploy it to your web server (Tomcat, Jetty, etc.). Let us say it is running at `http://localhost:8080/mancenter`.
 
 -   Start your web server and make sure `http://localhost:8080/mancenter` is up.
 
@@ -25,7 +25,7 @@ Here are the steps:
 
 -   Browse to `http://localhost:8080/mancenter` and login. **Initial login username/password is `admin/admin`**
 
-*Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files. You can change the data directory setting "hazelcast.mancenter.home" system property.*
+*Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files. You can change the data directory by setting `hazelcast.mancenter.home` system property.*
 
 
 
@@ -35,7 +35,7 @@ Once the page is loaded after selecting a cluster, tool's home page appears as s
 
 ![](images/NonHostedMCHomePage.jpg)
 
-This page provides the fundamental properties of the selected cluster which are explained in [Home Page](#homepage).
+This page provides the fundamental properties of the selected cluster which are explained in [Home Page](#homepage) section.
 
 It also has a toolbar on the top and a menu on the left.
 

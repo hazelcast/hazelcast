@@ -31,7 +31,9 @@ public class Address implements com.hazelcast.nio.serialization.DataSerializable
     }
 }
 ```
-Lets take a look at another example which is encapsulating a `DataSerializable` field.
+
+Let's take a look at another example which is encapsulating a `DataSerializable` field.
+
 
 ```java
 public class Employee implements com.hazelcast.nio.serialization.DataSerializable {
@@ -64,9 +66,15 @@ public class Employee implements com.hazelcast.nio.serialization.DataSerializabl
     }
 }
 ```
-As you can see, since `address` field itself is`DataSerializable`, it is calling `address.writeData(out)` when writing and `address.readData(in)` when reading. Also note that the order of writing and reading fields should be the same. While Hazelcast serializes a DataSerializable it writes the className first and when de-serializes it, className is used to instantiate the object using reflection. **IdentifiedDataSerializable** To avoid the reflection and long class names `IdentifiedDataSerializable` can be used instead of`DataSerializable`. Note that `IdentifiedDataSerializable` extends `DataSerializable` and introduces two new methods.
 
--   int getId();
--   int getFactoryId();
+As you can see, since `address` field itself is `DataSerializable`, it is calling `address.writeData(out)` when writing and `address.readData(in)` when reading. Also note that, the order of writing and reading fields should be the same. While Hazelcast serializes a DataSerializable, it writes the `className` first and when de-serializes it, `className` is used to instantiate the object using reflection. 
 
-IdentifiedDataSerializable uses `getId()` instead of className and uses getFactoryId() to load the class given the Id. To complete the implementation a `com.hazelcast.nio.serialization.DataSerializableFactory` should also be implemented and registered into `SerializationConfig` which can be accessed from `Config.getSerializationConfig()`. The Factories responsibility is to return an instance of the right `IdentifiedDataSerializable` object, given the id. So far this is the most efficient way of Serialization that Hazelcast supports of the shelf.
+**IdentifiedDataSerializable** 
+
+To avoid the reflection and long class names, `IdentifiedDataSerializable` can be used instead of `DataSerializable`. Note that, `IdentifiedDataSerializable` extends `DataSerializable` and introduces two new methods.
+
+-   `int getId();`
+-   `int getFactoryId();`
+
+
+`IdentifiedDataSerializable` uses `getId()` instead of className and uses getFactoryId() to load the class given the Id. To complete the implementation, a `com.hazelcast.nio.serialization.DataSerializableFactory` should also be implemented and registered into `SerializationConfig` which can be accessed from `Config.getSerializationConfig()`. Factory's responsibility is to return an instance of the right `IdentifiedDataSerializable` object, given the Id. So far this is the most efficient way of Serialization that Hazelcast supports of the shelf.
