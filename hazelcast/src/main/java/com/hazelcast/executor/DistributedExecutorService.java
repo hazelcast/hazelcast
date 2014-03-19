@@ -18,7 +18,11 @@ package com.hazelcast.executor;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -26,7 +30,12 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -71,6 +80,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         try {
             executionService.execute(name, processor);
         } catch (RejectedExecutionException e) {
+            rejectExecution(name);
             getLogger().warning("While executing " + callable + " on Executor[" + name + "]", e);
             if (uuid != null) {
                 submittedTasks.remove(uuid);
@@ -123,6 +133,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         getLocalExecutorStats(name).startPending();
     }
 
+    private void rejectExecution(String name) {
+        getLocalExecutorStats(name).rejectExecution();
+    }
+
     private class CallableProcessor extends FutureTask implements Runnable {
         final String name;
         final String uuid;
@@ -148,7 +162,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                 result = get();
             } catch (Exception e) {
                 final ILogger logger = getLogger();
-                logger.finest( "While executing callable: " + callableToString, e);
+                logger.finest("While executing callable: " + callableToString, e);
                 result = e;
             } finally {
                 if (uuid != null) {
