@@ -271,7 +271,7 @@
             <properties>
                 <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
                 <!-- no idea why the reportPath for it doesn't work.. so lets hack it in like this -->
-                <!-- sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.reportPath -->
+                <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco-banana.exec</sonar.jacoco.reportPath>
                 <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
             </properties>
             <build>
