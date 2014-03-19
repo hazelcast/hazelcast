@@ -72,7 +72,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private static final ILogger logger = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    private static int RETRY_COUNT = 20;
+    private static final int RETRY_COUNT = 20;
 
     static final int KILO_BYTE = 1024;
     public static final int BUFFER_SIZE = 16 << 10; // 32k

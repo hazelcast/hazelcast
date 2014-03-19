@@ -187,7 +187,7 @@ public class MulticastJoiner extends AbstractJoiner {
         String host = node.getThisAddress().getHost();
         int lastDigits;
         try {
-            lastDigits = Integer.valueOf(host.substring(host.lastIndexOf(".") + 1));
+            lastDigits = Integer.valueOf(host.substring(host.lastIndexOf('.') + 1));
         } catch (NumberFormatException e) {
             lastDigits = RandomPicker.getInt(512);
         }

@@ -72,16 +72,16 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     }
 
     private int getApostropheIndex(String str, int start) {
-        return str.indexOf("'", start);
+        return str.indexOf('\'', start);
     }
 
     private int getApostropheIndexIgnoringDoubles(String str, int start) {
-        int i = str.indexOf("'", start);
-        int j = str.indexOf("'", i + 1);
+        int i = str.indexOf('\'', start);
+        int j = str.indexOf('\'', i + 1);
         //ignore doubles
         while(i == j-1){
-            i = str.indexOf("'", j+1);
-            j = str.indexOf("'", i+1);
+            i = str.indexOf('\'', j+1);
+            j = str.indexOf('\'', i+1);
         }
         return i;
     }
