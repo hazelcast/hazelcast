@@ -279,17 +279,23 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>${jacoco.version}</version>
-                          <executions>
+                        <!-- version>${jacoco.version}</version -->
+                        <version>0.6.0.201210061924</version>
+                        <configuration>
+                            <propertyName>jacoco.agent.argLine</propertyName>
+                            <destFile>${sonar.jacoco.itReportPath}</destFile>
+                            <append>true</append>
+                        </configuration>
+                        <executions>
                             <execution>
                                 <id>default-prepare-agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
                                 </goals>
-                                <configuration>
+                                <!-- configuration>
                                     <destFile>${basedir}/target/coverage-reports/jacoco-it.exec</destFile>
                                     <dataFile>${basedir}/target/coverage-reports/jacoco-it.exec</dataFile>
-                                </configuration>
+                                </configuration -->
                             </execution>
                             <execution>
                                 <id>default-report</id>
