@@ -263,10 +263,10 @@ public class ManagementCenterService {
             return;
         }
 
-        managementCenterUrl = newUrl;
         if (newUrl.equals(managementCenterUrl)) {
             return;
         }
+        managementCenterUrl = newUrl;
 
         if (!isRunning()) {
             start();
