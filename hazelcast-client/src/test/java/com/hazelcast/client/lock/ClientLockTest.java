@@ -182,4 +182,18 @@ public class ClientLockTest {
         }.start();
         assertTrue(latch.await(1, TimeUnit.MINUTES));
     }
+
+    @Test
+    public void testObtainLock_FromDiffClients() throws InterruptedException {
+
+        HazelcastInstance clientA = HazelcastClient.newHazelcastClient();
+        ILock lockA = clientA.getLock(name);
+        lockA.lock();
+
+        HazelcastInstance clientB = HazelcastClient.newHazelcastClient();
+        ILock lockB = clientB.getLock(name);
+        boolean lockObtained = lockB.tryLock();
+
+        assertFalse("Lock obtained by 2 client ", lockObtained);
+    }
 }
