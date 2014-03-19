@@ -22,15 +22,15 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 
 ### Getting Started
 
-See [Getting Started Guide](http://hazelcast.com/docs/latest/manual/single_html/#GettingStarted)
+See [Getting Started Guide](http://hazelcast.org/docs/latest/manual/html/gettingstarted.html)
 
 ### Documentation
 
-See documentation at [www.hazelcast.com](http://hazelcast.com/docs.jsp)
+See documentation at [www.hazelcast.org](http://hazelcast.org/documentation/)
 
 ### Releases
 
-Download from [www.hazelcast.com](http://hazelcast.com/downloads.jsp)
+Download from [www.hazelcast.org](http://hazelcast.org/download/)
 
 Or use Maven snippet:
 ````xml
@@ -100,6 +100,6 @@ Hazelcast is available under the Apache 2 License.
 
 #### Copyright
 
-Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.
