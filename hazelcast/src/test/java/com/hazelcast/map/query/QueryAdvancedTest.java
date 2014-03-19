@@ -32,6 +32,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
@@ -108,19 +109,27 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testQueryDuringAndAfterMigration() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        int count = 100000;
-        IMap imap = h1.getMap("values");
+        int count = 500;
+        IMap imap = h1.getMap("employees");
         for (int i = 0; i < count; i++) {
-            imap.put(i, i);
+            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
         }
+
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance();
-        long startNow = Clock.currentTimeMillis();
-        while ((Clock.currentTimeMillis() - startNow) < 10000) {
-            Collection<Employee> values = imap.values();
-            assertEquals(count, values.size());
-        }
+
+        final IMap employees = h1.getMap("employees");
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<Employee> values = employees.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+                for (Employee employee : values) {
+                    assertTrue(employee.isActive());
+                }
+                assertEquals(6, values.size());
+            }
+        },3);
     }
 
     @Test
@@ -136,7 +145,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
         }
-        assertEquals(size, imap.size());
+
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
@@ -511,7 +520,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
      * test for issue #359
      */
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
+    @Category(SlowTest.class)
     public void testIndexCleanupOnMigration() throws InterruptedException {
         final int n = 6;
         final int runCount = 500;

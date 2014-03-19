@@ -48,6 +48,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -241,23 +242,20 @@ public class MapStoreTest extends HazelcastTestSupport {
         cfg.getMapConfig("testInitialLoadModeEagerWhileStoppigOneNode").setMapStoreConfig(mapStoreConfig);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        Runnable runnable = new Runnable() {
+        new Thread(new Runnable() {
+            @Override
             public void run() {
-                try {
-                    Thread.sleep(3000);
+                    sleepSeconds(3);
                     instance1.getLifecycleService().terminate();
-                    Thread.sleep(3000);
+                    sleepSeconds(3);
                     final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
                     assertEquals(size, map.size());
                     countDownLatch.countDown();
 
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
-        };
-        new Thread(runnable).start();
-        assertOpenEventually(countDownLatch, 120);
+        }).start();
+
+        assertOpenEventually(countDownLatch);
 
         final IMap<Object, Object> map2 = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
         final int map2Size = map2.size();
@@ -1259,6 +1257,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() throws InterruptedException {
         final int size = 1000;
         Config config = new Config();
@@ -1283,6 +1282,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testIssue1085WriteBehindBackupTransactional() throws InterruptedException {
         Config config = new Config();
         String name = "testIssue1085WriteBehindBackupTransactional";
@@ -1386,7 +1386,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     @Test
     public void testMapStoreWriteRemoveOrder() {
         final String mapName = randomMapName("testMapStoreWriteDeleteOrder");
-        final int numIterations = 40;
+        final int numIterations = 10;
         final int writeDelaySeconds = 10;
         // create map store implementation
         final RecordingMapStore store = new RecordingMapStore(numIterations,numIterations);
