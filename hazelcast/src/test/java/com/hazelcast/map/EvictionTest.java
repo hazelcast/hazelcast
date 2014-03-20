@@ -29,8 +29,10 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -93,9 +95,8 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<String, String> map = h.getMap("testIssue455ZeroTTLShouldPreventEviction");
         map.put("key", "value", 1, TimeUnit.SECONDS);
         map.put("key", "value2", 0, TimeUnit.SECONDS);
-        Thread.sleep(2000);
+        sleepSeconds(2);
         assertEquals("value2", map.get("key"));
-        h.shutdown();
     }
 
     /*
@@ -113,9 +114,8 @@ public class EvictionTest extends HazelcastTestSupport {
         IMap<String, String> map = h.getMap("testIssue585ZeroTTLShouldPreventEvictionWithSet");
         map.set("key", "value", 1, TimeUnit.SECONDS);
         map.set("key", "value2", 0, TimeUnit.SECONDS);
-        Thread.sleep(2000);
+        sleepSeconds(2);
         assertEquals("value2", map.get("key"));
-        h.shutdown();
     }
 
     /*
@@ -139,7 +139,6 @@ public class EvictionTest extends HazelcastTestSupport {
                 assertEquals(0, map.size());
             }
         });
-        h.shutdown();
     }
 
     /*
@@ -170,11 +169,10 @@ public class EvictionTest extends HazelcastTestSupport {
         String key = "key";
         for (int i = 0; i < 5; i++) {
             map.put(key, System.currentTimeMillis());
-            Thread.sleep(500);
+            sleepMillis(500);
         }
         assertEquals(evictCount.get(), 0);
         assertNotNull(map.get(key));
-        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -436,7 +434,6 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < size / 2; i++) {
             assertNotNull(map.get(i));
         }
-        instances[0].shutdown();
     }
 
     @Test
@@ -575,6 +572,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testMapRecordIdleEvictionOnMigration() {
         Config cfg = new Config();
         final String name = "testMapRecordIdleEvictionOnMigration";
@@ -674,15 +672,20 @@ public class EvictionTest extends HazelcastTestSupport {
         String mapname = "testContainsKeyShouldDelayEviction";
         cfg.getMapConfig(mapname).setMaxIdleSeconds(3);
         HazelcastInstance instance = createHazelcastInstance(cfg);
-        IMap<Object, Object> map = instance.getMap(mapname);
+        final IMap<Object, Object> map = instance.getMap(mapname);
         map.put(1, 1);
-        for (int i = 0; i < 20; i++) {
-            assertTrue(map.containsKey(1));
-            Thread.sleep(500);
-        }
+
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(map.containsKey(1));
+            }
+        }, 5);
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testIssue1085EvictionBackup() throws InterruptedException {
         Config config = new Config();
         config.getMapConfig("testIssue1085EvictionBackup").setTimeToLiveSeconds(3);
