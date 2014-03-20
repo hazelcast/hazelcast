@@ -1226,7 +1226,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                             migrationCount++;
                             MigrationInfo info = new MigrationInfo(partitionId, currentOwner, newOwner);
                             MigrateTask migrateTask = new MigrateTask(info, new BackupMigrationTask(partitionId, replicas));
-                            migrationQueue.offer(migrateTask);
+                            boolean offered = migrationQueue.offer(migrateTask);
+                            if(!offered){
+                                logger.severe("Failed to offer: "+migrateTask);
+                            }
                         } else {
                             currentPartition.setPartitionInfo(replicas);
                         }
