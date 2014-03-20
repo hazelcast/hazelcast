@@ -28,6 +28,7 @@ import java.util.Set;
  * @see MembershipListener
  * @see MembershipEvent
  */
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class InitialMembershipEvent extends EventObject {
 
     private static final long serialVersionUID = -2010865371829087371L;

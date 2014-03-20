@@ -27,6 +27,7 @@ import java.io.IOException;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class MemberAttributeEvent extends MembershipEvent implements DataSerializable {
 
     private MemberAttributeOperationType operationType;

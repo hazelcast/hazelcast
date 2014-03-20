@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * Thrown when a member left during an invocation or execution.
  */
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class MemberLeftException extends ExecutionException implements DataSerializable, RetryableException {
 
     private Member member;
