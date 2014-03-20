@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -1113,6 +1114,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("BC_UNCONFIRMED_CAST")
     @Override
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
         switch (event.getEventType()){
@@ -1123,7 +1125,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 listener.memberRemoved(event);
                 break;
             case MembershipEvent.MEMBER_ATTRIBUTE_CHANGED:
-                listener.memberAttributeChanged((MemberAttributeEvent) event);
+                MemberAttributeEvent memberAttributeEvent = (MemberAttributeEvent) event;
+                listener.memberAttributeChanged(memberAttributeEvent);
                 break;
             default:
                 throw new IllegalArgumentException("Unhandled event:"+event);
