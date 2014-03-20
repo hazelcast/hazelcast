@@ -30,6 +30,7 @@ import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.SocketReader;
 import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.util.StringUtil;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -133,7 +134,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
         if (bb.position() == 0) {
             result = "";
         } else {
-            result = new String(bb.array(), 0, bb.position());
+            result = StringUtil.bytesToString(bb.array(), 0, bb.position());
         }
         bb.clear();
         return result;

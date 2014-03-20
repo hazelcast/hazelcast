@@ -86,15 +86,18 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         textCommandProcessors[NO_OP.getValue()] = new NoOpCommandProcessor(this);
     }
 
+    @Override
     public Node getNode() {
         return node;
     }
 
+    @Override
     public byte[] toByteArray(Object value) {
         Data data = node.getSerializationService().toData(value);
         return data.getBuffer();
     }
 
+    @Override
     public Stats getStats() {
         Stats stats = new Stats();
         stats.uptime = (int) ((Clock.currentTimeMillis() - startTime) / 1000);
@@ -114,52 +117,64 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         return stats;
     }
 
+    @Override
     public long incrementDeleteHitCount(int inc) {
         return deleteHits.addAndGet(inc);
     }
 
+    @Override
     public long incrementDeleteMissCount() {
         return deleteMisses.incrementAndGet();
     }
 
+    @Override
     public long incrementGetHitCount() {
         return getHits.incrementAndGet();
     }
 
+    @Override
     public long incrementGetMissCount() {
         return getMisses.incrementAndGet();
     }
 
+    @Override
     public long incrementSetCount() {
         return sets.incrementAndGet();
     }
 
+    @Override
     public long incrementIncHitCount() {
         return incrementHits.incrementAndGet();
     }
 
+    @Override
     public long incrementIncMissCount() {
         return incrementMisses.incrementAndGet();
     }
 
+    @Override
     public long incrementDecrHitCount() {
         return decrementHits.incrementAndGet();
     }
 
+    @Override
     public long incrementDecrMissCount() {
         return decrementMisses.incrementAndGet();
     }
 
+    @Override
     public long incrementTouchCount() {
         return touches.incrementAndGet();
     }
 
+    @Override
     public void processRequest(TextCommand command) {
         if (responseThreadRunnable == null) {
             synchronized (this) {
                 if (responseThreadRunnable == null) {
                     responseThreadRunnable = new ResponseThreadRunnable();
-                    Thread thread = new Thread(node.threadGroup, responseThreadRunnable, node.getThreadNamePrefix("ascii.service.response"));
+                    String threadNamePrefix = node.getThreadNamePrefix("ascii.service.response");
+                    Thread thread = new Thread(node.threadGroup, responseThreadRunnable, threadNamePrefix);
                     thread.start();
                 }
             }
@@ -167,10 +182,12 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         node.nodeEngine.getExecutionService().execute("hz:text", new CommandExecutor(command));
     }
 
+    @Override
     public Object get(String mapName, String key) {
         return hazelcast.getMap(mapName).get(key);
     }
 
+    @Override
     public int getAdjustedTTLSeconds(int ttl) {
         if (ttl <= MONTH_SECONDS) {
             return ttl;
@@ -179,6 +196,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         }
     }
 
+    @Override
     public byte[] getByteArray(String mapName, String key) {
         Object value = hazelcast.getMap(mapName).get(key);
         byte[] result = null;
@@ -195,45 +213,56 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         return result;
     }
 
+    @Override
     public Object put(String mapName, String key, Object value) {
         return hazelcast.getMap(mapName).put(key, value);
     }
 
+    @Override
     public Object put(String mapName, String key, Object value, int ttlSeconds) {
         return hazelcast.getMap(mapName).put(key, value, ttlSeconds, TimeUnit.SECONDS);
     }
 
+    @Override
     public Object putIfAbsent(String mapName, String key, Object value, int ttlSeconds) {
         return hazelcast.getMap(mapName).putIfAbsent(key, value, ttlSeconds, TimeUnit.SECONDS);
     }
 
+    @Override
     public Object replace(String mapName, String key, Object value) {
         return hazelcast.getMap(mapName).replace(key, value);
     }
 
+    @Override
     public void lock(String mapName, String key) throws InterruptedException {
         if (!hazelcast.getMap(mapName).tryLock(key, 1, TimeUnit.MINUTES)) {
-            throw new RuntimeException("Memcache client could not get the lock for map:" + mapName + " key:" + key + " in 1 minute");
+            throw new RuntimeException("Memcache client could not get the lock for map:"
+                    + mapName + " key:" + key + " in 1 minute");
         }
     }
 
+    @Override
     public void unlock(String mapName, String key) {
         hazelcast.getMap(mapName).unlock(key);
     }
 
+    @Override
     public void deleteAll(String mapName) {
         final IMap<Object, Object> map = hazelcast.getMap(mapName);
         map.clear();
     }
 
+    @Override
     public Object delete(String mapName, String key) {
         return hazelcast.getMap(mapName).remove(key);
     }
 
+    @Override
     public boolean offer(String queueName, Object value) {
         return hazelcast.getQueue(queueName).offer(value);
     }
 
+    @Override
     public Object poll(String queueName, int seconds) {
         try {
             return hazelcast.getQueue(queueName).poll(seconds, TimeUnit.SECONDS);
@@ -242,17 +271,17 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         }
     }
 
+    @Override
     public Object poll(String queueName) {
         return hazelcast.getQueue(queueName).poll();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public int size(String queueName) {
         return hazelcast.getQueue(queueName).size();
     }
 
+    @Override
     public void sendResponse(TextCommand textCommand) {
         if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
             throw new RuntimeException("Shouldn't reply " + textCommand);
@@ -274,10 +303,12 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
             this.command = command;
         }
 
+        @Override
         public void run() {
             try {
                 TextCommandType type = command.getType();
-                textCommandProcessors[type.getValue()].handle(command);
+                TextCommandProcessor textCommandProcessor = textCommandProcessors[type.getValue()];
+                textCommandProcessor.handle(command);
             } catch (Throwable e) {
                 logger.warning(e);
             }
@@ -288,10 +319,12 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         private final BlockingQueue<TextCommand> blockingQueue = new ArrayBlockingQueue<TextCommand>(200);
         private final Object stopObject = new Object();
 
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
         public void sendResponse(TextCommand textCommand) {
             blockingQueue.offer(textCommand);
         }
 
+        @Override
         public void run() {
             while (running) {
                 try {
@@ -313,15 +346,18 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
             }
         }
 
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
         void stop() {
             running = false;
             synchronized (stopObject) {
                 try {
                     blockingQueue.offer(new AbstractTextCommand(TextCommandConstants.TextCommandType.STOP) {
+                        @Override
                         public boolean readFrom(ByteBuffer cb) {
                             return true;
                         }
 
+                        @Override
                         public boolean writeTo(ByteBuffer bb) {
                             return true;
                         }
