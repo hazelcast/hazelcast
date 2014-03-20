@@ -29,6 +29,27 @@ public abstract class ClientRequest implements Portable, SecureRequest {
     protected transient Object service;
     protected transient ClientEndpoint endpoint;
 
+    /**
+     * Some request needs to use a single connection like transaction requests and
+     * {@link com.hazelcast.cluster.client.ClientPingRequest}
+     * if true then request will not be retried
+     */
+    private transient boolean singleConnection = false;
+
+    /**
+     * mark this request as SingleConnection
+     */
+    public void setSingleConnection() {
+        this.singleConnection = true;
+    }
+
+    /**
+     * @return true if this request is SingleConnection false otherwise
+     */
+    public boolean isSingleConnection() {
+        return singleConnection;
+    }
+
     abstract void process() throws Exception;
 
     public ClientEngine getClientEngine() {
