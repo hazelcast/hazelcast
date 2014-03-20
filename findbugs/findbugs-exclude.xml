@@ -61,9 +61,6 @@
         <Package name="com.hazelcast.partition" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.partition.client" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.partition.impl" />
     </Match>
 

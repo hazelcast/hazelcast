@@ -24,6 +24,8 @@ import com.hazelcast.partition.PartitionDataSerializerHook;
 
 import java.io.IOException;
 
+//This is an internal structure, so doesn't matter if we expose arrays.
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public final class PartitionsResponse implements IdentifiedDataSerializable {
 
     private Address[] members;
