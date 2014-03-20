@@ -27,9 +27,6 @@
         <Package name="com.hazelcast.management.request" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.instance" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.core" />
     </Match>
     <Match>
