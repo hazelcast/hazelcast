@@ -248,6 +248,26 @@ public class ClientNearCacheTest {
     }
 
     @Test
+    public void testMapRemove_WithNearCache() {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+
+        final int size = 1113;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+        for (int i = 0; i < size; i++) {
+            map.remove(i);
+        }
+
+        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getMisses());
+        assertEquals(0, stats.getOwnedEntryCount());
+    }
+
+    @Test
     public void testNearCacheMaxSize() {
         final IMap map = client.getMap(mapWithMaxSizeCash +randomString());
 
