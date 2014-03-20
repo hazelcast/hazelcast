@@ -42,9 +42,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author ali 6/10/13
@@ -146,7 +148,7 @@ public class ClientTxnMapTest {
     }
 
     @Test
-    public void testPutGet() throws Exception {
+    public void testTxnMapPut() throws Exception {
         final String mapName = randomString();
         final String key = "key";
         final String value = "Value";
@@ -155,18 +157,50 @@ public class ClientTxnMapTest {
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         final TransactionalMap<Object, Object> txnMap = context.getMap(mapName);
-        assertNull(txnMap.put(key, value));
-        assertEquals(value, txnMap.get(key));
-        assertNull(map.get(key));
+        txnMap.put(key, value);
         context.commitTransaction();
 
         assertEquals(value, map.get(key));
     }
 
     @Test
+    public void testTxnMapPut_BeforeCommit() throws Exception {
+        final String mapName = randomString();
+        final String key = "key";
+        final String value = "Value";
+        final IMap map = client.getMap(mapName);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> txnMap = context.getMap(mapName);
+
+        assertNull(txnMap.put(key, value));
+
+        context.commitTransaction();
+    }
+
+    @Test
+    public void testTxnMapGet_BeforeCommit() throws Exception {
+        final String mapName = randomString();
+        final String key = "key";
+        final String value = "Value";
+        final IMap map = client.getMap(mapName);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> txnMap = context.getMap(mapName);
+
+        txnMap.put(key, value);
+        assertEquals(value, txnMap.get(key));
+        assertNull(map.get(key));
+
+        context.commitTransaction();
+    }
+
+    @Test
     public void testPutWithTTL() {
         final String mapName = randomString();
-        final int ttlSeconds = 2;
+        final int ttlSeconds = 1;
         final String key = "key";
         final String value = "Value";
         final IMap map = client.getMap(mapName);
@@ -183,6 +217,7 @@ public class ClientTxnMapTest {
         assertNull(resultFromClientWhileTxnInProgress);
         assertEquals(value, map.get(key));
 
+        //waite for ttl to expire
         sleepSeconds(ttlSeconds + 1);
 
         assertNull(map.get(key));
@@ -259,7 +294,7 @@ public class ClientTxnMapTest {
     @Test
     public void testKeysetAndValuesWithPredicates() throws Exception {
         final String mapName = randomString();
-        IMap<Object, Object> map = client.getMap(mapName);
+        IMap map = client.getMap(mapName);
 
         final SampleObjects.Employee emp1 = new SampleObjects.Employee("abc-123-xvz", 34, true, 10D);
         final SampleObjects.Employee emp2 = new SampleObjects.Employee("abc-123-xvz", 20, true, 10D);
@@ -268,9 +303,9 @@ public class ClientTxnMapTest {
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
-        assertNull(txMap.put(emp2, emp2));
+        final TransactionalMap txMap = context.getMap(mapName);
 
+        assertNull(txMap.put(emp2, emp2));
         assertEquals(2, txMap.size());
         assertEquals(2, txMap.keySet().size());
         assertEquals(0, txMap.keySet(new SqlPredicate("age = 10")).size());
@@ -298,5 +333,190 @@ public class ClientTxnMapTest {
         context.rollbackTransaction();
 
         assertNull(map.get(key));
+    }
+
+    @Test
+    public void testTnxMapContainsKey() throws Exception {
+        final String mapName = randomString();
+        IMap map = client.getMap(mapName);
+        map.put("key1", "value1");
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+        txMap.put("key2", "value2");
+        assertTrue(txMap.containsKey("key1"));
+        assertTrue(txMap.containsKey("key2"));
+        assertFalse(txMap.containsKey("key3"));
+
+        context.commitTransaction();
+    }
+
+    @Test
+    public void testTnxMapIsEmpty() throws Exception {
+        final String mapName = randomString();
+        IMap map = client.getMap(mapName);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+        assertTrue(txMap.isEmpty());
+        context.commitTransaction();
+    }
+
+    @Test
+    public void testTnxMapPutIfAbsent() throws Exception {
+        final String mapName = randomString();
+        IMap map = client.getMap(mapName);
+        final String keyValue1 = "keyValue1";
+        final String keyValue2 = "keyValue2";
+        map.put(keyValue1, keyValue1);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+
+        txMap.putIfAbsent(keyValue1, "NOT_THIS");
+        txMap.putIfAbsent(keyValue2, keyValue2);
+
+        context.commitTransaction();
+
+        assertEquals(keyValue1, map.get(keyValue1));
+        assertEquals(keyValue2, map.get(keyValue2));
+    }
+
+    @Test
+    public void testTnxMapReplace() throws Exception {
+        final String mapName = randomString();
+        IMap map = client.getMap(mapName);
+        final String key1 = "key1";
+        final String key2 = "key2";
+        final String replaceValue = "replaceValue";
+        map.put(key1, "OLD_VALUE");
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+
+        txMap.replace(key1, replaceValue);
+        txMap.replace(key2, "NOT_POSSIBLE");
+
+        context.commitTransaction();
+
+        assertEquals(replaceValue, map.get(key1));
+        assertNull(map.get(key2));
+    }
+
+    @Test
+    public void testTnxMapReplaceKeyValue() throws Exception {
+        final String mapName = randomString();
+        final String key1 = "key1";
+        final String oldValue1 = "old1";
+        final String newValue1 = "new1";
+        final String key2 = "key2";
+        final String oldValue2 = "old2";
+
+        IMap map = client.getMap(mapName);
+        map.put(key1, oldValue1);
+        map.put(key2, oldValue2);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+
+        txMap.replace(key1, oldValue1, newValue1);
+        txMap.replace(key2, "NOT_OLD_VALUE", "NEW_VALUE_CANT_BE_THIS");
+
+        context.commitTransaction();
+
+        assertEquals(newValue1, map.get(key1));
+        assertEquals(oldValue2, map.get(key2));
+    }
+
+    @Test
+    public void testTnxMapRemove() throws Exception {
+        final String mapName = randomString();
+        final String key = "key1";
+        final String value = "old1";
+
+        IMap map = client.getMap(mapName);
+        map.put(key, value);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+
+        txMap.remove(key);
+
+        context.commitTransaction();
+
+        assertNull(map.get(key));
+    }
+
+    @Test
+    public void testTnxMapRemoveKeyValue() throws Exception {
+        final String mapName = randomString();
+        final String key1 = "key1";
+        final String oldValue1 = "old1";
+        final String key2 = "key2";
+        final String oldValue2 = "old2";
+
+        IMap map = client.getMap(mapName);
+        map.put(key1, oldValue1);
+        map.put(key2, oldValue2);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+
+        txMap.remove(key1, oldValue1);
+        txMap.remove(key2, "NO_REMOVE_AS_NOT_VALUE");
+
+        context.commitTransaction();
+
+        assertNull(map.get(key1));
+        assertEquals(oldValue2, map.get(key2));
+    }
+
+    @Test
+    public void testTnxMapDelete() throws Exception {
+        final String mapName = randomString();
+        final String key = "key1";
+        final String value = "old1";
+
+        IMap map = client.getMap(mapName);
+        map.put(key, value);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+
+        txMap.delete(key);
+
+        context.commitTransaction();
+
+        assertNull(map.get(key));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testKeySetPredicateNull() throws Exception {
+        final String mapName = randomString();
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
+
+        txMap.keySet(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testKeyValuesPredicateNull() throws Exception {
+        final String mapName = randomString();
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
+
+        txMap.values(null);
     }
 }
