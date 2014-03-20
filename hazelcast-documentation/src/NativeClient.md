@@ -55,7 +55,7 @@ To configure the other parameters of client-cluster connection, `ClientNetworkCo
 
 
 
-### C++ Client - Enterprise Edition Only
+### C++ Client (Enterprise Only)
 
 You can use Native C++ Client to connect to Hazelcast nodes and perform almost all operations that a node can perform. Different from nodes, clients do not hold data. It is by default a smart client, i.e. it knows where the data is and asks directly to the correct node. This feature can be disabled (using `ClientConfig::setSmart` method) if you do not want the clients to connect every node.
 
@@ -334,7 +334,7 @@ Assume that you have the following two classes in Java and you want to use it wi
 Now, you can use class `Foo` and `Bar` in distributed structures. For example as Key or Value of `IMap` or as an Item in `IQueue`.
 	
 
-### C Sharp Client - Enterprise Edition Only
+### C# Client (Enterprise Only)
 
 You can use native C# client to connect to Hazelcast nodes. All you need is to add `HazelcastClient3x.dll` into your C# project references. The API is very similar to Java native client. Sample code is shown below.
 

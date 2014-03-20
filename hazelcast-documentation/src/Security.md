@@ -1,6 +1,6 @@
 
 
-# Security - Enterprise Edition Only#
+# Security (Enterprise Only)
 
 Hazelcast has an extensible, JAAS based security feature which can be used to authenticate both cluster members and clients and to do access control checks on client operations. Access control can be done according to endpoint principal and/or endpoint address. 
 
