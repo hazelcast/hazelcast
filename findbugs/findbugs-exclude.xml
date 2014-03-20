@@ -15,12 +15,6 @@
 
 
     <Match>
-        <Package name="com.hazelcast.ascii.rest" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.ascii.memcache" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.util" />
     </Match>
     <Match>
