@@ -24,9 +24,6 @@
         <Package name="com.hazelcast.util" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.core" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.nio.ssl" />
     </Match>
     <Match>

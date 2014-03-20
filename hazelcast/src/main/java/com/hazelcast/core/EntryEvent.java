@@ -26,6 +26,7 @@ import java.util.EventObject;
  * @see com.hazelcast.core.EntryListener
  * @see com.hazelcast.core.IMap#addEntryListener(EntryListener, boolean)
  */
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class EntryEvent<K, V> extends EventObject {
 
     private static final long serialVersionUID = -2296203982913729851L;
