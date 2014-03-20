@@ -29,7 +29,7 @@
      <Match>
         <Package name="com.hazelcast.util.executor" />
     </Match>
-    <Match>W
+    <Match>
         <Package name="com.hazelcast.nio.ascii" />
     </Match>
     <Match>
