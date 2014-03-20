@@ -46,7 +46,6 @@ public class ClientConcurrentLockTest {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void concurrent_TryLock_WithTimeOutTest() throws InterruptedException {
         concurrent_LockTest(true);
     }

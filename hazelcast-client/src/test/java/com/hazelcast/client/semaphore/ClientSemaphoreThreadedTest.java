@@ -45,7 +45,6 @@ public class ClientSemaphoreThreadedTest {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void concurrent_trySemaphoreWithTimeOutTest() {
         concurrent_trySemaphoreTest(true);
     }
