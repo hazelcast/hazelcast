@@ -39,9 +39,6 @@
         <Package name="com.hazelcast.nio.ascii" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.map.proxy" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.ascii" />
     </Match>
 
