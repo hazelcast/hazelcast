@@ -23,6 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -42,19 +43,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.*;
 
 /**
  * @author ali 6/10/13
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnMapTest {
 
-    static final String name = "test";
     static HazelcastInstance client;
     static HazelcastInstance server;
-    static HazelcastInstance second;
 
     @BeforeClass
     public static void init() {
@@ -64,30 +64,33 @@ public class ClientTxnMapTest {
 
     @AfterClass
     public static void destroy() {
-        client.shutdown();
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testUnlockAfterRollback() {
-        final String name = randomString();
-        String key = randomString();
+        final String mapName = randomString();
+        final String key ="key";
+
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object, Object> map = context.getMap(name);
+        final TransactionalMap<Object, Object> map = context.getMap(mapName);
         map.put(key, "value");
         context.rollbackTransaction();
 
-        assertFalse(client.getMap(name).isLocked(key));
+        assertFalse(client.getMap(mapName).isLocked(key));
     }
 
     @Test
     public void testDeadLockFromClientInstance() throws InterruptedException {
+        final String mapName = randomString();
+        final String key = "key";
         final AtomicBoolean running = new AtomicBoolean(true);
         Thread t = new Thread() {
             public void run() {
                 while (running.get()) {
-                    client.getMap("mapChildTransaction").get("3");
+                    client.getMap(mapName).get(key);
                 }
             }
         };
@@ -100,25 +103,25 @@ public class ClientTxnMapTest {
             TransactionContext context = client.newTransactionContext();
             context.beginTransaction();
 
-            TransactionalMap mapTransaction = context.getMap("mapChildTransaction");
+            TransactionalMap mapTransaction = context.getMap(mapName);
             // init data
-            mapTransaction.put("3", cb);
+            mapTransaction.put(key, cb);
             // start test deadlock, 3 set and concurrent, get deadlock
 
             cb.setAmount(12000);
-            mapTransaction.set("3", cb);
+            mapTransaction.set(key, cb);
 
             cb.setAmount(10000);
-            mapTransaction.set("3", cb);
+            mapTransaction.set(key, cb);
 
             cb.setAmount(900);
-            mapTransaction.set("3", cb);
+            mapTransaction.set(key, cb);
 
             cb.setAmount(800);
-            mapTransaction.set("3", cb);
+            mapTransaction.set(key, cb);
 
             cb.setAmount(700);
-            mapTransaction.set("3", cb);
+            mapTransaction.set(key, cb);
 
             context.commitTransaction();
 
@@ -131,7 +134,6 @@ public class ClientTxnMapTest {
     }
 
     public static class CBAuthorisation implements Serializable {
-
         private int amount;
 
         public void setAmount(int amount) {
@@ -145,102 +147,119 @@ public class ClientTxnMapTest {
 
     @Test
     public void testPutGet() throws Exception {
-        final String name = "defMap";
+        final String mapName = randomString();
+        final String key = "key";
+        final String value = "Value";
+        final IMap map = client.getMap(mapName);
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object, Object> map = context.getMap(name);
-        assertNull(map.put("key1", "value1"));
-        assertEquals("value1", map.get("key1"));
-        assertNull(client.getMap(name).get("key1"));
+        final TransactionalMap<Object, Object> txnMap = context.getMap(mapName);
+        assertNull(txnMap.put(key, value));
+        assertEquals(value, txnMap.get(key));
+        assertNull(map.get(key));
         context.commitTransaction();
 
-        assertEquals("value1", client.getMap(name).get("key1"));
+        assertEquals(value, map.get(key));
     }
 
     @Test
-    public void testPutWithTTL() throws Exception {
-        final String name = "testPutWithTTL";
+    public void testPutWithTTL() {
+        final String mapName = randomString();
+        final int ttlSeconds = 2;
+        final String key = "key";
+        final String value = "Value";
+        final IMap map = client.getMap(mapName);
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object, Object> map = context.getMap(name);
-        assertNull(map.put("key1", "value1", 5, TimeUnit.SECONDS));
-        assertEquals("value1", map.get("key1"));
-        assertNull(client.getMap(name).get("key1"));
+        final TransactionalMap<Object, Object> txnMap = context.getMap(mapName);
+
+        txnMap.put(key, value, ttlSeconds, TimeUnit.SECONDS);
+        Object resultFromClientWhileTxnInProgress = map.get(key);
+
         context.commitTransaction();
 
-        assertEquals("value1", client.getMap(name).get("key1"));
-        Thread.sleep(10000);
-        assertNull(client.getMap(name).get("key1"));
+        assertNull(resultFromClientWhileTxnInProgress);
+        assertEquals(value, map.get(key));
+
+        sleepSeconds(ttlSeconds + 1);
+
+        assertNull(map.get(key));
     }
 
     @Test
     public void testGetForUpdate() throws TransactionException {
-        final IMap<String, Integer> map = client.getMap("testTxnGetForUpdate");
-        final CountDownLatch latch1 = new CountDownLatch(1);
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        map.put("var", 0);
-        final AtomicBoolean pass = new AtomicBoolean(true);
+        final String mapName = randomString();
+        final String key = "key";
+        final int initialValue = 111;
+        final int value = 888;
 
+        final CountDownLatch getKeyForUpdateLatch = new CountDownLatch(1);
+        final CountDownLatch afterTryPutResult = new CountDownLatch(1);
 
+        final IMap<String, Integer> map = client.getMap(mapName);
+        map.put(key, initialValue);
+
+        final AtomicBoolean tryPutResult = new AtomicBoolean(true);
         Runnable incrementor = new Runnable() {
             public void run() {
                 try {
-                    latch1.await(100, TimeUnit.SECONDS);
-                    pass.set(map.tryPut("var", 1, 0, TimeUnit.SECONDS) == false);
-                    latch2.countDown();
+                    getKeyForUpdateLatch.await(30, TimeUnit.SECONDS);
+
+                    boolean result = map.tryPut(key, value, 0, TimeUnit.SECONDS);
+                    tryPutResult.set(result);
+
+                    afterTryPutResult.countDown();
                 } catch (Exception e) {
                 }
             }
         };
         new Thread(incrementor).start();
-        boolean b = client.executeTransaction(new TransactionalTask<Boolean>() {
+
+        client.executeTransaction(new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 try {
-                    final TransactionalMap<String, Integer> txMap = context.getMap("testTxnGetForUpdate");
-                    txMap.getForUpdate("var");
-                    latch1.countDown();
-                    latch2.await(100, TimeUnit.SECONDS);
+                    final TransactionalMap<String, Integer> txMap = context.getMap(mapName);
+                    txMap.getForUpdate(key);
+                    getKeyForUpdateLatch.countDown();
+                    afterTryPutResult.await(30, TimeUnit.SECONDS);
                 } catch (Exception e) {
                 }
                 return true;
             }
         });
-        assertTrue(b);
-        assertTrue(pass.get());
-        assertTrue(map.tryPut("var", 1, 0, TimeUnit.SECONDS));
+
+        assertFalse(tryPutResult.get());
     }
 
 
     @Test
     public void testKeySetValues() throws Exception {
-        final String name = "testKeySetValues";
-        IMap<Object, Object> map = client.getMap(name);
+        final String mapName = randomString();
+        IMap map = client.getMap(mapName);
         map.put("key1", "value1");
-        map.put("key2", "value2");
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object, Object> txMap = context.getMap(name);
-        assertNull(txMap.put("key3", "value3"));
+        final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
 
+        assertNull(txMap.put("key2", "value2"));
+        assertEquals(2, txMap.size());
+        assertEquals(2, txMap.keySet().size());
+        assertEquals(2, txMap.values().size());
 
-        assertEquals(3, txMap.size());
-        assertEquals(3, txMap.keySet().size());
-        assertEquals(3, txMap.values().size());
         context.commitTransaction();
 
-        assertEquals(3, map.size());
-        assertEquals(3, map.keySet().size());
-        assertEquals(3, map.values().size());
-
+        assertEquals(2, map.size());
+        assertEquals(2, map.keySet().size());
+        assertEquals(2, map.values().size());
     }
 
     @Test
     public void testKeysetAndValuesWithPredicates() throws Exception {
-        final String name = "testKeysetAndValuesWithPredicates";
-        IMap<Object, Object> map = client.getMap(name);
+        final String mapName = randomString();
+        IMap<Object, Object> map = client.getMap(mapName);
 
         final SampleObjects.Employee emp1 = new SampleObjects.Employee("abc-123-xvz", 34, true, 10D);
         final SampleObjects.Employee emp2 = new SampleObjects.Employee("abc-123-xvz", 20, true, 10D);
@@ -249,7 +268,7 @@ public class ClientTxnMapTest {
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object, Object> txMap = context.getMap(name);
+        final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
         assertNull(txMap.put(emp2, emp2));
 
         assertEquals(2, txMap.size());
@@ -262,21 +281,20 @@ public class ClientTxnMapTest {
         context.commitTransaction();
 
         assertEquals(2, map.size());
-//        assertEquals(1, txMap.keySet( new SqlPredicate( "age = 20" ) ).size() );
         assertEquals(2, map.values().size());
-
     }
 
     @Test
     public void testPutAndRoleBack() throws Exception {
         final String mapName = randomString();
-        final String key = "key1";
+        final String key = "key";
+        final String value = "value";
         final IMap map = client.getMap(mapName);
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         final TransactionalMap<Object, Object> mapTxn = context.getMap(mapName);
-        mapTxn.put(key, "value1");
+        mapTxn.put(key, value);
         context.rollbackTransaction();
 
         assertNull(map.get(key));
