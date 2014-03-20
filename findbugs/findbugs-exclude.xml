@@ -45,9 +45,6 @@
         <Package name="com.hazelcast.util.executor" />
     </Match>
     <Match>
-        <Package name="com.hazelcast.cluster.client" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.cluster" />
     </Match>
     <Match>
