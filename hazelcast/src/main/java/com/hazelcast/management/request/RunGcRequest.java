@@ -22,6 +22,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+//We want to be able to force a gc.
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_GC")
 public class RunGcRequest implements ConsoleRequest {
 
     public RunGcRequest() {
