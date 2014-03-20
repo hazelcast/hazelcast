@@ -22,6 +22,8 @@ public class PartitionInfo {
         return addresses[index];
     }
 
+    //Internal structure, so it doesn't matter if we expose this array.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
     public Address[] getReplicaAddresses() {
         return addresses;
     }
