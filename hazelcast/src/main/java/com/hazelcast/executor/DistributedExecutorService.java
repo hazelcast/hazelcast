@@ -149,7 +149,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         getLocalExecutorStats(name).startPending();
     }
 
-    private void rejectExecution(String name){
+    private void rejectExecution(String name) {
         getLocalExecutorStats(name).rejectExecution();
     }
 

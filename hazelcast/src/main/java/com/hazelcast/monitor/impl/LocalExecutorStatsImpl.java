@@ -53,7 +53,7 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         completed.incrementAndGet();
     }
 
-    public void rejectExecution(){
+    public void rejectExecution() {
         pending.decrementAndGet();
     }
 
