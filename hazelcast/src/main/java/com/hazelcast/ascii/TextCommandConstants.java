@@ -18,6 +18,7 @@ package com.hazelcast.ascii;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("MS_OOI_PKGPROTECT")
 public interface TextCommandConstants {
     int MONTH_SECONDS = 60 * 60 * 24 * 30;
 
