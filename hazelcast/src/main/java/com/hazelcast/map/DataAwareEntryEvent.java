@@ -21,6 +21,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class DataAwareEntryEvent extends EntryEvent {
 
     private final static long serialVersionUID = 1;
