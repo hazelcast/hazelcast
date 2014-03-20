@@ -18,10 +18,7 @@ package com.hazelcast.client.loadBalancer;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.util.AbstractLoadBalancer;
 import com.hazelcast.client.util.RandomLB;
-import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.client.util.StaticLB;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;

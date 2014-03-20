@@ -21,7 +21,6 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 5/8/13

@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.query.impl.*;
-import com.hazelcast.query.impl.QueryException;
 
 import java.io.IOException;
 import java.util.*;

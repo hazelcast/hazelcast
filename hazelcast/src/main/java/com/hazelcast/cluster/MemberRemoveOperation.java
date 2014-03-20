@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 public class MemberRemoveOperation extends AbstractClusterOperation {
 

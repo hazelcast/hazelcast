@@ -35,7 +35,6 @@ import com.hazelcast.util.StringUtil;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
 

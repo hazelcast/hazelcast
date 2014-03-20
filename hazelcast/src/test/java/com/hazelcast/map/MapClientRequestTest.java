@@ -41,7 +41,6 @@ import java.util.Set;
 
 import static com.hazelcast.query.SampleObjects.Employee;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

@@ -26,8 +26,6 @@ import org.hibernate.cache.RegionFactory;
 import org.hibernate.cfg.Settings;
 import org.hibernate.engine.SessionFactoryImplementor;
 
-import java.util.logging.Level;
-
 /**
  * Access underlying HazelcastInstance using Hibernate SessionFactory
  */

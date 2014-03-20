@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import java.util.AbstractMap;
-import java.util.Map;
 
 /**
  * User: ahmetmircik

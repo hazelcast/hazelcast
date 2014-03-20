@@ -21,7 +21,6 @@ import com.hazelcast.logging.Logger;
 
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
 
 /**
  * A {@link Config} which is initialized by loading an XML configuration file from the classpath.

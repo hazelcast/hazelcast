@@ -17,13 +17,8 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.map.operation.KeyBasedMapOperation;
-import com.hazelcast.map.operation.LockAwareOperation;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
-
-import java.io.IOException;
 
 public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;

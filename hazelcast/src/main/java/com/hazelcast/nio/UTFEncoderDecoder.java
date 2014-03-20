@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.util.HazelcastUtil;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
