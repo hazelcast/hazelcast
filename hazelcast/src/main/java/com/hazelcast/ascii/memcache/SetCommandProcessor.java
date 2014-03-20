@@ -23,7 +23,6 @@ import com.hazelcast.util.ByteUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.logging.Level;
 
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
 import static com.hazelcast.util.StringUtil.stringToBytes;

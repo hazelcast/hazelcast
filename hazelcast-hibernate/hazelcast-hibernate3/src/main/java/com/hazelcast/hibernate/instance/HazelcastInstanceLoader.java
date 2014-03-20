@@ -30,7 +30,6 @@ import org.hibernate.cache.CacheException;
 
 import java.io.IOException;
 import java.util.Properties;
-import java.util.logging.Level;
 
 class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 

@@ -29,7 +29,6 @@ import org.hibernate.cache.access.AccessType;
 import org.hibernate.cfg.Settings;
 
 import java.util.Properties;
-import java.util.logging.Level;
 
 public abstract class AbstractHazelcastCacheRegionFactory implements RegionFactory {
 

@@ -18,7 +18,6 @@ package com.hazelcast.collection.set;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionItem;
-import com.hazelcast.collection.CollectionService;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;

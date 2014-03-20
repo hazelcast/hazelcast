@@ -30,7 +30,6 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 
 public class WanReplicationService implements CoreService {
 

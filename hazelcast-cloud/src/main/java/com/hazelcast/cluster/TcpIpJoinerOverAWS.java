@@ -24,7 +24,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
 
 public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 

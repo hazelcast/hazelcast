@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 public class PrepareMergeOperation extends AbstractClusterOperation {
 

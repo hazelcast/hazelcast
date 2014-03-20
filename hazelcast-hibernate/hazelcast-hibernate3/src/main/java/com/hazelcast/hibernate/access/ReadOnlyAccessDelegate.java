@@ -21,7 +21,6 @@ import org.hibernate.cache.CacheException;
 import org.hibernate.cache.access.SoftLock;
 
 import java.util.Properties;
-import java.util.logging.Level;
 
 /**
  * @author Leo Kim (lkim@limewire.com)

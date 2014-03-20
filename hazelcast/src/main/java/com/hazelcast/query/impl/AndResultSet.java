@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
 import java.util.*;

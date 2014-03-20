@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
-import java.util.logging.Level;
 
 /**
  * A {@link Config} which is loaded using some url pointing to a Hazelcast XML file.

@@ -17,13 +17,9 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
-import java.io.IOException;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 

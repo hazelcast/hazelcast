@@ -20,8 +20,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 
-import java.util.logging.Level;
-
 /**
  * @author mdogan 9/28/12
  */

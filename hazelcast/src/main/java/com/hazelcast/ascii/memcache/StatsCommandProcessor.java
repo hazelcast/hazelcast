@@ -16,7 +16,6 @@
 
 package com.hazelcast.ascii.memcache;
 
-import com.hazelcast.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.ascii.TextCommandService;
 
 public class StatsCommandProcessor extends MemcacheCommandProcessor<StatsCommand> {

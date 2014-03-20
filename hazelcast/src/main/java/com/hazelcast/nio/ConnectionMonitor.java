@@ -19,8 +19,6 @@ package com.hazelcast.nio;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
-import java.util.logging.Level;
-
 public class ConnectionMonitor {
 
     final ILogger logger;

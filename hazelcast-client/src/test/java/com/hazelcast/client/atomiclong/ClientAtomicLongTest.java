@@ -30,7 +30,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.fail;
 
 /**
  * @author ali 5/24/13

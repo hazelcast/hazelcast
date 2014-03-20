@@ -22,7 +22,6 @@ import com.hazelcast.logging.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
