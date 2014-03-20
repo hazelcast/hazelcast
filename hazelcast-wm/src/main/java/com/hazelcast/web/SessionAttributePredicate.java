@@ -19,12 +19,13 @@ package com.hazelcast.web;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 import java.util.Map.Entry;
 
-public class SessionAttributePredicate implements Predicate, DataSerializable {
+public class SessionAttributePredicate implements Predicate, IdentifiedDataSerializable {
     private String sessionId;
 
     // Serialization Constructor
@@ -53,5 +54,15 @@ public class SessionAttributePredicate implements Predicate, DataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         sessionId = in.readUTF();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return WebDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return WebDataSerializerHook.SESSION_ATTRIBUTE_ID;
     }
 }
