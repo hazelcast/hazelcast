@@ -4,7 +4,6 @@ src/Introduction.md
 src/Whats_new_3.2.md
 	src/MigrationTo3.md
 	src/RevisionHistory.md
-	src/Todo.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/MapBackup.md

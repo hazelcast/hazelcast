@@ -77,10 +77,10 @@ Property Name | Default Value | Type | Description
 `hazelcast.partition.migration.timeout` | 300 | int  |   Timeout for partition migration tasks in seconds.
 `hazelcast.graceful.shutdown.max.wait` | 600 | int  |   Maximum wait seconds during graceful shutdown.
 `hazelcast.mc.url.change.enabled` | true | bool  |   Management Center changing server url is enabled.
-`hazelcast.elastic.memory.enabled` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-edition-only) off-heap storage.
-`hazelcast.elastic.memory.total.size` | 128 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-edition-only) storage total size in MB.
-`hazelcast.elastic.memory.chunk.size` | 1 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-edition-only) storage chunk size in KB.
-`hazelcast.elastic.memory.shared.storage` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-edition-only) shared storage.
+`hazelcast.elastic.memory.enabled` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) off-heap storage.
+`hazelcast.elastic.memory.total.size` | 128 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) storage total size in MB.
+`hazelcast.elastic.memory.chunk.size` | 1 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) storage chunk size in KB.
+`hazelcast.elastic.memory.shared.storage` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) shared storage.
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
 `hazelcast.system.log.enabled` | true | bool  |   Enable system logs.
 
