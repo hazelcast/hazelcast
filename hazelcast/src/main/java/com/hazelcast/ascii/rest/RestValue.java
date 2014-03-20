@@ -25,6 +25,7 @@ import java.io.IOException;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public class RestValue implements DataSerializable {
     private byte[] value;
     private byte[] contentType;

@@ -28,6 +28,7 @@ import java.util.Arrays;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public class MemcacheEntry implements DataSerializable, TextCommandConstants {
     private byte[] bytes;
     private byte[] value;

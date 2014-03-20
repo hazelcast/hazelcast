@@ -19,6 +19,7 @@ package com.hazelcast.ascii.rest;
 import com.hazelcast.ascii.NoOpCommand;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.util.StringUtil;
 
 import java.nio.ByteBuffer;
 
@@ -122,11 +123,11 @@ public class HttpPostCommand extends HttpCommand {
 
     String toStringAndClear(ByteBuffer bb) {
         if (bb == null) return "";
-        String result = null;
+        String result;
         if (bb.position() == 0) {
             result = "";
         } else {
-            result = new String(bb.array(), 0, bb.position());
+            result = StringUtil.bytesToString(bb.array(), 0, bb.position());
         }
         bb.clear();
         return result;

@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP","MS_MUTABLE_ARRAY","MS_PKGPROTECT"})
 public abstract class HttpCommand extends AbstractTextCommand {
     public static final String HEADER_CONTENT_TYPE = "content-type: ";
     public static final String HEADER_CONTENT_LENGTH = "content-length: ";
