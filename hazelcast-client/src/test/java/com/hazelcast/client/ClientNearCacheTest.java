@@ -19,207 +19,367 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastTest;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.*;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientNearCacheTest {
 
-    @After
-    @Before
-    public void cleanup() throws Exception {
+    private static final int MAX_CACHE_SIZE = 100;
+    private static final int MAX_TTL_SECONDS = 3;
+    private static final int MAX_IDLE_SECONDS = 1;
+
+    private static final String mapWithBasicCash = "mapWithBasicCash";
+    private static final String mapWithMaxSizeCash = "mapWithMaxSizeCash";
+    private static final String mapWithTTLCash = "mapWithTTLCash";
+    private static final String mapWithIdleCash = "mapWithIdleCash";
+    private static final String mapWithInvalidateCash = "mapWithInvalidateCash";
+
+    private static HazelcastInstance h1;
+    private static HazelcastInstance h2;
+    private static HazelcastInstance client;
+
+    @BeforeClass
+    public static void setup() throws Exception {
+        h1 = Hazelcast.newHazelcastInstance();
+        h2 = Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+
+        NearCacheConfig basicConfig = new NearCacheConfig();
+        basicConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        clientConfig.addNearCacheConfig(mapWithBasicCash+"*", basicConfig);
+
+        NearCacheConfig maxSizeConfig = new NearCacheConfig();
+        maxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
+        clientConfig.addNearCacheConfig(mapWithMaxSizeCash+"*", maxSizeConfig);
+
+        NearCacheConfig ttlConfig = new NearCacheConfig();
+        ttlConfig.setTimeToLiveSeconds(MAX_TTL_SECONDS);
+        clientConfig.addNearCacheConfig(mapWithTTLCash+"*", ttlConfig);
+
+        NearCacheConfig idleConfig = new NearCacheConfig();
+        idleConfig.setMaxIdleSeconds(MAX_IDLE_SECONDS);
+        clientConfig.addNearCacheConfig(mapWithIdleCash+"*", idleConfig);
+
+        NearCacheConfig invalidateConfig = new NearCacheConfig();
+        invalidateConfig.setInvalidateOnChange(true);
+        clientConfig.addNearCacheConfig(mapWithInvalidateCash+"*", invalidateConfig);
+
+        client = HazelcastClient.newHazelcastClient(clientConfig);
+    }
+
+    @AfterClass
+    public static void cleanup() throws Exception {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testNearCache() {
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+    public void testNearCacheFasterThanGoingToTheCluster() {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
 
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
-
-        clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setInMemoryFormat(InMemoryFormat.OBJECT));
-
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        final IMap map = client.getMap("map1");
-
-        for (int i = 0; i < 10 * 1000; i++) {
-            map.put("key" + i, "value" + i);
+        final int size = 2007;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
         }
 
         long begin = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
-            map.get("key" + i);
+        for (int i = 0; i < size; i++) {
+            map.get(i);
         }
-
-        long firstRead = System.currentTimeMillis() - begin;
-
+        long readFromClusterTime = System.currentTimeMillis() - begin;
 
         begin = System.currentTimeMillis();
-        for (int i = 0; i < 1000; i++) {
-            map.get("key" + i);
+        for (int i = 0; i < size; i++) {
+            map.get(i);
         }
-        long secondRead = System.currentTimeMillis() - begin;
+        long readFromCacheTime = System.currentTimeMillis() - begin;
 
-        assertTrue(secondRead < firstRead);
+        assertTrue("readFromCacheTime > readFromClusterTime", readFromCacheTime < readFromClusterTime);
     }
 
     @Test
-    public void testGetAll() throws Exception {
-        final String mapName = "testGetAllWithNearCache";
-        ClientConfig config = new ClientConfig();
-        config.addNearCacheConfig(mapName, new NearCacheConfig());
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+    public void testGetAllChecksNearCacheFirst() throws Exception {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final HashSet keys = new HashSet();
 
-        IMap<Integer, Integer> map = client.getMap(mapName);
-        HashSet keys = new HashSet();
-        int size = 1000;
+        final int size = 1003;
         for (int i = 0; i < size; i++) {
-            map.put(i,i);
+            map.put(i, i);
             keys.add(i);
         }
         //populate near cache
         for (int i = 0; i < size; i++) {
             map.get(i);
         }
+        //getAll generates the near cache hits
         map.getAll(keys);
-        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
-        assertEquals(1000, stats.getHits());
+
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getOwnedEntryCount());
+        assertEquals(size, stats.getHits());
+    }
+
+    @Test
+    public void testGetAllPopulatesNearCache() throws Exception {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final HashSet keys = new HashSet();
+
+        final int size = 1214;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+            keys.add(i);
+        }
+        //getAll populates near cache
+        map.getAll(keys);
+
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getOwnedEntryCount());
     }
 
     @Test
     public void testGetAsync() throws Exception {
-        final String mapName = "testGetAsyncWithNearCache";
-        ClientConfig config = new ClientConfig();
-        config.addNearCacheConfig(mapName, new NearCacheConfig());
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
 
-        IMap<Integer, Integer> map = client.getMap(mapName);
-        HashSet keys = new HashSet();
-        int size = 1000;
+        int size = 1009;
         for (int i = 0; i < size; i++) {
-            map.put(i,i);
-            keys.add(i);
+            map.put(i, i);
         }
         //populate near cache
         for (int i = 0; i < size; i++) {
             map.get(i);
         }
+        //generate near cache hits with async call
         for (int i = 0; i < size; i++) {
-            Future<Integer> async = map.getAsync(i);
+            Future async = map.getAsync(i);
             async.get();
         }
-        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
-        assertEquals(1000, stats.getHits());
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getOwnedEntryCount());
+        assertEquals(size, stats.getHits());
+    }
 
+    //this test test fails but testNearCachePopulatedAndHitsGenerated2 passes
+    //the only diffrence is the looping ???
+    @Test
+    @Category(ProblematicTest.class)
+    public void testNearCachePopulatedAndHitsGenerated() throws Exception {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+
+        final int size = 1278;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+            map.get(i);  //populate near cache
+            map.get(i);  //generate near cache hits
+        }
+
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        System.out.println("stats = " + stats);
+        assertEquals(size, stats.getOwnedEntryCount());
+        assertEquals(size, stats.getHits());
+    }
+
+    @Test
+    public void testNearCachePopulatedAndHitsGenerated2() throws Exception {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+
+        final int size = 1278;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        for (int i = 0; i < size; i++) {
+            map.get(i);  //populate near cache
+        }
+        for (int i = 0; i < size; i++) {
+            map.get(i);  //generate near cache hits
+        }
+
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        System.out.println("stats = " + stats);
+        assertEquals(size, stats.getOwnedEntryCount());
+        assertEquals(size, stats.getHits());
     }
 
     @Test
     public void testIssue2009() throws Exception {
-        final String mapName = "testIssue2009";
-        ClientConfig config = new ClientConfig();
-        config.addNearCacheConfig(mapName, new NearCacheConfig());
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
-        IMap map = client.getMap(mapName);
-        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertNotNull(stats);
     }
 
     @Test
-    @Category(ProblematicTest.class)
-    public void nearCacheWithMaxSizeSet() {
-        final String mapName = "nearCashWithMaxSizeSet";
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+    public void testGetNearCacheStatsBeforePopulation() {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final int size = 101;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertNotNull(stats);
+    }
 
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
+    @Test
+    public void testNearCacheMisses() {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
 
-        final int cacheSize = 2;
+        final int size = 1321;
+        for (int i = 0; i < size; i++) {
+            map.get("NotThere"+i);
+        }
+        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getMisses());
+        assertEquals(size, stats.getOwnedEntryCount());
+    }
 
-        NearCacheConfig cashConfig = new NearCacheConfig();
-        cashConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        cashConfig.setMaxSize(cacheSize);
-        clientConfig.addNearCacheConfig(mapName, cashConfig);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+    @Test
+    public void testMapRemove_WithNearCache() {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
 
-        final IMap map = client.getMap(mapName);
+        final int size = 1113;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+        for (int i = 0; i < size; i++) {
+            map.remove(i);
+        }
 
-        for (int i = 0; i < cacheSize * 100; i++) {
-            map.put("key" + i, "value" + i);
+        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getMisses());
+        assertEquals(0, stats.getOwnedEntryCount());
+    }
+
+    @Test
+    public void testNearCacheMaxSize() {
+        final IMap map = client.getMap(mapWithMaxSizeCash +randomString());
+
+        for (int i = 0; i < MAX_CACHE_SIZE +1; i++) {
+            map.put(i, i);
         }
         //populate near cache
-        for (int i = 0; i < cacheSize * 100; i++) {
+        for (int i = 0; i < MAX_CACHE_SIZE +1; i++) {
             map.get(i);
         }
 
-        final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        final int evictionSize = (int) (  MAX_CACHE_SIZE * (ClientNearCache.EVICTION_PERCENTAGE / 100.0) );
+        final int remainingSize = MAX_CACHE_SIZE - evictionSize;
+
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(cacheSize, stats.getOwnedEntryCount());
+                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                assertEquals(remainingSize, stats.getOwnedEntryCount());
             }
         });
     }
 
     @Test
-    public void getNearCacheStatsBeforePopulation() {
-        final String mapName = "getNearCashStatsBeforePopulation";
+    public void testNearCacheTTLCleanup() {
+        final IMap map = client.getMap(mapWithTTLCash +randomString());
 
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
-
-        NearCacheConfig cacheConfig = new NearCacheConfig();
-        cacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
-        clientConfig.addNearCacheConfig(mapName, cacheConfig);
-
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        final IMap map = client.getMap(mapName);
-
-        for (int i = 0; i < 300; i++) {
-            map.put("key" + i, "value" + i);
+        final int size = 133;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            map.get(i);
         }
 
-        final NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
-        //This Test throws a NullPointerException
-        assertEquals(0, stats.getOwnedEntryCount());
+        sleepSeconds( ClientNearCache.TTL_CLEANUP_INTERVAL_MILLS / 1000 );
+        map.get(0);
+
+        final int expectedSize = 1;
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                assertEquals(expectedSize, stats.getOwnedEntryCount());
+            }
+        });
     }
 
+    @Test
+    public void testNearCacheIdleRecordsEvicted() {
+        final IMap map = client.getMap(mapWithIdleCash +randomString());
+
+        final int size = 147;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+        //generate near cache hits
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        long hitsBeforeIdleExpire = stats.getHits();
+
+        sleepSeconds(MAX_IDLE_SECONDS + 1);
+
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+        stats = map.getLocalMapStats().getNearCacheStats();
+
+        assertEquals("as the hits are not equal, the entries were not cleared from near cash after MaxIdleSeconds", hitsBeforeIdleExpire, stats.getHits(), size);
+    }
+
+    @Test
+    public void testNearCacheInvalidateOnChange() {
+        final String mapName = mapWithInvalidateCash +randomString();
+        final IMap nodeMap = h1.getMap(mapName);
+        final IMap clientMap = client.getMap(mapName);
+
+        final int size = 118;
+        for (int i = 0; i < size; i++) {
+            nodeMap.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            clientMap.get(i);
+        }
+
+        NearCacheStats stats = clientMap.getLocalMapStats().getNearCacheStats();
+        long OwnedEntryCountBeforeInvalidate = stats.getOwnedEntryCount();
+
+        //invalidate near cache from cluster
+        for (int i = 0; i < size; i++) {
+            nodeMap.put(i, i);
+        }
+
+        assertEquals(size, OwnedEntryCountBeforeInvalidate);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                NearCacheStats stats = clientMap.getLocalMapStats().getNearCacheStats();
+                assertEquals(0, stats.getOwnedEntryCount());
+            }
+        });
+    }
 }

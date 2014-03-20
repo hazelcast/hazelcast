@@ -46,8 +46,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ClientNearCache<K> {
 
-    static final int evictionPercentage = 20;
-    static final int cleanupInterval = 5000;
+    public static final int EVICTION_PERCENTAGE = 20;
+    public static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
     final ClientNearCacheType cacheType;
     final int maxSize;
     volatile long lastCleanup;
@@ -146,7 +146,7 @@ public class ClientNearCache<K> {
                         try {
                             TreeSet<CacheRecord<K>> records = new TreeSet<CacheRecord<K>>(comparator);
                             records.addAll(cache.values());
-                            int evictSize = cache.size() * evictionPercentage / 100;
+                            int evictSize = cache.size() * EVICTION_PERCENTAGE / 100;
                             int i=0;
                             for (CacheRecord<K> record : records) {
                                 cache.remove(record.key);
@@ -167,7 +167,7 @@ public class ClientNearCache<K> {
     }
 
     private void fireTtlCleanup() {
-        if (Clock.currentTimeMillis() < (lastCleanup + cleanupInterval))
+        if (Clock.currentTimeMillis() < (lastCleanup + TTL_CLEANUP_INTERVAL_MILLS))
             return;
 
         if (canCleanUp.compareAndSet(true, false)) {
@@ -220,11 +220,9 @@ public class ClientNearCache<K> {
     }
 
     private NearCacheStatsImpl createNearCacheStats() {
-        long ownedEntryCount = 0;
+        long ownedEntryCount = cache.values().size();
         long ownedEntryMemory = 0;
-        for (CacheRecord record : cache.values())
-        {
-            ownedEntryCount++;
+        for (CacheRecord record : cache.values()){
             ownedEntryMemory += record.getCost();
         }
         clientNearCacheStats.setOwnedEntryCount(ownedEntryCount);
