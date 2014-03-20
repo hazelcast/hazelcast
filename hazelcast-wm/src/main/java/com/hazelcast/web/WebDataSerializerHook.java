@@ -3,6 +3,7 @@ package com.hazelcast.web;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class WebDataSerializerHook implements DataSerializerHook{
 
@@ -18,6 +19,14 @@ public class WebDataSerializerHook implements DataSerializerHook{
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new WebDataSerializableFactory();
+        return new DataSerializableFactory() {
+            @Override
+            public IdentifiedDataSerializable create(int typeId) {
+                if (typeId == WebDataSerializerHook.SESSION_ATTRIBUTE_ID){
+                    return new SessionAttributePredicate();
+                }
+                throw new IllegalArgumentException();
+            }
+        };
     }
 }
