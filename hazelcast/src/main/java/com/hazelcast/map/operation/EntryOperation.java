@@ -23,6 +23,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -60,7 +61,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void run() {
+        final long start = System.currentTimeMillis();
         oldValue = recordStore.getMapEntry(dataKey).getValue();
+        final LocalMapStatsImpl mapStats = mapService.getLocalMapStatsImpl(name);
         final Object valueBeforeProcess = mapService.toObject(oldValue);
         final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
@@ -70,15 +73,23 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
             eventType = __NO_NEED_TO_FIRE_EVENT;
         } else if (valueAfterProcess == null) {
             recordStore.remove(dataKey);
+            final long latency = System.currentTimeMillis() - start;
+            mapStats.incrementRemoves(latency);
             eventType = EntryEventType.REMOVED;
         } else {
             if (oldValue == null) {
+                final long latency = System.currentTimeMillis() - start;
+                mapStats.incrementPuts(latency);
                 eventType = EntryEventType.ADDED;
             }
             // take this case as a read so no need to fire an event.
             else if (!entry.isModified()) {
+                final long latency = System.currentTimeMillis() - start;
+                mapStats.incrementGets(latency);
                 eventType = __NO_NEED_TO_FIRE_EVENT;
             } else {
+                final long latency = System.currentTimeMillis() - start;
+                mapStats.incrementPuts(latency);
                 eventType = EntryEventType.UPDATED;
             }
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
@@ -105,6 +116,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapService.publishWanReplicationUpdate(name, entryView);
             }
         }
+
     }
 
     @Override

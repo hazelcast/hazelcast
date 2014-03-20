@@ -10,6 +10,7 @@ import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordStatistics;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -57,11 +58,13 @@ public class MultipleEntryOperation extends AbstractMapOperation
         response = new MapEntrySet();
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        final LocalMapStatsImpl mapStats = mapService.getLocalMapStatsImpl(name);
         MapEntrySimple entry;
 
         for (Data key : keys) {
             if (partitionService.getPartitionId(key) != getPartitionId())
                 continue;
+            long start = System.currentTimeMillis();
             Object objectKey = mapService.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
             final Object valueBeforeProcess = mapEntry.getValue();
@@ -77,15 +80,23 @@ public class MultipleEntryOperation extends AbstractMapOperation
             EntryEventType eventType;
             if (valueAfterProcess == null) {
                 recordStore.remove(key);
+                final long latency = System.currentTimeMillis() - start;
+                mapStats.incrementRemoves(latency);
                 eventType = EntryEventType.REMOVED;
             } else {
                 if (valueBeforeProcessObject == null) {
+                    final long latency = System.currentTimeMillis() - start;
+                    mapStats.incrementPuts(latency);
                     eventType = EntryEventType.ADDED;
                 }
                 // take this case as a read so no need to fire an event.
                 else if (!entry.isModified()) {
+                    final long latency = System.currentTimeMillis() - start;
+                    mapStats.incrementGets(latency);
                     eventType = __NO_NEED_TO_FIRE_EVENT;
                 } else {
+                    final long latency = System.currentTimeMillis() - start;
+                    mapStats.incrementPuts(latency);
                     eventType = EntryEventType.UPDATED;
                 }
                 // todo if this is a read only operation, record access operations should be done.
