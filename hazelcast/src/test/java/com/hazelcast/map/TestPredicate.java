@@ -34,18 +34,15 @@ public class TestPredicate implements IndexAwarePredicate {
     
     public boolean apply(Map.Entry mapEntry) {
         didApply = true;
-        System.out.println("matching entry " + mapEntry.getValue() + " with " + value);
         TempData data = (TempData) mapEntry.getValue();
         return data.getAttr1().equals(value);
     }
 
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        System.out.println("quering index for " + value);
         return queryContext.getIndex("attr1").getRecords(value);
     }
 
     public boolean isIndexed(QueryContext queryContext) {
-        System.out.println("isIndexed called.");
         return queryContext.getIndex("attr1") != null;
     }
 
