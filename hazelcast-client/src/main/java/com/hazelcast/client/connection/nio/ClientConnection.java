@@ -274,33 +274,19 @@ public class ClientConnection implements Connection, Closeable {
         }
         readHandler.shutdown();
         writeHandler.shutdown();
-        executionService.executeInternal(new CleanResourcesTask());
+        if (connectionManager.isLive()) {
+            executionService.executeInternal(new CleanResourcesTask());
+        } else {
+            cleanResources(new HazelcastException("Client is shutting down!!!"));
+        }
+
     }
 
     private class CleanResourcesTask implements Runnable {
         @Override
         public void run() {
-            final HazelcastException response;
-            if (connectionManager.isLive()) {
-                waitForPacketsProcessed();
-                response = new TargetDisconnectedException(remoteEndpoint);
-            } else {
-                response = new HazelcastException("Client is shutting down!!!");
-            }
-
-            final Iterator<Map.Entry<Integer,ClientCallFuture>> iter = callIdMap.entrySet().iterator();
-            while (iter.hasNext()) {
-                final Map.Entry<Integer, ClientCallFuture> entry = iter.next();
-                iter.remove();
-                entry.getValue().notify(response);
-                eventHandlerMap.remove(entry.getKey());
-            }
-            final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
-            while (iterator.hasNext()) {
-                final ClientCallFuture future = iterator.next();
-                iterator.remove();
-                future.notify(response);
-            }
+            waitForPacketsProcessed();
+            cleanResources(new TargetDisconnectedException(remoteEndpoint));
         }
 
         private void waitForPacketsProcessed() {
@@ -320,6 +306,22 @@ public class ClientConnection implements Connection, Closeable {
                 }
                 count = packetCount.get();
             }
+        }
+    }
+
+    private void cleanResources(HazelcastException response){
+        final Iterator<Map.Entry<Integer,ClientCallFuture>> iter = callIdMap.entrySet().iterator();
+        while (iter.hasNext()) {
+            final Map.Entry<Integer, ClientCallFuture> entry = iter.next();
+            iter.remove();
+            entry.getValue().notify(response);
+            eventHandlerMap.remove(entry.getKey());
+        }
+        final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
+        while (iterator.hasNext()) {
+            final ClientCallFuture future = iterator.next();
+            iterator.remove();
+            future.notify(response);
         }
     }
 
