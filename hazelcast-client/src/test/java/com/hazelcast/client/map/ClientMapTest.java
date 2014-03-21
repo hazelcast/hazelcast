@@ -67,15 +67,20 @@ public class ClientMapTest {
     static HazelcastInstance client;
     static HazelcastInstance server;
 
-    static TestMapStore mapStore = new TestMapStore();
+    static TestMapStore flushMapStore = new TestMapStore();
+    static TestMapStore transientMapStore = new TestMapStore();
 
     @BeforeClass
     public static void init() {
         Config config = new Config();
-        config.getMapConfig("mapStore*").
+        config.getMapConfig("flushMap").
                 setMapStoreConfig(new MapStoreConfig()
                         .setWriteDelaySeconds(1000)
-                        .setImplementation(mapStore));
+                        .setImplementation(flushMapStore));
+        config.getMapConfig("putTransientMap").
+                setMapStoreConfig(new MapStoreConfig()
+                        .setWriteDelaySeconds(1000)
+                        .setImplementation(transientMapStore));
 
         server = Hazelcast.newHazelcastInstance(config);
         client = HazelcastClient.newHazelcastClient(null);
@@ -179,11 +184,11 @@ public class ClientMapTest {
 
     @Test
     public void testFlush() throws InterruptedException {
-        mapStore.latch = new CountDownLatch(1);
-        IMap<Object, Object> map = client.getMap("mapStore_" + randomString());
+        flushMapStore.latch = new CountDownLatch(1);
+        IMap<Object, Object> map = client.getMap("flushMap");
         map.put(1l, "value");
         map.flush();
-        assertOpenEventually(mapStore.latch, 5);
+        assertOpenEventually(flushMapStore.latch, 5);
     }
 
     @Test
@@ -338,11 +343,11 @@ public class ClientMapTest {
 
     @Test
     public void testPutTransient() throws InterruptedException {
-        mapStore.latch = new CountDownLatch(1);
-        IMap<Object, Object> map = client.getMap("mapStore_" + randomString());
+        transientMapStore.latch = new CountDownLatch(1);
+        IMap<Object, Object> map = client.getMap("putTransientMap");
         map.putTransient(3l, "value1", 100, TimeUnit.SECONDS);
         map.flush();
-        assertFalse(mapStore.latch.await(5, TimeUnit.SECONDS));
+        assertFalse(transientMapStore.latch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
