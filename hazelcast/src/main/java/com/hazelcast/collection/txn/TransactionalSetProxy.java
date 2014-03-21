@@ -19,11 +19,15 @@ package com.hazelcast.collection.txn;
 import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
+import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.concurrent.Future;
 
 /**
 * @author ali 4/16/13
@@ -35,6 +39,34 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
 
     public TransactionalSetProxy(String name, TransactionSupport tx, NodeEngine nodeEngine, SetService service) {
         super(name, tx, nodeEngine, service);
+    }
+
+    @Override
+    public boolean add(E e) {
+        checkTransactionState();
+        throwExceptionIfNull(e);
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Data value = nodeEngine.toData(e);
+        if (!getCollection().add(new CollectionItem(-1, value))){
+            return false;
+        }
+        CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), value);
+        try {
+            Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
+            Long itemId = f.get();
+            if (itemId != null) {
+                if (!itemIdSet.add(itemId)) {
+                    throw new TransactionException("Duplicate itemId: " + itemId);
+                }
+                CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
+                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, getServiceName(), tx.getTxnId(), op));
+                return true;
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+        return false;
+
     }
 
     @Override
