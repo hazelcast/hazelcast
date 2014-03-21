@@ -36,9 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-/**
- * @author ali 6/6/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnTest {
@@ -77,7 +74,7 @@ public class ClientTxnTest {
 
             context.commitTransaction();
             fail("commit should throw exception!!!");
-        } catch (TransactionException e){
+        } catch (Exception e){
             context.rollbackTransaction();
             latch.countDown();
         }
