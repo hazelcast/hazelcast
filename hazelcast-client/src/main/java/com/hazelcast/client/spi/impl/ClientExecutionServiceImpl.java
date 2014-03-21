@@ -124,7 +124,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public void shutdown() {
-        internalExecutor.shutdown();
+        internalExecutor.shutdownNow();
         scheduledExecutor.shutdownNow();
         executor.shutdownNow();
     }
