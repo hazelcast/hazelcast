@@ -21,7 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.TransactionalList;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.*;
@@ -34,31 +34,31 @@ import static org.junit.Assert.*;
 /**
  * @author ali 6/11/13
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnListTest {
-    static HazelcastInstance hz;
+    static HazelcastInstance client;
     static HazelcastInstance server;
 
-    @Before
-    public void init(){
+    @BeforeClass
+    public static void init(){
         server = Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
+        client = HazelcastClient.newHazelcastClient(null);
     }
 
-    @After
-    public void destroy() {
-        hz.shutdown();
+    @AfterClass
+    public static void destroy() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testAddRemove() throws Exception {
         String listName = randomString();
-        final IList l = hz.getList(listName);
+        final IList l = client.getList(listName);
         l.add("item1");
 
-        final TransactionContext context = hz.newTransactionContext();
+        final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         final TransactionalList<Object> list = context.getList(listName);
         assertTrue(list.add("item2"));
@@ -75,10 +75,10 @@ public class ClientTxnListTest {
     @Test
     public void testAddAndRoleBack() throws Exception {
         final String listName = randomString();
-        final IList l = hz.getList(listName);
+        final IList l = client.getList(listName);
         l.add("item1");
 
-        final TransactionContext context = hz.newTransactionContext();
+        final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         final TransactionalList<Object> list = context.getList(listName);
         list.add("item2");
