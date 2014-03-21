@@ -584,7 +584,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
     // issue 1404 "to be fixed by issue 1404"
     @Test(timeout=1000*60)
-    @Ignore
     public void testQueryAfterInitialLoad() {
         String name = "testQueryAfterInitialLoad";
         Config cfg = new Config();
@@ -614,10 +613,16 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         });
         cfg.getMapConfig(name).setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = createHazelcastInstance(cfg);
-        IMap map = instance.getMap(name);
-        Collection values = map.values(new SqlPredicate("active = true"));
-        assertEquals(size, values.size());
-    }
+        final IMap map = instance.getMap(name);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection values = map.values(new SqlPredicate("active = true"));
+                assertEquals(size, values.size());
+            }
+        });
+     }
 
     /**
      * see zendesk ticket #82

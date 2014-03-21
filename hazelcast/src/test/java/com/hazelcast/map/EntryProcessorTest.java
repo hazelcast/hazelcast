@@ -143,7 +143,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void testIndexAware_Issue_1719() {
         Config cfg = new Config();
         cfg.getMapConfig("test").addMapIndexConfig(new MapIndexConfig("attr1", false));
@@ -152,8 +151,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.put("a", new TempData("foo", "bar"));
         map.put("b", new TempData("abc", "123"));
         TestPredicate predicate = new TestPredicate("foo");
-        map.executeOnEntries(new LoggingEntryProcessor(), predicate);
-        assertFalse("The predicate shouldn't be applied if indexing works!", predicate.didApply());
+        Map<String, Object> entries = map.executeOnEntries(new LoggingEntryProcessor(), predicate);
+        assertEquals("The predicate should be applied to only one entry if indexing works!", entries.size(),1);
     }
 
     /**
