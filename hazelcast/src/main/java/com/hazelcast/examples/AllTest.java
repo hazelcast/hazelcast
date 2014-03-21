@@ -81,7 +81,7 @@ public class AllTest {
      * @param args the number of threads to start
      */
     public static void main(String[] args) {
-        int nThreads = (args.length == 0) ? 10 : new Integer(args[0]);
+        int nThreads = (args.length == 0) ? 10 : Integer.parseInt(args[0]);
         final AllTest allTest = new AllTest(nThreads);
         allTest.start();
         Executors.newSingleThreadExecutor().execute(new Runnable() {

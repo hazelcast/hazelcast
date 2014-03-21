@@ -119,7 +119,7 @@ public class WebFilter implements Filter {
             String sessionTTL = getParam("session-ttl-seconds");
             if (sessionTTL != null) {
                 MapConfig mapConfig = hzConfig.getMapConfig(clusterMapName);
-                mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
+                mapConfig.setTimeToLiveSeconds(Integer.parseInt(sessionTTL));
                 hzConfig.addMapConfig(mapConfig);
             }
         } catch (UnsupportedOperationException ignored) {
