@@ -105,39 +105,32 @@ public class MapReduceService
 
     public boolean registerJobSupervisorCancellation(String name, String jobId, Address jobOwner) {
         NodeJobTracker jobTracker = (NodeJobTracker) createDistributedObject(name);
-        if (jobTracker != null) {
-            if (jobTracker.registerJobSupervisorCancellation(jobId) && getLocalAddress().equals(jobOwner)) {
-                for (MemberImpl member : clusterService.getMemberList()) {
-                    if (!member.getAddress().equals(jobOwner)) {
-                        try {
-                            ProcessingOperation operation = new CancelJobSupervisorOperation(name, jobId);
-                            processRequest(member.getAddress(), operation, name);
-                        } catch (Exception ignore) {
-                            LOGGER.finest("Member might be already unavailable", ignore);
-                        }
+        if (jobTracker.registerJobSupervisorCancellation(jobId) && getLocalAddress().equals(jobOwner)) {
+            for (MemberImpl member : clusterService.getMemberList()) {
+                if (!member.getAddress().equals(jobOwner)) {
+                    try {
+                        ProcessingOperation operation = new CancelJobSupervisorOperation(name, jobId);
+                        processRequest(member.getAddress(), operation, name);
+                    } catch (Exception ignore) {
+                        LOGGER.finest("Member might be already unavailable", ignore);
                     }
                 }
-                return true;
             }
+            return true;
         }
         return false;
     }
 
     public boolean unregisterJobSupervisorCancellation(String name, String jobId) {
         NodeJobTracker jobTracker = (NodeJobTracker) createDistributedObject(name);
-        if (jobTracker != null) {
-            return jobTracker.unregisterJobSupervisorCancellation(jobId);
-        }
-        return false;
+        return jobTracker.unregisterJobSupervisorCancellation(jobId);
     }
 
     public JobSupervisor createJobSupervisor(JobTaskConfiguration configuration) {
         // Job might already be cancelled (due to async processing)
         NodeJobTracker jobTracker = (NodeJobTracker) createDistributedObject(configuration.getName());
-        if (jobTracker != null) {
-            if (jobTracker.unregisterJobSupervisorCancellation(configuration.getJobId())) {
-                return null;
-            }
+        if (jobTracker.unregisterJobSupervisorCancellation(configuration.getJobId())) {
+            return null;
         }
 
         JobSupervisorKey key = new JobSupervisorKey(configuration.getName(), configuration.getJobId());
