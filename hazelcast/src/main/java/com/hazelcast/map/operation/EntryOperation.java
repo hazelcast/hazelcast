@@ -30,7 +30,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 
@@ -73,8 +72,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
             eventType = __NO_NEED_TO_FIRE_EVENT;
         } else if (valueAfterProcess == null) {
             recordStore.remove(dataKey);
-            final long latency = System.currentTimeMillis() - start;
-            mapStats.incrementRemoves(latency);
+            mapStats.incrementRemoves(getLatencyFrom(start));
             eventType = EntryEventType.REMOVED;
         } else {
             if (oldValue == null) {
@@ -160,7 +158,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return mapContainer.getBackupCount();
     }
 
-    private long getLatencyFrom(long begin){
+    private long getLatencyFrom(long begin) {
         return Clock.currentTimeMillis() - begin;
     }
 }

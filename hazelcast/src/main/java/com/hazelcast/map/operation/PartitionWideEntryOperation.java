@@ -36,7 +36,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
@@ -186,7 +185,8 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor) : null;
     }
-    private long getLatencyFrom(long begin){
+
+    private long getLatencyFrom(long begin) {
         return Clock.currentTimeMillis() - begin;
     }
 
