@@ -38,9 +38,6 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.*;
 
-/**
- * @author ali 6/7/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnQueueTest {
@@ -61,7 +58,7 @@ public class ClientTxnQueueTest {
     }
 
     @Test
-    public void testTransactionalOfferPoll1() throws Exception {
+    public void testTransactionalOfferPoll() {
         final String item = "offered";
         final String queueName = randomString();
         final IQueue queue = client.getQueue(queueName);
@@ -69,16 +66,29 @@ public class ClientTxnQueueTest {
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         TransactionalQueue txnQueue = context.getQueue(queueName);
-
         txnQueue.offer(item);
         assertEquals(item, txnQueue.poll());
-
         context.commitTransaction();
+    }
+
+    @Test
+    public void testQueueSizeAfterTxnOfferPoll() {
+        final String item = "offered";
+        final String queueName = randomString();
+        final IQueue queue = client.getQueue(queueName);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue txnQueue = context.getQueue(queueName);
+        txnQueue.offer(item);
+        txnQueue.poll();
+        context.commitTransaction();
+
         assertEquals(0, queue.size());
     }
 
     @Test
-    public void testTransactionalQueueGetsOfferedItems() throws Exception {
+    public void testTransactionalQueueGetsOfferedItems_whenBlockedOnPoll() throws InterruptedException{
         final String item = "offered1";
         final String queueName = randomString();
         final IQueue queue1 = client.getQueue(queueName);
@@ -101,20 +111,17 @@ public class ClientTxnQueueTest {
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         TransactionalQueue txnQueue1 = context.getQueue(queueName);
-        try {
-            justBeforeBlocked.countDown();
-            Object result = txnQueue1.poll(5, TimeUnit.SECONDS);
 
-            assertEquals("TransactionalQueue should get item offered from client queue", item, result);
+        justBeforeBlocked.countDown();
+        Object result = txnQueue1.poll(5, TimeUnit.SECONDS);
 
-        } catch (InterruptedException e) {
-            fail("TransactionalQueue did not get item offered from client queue" + e);
-        }
+        assertEquals("TransactionalQueue while blocked in pol should get item offered from client queue", item, result);
+
         context.commitTransaction();
     }
 
     @Test
-    public void testTransactionalPeek() throws Exception {
+    public void testTransactionalPeek() {
         final String item = "offered";
         final String queunName = randomString();
         final IQueue queue = client.getQueue(queunName);
@@ -128,19 +135,16 @@ public class ClientTxnQueueTest {
         assertEquals(item, txnQueue.peek());
 
         context.commitTransaction();
-
-        assertEquals(1, queue.size());
     }
 
     @Test
-    public void testTransactionalOfferRoleBack() throws Exception {
+    public void testTransactionalOfferRoleBack() {
         final String name = randomString();
         final IQueue queue = client.getQueue(name);
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
         TransactionalQueue<String> qTxn = context.getQueue(name);
-
         qTxn.offer("ITEM");
         context.rollbackTransaction();
 
@@ -148,7 +152,7 @@ public class ClientTxnQueueTest {
     }
 
     @Test
-    public void testTransactionalQueueSize() throws Exception {
+    public void testTransactionalQueueSize() {
         final String item = "offered";
         final String name = randomString();
         final IQueue queue = client.getQueue(name);
