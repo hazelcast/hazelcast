@@ -211,7 +211,7 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
                 return new TxnRemoveAllOperation();
             }
         };
-        constructors[TXN_REMOVE_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[TXN_REMOVE_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new TxnRemoveAllBackupOperation();
             }
