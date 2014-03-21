@@ -106,7 +106,7 @@ public class ClientTxnTest {
         try{
             context.commitTransaction();
             fail("commit should throw exception !");
-        } catch (TransactionException e){
+        } catch (Exception e){
             context.rollbackTransaction();
             latch.countDown();
         }
