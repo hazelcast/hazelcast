@@ -53,7 +53,7 @@ public class ClientTxnSetTest {
     }
 
     @Test
-    public void testAdd_inTxn() throws Exception {
+    public void testAdd_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
@@ -66,12 +66,27 @@ public class ClientTxnSetTest {
         assertEquals(1, txnSet.size());
 
         context.commitTransaction();
+    }
+
+    @Test
+    public void testSetSizeAfterAdd_withinTxn() throws Exception {
+        final String element = "item1";
+        final String setName = randomString();
+        final ISet set = client.getSet(setName);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+
+        final TransactionalSet<Object> txnSet = context.getSet(setName);
+        txnSet.add(element);
+
+        context.commitTransaction();
 
         assertEquals(1, set.size());
     }
 
     @Test
-    public void testRemove_inTxn() throws Exception {
+    public void testRemove_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
@@ -85,13 +100,29 @@ public class ClientTxnSetTest {
         assertFalse(txnSet.remove("NOT_THERE"));
 
         context.commitTransaction();
+    }
+
+    @Test
+    public void testSetSizeAfterRemove_withinTxn() throws Exception {
+        final String element = "item1";
+        final String setName = randomString();
+        final ISet set = client.getSet(setName);
+        set.add(element);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+
+        final TransactionalSet<Object> txnSet = context.getSet(setName);
+        txnSet.remove(element);
+
+        context.commitTransaction();
 
         assertEquals(0, set.size());
     }
 
     @Test
     @Category(ProblematicTest.class)
-    public void testAddDuplicateElement_insideTxn() throws Exception {
+    public void testAddDuplicateElement_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
 
@@ -107,7 +138,7 @@ public class ClientTxnSetTest {
 
     @Test
     @Category(ProblematicTest.class)
-    public void testAddDuplicateElement_inTxn() throws Exception {
+    public void testAddExistingElement_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
@@ -124,7 +155,7 @@ public class ClientTxnSetTest {
 
     @Test
     @Category(ProblematicTest.class)
-    public void testAddDuplicateElement_setSizeAfterCommit() throws Exception {
+    public void testSetSizeAfterAddingDuplicateElement_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
         final ISet set = client.getSet(setName);
