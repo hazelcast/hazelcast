@@ -56,7 +56,6 @@ public final class SimpleMapTest {
 
     static {
         System.setProperty("hazelcast.version.check.enabled", "false");
-        System.setProperty("hazelcast.socket.bind.any", "false");
         System.setProperty("java.net.preferIPv4Stack", "true");
     }
 
