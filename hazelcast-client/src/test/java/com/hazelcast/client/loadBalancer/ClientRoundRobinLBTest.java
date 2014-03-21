@@ -26,7 +26,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertNull;
 public class ClientRoundRobinLBTest {
 
     @AfterClass
-    public void destroy() {
+    public static void destroy() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
