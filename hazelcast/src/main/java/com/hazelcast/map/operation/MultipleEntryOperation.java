@@ -2,14 +2,15 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.SimpleEntryView;
-import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordStatistics;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -18,7 +19,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashSet;
@@ -57,11 +57,13 @@ public class MultipleEntryOperation extends AbstractMapOperation
         response = new MapEntrySet();
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        final LocalMapStatsImpl mapStats = mapService.getLocalMapStatsImpl(name);
         MapEntrySimple entry;
 
         for (Data key : keys) {
             if (partitionService.getPartitionId(key) != getPartitionId())
                 continue;
+            long start = System.currentTimeMillis();
             Object objectKey = mapService.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
             final Object valueBeforeProcess = mapEntry.getValue();
@@ -77,15 +79,19 @@ public class MultipleEntryOperation extends AbstractMapOperation
             EntryEventType eventType;
             if (valueAfterProcess == null) {
                 recordStore.remove(key);
+                mapStats.incrementRemoves(getLatencyFrom(start));
                 eventType = EntryEventType.REMOVED;
             } else {
                 if (valueBeforeProcessObject == null) {
+                    mapStats.incrementPuts(getLatencyFrom(start));
                     eventType = EntryEventType.ADDED;
                 }
                 // take this case as a read so no need to fire an event.
                 else if (!entry.isModified()) {
+                    mapStats.incrementGets(getLatencyFrom(start));
                     eventType = __NO_NEED_TO_FIRE_EVENT;
                 } else {
+                    mapStats.incrementPuts(getLatencyFrom(start));
                     eventType = EntryEventType.UPDATED;
                 }
                 // todo if this is a read only operation, record access operations should be done.
@@ -181,6 +187,9 @@ public class MultipleEntryOperation extends AbstractMapOperation
             key.writeData(out);
         }
 
+    }
+    private long getLatencyFrom(long begin){
+        return Clock.currentTimeMillis() - begin;
     }
 
 
