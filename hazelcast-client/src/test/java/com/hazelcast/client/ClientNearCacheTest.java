@@ -251,7 +251,9 @@ public class ClientNearCacheTest {
         assertEquals(size, stats.getOwnedEntryCount());
     }
 
+    // possible cause : https://github.com/hazelcast/hazelcast/issues/2065
     @Test
+    @Category(ProblematicTest.class)
     public void testMapRemove_WithNearCache() {
         final IMap map = client.getMap(mapWithBasicCash +randomString());
 
