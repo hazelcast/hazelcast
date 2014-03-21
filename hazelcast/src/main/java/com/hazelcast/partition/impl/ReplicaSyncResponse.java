@@ -36,6 +36,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public class ReplicaSyncResponse extends Operation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation {
 

@@ -17,6 +17,8 @@ class InternalPartitionImpl implements InternalPartition {
     //cas to prevent lost updates.
     //The old approach relied on a AtomicReferenceArray, but this performed a lot slower that the current approach.
     //Number of reads will outweigh the number of writes to the field.
+
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_REFERENCE_TO_ARRAY")
     volatile Address[] addresses = new Address[MAX_REPLICA_COUNT];
     private final int partitionId;
     private final PartitionListener partitionListener;
