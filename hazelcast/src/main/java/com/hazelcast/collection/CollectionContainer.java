@@ -180,7 +180,10 @@ public abstract class CollectionContainer implements DataSerializable {
      *
      */
 
-    public long reserveAdd(String transactionId){
+    public Long reserveAdd(String transactionId, Data value){
+        if (value != null && getCollection().contains(new CollectionItem(-1, value))){
+            return null;
+        }
         final long itemId = nextId();
         txMap.put(itemId, new TxCollectionItem(itemId, null, transactionId, false));
         return itemId;
