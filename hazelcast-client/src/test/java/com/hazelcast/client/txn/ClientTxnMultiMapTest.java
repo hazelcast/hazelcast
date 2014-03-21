@@ -21,7 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.TransactionalMultiMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
@@ -46,87 +46,92 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author ali 6/10/13
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnMultiMapTest {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
+    static HazelcastInstance client;
     static HazelcastInstance server;
-    static HazelcastInstance second;
 
     @BeforeClass
     public static void init() {
         server = Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient();
+        client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
     public static void destroy() {
-        hz.shutdown();
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testRemove() throws Exception {
-        final String NAME = "test";
-        final String KEY = "key";
-        final String VALUE = "value";
+        final String mapName = randomString();
+        final String key = "key";
+        final String val = "value";
 
-        hz.getMultiMap(NAME).put(KEY, VALUE);
-        TransactionContext tx = hz.newTransactionContext();
+        MultiMap multiMap = client.getMultiMap(mapName);
+        multiMap.put(key, val);
 
+        TransactionContext tx = client.newTransactionContext();
         tx.beginTransaction();
-        tx.getMultiMap(NAME).remove(KEY, VALUE);
+
+        TransactionalMultiMap txnMultiMap = tx.getMultiMap(mapName);
+        txnMultiMap.remove(key, val);
+
         tx.commitTransaction();
 
-        assertEquals(Collections.EMPTY_LIST, hz.getMultiMap(NAME).get(KEY));
+        assertEquals(Collections.EMPTY_LIST, client.getMultiMap(mapName).get(key));
     }
 
     @Test
     public void testRemoveAll() throws Exception {
+        final String mapName = randomString();
+        final String key = "key";
 
-        final String NAME = "test";
-        final String KEY = "key";
-        final String VALUE = "value";
-
+        MultiMap multiMap = client.getMultiMap(mapName);
         for (int i = 0; i < 10; i++) {
-            hz.getMultiMap(NAME).put(KEY, VALUE + i);
-
+            multiMap.put(key, i);
         }
-        TransactionContext tx = hz.newTransactionContext();
 
+        TransactionContext tx = client.newTransactionContext();
         tx.beginTransaction();
-        tx.getMultiMap(NAME).remove(KEY);
+
+        TransactionalMultiMap txnMultiMap = tx.getMultiMap(mapName);
+        txnMultiMap.remove(key);
         tx.commitTransaction();
-        assertEquals(Collections.EMPTY_LIST, hz.getMultiMap(NAME).get(KEY));
+
+        assertEquals(Collections.EMPTY_LIST, multiMap.get(key));
     }
 
     @Test
-    public void testPutGetRemove() throws Exception {
-        final MultiMap mm = hz.getMultiMap(name);
+    public void testConcrruentTxnPut() throws Exception {
+        final String mapName = randomString();
+        final MultiMap multiMap = client.getMultiMap(mapName);
+
         final int threads = 10;
         final ExecutorService ex = Executors.newFixedThreadPool(threads);
         final CountDownLatch latch = new CountDownLatch(threads);
         final AtomicReference<Throwable> error = new AtomicReference<Throwable>(null);
 
         for (int i = 0; i < threads; i++) {
-            final int finalI = i;
+            final int key = i;
             ex.execute(new Runnable() {
                 public void run() {
-                    final String key = finalI + "key";
-                    hz.getMultiMap(name).put(key, "value");
-                    final TransactionContext context = hz.newTransactionContext();
+                    multiMap.put(key, "value");
+
+                    final TransactionContext context = client.newTransactionContext();
                     try {
                         context.beginTransaction();
-                        final TransactionalMultiMap multiMap = context.getMultiMap(name);
-                        assertFalse(multiMap.put(key, "value"));
-                        assertTrue(multiMap.put(key, "value1"));
-                        assertTrue(multiMap.put(key, "value2"));
-                        assertEquals(3, multiMap.get(key).size());
+                        final TransactionalMultiMap txnMultiMap = context.getMultiMap(mapName);
+                        txnMultiMap.put(key, "value");
+                        txnMultiMap.put(key, "value1");
+                        txnMultiMap.put(key, "value2");
+                        assertEquals(3, txnMultiMap.get(key).size());
                         context.commitTransaction();
 
-                        assertEquals(3, mm.get(key).size());
+                        assertEquals(3, multiMap.get(key).size());
                     } catch (Exception e) {
                         error.compareAndSet(null, e);
                     } finally {
@@ -145,18 +150,56 @@ public class ClientTxnMultiMapTest {
 
     @Test
     public void testPutAndRoleBack() throws Exception {
-        final String name = randomString();
+        final String mapName = randomString();
         final String key = "key";
         final String value = "value";
-        final MultiMap multiMap = hz.getMultiMap(name);
+        final MultiMap multiMap = client.getMultiMap(mapName);
 
-        TransactionContext tx = hz.newTransactionContext();
+        TransactionContext tx = client.newTransactionContext();
         tx.beginTransaction();
-        TransactionalMultiMap mulitMapTxn = tx.getMultiMap(name);
+        TransactionalMultiMap mulitMapTxn = tx.getMultiMap(mapName);
         mulitMapTxn.put(key, value);
         mulitMapTxn.put(key, value);
         tx.rollbackTransaction();
 
         assertEquals(Collections.EMPTY_LIST, multiMap.get(key));
+    }
+
+    @Test
+    public void testTxnMultiMapSize() throws Exception {
+        final String mapName = randomString();
+        final String key = "key";
+        final String value = "value";
+        final MultiMap multiMap = client.getMultiMap(mapName);
+
+        multiMap.put(key, value);
+
+        TransactionContext tx = client.newTransactionContext();
+        tx.beginTransaction();
+        TransactionalMultiMap mulitMapTxn = tx.getMultiMap(mapName);
+        mulitMapTxn.put(key, "newValue");
+        mulitMapTxn.put("newKey", value);
+        assertEquals(3, mulitMapTxn.size());
+
+        tx.commitTransaction();
+    }
+
+    @Test
+    public void testTxnMultiValueCount() throws Exception {
+        final String mapName = randomString();
+        final String key = "key";
+        final String value = "value";
+        final MultiMap multiMap = client.getMultiMap(mapName);
+
+        multiMap.put(key, value);
+
+        TransactionContext tx = client.newTransactionContext();
+        tx.beginTransaction();
+        TransactionalMultiMap mulitMapTxn = tx.getMultiMap(mapName);
+        mulitMapTxn.put(key, "newValue");
+
+        assertEquals(2, mulitMapTxn.valueCount(key));
+
+        tx.commitTransaction();
     }
 }
