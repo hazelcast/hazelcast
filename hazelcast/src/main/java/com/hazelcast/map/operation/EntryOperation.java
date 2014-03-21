@@ -78,18 +78,15 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
             eventType = EntryEventType.REMOVED;
         } else {
             if (oldValue == null) {
-                final long latency = System.currentTimeMillis() - start;
-                mapStats.incrementPuts(latency);
+                mapStats.incrementPuts(getLatencyFrom(start));
                 eventType = EntryEventType.ADDED;
             }
             // take this case as a read so no need to fire an event.
             else if (!entry.isModified()) {
-                final long latency = System.currentTimeMillis() - start;
-                mapStats.incrementGets(latency);
+                mapStats.incrementGets(getLatencyFrom(start));
                 eventType = __NO_NEED_TO_FIRE_EVENT;
             } else {
-                final long latency = System.currentTimeMillis() - start;
-                mapStats.incrementPuts(latency);
+                mapStats.incrementPuts(getLatencyFrom(start));
                 eventType = EntryEventType.UPDATED;
             }
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
@@ -163,4 +160,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return mapContainer.getBackupCount();
     }
 
+    private long getLatencyFrom(long begin){
+        return Clock.currentTimeMillis() - begin;
+    }
 }
