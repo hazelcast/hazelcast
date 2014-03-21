@@ -44,7 +44,7 @@ public class SetCommandParser extends TypeAwareCommandParser {
             return new ErrorCommand(ERROR_CLIENT);
         }
         if (st.hasMoreTokens()) {
-            flag = Integer.valueOf(st.nextToken());
+            flag = Integer.parseInt(st.nextToken());
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }
