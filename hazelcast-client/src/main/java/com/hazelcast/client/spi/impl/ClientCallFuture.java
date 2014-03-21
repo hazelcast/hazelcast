@@ -115,7 +115,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                 return;
             }
         }
-
         if (response instanceof TargetDisconnectedException || response instanceof HazelcastInstanceNotActiveException) {
             if (request instanceof RetryableRequest || invocationService.isRedoOperation()) {
                 if (resend()) {
@@ -140,7 +139,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             this.response = response;
             this.notifyAll();
         }
-
         for (ExecutionCallbackNode node : callbackNodeList) {
             runAsynchronous(node.callback, node.executor);
         }
@@ -197,6 +195,9 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     }
 
     public boolean resend() {
+        if (request.isSingleConnection()) {
+            return false;
+        }
         if (handler == null && reSendCount.incrementAndGet() > MAX_RESEND_COUNT) {
             return false;
         }

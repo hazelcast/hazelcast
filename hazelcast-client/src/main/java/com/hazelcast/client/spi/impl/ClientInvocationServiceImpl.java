@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
@@ -88,7 +87,8 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     // NIO public
 
-    public ICompletableFuture send(ClientRequest request, ClientConnection connection) throws IOException {
+    public ICompletableFuture send(ClientRequest request, ClientConnection connection) {
+        request.setSingleConnection();
         return doSend(request, connection, null);
     }
 
