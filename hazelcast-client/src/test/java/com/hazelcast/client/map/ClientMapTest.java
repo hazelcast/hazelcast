@@ -72,7 +72,7 @@ public class ClientMapTest {
     @BeforeClass
     public static void init() {
         Config config = new Config();
-        config.getMapConfig("mapstore").
+        config.getMapConfig("mapStore*").
                 setMapStoreConfig(new MapStoreConfig()
                         .setWriteDelaySeconds(1000)
                         .setImplementation(mapStore));
@@ -180,7 +180,7 @@ public class ClientMapTest {
     @Test
     public void testFlush() throws InterruptedException {
         mapStore.latch = new CountDownLatch(1);
-        IMap<Object, Object> map = client.getMap("mapstore");
+        IMap<Object, Object> map = client.getMap("mapStore_" + randomString());
         map.put(1l, "value");
         map.flush();
         assertOpenEventually(mapStore.latch, 5);
@@ -339,7 +339,7 @@ public class ClientMapTest {
     @Test
     public void testPutTransient() throws InterruptedException {
         mapStore.latch = new CountDownLatch(1);
-        IMap<Object, Object> map = client.getMap("mapstore");
+        IMap<Object, Object> map = client.getMap("mapStore_" + randomString());
         map.putTransient(3l, "value1", 100, TimeUnit.SECONDS);
         map.flush();
         assertFalse(mapStore.latch.await(5, TimeUnit.SECONDS));
