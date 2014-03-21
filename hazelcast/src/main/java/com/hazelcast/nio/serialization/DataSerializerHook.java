@@ -16,14 +16,9 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 10/2/12
- */
-
 public interface DataSerializerHook {
 
-    public static int F_ID_OFFSET_WEBMODULE = -1000;
-    public static final int SESSION_ATTRIBUTE_ID = 1;
+    int F_ID_OFFSET_WEBMODULE = -1000;
 
     int getFactoryId();
 
