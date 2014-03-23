@@ -35,10 +35,19 @@ Hazelcast is a clustering and highly scalable data distribution platform for Jav
 
 To install Hazelcast:
 
--   Download hazelcast-*version*.zip from [www.hazelcast.org](http://www.hazelcast.org/download/).
+-   Download `hazelcast-`*`<version>`*`.zip` from [www.hazelcast.org](http://www.hazelcast.org/download/).
 
--   Unzip hazelcast-*version*.zip file.
+-   Unzip `hazelcast-`*`<version>`*`.zip` file.
 
--   Add hazelcast-*version*.jar file into your classpath.
+-   Add `hazelcast-`*`<version>`*`.jar` file into your classpath.
+
+
+Alternatively, Hazelcast can be found in the standard Maven repositories. So, if your project uses Maven, you do not need to add additional repositories to your `pom.xml`. Just add the following lines to the `pom.xml`:
+
+	<dependencies> 
+		<dependency>			<groupId>com.hazelcast</groupId>
+			<artifactId>hazelcast</artifactId>			<version>3.2-SNAPSHOT</version> 
+		</dependency>	</dependencies>
+
 
 Hazelcast is pure Java. JVMs that are running Hazelcast will dynamically cluster. Although by default Hazelcast will use multicast for discovery, it can also be configured to only use TCP/IP for environments where multicast is not available or preferred ([Click here for more info](#configuring-tcpip-cluster)). Communication among cluster members is always TCP/IP with Java NIO beauty. Default configuration comes with 1 backup so if one node fails, no data will be lost. It is as simple as using `java.util.{Queue, Set, List, Map}`. Just add the `hazelcast.jar` into your classpath and start coding.
