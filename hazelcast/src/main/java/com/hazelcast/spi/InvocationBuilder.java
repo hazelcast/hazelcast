@@ -28,11 +28,11 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
  */
 public abstract class InvocationBuilder {
 
-    public final static long DEFAULT_CALL_TIMEOUT = -1L;
-    public final static int DEFAULT_REPLICA_INDEX = 0;
-    public final static int DEFAULT_TRY_COUNT = 250;
-    public final static long DEFAULT_TRY_PAUSE_MILLIS = 500;
-    public final static boolean DEFAULT_DESERIALIZE_RESULT = true;
+    public static final long DEFAULT_CALL_TIMEOUT = -1L;
+    public static final int DEFAULT_REPLICA_INDEX = 0;
+    public static final int DEFAULT_TRY_COUNT = 250;
+    public static final long DEFAULT_TRY_PAUSE_MILLIS = 500;
+    public static final boolean DEFAULT_DESERIALIZE_RESULT = true;
 
     protected final NodeEngineImpl nodeEngine;
     protected final String serviceName;
@@ -42,10 +42,10 @@ public abstract class InvocationBuilder {
     protected Callback<Object> callback;
 
     protected long callTimeout = DEFAULT_CALL_TIMEOUT;
-    protected int replicaIndex = 0;
-    protected int tryCount = 250;
-    protected long tryPauseMillis = 500;
-    protected String executorName = null;
+    protected int replicaIndex;
+    protected int tryCount = DEFAULT_TRY_COUNT;
+    protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
+    protected String executorName;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
 
     public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,

@@ -14,18 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
-import com.hazelcast.spi.annotation.PrivateApi;
-
-@PrivateApi
-public final class DistributedObjectAccessor {
-
-    private DistributedObjectAccessor() {
-    }
-
-    public static void onNodeShutdown(AbstractDistributedObject distributedObject) {
-        distributedObject.invalidate();
-    }
-
-}
+/**
+ * Contains annotations for Hazelcast SPI.
+ */
+package com.hazelcast.spi.annotation;

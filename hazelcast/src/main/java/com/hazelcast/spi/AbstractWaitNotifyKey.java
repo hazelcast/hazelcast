@@ -22,7 +22,8 @@ public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
     private final String objectName;
 
     protected AbstractWaitNotifyKey(String service, String objectName) {
-        this.service = service;
+        //todo: can we verify here that service and objectName are not null?
+         this.service = service;
         this.objectName = objectName;
     }
 
@@ -38,13 +39,21 @@ public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         AbstractWaitNotifyKey that = (AbstractWaitNotifyKey) o;
 
-        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) return false;
-        if (service != null ? !service.equals(that.service) : that.service != null) return false;
+        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) {
+            return false;
+        }
+        if (service != null ? !service.equals(that.service) : that.service != null) {
+            return false;
+        }
 
         return true;
     }

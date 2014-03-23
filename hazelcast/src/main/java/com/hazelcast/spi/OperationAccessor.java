@@ -25,16 +25,19 @@ import com.hazelcast.spi.annotation.PrivateApi;
 @PrivateApi
 public final class OperationAccessor {
 
-    private static final ClassLoader thisClassLoader = OperationAccessor.class.getClassLoader();
+    private static final ClassLoader THIS_CLASS_LOADER = OperationAccessor.class.getClassLoader();
+
+    private OperationAccessor() {
+    }
 
     public static boolean isJoinOperation(Operation op) {
         return op instanceof JoinOperation
-                && op.getClass().getClassLoader() == thisClassLoader;
+                && op.getClass().getClassLoader() == THIS_CLASS_LOADER;
     }
 
     public static boolean isMigrationOperation(Operation op) {
         return op instanceof MigrationCycleOperation
-                && op.getClass().getClassLoader() == thisClassLoader;
+                && op.getClass().getClassLoader() == THIS_CLASS_LOADER;
     }
 
     public static void setCallerAddress(Operation op, Address caller) {
@@ -61,6 +64,4 @@ public final class OperationAccessor {
         op.setCallTimeout(callTimeout);
     }
 
-    private OperationAccessor() {
-    }
 }

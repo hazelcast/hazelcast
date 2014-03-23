@@ -95,16 +95,23 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         DistributedObject that = (DistributedObject) o;
         Object name = getName();
-        if (name != null ? !name.equals(that.getName()) : that.getName() != null) return false;
+        if (name != null ? !name.equals(that.getName()) : that.getName() != null) {
+            return false;
+        }
 
         String serviceName = getServiceName();
-        if (serviceName != null ? !serviceName.equals(that.getServiceName()) : that.getServiceName() != null)
+        if (serviceName != null ? !serviceName.equals(that.getServiceName()) : that.getServiceName() != null) {
             return false;
+        }
 
         return true;
     }

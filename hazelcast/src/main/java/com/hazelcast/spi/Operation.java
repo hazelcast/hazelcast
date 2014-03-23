@@ -42,7 +42,7 @@ public abstract class Operation implements DataSerializable {
     private String serviceName;
     private int partitionId = -1;
     private int replicaIndex;
-    private long callId = 0;
+    private long callId;
     private boolean validateTarget = true;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;

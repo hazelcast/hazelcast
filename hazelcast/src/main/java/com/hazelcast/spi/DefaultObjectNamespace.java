@@ -31,6 +31,7 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
     }
 
     public DefaultObjectNamespace(String serviceName, String objectName) {
+        //todo: can we verify that serviceName and objectname != null?
         this.service = serviceName;
         this.objectName = objectName;
     }
@@ -48,7 +49,8 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(service);
-        out.writeObject(objectName);  // writing as object for backward-compatibility
+        // writing as object for backward-compatibility
+        out.writeObject(objectName);
     }
 
     @Override
@@ -59,13 +61,21 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         DefaultObjectNamespace that = (DefaultObjectNamespace) o;
 
-        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) return false;
-        if (service != null ? !service.equals(that.service) : that.service != null) return false;
+        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) {
+            return false;
+        }
+        if (service != null ? !service.equals(that.service) : that.service != null) {
+            return false;
+        }
 
         return true;
     }
