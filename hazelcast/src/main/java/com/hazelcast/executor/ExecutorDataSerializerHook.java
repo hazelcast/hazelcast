@@ -18,12 +18,12 @@ package com.hazelcast.executor;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class ExecutorDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.EXECUTOR_DS_FACTORY, -13);
+    public static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.EXECUTOR);
 
     static final int CALLABLE_TASK = 0;
     static final int MEMBER_CALLABLE_TASK = 1;

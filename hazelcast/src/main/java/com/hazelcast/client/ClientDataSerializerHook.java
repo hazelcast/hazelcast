@@ -18,12 +18,12 @@ package com.hazelcast.client;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class ClientDataSerializerHook implements DataSerializerHook {
 
-    public static final int ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_DS_FACTORY, -3);
+    public static final int ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.CLIENT);
 
     public static final int CLIENT_RESPONSE = 1;
 

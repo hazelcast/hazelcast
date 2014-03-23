@@ -16,6 +16,9 @@
 
 package com.hazelcast.nio.serialization;
 
+/**
+ * Hazelcast Internal Factory ID Repository
+ */
 public enum FactoryIdRepository {
 
     DEFAULT(0),// factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
@@ -31,6 +34,7 @@ public enum FactoryIdRepository {
     SEMAPHORE(-16),
     ATOMIC_LONG(-17),
     TOPIC(-18),
+    CLIENT_TXN(-19),
     COLLECTION(-20),
     ATOMIC_REFERENCE(-21),
     MAP_REDUCE(-23),
@@ -71,7 +75,7 @@ public enum FactoryIdRepository {
     }
 
     /**
-     * returns Portable  Factory Id
+     * returns Portable Factory Id
      * @param module defined in FactoryIdRepository
      * @return factoryId
      */

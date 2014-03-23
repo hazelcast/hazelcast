@@ -16,17 +16,12 @@
 
 package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
-
+import com.hazelcast.nio.serialization.*;
 import java.util.Collection;
 
 public class LockPortableHook implements PortableHook {
 
-    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_PORTABLE_FACTORY, -15);
+    public static final int FACTORY_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.LOCK);
 
     public static final int LOCK = 1;
     public static final int UNLOCK = 2;

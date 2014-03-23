@@ -18,11 +18,11 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 
 public final class LockDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_DS_FACTORY, -15);
+    public static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.LOCK);
 
     @Override
     public int getFactoryId() {

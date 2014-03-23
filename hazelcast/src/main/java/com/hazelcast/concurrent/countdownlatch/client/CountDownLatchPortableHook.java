@@ -16,17 +16,12 @@
 
 package com.hazelcast.concurrent.countdownlatch.client;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
-
+import com.hazelcast.nio.serialization.*;
 import java.util.Collection;
 
 public final class CountDownLatchPortableHook implements PortableHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CDL_PORTABLE_FACTORY, -14);
+    static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.CDL);
 
     static final int COUNT_DOWN = 1;
     static final int AWAIT = 2;

@@ -18,11 +18,11 @@ package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 
 public final class AtomicLongDataSerializerHook implements DataSerializerHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_DS_FACTORY, -17);
+    static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.ATOMIC_LONG);
 
     @Override
     public int getFactoryId() {

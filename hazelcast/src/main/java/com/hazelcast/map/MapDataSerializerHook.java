@@ -23,12 +23,9 @@ import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.QueryResultSet;
 
-/**
- * @author mdogan 8/24/12
- */
 public final class MapDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_DS_FACTORY, -10);
+    public static final int F_ID =FactoryIdRepository.getDSFactoryId(FactoryIdRepository.MAP);
 
     public static final int PUT = 0;
     public static final int GET = 1;

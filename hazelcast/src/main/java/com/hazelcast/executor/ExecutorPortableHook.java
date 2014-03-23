@@ -20,17 +20,13 @@ import com.hazelcast.executor.client.CancellationRequest;
 import com.hazelcast.executor.client.IsShutdownRequest;
 import com.hazelcast.executor.client.PartitionCallableRequest;
 import com.hazelcast.executor.client.TargetCallableRequest;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
 
 public final class ExecutorPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.EXECUTOR_PORTABLE_FACTORY, -13);
+    public static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.EXECUTOR);
 
     public static final int IS_SHUTDOWN_REQUEST = 1;
     public static final int CANCELLATION_REQUEST = 2;

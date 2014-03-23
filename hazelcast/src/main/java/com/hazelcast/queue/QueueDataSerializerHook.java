@@ -20,12 +20,9 @@ import com.hazelcast.nio.serialization.*;
 import com.hazelcast.queue.tx.*;
 import com.hazelcast.util.ConstructorFunction;
 
-/**
- * @author mdogan 8/24/12
- */
 public final class QueueDataSerializerHook implements DataSerializerHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_DS_FACTORY, -11);
+    static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.QUEUE);
 
     static final int OFFER = 0;
     static final int POLL = 1;

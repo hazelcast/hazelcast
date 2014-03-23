@@ -16,17 +16,13 @@
 
 package com.hazelcast.concurrent.semaphore.client;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
-
+import com.hazelcast.nio.serialization.*;
 import java.util.Collection;
 
 public class SemaphorePortableHook implements PortableHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY, -16);
+    static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.SEMAPHORE);
+            //FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY, -16);
     static final int ACQUIRE = 1;
     static final int AVAILABLE = 2;
     static final int DRAIN = 3;

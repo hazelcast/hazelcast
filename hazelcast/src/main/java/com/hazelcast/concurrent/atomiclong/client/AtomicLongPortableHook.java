@@ -16,17 +16,12 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
-
+import com.hazelcast.nio.serialization.*;
 import java.util.Collection;
 
 public class AtomicLongPortableHook implements PortableHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_PORTABLE_FACTORY, -17);
+    static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.ATOMIC_LONG);
 
     static final int ADD_AND_GET = 1;
     static final int COMPARE_AND_SET = 2;
