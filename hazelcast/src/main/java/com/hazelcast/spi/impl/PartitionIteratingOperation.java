@@ -96,6 +96,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     private static class ResponseQueue implements ResponseHandler {
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
+        @Override
         public void sendResponse(Object obj) {
             b.offer(obj);
         }
@@ -104,6 +105,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             return b.take();
         }
 
+        @Override
         public boolean isLocal() {
             return true;
         }
@@ -121,6 +123,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             this.results = results != null ? results : Collections.<Integer, Object>emptyMap();
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             int len = results != null ? results.size() : 0;
             out.writeInt(len);
@@ -132,6 +135,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             }
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             int len = in.readInt();
             if (len > 0) {
@@ -150,10 +154,12 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             return results;
         }
 
+        @Override
         public int getFactoryId() {
             return SpiDataSerializerHook.F_ID;
         }
 
+        @Override
         public int getId() {
             return SpiDataSerializerHook.PARTITION_RESPONSE;
         }
@@ -181,10 +187,12 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         operationFactory = in.readObject();
     }
 
+    @Override
     public int getFactoryId() {
         return SpiDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return SpiDataSerializerHook.PARTITION_ITERATOR;
     }

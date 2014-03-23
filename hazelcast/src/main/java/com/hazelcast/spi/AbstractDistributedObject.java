@@ -53,7 +53,6 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     }
 
     protected void postDestroy() {
-
     }
 
     public final NodeEngine getNodeEngine() {
@@ -80,6 +79,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         return s;
     }
 
+    @Override
     public abstract String getServiceName();
 
     final void invalidate() {

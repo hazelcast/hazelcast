@@ -18,9 +18,6 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
 
-/**
- * @author mdogan 1/18/13
- */
 public class TargetDisconnectedException extends RetryableHazelcastException {
 
     public TargetDisconnectedException() {
@@ -29,5 +26,4 @@ public class TargetDisconnectedException extends RetryableHazelcastException {
     public TargetDisconnectedException(Address address) {
         super("Target[" + address + "] disconnected.");
     }
-
 }

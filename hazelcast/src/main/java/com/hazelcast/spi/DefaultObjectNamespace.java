@@ -21,9 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-/**
-* @author mdogan 2/12/13
-*/
 public final class DefaultObjectNamespace implements ObjectNamespace {
 
     private String service;
@@ -38,12 +35,26 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
         this.objectName = objectName;
     }
 
+    @Override
     public String getServiceName() {
         return service;
     }
 
+    @Override
     public String getObjectName() {
         return objectName;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(service);
+        out.writeObject(objectName);  // writing as object for backward-compatibility
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        service = in.readUTF();
+        objectName = in.readObject();
     }
 
     @Override
@@ -64,16 +75,6 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
         int result = service != null ? service.hashCode() : 0;
         result = 31 * result + (objectName != null ? objectName.hashCode() : 0);
         return result;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(service);
-        out.writeObject(objectName);  // writing as object for backward-compatibility
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        service = in.readUTF();
-        objectName = in.readObject();
     }
 
     @Override

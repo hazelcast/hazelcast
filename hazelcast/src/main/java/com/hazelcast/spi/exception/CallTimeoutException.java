@@ -15,10 +15,6 @@
  */
 
 package com.hazelcast.spi.exception;
-
-/**
- * @author mdogan 12/19/12
- */
 public class CallTimeoutException extends RetryableHazelcastException {
 
     public CallTimeoutException() {

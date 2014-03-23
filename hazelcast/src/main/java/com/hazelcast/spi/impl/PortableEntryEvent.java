@@ -27,9 +27,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- * @author ali 5/23/13
- */
 public class PortableEntryEvent implements Portable {
 
     private Data key;
@@ -69,14 +66,17 @@ public class PortableEntryEvent implements Portable {
         return uuid;
     }
 
+    @Override
     public int getFactoryId() {
         return SpiPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return SpiPortableHook.ENTRY_EVENT;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
@@ -86,6 +86,7 @@ public class PortableEntryEvent implements Portable {
         IOUtil.writeNullableData(out, oldValue);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         eventType = EntryEventType.getByType(reader.readInt("e"));
         uuid = reader.readUTF("u");

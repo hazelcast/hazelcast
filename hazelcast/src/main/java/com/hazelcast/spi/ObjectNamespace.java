@@ -18,9 +18,6 @@ package com.hazelcast.spi;
 
 import com.hazelcast.nio.serialization.DataSerializable;
 
-/**
- * @author mdogan 2/13/13
- */
 public interface ObjectNamespace extends DataSerializable {
 
     String getServiceName();

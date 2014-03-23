@@ -16,9 +16,6 @@
 
 package com.hazelcast.spi;
 
-/**
- * @author mdogan 1/15/13
- */
 public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
 
     private final String service;
@@ -29,10 +26,12 @@ public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
         this.objectName = objectName;
     }
 
+    @Override
     public final String getServiceName() {
         return service;
     }
 
+    @Override
     public String getObjectName() {
         return objectName;
     }

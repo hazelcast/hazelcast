@@ -26,9 +26,6 @@ import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * @author mdogan 8/2/12
- */
 public final class ResponseHandlerFactory {
 
     private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
@@ -60,9 +57,11 @@ public final class ResponseHandlerFactory {
     }
 
     private static class NoResponseHandler implements ResponseHandler {
+        @Override
         public void sendResponse(final Object obj) {
         }
 
+        @Override
         public boolean isLocal() {
             return false;
         }
@@ -79,6 +78,7 @@ public final class ResponseHandlerFactory {
             this.logger = logger;
         }
 
+        @Override
         public void sendResponse(final Object obj) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
@@ -86,6 +86,7 @@ public final class ResponseHandlerFactory {
             }
         }
 
+        @Override
         public boolean isLocal() {
             return true;
         }
@@ -102,6 +103,7 @@ public final class ResponseHandlerFactory {
             this.op = op;
         }
 
+        @Override
         public void sendResponse(Object obj) {
             long callId = op.getCallId();
             Connection conn = op.getConnection();
@@ -120,6 +122,7 @@ public final class ResponseHandlerFactory {
             nodeEngine.getOperationService().send(response, op.getCallerAddress());
         }
 
+        @Override
         public boolean isLocal() {
             return false;
         }
@@ -136,6 +139,7 @@ public final class ResponseHandlerFactory {
             this.callId = callId;
         }
 
+        @Override
         public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
                 throw new ResponseAlreadySentException("NormalResponse already sent for callback: " + callback
@@ -144,6 +148,7 @@ public final class ResponseHandlerFactory {
             callback.notify(obj);
         }
 
+        @Override
         public boolean isLocal() {
             return true;
         }

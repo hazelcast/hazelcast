@@ -36,9 +36,6 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.Arrays;
 
-/**
- * @author mdogan 4/5/13
- */
 final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
     private Data backupOpData;

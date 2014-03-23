@@ -69,6 +69,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     };
 
     // runs after queue lock
+    @Override
     public void await(WaitSupport waitSupport) {
         final WaitNotifyKey key = waitSupport.getWaitKey();
         final Queue<WaitingOp> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
@@ -82,6 +83,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     // runs after queue lock
+    @Override
     public void notify(Notifier notifier) {
         WaitNotifyKey key = notifier.getNotifiedKey();
         Queue<WaitingOp> q = mapWaitingOps.get(key);
@@ -261,10 +263,12 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             return waitSupport.shouldWait();
         }
 
+        @Override
         public long getDelay(TimeUnit unit) {
             return unit.convert(expirationTime - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
         }
 
+        @Override
         public int compareTo(Delayed other) {
             if (other == this) // compare zero ONLY if same object
                 return 0;
@@ -305,6 +309,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             return super.equals(obj);
         }
 
+        @Override
         public void logError(Throwable e) {
             final ILogger logger = getLogger();
             if (e instanceof RetryableException) {
@@ -363,6 +368,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     private class ExpirationTask implements Runnable {
+        @Override
         public void run() {
             while (true) {
                 if (Thread.interrupted()) {

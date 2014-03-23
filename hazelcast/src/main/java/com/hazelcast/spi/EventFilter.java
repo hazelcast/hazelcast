@@ -16,11 +16,7 @@
 
 package com.hazelcast.spi;
 
-/**
- * @author mdogan 12/14/12
- */
 public interface EventFilter {
 
     boolean eval(Object arg);
-
 }

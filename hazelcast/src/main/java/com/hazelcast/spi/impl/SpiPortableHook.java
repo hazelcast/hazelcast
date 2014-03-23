@@ -21,9 +21,6 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 4/30/13
- */
 public final class SpiPortableHook implements PortableHook {
 
     public final static int ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_PORTABLE_FACTORY, -1);
@@ -34,10 +31,12 @@ public final class SpiPortableHook implements PortableHook {
     public static final int ENTRY_EVENT = 4;
     public static final int DISTRIBUTED_OBJECT_EVENT = 5;
 
+    @Override
     public int getFactoryId() {
         return ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
@@ -52,12 +51,14 @@ public final class SpiPortableHook implements PortableHook {
                         return new PortableEntryEvent();
                     case DISTRIBUTED_OBJECT_EVENT:
                         return new PortableDistributedObjectEvent();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

@@ -36,10 +36,11 @@ public interface InternalOperationService extends OperationService{
 
     boolean isCallTimedOut(Operation op);
 
+
+    void notifyBackupCall(long callId);
+
     /**
      * Shuts down this InternalOperationService.
      */
     void shutdown();
-
-    void notifyBackupCall(long callId);
 }

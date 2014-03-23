@@ -22,10 +22,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 
-/**
- * @author mdogan 12/21/12
- */
-
 @PrivateApi
 public final class OperationAccessor {
 

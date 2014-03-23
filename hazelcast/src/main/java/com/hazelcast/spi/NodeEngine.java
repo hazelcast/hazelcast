@@ -31,9 +31,6 @@ import com.hazelcast.storage.Storage;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
-/**
- * @author mdogan 8/24/12
- */
 public interface NodeEngine {
 
     OperationService getOperationService();

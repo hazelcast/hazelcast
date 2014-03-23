@@ -18,10 +18,6 @@ package com.hazelcast.spi.annotation;
 
 import java.lang.annotation.*;
 
-/**
- * @author mdogan 9/14/12
- */
-
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
