@@ -23,7 +23,7 @@ import java.io.IOException;
 
 public final class Data implements IdentifiedDataSerializable {
 
-    public static final int FACTORY_ID = 0;
+    public static final int FACTORY_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.DEFAULT);
     public static final int ID = 0;
     public static final int NO_CLASS_ID = 0; // WARNING: Portable class-id cannot be zero.
 
