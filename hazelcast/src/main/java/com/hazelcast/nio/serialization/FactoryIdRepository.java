@@ -38,7 +38,7 @@ public enum FactoryIdRepository {
     COLLECTION(-20),
     ATOMIC_REFERENCE(-21),
     MAP_REDUCE(-23),
-    WEB(-1000);
+    WEB(-24);
 
     private String serializationProperty;
     private String portableProperty;
