@@ -24,21 +24,8 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.DistributedObjectAccessor;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedRunnable;
@@ -247,9 +234,9 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         /**
          * Retrieves a DistributedObject proxy or creates it if it's not available
          *
-         * @param name name of the proxy object
+         * @param name         name of the proxy object
          * @param publishEvent true if a DistributedObjectEvent should  be fired
-         * @param initialize true if proxy object should be initialized
+         * @param initialize   true if proxy object should be initialized
          * @return a DistributedObject instance
          */
         DistributedObject getOrCreateProxy(final String name, boolean publishEvent, boolean initialize) {
@@ -270,9 +257,9 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         /**
          * Creates a DistributedObject proxy if it's not created yet
          *
-         * @param name name of the proxy object
+         * @param name         name of the proxy object
          * @param publishEvent true if a DistributedObjectEvent should  be fired
-         * @param initialize true if proxy object should be initialized
+         * @param initialize   true if proxy object should be initialized
          * @return a DistributedObject instance if it's created by this method, null otherwise
          */
         DistributedObject createProxy(final String name, boolean publishEvent, boolean initialize) {
@@ -349,9 +336,9 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         public void run() {
             DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, object);
             for (DistributedObjectListener listener : listeners.values()) {
-                if (EventType.CREATED.equals(type)){
+                if (EventType.CREATED.equals(type)) {
                     listener.distributedObjectCreated(event);
-                } else if (EventType.DESTROYED.equals(type)){
+                } else if (EventType.DESTROYED.equals(type)) {
                     listener.distributedObjectDestroyed(event);
                 }
             }

@@ -40,7 +40,6 @@
     <suppress checks="" files="[\\/]nio[\\/]"/>
     <suppress checks="" files="[\\/]query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
-    <suppress checks="" files="[\\/]spi[\\/]"/>
     <suppress checks="" files="[\\/]storage[\\/]"/>
     <suppress checks="" files="[\\/]transaction[\\/]"/>
     <suppress checks="" files="[\\/]util[\\/]"/>

@@ -31,22 +31,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupCompletionCallback;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.ExecutionTracingService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.ResponseHandler;
-import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -57,22 +42,8 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
@@ -138,7 +109,8 @@ final class BasicOperationService implements InternalOperationService {
                 0L, TimeUnit.MILLISECONDS,
                 responseWorkQueue,
                 new SingleExecutorThreadFactory(node.threadGroup,
-                        node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
+                        node.getConfigClassLoader(), node.getThreadNamePrefix("response"))
+        );
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         backupCalls = new ConcurrentHashMap<Long, BackupCompletionCallback>(1000, 0.75f, concurrencyLevel);

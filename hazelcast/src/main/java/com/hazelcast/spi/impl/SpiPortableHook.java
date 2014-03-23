@@ -40,7 +40,7 @@ public final class SpiPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
-                switch (classId){
+                switch (classId) {
                     case USERNAME_PWD_CRED:
                         return new UsernamePasswordCredentials();
                     case COLLECTION:

@@ -31,8 +31,8 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.storage.DataRef;
@@ -235,7 +235,7 @@ public class NodeEngineImpl implements NodeEngine {
         public void run() {
             retries++;
             if (logger.isFinestEnabled()) {
-                logger.finest( "Retrying[" + retries + "] packet send operation to: " + target);
+                logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
             }
             send(packet, target, this);
         }
@@ -363,7 +363,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void shutdown(final boolean terminate) {
-        logger.finest( "Shutting down services...");
+        logger.finest("Shutting down services...");
         waitNotifyService.shutdown();
         proxyService.shutdown();
         serviceManager.shutdown(terminate);

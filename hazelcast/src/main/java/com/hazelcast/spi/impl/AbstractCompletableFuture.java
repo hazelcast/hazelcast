@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -64,7 +64,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
             runAsynchronous(callback, executor);
             return;
         }
-        for (;;) {
+        for (; ; ) {
             ExecutionCallbackNode oldCallbackHead = callbackHead;
             ExecutionCallbackNode newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
             if (callbackUpdater.compareAndSet(this, oldCallbackHead, newCallbackHead)) {
@@ -104,7 +104,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
     protected void fireCallbacks() {
         ExecutionCallbackNode<V> callbackChain;
-        for (;;) {
+        for (; ; ) {
             callbackChain = callbackHead;
             if (callbackUpdater.compareAndSet(this, callbackChain, null)) {
                 break;

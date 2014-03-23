@@ -174,7 +174,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     void shutdown() {
-        logger.finest( "Stopping tasks...");
+        logger.finest("Stopping tasks...");
         expirationTask.cancel(true);
         expirationService.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
@@ -252,7 +252,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
         public boolean isCallTimedOut() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            if(nodeEngine.operationService.isCallTimedOut(op)) {
+            if (nodeEngine.operationService.isCallTimedOut(op)) {
                 cancel(new CallTimeoutException(op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout()));
                 return true;
             }

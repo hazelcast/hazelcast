@@ -33,23 +33,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -78,10 +62,11 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 new SynchronousQueue<Runnable>(), threadFactory, new RejectedExecutionHandler() {
             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Node is shutting down; discarding the task: " + r);
+                    logger.finest("Node is shutting down; discarding the task: " + r);
                 }
             }
-        });
+        }
+        );
 
         final String scheduledThreadName = node.getThreadNamePrefix("scheduled");
         scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
@@ -143,7 +128,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
                     60, TimeUnit.SECONDS,
                     new LinkedBlockingQueue<Runnable>(queueCapacity),
                     new PoolExecutorThreadFactory(node.threadGroup,
-                            node.getThreadPoolNamePrefix(internalName), node.getConfigClassLoader()));
+                            node.getThreadPoolNamePrefix(internalName), node.getConfigClassLoader())
+            );
             pool.allowCoreThreadTimeOut(true);
             executor = pool;
         } else {
@@ -232,7 +218,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
     @PrivateApi
     void shutdown() {
-        logger.finest( "Stopping executors...");
+        logger.finest("Stopping executors...");
         cachedExecutorService.shutdown();
         scheduledExecutorService.shutdownNow();
         try {
@@ -275,7 +261,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         @Override
         public void run() {
-            if(entries.isEmpty()){
+            if (entries.isEmpty()) {
                 return;
             }
 
@@ -317,7 +303,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         private CompletableFutureEntry(Future<V> future, NodeEngine nodeEngine,
                                        CompletableFutureTask completableFutureTask) {
             this.completableFutureTask = completableFutureTask;
-            this.completableFuture  = new BasicCompletableFuture<V>(future, nodeEngine);
+            this.completableFuture = new BasicCompletableFuture<V>(future, nodeEngine);
         }
 
         private boolean processState() {
