@@ -111,7 +111,7 @@ This section lists issues solved for Hazelcast 3.2 release.
 -	`DelegatingFuture.isDone` always returns false until get is called [[#850]](https://github.com/hazelcast/hazelcast/issues/850).
 -	Predicate support for entry processor [[#826]](https://github.com/hazelcast/hazelcast/issues/826).
 -	Full replication of Maps should be performed [[#360]](https://github.com/hazelcast/hazelcast/issues/360).
--	Near cache statistics [[#30]](https://github.com/hazelcast/hazelcast/issues/30).
+
 
 ### Known Issues & Workarounds
 

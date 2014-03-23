@@ -20,100 +20,474 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.*;
 
-/**
- * @author ali 5/19/13
- */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientQueueTest {
 
-    static final String queueName = "test1";
-    static HazelcastInstance hz;
+    final static int maxSizeForQueue = 8;
+    final static String queueForTestQueueWithSizeLimit = "testQueuWithSizeLimit";
+    final static String queueForTestOfferPoll = "queueForTestOfferPoll";
+
+    static HazelcastInstance client;
     static HazelcastInstance server;
-    static IQueue q;
 
     @BeforeClass
     public static void init(){
         Config config = new Config();
-        QueueConfig queueConfig = config.getQueueConfig(queueName);
-        queueConfig.setMaxSize(6);
+
+        QueueConfig queueConfig = config.getQueueConfig(queueForTestQueueWithSizeLimit);
+        queueConfig.setMaxSize(maxSizeForQueue);
+
+        queueConfig = config.getQueueConfig(queueForTestOfferPoll);
+        queueConfig.setMaxSize(maxSizeForQueue);
+
         server = Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient(null);
-        q = hz.getQueue(queueName);
+        client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
     public static void destroy() {
-        hz.shutdown();
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
-    @Before
-    @After
-    public void clear() throws IOException {
+    @Test
+    public void testOffer() {
+        final IQueue q = client.getQueue(randomString());
+        assertTrue(q.offer(1));
+        assertEquals(1, q.size());
+    }
+
+    @Test
+    public void testadd() {
+        final IQueue q = client.getQueue(randomString());
+        assertTrue(q.add(1));
+        assertEquals(1, q.size());
+    }
+
+    @Test
+    public void testPut() throws InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        q.put(1);
+        assertEquals(1, q.size());
+    }
+
+    @Test
+    public void testTake() throws InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        q.put(1);
+        assertEquals(1, q.take());
+    }
+
+    @Test
+    public void testEmptyPeak() throws InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        assertNull(q.peek());
+    }
+
+    @Test
+    public void testPeak() throws InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        q.offer(1);
+        assertEquals(1, q.peek());
+        assertEquals(1, q.peek());
+        assertEquals(1, q.size());
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testEmptyElement() throws InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        q.element();
+    }
+
+    @Test
+    public void testElement() throws InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        q.offer(1);
+        assertEquals(1, q.element());
+    }
+
+    @Test
+    public void testPoll() throws InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        q.offer(1);
+        assertEquals(1, q.poll());
+    }
+
+
+    @Test
+    public void testOfferWithTimeOut() throws IOException, InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        boolean result = q.offer(1, 50, TimeUnit.MILLISECONDS);
+        assertTrue(result);
+    }
+
+    @Test
+    public void testRemainingCapacity() throws IOException {
+        final IQueue q = client.getQueue(randomString());
+
+        assertEquals(Integer.MAX_VALUE, q.remainingCapacity());
+        q.offer("one");
+        assertEquals(Integer.MAX_VALUE-1, q.remainingCapacity());
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testEmptyRemove() throws IOException {
+        final IQueue q = client.getQueue(randomString());
+        q.remove();
+    }
+
+    @Test
+    public void testRemoveTop() throws IOException, InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        q.offer(1);
+        assertEquals(1, q.remove());
+    }
+
+    @Test
+    public void testRemove() throws IOException {
+        final IQueue q = client.getQueue(randomString());
+
+        q.offer(1);
+        assertTrue(q.remove(1));
+        assertFalse(q.remove(2));
+    }
+
+    @Test
+    public void testContains() {
+        final IQueue q = client.getQueue(randomString());
+
+        q.offer(1);
+        assertTrue(q.contains(1));
+        assertFalse(q.contains(2));
+    }
+
+    @Test
+    public void testContainsAll() {
+        final int maxItems = 11;
+        final IQueue q = client.getQueue(randomString());
+
+        List trueList = new ArrayList();
+        List falseList = new ArrayList();
+        for(int i=0; i<maxItems; i++){
+            q.offer(i);
+            trueList.add(i);
+            falseList.add(i+1);
+        }
+        assertTrue(q.containsAll(trueList));
+        assertFalse(q.containsAll(falseList));
+    }
+
+
+    @Test
+    public void testDrain() {
+        final int maxItems = 12;
+        final IQueue q = client.getQueue(randomString());
+
+        List offeredList = new LinkedList();
+        for(int i=0; i<maxItems; i++){
+            q.offer(i);
+            offeredList.add(i);
+        }
+        List drainedList = new LinkedList();
+        int totalDrained = q.drainTo(drainedList);
+
+        assertEquals(maxItems, totalDrained);
+        assertEquals(offeredList, drainedList);
+    }
+
+    @Test
+    public void testPartialDrain() {
+        final int maxItems = 15;
+        final int itemsToDrain = maxItems/2;
+
+        final IQueue q = client.getQueue(randomString());
+
+        List expectedList = new LinkedList();
+        for(int i=0; i<maxItems; i++){
+            q.offer(i);
+            if(i < itemsToDrain){
+                expectedList.add(i);
+            }
+        }
+        List drainedList = new LinkedList();
+        int totalDrained = q.drainTo(drainedList, itemsToDrain);
+
+        assertEquals(itemsToDrain, totalDrained);
+        assertEquals(expectedList, drainedList);
+    }
+
+    @Test
+    public void testIterator(){
+        final int maxItems = 18;
+        final IQueue q = client.getQueue(randomString());
+
+        for(int i=0; i<maxItems; i++){
+            q.offer(i);
+        }
+
+        int i=0;
+        for (Object o : q) {
+            assertEquals(i++, o);
+        }
+    }
+
+    @Test
+    public void testToArray(){
+        final int maxItems = 19;
+        final IQueue q = client.getQueue(randomString());
+
+        Object[] offered = new Object[maxItems];
+        for(int i=0; i<maxItems; i++){
+            q.offer(i);
+            offered[i]=i;
+        }
+
+        Object[] result =  q.toArray();
+        assertEquals(offered, result);
+    }
+
+    @Test
+    public void testToPartialArray(){
+        final int maxItems = 74;
+        final int arraySZ = maxItems / 2 ;
+        final IQueue q = client.getQueue(randomString());
+
+        Object[] offered = new Object[maxItems];
+        for(int i=0; i<maxItems; i++){
+            q.offer(i);
+            offered[i]=i;
+        }
+
+        Object[] result = q.toArray(new Object[arraySZ]);
+        assertEquals(offered, result);
+    }
+
+    @Test
+    public void testAddAll() throws IOException {
+        final int maxItems = 13;
+        final IQueue q = client.getQueue(randomString());
+
+        Collection coll = new ArrayList(maxItems);
+
+        for(int i=0; i<maxItems; i++){
+            coll.add(i);
+        }
+
+        assertTrue(q.addAll(coll));
+        assertEquals(coll.size(), q.size());
+    }
+
+    @Test
+    public void testRemoveList() throws IOException {
+        final int maxItems = 131;
+        final IQueue q = client.getQueue(randomString());
+
+        List removeList = new LinkedList();
+        for(int i=0; i<maxItems; i++){
+            q.add(i);
+            removeList.add(i);
+        }
+
+        assertTrue(q.removeAll(removeList));
+        assertEquals(0, q.size());
+    }
+
+    @Test
+    public void testRemoveList_whereNotFound() throws IOException {
+        final int maxItems = 131;
+        final IQueue q = client.getQueue(randomString());
+
+        List removeList = new LinkedList();
+        for(int i=0; i<maxItems; i++){
+            q.add(i);
+        }
+        removeList.add(maxItems+1);
+        removeList.add(maxItems+2);
+
+        assertFalse(q.removeAll(removeList));
+        assertEquals(maxItems, q.size());
+    }
+
+    @Test
+    public void testRetainEmptyList() throws IOException {
+        final int maxItems = 131;
+        final IQueue q = client.getQueue(randomString());
+
+        for(int i=0; i<maxItems; i++){
+            q.add(i);
+        }
+
+        List retain = new LinkedList();
+        assertTrue(q.retainAll(retain));
+        assertEquals(0, q.size());
+    }
+
+    @Test
+    public void testRetainAllList() throws IOException {
+        final int maxItems = 181;
+        final IQueue q = client.getQueue(randomString());
+
+        List retain = new LinkedList();
+        for(int i=0; i<maxItems; i++){
+            q.add(i);
+            retain.add(i);
+        }
+
+        assertFalse(q.retainAll(retain));
+        assertEquals(maxItems, q.size());
+    }
+
+    @Test
+    public void testRetainAll_ListNotFound() throws IOException {
+        final int maxItems = 181;
+        final IQueue q = client.getQueue(randomString());
+
+        List retain = new LinkedList();
+        for(int i=0; i<maxItems; i++){
+            q.add(i);
+        }
+        retain.add(maxItems+1);
+        retain.add(maxItems+2);
+
+        assertTrue(q.retainAll(retain));
+        assertEquals(0, q.size());
+    }
+
+    @Test
+    public void testRetainAll_mixedList() throws IOException {
+        final int maxItems = 181;
+        final IQueue q = client.getQueue(randomString());
+
+        List retain = new LinkedList();
+        for(int i=0; i<maxItems; i++){
+            q.add(i);
+        }
+        retain.add(maxItems-1);
+        retain.add(maxItems+1);
+
+        assertTrue(q.retainAll(retain));
+        assertEquals(1, q.size());
+    }
+
+    @Test
+    public void testSize(){
+        final int maxItems = 143;
+        final IQueue q = client.getQueue(randomString());
+
+        for(int i=0; i<maxItems; i++){
+            q.add(i);
+        }
+        assertEquals(maxItems, q.size());
+    }
+
+    @Test
+    public void testIsEmpty(){
+        final IQueue q = client.getQueue(randomString());
+        assertTrue(q.isEmpty());
+    }
+
+    @Test
+    public void testNotIsEmpty(){
+        final IQueue q = client.getQueue(randomString());
+        q.offer(1);
+        assertFalse(q.isEmpty());
+    }
+
+    @Test
+    public void testClear(){
+        final int maxItems = 123;
+        final IQueue q = client.getQueue(randomString());
+
+        for(int i=0; i<maxItems; i++){
+            q.add(i);
+        }
+
+        assertEquals(maxItems, q.size());
         q.clear();
+        assertEquals(0, q.size());
     }
 
     @Test
     public void testListener() throws Exception {
-        assertEquals(0, q.size());
+        final int maxItems = 10;
+        final CountDownLatch itemAddedLatch = new CountDownLatch(maxItems);
+        final CountDownLatch itemRemovedLatch = new CountDownLatch(maxItems);
 
-        final CountDownLatch latch = new CountDownLatch(5);
 
-        ItemListener listener = new ItemListener() {
+        final IQueue queue = client.getQueue(randomString());
+
+        String id = queue.addItemListener(new ItemListener() {
 
             public void itemAdded(ItemEvent itemEvent) {
-                latch.countDown();
+                itemAddedLatch.countDown();
             }
 
             public void itemRemoved(ItemEvent item) {
+                itemRemovedLatch.countDown();
             }
-        };
-        String id = q.addItemListener(listener, true);
-
-        Thread.sleep(500);
+        }, true);
 
         new Thread(){
             public void run() {
-                for (int i=0; i<5; i++){
-                    if(!q.offer("event_item" + i)){
-                        throw new RuntimeException();
-                    }
+                for (int i=0; i<maxItems; i++){
+                    queue.offer(i);
+                    queue.remove(i);
                 }
             }
         }.start();
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
-        q.removeItemListener(id);
+
+        assertTrue(itemAddedLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(itemRemovedLatch.await(5, TimeUnit.SECONDS));
+        queue.removeItemListener(id);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetLocalQueueStats()  {
+        final IQueue q = client.getQueue(randomString());
+        q.getLocalQueueStats();
+    }
+
+    @Test
+    public void testQueueWithSizeLimit(){
+        final IQueue q = client.getQueue(queueForTestQueueWithSizeLimit);
+
+        for(int i=0; i< maxSizeForQueue; i++){
+            q.offer(i);
+        }
+        assertFalse(q.offer(maxSizeForQueue));
     }
 
     @Test
     public void testOfferPoll() throws IOException, InterruptedException {
+
+        final IQueue q = client.getQueue(queueForTestOfferPoll);
+
         for (int i=0; i<10; i++){
             boolean result = q.offer("item");
-            if (i<6){
+            if (i<maxSizeForQueue){
                 assertTrue(result);
             }
             else {
                 assertFalse(result);
             }
         }
-        assertEquals(6, q.size());
+        assertEquals(maxSizeForQueue, q.size());
 
         final Thread t1 = new Thread() {
             public void run() {
@@ -133,7 +507,7 @@ public class ClientQueueTest {
 
         for (int i=0; i<10; i++){
             Object o = q.poll();
-            if (i<6){
+            if (i<maxSizeForQueue){
                 assertNotNull(o);
             }
             else {
@@ -159,172 +533,5 @@ public class ClientQueueTest {
         assertEquals("item1", o);
         t1.join(10000);
         t2.join(10000);
-    }
-
-    @Test
-    public void testRemainingCapacity() throws IOException {
-        assertEquals(6, q.remainingCapacity());
-        q.offer("item");
-        assertEquals(5, q.remainingCapacity());
-    }
-
-    @Test
-    public void testRemove() throws IOException {
-        assertTrue(q.offer("item1"));
-        assertTrue(q.offer("item2"));
-        assertTrue(q.offer("item3"));
-
-        assertFalse(q.remove("item4"));
-        assertEquals(3, q.size());
-
-        assertTrue(q.remove("item2"));
-
-        assertEquals(2, q.size());
-
-        assertEquals("item1", q.poll());
-        assertEquals("item3", q.poll());
-    }
-
-    @Test
-    public void testContains() {
-        assertTrue(q.offer("item1"));
-        assertTrue(q.offer("item2"));
-        assertTrue(q.offer("item3"));
-        assertTrue(q.offer("item4"));
-        assertTrue(q.offer("item5"));
-
-
-        assertTrue(q.contains("item3"));
-        assertFalse(q.contains("item"));
-
-        List list = new ArrayList(2);
-        list.add("item4");
-        list.add("item2");
-
-        assertTrue(q.containsAll(list));
-
-        list.add("item");
-        assertFalse(q.containsAll(list));
-
-    }
-
-    @Test
-    public void testDrain() {
-        assertTrue(q.offer("item1"));
-        assertTrue(q.offer("item2"));
-        assertTrue(q.offer("item3"));
-        assertTrue(q.offer("item4"));
-        assertTrue(q.offer("item5"));
-
-        List list = new LinkedList();
-        int result = q.drainTo(list, 2);
-        assertEquals(2, result);
-        assertEquals("item1", list.get(0));
-        assertEquals("item2", list.get(1));
-
-        list = new LinkedList();
-        result = q.drainTo(list);
-        assertEquals(3, result);
-        assertEquals("item3", list.get(0));
-        assertEquals("item4", list.get(1));
-        assertEquals("item5", list.get(2));
-    }
-
-    @Test
-    public void testIterator(){
-        assertTrue(q.offer("item1"));
-        assertTrue(q.offer("item2"));
-        assertTrue(q.offer("item3"));
-        assertTrue(q.offer("item4"));
-        assertTrue(q.offer("item5"));
-
-        int i=0;
-        for (Object o : q) {
-            i++;
-            assertEquals("item"+i, o);
-        }
-
-    }
-
-    @Test
-    public void testToArray(){
-        assertTrue(q.offer("item1"));
-        assertTrue(q.offer("item2"));
-        assertTrue(q.offer("item3"));
-        assertTrue(q.offer("item4"));
-        assertTrue(q.offer("item5"));
-
-        Object[] array =  q.toArray();
-        int i=0;
-        for (Object o : array) {
-            i++;
-            assertEquals("item"+i, o);
-        }
-
-        Object[] objects = q.toArray(new Object[2]);
-        i=0;
-        for (Object o : objects) {
-            i++;
-            assertEquals("item"+i, o);
-        }
-    }
-
-    @Test
-    public void testAddAll() throws IOException {
-        Collection coll = new ArrayList(4);
-        coll.add("item1");
-        coll.add("item2");
-        coll.add("item3");
-        coll.add("item4");
-        assertTrue(q.addAll(coll));
-        int size = q.size();
-        assertEquals(size, coll.size());
-
-    }
-
-    @Test
-    public void testRemoveRetain() throws IOException {
-        assertTrue(q.offer("item1"));
-        assertTrue(q.offer("item2"));
-        assertTrue(q.offer("item3"));
-        assertTrue(q.offer("item4"));
-        assertTrue(q.offer("item5"));
-
-        List list = new LinkedList();
-        list.add("item8");
-        list.add("item9");
-        assertFalse(q.removeAll(list));
-        assertEquals(5, q.size());
-
-        list.add("item3");
-        list.add("item4");
-        list.add("item1");
-        assertTrue(q.removeAll(list));
-        assertEquals(2, q.size());
-
-        list.clear();
-        list.add("item2");
-        list.add("item5");
-        assertFalse(q.retainAll(list));
-        assertEquals(2, q.size());
-
-        list.clear();
-        assertTrue(q.retainAll(list));
-        assertEquals(0, q.size());
-    }
-
-    @Test
-    public void testClear(){
-        assertTrue(q.offer("item1"));
-        assertTrue(q.offer("item2"));
-        assertTrue(q.offer("item3"));
-        assertTrue(q.offer("item4"));
-        assertTrue(q.offer("item5"));
-
-        q.clear();
-
-        assertEquals(0, q.size());
-        assertNull(q.poll());
-
     }
 }
