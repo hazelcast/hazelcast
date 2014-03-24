@@ -16,7 +16,11 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.topic.client.AddMessageListenerRequest;
 import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;

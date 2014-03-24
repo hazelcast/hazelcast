@@ -1,8 +1,12 @@
 package com.hazelcast.web;
 
-import com.hazelcast.nio.serialization.*;
 
-public class WebDataSerializerHook implements DataSerializerHook{
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+public class WebDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.WEB);
 

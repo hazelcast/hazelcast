@@ -20,7 +20,11 @@ import com.hazelcast.executor.client.CancellationRequest;
 import com.hazelcast.executor.client.IsShutdownRequest;
 import com.hazelcast.executor.client.PartitionCallableRequest;
 import com.hazelcast.executor.client.TargetCallableRequest;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 

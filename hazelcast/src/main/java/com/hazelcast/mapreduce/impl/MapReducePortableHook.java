@@ -20,7 +20,11 @@ import com.hazelcast.mapreduce.impl.client.ClientCancellationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;

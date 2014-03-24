@@ -16,16 +16,24 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.map.operation.*;
+import com.hazelcast.map.operation.GetOperation;
+import com.hazelcast.map.operation.PutBackupOperation;
+import com.hazelcast.map.operation.PutOperation;
+import com.hazelcast.map.operation.RemoveBackupOperation;
+import com.hazelcast.map.operation.RemoveOperation;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.QueryResultSet;
 
 public final class MapDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID =FactoryIdRepository.getDSFactoryId(FactoryIdRepository.MAP);
+    public static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.MAP);
 
     public static final int PUT = 0;
     public static final int GET = 1;

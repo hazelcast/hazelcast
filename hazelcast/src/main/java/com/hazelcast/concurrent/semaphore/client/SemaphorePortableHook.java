@@ -16,7 +16,12 @@
 
 package com.hazelcast.concurrent.semaphore.client;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
+
 import java.util.Collection;
 
 public class SemaphorePortableHook implements PortableHook {
