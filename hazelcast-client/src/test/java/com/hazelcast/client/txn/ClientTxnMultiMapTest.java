@@ -210,7 +210,7 @@ public class ClientTxnMultiMapTest {
     }
 
     @Test
-    public void testTxnMultiMapPut_backedWithList() throws Exception {
+    public void testTxnMultiMapGet_backedWithList() throws Exception {
         final String mapName = multiMapBackedByList+randomString();
 
         final String key = "key";
