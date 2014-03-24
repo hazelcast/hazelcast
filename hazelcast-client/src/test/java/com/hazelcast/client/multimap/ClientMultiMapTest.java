@@ -20,206 +20,322 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author ali 5/20/13
- */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMultiMapTest {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static MultiMap mm;
+    static HazelcastInstance server;
+    static HazelcastInstance client;
 
     @BeforeClass
     public static void init() {
-        Config config = new Config();
-        MultiMapConfig multiMapConfig = config.getMultiMapConfig(name);
-        multiMapConfig.setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
-        Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient();
-        mm = hz.getMultiMap(name);
+        server = Hazelcast.newHazelcastInstance();
+        client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
     public static void destroy() {
-        hz.shutdown();
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
-    @Before
-    @After
-    public void clear() throws IOException {
-        mm.clear();
+    @Test
+    public void testPut() {
+        final Object key = "key1";
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        assertTrue(mm.put(key, 1));
+        assertTrue(mm.put(key, 2));
     }
 
     @Test
-    public void testPutGetRemove() {
-        assertTrue(mm.put("key1", "value1"));
-        assertTrue(mm.put("key1", "value2"));
-        assertTrue(mm.put("key1", "value3"));
+    public void testPut_WithExistingKeyValue() {
+        final Object key = "key1";
+        final MultiMap mm = client.getMultiMap(randomString());
 
-        assertTrue(mm.put("key2", "value4"));
-        assertTrue(mm.put("key2", "value5"));
-
-        assertEquals(3, mm.valueCount("key1"));
-        assertEquals(2, mm.valueCount("key2"));
-        assertEquals(5, mm.size());
-
-        Collection coll = mm.get("key1");
-        assertEquals(3, coll.size());
-
-        coll = mm.remove("key2");
-        assertEquals(2, coll.size());
-        assertEquals(0, mm.valueCount("key2"));
-        assertEquals(0, mm.get("key2").size());
-
-        assertFalse(mm.remove("key1", "value4"));
-        assertEquals(3, mm.size());
-
-        assertTrue(mm.remove("key1", "value2"));
-        assertEquals(2, mm.size());
-
-        assertTrue(mm.remove("key1", "value1"));
-        assertEquals(1, mm.size());
-        assertEquals("value3", mm.get("key1").iterator().next());
+        assertTrue(mm.put(key, 1));
+        assertFalse(mm.put(key, 1));
     }
 
     @Test
-    public void testKeySetEntrySetAndValues() {
-        assertTrue(mm.put("key1", "value1"));
-        assertTrue(mm.put("key1", "value2"));
-        assertTrue(mm.put("key1", "value3"));
+    public void testValueCount() {
+        final Object key = "key1";
 
-        assertTrue(mm.put("key2", "value4"));
-        assertTrue(mm.put("key2", "value5"));
+        final MultiMap mm = client.getMultiMap(randomString());
 
+        mm.put(key, 1);
+        mm.put(key, 2);
 
-        assertEquals(2, mm.keySet().size());
-        assertEquals(5, mm.values().size());
-        assertEquals(5, mm.entrySet().size());
+        assertEquals(2, mm.valueCount(key));
+        assertEquals(0, mm.valueCount("NOT_THERE"));
     }
 
     @Test
-    public void testContains() {
-        assertTrue(mm.put("key1", "value1"));
-        assertTrue(mm.put("key1", "value2"));
-        assertTrue(mm.put("key1", "value3"));
+    public void testSizeCount() {
+        final Object key1 = "key1";
+        final Object key2 = "key2";
 
-        assertTrue(mm.put("key2", "value4"));
-        assertTrue(mm.put("key2", "value5"));
+        final MultiMap mm = client.getMultiMap(randomString());
 
-        assertFalse(mm.containsKey("key3"));
-        assertTrue(mm.containsKey("key1"));
+        mm.put(key1, 1);
+        mm.put(key1, 2);
 
-        assertFalse(mm.containsValue("value6"));
-        assertTrue(mm.containsValue("value4"));
+        mm.put(key2, 1);
+        mm.put(key2, 2);
 
-        assertFalse(mm.containsEntry("key1", "value4"));
-        assertFalse(mm.containsEntry("key2", "value3"));
-        assertTrue(mm.containsEntry("key1", "value1"));
-        assertTrue(mm.containsEntry("key2", "value5"));
+        assertEquals(4, mm.size());
     }
 
     @Test
-    public void testListener() throws InterruptedException {
-        final CountDownLatch latch1Add = new CountDownLatch(8);
-        final CountDownLatch latch1Remove = new CountDownLatch(4);
+    public void testEmptySizeCount() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        assertEquals(0, mm.size());
+    }
 
-        final CountDownLatch latch2Add = new CountDownLatch(3);
-        final CountDownLatch latch2Remove = new CountDownLatch(3);
+    @Test
+    public void testGetNotThere() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        Collection coll = mm.get("NOT_THERE");
 
-        EntryListener listener1 = new EntryAdapter() {
+        assertEquals(Collections.EMPTY_LIST, coll);
+    }
 
-            public void entryAdded(EntryEvent event) {
-                latch1Add.countDown();
-            }
+    @Test
+    public void testGet() {
+        final Object key = "key";
+        final int maxItemsPerKey = 3;
+        final MultiMap mm = client.getMultiMap(randomString());
 
-            public void entryRemoved(EntryEvent event) {
-                latch1Remove.countDown();
-            }
-        };
+        Set expeted = new TreeSet();
+        for ( int i=0; i< maxItemsPerKey; i++ ){
+            mm.put(key, i);
+            expeted.add(i);
+        }
 
-        EntryListener listener2 = new EntryAdapter() {
+        Collection resultSet = new TreeSet( mm.get(key) );
 
-            public void entryAdded(EntryEvent event) {
-                latch2Add.countDown();
-            }
+        assertEquals(expeted, resultSet);
+    }
 
-            public void entryRemoved(EntryEvent event) {
-                latch2Remove.countDown();
-            }
-      };
+    @Test
+    public void testRemoveNotThere() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        Collection coll = mm.remove("NOT_THERE");
 
-        final String firstRegId = mm.addEntryListener(listener1, true);
-        final String secondRegId = mm.addEntryListener(listener2, "key3", true);
+        assertEquals(Collections.EMPTY_LIST, coll);
+    }
 
+    @Test
+    public void testRemoveKey() {
+        final Object key = "key";
+        final int maxItemsPerKey = 44;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        Set expeted = new TreeSet();
+        for ( int i=0; i< maxItemsPerKey; i++ ){
+            mm.put(key, i);
+            expeted.add(i);
+        }
+        Set resultSet  = new TreeSet( mm.remove(key) );
+
+        assertEquals(expeted, resultSet);
+    }
+
+    @Test
+    public void testRemoveKeyValueNotThere() {
+        final Object key = "key";
+        final int maxItemsPerKey = 4;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        for ( int i=0; i< maxItemsPerKey; i++ ){
+            mm.put(key, i);
+        }
+        boolean result = mm.remove(key, "NOT_THERE");
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testRemoveKeyValue() {
+        final Object key = "key";
+        final int maxItemsPerKey = 4;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        for ( int i=0; i< maxItemsPerKey; i++ ){
+            mm.put(key, i);
+        }
+
+        for ( int i=0; i< maxItemsPerKey; i++ ){
+            boolean result = mm.remove(key, i);
+            assertTrue(result);
+        }
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testLocalKeySet() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.localKeySet();
+    }
+
+
+    @Test
+    public void testEmptyKeySet() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        assertEquals(Collections.EMPTY_SET, mm.keySet());
+    }
+
+    @Test
+    public void testKeySet() {
+        final int maxKeys = 23;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        Set expeted = new TreeSet();
+        for ( int key=0; key< maxKeys; key++ ){
+            mm.put(key, key);
+            expeted.add(key);
+        }
+
+        assertEquals(expeted, mm.keySet());
+    }
+
+    @Test
+    public void testEmptyValues() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        assertEquals(Collections.EMPTY_LIST, mm.values());
+    }
+
+    @Test
+    public void testKeyValues() {
+        final int maxKeys = 31;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        Set expeted = new TreeSet();
+        for ( int key=0; key< maxKeys; key++ ){
+            mm.put(key, key);
+            expeted.add(key);
+        }
+
+        Set resultSet = new TreeSet( mm.values() );
+
+        assertEquals(expeted, resultSet);
+    }
+
+    @Test
+    public void testEmptyEntrySet() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        assertEquals(Collections.EMPTY_SET, mm.entrySet());
+    }
+
+    @Test
+    public void testEnterySet() {
+        final int maxKeys = 14;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        for ( int key=0; key< maxKeys; key++ ){
+            mm.put(key, key);
+            mm.put(key, key+maxKeys);
+        }
+
+        assertEquals(maxKeys * 2, mm.entrySet().size());
+    }
+
+    @Test
+    public void testContainsKey() {
+        final MultiMap mm = client.getMultiMap(randomString());
         mm.put("key1", "value1");
-        mm.put("key1", "value2");
-        mm.put("key1", "value3");
-        mm.put("key2", "value4");
-        mm.put("key2", "value5");
 
-        mm.remove("key1", "value2");
-
-        mm.put("key3", "value6");
-        mm.put("key3", "value7");
-        mm.put("key3", "value8");
-
-        mm.remove("key3");
-
-        assertTrue(latch1Add.await(20, TimeUnit.SECONDS));
-        assertTrue(latch1Remove.await(20, TimeUnit.SECONDS));
-
-        assertTrue(latch2Add.await(20, TimeUnit.SECONDS));
-        assertTrue(latch2Remove.await(20, TimeUnit.SECONDS));
-
-        assertTrue(mm.removeEntryListener(firstRegId));
-        assertTrue(mm.removeEntryListener(secondRegId));
+        assertTrue(mm.containsKey("key1"));
+        assertFalse(mm.containsKey("NOT_THERE"));
     }
 
+    @Test
+    public void testContainsValue() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.put("key1", "value1");
+
+        assertTrue(mm.containsValue("value1"));
+        assertFalse(mm.containsValue("NOT_THERE"));
+    }
+
+    @Test
+    public void testContainsEntry() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.put("key1", "value1");
+
+        assertTrue(mm.containsEntry("key1", "value1"));
+        assertFalse(mm.containsEntry("key1", "NOT_THERE"));
+        assertFalse(mm.containsEntry("NOT_THERE", "NOT_THERE"));
+        assertFalse(mm.containsEntry("NOT_THERE", "value1"));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddLocalEntryListener() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.addLocalEntryListener(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetLocalMultiMapStats() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.getLocalMultiMapStats();
+    }
 
     @Test
     public void testLock() throws Exception {
-        mm.lock("key1");
+        final Object key = "Key";
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.lock(key);
+        assertTrue(mm.tryLock(key));
+        mm.forceUnlock(key);
+    }
+
+    @Test
+    public void testLock_WithTryLock() throws Exception {
+        final Object key = "Key1";
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.lock(key);
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                if (!mm.tryLock("key1")) {
+                if (!mm.tryLock(key)) {
                     latch.countDown();
                 }
             }
         }.start();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
-        mm.forceUnlock("key1");
+        mm.forceUnlock(key);
     }
 
     @Test
     public void testLockTtl() throws Exception {
-        mm.lock("key1", 3, TimeUnit.SECONDS);
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "KeyC";
+
+        mm.lock(key, 3, TimeUnit.SECONDS);
         final CountDownLatch latch = new CountDownLatch(2);
         new Thread() {
             public void run() {
-                if (!mm.tryLock("key1")) {
+                if (!mm.tryLock(key)) {
                     latch.countDown();
                 }
                 try {
-                    if (mm.tryLock("key1", 5, TimeUnit.SECONDS)) {
+                    if (mm.tryLock(key, 5, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -228,35 +344,38 @@ public class ClientMultiMapTest {
             }
         }.start();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-        mm.forceUnlock("key1");
+        mm.forceUnlock(key);
     }
 
     @Test
     public void testTryLock() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "keyZ";
 
-        assertTrue(mm.tryLock("key1", 2, TimeUnit.SECONDS));
-        final CountDownLatch latch = new CountDownLatch(1);
+        mm.lock(key);
+
+        final CountDownLatch tryLockFailed = new CountDownLatch(1);
         new Thread(){
             public void run() {
                 try {
-                    if(!mm.tryLock("key1", 2, TimeUnit.SECONDS)){
-                        latch.countDown();
+                    if(!mm.tryLock(key, 2, TimeUnit.SECONDS)){
+                        tryLockFailed.countDown();
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         }.start();
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
 
-        assertTrue(mm.isLocked("key1"));
+        assertTrue(tryLockFailed.await(30, TimeUnit.SECONDS));
+        assertTrue(mm.isLocked(key));
 
-        final CountDownLatch latch2 = new CountDownLatch(1);
+        final CountDownLatch tryLockReturnsTrue = new CountDownLatch(1);
         new Thread(){
             public void run() {
                 try {
-                    if(mm.tryLock("key1", 20, TimeUnit.SECONDS)){
-                        latch2.countDown();
+                    if(mm.tryLock(key, 20, TimeUnit.SECONDS)){
+                        tryLockReturnsTrue.countDown();
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -264,23 +383,127 @@ public class ClientMultiMapTest {
             }
         }.start();
         Thread.sleep(1000);
-        mm.unlock("key1");
-        assertTrue(latch2.await(100, TimeUnit.SECONDS));
-        assertTrue(mm.isLocked("key1"));
-        mm.forceUnlock("key1");
+
+        mm.unlock(key);
+
+        assertTrue(tryLockReturnsTrue.await(30, TimeUnit.SECONDS));
+        assertTrue(mm.isLocked(key));
+        mm.forceUnlock(key);
     }
 
     @Test
     public void testForceUnlock() throws Exception {
-        mm.lock("key1");
-        final CountDownLatch latch = new CountDownLatch(1);
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "key";
+        mm.lock(key);
+        final CountDownLatch forceUnlock = new CountDownLatch(1);
         new Thread(){
             public void run() {
-                mm.forceUnlock("key1");
-                latch.countDown();
+                mm.forceUnlock(key);
+                forceUnlock.countDown();
             }
         }.start();
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
-        assertFalse(mm.isLocked("key1"));
+        assertTrue(forceUnlock.await(30, TimeUnit.SECONDS));
+        assertFalse(mm.isLocked(key));
     }
+
+    @Test
+    public void testListener() throws InterruptedException {
+
+        final int maxKeys = 64;
+        final int maxItems = 3;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new MyEntryListener(maxKeys * maxItems);
+        final String id = mm.addEntryListener(listener, true);
+
+        for(int i=0; i<maxKeys; i++){
+            for(int j=0; j<maxKeys; j++){
+                mm.put(i, j);
+                mm.remove(i, j);
+            }
+        }
+
+        assertTrue(listener.addLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(listener.removeLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(mm.removeEntryListener(id));
+    }
+
+    @Test
+    public void testListenerOnKey() throws InterruptedException {
+        final Object key = "key";
+        final int maxItems = 101;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new MyEntryListener(maxItems);
+        final String id = mm.addEntryListener(listener, key, true);
+
+        for(int i=0; i<maxItems; i++){
+            mm.put(key, "value");
+            mm.remove(key, "value");
+        }
+
+        assertTrue(listener.addLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(listener.removeLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(mm.removeEntryListener(id));
+        assertEquals(0, mm.size());
+    }
+
+    @Test
+    public void testListenerOnKey_WithOneRemove() throws InterruptedException {
+        final Object key = "key";
+        final int maxItems = 101;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new MyEntryListener(maxItems, 1);
+        final String id = mm.addEntryListener(listener, key, true);
+
+        for(int i=0; i<maxItems; i++){
+            mm.put(key, i);
+        }
+        mm.remove(key);
+
+        assertTrue(listener.addLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(listener.removeLatch.await(10, TimeUnit.SECONDS));
+        assertTrue(mm.removeEntryListener(id));
+        assertEquals(0, mm.size());
+    }
+
+    static class MyEntryListener implements EntryListener {
+
+        final public CountDownLatch addLatch;
+        final public CountDownLatch removeLatch;
+        final public CountDownLatch updateLatch;
+        final public CountDownLatch evictLatch;
+
+        public MyEntryListener(int latchCount){
+            addLatch = new CountDownLatch(latchCount);
+            removeLatch = new CountDownLatch(latchCount);
+            updateLatch = new CountDownLatch(1);
+            evictLatch = new CountDownLatch(1);
+        }
+
+        public MyEntryListener(int addlatchCount, int removeLatchCount){
+            addLatch = new CountDownLatch(addlatchCount);
+            removeLatch = new CountDownLatch(removeLatchCount);
+            updateLatch = new CountDownLatch(1);
+            evictLatch = new CountDownLatch(1);
+        }
+
+        public void entryAdded(EntryEvent event) {
+            addLatch.countDown();
+        }
+
+        public void entryRemoved(EntryEvent event) {
+            removeLatch.countDown();
+        }
+
+        public void entryUpdated(EntryEvent event) {
+            updateLatch.countDown();
+        }
+
+        public void entryEvicted(EntryEvent event) {
+            evictLatch.countDown();
+        }
+    };
 }
