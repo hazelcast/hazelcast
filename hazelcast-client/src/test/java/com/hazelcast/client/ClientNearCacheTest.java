@@ -49,6 +49,7 @@ public class ClientNearCacheTest {
     private static final int MAX_IDLE_SECONDS = 1;
 
     private static final String mapWithBasicCash = "mapWithBasicCash";
+    private static final String mapWithBasicCashNoInvalidation = "mapWithBasicCashNoInvalidation";
     private static final String mapWithMaxSizeCash = "mapWithMaxSizeCash";
     private static final String mapWithTTLCash = "mapWithTTLCash";
     private static final String mapWithIdleCash = "mapWithIdleCash";
@@ -68,6 +69,11 @@ public class ClientNearCacheTest {
         NearCacheConfig basicConfig = new NearCacheConfig();
         basicConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         clientConfig.addNearCacheConfig(mapWithBasicCash+"*", basicConfig);
+
+        NearCacheConfig basicConfigNoInvalidation = new NearCacheConfig();
+        basicConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        basicConfigNoInvalidation.setInvalidateOnChange(false);
+        clientConfig.addNearCacheConfig(mapWithBasicCashNoInvalidation+"*", basicConfigNoInvalidation);
 
         NearCacheConfig maxSizeConfig = new NearCacheConfig();
         maxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
@@ -179,12 +185,9 @@ public class ClientNearCacheTest {
         assertEquals(size, stats.getHits());
     }
 
-    //this test test fails but testNearCachePopulatedAndHitsGenerated2 passes
-    //the only diffrence is the looping ???
     @Test
-    @Category(ProblematicTest.class)
     public void testNearCachePopulatedAndHitsGenerated() throws Exception {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
 
         final int size = 1278;
         for (int i = 0; i < size; i++) {
@@ -201,7 +204,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCachePopulatedAndHitsGenerated2() throws Exception {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
 
         final int size = 1278;
         for (int i = 0; i < size; i++) {
@@ -229,7 +232,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testGetNearCacheStatsBeforePopulation() {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
         final int size = 101;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -240,7 +243,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCacheMisses() {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
 
         final int size = 1321;
         for (int i = 0; i < size; i++) {
