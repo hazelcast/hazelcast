@@ -24,20 +24,47 @@ public class MapStoreProcessor implements ScheduledEntryProcessor<Data, Object> 
         if (scheduledEntries == null || scheduledEntries.isEmpty()) {
             return;
         }
+        final List<ScheduledEntry<Data, Object>> entriesToProcess = new ArrayList<ScheduledEntry<Data, Object>>();
 
-        final List<ScheduledEntry<Data, Object>> writes = new ArrayList<ScheduledEntry<Data, Object>>();
-        final List<ScheduledEntry<Data, Object>> deletes = new ArrayList<ScheduledEntry<Data, Object>>();
-
-        for (ScheduledEntry<Data, Object> entry : scheduledEntries) {
+        ProcessMode mode = null;
+        ProcessMode previousMode;
+        // process entries by preserving order.
+        for (final ScheduledEntry<Data, Object> entry : scheduledEntries) {
+            previousMode = mode;
             if (entry.getValue() == null) {
-                deletes.add(entry);
+                mode = ProcessMode.DELETE;
             } else {
-                writes.add(entry);
+                mode = ProcessMode.WRITE;
             }
+            if (previousMode != null && !previousMode.equals(mode)) {
+                doProcess(scheduler, entriesToProcess, previousMode);
+                entriesToProcess.clear();
+            }
+            entriesToProcess.add(entry);
         }
 
-        writeProcessor.process(scheduler, writes);
-        deleteProcessor.process(scheduler, deletes);
-
+        doProcess(scheduler, entriesToProcess, mode);
+        entriesToProcess.clear();
     }
+
+
+    private void doProcess(EntryTaskScheduler<Data, Object> scheduler, List<ScheduledEntry<Data, Object>> entriesToProcess, ProcessMode mode) {
+        switch (mode) {
+            case DELETE:
+                deleteProcessor.process(scheduler, entriesToProcess);
+                break;
+            case WRITE:
+                writeProcessor.process(scheduler, entriesToProcess);
+                break;
+            default:
+                throw new IllegalArgumentException("Not found any appropriate processor for mode [" + mode + "]");
+        }
+    }
+
+    private enum ProcessMode {
+        DELETE,
+        WRITE;
+    }
+
+
 }
