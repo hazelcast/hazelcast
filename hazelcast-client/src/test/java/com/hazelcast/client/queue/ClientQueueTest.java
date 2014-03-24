@@ -42,6 +42,7 @@ public class ClientQueueTest {
     final static int maxSizeForQueue = 8;
     final static String queueForTestQueueWithSizeLimit = "testQueuWithSizeLimit";
     final static String queueForTestOfferPoll = "queueForTestOfferPoll";
+    final static String queueForTestAddMaxSzie = "queueForTestAddMaxSzie";
 
     static HazelcastInstance client;
     static HazelcastInstance server;
@@ -54,6 +55,9 @@ public class ClientQueueTest {
         queueConfig.setMaxSize(maxSizeForQueue);
 
         queueConfig = config.getQueueConfig(queueForTestOfferPoll);
+        queueConfig.setMaxSize(maxSizeForQueue);
+
+        queueConfig = config.getQueueConfig(queueForTestAddMaxSzie);
         queueConfig.setMaxSize(maxSizeForQueue);
 
         server = Hazelcast.newHazelcastInstance(config);
@@ -78,6 +82,15 @@ public class ClientQueueTest {
         final IQueue q = client.getQueue(randomString());
         assertTrue(q.add(1));
         assertEquals(1, q.size());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddPastMaxSize() {
+        final IQueue q = client.getQueue(queueForTestAddMaxSzie);
+        for(int i=0; i<maxSizeForQueue; i++){
+            q.add(i);
+        }
+        q.add(maxSizeForQueue);
     }
 
     @Test
