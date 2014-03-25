@@ -172,7 +172,7 @@ public class ClientTxnMultiMapTest {
     }
 
     @Test
-    public void testMapSize() throws Exception {
+    public void testSize() throws Exception {
         final String mapName = randomString();
         final String key = "key";
         final String value = "value";
@@ -191,7 +191,7 @@ public class ClientTxnMultiMapTest {
     }
 
     @Test
-    public void testValueCount() throws Exception {
+    public void testCount() throws Exception {
         final String mapName = randomString();
         final String key = "key";
         final String value = "value";
@@ -210,7 +210,7 @@ public class ClientTxnMultiMapTest {
     }
 
     @Test
-    public void testMapGet_whenBackedWithList() throws Exception {
+    public void testGet_whenBackedWithList() throws Exception {
         final String mapName = multiMapBackedByList+randomString();
 
         final String key = "key";
@@ -229,7 +229,7 @@ public class ClientTxnMultiMapTest {
     }
 
     @Test
-    public void testMapRemove_whenBackedWithList() throws Exception {
+    public void testRemove_whenBackedWithList() throws Exception {
         final String mapName = multiMapBackedByList+randomString();
 
         final String key = "key";
