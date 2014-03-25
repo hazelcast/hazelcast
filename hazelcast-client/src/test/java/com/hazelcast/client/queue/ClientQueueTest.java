@@ -80,9 +80,13 @@ public class ClientQueueTest {
     public void testAdd_whenExceedingMaximumCapacity() {
         final IQueue q = client.getQueue(queueWithMaxSize+randomString());
         for(int i=0; i<maxSizeForQueue; i++){
-            q.add(i);
+            try{
+                q.add(1);
+            }catch (Exception e){
+                fail("failed to add items up to max size of the Queue");
+            }
         }
-        q.add(maxSizeForQueue);
+        q.add(1);
     }
 
     @Test
