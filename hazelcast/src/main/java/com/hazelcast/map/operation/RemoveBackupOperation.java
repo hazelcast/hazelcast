@@ -50,8 +50,7 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
-            updateSizeEstimator(-calculateRecordSize(record));
-            recordStore.deleteRecord(dataKey);
+            recordStore.removeBackup(dataKey);
         }
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -81,11 +80,4 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         return MapDataSerializerHook.REMOVE_BACKUP;
     }
 
-    private void updateSizeEstimator(long recordSize) {
-        recordStore.getSizeEstimator().add(recordSize);
-    }
-
-    private long calculateRecordSize(Record record) {
-        return recordStore.getSizeEstimator().getCost(record);
-    }
 }
