@@ -1,4 +1,4 @@
-package com.hazelcast.client.MapStore;
+package com.hazelcast.client.Mapstore;
 
 import java.util.Collection;
 import java.util.HashMap;
