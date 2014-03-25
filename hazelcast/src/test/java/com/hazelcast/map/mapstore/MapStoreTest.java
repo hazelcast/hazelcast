@@ -1425,15 +1425,20 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, store.getStore().keySet().size());
     }
 
+    /**
+     *
+     * At least sleep 1 second so entries can fall different time slices in
+     * {@link com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler}
+     */
     @Test
     public void testWriteBehindWriteRemoveOrderOfSameKey() throws Exception {
         final String mapName = randomMapName("_testWriteBehindWriteRemoveOrderOfSameKey_");
-        final int iterationCount = 10;
+        final int iterationCount = 5;
         final int delaySeconds = 1;
         final int putOps = 3;
         final int removeOps = 2;
         final int expectedStoreSizeEventually = 1;
-        final RecordingMapStore store = new RecordingMapStore(iterationCount * putOps,iterationCount * removeOps);
+        final RecordingMapStore store = new RecordingMapStore(iterationCount * putOps, iterationCount * removeOps);
         final Config config = newConfig(store, delaySeconds);
         final HazelcastInstance node = createHazelcastInstance(config);
         final IMap<Object, Object> map = node.getMap(mapName);
@@ -1441,15 +1446,15 @@ public class MapStoreTest extends HazelcastTestSupport {
             String key = "key";
             String value = "value" + i;
             map.put(key, value);
-            sleepMillis(100);
+            sleepMillis(1000);
             map.remove(key);
-            sleepMillis(100);
+            sleepMillis(1000);
             map.put(key, value);
-            sleepMillis(100);
+            sleepMillis(1000);
             map.remove(key);
-            sleepMillis(100);
+            sleepMillis(1000);
             map.put(key, value);
-            sleepMillis(100);
+            sleepMillis(1000);
         }
 
         assertTrueEventually(new AssertTask() {
@@ -1563,6 +1568,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         public void awaitStores() {
             assertOpenEventually(expectedStore);
         }
+
         public void awaitRemoves() {
             assertOpenEventually(expectedRemove);
         }
