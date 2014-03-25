@@ -80,6 +80,8 @@ public class ProxyEqualityTest {
         ClientProxy ref2 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
 
         assertEquals(ref1.hashCode(), ref2.hashCode());
+        assertEquals(ref1, ref2);
+        assertEquals(ref2, ref1);
     }
 
     @Test
