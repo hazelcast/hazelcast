@@ -99,13 +99,4 @@ public class ProxyEqualityTest {
 
         assertNotEquals(ref1, ref2);
     }
-
-    @Test
-    public void testTwoClientProxiesFromTwoDifferentClientsConnectedToTheSameInstanceAreHashCodeNotEquals() {
-
-        ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client2GroupA.getAtomicLong(atomicName);
-
-        assertNotEquals(ref1.hashCode(), ref2.hashCode());
-    }
 }
