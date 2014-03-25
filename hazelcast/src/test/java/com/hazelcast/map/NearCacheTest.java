@@ -181,9 +181,24 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertEquals(0, map2.size());
         assertEquals(0, map3.size());
         //near cache sizes should be zero after eviction.
-        assertEquals(0, countNotNullValuesInNearCache(mapName, instance1));
-        assertEquals(0, countNotNullValuesInNearCache(mapName, instance2));
-        assertEquals(0, countNotNullValuesInNearCache(mapName, instance3));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, countNotNullValuesInNearCache(mapName, instance1));
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, countNotNullValuesInNearCache(mapName, instance2));
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, countNotNullValuesInNearCache(mapName, instance3));
+            }
+        });
     }
 
     private int countNotNullValuesInNearCache(String mapName, HazelcastInstance instance) {
