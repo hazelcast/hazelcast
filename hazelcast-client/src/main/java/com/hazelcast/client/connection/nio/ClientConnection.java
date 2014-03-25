@@ -269,11 +269,14 @@ public class ClientConnection implements Connection, Closeable {
             return;
         }
         live = false;
-        if (socketChannelWrapper != null && socketChannelWrapper.isOpen()) {
+        if (socketChannelWrapper.isOpen()) {
             socketChannelWrapper.close();
         }
         readHandler.shutdown();
         writeHandler.shutdown();
+        if (socketChannelWrapper.isBlocking()) {
+            return;
+        }
         if (connectionManager.isLive()) {
             executionService.executeInternal(new CleanResourcesTask());
         } else {
