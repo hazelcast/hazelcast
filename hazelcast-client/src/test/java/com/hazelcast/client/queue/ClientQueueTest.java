@@ -40,9 +40,7 @@ import static org.junit.Assert.*;
 public class ClientQueueTest {
 
     final static int maxSizeForQueue = 8;
-    final static String queueForTestQueueWithSizeLimit = "testQueuWithSizeLimit";
-    final static String queueForTestOfferPoll = "queueForTestOfferPoll";
-    final static String queueForTestAddMaxSzie = "queueForTestAddMaxSzie";
+    final static String queueWithMaxSize = "queueWithMaxSize*";
 
     static HazelcastInstance client;
     static HazelcastInstance server;
@@ -51,13 +49,7 @@ public class ClientQueueTest {
     public static void init(){
         Config config = new Config();
 
-        QueueConfig queueConfig = config.getQueueConfig(queueForTestQueueWithSizeLimit);
-        queueConfig.setMaxSize(maxSizeForQueue);
-
-        queueConfig = config.getQueueConfig(queueForTestOfferPoll);
-        queueConfig.setMaxSize(maxSizeForQueue);
-
-        queueConfig = config.getQueueConfig(queueForTestAddMaxSzie);
+        QueueConfig queueConfig = config.getQueueConfig(queueWithMaxSize);
         queueConfig.setMaxSize(maxSizeForQueue);
 
         server = Hazelcast.newHazelcastInstance(config);
@@ -85,8 +77,8 @@ public class ClientQueueTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testAddPastMaxSize() {
-        final IQueue q = client.getQueue(queueForTestAddMaxSzie);
+    public void testAdd_whenExceedingMaximumCapacity() {
+        final IQueue q = client.getQueue(queueWithMaxSize+randomString());
         for(int i=0; i<maxSizeForQueue; i++){
             q.add(i);
         }
@@ -141,7 +133,6 @@ public class ClientQueueTest {
         q.offer(1);
         assertEquals(1, q.poll());
     }
-
 
     @Test
     public void testOfferWithTimeOut() throws IOException, InterruptedException {
@@ -205,7 +196,6 @@ public class ClientQueueTest {
         assertTrue(q.containsAll(trueList));
         assertFalse(q.containsAll(falseList));
     }
-
 
     @Test
     public void testDrain() {
@@ -477,8 +467,8 @@ public class ClientQueueTest {
     }
 
     @Test
-    public void testQueueWithSizeLimit(){
-        final IQueue q = client.getQueue(queueForTestQueueWithSizeLimit);
+    public void testOffer_whenExceedingMaxCapacity(){
+        final IQueue q = client.getQueue(queueWithMaxSize+randomString());
 
         for(int i=0; i< maxSizeForQueue; i++){
             q.offer(i);
@@ -489,7 +479,7 @@ public class ClientQueueTest {
     @Test
     public void testOfferPoll() throws IOException, InterruptedException {
 
-        final IQueue q = client.getQueue(queueForTestOfferPoll);
+        final IQueue q = client.getQueue(queueWithMaxSize+randomString());
 
         for (int i=0; i<10; i++){
             boolean result = q.offer("item");
