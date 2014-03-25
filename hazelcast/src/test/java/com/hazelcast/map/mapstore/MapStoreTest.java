@@ -169,9 +169,18 @@ public class MapStoreTest extends HazelcastTestSupport {
         for (int i = 0; i < count; i++) {
             map.put(i, 2);
         }
-        Thread.sleep(15000); // sleep for waiting all stores to be completed for checking correctness
         for (int i = 0; i < count; i++) {
-            assertEquals(map.get(i), store.getStore().get(i));
+            final int index = i;
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    final Integer valueInMap = map.get(index);
+                    final Integer valueInStore = (Integer)store.getStore().get(index);
+
+                    assertEquals(valueInMap,valueInStore );
+                }
+            });
+
         }
     }
 
