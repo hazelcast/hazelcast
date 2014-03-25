@@ -94,6 +94,7 @@ public class ClientMultiMapTest {
 
         mm.put(key2, 1);
         mm.put(key2, 2);
+        mm.put(key2, 2);
 
         assertEquals(4, mm.size());
     }
@@ -115,7 +116,7 @@ public class ClientMultiMapTest {
     @Test
     public void testGet() {
         final Object key = "key";
-        final int maxItemsPerKey = 3;
+        final int maxItemsPerKey = 33;
         final MultiMap mm = client.getMultiMap(randomString());
 
         Set expeted = new TreeSet();
@@ -203,7 +204,7 @@ public class ClientMultiMapTest {
 
         Set expeted = new TreeSet();
         for ( int key=0; key< maxKeys; key++ ){
-            mm.put(key, key);
+            mm.put(key, 1);
             expeted.add(key);
         }
 
@@ -219,12 +220,15 @@ public class ClientMultiMapTest {
     @Test
     public void testKeyValues() {
         final int maxKeys = 31;
+        final int maxValues = 3;
         final MultiMap mm = client.getMultiMap(randomString());
 
         Set expeted = new TreeSet();
         for ( int key=0; key< maxKeys; key++ ){
-            mm.put(key, key);
-            expeted.add(key);
+            for ( int val=0; val< maxValues; val++ ){
+                mm.put(key, val);
+                expeted.add(val);
+            }
         }
 
         Set resultSet = new TreeSet( mm.values() );
