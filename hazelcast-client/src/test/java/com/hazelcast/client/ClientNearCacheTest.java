@@ -68,7 +68,7 @@ public class ClientNearCacheTest {
 
         NearCacheConfig basicConfig = new NearCacheConfig();
         basicConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        clientConfig.addNearCacheConfig(mapWithBasicCash+"*", basicConfig);
+        clientConfig.addNearCacheConfig(mapWithBasicCash + "*", basicConfig);
 
         NearCacheConfig basicConfigNoInvalidation = new NearCacheConfig();
         basicConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -77,19 +77,19 @@ public class ClientNearCacheTest {
 
         NearCacheConfig maxSizeConfig = new NearCacheConfig();
         maxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
-        clientConfig.addNearCacheConfig(mapWithMaxSizeCash+"*", maxSizeConfig);
+        clientConfig.addNearCacheConfig(mapWithMaxSizeCash + "*", maxSizeConfig);
 
         NearCacheConfig ttlConfig = new NearCacheConfig();
         ttlConfig.setTimeToLiveSeconds(MAX_TTL_SECONDS);
-        clientConfig.addNearCacheConfig(mapWithTTLCash+"*", ttlConfig);
+        clientConfig.addNearCacheConfig(mapWithTTLCash + "*", ttlConfig);
 
         NearCacheConfig idleConfig = new NearCacheConfig();
         idleConfig.setMaxIdleSeconds(MAX_IDLE_SECONDS);
-        clientConfig.addNearCacheConfig(mapWithIdleCash+"*", idleConfig);
+        clientConfig.addNearCacheConfig(mapWithIdleCash + "*", idleConfig);
 
         NearCacheConfig invalidateConfig = new NearCacheConfig();
         invalidateConfig.setInvalidateOnChange(true);
-        clientConfig.addNearCacheConfig(mapWithInvalidateCash+"*", invalidateConfig);
+        clientConfig.addNearCacheConfig(mapWithInvalidateCash + "*", invalidateConfig);
 
         client = HazelcastClient.newHazelcastClient(clientConfig);
     }
@@ -102,7 +102,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCacheFasterThanGoingToTheCluster() {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
 
         final int size = 2007;
         for (int i = 0; i < size; i++) {
@@ -126,7 +126,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testGetAllChecksNearCacheFirst() throws Exception {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
         final HashSet keys = new HashSet();
 
         final int size = 1003;
@@ -148,7 +148,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testGetAllPopulatesNearCache() throws Exception {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
         final HashSet keys = new HashSet();
 
         final int size = 1214;
@@ -165,7 +165,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testGetAsync() throws Exception {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
 
         int size = 1009;
         for (int i = 0; i < size; i++) {
@@ -187,7 +187,11 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCachePopulatedAndHitsGenerated() throws Exception {
+<<<<<<< HEAD
         final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
+=======
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
+>>>>>>> small styling changes related to the tests.
 
         final int size = 1278;
         for (int i = 0; i < size; i++) {
@@ -204,7 +208,11 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCachePopulatedAndHitsGenerated2() throws Exception {
+<<<<<<< HEAD
         final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
+=======
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
+>>>>>>> small styling changes related to the tests.
 
         final int size = 1278;
         for (int i = 0; i < size; i++) {
@@ -225,14 +233,18 @@ public class ClientNearCacheTest {
 
     @Test
     public void testIssue2009() throws Exception {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertNotNull(stats);
     }
 
     @Test
     public void testGetNearCacheStatsBeforePopulation() {
+<<<<<<< HEAD
         final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
+=======
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
+>>>>>>> small styling changes related to the tests.
         final int size = 101;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -243,13 +255,17 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCacheMisses() {
+<<<<<<< HEAD
         final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
+=======
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
+>>>>>>> small styling changes related to the tests.
 
         final int size = 1321;
         for (int i = 0; i < size; i++) {
-            map.get("NotThere"+i);
+            map.get("NotThere" + i);
         }
-        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(size, stats.getMisses());
         assertEquals(size, stats.getOwnedEntryCount());
     }
@@ -258,7 +274,7 @@ public class ClientNearCacheTest {
     @Test
     @Category(ProblematicTest.class)
     public void testMapRemove_WithNearCache() {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
 
         final int size = 1113;
         for (int i = 0; i < size; i++) {
@@ -271,24 +287,24 @@ public class ClientNearCacheTest {
             map.remove(i);
         }
 
-        NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(size, stats.getMisses());
         assertEquals(0, stats.getOwnedEntryCount());
     }
 
     @Test
     public void testNearCacheMaxSize() {
-        final IMap map = client.getMap(mapWithMaxSizeCash +randomString());
+        final IMap map = client.getMap(mapWithMaxSizeCash + randomString());
 
-        for (int i = 0; i < MAX_CACHE_SIZE +1; i++) {
+        for (int i = 0; i < MAX_CACHE_SIZE + 1; i++) {
             map.put(i, i);
         }
         //populate near cache
-        for (int i = 0; i < MAX_CACHE_SIZE +1; i++) {
+        for (int i = 0; i < MAX_CACHE_SIZE + 1; i++) {
             map.get(i);
         }
 
-        final int evictionSize = (int) (  MAX_CACHE_SIZE * (ClientNearCache.EVICTION_PERCENTAGE / 100.0) );
+        final int evictionSize = (int) (MAX_CACHE_SIZE * (ClientNearCache.EVICTION_PERCENTAGE / 100.0));
         final int remainingSize = MAX_CACHE_SIZE - evictionSize;
 
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
@@ -302,7 +318,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCacheTTLCleanup() {
-        final IMap map = client.getMap(mapWithTTLCash +randomString());
+        final IMap map = client.getMap(mapWithTTLCash + randomString());
 
         final int size = 133;
         for (int i = 0; i < size; i++) {
@@ -313,7 +329,7 @@ public class ClientNearCacheTest {
             map.get(i);
         }
 
-        sleepSeconds( ClientNearCache.TTL_CLEANUP_INTERVAL_MILLS / 1000 );
+        sleepSeconds(ClientNearCache.TTL_CLEANUP_INTERVAL_MILLS / 1000);
         map.get(0);
 
         final int expectedSize = 1;
@@ -327,7 +343,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCacheIdleRecordsEvicted() {
-        final IMap map = client.getMap(mapWithIdleCash +randomString());
+        final IMap map = client.getMap(mapWithIdleCash + randomString());
 
         final int size = 147;
         for (int i = 0; i < size; i++) {
@@ -357,7 +373,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCacheInvalidateOnChange() {
-        final String mapName = mapWithInvalidateCash +randomString();
+        final String mapName = mapWithInvalidateCash + randomString();
         final IMap nodeMap = h1.getMap(mapName);
         final IMap clientMap = client.getMap(mapName);
 
@@ -387,10 +403,11 @@ public class ClientNearCacheTest {
             }
         });
     }
+
     @Test
     @Category(ProblematicTest.class) // one can see stale value on the near cache after map.remove
     public void testMapContainsKey_withNearCache() {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
 
         map.put("key1", "value1");
         map.put("key2", "value2");
@@ -399,11 +416,11 @@ public class ClientNearCacheTest {
         map.get("key1");
         map.get("key2");
         map.get("key3");
-        assertEquals(true, map.containsKey("key1"));
-        assertEquals(false, map.containsKey("key5"));
+        assertTrue(map.containsKey("key1"));
+        assertFalse(map.containsKey("key5"));
         map.remove("key1");
-        assertEquals(false, map.containsKey("key5"));
-        assertEquals(true, map.containsKey("key2"));
-        assertEquals(false, map.containsKey("key1"));
+        assertFalse(map.containsKey("key5"));
+        assertTrue(map.containsKey("key2"));
+        assertFalse(map.containsKey("key1"));
     }
 }
