@@ -485,13 +485,13 @@ public class DefaultRecordStore implements RecordStore {
     @Override
     public void removeBackup(Data dataKey) {
         final Record record = records.get(dataKey);
-        if (record != null) {
-            // reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
-            deleteRecord(dataKey);
-            cancelAssociatedSchedulers(dataKey);
+        if(record == null) {
+            return;
         }
-
+        // reduce size
+        updateSizeEstimator(-calculateRecordSize(record));
+        deleteRecord(dataKey);
+        cancelAssociatedSchedulers(dataKey);
     }
 
     private void removeIndex(Data key) {
