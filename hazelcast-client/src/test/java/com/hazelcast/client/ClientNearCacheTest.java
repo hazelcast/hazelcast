@@ -24,21 +24,21 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.test.*;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import java.util.HashSet;
+import java.util.concurrent.Future;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
-import java.util.concurrent.Future;
-
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static com.hazelcast.test.HazelcastTestSupport.*;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -386,5 +386,24 @@ public class ClientNearCacheTest {
                 assertEquals(0, stats.getOwnedEntryCount());
             }
         });
+    }
+    @Test
+    @Category(ProblematicTest.class) // one can see stale value on the near cache after map.remove
+    public void testMapContainsKey_withNearCache() {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+
+        map.get("key1");
+        map.get("key2");
+        map.get("key3");
+        assertEquals(true, map.containsKey("key1"));
+        assertEquals(false, map.containsKey("key5"));
+        map.remove("key1");
+        assertEquals(false, map.containsKey("key5"));
+        assertEquals(true, map.containsKey("key2"));
+        assertEquals(false, map.containsKey("key1"));
     }
 }
