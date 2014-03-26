@@ -167,7 +167,6 @@ public class ClientMultiMapLockTest {
         assertTrue(mm.tryLock(key));
     }
 
-
     @Test
     public void testTryLock_whenLockedByOther() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
@@ -182,6 +181,33 @@ public class ClientMultiMapLockTest {
             }
         }.start();
         assertTrue(tryLockFailed.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testTryLockWaitingOnLockedKey_thenKeyUnlockedByOtherThread() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "keyZ";
+
+        mm.lock(key);
+
+        final CountDownLatch tryLockReturnsTrue = new CountDownLatch(1);
+        new Thread(){
+            public void run() {
+                try {
+                    if(mm.tryLock(key, 10, TimeUnit.SECONDS)){
+                        tryLockReturnsTrue.countDown();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+
+        sleepSeconds(1);
+        mm.unlock(key);
+
+        assertTrue(tryLockReturnsTrue.await(20, TimeUnit.SECONDS));
+        assertTrue(mm.isLocked(key));
     }
 
     @Test(expected = NullPointerException.class)
@@ -237,7 +263,7 @@ public class ClientMultiMapLockTest {
     }
 
     @Test
-    public void testLockTTLExpires_andOtherThreadCanObtain() throws Exception {
+    public void testLockTTLExpires_thenOtherThreadCanObtain() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "Key";
 
@@ -255,32 +281,5 @@ public class ClientMultiMapLockTest {
             }
         }.start();
         assertTrue(tryLockSuccess.await(10, TimeUnit.SECONDS));
-    }
-
-    @Test
-    public void testTryLockWaitingOnLockedKey_thenKeyUnlockedByOtherThread() throws Exception {
-        final MultiMap mm = client.getMultiMap(randomString());
-        final Object key = "keyZ";
-
-        mm.lock(key);
-
-        final CountDownLatch tryLockReturnsTrue = new CountDownLatch(1);
-        new Thread(){
-            public void run() {
-                try {
-                    if(mm.tryLock(key, 10, TimeUnit.SECONDS)){
-                        tryLockReturnsTrue.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
-
-        sleepSeconds(1);
-        mm.unlock(key);
-
-        assertTrue(tryLockReturnsTrue.await(20, TimeUnit.SECONDS));
-        assertTrue(mm.isLocked(key));
     }
 }
