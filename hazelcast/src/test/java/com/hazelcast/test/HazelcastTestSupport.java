@@ -55,7 +55,6 @@ public abstract class HazelcastTestSupport {
             public void run(){
                 sleepMillis(delaysMs);
                 currentThread.interrupt();
-                System.out.println(currentThread+" is interrupted");
             }
         }.start();
     }
