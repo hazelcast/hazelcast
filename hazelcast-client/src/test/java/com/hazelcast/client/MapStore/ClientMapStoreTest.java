@@ -32,7 +32,7 @@ import static junit.framework.Assert.assertEquals;
 @Category(SlowTest.class)
 public class ClientMapStoreTest {
 
-    static final String MAP_NAME = "ClientMapStoreLoad";
+    static final String MAP_NAME = "clientMapStoreLoad";
     Config nodeConfig;
 
     @Before
