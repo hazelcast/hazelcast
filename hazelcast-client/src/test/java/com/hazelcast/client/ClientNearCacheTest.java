@@ -209,6 +209,28 @@ public class ClientNearCacheTest {
         assertEquals(size, stats.getHits());
     }
 
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void testRemovedKeyValueNotInNearCache() throws Exception {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+
+        int size = 1247;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+
+        for (int i = 0; i < size; i++) {
+            map.remove(i);
+            assertNull(map.get(i));
+        }
+    }
+
+
     @Test
     public void testNearCachePopulatedAndHitsGenerated() throws Exception {
         final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
@@ -271,7 +293,7 @@ public class ClientNearCacheTest {
 
         final int size = 1321;
         for (int i = 0; i < size; i++) {
-            map.get("NotThere"+i);
+            map.get("NotThere" + i);
         }
         NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
         assertEquals(size, stats.getMisses());
