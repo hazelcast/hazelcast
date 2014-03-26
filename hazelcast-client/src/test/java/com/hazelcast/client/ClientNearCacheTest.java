@@ -124,6 +124,7 @@ public class ClientNearCacheTest {
         assertTrue("readFromCacheTime > readFromClusterTime", readFromCacheTime < readFromClusterTime);
     }
 
+
     @Test
     public void testGetAllChecksNearCacheFirst() throws Exception {
         final IMap map = client.getMap(mapWithBasicCash +randomString());
@@ -252,6 +253,20 @@ public class ClientNearCacheTest {
         NearCacheStats stats =   map.getLocalMapStats().getNearCacheStats();
         assertEquals(size, stats.getMisses());
         assertEquals(size, stats.getOwnedEntryCount());
+    }
+
+    @Test
+    public void testNearCacheMisses_whenRepeatedOnSameKey() {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+
+        final int size = 17;
+        for (int i = 0; i < size; i++) {
+            map.get("NOT_THERE");
+        }
+
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(1, stats.getOwnedEntryCount());
+        assertEquals(size, stats.getMisses());
     }
 
     // possible cause : https://github.com/hazelcast/hazelcast/issues/2065
