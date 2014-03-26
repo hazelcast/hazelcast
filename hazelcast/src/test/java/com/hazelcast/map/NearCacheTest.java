@@ -140,7 +140,7 @@ public class NearCacheTest extends HazelcastTestSupport {
     public void testNearCacheEvictionByUsingMapTTLEviction() throws InterruptedException {
         final int instanceCount = 3;
         final int ttl = 1;
-        final int size = 1000;
+        final int size = 100;
         final Config cfg = new Config();
         final String mapName = "_testNearCacheEvictionByUsingMapTTLEviction_";
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
