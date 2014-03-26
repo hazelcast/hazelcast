@@ -18,7 +18,6 @@ package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -27,15 +26,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static com.hazelcast.test.HazelcastTestSupport.*;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -61,7 +55,8 @@ public class ClientMultiMapLockTest {
     public void testIsLocked_whenNotLocked() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "KeyNotLocked";
-        assertFalse(mm.isLocked(key));
+        final boolean result = mm.isLocked(key);
+        assertFalse(result);
     }
 
     @Test
@@ -78,6 +73,18 @@ public class ClientMultiMapLockTest {
         mm.lock(null);
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testUnLock_whenNullKey() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.unlock(null);
+    }
+
+    @Test(expected = IllegalMonitorStateException.class)
+    public void testUnlock_whenNotLocked() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.unlock("NOT_LOCKED");
+    }
+
     @Test
     public void testUnLock() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
@@ -89,6 +96,48 @@ public class ClientMultiMapLockTest {
     }
 
     @Test
+    public void testUnlock_whenRentrantlyLockedBySelf() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "key";
+
+        mm.lock(key);
+        mm.lock(key);
+        mm.unlock(key);
+        assertTrue(mm.isLocked(key));
+    }
+
+    @Test(expected = IllegalMonitorStateException.class)
+    public void testUnlock_whenLockedByOther() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "key";
+        mm.lock(key);
+
+        UnLockThread t = new UnLockThread(mm, key);
+        t.start();
+        assertJoinable(t);
+        throw t.exception;
+    }
+
+    static class UnLockThread extends Thread{
+        public Exception exception=null;
+        public MultiMap mm=null;
+        public Object key=null;
+
+        public UnLockThread(MultiMap mm, Object key){
+            this.mm = mm;
+            this.key = key;
+        }
+
+        public void run() {
+            try{
+                mm.unlock(key);
+            }catch (Exception e){
+                exception = e;
+            }
+        }
+    };
+
+    @Test
     public void testMultiLockCalls() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "Key";
@@ -98,25 +147,29 @@ public class ClientMultiMapLockTest {
     }
 
     @Test
-    public void testLockAndTryLock() throws Exception {
+    public void testTryLock() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        Object key = "key";
+        assertTrue(mm.tryLock(key));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testTryLock_whenNullKey() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.tryLock(null);
+    }
+
+    @Test
+    public void testTryLock_whenLockedBySelf() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "Key";
         mm.lock(key);
         assertTrue(mm.tryLock(key));
     }
 
-    @Test
-    public void testLockTTL() throws Exception {
-        final MultiMap mm = client.getMultiMap(randomString());
-        final Object key = "Key";
-
-        mm.lock(key, 1, TimeUnit.SECONDS);
-        sleepSeconds(2);
-        assertFalse(mm.isLocked(key));
-    }
 
     @Test
-    public void testLock_WithTryLock() throws Exception {
+    public void testTryLock_whenLockedByOther() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "Key1";
         mm.lock(key);
@@ -131,8 +184,60 @@ public class ClientMultiMapLockTest {
         assertTrue(tryLockFailed.await(5, TimeUnit.SECONDS));
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testForceUnlock_whenKeyNull() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        mm.forceUnlock(null);
+    }
+
     @Test
-    public void testLockTTTL_threaded() throws Exception {
+    public void testForceUnlock_whenKeyLocked() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "Key";
+        mm.lock(key);
+        mm.lock(key);
+        mm.forceUnlock(key);
+        assertFalse(mm.isLocked(key));
+    }
+
+    @Test
+    public void testForceUnlock_whenKeyLockedByOther() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "key";
+        mm.lock(key);
+        mm.lock(key);
+        final CountDownLatch forceUnlock = new CountDownLatch(1);
+        new Thread(){
+            public void run() {
+                mm.forceUnlock(key);
+                forceUnlock.countDown();
+            }
+        }.start();
+        assertTrue(forceUnlock.await(30, TimeUnit.SECONDS));
+        assertFalse(mm.isLocked(key));
+    }
+
+    @Test
+    public void testLockTTL() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "Key";
+
+        mm.lock(key, 1, TimeUnit.SECONDS);
+        assertTrue(mm.isLocked(key));
+    }
+
+    @Test
+    public void testLockTTLExpired() throws Exception {
+        final MultiMap mm = client.getMultiMap(randomString());
+        final Object key = "Key";
+
+        mm.lock(key, 1, TimeUnit.SECONDS);
+        sleepSeconds(2);
+        assertFalse(mm.isLocked(key));
+    }
+
+    @Test
+    public void testLockTTLExpires_andOtherThreadCanObtain() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "Key";
 
@@ -153,7 +258,7 @@ public class ClientMultiMapLockTest {
     }
 
     @Test
-    public void testUnLockThreaded() throws Exception {
+    public void testTryLockWaitingOnLockedKey_thenKeyUnlockedByOtherThread() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "keyZ";
 
@@ -177,21 +282,5 @@ public class ClientMultiMapLockTest {
 
         assertTrue(tryLockReturnsTrue.await(20, TimeUnit.SECONDS));
         assertTrue(mm.isLocked(key));
-    }
-
-    @Test
-    public void testForceUnlock() throws Exception {
-        final MultiMap mm = client.getMultiMap(randomString());
-        final Object key = "key";
-        mm.lock(key);
-        final CountDownLatch forceUnlock = new CountDownLatch(1);
-        new Thread(){
-            public void run() {
-                mm.forceUnlock(key);
-                forceUnlock.countDown();
-            }
-        }.start();
-        assertTrue(forceUnlock.await(30, TimeUnit.SECONDS));
-        assertFalse(mm.isLocked(key));
     }
 }

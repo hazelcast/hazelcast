@@ -20,6 +20,8 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -34,13 +36,14 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientMultiMapListnersTest {
+public class ClientMultiMapListenersTest {
 
     static HazelcastInstance server;
     static HazelcastInstance client;
@@ -70,69 +73,111 @@ public class ClientMultiMapListnersTest {
         mm.addLocalEntryListener(myEntryListener);
     }
 
-    @Test
-    public void testAddListener_whenListnerNull() throws InterruptedException {
+    @Test(expected = NullPointerException.class)
+    @Category(ProblematicTest.class)
+    public void testAddListener_whenListenerNull() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
-        final String id = mm.addEntryListener(null, true);
-        mm.put(1, 1);
+        mm.addEntryListener(null, true);
+    }
+
+    @Test
+    public void testRemoveListener() throws InterruptedException {
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new MyEntryListener(1);
+        final String id = mm.addEntryListener(listener, true);
+
         assertTrue(mm.removeEntryListener(id));
     }
 
     @Test
-    public void testAddSameListenerTwice_whenSameObject() throws InterruptedException {
+    public void testRemoveListener_whenNotExist() throws InterruptedException {
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        assertFalse(mm.removeEntryListener("NOT_THERE"));
+    }
+
+    @Test()
+    @Category(ProblematicTest.class)
+    //this test is marked problematic as we cannot determine the desired behaviour from API
+    public void addEntryListener_whenSameListenerAddedMultipleTimes() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
 
         MyEntryListener listener = new MyEntryListener(1);
         final String id = mm.addEntryListener(listener, true);
         final String id2 = mm.addEntryListener(listener, true);
-
-        assertTrue(mm.removeEntryListener(id));
-        assertTrue(mm.removeEntryListener(id2));
     }
 
     @Test
-    public void testListener() throws InterruptedException {
+    public void testListenerEntryAddEvent() throws InterruptedException {
         final int maxKeys = 22;
         final int maxItems = 3;
         final MultiMap mm = client.getMultiMap(randomString());
 
         MyEntryListener listener = new MyEntryListener(maxKeys * maxItems);
-        final String id = mm.addEntryListener(listener, true);
+        mm.addEntryListener(listener, true);
 
         for(int i=0; i<maxKeys; i++){
             for(int j=0; j<maxKeys; j++){
                 mm.put(i, j);
-                mm.remove(i, j);
             }
         }
-
-        assertTrue(listener.addLatch.await(10, TimeUnit.SECONDS));
-        assertTrue(listener.removeLatch.await(10, TimeUnit.SECONDS));
-        assertTrue(mm.removeEntryListener(id));
+        assertOpenEventually(listener.addLatch, 10);
     }
 
     @Test
-    public void testListenerOnKey() throws InterruptedException {
+    public void testListenerEntryRemoveEvent() throws InterruptedException {
+        final int maxKeys = 22;
+        final int maxItems = 3;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new MyEntryListener(maxKeys * maxItems);
+        mm.addEntryListener(listener, true);
+
+        for(int i=0; i<maxKeys; i++){
+            for(int j=0; j<maxKeys; j++){
+                mm.put(i, j);
+                mm.remove(i);
+            }
+        }
+        assertOpenEventually(listener.removeLatch, 10);
+    }
+
+    @Test
+    public void testListenerOnKeyEntryAddEvent() throws InterruptedException {
         final Object key = "key";
         final int maxItems = 101;
         final MultiMap mm = client.getMultiMap(randomString());
 
         MyEntryListener listener = new MyEntryListener(maxItems);
-        final String id = mm.addEntryListener(listener, key, true);
+        mm.addEntryListener(listener, key, true);
 
         for(int i=0; i<maxItems; i++){
-            mm.put(key, "value");
-            mm.remove(key, "value");
+            mm.put(key, i);
         }
 
-        assertTrue(listener.addLatch.await(10, TimeUnit.SECONDS));
-        assertTrue(listener.removeLatch.await(10, TimeUnit.SECONDS));
-        assertTrue(mm.removeEntryListener(id));
-        assertEquals(0, mm.size());
+        assertOpenEventually(listener.addLatch, 10);
     }
 
     @Test
-    public void testListenerOnKey_WithOneRemove() throws InterruptedException {
+    public void testListenerOnKeyEntryRemoveEvent() throws InterruptedException {
+        final Object key = "key";
+        final int maxItems = 101;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new MyEntryListener(maxItems);
+        mm.addEntryListener(listener, key, true);
+
+        for(int i=0; i<maxItems; i++){
+            mm.put(key, i);
+            mm.remove(key, i);
+        }
+
+        assertOpenEventually(listener.removeLatch, 10);
+    }
+
+    @Test
+    public void testListenerOnKeyEntryRemove_WithOneRemove() throws InterruptedException {
         final Object key = "key";
         final int maxItems = 101;
         final MultiMap mm = client.getMultiMap(randomString());
@@ -145,10 +190,7 @@ public class ClientMultiMapListnersTest {
         }
         mm.remove(key);
 
-        assertTrue(listener.addLatch.await(10, TimeUnit.SECONDS));
-        assertTrue(listener.removeLatch.await(10, TimeUnit.SECONDS));
-        assertTrue(mm.removeEntryListener(id));
-        assertEquals(0, mm.size());
+        assertOpenEventually(listener.removeLatch, 10);
     }
 
     static class MyEntryListener implements EntryListener {
