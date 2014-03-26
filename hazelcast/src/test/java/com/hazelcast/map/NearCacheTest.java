@@ -216,12 +216,12 @@ public class NearCacheTest extends HazelcastTestSupport {
 
     @Test
     public void testNearCacheStats() throws Exception {
-        String mapName = "NearCacheStatsTest";
+        String mapName = randomMapName();
         Config config = new Config();
-        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(true));
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(false));
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = factory.newInstances(config);
-        IMap<Integer, Integer> map = instances[0].getMap("NearCacheStatsTest");
+        IMap<Integer, Integer> map = instances[0].getMap(mapName);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
