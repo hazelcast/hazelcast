@@ -30,6 +30,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,7 +42,7 @@ import static org.junit.Assert.assertNull;
 @Category(QuickTest.class)
 public class ClientRandomLBTest {
 
-    @After
+    @AfterClass
     public void destroy() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
