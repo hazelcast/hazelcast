@@ -99,8 +99,20 @@ public class ClientConfig {
         this.networkConfig = networkConfig;
     }
 
+    /**
+     * please use {@link ClientConfig#addNearCacheConfig(NearCacheConfig)}
+     * @param mapName
+     * @param nearCacheConfig
+     * @return
+     */
+    @Deprecated
     public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig){
-        nearCacheConfigMap.put(mapName, nearCacheConfig);
+        nearCacheConfig.setName(mapName);
+        return addNearCacheConfig(nearCacheConfig);
+    }
+
+    public ClientConfig addNearCacheConfig(NearCacheConfig nearCacheConfig){
+        nearCacheConfigMap.put(nearCacheConfig.getName(), nearCacheConfig);
         return this;
     }
 
@@ -359,31 +371,33 @@ public class ClientConfig {
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);
         if (t == null) {
+            int index = -1;
             for (Map.Entry<String,T> entry : map.entrySet()) {
                 String pattern = entry.getKey();
                 T value = entry.getValue();
-                if (nameMatches(name, pattern)) {
-                    return value;
+                final int i = nameMatches(name, pattern);
+                if (i > index) {
+                    index = i;
+                    t = value;
                 }
             }
         }
         return t;
     }
 
-    private static boolean nameMatches(final String name, final String pattern) {
+    private static int nameMatches(final String name, final String pattern) {
         final int index = pattern.indexOf('*');
-        if (index == -1) {
-            return name.equals(pattern);
-        } else {
+        if (index != -1) {
             final String firstPart = pattern.substring(0, index);
             final int indexFirstPart = name.indexOf(firstPart, 0);
             if (indexFirstPart == -1) {
-                return false;
+                return -1;
             }
             final String secondPart = pattern.substring(index + 1);
             final int indexSecondPart = name.indexOf(secondPart, index + 1);
-            return indexSecondPart != -1;
+            return indexSecondPart;
         }
+        return -1;
     }
 
 }
