@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -37,10 +38,10 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientQueueTest {
+public class ClientQueueTest extends HazelcastTestSupport{
 
     final static int maxSizeForQueue = 8;
-    final static String queueForTestQueueWithSizeLimit = "testQueuWithSizeLimit";
+    final static String queueForTestQueueWithSizeLimit = "testQueueWithSizeLimit";
     final static String queueForTestOfferPoll = "queueForTestOfferPoll";
 
     static HazelcastInstance client;
@@ -94,6 +95,15 @@ public class ClientQueueTest {
         assertEquals(1, q.take());
     }
 
+
+    @Test(expected = InterruptedException.class)
+    public void testTake_whenInterruptedWhileBlocking() throws InterruptedException {
+        IQueue queue = client.getQueue(randomString());
+        interruptCurrentThread(2000);
+
+        queue.take();
+    }
+
     @Test
     public void testEmptyPeak() throws InterruptedException {
         final IQueue q = client.getQueue(randomString());
@@ -129,6 +139,13 @@ public class ClientQueueTest {
         assertEquals(1, q.poll());
     }
 
+    @Test(expected = InterruptedException.class)
+    public void testPoll_whenInterruptedWhileBlocking() throws InterruptedException {
+        IQueue queue = client.getQueue(randomString());
+        interruptCurrentThread(2000);
+
+        queue.poll(1, TimeUnit.MINUTES);
+    }
 
     @Test
     public void testOfferWithTimeOut() throws IOException, InterruptedException {
