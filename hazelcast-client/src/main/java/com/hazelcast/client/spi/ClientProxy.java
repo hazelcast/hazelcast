@@ -23,6 +23,7 @@ import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ExceptionUtil;
@@ -108,17 +109,33 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected <T> T invoke(ClientRequest req, Object key) {
         try {
-            final Future future = getContext().getInvocationService().invokeOnKeyOwner(req, key);
-            return context.getSerializationService().toObject(future.get());
+            final Future future = getInvocationService().invokeOnKeyOwner(req, key);
+            Object result = future.get();
+            return toObject(result);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
+    protected <T> T invokeInterruptibly(ClientRequest req, Object key)throws InterruptedException {
+        try {
+            final Future future = getInvocationService().invokeOnKeyOwner(req, key);
+            Object result = future.get();
+            return toObject(result);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrowAllowInterrupted(e);
+        }
+    }
+
+    private ClientInvocationService getInvocationService() {
+        return getContext().getInvocationService();
+    }
+
     protected <T> T invoke(ClientRequest req) {
         try {
-            final Future future = getContext().getInvocationService().invokeOnRandomTarget(req);
-            return context.getSerializationService().toObject(future.get());
+            final Future future = getInvocationService().invokeOnRandomTarget(req);
+            Object result = future.get();
+            return toObject(result);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -126,8 +143,9 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected <T> T invoke(ClientRequest req, Address address) {
         try {
-            final Future future = getContext().getInvocationService().invokeOnTarget(req, address);
-            return context.getSerializationService().toObject(future.get());
+            final Future future = getInvocationService().invokeOnTarget(req, address);
+            Object result = future.get();
+            return toObject(result);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
