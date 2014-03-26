@@ -187,6 +187,29 @@ public class ClientNearCacheTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
+    public void testGetAsyncPopulatesNearCache() throws Exception {
+        final IMap map = client.getMap(mapWithBasicCash +randomString());
+
+        int size = 1239;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            Future async = map.getAsync(i);
+            async.get();
+        }
+        //generate near cache hits with async call
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getOwnedEntryCount());
+        assertEquals(size, stats.getHits());
+    }
+
+    @Test
     public void testNearCachePopulatedAndHitsGenerated() throws Exception {
         final IMap map = client.getMap(mapWithBasicCashNoInvalidation +randomString());
 
