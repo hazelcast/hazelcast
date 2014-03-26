@@ -406,7 +406,7 @@ public class ClientNearCacheTest {
 
     @Test
     @Category(ProblematicTest.class) // one can see stale value on the near cache after map.remove
-    public void testMapContainsKey_withNearCache() {
+    public void testNearCacheContainsKey() {
         final IMap map = client.getMap(mapWithBasicCash + randomString());
 
         map.put("key1", "value1");
@@ -416,9 +416,8 @@ public class ClientNearCacheTest {
         map.get("key1");
         map.get("key2");
         map.get("key3");
-        assertTrue(map.containsKey("key1"));
-        assertFalse(map.containsKey("key5"));
         map.remove("key1");
+
         assertFalse(map.containsKey("key5"));
         assertTrue(map.containsKey("key2"));
         assertFalse(map.containsKey("key1"));
