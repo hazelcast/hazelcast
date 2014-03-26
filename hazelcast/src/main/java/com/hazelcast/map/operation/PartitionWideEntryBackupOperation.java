@@ -61,7 +61,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
             entry = new AbstractMap.SimpleEntry(objectKey, valueBeforeProcess);
             entryProcessor.processBackup(entry);
             if (entry.getValue() == null){
-                recordStore.remove(dataKey);
+                recordStore.removeBackup(dataKey);
             } else {
                 recordStore.putBackup(dataKey, entry.getValue());
             }

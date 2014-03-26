@@ -31,6 +31,12 @@ public interface RecordStore {
 
     Object remove(Data dataKey);
 
+    /**
+     * Similar to {@link com.hazelcast.map.RecordStore#remove(com.hazelcast.nio.serialization.Data)}
+     * except removeBackup doesn't touch mapstore since it does not return previous value.
+     */
+    void removeBackup(Data dataKey);
+
     boolean remove(Data dataKey, Object testValue);
 
     Object get(Data dataKey);

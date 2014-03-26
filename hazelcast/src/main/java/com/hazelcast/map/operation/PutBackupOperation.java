@@ -88,12 +88,5 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         return MapDataSerializerHook.PUT_BACKUP;
     }
 
-    private void updateSizeEstimator( long recordSize ) {
-        recordStore.getSizeEstimator().add( recordSize );
-    }
-
-    private long calculateRecordSize( Record record ) {
-        return recordStore.getSizeEstimator().getCost(record);
-    }
 
 }
