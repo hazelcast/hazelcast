@@ -214,8 +214,9 @@ public class MapStoreConfig {
      *
      * @param initialLoadMode initial load mode object
      */
-    public void setInitialLoadMode(InitialLoadMode initialLoadMode) {
+    public MapStoreConfig setInitialLoadMode(InitialLoadMode initialLoadMode) {
         this.initialLoadMode = initialLoadMode;
+        return this;
     }
 
 
