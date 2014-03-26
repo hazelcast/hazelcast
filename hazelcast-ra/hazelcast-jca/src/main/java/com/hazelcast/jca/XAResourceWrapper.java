@@ -16,6 +16,7 @@
 
 package com.hazelcast.jca;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.transaction.TransactionContext;
 
 import javax.transaction.xa.XAException;
@@ -45,11 +46,7 @@ public class XAResourceWrapper implements XAResource {
 
         switch (flags){
             case TMNOFLAGS:
-//                validateInner(false);
-                if(inner == null){
-                    setInner();
-                }
-//                inner.start(xid, flags);
+                setInner();
                 break;
             case TMRESUME:
             case TMJOIN:
@@ -103,10 +100,13 @@ public class XAResourceWrapper implements XAResource {
 
     @Override
     public boolean isSameRM(XAResource xaResource) throws XAException {
-        if (inner == null) {
-            setInner();
+        if (xaResource instanceof XAResourceWrapper ){
+            final ManagedConnectionImpl otherManagedConnection = ((XAResourceWrapper) xaResource).managedConnection;
+            final HazelcastInstance hazelcastInstance = managedConnection.getHazelcastInstance();
+            final HazelcastInstance otherHazelcastInstance = otherManagedConnection.getHazelcastInstance();
+            return hazelcastInstance != null && hazelcastInstance.equals(otherHazelcastInstance);
         }
-        return inner.isSameRM(xaResource);
+        return false;
     }
 
     @Override
@@ -144,14 +144,6 @@ public class XAResourceWrapper implements XAResource {
     }
 
     public String toString() {
-        if (inner == null) {
-            try {
-                setInner();
-                return inner.toString();
-            } catch (Exception e) {
-                //ignore;
-            }
-        }
         return super.toString();
     }
 }
