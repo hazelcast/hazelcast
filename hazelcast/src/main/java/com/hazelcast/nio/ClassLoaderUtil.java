@@ -18,7 +18,6 @@ package com.hazelcast.nio;
 
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.ValidationUtil;
-import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
