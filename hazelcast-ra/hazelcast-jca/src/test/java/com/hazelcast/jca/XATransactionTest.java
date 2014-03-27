@@ -18,14 +18,27 @@ package com.hazelcast.jca;
 
 import com.hazelcast.core.TransactionalMap;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit.InSequence;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import javax.transaction.UserTransaction;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
 * Arquillian tests for xa transactions
@@ -42,78 +55,132 @@ public class XATransactionTest extends AbstractDeploymentTest {
     @Resource(mappedName = "java:jboss/UserTransaction")
     private UserTransaction userTx;
 
-//    @Resource(mappedName = "java:/UserTransaction")
-//    protected UserTransaction userTx;
 
-/*
-    @Resource(mappedName = "java:/HazelcastDS")
-    protected DataSource ds;
-*/
+    @Resource(mappedName = "java:jboss/datasources/ExampleDS")
+//    @Resource(mappedName = "java:/HazelcastDS")
+    protected DataSource h2Datasource;
+
+    private static boolean isDbInit=false;
+
+    @Before
+    public void Init() throws SQLException {
+        if(!isDbInit){
+            isDbInit=true;
+            Connection con = h2Datasource.getConnection();
+            Statement stmt = null;
+            try {
+                stmt = con.createStatement();
+                stmt.execute("create table TEST (A varchar(3))");
+            } finally {
+                if (stmt != null) {
+                    stmt.close();
+                }
+                con.close();
+            }
+        }
+    }
+
+
 
     @Test
+    @InSequence(2)
     public void testTransactionCommit() throws Throwable {
         userTx.begin();
-
         HazelcastConnection c = getConnection();
+        try {
+            TransactionalMap<String, String> m = c.getTransactionalMap("testTransactionCommit");
 
-        TransactionalMap<String, String> m = c.getTransactionalMap("testTransactionCommit");
+            m.put("key", "value");
 
-        m.put("key", "value");
+            doSql();
 
-        assertEquals("value", m.get("key"));
-
+            assertEquals("value", m.get("key"));
+        } finally {
+            c.close();
+        }
         userTx.commit();
-
         HazelcastConnection con2 = getConnection();
 
-        assertEquals("value", con2.getMap("testTransactionCommit").get("key"));
+        try {
+            assertEquals("value", con2.getMap("testTransactionCommit").get("key"));
+            validateSQLdata(true);
+        } finally {
+            con2.close();
+        }
     }
 
     @Test
+    @InSequence(1)
     public void testTransactionRollback() throws Throwable {
         userTx.begin();
 
         HazelcastConnection c = getConnection();
-
-        TransactionalMap<String, String> m = c.getTransactionalMap("testTransactionRollback");
-
-        m.put("key", "value");
-
-        assertEquals("value", m.get("key"));
+        try {
+            TransactionalMap<String, String> m = c.getTransactionalMap("testTransactionRollback");
+            m.put("key", "value");
+            assertEquals("value", m.get("key"));
+            doSql();
+        } finally {
+            c.close();
+        }
 
         userTx.rollback();
 
         HazelcastConnection con2 = getConnection();
 
-        assertEquals(null, con2.getMap("testTransactionRollback").get("key"));
+        try {
+            assertEquals(null, con2.getMap("testTransactionRollback").get("key"));
+            validateSQLdata(false);
+        } finally {
+            con2.close();
+        }
 
     }
 
-/*    private void doSql() throws NamingException, SQLException {
+    private void doSql() throws NamingException, SQLException {
 
-        Connection con = ds.getConnection();
+        Connection con = h2Datasource.getConnection();
         Statement stmt = null;
         try {
             stmt = con.createStatement();
-            stmt.execute("create table TEST (A varchar(2))");
+            stmt.execute("INSERT INTO TEST VALUES ('txt')");
         } finally {
             if (stmt != null) {
                 stmt.close();
             }
             con.close();
         }
+    }
+
+    private void validateSQLdata(boolean hasdata) throws NamingException, SQLException {
+
+        Connection con = h2Datasource.getConnection();
+        Statement stmt = null;
 
         try {
             stmt = con.createStatement();
-            stmt.execute("INSERT INTO TEST VALUES ('ab')");
-            stmt.execute("SELECT * FROM TEST");
+
+            ResultSet resultSet = null;
+            try {
+                resultSet = stmt.executeQuery("SELECT * FROM TEST");
+
+            } catch (SQLException e) {
+            }
+            if(hasdata){
+                assertNotNull(resultSet);
+                assertTrue(resultSet.first());
+                assertEquals("txt", resultSet.getString("A"));
+            }else{
+                assertTrue(resultSet == null || resultSet.getFetchSize() == 0  );
+            }
+
         } finally {
             if (stmt != null) {
                 stmt.close();
             }
             con.close();
         }
-    }*/
+    }
 
 
 

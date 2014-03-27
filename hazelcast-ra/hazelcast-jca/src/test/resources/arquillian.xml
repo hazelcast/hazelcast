@@ -17,15 +17,15 @@
     <!--</container>-->
 
     <container qualifier="jbossas-managed" default="true">
-        <protocol type="jmx-as7">
-            <property name="executionType">MANAGED</property>
-        </protocol>
+        <!--<protocol type="jmx-as7">-->
+            <!--<property name="executionType">MANAGED</property>-->
+        <!--</protocol>-->
         <configuration>
             <!--<property name="jbossHome">C:\\Users\\asm\\apps\\jboss-eap-6.2</property>-->
             <property name="jbossHome">C:\\Users\\asm\\apps\\jboss-as-7.1.1.Final</property>
             <!--<property name="javaVmArguments">-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n -Xmx512m -XX:MaxPermSize=128m</property>-->
             <property name="outputToConsole">true</property>
-            <!--<property name="serverConfig">standalone-full.xml</property>-->
+            <property name="serverConfig">standalone-full.xml</property>
         </configuration>
     </container>
 

@@ -19,8 +19,8 @@ package com.hazelcast.jca;
 import com.hazelcast.core.TransactionalMap;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.junit.InSequence;
-import org.jboss.arquillian.transaction.api.annotation.TransactionMode;
-import org.jboss.arquillian.transaction.api.annotation.Transactional;
+//import org.jboss.arquillian.transaction.api.annotation.TransactionMode;
+//import org.jboss.arquillian.transaction.api.annotation.Transactional;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -39,13 +39,14 @@ public class XATransactionJTATest extends AbstractDeploymentTest {
 
 
     @Test
-    @Transactional(TransactionMode.ROLLBACK)
+//    @Transactional(TransactionMode.ROLLBACK)
     @InSequence(1)
     public void testTransactionRollback() throws Throwable {
         HazelcastConnection c = getConnection();
         TransactionalMap<String, String> m = c.getTransactionalMap("testTransactionRollback");
         m.put("key", "value");
         assertEquals("value", m.get("key"));
+        c.close();
     }
 
     @Test
@@ -53,6 +54,7 @@ public class XATransactionJTATest extends AbstractDeploymentTest {
     public void testTransactionRollbackPostCheck() throws Throwable {
         HazelcastConnection con2 = getConnection();
         assertEquals(null, con2.getMap("testTransactionRollback").get("key"));
+        con2.close();
     }
 
 /*    private void doSql() throws NamingException, SQLException {
