@@ -2,9 +2,9 @@ package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -19,12 +19,13 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static junit.framework.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class ClientMultiMapListenerStressTest {
 
+    static final int MAX_SECONDS = 60 * 10;
     static final String MAP_NAME = randomString();
-    static final int NUMBER_OF_CLIENTS = 1;
-    static final int THREADS_PER_CLIENT = 8;
+    static final int NUMBER_OF_CLIENTS = 8;
+    static final int THREADS_PER_CLIENT = 16;
 
     static HazelcastInstance server;
 
@@ -41,10 +42,9 @@ public class ClientMultiMapListenerStressTest {
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void listenerAddStressTest() throws InterruptedException {
 
-        PutItemsThread[] putThreads = new PutItemsThread[NUMBER_OF_CLIENTS * THREADS_PER_CLIENT];
+        final PutItemsThread[] putThreads = new PutItemsThread[NUMBER_OF_CLIENTS * THREADS_PER_CLIENT];
 
         int idx=0;
         for(int i=0; i<NUMBER_OF_CLIENTS; i++){
@@ -59,19 +59,25 @@ public class ClientMultiMapListenerStressTest {
             putThreads[i].start();
         }
 
-        assertJoinable(putThreads);
+        assertJoinable(MAX_SECONDS, putThreads );
 
         MultiMap mm = server.getMultiMap(MAP_NAME);
-        assertEquals(PutItemsThread.maxItems * putThreads.length, mm.size());
+        assertEquals(PutItemsThread.MAX_ITEMS * putThreads.length, mm.size());
 
-        for(int i=0; i<putThreads.length; i++){
-            putThreads[i].assertResult(PutItemsThread.maxItems * putThreads.length);
-        }
+        assertTrueEventually(new AssertTask() {
+
+            public void run() throws Exception {
+                for(int i=0; i<putThreads.length; i++){
+                    putThreads[i].assertResult(PutItemsThread.MAX_ITEMS * putThreads.length);
+                }
+            }
+        });
+
     }
 
     public class PutItemsThread extends Thread{
 
-        public static final int maxItems = 1000;
+        public static final int MAX_ITEMS = 1000;
 
         public final MyEntryListener listener = new MyEntryListener();
         public HazelcastInstance hzInstance;
@@ -86,7 +92,7 @@ public class ClientMultiMapListenerStressTest {
         }
 
         public void run(){
-            for(int i=0; i<maxItems; i++){
+            for(int i=0; i< MAX_ITEMS; i++){
                 mm.put(id+i, id+i);
             }
         }
