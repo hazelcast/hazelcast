@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.interruptCurrentThread;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.*;
 
