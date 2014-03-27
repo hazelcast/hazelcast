@@ -1,9 +1,13 @@
 ### Eviction
 
 Hazelcast also supports policy based eviction for distributed map. Currently supported eviction policies are LRU (Least Recently Used) and LFU (Least Frequently Used). This feature enables Hazelcast to be used as a distributed cache. If `time-to-live-seconds` is not 0, entries older than `time-to-live-seconds` value will get evicted,
-regardless of the eviction policy set. Here is a sample configuration for eviction:
+regardless of the eviction policy set.
+
+When eviction occurs on a key and there is a backing persistence store configured, the entry is removed from memory but not from the underlying store. If an evicted key is then later requested, it will be loaded from the store. To evict a key manually, use `evict(key)`.
 
 Note that, LRU/LFU evictions work if statistics are enabled.
+
+Here is a sample configuration for eviction:
 
 ```xml
 <hazelcast>
