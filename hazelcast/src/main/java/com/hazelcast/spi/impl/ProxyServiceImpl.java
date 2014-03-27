@@ -103,7 +103,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
             throw new NullPointerException("Object name is required!");
         }
         ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
-        registry.createProxy(name, true, true);
+        registry.getOrCreateProxy(name, true, true);
     }
 
     public DistributedObject getDistributedObject(String serviceName, String name) {
@@ -166,7 +166,10 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
-            objects.addAll(registry.proxies.values());
+            Collection<DistributedObjectFuture> futures = registry.proxies.values();
+            for (DistributedObjectFuture future : futures) {
+                objects.add(future.get());
+            }
         }
         return objects;
     }
@@ -174,7 +177,10 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
     public Collection<DistributedObject> getAllDistributedObjects() {
         Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
         for (ProxyRegistry registry : registries.values()) {
-            objects.addAll(registry.proxies.values());
+            Collection<DistributedObjectFuture> futures = registry.proxies.values();
+            for (DistributedObjectFuture future : futures) {
+                objects.add(future.get());
+            }
         }
         return objects;
     }
@@ -210,7 +216,8 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
     public Operation getPostJoinOperation() {
         Collection<ProxyInfo> proxies = new LinkedList<ProxyInfo>();
         for (ProxyRegistry registry : registries.values()) {
-            for (DistributedObject distributedObject : registry.proxies.values()) {
+            for (DistributedObjectFuture future : registry.proxies.values()) {
+                DistributedObject distributedObject = future.get();
                 if (distributedObject instanceof InitializingObject) {
                     proxies.add(new ProxyInfo(registry.serviceName, distributedObject.getName()));
                 }
@@ -223,7 +230,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
 
         final String serviceName;
         final RemoteService service;
-        final ConcurrentMap<String, DistributedObject> proxies = new ConcurrentHashMap<String, DistributedObject>();
+        final ConcurrentMap<String, DistributedObjectFuture> proxies = new ConcurrentHashMap<String, DistributedObjectFuture>();
 
         private ProxyRegistry(String serviceName) {
             this.serviceName = serviceName;
@@ -246,18 +253,18 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
          * @return a DistributedObject instance
          */
         DistributedObject getOrCreateProxy(final String name, boolean publishEvent, boolean initialize) {
-            DistributedObject proxy = proxies.get(name);
-            if (proxy == null) {
+            DistributedObjectFuture proxyFuture = proxies.get(name);
+            if (proxyFuture == null) {
                 if (!nodeEngine.isActive()) {
                     throw new HazelcastInstanceNotActiveException();
                 }
-                proxy = createProxy(name, publishEvent, initialize);
-                if (proxy == null) {
+                proxyFuture = createProxy(name, publishEvent, initialize);
+                if (proxyFuture == null) {
                     // warning; recursive call! I (@mdogan) do not think this will ever cause a stack overflow..
                     return getOrCreateProxy(name, publishEvent, initialize);
                 }
             }
-            return proxy;
+            return proxyFuture.get();
         }
 
         /**
@@ -268,13 +275,14 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
          * @param initialize true if proxy object should be initialized
          * @return a DistributedObject instance if it's created by this method, null otherwise
          */
-        DistributedObject createProxy(final String name, boolean publishEvent, boolean initialize) {
+        DistributedObjectFuture createProxy(final String name, boolean publishEvent, boolean initialize) {
             if (!proxies.containsKey(name)) {
                 if (!nodeEngine.isActive()) {
                     throw new HazelcastInstanceNotActiveException();
                 }
-                DistributedObject proxy = service.createDistributedObject(name);
-                if (proxies.putIfAbsent(name, proxy) == null) {
+                DistributedObjectFuture proxyFuture = new DistributedObjectFuture();
+                if (proxies.putIfAbsent(name, proxyFuture) == null) {
+                    DistributedObject proxy = service.createDistributedObject(name);
                     if (initialize && proxy instanceof InitializingObject) {
                         try {
                             ((InitializingObject) proxy).initialize();
@@ -286,15 +294,17 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
                     if (publishEvent) {
                         publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
                     }
-                    return proxy;
+                    proxyFuture.set(proxy);
+                    return proxyFuture;
                 }
             }
             return null;
         }
 
         void destroyProxy(String name, boolean publishEvent) {
-            final DistributedObject proxy = proxies.remove(name);
-            if (proxy != null) {
+            final DistributedObjectFuture proxyFuture = proxies.remove(name);
+            if (proxyFuture != null) {
+                DistributedObject proxy = proxyFuture.get();
                 nodeEngine.eventService.executeEvent(new ProxyEventProcessor(DESTROYED, serviceName, proxy));
                 if (publishEvent) {
                     publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name));
@@ -313,7 +323,8 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         }
 
         void destroy() {
-            for (DistributedObject distributedObject : proxies.values()) {
+            for (DistributedObjectFuture future : proxies.values()) {
+                DistributedObject distributedObject = future.get();
                 if (distributedObject instanceof AbstractDistributedObject) {
                     DistributedObjectAccessor.onNodeShutdown((AbstractDistributedObject) distributedObject);
                 }
@@ -323,6 +334,40 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
 
         public int getProxyCount() {
             return proxies.size();
+        }
+    }
+
+    private class DistributedObjectFuture {
+
+        volatile DistributedObject proxy;
+
+        DistributedObject get() {
+            if (proxy == null) {
+                boolean interrupted = false;
+                synchronized (this) {
+                    while (proxy == null) {
+                        try {
+                            wait();
+                        } catch (InterruptedException e) {
+                            interrupted = true;
+                        }
+                    }
+                }
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return proxy;
+        }
+
+        void set(DistributedObject o) {
+            if (o == null) {
+                throw new IllegalArgumentException();
+            }
+            synchronized (this) {
+                proxy = o;
+                notifyAll();
+            }
         }
     }
 
@@ -414,18 +459,21 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
                 for (ProxyInfo proxy : proxies) {
                     final ProxyRegistry registry = ConcurrencyUtil
                             .getOrPutIfAbsent(proxyService.registries, proxy.serviceName,
-                                              proxyService.registryConstructor);
-                    final DistributedObject object = registry.createProxy(proxy.objectName, false, false);
-                    if (object != null && object instanceof InitializingObject) {
-                        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-                            public void run() {
-                                try {
-                                    ((InitializingObject) object).initialize();
-                                } catch (Exception e) {
-                                    getLogger().warning("Error while initializing proxy: " + object, e);
+                                    proxyService.registryConstructor);
+                    DistributedObjectFuture future = registry.createProxy(proxy.objectName, false, false);
+                    if (future != null) {
+                        final DistributedObject object = future.get();
+                        if (object instanceof InitializingObject) {
+                            nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                                public void run() {
+                                    try {
+                                        ((InitializingObject) object).initialize();
+                                    } catch (Exception e) {
+                                        getLogger().warning("Error while initializing proxy: " + object, e);
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 }
             }
