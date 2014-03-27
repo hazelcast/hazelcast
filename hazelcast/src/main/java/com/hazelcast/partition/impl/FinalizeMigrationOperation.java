@@ -45,19 +45,20 @@ final class FinalizeMigrationOperation extends AbstractOperation
     public void run() {
         InternalPartitionServiceImpl partitionService = getService();
 
-        MigrationInfo migrationInfo = partitionService.getActiveMigration(getPartitionId());
+        int partitionId = getPartitionId();
+        MigrationInfo migrationInfo = partitionService.getActiveMigration(partitionId);
         if (migrationInfo == null) {
             return;
         }
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 
-        PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, getPartitionId());
+        PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, partitionId);
         for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
             finishMigration(event, service);
         }
 
-        partitionService.removeActiveMigration(getPartitionId());
+        partitionService.removeActiveMigration(partitionId);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
         }
