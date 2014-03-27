@@ -18,6 +18,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -74,14 +75,12 @@ public class ProxyEqualityTest {
     }
 
     @Test
-    public void testTwoClientProxiesFromTheSameInstanceAreHashCodeEquals() {
+    public void testProxiesAreCached() {
 
         ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
         ClientProxy ref2 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
 
-        assertEquals(ref1.hashCode(), ref2.hashCode());
-        assertEquals(ref1, ref2);
-        assertEquals(ref2, ref1);
+        assertSame(ref1, ref2);
     }
 
     @Test
