@@ -48,7 +48,7 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category(ProblematicTest.class)
 public class NearCacheTest extends HazelcastTestSupport {
 
     @Test
