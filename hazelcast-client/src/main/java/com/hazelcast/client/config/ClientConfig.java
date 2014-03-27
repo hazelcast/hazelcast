@@ -24,6 +24,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.security.Credentials;
+import sun.applet.Main;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -371,13 +372,13 @@ public class ClientConfig {
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);
         if (t == null) {
-            int index = -1;
+            int lastMatchingPoint = -1;
             for (Map.Entry<String,T> entry : map.entrySet()) {
                 String pattern = entry.getKey();
                 T value = entry.getValue();
-                final int i = nameMatches(name, pattern);
-                if (i > index) {
-                    index = i;
+                final int matchingPoint = getMatchingPoint(name, pattern);
+                if (matchingPoint > lastMatchingPoint) {
+                    lastMatchingPoint = matchingPoint;
                     t = value;
                 }
             }
@@ -385,7 +386,13 @@ public class ClientConfig {
         return t;
     }
 
-    private static int nameMatches(final String name, final String pattern) {
+    /**
+     * higher values means more specific matching
+     * @param name
+     * @param pattern
+     * @return -1 if name does not match at all, zero or positive otherwise
+     */
+    private static int getMatchingPoint(final String name, final String pattern) {
         final int index = pattern.indexOf('*');
         if (index != -1) {
             final String firstPart = pattern.substring(0, index);
@@ -399,5 +406,4 @@ public class ClientConfig {
         }
         return -1;
     }
-
 }
