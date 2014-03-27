@@ -20,6 +20,7 @@
 
     <name>hazelcast</name>
     <artifactId>hazelcast</artifactId>
+    <description>Core Hazelcast Module</description>
     <packaging>jar</packaging>
 
     <parent>
