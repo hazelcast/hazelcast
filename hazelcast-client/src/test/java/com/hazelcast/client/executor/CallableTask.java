@@ -28,6 +28,8 @@ import java.util.concurrent.Callable;
  */
 public class CallableTask implements Callable<String>, DataSerializable {
 
+    public static final String resultPostFix = ":result";
+
     private String param;
 
     public CallableTask() {
@@ -38,7 +40,7 @@ public class CallableTask implements Callable<String>, DataSerializable {
     }
 
     public String call() throws Exception {
-        return param + ":result";
+        return param + resultPostFix;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
