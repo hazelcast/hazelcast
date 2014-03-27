@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.util.ConcurrentReferenceHashMap;
+import com.hazelcast.util.ValidationUtil;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -74,9 +75,8 @@ public final class ClassLoaderUtil {
 
     public static Class<?> loadClass(final ClassLoader classLoader, final String className)
             throws ClassNotFoundException {
-        if (className == null) {
-            throw new IllegalArgumentException("ClassName cannot be null!");
-        }
+
+        ValidationUtil.isNotNull(className, "className");
         if (className.length() <= MAX_PRIM_CLASSNAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
             final Class primitiveClass = PRIMITIVE_CLASSES.get(className);
             if (primitiveClass != null) {
@@ -126,11 +126,12 @@ public final class ClassLoaderUtil {
         }
 
         private <T> Constructor put(ClassLoader classLoader, String className, Constructor<T> constructor) {
-            ConcurrentMap<String, WeakReference<Constructor>> innerCache = cache.get(classLoader);
+            ClassLoader cl = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
+            ConcurrentMap<String, WeakReference<Constructor>> innerCache = cache.get(cl);
             if (innerCache == null) {
                 // Let's guess a start of 100 classes per classloader
                 innerCache = new ConcurrentHashMap<String, WeakReference<Constructor>>(100);
-                ConcurrentMap<String, WeakReference<Constructor>> old = cache.putIfAbsent(classLoader, innerCache);
+                ConcurrentMap<String, WeakReference<Constructor>> old = cache.putIfAbsent(cl, innerCache);
                 if (old != null) {
                     innerCache = old;
                 }
