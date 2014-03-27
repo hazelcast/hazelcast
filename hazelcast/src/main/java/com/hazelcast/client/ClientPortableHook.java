@@ -16,9 +16,10 @@
 
 package com.hazelcast.client;
 
+
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
 
@@ -30,7 +31,7 @@ import java.util.Collections;
  */
 public class ClientPortableHook implements PortableHook {
 
-    public static final int ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_PORTABLE_FACTORY, -3);
+    public static final int ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.CLIENT);
 
     public static final int GENERIC_ERROR = 1;
     public static final int AUTH = 2;

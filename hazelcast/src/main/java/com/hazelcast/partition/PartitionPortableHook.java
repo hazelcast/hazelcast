@@ -17,7 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
 
@@ -25,7 +25,7 @@ import java.util.Collection;
 
 public final class PartitionPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.PARTITION_PORTABLE_FACTORY, -2);
+    public static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.PARTITION);
 
     @Override
     public int getFactoryId() {

@@ -37,7 +37,7 @@ import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
 import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -49,7 +49,7 @@ import com.hazelcast.util.ConstructorFunction;
 public class MapReduceDataSerializerHook
         implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_REDUCE_DS_FACTORY, -23);
+    public static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.MAP_REDUCE);
 
     public static final int KEY_VALUE_SOURCE_MAP = 0;
     public static final int KEY_VALUE_SOURCE_MULTIMAP = 1;

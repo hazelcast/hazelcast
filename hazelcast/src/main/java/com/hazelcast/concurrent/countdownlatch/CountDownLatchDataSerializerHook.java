@@ -24,12 +24,12 @@ import com.hazelcast.concurrent.countdownlatch.operations.GetCountOperation;
 import com.hazelcast.concurrent.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class CountDownLatchDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CDL_PORTABLE_FACTORY, -14);
+    public static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.CDL);
 
     public static final int AWAIT_OPERATION = 0;
     public static final int COUNT_DOWN_LATCH_BACKUP_OPERATION = 1;

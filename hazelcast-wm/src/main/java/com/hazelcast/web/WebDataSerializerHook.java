@@ -1,13 +1,14 @@
 package com.hazelcast.web;
 
+
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class WebDataSerializerHook implements DataSerializerHook{
+public class WebDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.WEB_DS_FACTORY, F_ID_OFFSET_WEBMODULE);
+    public static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.WEB);
 
     public static final int SESSION_ATTRIBUTE_ID = 1;
 

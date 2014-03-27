@@ -22,12 +22,9 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-/**
- * @author ali 5/9/13
- */
 public class MultiMapPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MULTIMAP_PORTABLE_FACTORY, -12);
+    public static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.MULTIMAP);
 
 
     public static final int CLEAR = 1;

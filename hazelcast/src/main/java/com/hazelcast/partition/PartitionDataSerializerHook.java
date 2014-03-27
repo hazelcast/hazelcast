@@ -18,13 +18,13 @@ package com.hazelcast.partition;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.client.PartitionsResponse;
 
 public final class PartitionDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.PARTITION_DS_FACTORY, -2);
+    public static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.PARTITION);
 
     public static final int PARTITIONS = 2;
 

@@ -32,12 +32,12 @@ import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperatio
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class SemaphoreDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_DS_FACTORY, -16);
+    public static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.SEMAPHORE);
 
     public static final int ACQUIRE_BACKUP_OPERATION = 0;
     public static final int ACQUIRE_OPERATION = 1;

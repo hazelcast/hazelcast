@@ -27,7 +27,7 @@ import com.hazelcast.util.ConstructorFunction;
  */
 public class CollectionDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -20);
+    public static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.COLLECTION);
 
     private static int increment = 1;
 

@@ -18,8 +18,6 @@ package com.hazelcast.nio.serialization;
 
 public interface DataSerializerHook {
 
-    int F_ID_OFFSET_WEBMODULE = -1000;
-
     int getFactoryId();
 
     DataSerializableFactory createFactory();

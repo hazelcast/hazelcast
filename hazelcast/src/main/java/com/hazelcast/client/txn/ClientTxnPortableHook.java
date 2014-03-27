@@ -16,8 +16,9 @@
 
 package com.hazelcast.client.txn;
 
+
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
@@ -26,7 +27,7 @@ import java.util.Collection;
 
 public class ClientTxnPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_TXN_PORTABLE_FACTORY, -19);
+    public static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.CLIENT_TXN);
 
     public static final int CREATE = 1;
     public static final int COMMIT = 2;

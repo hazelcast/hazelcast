@@ -22,12 +22,9 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-/**
- * @author ali 5/8/13
- */
 public class QueuePortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_PORTABLE_FACTORY, -11);
+    public static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.QUEUE);
 
 
     public static final int OFFER = 1;

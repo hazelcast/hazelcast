@@ -18,14 +18,14 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.EventServiceImpl.EventPacket;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 
 public final class SpiDataSerializerHook implements DataSerializerHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
+    static final int F_ID = FactoryIdRepository.getDSFactoryId(FactoryIdRepository.SPI);
 
     static final int NORMAL_RESPONSE = 0;
     static final int BACKUP = 1;

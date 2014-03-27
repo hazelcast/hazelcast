@@ -22,13 +22,9 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-/**
- * @ali 9/4/13
- */
 public class CollectionPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -20);
-
+    public static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.COLLECTION);
 
     public static final int COLLECTION_SIZE = 1;
     public static final int COLLECTION_CONTAINS = 2;

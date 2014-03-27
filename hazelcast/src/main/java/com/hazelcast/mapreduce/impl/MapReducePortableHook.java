@@ -21,7 +21,7 @@ import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
@@ -36,7 +36,7 @@ public class MapReducePortableHook
         implements PortableHook {
 
     //CHECKSTYLE:OFF
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_REDUCE_PORTABLE_FACTORY, -23);
+    public static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.MAP_REDUCE);
 
     public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 1;
     public static final int CLIENT_CANCELLATION_REQUEST = 2;

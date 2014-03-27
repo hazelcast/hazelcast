@@ -16,8 +16,9 @@
 
 package com.hazelcast.concurrent.atomicreference.client;
 
+
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdRepository;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
@@ -26,7 +27,7 @@ import java.util.Collection;
 
 public class AtomicReferencePortableHook implements PortableHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_REFERENCE_PORTABLE_FACTORY, -21);
+    static final int F_ID = FactoryIdRepository.getPortableFactoryId(FactoryIdRepository.ATOMIC_REFERENCE);
 
     static final int GET = 1;
     static final int SET = 2;
