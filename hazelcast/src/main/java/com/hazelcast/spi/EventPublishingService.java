@@ -16,9 +16,6 @@
 
 package com.hazelcast.spi;
 
-/**
- * @author mdogan 12/12/12
- */
 public interface EventPublishingService<E, T> {
 
     void dispatchEvent(E event, T listener);

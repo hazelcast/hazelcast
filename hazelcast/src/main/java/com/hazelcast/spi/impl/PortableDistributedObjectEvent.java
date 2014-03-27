@@ -23,9 +23,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-/**
- * @ali 10/7/13
- */
 public class PortableDistributedObjectEvent implements Portable {
 
     private DistributedObjectEvent.EventType eventType;
@@ -55,20 +52,24 @@ public class PortableDistributedObjectEvent implements Portable {
         return serviceName;
     }
 
+    @Override
     public int getFactoryId() {
         return SpiPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return SpiPortableHook.DISTRIBUTED_OBJECT_EVENT;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeUTF("s",serviceName);
-        writer.writeUTF("t",eventType.name());
+        writer.writeUTF("n", name);
+        writer.writeUTF("s", serviceName);
+        writer.writeUTF("t", eventType.name());
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         serviceName = reader.readUTF("s");

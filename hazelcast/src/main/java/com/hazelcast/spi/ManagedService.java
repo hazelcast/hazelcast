@@ -20,7 +20,7 @@ import java.util.Properties;
 
 /**
  * A interface that can be implemented by a SPI Service to receive lifecycle calls like initialization and shutdown.
- *
+ * <p/>
  * Also there is a reset:
  * todo: unclear what the purpose of reset is.
  *

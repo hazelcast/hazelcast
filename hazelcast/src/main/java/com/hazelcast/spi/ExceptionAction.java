@@ -16,9 +16,6 @@
 
 package com.hazelcast.spi;
 
-/**
- * @author mdogan 1/18/13
- */
 public enum ExceptionAction {
 
     RETRY_INVOCATION, CONTINUE_WAIT, THROW_EXCEPTION

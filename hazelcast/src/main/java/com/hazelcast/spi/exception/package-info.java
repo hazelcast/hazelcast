@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
-
-public interface BasicProcessor {
-
-    void process(Object obj);
-}
+/**
+ * Contains exceptions for Hazelcast SPI.
+ */
+package com.hazelcast.spi.exception;

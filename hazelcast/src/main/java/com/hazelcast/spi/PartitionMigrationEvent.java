@@ -20,9 +20,6 @@ import com.hazelcast.partition.MigrationEndpoint;
 
 import java.util.EventObject;
 
-/**
- * @author mdogan 9/12/12
- */
 public class PartitionMigrationEvent extends EventObject {
 
     private final MigrationEndpoint migrationEndpoint;

@@ -18,9 +18,6 @@ package com.hazelcast.spi;
 
 import java.util.EventObject;
 
-/**
- * @author mdogan 9/12/12
- */
 public class PartitionReplicationEvent extends EventObject {
 
     private final int partitionId;

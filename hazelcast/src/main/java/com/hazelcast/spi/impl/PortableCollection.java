@@ -29,9 +29,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * @author ali 5/19/13
- */
 public final class PortableCollection implements Portable {
 
     private Collection<Data> collection;
@@ -47,14 +44,17 @@ public final class PortableCollection implements Portable {
         return collection;
     }
 
+    @Override
     public int getFactoryId() {
         return SpiPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return SpiPortableHook.COLLECTION;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeBoolean("l", collection instanceof List);
         if (collection == null) {
@@ -68,19 +68,20 @@ public final class PortableCollection implements Portable {
         }
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         boolean list = reader.readBoolean("l");
         int size = reader.readInt("s");
-        if (size == -1){
+        if (size == -1) {
             return;
         }
-        if (list){
+        if (list) {
             collection = new ArrayList<Data>(size);
         } else {
             collection = new HashSet<Data>(size);
         }
         final ObjectDataInput in = reader.getRawDataInput();
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             Data data = new Data();
             data.readData(in);
             collection.add(data);
