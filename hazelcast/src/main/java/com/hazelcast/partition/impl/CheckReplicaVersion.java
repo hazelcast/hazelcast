@@ -16,10 +16,11 @@
 
 package com.hazelcast.partition.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -56,14 +57,17 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
             response = true;
         } else {
             logBackupVersionMismatch(currentVersion);
-            partitionService.syncPartitionReplica(partitionId, replicaIndex, false);
+            partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex);
             response = false;
         }
     }
 
     private void logBackupVersionMismatch(long currentVersion) {
-        getLogger().info("Backup partition version is not matching version of the owner "
-                + "-> " + currentVersion + " -vs- " + version);
+        ILogger logger = getLogger();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Partition: " + getPartitionId() + " version is not matching to version of the owner -> "
+                    + currentVersion + " -vs- " + version);
+        }
     }
 
     @Override
