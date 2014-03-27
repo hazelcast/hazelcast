@@ -138,7 +138,8 @@ final class BasicOperationService implements InternalOperationService {
                 0L, TimeUnit.MILLISECONDS,
                 responseWorkQueue,
                 new SingleExecutorThreadFactory(node.threadGroup,
-                        node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
+                        node.getConfigClassLoader(), node.getThreadNamePrefix("response"))
+        );
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         backupCalls = new ConcurrentHashMap<Long, BackupCompletionCallback>(1000, 0.75f, concurrencyLevel);

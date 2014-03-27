@@ -16,9 +16,6 @@
 
 package com.hazelcast.spi;
 
-/**
- * @author mdogan 7/23/12
- */
 public interface MigrationAwareService {
 
     Operation prepareReplicationOperation(PartitionReplicationEvent event);
@@ -30,5 +27,4 @@ public interface MigrationAwareService {
     void rollbackMigration(PartitionMigrationEvent event);
 
     void clearPartitionReplica(int partitionId);
-
 }

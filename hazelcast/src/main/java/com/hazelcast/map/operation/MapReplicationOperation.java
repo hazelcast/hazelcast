@@ -89,7 +89,6 @@ public class MapReplicationOperation extends AbstractOperation {
                     Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1, false);
                     mapService.applyRecordInfo(newRecord, mapName, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
-                    updateSizeEstimator(newRecord,recordStore);
                 }
             }
         }

@@ -16,9 +16,6 @@
 
 package com.hazelcast.spi;
 
-/**
- * @author mdogan 1/15/13
- */
 public interface WaitNotifyKey {
 
     String getServiceName();

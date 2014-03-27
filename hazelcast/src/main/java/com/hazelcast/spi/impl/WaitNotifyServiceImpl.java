@@ -22,7 +22,13 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.WaitNotifyService;
+import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
@@ -33,7 +39,15 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.util.Iterator;
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 class WaitNotifyServiceImpl implements WaitNotifyService {
@@ -69,6 +83,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     };
 
     // runs after queue lock
+    @Override
     public void await(WaitSupport waitSupport) {
         final WaitNotifyKey key = waitSupport.getWaitKey();
         final Queue<WaitingOp> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
@@ -82,6 +97,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     // runs after queue lock
+    @Override
     public void notify(Notifier notifier) {
         WaitNotifyKey key = notifier.getNotifiedKey();
         Queue<WaitingOp> q = mapWaitingOps.get(key);
@@ -172,7 +188,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     void shutdown() {
-        logger.finest( "Stopping tasks...");
+        logger.finest("Stopping tasks...");
         expirationTask.cancel(true);
         expirationService.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
@@ -250,7 +266,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
         public boolean isCallTimedOut() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            if(nodeEngine.operationService.isCallTimedOut(op)) {
+            if (nodeEngine.operationService.isCallTimedOut(op)) {
                 cancel(new CallTimeoutException(op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout()));
                 return true;
             }
@@ -261,10 +277,12 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             return waitSupport.shouldWait();
         }
 
+        @Override
         public long getDelay(TimeUnit unit) {
             return unit.convert(expirationTime - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
         }
 
+        @Override
         public int compareTo(Delayed other) {
             if (other == this) // compare zero ONLY if same object
                 return 0;
@@ -305,6 +323,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             return super.equals(obj);
         }
 
+        @Override
         public void logError(Throwable e) {
             final ILogger logger = getLogger();
             if (e instanceof RetryableException) {
@@ -363,6 +382,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     private class ExpirationTask implements Runnable {
+        @Override
         public void run() {
             while (true) {
                 if (Thread.interrupted()) {

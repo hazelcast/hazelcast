@@ -40,7 +40,7 @@
     <suppress checks="" files="[\\/]nio[\\/]"/>
     <suppress checks="" files="[\\/]query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
-    <suppress checks="" files="[\\/]spi[\\/]"/>
+    <suppress checks="" files="[\\/]spi.impl[\\/]"/>
     <suppress checks="" files="[\\/]storage[\\/]"/>
     <suppress checks="" files="[\\/]transaction[\\/]"/>
     <suppress checks="" files="[\\/]util[\\/]"/>
@@ -68,25 +68,31 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.concurrent[\\/]"/>
 
+    <!-- current.atomiclong-->
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook.java"/>
 
+    <!-- concurrent.atomicreference -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook"/>
 
+    <!-- concurrent.countdownlatch -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook"/>
 
+    <!-- concurrent.semaphore -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.client.SemaphorePortableHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
     <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
 
+    <!-- concurrent.lock -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.lock.client.LockPortableHook.java"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockServiceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockStoreImpl"/>
     <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
 
+    <!-- client -->
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.client[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
@@ -98,6 +104,7 @@
     <suppress checks="MethodCount" files="com.hazelcast.client.ClientEngineImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.ClientEngineImpl"/>
 
+    <!-- monitor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.monitor[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
@@ -108,7 +115,16 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
 
+    <!-- SPI -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.spi[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.spi[\\/]"/>
+    <suppress checks="MethodCount" files="com.hazelcast.spi.Operation"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spi.DistributedObjectAccessor"/>
+    <suppress checks="" files="com.hazelcast.spi.Operation"/>
 
+    <!-- OSGI -->
     <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.osgi[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>

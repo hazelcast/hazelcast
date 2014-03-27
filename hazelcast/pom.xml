@@ -20,12 +20,13 @@
 
     <name>hazelcast</name>
     <artifactId>hazelcast</artifactId>
+    <description>Core Hazelcast Module</description>
     <packaging>jar</packaging>
 
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.2-RC3-SNAPSHOT</version>
+        <version>3.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -251,29 +252,5 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <!--Only releases need to be signed. Use mvn -Pfindbugs clean compile site -->
-            <id>findbugs</id>
-            <build>
-                <plugins>
-
-                    <!--Use mvn compile site to generate this-->
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>findbugs-maven-plugin</artifactId>
-                        <version>${maven.findbugs.plugin.version}</version>
-                        <configuration>
-                            <effort>Max</effort>
-                            <threshold>Low</threshold>
-                            <excludeFilterFile>${basedir}/findbugs/findbugs-exclude.xml
-                            </excludeFilterFile>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
 </project>

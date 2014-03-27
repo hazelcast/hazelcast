@@ -100,7 +100,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         Data data = getContext().getSerializationService().toData(e);
         OfferRequest request = new OfferRequest(name, unit.toMillis(timeout), data);
-        final Boolean result = invoke(request);
+        final Boolean result = invokeInterruptibly(request);
         return result;
     }
 
@@ -110,7 +110,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         PollRequest request = new PollRequest(name, unit.toMillis(timeout));
-        return invoke(request);
+        return invokeInterruptibly(request);
     }
 
     public int remainingCapacity() {
@@ -257,6 +257,10 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
 
     protected  <T> T invoke(ClientRequest req){
         return super.invoke(req, getPartitionKey());
+    }
+
+    protected  <T> T invokeInterruptibly(ClientRequest req)throws InterruptedException{
+        return super.invokeInterruptibly(req, getPartitionKey());
     }
 
     private List<Data> getDataList(Collection<?> objects) {

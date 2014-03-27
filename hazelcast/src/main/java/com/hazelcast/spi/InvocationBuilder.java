@@ -22,17 +22,17 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
  * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.
- *
+ * <p/>
  * The original design exposed the actual Invocation class, but this will limit flexibility since
  * the whole invocation can't be changed or fully removed easily.
  */
 public abstract class InvocationBuilder {
 
-    public final static long DEFAULT_CALL_TIMEOUT = -1L;
-    public final static int DEFAULT_REPLICA_INDEX = 0;
-    public final static int DEFAULT_TRY_COUNT = 250;
-    public final static long DEFAULT_TRY_PAUSE_MILLIS = 500;
-    public final static boolean DEFAULT_DESERIALIZE_RESULT = true;
+    public static final long DEFAULT_CALL_TIMEOUT = -1L;
+    public static final int DEFAULT_REPLICA_INDEX = 0;
+    public static final int DEFAULT_TRY_COUNT = 250;
+    public static final long DEFAULT_TRY_PAUSE_MILLIS = 500;
+    public static final boolean DEFAULT_DESERIALIZE_RESULT = true;
 
     protected final NodeEngineImpl nodeEngine;
     protected final String serviceName;
@@ -42,14 +42,14 @@ public abstract class InvocationBuilder {
     protected Callback<Object> callback;
 
     protected long callTimeout = DEFAULT_CALL_TIMEOUT;
-    protected int replicaIndex = 0;
-    protected int tryCount = 250;
-    protected long tryPauseMillis = 500;
-    protected String executorName = null;
+    protected int replicaIndex;
+    protected int tryCount = DEFAULT_TRY_COUNT;
+    protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
+    protected String executorName;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
 
     public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                                   int partitionId, Address target) {
+                             int partitionId, Address target) {
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -72,7 +72,7 @@ public abstract class InvocationBuilder {
     /**
      * Sets the executor name. Value can be null, meaning that no custom executor will be used.
      *
-     * @param executorName  the name of the executor.
+     * @param executorName the name of the executor.
      */
 
     public InvocationBuilder setExecutorName(String executorName) {
@@ -93,7 +93,7 @@ public abstract class InvocationBuilder {
      * Checks if the Future should automatically deserialize the result. In most cases you don't want get
      * {@link com.hazelcast.nio.serialization.Data} to be returned, but the deserialized object. But in some
      * cases you want to get the raw Data object.
-     *
+     * <p/>
      * Defaults to true.
      *
      * @return true if the the result is automatically deserialized, false otherwise.

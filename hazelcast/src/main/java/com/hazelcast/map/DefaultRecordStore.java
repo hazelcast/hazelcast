@@ -189,6 +189,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public void putRecord(Data key, Record record) {
         records.put(key, record);
+        updateSizeEstimator(calculateRecordSize(record));
     }
 
 
@@ -479,6 +480,18 @@ public class DefaultRecordStore implements RecordStore {
             cancelAssociatedSchedulers(dataKey);
         }
         return oldValue;
+    }
+
+    @Override
+    public void removeBackup(Data dataKey) {
+        final Record record = records.get(dataKey);
+        if(record == null) {
+            return;
+        }
+        // reduce size
+        updateSizeEstimator(-calculateRecordSize(record));
+        deleteRecord(dataKey);
+        cancelAssociatedSchedulers(dataKey);
     }
 
     private void removeIndex(Data key) {

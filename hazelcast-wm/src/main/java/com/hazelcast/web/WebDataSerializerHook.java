@@ -7,9 +7,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class WebDataSerializerHook implements DataSerializerHook{
 
-
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.WEB_DS_FACTORY, F_ID_OFFSET_WEBMODULE);
 
+    public static final int SESSION_ATTRIBUTE_ID = 1;
 
     @Override
     public int getFactoryId() {

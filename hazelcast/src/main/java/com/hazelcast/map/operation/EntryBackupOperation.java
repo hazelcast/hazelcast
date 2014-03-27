@@ -51,7 +51,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
             Map.Entry<Object, Object> entry = new AbstractMap.SimpleEntry<Object, Object>(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
             entryProcessor.processBackup(entry);
             if (entry.getValue() == null){
-                recordStore.remove(dataKey);
+                recordStore.removeBackup(dataKey);
             } else {
                 recordStore.putBackup(dataKey, entry.getValue());
             }

@@ -22,15 +22,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import java.io.IOException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -71,6 +73,7 @@ public class ClientLockWithTerminationTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testLockOnClient_withNodeCrash() throws InterruptedException {
         ILock lock = client1.getLock(keyOwnedByNode1);
         lock.lock();

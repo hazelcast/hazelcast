@@ -103,6 +103,15 @@ public class ClientQueueTest {
         assertEquals(1, q.take());
     }
 
+
+    @Test(expected = InterruptedException.class)
+    public void testTake_whenInterruptedWhileBlocking() throws InterruptedException {
+        IQueue queue = client.getQueue(randomString());
+        interruptCurrentThread(2000);
+
+        queue.take();
+    }
+
     @Test
     public void testEmptyPeak() throws InterruptedException {
         final IQueue q = client.getQueue(randomString());
@@ -136,6 +145,14 @@ public class ClientQueueTest {
         final IQueue q = client.getQueue(randomString());
         q.offer(1);
         assertEquals(1, q.poll());
+    }
+
+    @Test(expected = InterruptedException.class)
+    public void testPoll_whenInterruptedWhileBlocking() throws InterruptedException {
+        IQueue queue = client.getQueue(randomString());
+        interruptCurrentThread(2000);
+
+        queue.poll(1, TimeUnit.MINUTES);
     }
 
     @Test

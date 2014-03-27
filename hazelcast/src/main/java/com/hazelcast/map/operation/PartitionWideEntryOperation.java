@@ -25,6 +25,7 @@ import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,7 +36,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
@@ -67,8 +67,10 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
         response = new MapEntrySet();
         MapEntrySimple entry;
         final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        final LocalMapStatsImpl mapStats = mapService.getLocalMapStatsImpl(name);
         final Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         for (final Map.Entry<Data, Record> recordEntry : records.entrySet()) {
+            final long start = System.currentTimeMillis();
             final Data dataKey = recordEntry.getKey();
             final Record record = recordEntry.getValue();
             final Object valueBeforeProcess = record.getValue();
@@ -93,15 +95,19 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
             EntryEventType eventType;
             if (valueAfterProcess == null) {
                 recordStore.remove(dataKey);
+                mapStats.incrementRemoves(getLatencyFrom(start));
                 eventType = EntryEventType.REMOVED;
             } else {
                 if (valueBeforeProcessObject == null) {
+                    mapStats.incrementPuts(getLatencyFrom(start));
                     eventType = EntryEventType.ADDED;
                 }
                 // take this case as a read so no need to fire an event.
                 else if (!entry.isModified()) {
+                    mapStats.incrementGets(getLatencyFrom(start));
                     eventType = __NO_NEED_TO_FIRE_EVENT;
                 } else {
+                    mapStats.incrementPuts(getLatencyFrom(start));
                     eventType = EntryEventType.UPDATED;
                 }
                 // todo if this is a read only operation, record access operations should be done.
@@ -179,4 +185,9 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor) : null;
     }
+
+    private long getLatencyFrom(long begin) {
+        return Clock.currentTimeMillis() - begin;
+    }
+
 }

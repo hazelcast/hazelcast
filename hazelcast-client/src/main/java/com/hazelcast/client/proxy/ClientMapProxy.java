@@ -119,7 +119,17 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean containsKey(Object key) {
-        Data keyData = toData(key);
+        initNearCache();
+        final Data keyData = toData(key);
+        if (nearCache != null) {
+            Object cached = nearCache.get(keyData);
+            if (cached != null) {
+                if (cached.equals(ClientNearCache.NULL_OBJECT)) {
+                    return false;
+                }
+                return true;
+            }
+        }
         MapContainsKeyRequest request = new MapContainsKeyRequest(name, keyData);
         Boolean result = invoke(request, keyData);
         return result;
@@ -564,7 +574,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
         PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, sortedResult.last());
 
-        return (Set<K>)sortedResult;
+        return (Set<K>) sortedResult;
     }
 
     @Override

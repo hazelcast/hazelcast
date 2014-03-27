@@ -140,7 +140,7 @@ Predicate predicate = e.is("active").and(e.get("age").lessThan(30));
 Set<Employee> employees = (Set<Employee>) map.values(predicate);
 ```
 
-**Paging Predicate (Sort & Limit)**
+**Paging Predicate (Order & Limit)**
 
 Hazelcast provides paging for defined predicates. For this purpose, `PagingPredicate` class has been developed. You may want to get collection of keys, values or entries page by page, by filtering the them with predicates and giving the size of pages. Also, you can sort the entries by specifying comparators.
 

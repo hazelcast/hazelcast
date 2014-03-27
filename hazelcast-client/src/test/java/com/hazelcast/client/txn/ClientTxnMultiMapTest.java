@@ -17,6 +17,8 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
@@ -30,6 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -43,19 +46,22 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author ali 6/10/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnMultiMapTest {
 
+    private static final String multiMapBackedByList = "BackedByList*";
     static HazelcastInstance client;
     static HazelcastInstance server;
 
     @BeforeClass
     public static void init() {
-        server = Hazelcast.newHazelcastInstance();
+
+        Config config = new Config();
+        MultiMapConfig multiMapConfig = config.getMultiMapConfig(multiMapBackedByList);
+        multiMapConfig.setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+
+        server = Hazelcast.newHazelcastInstance(config);
         client = HazelcastClient.newHazelcastClient();
     }
 
@@ -166,7 +172,7 @@ public class ClientTxnMultiMapTest {
     }
 
     @Test
-    public void testTxnMultiMapSize() throws Exception {
+    public void testSize() throws Exception {
         final String mapName = randomString();
         final String key = "key";
         final String value = "value";
@@ -185,7 +191,7 @@ public class ClientTxnMultiMapTest {
     }
 
     @Test
-    public void testTxnMultiValueCount() throws Exception {
+    public void testCount() throws Exception {
         final String mapName = randomString();
         final String key = "key";
         final String value = "value";
@@ -200,6 +206,44 @@ public class ClientTxnMultiMapTest {
 
         assertEquals(2, mulitMapTxn.valueCount(key));
 
+        tx.commitTransaction();
+    }
+
+    @Test
+    public void testGet_whenBackedWithList() throws Exception {
+        final String mapName = multiMapBackedByList+randomString();
+
+        final String key = "key";
+        final String value = "value";
+
+        final MultiMap multiMap = server.getMultiMap(mapName);
+
+        multiMap.put(key, value);
+
+        TransactionContext tx = client.newTransactionContext();
+        tx.beginTransaction();
+        TransactionalMultiMap mulitMapTxn = tx.getMultiMap(mapName);
+        Collection c = mulitMapTxn.get(key);
+        assertFalse(c.isEmpty());
+        tx.commitTransaction();
+    }
+
+    @Test
+    public void testRemove_whenBackedWithList() throws Exception {
+        final String mapName = multiMapBackedByList+randomString();
+
+        final String key = "key";
+        final String value = "value";
+
+        final MultiMap multiMap = server.getMultiMap(mapName);
+
+        multiMap.put(key, value);
+
+        TransactionContext tx = client.newTransactionContext();
+        tx.beginTransaction();
+        TransactionalMultiMap mulitMapTxn = tx.getMultiMap(mapName);
+        Collection c = mulitMapTxn.remove(key);
+        assertFalse(c.isEmpty());
         tx.commitTransaction();
     }
 }

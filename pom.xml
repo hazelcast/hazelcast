@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.2-RC3-SNAPSHOT</version>
+    <version>3.3-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -35,7 +35,7 @@
         <module>hazelcast-wm</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-cloud</module>
-        <module>hazelcast-ra</module>
+        <!--<module>hazelcast-ra</module>-->
     </modules>
 
     <properties>
@@ -59,7 +59,7 @@
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
         <findbugs.maven.plugin.version>2.5.3</findbugs.maven.plugin.version>
-        <checkstyle.maven.plugin.version>2.11</checkstyle.maven.plugin.version>
+        <checkstyle.maven.plugin.version>2.12</checkstyle.maven.plugin.version>
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <junit.version>4.11</junit.version>
         <junit-benchmarks.version>0.7.2</junit-benchmarks.version>

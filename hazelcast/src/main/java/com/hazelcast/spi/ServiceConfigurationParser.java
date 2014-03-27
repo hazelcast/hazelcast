@@ -16,11 +16,7 @@
 
 package com.hazelcast.spi;
 
-/**
- *
- */
 public interface ServiceConfigurationParser<T> {
 
     T parse(org.w3c.dom.Element element);
-
 }

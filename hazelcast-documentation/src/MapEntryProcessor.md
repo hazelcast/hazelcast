@@ -43,7 +43,12 @@ There are below methods in IMap interface for entry processing:
     Map<K,Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 	```
 
-Using `executeOnEntries	` method, if the number of entries is high and you do need the results, then returning null in `process(..)` method is a good practice.
+Using `executeOnEntries	` method, if the number of entries is high and you do not need the results, then returning null in `process(..)` method is a good practice. 
+
+-	If you would like to update your object in the `process()` method, you need to call `entry.setValue(V)` method. Otherwise, the entry will not be updated. 
+-	If you want to remove the entry, the method `entry.setValue(V)` should be called with the parameter `null` (i.e. `entry.setValue(null)`). 
+
+
 
 Here is the EntryProcessor interface:
 

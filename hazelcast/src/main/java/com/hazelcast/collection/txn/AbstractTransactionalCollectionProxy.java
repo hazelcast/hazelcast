@@ -63,7 +63,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         throwExceptionIfNull(e);
         final NodeEngine nodeEngine = getNodeEngine();
         final Data value = nodeEngine.toData(e);
-        CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId());
+        CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), null);
         try {
             Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
             Long itemId = f.get();
@@ -132,13 +132,13 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         }
     }
 
-    private void checkTransactionState(){
+    protected void checkTransactionState(){
         if(!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }
 
-    private void throwExceptionIfNull(Object o) {
+    protected void throwExceptionIfNull(Object o) {
         if (o == null) {
             throw new NullPointerException("Object is null");
         }

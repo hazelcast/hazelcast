@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category(ProblematicTest.class)
 public class EvictionTest extends HazelcastTestSupport {
 
 

@@ -42,7 +42,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
             final int cores = Runtime.getRuntime().availableProcessors();
             poolSize = cores * 5;
         }
-        internalExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+        internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new PoolExecutorThreadFactory(threadGroup, name + ".internal-", classLoader),
                 new RejectedExecutionHandler() {
@@ -124,6 +124,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public void shutdown() {
+        internalExecutor.shutdownNow();
         scheduledExecutor.shutdownNow();
         executor.shutdownNow();
     }

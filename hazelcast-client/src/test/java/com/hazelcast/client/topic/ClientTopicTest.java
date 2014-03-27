@@ -18,7 +18,7 @@ package com.hazelcast.client.topic;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -27,47 +27,63 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author ali 5/24/13
- */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTopicTest {
 
-    static final String name = "test1";
-    static HazelcastInstance hz;
+    static HazelcastInstance client;
     static HazelcastInstance server;
-    static ITopic t;
 
-    @Before
-    public void init(){
+    @BeforeClass
+    public static void init(){
         server = Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
-        t = hz.getTopic(name);
+        client = HazelcastClient.newHazelcastClient(null);
     }
 
-    @After
-    public void stop(){
-        hz.shutdown();
+    @AfterClass
+    public static void stop(){
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testListener() throws Exception {
+    public void testListener() throws InterruptedException{
+        ITopic topic = client.getTopic(randomString());
+
         final CountDownLatch latch = new CountDownLatch(10);
         MessageListener listener = new MessageListener() {
             public void onMessage(Message message) {
                 latch.countDown();
             }
         };
-        t.addMessageListener(listener);
+        topic.addMessageListener(listener);
 
         for (int i=0; i<10; i++){
-            t.publish("naber"+i);
+            topic.publish(i);
         }
         assertTrue(latch.await(20, TimeUnit.SECONDS));
+    }
 
+    @Test
+    public void testRemoveListener() {
+        ITopic topic = client.getTopic(randomString());
+
+        MessageListener listener = new MessageListener() {
+            public void onMessage(Message message) {
+            }
+        };
+        String id = topic.addMessageListener(listener);
+
+        assertTrue(topic.removeMessageListener(id));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetLocalTopicStats() throws Exception {
+        ITopic topic = client.getTopic(randomString());
+
+        topic.getLocalTopicStats();
     }
 }

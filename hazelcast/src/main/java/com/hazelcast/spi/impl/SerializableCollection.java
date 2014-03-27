@@ -27,9 +27,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-/**
- * @author ali 1/4/13
- */
 public final class SerializableCollection implements IdentifiedDataSerializable, Iterable<Data> {
 
     private Collection<Data> collection;
@@ -52,6 +49,7 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
         return collection;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         if (collection == null) {
             out.writeInt(-1);
@@ -63,6 +61,7 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         if (size == -1) {
@@ -74,10 +73,12 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
         }
     }
 
+    @Override
     public int getFactoryId() {
         return SpiDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return SpiDataSerializerHook.COLLECTION;
     }
@@ -86,14 +87,17 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
     public Iterator<Data> iterator() {
         final Iterator<Data> iterator = collection == null ? null : collection.iterator();
         return new Iterator<Data>() {
+            @Override
             public boolean hasNext() {
-                return iterator == null ? false : iterator.hasNext();
+                return iterator != null && iterator.hasNext();
             }
 
+            @Override
             public Data next() {
                 return iterator.next();
             }
 
+            @Override
             public void remove() {
                 iterator.remove();
             }

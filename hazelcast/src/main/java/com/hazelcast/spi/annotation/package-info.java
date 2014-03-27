@@ -14,15 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
 /**
- * @author mdogan 12/12/12
+ * Contains annotations for Hazelcast SPI.
  */
-public interface EventOperation {
-
-    String getServiceName();
-
-    Object getTopic();
-
-}
+package com.hazelcast.spi.annotation;

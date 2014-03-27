@@ -20,7 +20,7 @@ import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-
+import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 /**
@@ -29,13 +29,15 @@ import java.io.IOException;
 public class CollectionReserveAddOperation extends CollectionOperation {
 
     String transactionId;
+    Data value;
 
     public CollectionReserveAddOperation() {
     }
 
-    public CollectionReserveAddOperation(String name, String transactionId) {
+    public CollectionReserveAddOperation(String name, String transactionId, Data value) {
         super(name);
         this.transactionId = transactionId;
+        this.value = value;
     }
 
     @Override
@@ -49,8 +51,9 @@ public class CollectionReserveAddOperation extends CollectionOperation {
 
     @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().reserveAdd(transactionId);
+        response = getOrCreateContainer().reserveAdd(transactionId, value);
     }
+
 
     @Override
     public void afterRun() throws Exception {
@@ -60,11 +63,14 @@ public class CollectionReserveAddOperation extends CollectionOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(transactionId);
+        out.writeObject(value);
+
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         transactionId = in.readUTF();
+        value = in.readObject();
     }
 }

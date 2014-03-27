@@ -18,13 +18,9 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.core.HazelcastException;
 
-/**
- * @author mdogan 6/7/13
- */
 public class ResponseAlreadySentException extends HazelcastException {
 
     public ResponseAlreadySentException() {
-        super();
     }
 
     public ResponseAlreadySentException(String message) {

@@ -42,7 +42,7 @@ public abstract class Operation implements DataSerializable {
     private String serviceName;
     private int partitionId = -1;
     private int replicaIndex;
-    private long callId = 0;
+    private long callId;
     private boolean validateTarget = true;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
@@ -58,7 +58,7 @@ public abstract class Operation implements DataSerializable {
     private transient ResponseHandler responseHandler;
     private transient long startTime;
 
-    public boolean isUrgent(){
+    public boolean isUrgent() {
         return this instanceof UrgentSystemOperation;
     }
 
@@ -152,7 +152,7 @@ public abstract class Operation implements DataSerializable {
                     throw new HazelcastException("Service with name '" + name + "' not found!");
                 } else {
                     throw new RetryableHazelcastException("HazelcastInstance[" + nodeEngine.getThisAddress()
-                        + "] is not active!");
+                            + "] is not active!");
                 }
             }
         }
@@ -270,6 +270,7 @@ public abstract class Operation implements DataSerializable {
         }
     }
 
+    @Override
     public final void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(serviceName);
         out.writeInt(partitionId);
@@ -284,6 +285,7 @@ public abstract class Operation implements DataSerializable {
         writeInternal(out);
     }
 
+    @Override
     public final void readData(ObjectDataInput in) throws IOException {
         serviceName = in.readUTF();
         partitionId = in.readInt();
