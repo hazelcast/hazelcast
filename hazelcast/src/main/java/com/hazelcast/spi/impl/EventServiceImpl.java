@@ -500,7 +500,9 @@ public class EventServiceImpl implements EventService {
             Registration registration = segment.registrationIdMap.get(eventPacket.id);
             if (registration == null) {
                 if (nodeEngine.isActive()) {
-                    logger.warning("No registration found for " + serviceName + " / " + eventPacket.id);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("No registration found for " + serviceName + " / " + eventPacket.id);
+                    }
                 }
                 return;
             }
