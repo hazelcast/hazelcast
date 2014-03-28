@@ -27,8 +27,10 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallTimeoutException;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -37,6 +39,7 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
@@ -51,7 +54,10 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  * A handle to wait for the completion of this BasicInvocation is the
  * {@link com.hazelcast.spi.impl.BasicInvocationFuture}.
  */
-abstract class BasicInvocation implements Callback<Object>, BackupCompletionCallback {
+abstract class BasicInvocation implements Callback<Object>, BackupCompletionCallback, ResponseHandler {
+
+    private final static AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class,Boolean.class,"responseReceived");
 
     static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
@@ -90,6 +96,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     protected final ILogger logger;
     private final BasicInvocationFuture invocationFuture;
 
+    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
+    private volatile Boolean responseReceived = Boolean.FALSE;
     private volatile int invokeCount = 0;
     private volatile Address target;
     boolean remote = false;
@@ -203,7 +211,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         doInvoke();
     }
 
-    private void doInvoke() {
+     private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
             notify(new HazelcastInstanceNotActiveException());
@@ -257,7 +265,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             if (!sent) {
                 operationService.deregisterRemoteCall(callId);
                 operationService.deregisterBackupCall(callId);
-                notify(new RetryableIOException("Packet not sent to -> " + invTarget));
+                notify(new RetryableIOException("Packet not responseReceived to -> " + invTarget));
             }
         } else {
             if (op instanceof BackupAwareOperation) {
@@ -265,7 +273,11 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 registerBackups((BackupAwareOperation) op, callId);
                 setCallId(op, callId);
             }
-            ResponseHandlerFactory.setLocalResponseHandler(op, this);
+            //ResponseHandlerFactory.setLocalResponseHandler(op, this);
+
+            responseReceived = Boolean.FALSE;
+            op.setResponseHandler(this);//new LocalInvocationResponseHandler(this));
+
             //todo: should move to the operationService.
             if (operationService.isAllowedToRunInCurrentThread(op)) {
                 operationService.runOperation(op);
@@ -294,6 +306,20 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
 
         return (Throwable) response.getValue();
+    }
+
+     @Override
+    public void sendResponse(Object obj) {
+        if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this,Boolean.FALSE, Boolean.TRUE)) {
+            throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
+                    + ", current-response: : " + obj);
+        }
+        notify(obj);
+    }
+
+    @Override
+    public boolean isLocal() {
+        return true;
     }
 
     //this method is called by the operation service to signal the invocation that something has happened, e.g.
