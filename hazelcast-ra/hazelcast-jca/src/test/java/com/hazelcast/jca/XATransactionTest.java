@@ -22,6 +22,7 @@ import org.jboss.arquillian.junit.InSequence;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -45,7 +46,8 @@ import static org.junit.Assert.assertTrue;
 *
 * @author asimarslan
 */
-@RunWith(Arquillian.class)
+//@RunWith(Arquillian.class)
+@Ignore
 public class XATransactionTest extends AbstractDeploymentTest {
 
 
@@ -84,6 +86,7 @@ public class XATransactionTest extends AbstractDeploymentTest {
 
     @Test
     @InSequence(2)
+    @Ignore
     public void testTransactionCommit() throws Throwable {
         userTx.begin();
         HazelcastConnection c = getConnection();
@@ -111,6 +114,7 @@ public class XATransactionTest extends AbstractDeploymentTest {
 
     @Test
     @InSequence(1)
+    @Ignore
     public void testTransactionRollback() throws Throwable {
         userTx.begin();
 
