@@ -86,7 +86,7 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
 	}
 
 	void fireConnectionEvent(int event, Connection conn) {
-		log(Level.FINEST, "fireConnectionEvevnt: " + event);
+		log(Level.FINEST, "fireConnectionEvent: " + event);
 
 		ConnectionEvent connnectionEvent = new ConnectionEvent(this, event);
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.operation.LockAwareOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -45,6 +46,9 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
         if (!recordStore.txnLock(getKey(), ownerUuid, getThreadId(), ttl)) {
             throw new TransactionException("Transaction couldn't obtain lock.");
         }
+        ILogger logger = getLogger();
+        logger.severe("TxnLockAndGetOperation:"+recordStore.isLocked(getKey())+":"+getKey());
+
         Record record = recordStore.getRecord(dataKey);
         Data value = record == null ? null : mapService.toData(record.getValue());
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());

@@ -23,7 +23,7 @@
 
     <vendor-name>Hazelcast.com</vendor-name>
     <eis-type>Hazelcast</eis-type>
-    <resourceadapter-version>3.2.1-SNAPSHOT</resourceadapter-version>
+    <resourceadapter-version>3.2-RC3-SNAPSHOT</resourceadapter-version>
 
     <license>
         <description>Copyright (c) 2008-2013, Hazelcast, Inc.</description>
@@ -58,7 +58,7 @@
                 <connectionfactory-impl-class>com.hazelcast.jca.ConnectionFactoryImpl</connectionfactory-impl-class>
                 
                 <connection-interface>javax.resource.cci.Connection</connection-interface>
-                <connection-impl-class>com.hazelcast.jca.ConnectionImpl</connection-impl-class>
+                <connection-impl-class>com.hazelcast.jca.HazelcastConnectionImpl</connection-impl-class>
             </connection-definition>
 
             <transaction-support>XATransaction</transaction-support>

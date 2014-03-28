@@ -60,6 +60,7 @@ public class XAResourceImpl implements XAResource {
                     transactionManager.addManagedTransaction(xid, transaction);
                     transaction.begin();
                 } catch (IllegalStateException e) {
+                    logger.severe(e);
                     throw new XAException(XAException.XAER_INVAL);
                 }
                 break;
@@ -92,7 +93,8 @@ public class XAResourceImpl implements XAResource {
                 } catch (IllegalStateException e) {
                     throw new XAException(XAException.XAER_RMERR);
                 }
-                break;
+                throw new XAException(XAException.XA_RBROLLBACK);
+//                break;
             case XAResource.TMSUSPEND:
                 break;
             default:

@@ -35,7 +35,7 @@
         <module>hazelcast-wm</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-cloud</module>
-        <!--<module>hazelcast-ra</module>-->
+        <module>hazelcast-ra</module>
     </modules>
 
     <properties>

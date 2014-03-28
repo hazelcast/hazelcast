@@ -1652,7 +1652,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
             config.addExecutorConfig(new ExecutorConfig("e" + k).setPoolSize(k));
         }
-        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
+        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
         testApp.start(args);
     }
 
