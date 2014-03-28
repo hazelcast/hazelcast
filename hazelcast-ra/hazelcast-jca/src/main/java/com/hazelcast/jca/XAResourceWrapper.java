@@ -66,7 +66,6 @@ public class XAResourceWrapper implements XAResource {
         managedConnection.log(Level.FINEST, "XA end: " + xid + ", " + flags);
         validateInner();
         inner.end(xid, flags);
-//        inner=null;
     }
 
     @Override
@@ -81,7 +80,6 @@ public class XAResourceWrapper implements XAResource {
         managedConnection.log(Level.FINEST, "XA commit: " + xid);
         validateInner();
         inner.commit(xid, onePhase);
-//        inner=null;
     }
 
     @Override
@@ -89,12 +87,10 @@ public class XAResourceWrapper implements XAResource {
         managedConnection.log(Level.FINEST, "XA rollback: " + xid);
         validateInner();
         inner.rollback(xid);
-//        inner=null;
     }
 
     @Override
     public void forget(Xid xid) throws XAException {
-//        inner=null;
         throw new XAException(XAException.XAER_PROTO);
     }
 
@@ -132,9 +128,6 @@ public class XAResourceWrapper implements XAResource {
         if (inner == null) {
             throw new XAException(XAException.XAER_NOTA);
         }
-//        else if (!shouldExist && inner != null) {
-//            throw new XAException(XAException.XAER_DUPID);
-//        }
     }
 
     private void setInner() throws XAException {
@@ -143,7 +136,4 @@ public class XAResourceWrapper implements XAResource {
         inner = transactionContext.getXaResource();
     }
 
-    public String toString() {
-        return super.toString();
-    }
 }

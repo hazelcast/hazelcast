@@ -329,6 +329,10 @@ final class TransactionImpl implements Transaction, TransactionSupport {
 
     }
 
+    public void setRollbackOnly(){
+        state = ROLLING_BACK;
+    }
+
     private void purgeTxBackups() {
         if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
             final OperationService operationService = nodeEngine.getOperationService();
