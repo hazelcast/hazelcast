@@ -27,7 +27,6 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.RetryableException;
@@ -39,10 +38,18 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.OperationAccessor.*;
+import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
+import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
+import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
+import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
+import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
 
 /**
  * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
+ *
+ * A handle to wait for the completion of this BasicInvocation is the
+ * {@link com.hazelcast.spi.impl.BasicInvocationFuture}.
  */
 abstract class BasicInvocation implements Callback<Object>, BackupCompletionCallback {
 
@@ -64,6 +71,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             this.toString = toString;
         }
 
+        @Override
         public String toString() {
             return toString;
         }
@@ -288,8 +296,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return (Throwable) response.getValue();
     }
 
-    //this method is called by the operation service to signal the invocation that something has happeend, e.g.
-    //a resposnse is returned.
+    //this method is called by the operation service to signal the invocation that something has happened, e.g.
+    //a response is returned.
     @Override
     public void notify(Object obj) {
         Object response;
