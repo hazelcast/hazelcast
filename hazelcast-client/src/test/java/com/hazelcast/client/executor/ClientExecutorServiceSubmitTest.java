@@ -541,36 +541,4 @@ public class ClientExecutorServiceSubmitTest {
         assertOpenEventually(responseLatch, 5);
         assertEquals(msg + AppendCallable.APPENDAGE, result.get());
     }
-
-
-
-///////////////////////////////////////////////////
-
-
-
-
-    @Test(expected = ExecutionException.class)
-    public void testSubmitFailingCallableException() throws ExecutionException, InterruptedException {
-        final IExecutorService service = client.getExecutorService(randomString());
-
-        final Callable failingCallable = new FailingCallable();
-        final Future<String> result = service.submit(failingCallable);
-
-        result.get();
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testSubmitFailingCallableReasonExceptionCause() throws Throwable {
-        final IExecutorService service = client.getExecutorService(randomString());
-
-        final Callable failingCallable = new FailingCallable();
-        final Future<String> result = service.submit(failingCallable);
-
-        try{
-            result.get();
-        }catch(ExecutionException e){
-            throw e.getCause();
-        }
-    }
-
 }
