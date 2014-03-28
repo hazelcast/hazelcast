@@ -45,17 +45,21 @@ public class XAResourceWrapper implements XAResource {
 
         switch (flags){
             case TMNOFLAGS:
-                validateInner(false);
-                setInner();
-                inner.start(xid, flags);
+//                validateInner(false);
+                if(inner == null){
+                    setInner();
+                }
+//                inner.start(xid, flags);
                 break;
             case TMRESUME:
             case TMJOIN:
-                validateInner(true);
-                inner.start(xid, flags);
                 break;
             default:
                 throw new XAException(XAException.XAER_INVAL);
+        }
+
+        if(inner != null){
+            inner.start(xid, flags);
         }
 
     }
@@ -63,33 +67,37 @@ public class XAResourceWrapper implements XAResource {
     @Override
     public void end(Xid xid, int flags) throws XAException {
         managedConnection.log(Level.FINEST, "XA end: " + xid + ", " + flags);
-        validateInner(true);
+        validateInner();
         inner.end(xid, flags);
+//        inner=null;
     }
 
     @Override
     public int prepare(Xid xid) throws XAException {
         managedConnection.log(Level.FINEST, "XA prepare: " + xid);
-        validateInner(true);
+        validateInner();
         return inner.prepare(xid);
     }
 
     @Override
     public void commit(Xid xid, boolean onePhase) throws XAException {
         managedConnection.log(Level.FINEST, "XA commit: " + xid);
-        validateInner(true);
+        validateInner();
         inner.commit(xid, onePhase);
+//        inner=null;
     }
 
     @Override
     public void rollback(Xid xid) throws XAException {
         managedConnection.log(Level.FINEST, "XA rollback: " + xid);
-        validateInner(true);
+        validateInner();
         inner.rollback(xid);
+//        inner=null;
     }
 
     @Override
     public void forget(Xid xid) throws XAException {
+//        inner=null;
         throw new XAException(XAException.XAER_PROTO);
     }
 
@@ -120,12 +128,13 @@ public class XAResourceWrapper implements XAResource {
         return false;
     }
 
-    private final void validateInner(boolean shouldExist) throws XAException {
-        if (shouldExist && inner == null) {
-
-        } else if (!shouldExist && inner != null) {
-            throw new XAException(XAException.XAER_DUPID);
+    private final void validateInner() throws XAException {
+        if (inner == null) {
+            throw new XAException(XAException.XAER_NOTA);
         }
+//        else if (!shouldExist && inner != null) {
+//            throw new XAException(XAException.XAER_DUPID);
+//        }
     }
 
     private void setInner() throws XAException {
@@ -139,8 +148,8 @@ public class XAResourceWrapper implements XAResource {
             try {
                 setInner();
                 return inner.toString();
-            } catch (XAException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                //ignore;
             }
         }
         return super.toString();
