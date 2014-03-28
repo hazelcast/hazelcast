@@ -39,6 +39,8 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.spi.OperationAccessor.*;
+
 /**
  * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
  */
@@ -53,7 +55,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
 
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
-
 
     static class InternalResponse {
 
@@ -162,8 +163,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
 
         try {
-            OperationAccessor.setCallTimeout(op, callTimeout);
-            OperationAccessor.setCallerAddress(op, nodeEngine.getThisAddress());
+            setCallTimeout(op, callTimeout);
+            setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine)
                     .setServiceName(serviceName)
                     .setPartitionId(partitionId)
@@ -173,7 +174,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
             BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-            if (!operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
+            if (!operationService.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
@@ -187,12 +188,83 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return invocationFuture;
     }
 
-
     private void resetAndReInvoke() {
         invokeCount = 0;
         potentialResponse = null;
         expectedBackupCount = -1;
         doInvoke();
+    }
+
+    private void doInvoke() {
+        if (!nodeEngine.isActive()) {
+            remote = false;
+            notify(new HazelcastInstanceNotActiveException());
+            return;
+        }
+
+        final Address invTarget = getTarget();
+        target = invTarget;
+        invokeCount++;
+        final Address thisAddress = nodeEngine.getThisAddress();
+        if (invTarget == null) {
+            remote = false;
+            if (nodeEngine.isActive()) {
+                notify(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+            } else {
+                notify(new HazelcastInstanceNotActiveException());
+            }
+            return;
+        }
+
+        final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
+        if (!isJoinOperation(op) && member == null) {
+            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            return;
+        }
+
+        if (op.getPartitionId() != partitionId) {
+            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
+                    " is not equal to the partition id of invocation: " + partitionId));
+            return;
+        }
+
+        if (op.getReplicaIndex() != replicaIndex) {
+            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
+                    " is not equal to the replica index of invocation: " + replicaIndex));
+            return;
+        }
+
+        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
+        setInvocationTime(op, nodeEngine.getClusterTime());
+
+        remote = !thisAddress.equals(invTarget);
+        if (remote) {
+            final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
+            final long callId = operationService.registerRemoteCall(call);
+            if (op instanceof BackupAwareOperation) {
+                registerBackups((BackupAwareOperation) op, callId);
+            }
+            setCallId(op, callId);
+            boolean sent = operationService.send(op, invTarget);
+            if (!sent) {
+                operationService.deregisterRemoteCall(callId);
+                operationService.deregisterBackupCall(callId);
+                notify(new RetryableIOException("Packet not sent to -> " + invTarget));
+            }
+        } else {
+            if (op instanceof BackupAwareOperation) {
+                final long callId = operationService.newCallId();
+                registerBackups((BackupAwareOperation) op, callId);
+                setCallId(op, callId);
+            }
+            ResponseHandlerFactory.setLocalResponseHandler(op, this);
+            //todo: should move to the operationService.
+            if (operationService.isAllowedToRunInCurrentThread(op)) {
+                operationService.runOperation(op);
+            } else {
+                operationService.executeOperation(op);
+            }
+        }
     }
 
     private static Throwable getError(Object obj) {
@@ -293,78 +365,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         invocationFuture.set(response);
     }
 
-    private void doInvoke() {
-        if (!nodeEngine.isActive()) {
-            remote = false;
-            notify(new HazelcastInstanceNotActiveException());
-            return;
-        }
-
-        final Address invTarget = getTarget();
-        target = invTarget;
-        invokeCount++;
-        final Address thisAddress = nodeEngine.getThisAddress();
-        if (invTarget == null) {
-            remote = false;
-            if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
-            } else {
-                notify(new HazelcastInstanceNotActiveException());
-            }
-            return;
-        }
-
-        final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
-        if (!OperationAccessor.isJoinOperation(op) && member == null) {
-            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
-            return;
-        }
-
-        if (op.getPartitionId() != partitionId) {
-            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
-                    " is not equal to the partition id of invocation: " + partitionId));
-            return;
-        }
-
-        if (op.getReplicaIndex() != replicaIndex) {
-            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
-                    " is not equal to the replica index of invocation: " + replicaIndex));
-            return;
-        }
-
-        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
-
-        remote = !thisAddress.equals(invTarget);
-        if (remote) {
-            final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
-            final long callId = operationService.registerRemoteCall(call);
-            if (op instanceof BackupAwareOperation) {
-                registerBackups((BackupAwareOperation) op, callId);
-            }
-            OperationAccessor.setCallId(op, callId);
-            boolean sent = operationService.send(op, invTarget);
-            if (!sent) {
-                operationService.deregisterRemoteCall(callId);
-                operationService.deregisterBackupCall(callId);
-                notify(new RetryableIOException("Packet not sent to -> " + invTarget));
-            }
-        } else {
-            if (op instanceof BackupAwareOperation) {
-                final long callId = operationService.newCallId();
-                registerBackups((BackupAwareOperation) op, callId);
-                OperationAccessor.setCallId(op, callId);
-            }
-            ResponseHandlerFactory.setLocalResponseHandler(op, this);
-            //todo: should move to the operationService.
-            if (operationService.isAllowedToRunInCurrentThread(op)) {
-                operationService.runOperation(op);
-            } else {
-                operationService.executeOperation(op);
-            }
-        }
-    }
-
     protected abstract Address getTarget();
 
     private void registerBackups(BackupAwareOperation op, long callId) {
@@ -457,5 +457,4 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             doInvoke();
         }
     }
-
 }
