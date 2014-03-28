@@ -17,10 +17,14 @@
 package com.hazelcast.client.executor;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.executor.tasks.Sim;
+import com.hazelcast.client.executor.tasks.CallableTask;
+import com.hazelcast.client.executor.tasks.CancellationAwareTask;
+import com.hazelcast.client.executor.tasks.FailingTask;
+import com.hazelcast.client.executor.tasks.RunnableTask;
 import com.hazelcast.core.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -29,11 +33,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-import java.util.TreeSet;
 import java.util.concurrent.*;
 
 import static com.hazelcast.test.HazelcastTestSupport.*;
@@ -75,7 +77,7 @@ public class ClientExecutorServiceTest {
     @Test
     public void testIsShutdown() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
-        assertFalse( service.isShutdown() );
+        assertFalse(service.isShutdown());
     }
 
     @Test
@@ -95,10 +97,7 @@ public class ClientExecutorServiceTest {
     public void testAwaitTermination() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
         service.awaitTermination(1, TimeUnit.MILLISECONDS);
-        sleepSeconds(1);
     }
-
-
 
     @Test(expected = TimeoutException.class)
     public void testCancellationAwareTask_whenTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
@@ -286,4 +285,90 @@ public class ClientExecutorServiceTest {
         IExecutorService service = client.getExecutorService(randomString());
         service.getLocalExecutorStats();
     }
+
+    @Test
+    public void testExecute() {
+        IExecutorService service = client.getExecutorService(randomString());
+
+        service.execute( new RunnableTask("task"));
+    }
+
+    @Test
+    public void testExecute_whenTaskNull() {
+        IExecutorService service = client.getExecutorService(randomString());
+
+        service.execute( null );
+    }
+
+    @Test
+    public void testExecuteOnKeyOwner() {
+        IExecutorService service = client.getExecutorService(randomString());
+
+        service.executeOnKeyOwner(new RunnableTask("task"), "key");
+    }
+
+    @Test
+    public void testExecuteOnKeyOwner_whenKeyNull() {
+        IExecutorService service = client.getExecutorService(randomString());
+
+        service.executeOnKeyOwner(new RunnableTask("task"), null);
+    }
+
+    @Test
+    public void testExecuteOnMember(){
+        IExecutorService service = client.getExecutorService(randomString());
+
+        service.executeOnMember(new RunnableTask("task"), instance1.getCluster().getLocalMember() );
+    }
+
+    @Test
+    public void testExecuteOnMember_WhenMemberNull() {
+        IExecutorService service = client.getExecutorService(randomString());
+
+        service.executeOnMember(new RunnableTask("task"), null);
+    }
+
+
+    @Test
+    public void testExecuteOnMembers() {
+        IExecutorService service = client.getExecutorService(randomString());
+        Collection collection = instance1.getCluster().getMembers();
+
+        service.executeOnMembers(new RunnableTask("task"), collection);
+    }
+
+    @Test
+    public void testExecuteOnMembers_WhenCollectionNull() {
+        IExecutorService service = client.getExecutorService(randomString());
+        Collection collection = null;
+
+        service.executeOnMembers(new RunnableTask("task"), collection);
+    }
+
+    @Test
+    public void testExecuteOnMembers_withSelector() {
+        IExecutorService service = client.getExecutorService(randomString());
+
+        MemberSelector selector = null;//new SimpleMem();
+        service.executeOnMembers(new RunnableTask("task"), selector);
+    }
+
+    @Test
+    public void testExecuteOnMembers_whenSelectorNull() {
+        IExecutorService service = client.getExecutorService(randomString());
+
+        MemberSelector selector = null;
+        service.executeOnMembers(new RunnableTask("task"), selector);
+    }
+
+    @Test
+    public void testExecuteOnAllMembers() {
+        IExecutorService service = client.getExecutorService(randomString());
+        Collection collection = null;
+
+        service.executeOnAllMembers(new RunnableTask("task"));
+    }
+
+
+
 }

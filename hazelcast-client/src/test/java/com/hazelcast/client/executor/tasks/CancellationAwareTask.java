@@ -1,4 +1,4 @@
-package com.hazelcast.client.executor;
+package com.hazelcast.client.executor.tasks;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;

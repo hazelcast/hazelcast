@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.executor;
+package com.hazelcast.client.executor.tasks;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

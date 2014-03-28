@@ -14,36 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.executor;
+package com.hazelcast.client.executor.tasks;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
-/**
- * @ali 8/20/13
- */
-public class RunnableTask implements Runnable, DataSerializable {
+public class FailingTask implements Callable<String>, DataSerializable {
 
-    String param;
-
-    public RunnableTask() {
+    public FailingTask() {
     }
 
-    public RunnableTask(String param) {
-        this.param = param;
+    public String call() throws Exception {
+        throw new IllegalStateException();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(param);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        param = in.readUTF();
-    }
-
-    public void run() {
     }
 }
