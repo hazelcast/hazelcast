@@ -38,7 +38,6 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 import com.hazelcast.util.executor.TimeoutRunnable;
@@ -493,7 +492,9 @@ public class EventServiceImpl implements EventService {
             Registration registration = segment.registrationIdMap.get(eventPacket.id);
             if (registration == null) {
                 if (nodeEngine.isActive()) {
-                    logger.warning("No registration found for " + serviceName + " / " + eventPacket.id);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("No registration found for " + serviceName + " / " + eventPacket.id);
+                    }
                 }
                 return;
             }
