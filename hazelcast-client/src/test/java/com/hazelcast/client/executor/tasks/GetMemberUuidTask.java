@@ -16,34 +16,33 @@
 
 package com.hazelcast.client.executor.tasks;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
-/**
- * @ali 8/20/13
- */
-public class RunnableTask implements Runnable, DataSerializable {
+public class GetMemberUuidTask implements Callable<String>, DataSerializable, HazelcastInstanceAware{
 
-    String param;
+    private HazelcastInstance node;
 
-    public RunnableTask() {
-    }
-
-    public RunnableTask(String param) {
-        this.param = param;
+    public String call() throws Exception {
+        return node.getCluster().getLocalMember().getUuid();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(param);
+
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        param = in.readUTF();
+
     }
 
-    public void run() {
+    @Override
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        node = hazelcastInstance;
     }
 }

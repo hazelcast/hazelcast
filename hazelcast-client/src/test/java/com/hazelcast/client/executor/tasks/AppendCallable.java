@@ -23,32 +23,29 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-/**
- * @author ali 5/27/13
- */
-public class CallableTask implements Callable<String>, DataSerializable {
+public class AppendCallable implements Callable<String>, DataSerializable{
 
-    public static final String resultPostFix = ":result";
+    public static final String APPENDAGE = ":CallableResult";
 
-    private String param;
+    private String msg;
 
-    public CallableTask() {
+    public AppendCallable() {
     }
 
-    public CallableTask(String param) {
-        this.param = param;
+    public AppendCallable(String msg) {
+        this.msg = msg;
     }
 
     public String call() throws Exception {
-        return param + resultPostFix;
+        return msg + APPENDAGE;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(param);
+        out.writeUTF(msg);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        param = in.readUTF();
+        msg = in.readUTF();
     }
 
 }

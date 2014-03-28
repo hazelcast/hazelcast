@@ -16,25 +16,54 @@
 
 package com.hazelcast.client.executor.tasks;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 
-public class FailingTask implements Callable<String>, DataSerializable {
+public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInstanceAware {
 
-    public FailingTask() {
-    }
+    private HazelcastInstance instance;
 
-    public String call() throws Exception {
-        throw new IllegalStateException();
+    public String mapName;
+
+    public MapPutRunnable(){}
+
+    public MapPutRunnable(String mapName) {
+        this.mapName = mapName;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(mapName);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+        mapName = in.readUTF();
+    }
+
+    public void run() {
+        Member member = instance.getCluster().getLocalMember();
+
+        IMap map = instance.getMap(mapName);
+
+        map.put(member.getUuid(), member.getUuid()+"value");
+    }
+
+    @Override
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        instance = hazelcastInstance;
+    }
+
+    public String getMapName() {
+        return mapName;
+    }
+
+    public void setMapName(String mapName) {
+        this.mapName = mapName;
     }
 }

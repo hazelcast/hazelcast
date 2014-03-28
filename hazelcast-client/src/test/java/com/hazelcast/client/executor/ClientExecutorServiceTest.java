@@ -17,11 +17,7 @@
 package com.hazelcast.client.executor;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.executor.tasks.Sim;
-import com.hazelcast.client.executor.tasks.CallableTask;
-import com.hazelcast.client.executor.tasks.CancellationAwareTask;
-import com.hazelcast.client.executor.tasks.FailingTask;
-import com.hazelcast.client.executor.tasks.RunnableTask;
+import com.hazelcast.client.executor.tasks.*;
 import com.hazelcast.core.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -37,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.test.HazelcastTestSupport.*;
 import static org.junit.Assert.*;
@@ -68,6 +65,12 @@ public class ClientExecutorServiceTest {
         Hazelcast.shutdownAll();
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetLocalExecutorStats() throws Throwable, InterruptedException {
+        IExecutorService service = client.getExecutorService(randomString());
+        service.getLocalExecutorStats();
+    }
+
     @Test
     public void testIsTerminated() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
@@ -96,7 +99,8 @@ public class ClientExecutorServiceTest {
     @Test
     public void testAwaitTermination() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
-        service.awaitTermination(1, TimeUnit.MILLISECONDS);
+        final boolean result = service.awaitTermination(9999, TimeUnit.DAYS);
+        assertFalse( result );
     }
 
     @Test(expected = TimeoutException.class)
@@ -154,221 +158,23 @@ public class ClientExecutorServiceTest {
         future.get();
     }
 
-    @Test
-    public void testSubmitWithResult() throws ExecutionException, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
-
-        final Integer res = 5;
-        final Future<Integer> future = service.submit( new RunnableTask("task"), res);
-        final Integer integer = future.get();
-        assertEquals(res, integer);
-    }
-
-    @Test
-    public void submitCallableToKeyOwner() throws Exception {
-        IExecutorService service = client.getExecutorService(randomString());
-        final String msg = randomString();
-
-        final Future<String> future = service.submitToKeyOwner(new CallableTask(msg), "key");
-        String result = future.get();
-        assertEquals(msg + CallableTask.resultPostFix, result);
-    }
-
-    @Test
-    public void submitCallableToKeyOwner_withExecutionCallback() throws Exception {
-        IExecutorService service = client.getExecutorService(randomString());
-        final String msg = randomString();
-        final CountDownLatch responseLatch = new CountDownLatch(1);
-        service.submitToKeyOwner(new CallableTask(msg), "key", new ExecutionCallback<String>() {
-            public void onResponse(String response) {
-                if (response.equals(msg + CallableTask.resultPostFix)) {
-                    responseLatch.countDown();
-                }
-            }
-
-            public void onFailure(Throwable t) {
-            }
-        });
-
-        assertOpenEventually(responseLatch, 5);
-    }
-
-    @Test
-    public void submitCallableToAllMembers() throws Exception {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String msg = randomString();
-        final Map<Member, Future<String>> map = service.submitToAllMembers(new CallableTask(msg));
-        for (Member member : map.keySet()) {
-            final Future<String> future = map.get(member);
-            String result = future.get();
-
-            assertEquals(msg+CallableTask.resultPostFix, result);
-        }
-    }
-
-    @Test
-    public void submitCallableToAllMembers_withMultiExecutionCallback() throws Exception {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final CountDownLatch responseLatch = new CountDownLatch(CLUSTER_SIZE);
-        final CountDownLatch completeLatch = new CountDownLatch(1);
-        final String msg = randomString();
-
-        service.submitToAllMembers(new CallableTask(msg), new MultiExecutionCallback() {
-            public void onResponse(Member member, Object value) {
-                if (value.equals(msg + CallableTask.resultPostFix)) {
-                    responseLatch.countDown();
-                }
-            }
-
-            public void onComplete(Map<Member, Object> values) {
-                for (Member member : values.keySet()) {
-                    Object value = values.get(member);
-                    if (value.equals(msg + CallableTask.resultPostFix)) {
-                        completeLatch.countDown();
-                    }
-                }
-            }
-        });
-        assertOpenEventually(responseLatch, 5);
-        assertOpenEventually(completeLatch, 5);
-    }
-
     @Test(expected = ExecutionException.class)
     public void testSubmitFailingCallableException() throws ExecutionException, InterruptedException {
         IExecutorService service = client.getExecutorService(randomString());
-        final Future<String> f = service.submit(new FailingTask());
+        final Future<String> f = service.submit(new FailingCallable());
 
         f.get();
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testSubmitFailingCallableReasonExceptionCause() throws Throwable, InterruptedException {
+    public void testSubmitFailingCallableReasonExceptionCause() throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
-        final Future<String> f = service.submit(new FailingTask());
+        final Future<String> f = service.submit(new FailingCallable());
 
         try{
-        f.get();
+            f.get();
         }catch(ExecutionException e){
             throw e.getCause();
         }
     }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAll() throws Throwable, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection c = new ArrayList();
-        c.add(new CallableTask());
-        c.add(new CallableTask());
-        service.invokeAll(c, 1, TimeUnit.MINUTES);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAny() throws Throwable, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection c = new ArrayList();
-        c.add(new CallableTask());
-        c.add(new CallableTask());
-        service.invokeAny(c);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAnyTimeOut() throws Throwable, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection c = new ArrayList();
-        c.add(new CallableTask());
-        c.add(new CallableTask());
-        service.invokeAny(c, 1, TimeUnit.MINUTES);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetLocalExecutorStats() throws Throwable, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
-        service.getLocalExecutorStats();
-    }
-
-    @Test
-    public void testExecute() {
-        IExecutorService service = client.getExecutorService(randomString());
-
-        service.execute( new RunnableTask("task"));
-    }
-
-    @Test
-    public void testExecute_whenTaskNull() {
-        IExecutorService service = client.getExecutorService(randomString());
-
-        service.execute( null );
-    }
-
-    @Test
-    public void testExecuteOnKeyOwner() {
-        IExecutorService service = client.getExecutorService(randomString());
-
-        service.executeOnKeyOwner(new RunnableTask("task"), "key");
-    }
-
-    @Test
-    public void testExecuteOnKeyOwner_whenKeyNull() {
-        IExecutorService service = client.getExecutorService(randomString());
-
-        service.executeOnKeyOwner(new RunnableTask("task"), null);
-    }
-
-    @Test
-    public void testExecuteOnMember(){
-        IExecutorService service = client.getExecutorService(randomString());
-
-        service.executeOnMember(new RunnableTask("task"), instance1.getCluster().getLocalMember() );
-    }
-
-    @Test
-    public void testExecuteOnMember_WhenMemberNull() {
-        IExecutorService service = client.getExecutorService(randomString());
-
-        service.executeOnMember(new RunnableTask("task"), null);
-    }
-
-
-    @Test
-    public void testExecuteOnMembers() {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection collection = instance1.getCluster().getMembers();
-
-        service.executeOnMembers(new RunnableTask("task"), collection);
-    }
-
-    @Test
-    public void testExecuteOnMembers_WhenCollectionNull() {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection collection = null;
-
-        service.executeOnMembers(new RunnableTask("task"), collection);
-    }
-
-    @Test
-    public void testExecuteOnMembers_withSelector() {
-        IExecutorService service = client.getExecutorService(randomString());
-
-        MemberSelector selector = null;//new SimpleMem();
-        service.executeOnMembers(new RunnableTask("task"), selector);
-    }
-
-    @Test
-    public void testExecuteOnMembers_whenSelectorNull() {
-        IExecutorService service = client.getExecutorService(randomString());
-
-        MemberSelector selector = null;
-        service.executeOnMembers(new RunnableTask("task"), selector);
-    }
-
-    @Test
-    public void testExecuteOnAllMembers() {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection collection = null;
-
-        service.executeOnAllMembers(new RunnableTask("task"));
-    }
-
-
-
 }
