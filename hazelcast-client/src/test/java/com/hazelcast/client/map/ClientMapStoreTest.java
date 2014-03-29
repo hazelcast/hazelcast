@@ -1,10 +1,4 @@
-package com.hazelcast.client.mapstore;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
@@ -17,13 +11,18 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static junit.framework.Assert.assertEquals;
@@ -40,26 +39,23 @@ public class ClientMapStoreTest {
         nodeConfig = new Config();
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapStore());
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-
         mapConfig.setName(MAP_NAME);
         mapConfig.setMapStoreConfig(mapStoreConfig);
-
         nodeConfig.addMapConfig(mapConfig);
     }
 
     @After
-    public void tearDown(){
-        Hazelcast.shutdownAll();
+    public void tearDown() {
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
     public void testOneClient_KickOffMapStoreLoad() throws InterruptedException {
-        HazelcastInstance node1 = Hazelcast.newHazelcastInstance(nodeConfig);
+        Hazelcast.newHazelcastInstance(nodeConfig);
 
         ClientThread client1 = new ClientThread();
         client1.start();
@@ -70,11 +66,9 @@ public class ClientMapStoreTest {
 
     @Test
     public void testTwoClient_KickOffMapStoreLoad() throws InterruptedException {
-        HazelcastInstance node1 = Hazelcast.newHazelcastInstance(nodeConfig);
-
+        Hazelcast.newHazelcastInstance(nodeConfig);
         ClientThread[] clientThreads = new ClientThread[2];
-
-        for(int i=0; i<clientThreads.length; i++){
+        for (int i = 0; i < clientThreads.length; i++) {
             ClientThread client1 = new ClientThread();
             client1.start();
             clientThreads[i] = client1;
@@ -82,20 +76,19 @@ public class ClientMapStoreTest {
 
         HazelcastTestSupport.assertJoinable(clientThreads);
 
-        for(ClientThread c : clientThreads){
+        for (ClientThread c : clientThreads) {
             assertEquals(SimpleMapStore.MAX_KEYS, c.mapSize);
         }
     }
 
     @Test
-    @Category(ProblematicTest.class)
-    public void testOneClientKickOffMapStoreLoad_ThenNodeJoins(){
-        HazelcastInstance node1 = Hazelcast.newHazelcastInstance(nodeConfig);
+    public void testOneClientKickOffMapStoreLoad_ThenNodeJoins() {
+        Hazelcast.newHazelcastInstance(nodeConfig);
 
         ClientThread client1 = new ClientThread();
         client1.start();
 
-        HazelcastInstance node2 = Hazelcast.newHazelcastInstance(nodeConfig);
+        Hazelcast.newHazelcastInstance(nodeConfig);
 
         HazelcastTestSupport.assertJoinable(client1);
 
@@ -103,14 +96,13 @@ public class ClientMapStoreTest {
     }
 
     @Test
-    @Category(ProblematicTest.class)
-    public void testForIssue2112(){
-        HazelcastInstance node1 = Hazelcast.newHazelcastInstance(nodeConfig);
+    public void testForIssue2112() {
+        Hazelcast.newHazelcastInstance(nodeConfig);
 
         ClientThread client1 = new ClientThread();
         client1.start();
 
-        HazelcastInstance node2 = Hazelcast.newHazelcastInstance(nodeConfig);
+        Hazelcast.newHazelcastInstance(nodeConfig);
 
         ClientThread client2 = new ClientThread();
         client2.start();
@@ -130,12 +122,12 @@ public class ClientMapStoreTest {
         @Override
         public String load(String key) {
             sleepSeconds(DELAY_SECONDS_PER_KEY);
-            return key+"value";
+            return key + "value";
         }
 
         @Override
         public Map<String, String> loadAll(Collection<String> keys) {
-            Map<String, String> map = new HashMap();
+            Map<String, String> map = new HashMap<String, String>();
             for (String key : keys) {
                 map.put(key, load(key));
             }
@@ -144,10 +136,9 @@ public class ClientMapStoreTest {
 
         @Override
         public Set<String> loadAllKeys() {
-            Set<String> keys = new HashSet();
+            Set<String> keys = new HashSet<String>();
 
-            for(int k=0; k<MAX_KEYS; k++)
-                keys.add("key"+k);
+            for (int k = 0; k < MAX_KEYS; k++) { keys.add("key" + k); }
 
             return keys;
         }
@@ -177,14 +168,13 @@ public class ClientMapStoreTest {
         }
     }
 
-    class ClientThread extends Thread {
+    private class ClientThread extends Thread {
 
-        public volatile int mapSize=0;
+        public volatile int mapSize = 0;
 
         public void run() {
             HazelcastInstance client = HazelcastClient.newHazelcastClient();
             IMap<String, String> map = client.getMap(ClientMapStoreTest.MAP_NAME);
-
             mapSize = map.size();
         }
     }
