@@ -18,6 +18,7 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
@@ -42,7 +43,8 @@ public class ReplicaSyncRetryResponse extends Operation implements PartitionAwar
         final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
-        partitionService.syncPartitionReplica(partitionId, replicaIndex, true);
+        partitionService.schedulePartitionReplicaSync(partitionId, replicaIndex,
+                InternalPartitionService.REPLICA_SYNC_RETRY_DELAY);
     }
 
     public void afterRun() throws Exception {
