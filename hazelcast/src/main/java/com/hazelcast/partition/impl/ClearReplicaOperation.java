@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,56 +19,39 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
-import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.Collection;
 
 // runs locally...
-final class PromoteFromBackupOperation extends AbstractOperation
+final class ClearReplicaOperation extends AbstractOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
     @Override
     public void run() throws Exception {
-        logPromotingPartition();
-
-        PartitionMigrationEvent event = createPartitionMigrationEvent();
-
-        sendToAllMigrationAwareServices(event);
-    }
-
-    private void sendToAllMigrationAwareServices(PartitionMigrationEvent event) {
+        int partitionId = getPartitionId();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+        final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
+        for (MigrationAwareService service : services) {
             try {
-                service.beforeMigration(event);
-                service.commitMigration(event);
+                service.clearPartitionReplica(partitionId);
             } catch (Throwable e) {
                 logMigrationError(e);
             }
         }
-    }
-
-    private PartitionMigrationEvent createPartitionMigrationEvent() {
-        int partitionId = getPartitionId();
-        return new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, partitionId);
+        InternalPartitionService partitionService = getService();
+        partitionService.clearPartitionReplicaVersions(partitionId);
     }
 
     private void logMigrationError(Throwable e) {
         ILogger logger = getLogger();
-        logger.warning("While promoting partition " + getPartitionId(), e);
-    }
-
-    private void logPromotingPartition() {
-        ILogger logger = getLogger();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Promoting partition " + getPartitionId());
-        }
+        logger.warning("While clearing partition data: " + getPartitionId(), e);
     }
 
     @Override
