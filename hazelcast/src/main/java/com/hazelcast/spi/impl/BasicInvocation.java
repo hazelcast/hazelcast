@@ -52,7 +52,7 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  * A handle to wait for the completion of this BasicInvocation is the
  * {@link com.hazelcast.spi.impl.BasicInvocationFuture}.
  */
-abstract class BasicInvocation implements ResponseHandler {
+abstract class BasicInvocation implements ResponseHandler,Runnable {
 
     private final static AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
@@ -372,10 +372,9 @@ abstract class BasicInvocation implements ResponseHandler {
                 final ExecutionService ex = nodeEngine.getExecutionService();
                 // fast retry for the first few invocations
                 if (invokeCount < 5) {
-                    getAsyncExecutor().execute(new ReInvocationTask());
+                    getAsyncExecutor().execute(this);
                 } else {
-                    ex.schedule(ExecutionService.ASYNC_EXECUTOR, new ReInvocationTask(),
-                            tryPauseMillis, TimeUnit.MILLISECONDS);
+                    ex.schedule(ExecutionService.ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
                 }
             }
             return;
@@ -477,9 +476,8 @@ abstract class BasicInvocation implements ResponseHandler {
         }, timeout, unit);
     }
 
-    private class ReInvocationTask implements Runnable {
-        public void run() {
-            doInvoke();
-        }
+    @Override
+    public void run() {
+        doInvoke();
     }
 }
