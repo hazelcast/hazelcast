@@ -14,6 +14,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -70,23 +71,27 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Object resp = resolveResponse(response);
+        try {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Object resp = resolveResponse(response);
 
-                    if (resp == null || !(resp instanceof Throwable)) {
-                        callback.onResponse((E) resp);
-                    } else {
-                        callback.onFailure((Throwable) resp);
+                        if (resp == null || !(resp instanceof Throwable)) {
+                            callback.onResponse((E) resp);
+                        } else {
+                            callback.onFailure((Throwable) resp);
+                        }
+                    } catch (Throwable t) {
+                        //todo: improved error message
+                        basicInvocation.logger.severe("Failed to async for " + basicInvocation, t);
                     }
-                } catch (Throwable t) {
-                    //todo: improved error message
-                    basicInvocation.logger.severe("Failed to async for " + basicInvocation, t);
                 }
-            }
-        });
+            });
+        } catch (RejectedExecutionException ignore) {
+            basicInvocation.logger.finest(ignore);
+        }
     }
 
     public void set(Object response) {
