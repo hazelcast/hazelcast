@@ -107,7 +107,7 @@ final class BasicOperationService implements InternalOperationService {
     private final Node node;
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(0);
-    final ConcurrentMap<Long, RemoteCall> remoteCalls;
+    final ConcurrentMap<Long, RemotecallCallback> remoteCalls;
 
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
@@ -126,7 +126,7 @@ final class BasicOperationService implements InternalOperationService {
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= 8;
         int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
-        remoteCalls = new ConcurrentHashMap<Long, RemoteCall>(1000, 0.75f, concurrencyLevel);
+        remoteCalls = new ConcurrentHashMap<Long, RemotecallCallback>(1000, 0.75f, concurrencyLevel);
         int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
         operationThreadCount = opThreadCount > 0 ? opThreadCount : coreSize * 2;
 
@@ -659,7 +659,7 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
-    long registerRemoteCall(RemoteCall call) {
+    long registerRemoteCall(RemotecallCallback call) {
         final long callId = newCallId();
         remoteCalls.put(callId, call);
         return callId;
@@ -675,7 +675,7 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
-    RemoteCall deregisterRemoteCall(long callId) {
+    RemotecallCallback deregisterRemoteCall(long callId) {
         return remoteCalls.remove(callId);
     }
 
@@ -721,12 +721,12 @@ final class BasicOperationService implements InternalOperationService {
         // postpone notifying calls since real response may arrive in the mean time.
         nodeEngine.getExecutionService().schedule(new Runnable() {
             public void run() {
-                final Iterator<RemoteCall> iter = remoteCalls.values().iterator();
+                final Iterator<RemotecallCallback> iter = remoteCalls.values().iterator();
                 while (iter.hasNext()) {
-                    final RemoteCall call = iter.next();
+                    final RemotecallCallback call = iter.next();
                     if (call.isCallTarget(member)) {
                         iter.remove();
-                        call.offerResponse(new MemberLeftException(member));
+                        call.notify(new MemberLeftException(member));
                     }
                 }
             }
@@ -738,8 +738,8 @@ final class BasicOperationService implements InternalOperationService {
         logger.finest("Stopping operation threads...");
         responseExecutor.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
-        for (RemoteCall call : remoteCalls.values()) {
-            call.offerResponse(response);
+        for (RemotecallCallback call : remoteCalls.values()) {
+            call.notify(response);
         }
         remoteCalls.clear();
         backupCalls.clear();
@@ -800,12 +800,12 @@ final class BasicOperationService implements InternalOperationService {
 
         // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
         private void notifyRemoteCall(NormalResponse response) {
-            RemoteCall call = deregisterRemoteCall(response.getCallId());
+            RemotecallCallback call = deregisterRemoteCall(response.getCallId());
             if (call == null) {
                 throw new HazelcastException("No call for response:" + response);
             }
 
-            call.offerResponse(response);
+            call.notify(response);
         }
 
         @Override

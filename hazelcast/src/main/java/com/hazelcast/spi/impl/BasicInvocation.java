@@ -50,14 +50,14 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
 
 /**
  * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
- *
+ * <p/>
  * A handle to wait for the completion of this BasicInvocation is the
  * {@link com.hazelcast.spi.impl.BasicInvocationFuture}.
  */
-abstract class BasicInvocation implements Callback<Object>, BackupCompletionCallback, ResponseHandler {
+abstract class BasicInvocation implements RemotecallCallback, BackupCompletionCallback, ResponseHandler {
 
     private final static AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class,Boolean.class,"responseReceived");
+            AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
 
     static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
@@ -68,6 +68,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
 
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
+    private Address invTarget;
+    private MemberImpl invTargetMember;
 
     static class InternalResponse {
 
@@ -211,14 +213,14 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         doInvoke();
     }
 
-     private void doInvoke() {
+    private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
             notify(new HazelcastInstanceNotActiveException());
             return;
         }
 
-        final Address invTarget = getTarget();
+        invTarget = getTarget();
         target = invTarget;
         invokeCount++;
         final Address thisAddress = nodeEngine.getThisAddress();
@@ -232,8 +234,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             return;
         }
 
-        final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
-        if (!isJoinOperation(op) && member == null) {
+        invTargetMember = nodeEngine.getClusterService().getMember(invTarget);
+        if (!isJoinOperation(op) && invTargetMember == null) {
             notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return;
         }
@@ -255,7 +257,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
         remote = !thisAddress.equals(invTarget);
         if (remote) {
-            final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
+            final RemotecallCallback call = this;
             final long callId = operationService.registerRemoteCall(call);
             if (op instanceof BackupAwareOperation) {
                 registerBackups((BackupAwareOperation) op, callId);
@@ -273,10 +275,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 registerBackups((BackupAwareOperation) op, callId);
                 setCallId(op, callId);
             }
-            //ResponseHandlerFactory.setLocalResponseHandler(op, this);
-
             responseReceived = Boolean.FALSE;
-            op.setResponseHandler(this);//new LocalInvocationResponseHandler(this));
+            op.setResponseHandler(this);
 
             //todo: should move to the operationService.
             if (operationService.isAllowedToRunInCurrentThread(op)) {
@@ -308,9 +308,9 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return (Throwable) response.getValue();
     }
 
-     @Override
+    @Override
     public void sendResponse(Object obj) {
-        if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this,Boolean.FALSE, Boolean.TRUE)) {
+        if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
                     + ", current-response: : " + obj);
         }
@@ -322,8 +322,18 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return true;
     }
 
+    @Override
+    public boolean isCallTarget(MemberImpl leftMember) {
+        if (invTargetMember == null) {
+            return leftMember.getAddress().equals(invTarget);
+        } else {
+            return leftMember.getUuid().equals(invTargetMember.getUuid());
+        }
+    }
+
     //this method is called by the operation service to signal the invocation that something has happened, e.g.
     //a response is returned.
+    //@Override
     @Override
     public void notify(Object obj) {
         Object response;
