@@ -32,7 +32,6 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupCompletionCallback;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -56,6 +55,7 @@ import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
+import org.jruby.runtime.profile.Invocation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -76,6 +76,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
+import static com.hazelcast.spi.OperationAccessor.setCallId;
 
 /**
  * This is the Basic InternalOperationService and depends on Java 6.
@@ -106,13 +107,14 @@ final class BasicOperationService implements InternalOperationService {
     private final NodeEngineImpl nodeEngine;
     private final Node node;
     private final ILogger logger;
-    private final AtomicLong callIdGen = new AtomicLong(0);
-    final ConcurrentMap<Long, RemotecallCallback> remoteCalls;
+    private final AtomicLong callIdGen = new AtomicLong(1);
+
+    private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
+
+    final ConcurrentMap<Long, BasicInvocation> invocations;
 
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
-    private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-    final ConcurrentMap<Long, BackupCompletionCallback> backupCalls;
     private final int operationThreadCount;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
     private final ExecutionService executionService;
@@ -126,7 +128,6 @@ final class BasicOperationService implements InternalOperationService {
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= 8;
         int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
-        remoteCalls = new ConcurrentHashMap<Long, RemotecallCallback>(1000, 0.75f, concurrencyLevel);
         int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
         operationThreadCount = opThreadCount > 0 ? opThreadCount : coreSize * 2;
 
@@ -142,7 +143,7 @@ final class BasicOperationService implements InternalOperationService {
         );
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
-        backupCalls = new ConcurrentHashMap<Long, BackupCompletionCallback>(1000, 0.75f, concurrencyLevel);
+        invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
 
         this.executor = new BasicOperationScheduler(
                 node, executionService, operationThreadCount, new BasicOperationProcessorImpl());
@@ -165,7 +166,8 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getRemoteOperationsCount() {
-        return remoteCalls.size();
+        //todo:
+        return 0;
     }
 
     @Override
@@ -658,39 +660,56 @@ final class BasicOperationService implements InternalOperationService {
         return nodeEngine.send(packet, connection);
     }
 
-    @PrivateApi
-    long registerRemoteCall(RemotecallCallback call) {
-        final long callId = newCallId();
-        remoteCalls.put(callId, call);
+    public long registerInvocation(BasicInvocation invocation){
+        long callId = callIdGen.getAndIncrement();
+        Operation op = invocation.op;
+        if(op.getCallId()!=0){
+            invocations.remove(op.getCallId());
+        }
+
+        invocations.put(callId,invocation);
+        setCallId(invocation.op, callId);
         return callId;
     }
 
-    @PrivateApi
-    long newCallId() {
-        final long callId = callIdGen.incrementAndGet();
-        if (callId == 0) {
-            return newCallId();
-        }
-        return callId;
+    public void deregisterInvocation(long id){
+        invocations.remove(id);
     }
 
-    @PrivateApi
-    RemotecallCallback deregisterRemoteCall(long callId) {
-        return remoteCalls.remove(callId);
-    }
 
-    @PrivateApi
-    void registerBackupCall(long callId, BackupCompletionCallback backupCompletionCallback) {
-        final BackupCompletionCallback current = backupCalls.put(callId, backupCompletionCallback);
-        if (current != null) {
-            logger.warning("Already registered a backup record for call[" + callId + "]!");
-        }
-    }
-
-    @PrivateApi
-    void deregisterBackupCall(long callId) {
-        backupCalls.remove(callId);
-    }
+//    @PrivateApi
+//    long registerRemoteCall(RemotecallCallback call) {
+//        final long callId = newCallId();
+//        remoteCalls.put(callId, call);
+//        return callId;
+//    }
+//
+//    @PrivateApi
+//    long newCallId() {
+//        final long callId = callIdGen.incrementAndGet();
+//        if (callId == 0) {
+//            return newCallId();
+//        }
+//        return callId;
+//    }
+//
+//    @PrivateApi
+//    RemotecallCallback deregisterRemoteCall(long callId) {
+//        return remoteCalls.remove(callId);
+//    }
+//
+//    @PrivateApi
+//    void registerBackupCall(long callId, BackupCompletionCallback backupCompletionCallback) {
+//        final BackupCompletionCallback current = backupCalls.put(callId, backupCompletionCallback);
+//        if (current != null) {
+//            logger.warning("Already registered a backup record for call[" + callId + "]!");
+//        }
+//    }
+//
+//    @PrivateApi
+//    void deregisterBackupCall(long callId) {
+//        backupCalls.remove(callId);
+//    }
 
     @PrivateApi
     long getDefaultCallTimeout() {
@@ -721,12 +740,12 @@ final class BasicOperationService implements InternalOperationService {
         // postpone notifying calls since real response may arrive in the mean time.
         nodeEngine.getExecutionService().schedule(new Runnable() {
             public void run() {
-                final Iterator<RemotecallCallback> iter = remoteCalls.values().iterator();
+                final Iterator<BasicInvocation> iter = invocations.values().iterator();
                 while (iter.hasNext()) {
-                    final RemotecallCallback call = iter.next();
-                    if (call.isCallTarget(member)) {
+                    final BasicInvocation invocation = iter.next();
+                    if (invocation.isCallTarget(member)) {
                         iter.remove();
-                        call.notify(new MemberLeftException(member));
+                        invocation.notify(new MemberLeftException(member));
                     }
                 }
             }
@@ -738,11 +757,10 @@ final class BasicOperationService implements InternalOperationService {
         logger.finest("Stopping operation threads...");
         responseExecutor.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
-        for (RemotecallCallback call : remoteCalls.values()) {
-            call.notify(response);
+        for (BasicInvocation invocation : invocations.values()) {
+            invocation.notify(response);
         }
-        remoteCalls.clear();
-        backupCalls.clear();
+        invocations.clear();
         executor.shutdown();
     }
 
@@ -782,9 +800,9 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public void notifyBackupCall(long callId) {
         try {
-            final BackupCompletionCallback callback = backupCalls.get(callId);
-            if (callback != null) {
-                callback.signalOneBackupComplete();
+            final BasicInvocation invocation = invocations.get(callId);
+            if (invocation != null) {
+                invocation.signalOneBackupComplete();
             }
         } catch (Exception e) {
             ReplicaErrorLogger.log(e, logger);
@@ -800,12 +818,12 @@ final class BasicOperationService implements InternalOperationService {
 
         // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
         private void notifyRemoteCall(NormalResponse response) {
-            RemotecallCallback call = deregisterRemoteCall(response.getCallId());
-            if (call == null) {
-                throw new HazelcastException("No call for response:" + response);
+            BasicInvocation invocation = invocations.get(response.getCallId());
+            if (invocation == null) {
+                throw new HazelcastException("No invocation for response:" + response);
             }
 
-            call.notify(response);
+            invocation.notify(response);
         }
 
         @Override

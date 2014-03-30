@@ -116,9 +116,8 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             this.notifyAll();
         }
 
-        //we need to deregister the backup call to make sure that there is no memory leak.
         BasicOperationService operationService = (BasicOperationService) basicInvocation.nodeEngine.operationService;
-        operationService.deregisterBackupCall(basicInvocation.op.getCallId());
+        operationService.deregisterInvocation(basicInvocation.op.getCallId());
 
         while (callbackChain != null) {
             runAsynchronous(callbackChain.callback, callbackChain.executor);

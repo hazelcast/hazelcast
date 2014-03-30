@@ -129,9 +129,8 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("backup calls should be empty", 0, operationService.backupCalls.size());
-                assertEquals("remote calls should be empty", 0, operationService.remoteCalls.size());
-            }
+                assertEquals("invocations should be empty", 0, operationService.invocations.size());
+             }
         });
     }
 }

@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupCompletionCallback;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
@@ -43,7 +42,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
-import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
@@ -54,7 +52,7 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  * A handle to wait for the completion of this BasicInvocation is the
  * {@link com.hazelcast.spi.impl.BasicInvocationFuture}.
  */
-abstract class BasicInvocation implements RemotecallCallback, BackupCompletionCallback, ResponseHandler {
+abstract class BasicInvocation implements ResponseHandler {
 
     private final static AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
@@ -257,24 +255,19 @@ abstract class BasicInvocation implements RemotecallCallback, BackupCompletionCa
 
         remote = !thisAddress.equals(invTarget);
         if (remote) {
-            final RemotecallCallback call = this;
-            final long callId = operationService.registerRemoteCall(call);
-            if (op instanceof BackupAwareOperation) {
-                registerBackups((BackupAwareOperation) op, callId);
-            }
-            setCallId(op, callId);
+            final long callId = operationService.registerInvocation(this);
+
             boolean sent = operationService.send(op, invTarget);
+
             if (!sent) {
-                operationService.deregisterRemoteCall(callId);
-                operationService.deregisterBackupCall(callId);
+                operationService.deregisterInvocation(callId);
                 notify(new RetryableIOException("Packet not responseReceived to -> " + invTarget));
             }
         } else {
             if (op instanceof BackupAwareOperation) {
-                final long callId = operationService.newCallId();
-                registerBackups((BackupAwareOperation) op, callId);
-                setCallId(op, callId);
+                operationService.registerInvocation(this);
             }
+
             responseReceived = Boolean.FALSE;
             op.setResponseHandler(this);
 
@@ -322,7 +315,6 @@ abstract class BasicInvocation implements RemotecallCallback, BackupCompletionCa
         return true;
     }
 
-    @Override
     public boolean isCallTarget(MemberImpl leftMember) {
         if (invTargetMember == null) {
             return leftMember.getAddress().equals(invTarget);
@@ -334,7 +326,6 @@ abstract class BasicInvocation implements RemotecallCallback, BackupCompletionCa
     //this method is called by the operation service to signal the invocation that something has happened, e.g.
     //a response is returned.
     //@Override
-    @Override
     public void notify(Object obj) {
         Object response;
         if (obj == null) {
@@ -411,15 +402,6 @@ abstract class BasicInvocation implements RemotecallCallback, BackupCompletionCa
 
     protected abstract Address getTarget();
 
-    private void registerBackups(BackupAwareOperation op, long callId) {
-        final long oldCallId = ((Operation) op).getCallId();
-        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        if (oldCallId != 0) {
-            operationService.deregisterBackupCall(oldCallId);
-        }
-        operationService.registerBackupCall(callId, this);
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
@@ -441,7 +423,6 @@ abstract class BasicInvocation implements RemotecallCallback, BackupCompletionCa
     private volatile NormalResponse potentialResponse;
     private volatile int expectedBackupCount;
 
-    @Override
     public void signalOneBackupComplete() {
         synchronized (this) {
             availableBackups++;
