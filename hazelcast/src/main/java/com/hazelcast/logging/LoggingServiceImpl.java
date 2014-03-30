@@ -58,7 +58,7 @@ public class LoggingServiceImpl implements LoggingService {
         this.buildInfo = buildInfo;
     }
 
-    public void setThisMember(MemberImpl thisMember){
+    public void setThisMember(MemberImpl thisMember) {
         this.thisMember = thisMember;
         this.thisAddressString = "[" + thisMember.getAddress().getHost() + "]:" + thisMember.getAddress().getPort();
     }

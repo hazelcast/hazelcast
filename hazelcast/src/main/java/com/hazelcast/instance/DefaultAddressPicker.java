@@ -43,6 +43,7 @@ class DefaultAddressPicker implements AddressPicker {
         this.logger = node.getLogger(DefaultAddressPicker.class);
     }
 
+    @Override
     public void pickAddress() throws Exception {
         if (publicAddress != null || bindAddress != null) {
             return;
