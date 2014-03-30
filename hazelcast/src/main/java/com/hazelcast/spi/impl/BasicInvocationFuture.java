@@ -94,6 +94,12 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
+    /**
+     * Can be called multiple times, but only the first answer will lead to the future getting triggered. All subsequent
+     * 'set' calls are ignored.
+     * 
+     * @param response
+     */
     public void set(Object response) {
         if (response == null) {
             throw new IllegalArgumentException("response can't be null");
@@ -110,7 +116,11 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
             if (this.response != null && !(this.response instanceof BasicInvocation.InternalResponse)) {
-                throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
+                //it can be that this invocation future already received an answer, e.g. when a an invocation
+                //already received a response, but before it cleans up itself, it receives a
+                //HazelcastInstanceNotActiveException.
+                basicInvocation.logger.info("The InvocationFuture.set method can only be called once");
+                return;
             }
             this.response = response;
             if (response == BasicInvocation.WAIT_RESPONSE) {
