@@ -363,11 +363,6 @@ public class ClientMultiMapTest {
             }
         }
         mm.clear();
-
-        assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                assertEquals(0, mm.size());
-            }
-        });
+        assertEquals(0, mm.size());
     }
 }
