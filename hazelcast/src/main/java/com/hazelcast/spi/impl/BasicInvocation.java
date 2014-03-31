@@ -52,7 +52,7 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  * A handle to wait for the completion of this BasicInvocation is the
  * {@link com.hazelcast.spi.impl.BasicInvocationFuture}.
  */
-abstract class BasicInvocation implements ResponseHandler,Runnable {
+abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     private final static AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
@@ -327,61 +327,15 @@ abstract class BasicInvocation implements ResponseHandler,Runnable {
     //a response is returned.
     //@Override
     public void notify(Object obj) {
-        Object response;
-        if (obj == null) {
-            response = NULL_RESPONSE;
-        } else {
-            Throwable error = getError(obj);
-            if (error != null) {
-                if (error instanceof CallTimeoutException) {
-                    response = RETRY_RESPONSE;
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
-                    }
-                    if (op instanceof WaitSupport) {
-                        // decrement wait-timeout by call-timeout
-                        long waitTimeout = op.getWaitTimeout();
-                        waitTimeout -= callTimeout;
-                        op.setWaitTimeout(waitTimeout);
-                    }
-                    invokeCount--;
-                } else {
-                    final ExceptionAction action = onException(error);
-                    final int localInvokeCount = invokeCount;
-                    if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
-                        response = RETRY_RESPONSE;
-                        if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
-                            logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
-                        }
-                    } else if (action == ExceptionAction.CONTINUE_WAIT) {
-                        response = WAIT_RESPONSE;
-                    } else {
-                        response = error;
-                    }
-                }
-            } else {
-                response = obj;
-            }
-        }
+        Object response = resolveResponse(obj);
 
         if (response == RETRY_RESPONSE) {
-            if (invocationFuture.interrupted) {
-                invocationFuture.set(INTERRUPTED_RESPONSE);
-            } else {
-                invocationFuture.set(WAIT_RESPONSE);
-                final ExecutionService ex = nodeEngine.getExecutionService();
-                // fast retry for the first few invocations
-                if (invokeCount < 5) {
-                    getAsyncExecutor().execute(this);
-                } else {
-                    ex.schedule(ExecutionService.ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
-                }
-            }
+            handleRetryResponse();
             return;
         }
 
         if (response == WAIT_RESPONSE) {
-            invocationFuture.set(WAIT_RESPONSE);
+            handleWaitResponse();
             return;
         }
 
@@ -397,6 +351,65 @@ abstract class BasicInvocation implements ResponseHandler,Runnable {
 
         //we don't need to wait for a backup, so we can set the response immediately.
         invocationFuture.set(response);
+    }
+
+    private void handleWaitResponse() {
+        invocationFuture.set(WAIT_RESPONSE);
+    }
+
+    private void handleRetryResponse() {
+        if (invocationFuture.interrupted) {
+            invocationFuture.set(INTERRUPTED_RESPONSE);
+        } else {
+            invocationFuture.set(WAIT_RESPONSE);
+            final ExecutionService ex = nodeEngine.getExecutionService();
+            // fast retry for the first few invocations
+            if (invokeCount < 5) {
+                getAsyncExecutor().execute(this);
+            } else {
+                ex.schedule(ExecutionService.ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
+            }
+        }
+    }
+
+    private Object resolveResponse(Object obj) {
+        if (obj == null) {
+            return NULL_RESPONSE;
+        }
+
+        Throwable error = getError(obj);
+        if (error == null) {
+            return obj;
+        }
+
+        if (error instanceof CallTimeoutException) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+            }
+            if (op instanceof WaitSupport) {
+                // decrement wait-timeout by call-timeout
+                long waitTimeout = op.getWaitTimeout();
+                waitTimeout -= callTimeout;
+                op.setWaitTimeout(waitTimeout);
+            }
+            invokeCount--;
+            return RETRY_RESPONSE;
+        }
+
+        final ExceptionAction action = onException(error);
+        final int localInvokeCount = invokeCount;
+        if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
+            if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
+                logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
+            }
+            return RETRY_RESPONSE;
+        }
+
+        if (action == ExceptionAction.CONTINUE_WAIT) {
+            return WAIT_RESPONSE;
+        }
+
+        return error;
     }
 
     protected abstract Address getTarget();

@@ -55,7 +55,6 @@ import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
-import org.jruby.runtime.profile.Invocation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -659,19 +658,19 @@ final class BasicOperationService implements InternalOperationService {
         return nodeEngine.send(packet, connection);
     }
 
-    public long registerInvocation(BasicInvocation invocation){
+    public long registerInvocation(BasicInvocation invocation) {
         long callId = callIdGen.getAndIncrement();
         Operation op = invocation.op;
-        if(op.getCallId()!=0){
+        if (op.getCallId() != 0) {
             invocations.remove(op.getCallId());
         }
 
-        invocations.put(callId,invocation);
+        invocations.put(callId, invocation);
         setCallId(invocation.op, callId);
         return callId;
     }
 
-    public void deregisterInvocation(long id){
+    public void deregisterInvocation(long id) {
         invocations.remove(id);
     }
 

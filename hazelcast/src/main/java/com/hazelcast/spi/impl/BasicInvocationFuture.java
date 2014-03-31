@@ -367,7 +367,6 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         return sb.toString();
     }
 
-
     private static class ExecutionCallbackNode<E> {
         private final ExecutionCallback<E> callback;
         private final Executor executor;
