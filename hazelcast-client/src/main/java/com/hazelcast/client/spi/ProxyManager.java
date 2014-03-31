@@ -182,11 +182,11 @@ public final class ProxyManager {
             throw new IllegalArgumentException("No factory registered for service: " + service);
         }
         final ClientProxy clientProxy = factory.create(id);
-        initialize(clientProxy);
         final ClientProxy current = proxies.putIfAbsent(ns, clientProxy);
         if (current != null){
             return current;
         }
+        initialize(clientProxy);
         return clientProxy;
     }
 
