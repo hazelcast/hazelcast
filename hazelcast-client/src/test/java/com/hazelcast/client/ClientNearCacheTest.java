@@ -188,7 +188,7 @@ public class ClientNearCacheTest {
     @Test
     @Category(ProblematicTest.class)
     public void testGetAsyncPopulatesNearCache() throws Exception {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
 
         int size = 1239;
         for (int i = 0; i < size; i++) {
@@ -211,7 +211,7 @@ public class ClientNearCacheTest {
     @Test
     @Category(ProblematicTest.class)
     public void testRemovedKeyValueNotInNearCache() throws Exception {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
 
         int size = 1247;
         for (int i = 0; i < size; i++) {
@@ -299,7 +299,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCacheMisses_whenRepeatedOnSameKey() {
-        final IMap map = client.getMap(mapWithBasicCash +randomString());
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
 
         final int size = 17;
         for (int i = 0; i < size; i++) {
