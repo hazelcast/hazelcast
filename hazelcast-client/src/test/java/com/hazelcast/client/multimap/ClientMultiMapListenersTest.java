@@ -18,9 +18,7 @@ package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -29,16 +27,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -69,7 +61,7 @@ public class ClientMultiMapListenersTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testAddLocalEntryListener() {
         final MultiMap mm = client.getMultiMap(randomString());
-        MyEntryListener myEntryListener = new MyEntryListener(1);
+        MyEntryListener myEntryListener = new CountDownValueNotNullListener(1);
         mm.addLocalEntryListener(myEntryListener);
     }
 
@@ -84,11 +76,12 @@ public class ClientMultiMapListenersTest {
     public void testRemoveListener() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
 
-        MyEntryListener listener = new MyEntryListener(1);
+        MyEntryListener listener = new CountDownValueNotNullListener(1);
         final String id = mm.addEntryListener(listener, true);
 
         assertTrue(mm.removeEntryListener(id));
     }
+
 
     @Test
     public void testRemoveListener_whenNotExist() throws InterruptedException {
@@ -103,18 +96,18 @@ public class ClientMultiMapListenersTest {
     public void addEntryListener_whenSameListenerAddedMultipleTimes() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
 
-        MyEntryListener listener = new MyEntryListener(1);
+        MyEntryListener listener = new CountDownValueNotNullListener(1);
         final String id = mm.addEntryListener(listener, true);
         final String id2 = mm.addEntryListener(listener, true);
     }
 
     @Test
     public void testListenerEntryAddEvent() throws InterruptedException {
-        final int maxKeys = 22;
+        final int maxKeys = 12;
         final int maxItems = 3;
         final MultiMap mm = client.getMultiMap(randomString());
 
-        MyEntryListener listener = new MyEntryListener(maxKeys * maxItems);
+        MyEntryListener listener = new CountDownValueNotNullListener(maxKeys * maxItems);
         mm.addEntryListener(listener, true);
 
         for(int i=0; i<maxKeys; i++){
@@ -122,16 +115,33 @@ public class ClientMultiMapListenersTest {
                 mm.put(i, j);
             }
         }
-        assertOpenEventually(listener.addLatch, 10);
+        assertOpenEventually(listener.addLatch);
+    }
+
+    @Test
+    public void testListenerEntryAddEvent_whenValueNotIncluded() throws InterruptedException {
+        final int maxKeys = 21;
+        final int maxItems = 3;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new CountDownValueNullListener(maxKeys * maxItems);
+        mm.addEntryListener(listener, false);
+
+        for(int i=0; i<maxKeys; i++){
+            for(int j=0; j<maxKeys; j++){
+                mm.put(i, j);
+            }
+        }
+        assertOpenEventually(listener.addLatch);
     }
 
     @Test
     public void testListenerEntryRemoveEvent() throws InterruptedException {
-        final int maxKeys = 22;
+        final int maxKeys = 25;
         final int maxItems = 3;
         final MultiMap mm = client.getMultiMap(randomString());
 
-        MyEntryListener listener = new MyEntryListener(maxKeys * maxItems);
+        MyEntryListener listener = new CountDownValueNotNullListener(maxKeys * maxItems);
         mm.addEntryListener(listener, true);
 
         for(int i=0; i<maxKeys; i++){
@@ -140,32 +150,66 @@ public class ClientMultiMapListenersTest {
                 mm.remove(i);
             }
         }
-        assertOpenEventually(listener.removeLatch, 10);
+        assertOpenEventually(listener.removeLatch);
+    }
+
+    @Test
+    public void testListenerEntryRemoveEvent_whenValueNotIncluded() throws InterruptedException {
+        final int maxKeys = 31;
+        final int maxItems = 3;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new CountDownValueNullListener(maxKeys * maxItems);
+        mm.addEntryListener(listener, false);
+
+        for(int i=0; i<maxKeys; i++){
+            for(int j=0; j<maxKeys; j++){
+                mm.put(i, j);
+                mm.remove(i);
+            }
+        }
+        assertOpenEventually(listener.removeLatch);
     }
 
     @Test
     public void testListenerOnKeyEntryAddEvent() throws InterruptedException {
         final Object key = "key";
-        final int maxItems = 101;
+        final int maxItems = 42;
         final MultiMap mm = client.getMultiMap(randomString());
 
-        MyEntryListener listener = new MyEntryListener(maxItems);
+        MyEntryListener listener = new CountDownValueNotNullListener(maxItems);
         mm.addEntryListener(listener, key, true);
 
         for(int i=0; i<maxItems; i++){
             mm.put(key, i);
         }
 
-        assertOpenEventually(listener.addLatch, 10);
+        assertOpenEventually(listener.addLatch);
+    }
+
+    @Test
+    public void testListenerOnKeyEntryAddEvent_whenValueNotIncluded() throws InterruptedException {
+        final Object key = "key";
+        final int maxItems = 72;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new CountDownValueNullListener(maxItems);
+        mm.addEntryListener(listener, key, false);
+
+        for(int i=0; i<maxItems; i++){
+            mm.put(key, i);
+        }
+
+        assertOpenEventually(listener.addLatch);
     }
 
     @Test
     public void testListenerOnKeyEntryRemoveEvent() throws InterruptedException {
         final Object key = "key";
-        final int maxItems = 101;
+        final int maxItems = 88;
         final MultiMap mm = client.getMultiMap(randomString());
 
-        MyEntryListener listener = new MyEntryListener(maxItems);
+        MyEntryListener listener = new CountDownValueNotNullListener(maxItems);
         mm.addEntryListener(listener, key, true);
 
         for(int i=0; i<maxItems; i++){
@@ -173,16 +217,33 @@ public class ClientMultiMapListenersTest {
             mm.remove(key, i);
         }
 
-        assertOpenEventually(listener.removeLatch, 10);
+        assertOpenEventually(listener.removeLatch);
+    }
+
+    @Test
+    public void testListenerOnKeyEntryRemoveEvent_whenValueNotIncluded() throws InterruptedException {
+        final Object key = "key";
+        final int maxItems = 62;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new CountDownValueNullListener(maxItems);
+        mm.addEntryListener(listener, key, false);
+
+        for(int i=0; i<maxItems; i++){
+            mm.put(key, i);
+            mm.remove(key, i);
+        }
+
+        assertOpenEventually(listener.removeLatch);
     }
 
     @Test
     public void testListenerOnKeyEntryRemove_WithOneRemove() throws InterruptedException {
         final Object key = "key";
-        final int maxItems = 101;
+        final int maxItems = 98;
         final MultiMap mm = client.getMultiMap(randomString());
 
-        MyEntryListener listener = new MyEntryListener(maxItems, 1);
+        MyEntryListener listener = new CountDownValueNotNullListener(maxItems, 1);
         final String id = mm.addEntryListener(listener, key, true);
 
         for(int i=0; i<maxItems; i++){
@@ -190,10 +251,28 @@ public class ClientMultiMapListenersTest {
         }
         mm.remove(key);
 
-        assertOpenEventually(listener.removeLatch, 10);
+        assertOpenEventually(listener.removeLatch);
     }
 
-    static class MyEntryListener implements EntryListener {
+    @Test
+    public void testListenerOnKeyEntryRemove_WithOneRemoveWhenValueNotIncluded() throws InterruptedException {
+        final Object key = "key";
+        final int maxItems = 56;
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        MyEntryListener listener = new CountDownValueNullListener(maxItems, 1);
+        final String id = mm.addEntryListener(listener, key, false);
+
+        for(int i=0; i<maxItems; i++){
+            mm.put(key, i);
+        }
+        mm.remove(key);
+
+        assertOpenEventually(listener.removeLatch);
+    }
+
+
+    static abstract class MyEntryListener implements EntryListener {
 
         final public CountDownLatch addLatch;
         final public CountDownLatch removeLatch;
@@ -213,21 +292,75 @@ public class ClientMultiMapListenersTest {
             updateLatch = new CountDownLatch(1);
             evictLatch = new CountDownLatch(1);
         }
+    };
+
+    static class CountDownValueNotNullListener extends MyEntryListener{
+
+        public CountDownValueNotNullListener(int latchCount){
+            super(latchCount);
+        }
+
+        public CountDownValueNotNullListener(int addlatchCount, int removeLatchCount){
+            super(addlatchCount, removeLatchCount);
+        }
 
         public void entryAdded(EntryEvent event) {
-            addLatch.countDown();
+            if(event.getValue() != null){
+                addLatch.countDown();
+            }
         }
 
         public void entryRemoved(EntryEvent event) {
-            removeLatch.countDown();
+            if(event.getValue() != null){
+                removeLatch.countDown();
+            }
         }
 
         public void entryUpdated(EntryEvent event) {
-            updateLatch.countDown();
+            if(event.getValue() != null){
+                updateLatch.countDown();
+            }
         }
 
         public void entryEvicted(EntryEvent event) {
-            evictLatch.countDown();
+            if(event.getValue() != null){
+                evictLatch.countDown();
+            }
+        }
+    }
+
+    static class CountDownValueNullListener extends MyEntryListener {
+
+        public CountDownValueNullListener(int latchCount){
+            super(latchCount);
+        }
+
+        public CountDownValueNullListener(int addlatchCount, int removeLatchCount){
+            super(addlatchCount, removeLatchCount);
+        }
+
+        public void entryAdded(EntryEvent event) {
+            if(event.getValue() == null){
+                addLatch.countDown();
+            }
+        }
+
+        public void entryRemoved(EntryEvent event) {
+            if(event.getValue() == null){
+                removeLatch.countDown();
+            }
+        }
+
+        public void entryUpdated(EntryEvent event) {
+            if(event.getValue() == null){
+                updateLatch.countDown();
+            }
+        }
+
+        public void entryEvicted(EntryEvent event) {
+            if(event.getValue() == null){
+                evictLatch.countDown();
+            }
         }
     };
 }
