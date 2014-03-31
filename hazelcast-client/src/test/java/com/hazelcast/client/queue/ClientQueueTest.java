@@ -76,15 +76,20 @@ public class ClientQueueTest {
         assertEquals(1, q.size());
     }
 
+    @Test
+    public void testAdd_whenReachingMaximumCapacity() {
+        final IQueue q = client.getQueue(queueWithMaxSize+randomString());
+        for(int i=0; i<maxSizeForQueue; i++){
+            q.add(1);
+        }
+        assertEquals(maxSizeForQueue, q.size());
+    }
+
     @Test(expected = IllegalStateException.class)
     public void testAdd_whenExceedingMaximumCapacity() {
         final IQueue q = client.getQueue(queueWithMaxSize+randomString());
         for(int i=0; i<maxSizeForQueue; i++){
-            try{
-                q.add(1);
-            }catch (Exception e){
-                fail("failed to add items up to max size of the Queue");
-            }
+            q.add(1);
         }
         q.add(1);
     }
