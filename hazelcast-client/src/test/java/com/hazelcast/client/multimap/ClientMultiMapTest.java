@@ -354,7 +354,6 @@ public class ClientMultiMapTest {
     @Test
     public void testClear() {
         final MultiMap mm = client.getMultiMap(randomString());
-
         final int maxKeys = 9;
         final int maxValues = 3;
 
@@ -363,7 +362,6 @@ public class ClientMultiMapTest {
                 mm.put(key, val);
             }
         }
-
         mm.clear();
 
         assertTrueEventually(new AssertTask() {
