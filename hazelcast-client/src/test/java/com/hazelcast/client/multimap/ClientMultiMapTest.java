@@ -19,6 +19,7 @@ package com.hazelcast.client.multimap;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -348,5 +349,27 @@ public class ClientMultiMapTest {
     public void testGetLocalMultiMapStats() {
         final MultiMap mm = client.getMultiMap(randomString());
         mm.getLocalMultiMapStats();
+    }
+
+    @Test
+    public void testClear() {
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        final int maxKeys = 9;
+        final int maxValues = 3;
+
+        for ( int key=0; key< maxKeys; key++ ){
+            for ( int val=0; val< maxValues; val++ ){
+                mm.put(key, val);
+            }
+        }
+
+        mm.clear();
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertEquals(0, mm.size());
+            }
+        });
     }
 }
