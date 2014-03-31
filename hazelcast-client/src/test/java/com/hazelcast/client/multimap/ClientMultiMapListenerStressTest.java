@@ -42,7 +42,6 @@ public class ClientMultiMapListenerStressTest {
 
     @Test
     public void listenerAddStressTest() throws InterruptedException {
-
         final PutItemsThread[] putThreads = new PutItemsThread[NUMBER_OF_CLIENTS * THREADS_PER_CLIENT];
 
         int idx=0;
@@ -74,7 +73,6 @@ public class ClientMultiMapListenerStressTest {
     }
 
     public class PutItemsThread extends Thread{
-
         public static final int MAX_ITEMS = 1000;
 
         public final MyEntryListener listener = new MyEntryListener();
@@ -102,7 +100,6 @@ public class ClientMultiMapListenerStressTest {
     }
 
     static class MyEntryListener implements EntryListener {
-
         public AtomicInteger add = new AtomicInteger(0);
 
         public void entryAdded(EntryEvent event) {
