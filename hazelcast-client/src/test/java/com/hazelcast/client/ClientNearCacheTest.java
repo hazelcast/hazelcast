@@ -165,7 +165,7 @@ public class ClientNearCacheTest {
     }
 
     @Test
-    public void testGetAsync() throws Exception {
+    public void testGetAsyncChecksNearCacheFirst() throws Exception {
         final IMap map = client.getMap(mapWithBasicCash +randomString());
 
         int size = 1009;
@@ -209,7 +209,6 @@ public class ClientNearCacheTest {
         assertEquals(size, stats.getHits());
     }
 
-
     @Test
     @Category(ProblematicTest.class)
     public void testRemovedKeyValueNotInNearCache() throws Exception {
@@ -229,7 +228,6 @@ public class ClientNearCacheTest {
             assertNull(map.get(i));
         }
     }
-
 
     @Test
     public void testNearCachePopulatedAndHitsGenerated() throws Exception {
