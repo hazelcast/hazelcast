@@ -621,7 +621,6 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testMapPutTTLWithListener() throws InterruptedException {
-        Config cfg = new Config();
         final HazelcastInstance instance = createHazelcastInstance();
 
         final int putCount = 100;
