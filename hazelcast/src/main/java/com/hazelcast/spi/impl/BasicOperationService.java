@@ -166,8 +166,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getRemoteOperationsCount() {
-        //todo:
-        return 0;
+        return invocations.size();
     }
 
     @Override
