@@ -25,7 +25,7 @@ public class ClientMultiMapListenerStressTest {
     static final int MAX_SECONDS = 60 * 10;
     static final String MAP_NAME = randomString();
     static final int NUMBER_OF_CLIENTS = 8;
-    static final int THREADS_PER_CLIENT = 16;
+    static final int THREADS_PER_CLIENT = 8;
 
     static HazelcastInstance server;
 
@@ -39,7 +39,6 @@ public class ClientMultiMapListenerStressTest {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
-
 
     @Test
     public void listenerAddStressTest() throws InterruptedException {
@@ -72,7 +71,6 @@ public class ClientMultiMapListenerStressTest {
                 }
             }
         });
-
     }
 
     public class PutItemsThread extends Thread{
@@ -98,6 +96,7 @@ public class ClientMultiMapListenerStressTest {
         }
 
         public void assertResult(int target){
+            System.out.println("listener "+id+" add events received "+listener.add.get());
             assertEquals(target, listener.add.get());
         }
     }
