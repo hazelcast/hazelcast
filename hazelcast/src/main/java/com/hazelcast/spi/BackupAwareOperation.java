@@ -26,7 +26,7 @@ public interface BackupAwareOperation extends PartitionAwareOperation {
 
     /**
      * Checks if a backup needs to be made.
-     *
+     * <p/>
      * If a call has not made any change, e.g. an AtomicLong increment with 0, no backup needs to be made.
      *
      * @return true if a backup needs to be made, false otherwise.
@@ -36,7 +36,7 @@ public interface BackupAwareOperation extends PartitionAwareOperation {
     /**
      * The synchronous backup count.
      *
-     * @return  the synchronous backup count.
+     * @return the synchronous backup count.
      */
     int getSyncBackupCount();
 

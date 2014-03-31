@@ -14,9 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.client.executor.tasks;
 
-public interface BasicProcessor {
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-    void process(Object obj);
+import java.io.IOException;
+import java.util.concurrent.Callable;
+
+public class FailingCallable implements Callable<String>, DataSerializable {
+
+    public String call() throws Exception {
+        throw new IllegalStateException();
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+    }
 }

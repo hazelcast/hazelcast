@@ -23,9 +23,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.EventServiceImpl.EventPacket;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 
-/**
- * @author mdogan 8/24/12
- */
 public final class SpiDataSerializerHook implements DataSerializerHook {
 
     static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
@@ -61,8 +58,9 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new EventPacket();
                     case COLLECTION:
                         return new SerializableCollection();
+                    default:
+                        return null;
                 }
-                return null;
             }
         };
     }

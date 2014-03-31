@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.executor;
+package com.hazelcast.client.executor.tasks;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -23,18 +25,24 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class FailingTask implements Callable<String>, DataSerializable {
+public class GetMemberUuidTask implements Callable<String>, DataSerializable, HazelcastInstanceAware{
 
-    public FailingTask() {
-    }
+    private HazelcastInstance node;
 
     public String call() throws Exception {
-        throw new IllegalStateException();
+        return node.getCluster().getLocalMember().getUuid();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+
+    }
+
+    @Override
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        node = hazelcastInstance;
     }
 }

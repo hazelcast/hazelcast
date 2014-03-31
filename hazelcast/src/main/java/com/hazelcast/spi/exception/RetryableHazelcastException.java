@@ -18,13 +18,9 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.core.HazelcastException;
 
-/**
- * @author mdogan 1/18/13
- */
 public class RetryableHazelcastException extends HazelcastException implements RetryableException {
 
     public RetryableHazelcastException() {
-        super();
     }
 
     public RetryableHazelcastException(String message) {

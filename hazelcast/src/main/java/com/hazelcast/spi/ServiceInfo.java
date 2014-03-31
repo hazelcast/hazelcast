@@ -27,6 +27,7 @@ public final class ServiceInfo {
     private final Object service;
 
     public ServiceInfo(String name, Object service) {
+        //todo: can we verify that name/service are not null?
         this.name = name;
         this.service = service;
     }
@@ -58,12 +59,18 @@ public final class ServiceInfo {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ServiceInfo that = (ServiceInfo) o;
 
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
 
         return true;
     }

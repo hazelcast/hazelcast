@@ -48,7 +48,7 @@ final class PromoteFromBackupOperation extends AbstractOperation
             try {
                 service.beforeMigration(event);
                 service.commitMigration(event);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logMigrationError(e);
             }
         }
@@ -59,7 +59,7 @@ final class PromoteFromBackupOperation extends AbstractOperation
         return new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, partitionId);
     }
 
-    private void logMigrationError(Exception e) {
+    private void logMigrationError(Throwable e) {
         ILogger logger = getLogger();
         logger.warning("While promoting partition " + getPartitionId(), e);
     }

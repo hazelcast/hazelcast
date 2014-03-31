@@ -18,9 +18,6 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.core.HazelcastException;
 
-/**
- * @author mdogan 1/15/13
- */
 public class DistributedObjectDestroyedException extends HazelcastException {
 
     public DistributedObjectDestroyedException(String service, String name) {

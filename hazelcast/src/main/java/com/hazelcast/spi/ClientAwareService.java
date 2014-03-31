@@ -18,7 +18,7 @@ package com.hazelcast.spi;
 
 /**
  * A interface that can be implemented by a SPI Service so that it can be notified about client disconnects.
- *
+ * <p/>
  * This is useful if a service needs to cleanup resources when a client leaves, e.g. release locks.
  *
  * @author mdogan 5/6/13

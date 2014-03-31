@@ -24,10 +24,10 @@ import com.hazelcast.instance.MemberImpl;
 public class MemberAttributeServiceEvent extends MemberAttributeEvent {
 
     public MemberAttributeServiceEvent() {
-        super();
     }
 
-    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType, String key, Object value) {
+    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType,
+                                       String key, Object value) {
         super(cluster, member, operationType, key, value);
     }
 

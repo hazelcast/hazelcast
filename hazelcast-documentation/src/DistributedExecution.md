@@ -55,4 +55,4 @@ public void echoOnMembers(String input, Set<Member> members) throws Exception {
 }```
 
 
-Note that you can obtain the set of cluster members via `Hazelcast.getCluster().getMembers()` call.
+Note that you can obtain the set of cluster members via `instance.getCluster().getMembers()` call.

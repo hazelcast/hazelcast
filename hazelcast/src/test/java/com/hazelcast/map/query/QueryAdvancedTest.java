@@ -56,7 +56,7 @@ import static com.hazelcast.query.SampleObjects.*;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category(ProblematicTest.class)
 public class QueryAdvancedTest extends HazelcastTestSupport {
 
 

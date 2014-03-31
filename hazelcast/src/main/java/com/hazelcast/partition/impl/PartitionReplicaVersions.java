@@ -41,6 +41,12 @@ final class PartitionReplicaVersions {
         arraycopy(newVersions, 0, versions, 0, newVersions.length);
     }
 
+    void clear() {
+        for (int i = 0; i < versions.length; i++) {
+            versions[i] = 0;
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

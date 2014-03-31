@@ -210,7 +210,7 @@ public class BackupTest extends HazelcastTestSupport {
     }
 
     /**
-     * Fix for the issue 275.
+     * Test for the issue https://code.google.com/p/hazelcast/issues/detail?id=275.
      */
     @Test
     public void testBackupMigrationAndRecovery() throws Exception {
@@ -218,7 +218,7 @@ public class BackupTest extends HazelcastTestSupport {
     }
 
     /**
-     * Fix for the issue 395.
+     * Test for the issue https://code.google.com/p/hazelcast/issues/detail?id=395.
      */
     @Test
     public void testBackupMigrationAndRecovery2() throws Exception {
@@ -230,6 +230,7 @@ public class BackupTest extends HazelcastTestSupport {
         final String name = MAP_NAME;
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
+        config.setProperty(GroupProperties.PROP_PARTITION_BACKUP_SYNC_INTERVAL, "3");
         config.getMapConfig(name).setBackupCount(backupCount).setStatisticsEnabled(true);
 
         final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];

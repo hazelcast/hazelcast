@@ -125,7 +125,7 @@ public final class BasicOperationScheduler {
             size += t.priorityQueue.size();
         }
 
-       return size;
+        return size;
     }
 
     public void execute(final Object task, int partitionId, boolean priority) {

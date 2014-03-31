@@ -32,6 +32,10 @@ public interface InternalPartitionService extends CoreService {
 
     String SERVICE_NAME = "hz:core:partitionService";
 
+    int MAX_PARALLEL_REPLICATIONS = 4;
+    long DEFAULT_REPLICA_SYNC_DELAY = 15000L;
+    long REPLICA_SYNC_RETRY_DELAY = 1000L;
+
     /**
      * @param partitionId
      * @return
@@ -115,6 +119,11 @@ public interface InternalPartitionService extends CoreService {
 
     long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);
 
+    void setPartitionReplicaVersions(int partitionId, long[] versions);
+
+    void clearPartitionReplicaVersions(int partitionId);
+
     //todo: this is very strange.
     com.hazelcast.core.PartitionService getPartitionServiceProxy();
+
 }

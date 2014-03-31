@@ -18,9 +18,6 @@ package com.hazelcast.spi;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 12/14/12
- */
 public interface EventService {
 
     int getEventThreadCount();

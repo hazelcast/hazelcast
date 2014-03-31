@@ -24,11 +24,11 @@ import com.hazelcast.spi.OperationService;
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
  * InternalOperationService: {@link com.hazelcast.spi.impl.BasicOperationService}, but in the future others can be added.
- *
+ * <p/>
  * It exposes methods that will not be called by regular code, like shutdown, but will only be called by
  * the the SPI management.
  */
-public interface InternalOperationService extends OperationService{
+public interface InternalOperationService extends OperationService {
 
     void receive(Packet packet);
 
@@ -36,10 +36,11 @@ public interface InternalOperationService extends OperationService{
 
     boolean isCallTimedOut(Operation op);
 
+
+    void notifyBackupCall(long callId);
+
     /**
      * Shuts down this InternalOperationService.
      */
     void shutdown();
-
-    void notifyBackupCall(long callId);
 }

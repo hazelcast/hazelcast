@@ -48,7 +48,7 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category(ProblematicTest.class)
 public class NearCacheTest extends HazelcastTestSupport {
 
     @Test
@@ -305,12 +305,12 @@ public class NearCacheTest extends HazelcastTestSupport {
         map.get("key1");
         map.get("key2");
         map.get("key3");
-        assertEquals(map.containsKey("key1"), true);
-        assertEquals(map.containsKey("key5"), false);
+        assertTrue(map.containsKey("key1"));
+        assertFalse(map.containsKey("key5"));
         map.remove("key1");
-        assertEquals(map.containsKey("key1"), false);
-        assertEquals(map.containsKey("key2"), true);
-        assertEquals(map.containsKey("key5"), false);
+        assertFalse(map.containsKey("key5"));
+        assertTrue(map.containsKey("key2"));
+        assertFalse(map.containsKey("key1"));
     }
 
     @Test

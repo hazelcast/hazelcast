@@ -31,6 +31,6 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PACKAGE, ElementType.TYPE})
+@Target({ElementType.PACKAGE, ElementType.TYPE })
 public @interface Beta {
 }

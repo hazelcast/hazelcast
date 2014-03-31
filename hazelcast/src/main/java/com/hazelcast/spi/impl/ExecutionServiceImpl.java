@@ -58,9 +58,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * @author mdogan 12/14/12
- */
 public final class ExecutionServiceImpl implements ExecutionService {
 
     private final NodeEngineImpl nodeEngine;
@@ -86,13 +83,15 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 new SynchronousQueue<Runnable>(), threadFactory, new RejectedExecutionHandler() {
             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Node is shutting down; discarding the task: " + r);
+                    logger.finest("Node is shutting down; discarding the task: " + r);
                 }
             }
-        });
+        }
+        );
 
         final String scheduledThreadName = node.getThreadNamePrefix("scheduled");
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(1, new SingleExecutorThreadFactory(node.threadGroup, classLoader, scheduledThreadName));
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
+                new SingleExecutorThreadFactory(node.threadGroup, classLoader, scheduledThreadName));
         enableRemoveOnCancelIfAvailable();
 
         final int coreSize = Runtime.getRuntime().availableProcessors();
@@ -116,6 +115,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
+    @Override
     public ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type) {
         ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfigs().get(name);
         if (cfg != null) {
@@ -149,7 +149,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
                     60, TimeUnit.SECONDS,
                     new LinkedBlockingQueue<Runnable>(queueCapacity),
                     new PoolExecutorThreadFactory(node.threadGroup,
-                            node.getThreadPoolNamePrefix(internalName), node.getConfigClassLoader()));
+                            node.getThreadPoolNamePrefix(internalName), node.getConfigClassLoader())
+            );
             pool.allowCoreThreadTimeOut(true);
             executor = pool;
         } else {
@@ -158,6 +159,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return executor;
     }
 
+    @Override
     public ManagedExecutorService getExecutor(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(executors, name, constructor);
     }
@@ -173,39 +175,48 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return registerCompletableFuture(future);
     }
 
+    @Override
     public void execute(String name, Runnable command) {
         getExecutor(name).execute(command);
     }
 
+    @Override
     public Future<?> submit(String name, Runnable task) {
         return getExecutor(name).submit(task);
     }
 
+    @Override
     public <T> Future<T> submit(String name, Callable<T> task) {
         return getExecutor(name).submit(task);
     }
 
+    @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
         return defaultScheduledExecutorServiceDelegate.schedule(command, delay, unit);
     }
 
+    @Override
     public ScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit) {
         return getScheduledExecutor(name).schedule(command, delay, unit);
     }
 
+    @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
         return defaultScheduledExecutorServiceDelegate.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
+    @Override
     public ScheduledFuture<?> scheduleAtFixedRate(String name, Runnable command, long initialDelay,
                                                   long period, TimeUnit unit) {
         return getScheduledExecutor(name).scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
+    @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit) {
         return defaultScheduledExecutorServiceDelegate.scheduleWithFixedDelay(command, initialDelay, period, unit);
     }
 
+    @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(String name, Runnable command, long initialDelay,
                                                      long period, TimeUnit unit) {
         return getScheduledExecutor(name).scheduleWithFixedDelay(command, initialDelay, period, unit);
@@ -216,17 +227,19 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return new ExecutorDelegate(cachedExecutorService);
     }
 
+    @Override
     public ScheduledExecutorService getDefaultScheduledExecutor() {
         return defaultScheduledExecutorServiceDelegate;
     }
 
+    @Override
     public ScheduledExecutorService getScheduledExecutor(String name) {
         return new ScheduledExecutorServiceDelegate(scheduledExecutorService, getExecutor(name));
     }
 
     @PrivateApi
     void shutdown() {
-        logger.finest( "Stopping executors...");
+        logger.finest("Stopping executors...");
         cachedExecutorService.shutdown();
         scheduledExecutorService.shutdownNow();
         try {
@@ -240,6 +253,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         executors.clear();
     }
 
+    @Override
     public void shutdownExecutor(String name) {
         final ExecutorService ex = executors.remove(name);
         if (ex != null) {
@@ -266,45 +280,38 @@ public final class ExecutionServiceImpl implements ExecutionService {
             }
         }
 
-        private <V> boolean cancelCompletableFutureEntry(CompletableFutureEntry<V> entry) {
+        @Override
+        public void run() {
+            if (entries.isEmpty()) {
+                return;
+            }
+
+            CompletableFutureEntry[] copy;
             entriesLock.lock();
             try {
-                return entries.remove(entry);
+                copy = new CompletableFutureEntry[entries.size()];
+                copy = this.entries.toArray(copy);
             } finally {
                 entriesLock.unlock();
             }
-        }
-
-        @Override
-        public void run() {
-            if (entries.size() > 0) {
-                CompletableFutureEntry[] copy;
+            List<CompletableFutureEntry> removes = null;
+            for (CompletableFutureEntry entry : copy) {
+                if (entry.processState()) {
+                    if (removes == null) {
+                        removes = new ArrayList<CompletableFutureEntry>(copy.length / 2);
+                    }
+                    removes.add(entry);
+                }
+            }
+            // Remove processed elements
+            if (removes != null && !removes.isEmpty()) {
                 entriesLock.lock();
                 try {
-                    copy = new CompletableFutureEntry[entries.size()];
-                    copy = this.entries.toArray(copy);
+                    for (int i = 0; i < removes.size(); i++) {
+                        entries.remove(removes.get(i));
+                    }
                 } finally {
                     entriesLock.unlock();
-                }
-                List<CompletableFutureEntry> removes = null;
-                for (CompletableFutureEntry entry : copy) {
-                    if (entry.processState()) {
-                        if (removes == null) {
-                            removes = new ArrayList<CompletableFutureEntry>(copy.length / 2);
-                        }
-                        removes.add(entry);
-                    }
-                }
-                // Remove processed elements
-                if (removes != null && !removes.isEmpty()) {
-                    entriesLock.lock();
-                    try {
-                        for (int i = 0; i < removes.size(); i++) {
-                            entries.remove(removes.get(i));
-                        }
-                    } finally {
-                        entriesLock.unlock();
-                    }
                 }
             }
         }
@@ -317,7 +324,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         private CompletableFutureEntry(Future<V> future, NodeEngine nodeEngine,
                                        CompletableFutureTask completableFutureTask) {
             this.completableFutureTask = completableFutureTask;
-            this.completableFuture  = new BasicCompletableFuture<V>(future, nodeEngine);
+            this.completableFuture = new BasicCompletableFuture<V>(future, nodeEngine);
         }
 
         private boolean processState() {
@@ -342,6 +349,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
             this.executor = executor;
         }
 
+        @Override
         public void execute(Runnable command) {
             executor.execute(command);
         }
@@ -357,70 +365,87 @@ public final class ExecutionServiceImpl implements ExecutionService {
             this.executor = executor;
         }
 
+        @Override
         public void execute(Runnable command) {
             executor.execute(command);
         }
 
+        @Override
         public <T> Future<T> submit(Callable<T> task) {
             return executor.submit(task);
         }
 
+        @Override
         public <T> Future<T> submit(Runnable task, T result) {
             return executor.submit(task, result);
         }
 
+        @Override
         public Future<?> submit(Runnable task) {
             return executor.submit(task);
         }
 
+        @Override
         public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
             return scheduledExecutorService.schedule(new ScheduledTaskRunner(command, executor), delay, unit);
         }
 
+        @Override
         public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
             return scheduledExecutorService.scheduleAtFixedRate(new ScheduledTaskRunner(command, executor), initialDelay, period, unit);
         }
 
+        @Override
         public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
             return scheduledExecutorService.scheduleWithFixedDelay(new ScheduledTaskRunner(command, executor), initialDelay, delay, unit);
         }
 
+        @Override
         public void shutdown() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public List<Runnable> shutdownNow() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public boolean isShutdown() {
             return false;
         }
 
+        @Override
         public boolean isTerminated() {
             return false;
         }
 
+        @Override
         public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public <V> ScheduledFuture<V> schedule(final Callable<V> callable, long delay, TimeUnit unit) {
             throw new UnsupportedOperationException();
         }
@@ -486,6 +511,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
             this.runnable = runnable;
         }
 
+        @Override
         public void run() {
             try {
                 executor.execute(runnable);
