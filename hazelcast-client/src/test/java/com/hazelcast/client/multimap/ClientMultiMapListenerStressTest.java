@@ -56,12 +56,10 @@ public class ClientMultiMapListenerStressTest {
         for(int i=0; i<putThreads.length; i++){
             putThreads[i].start();
         }
+        MultiMap mm = server.getMultiMap(MAP_NAME);
 
         assertJoinable(MAX_SECONDS, putThreads );
-
-        MultiMap mm = server.getMultiMap(MAP_NAME);
         assertEquals(PutItemsThread.MAX_ITEMS * putThreads.length, mm.size());
-
         assertTrueEventually(new AssertTask() {
 
             public void run() throws Exception {
