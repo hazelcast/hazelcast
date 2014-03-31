@@ -74,7 +74,7 @@ public class ClientExecutorServiceTest {
     @Test
     public void testIsTerminated() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
-        assertFalse( service.isTerminated() );
+        assertFalse(service.isTerminated());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class ClientExecutorServiceTest {
     public void testAwaitTermination() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
         final boolean result = service.awaitTermination(9999, TimeUnit.DAYS);
-        assertFalse( result );
+        assertFalse(result);
     }
 
     @Test(expected = TimeoutException.class)
@@ -176,5 +176,14 @@ public class ClientExecutorServiceTest {
         }catch(ExecutionException e){
             throw e.getCause();
         }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testExecute_withNoMemberSelected() {
+        final IExecutorService service = client.getExecutorService(randomString());
+        final String mapName = randomString();
+        final MemberSelector selector = new SelectNoMembers();
+
+        service.execute( new MapPutRunnable(mapName), selector);
     }
 }
