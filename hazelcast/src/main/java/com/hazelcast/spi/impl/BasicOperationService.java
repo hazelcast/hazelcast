@@ -676,41 +676,6 @@ final class BasicOperationService implements InternalOperationService {
         invocations.remove(id);
     }
 
-
-//    @PrivateApi
-//    long registerRemoteCall(RemotecallCallback call) {
-//        final long callId = newCallId();
-//        remoteCalls.put(callId, call);
-//        return callId;
-//    }
-//
-//    @PrivateApi
-//    long newCallId() {
-//        final long callId = callIdGen.incrementAndGet();
-//        if (callId == 0) {
-//            return newCallId();
-//        }
-//        return callId;
-//    }
-//
-//    @PrivateApi
-//    RemotecallCallback deregisterRemoteCall(long callId) {
-//        return remoteCalls.remove(callId);
-//    }
-//
-//    @PrivateApi
-//    void registerBackupCall(long callId, BackupCompletionCallback backupCompletionCallback) {
-//        final BackupCompletionCallback current = backupCalls.put(callId, backupCompletionCallback);
-//        if (current != null) {
-//            logger.warning("Already registered a backup record for call[" + callId + "]!");
-//        }
-//    }
-//
-//    @PrivateApi
-//    void deregisterBackupCall(long callId) {
-//        backupCalls.remove(callId);
-//    }
-
     @PrivateApi
     long getDefaultCallTimeout() {
         return defaultCallTimeout;
