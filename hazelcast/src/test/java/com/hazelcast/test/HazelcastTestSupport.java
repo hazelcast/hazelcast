@@ -98,6 +98,9 @@ public abstract class HazelcastTestSupport {
 
                 long durationMs = System.currentTimeMillis() - startMs;
                 remainingTimeoutMs -= durationMs;
+                if (remainingTimeoutMs <= 0) {
+                    fail("Timeout waiting for thread " + t.getName() + " to terminate");
+                }
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
