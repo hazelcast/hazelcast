@@ -97,7 +97,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     /**
      * Can be called multiple times, but only the first answer will lead to the future getting triggered. All subsequent
      * 'set' calls are ignored.
-     * 
+     *
      * @param response
      */
     public void set(Object response) {
