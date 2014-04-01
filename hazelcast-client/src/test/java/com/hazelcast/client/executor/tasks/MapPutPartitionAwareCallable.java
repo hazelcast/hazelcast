@@ -23,6 +23,11 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.util.concurrent.Callable;
 import java.io.IOException;
 
+/**
+ * this task should execute on a node owning the given partitionKey argument,
+ * the action is to put the UUid of the executing node into a map with the given name
+ * and return that UUid
+ */
 public class MapPutPartitionAwareCallable implements Callable, DataSerializable, PartitionAware, HazelcastInstanceAware {
 
     private HazelcastInstance instance;

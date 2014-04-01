@@ -560,7 +560,8 @@ public class ClientExecutorServiceSubmitTest {
         final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
         final Member member = instance2.getCluster().getLocalMember();
 
-        //this runnable will insert the UUid of the node owning the given key argument, into a map with the given mapName
+        //this task should execute on a node owning the given key argument,
+        //the action is to put the UUid of the executing node into a map with the given name
         final Runnable runnable = new MapPutPartitionAwareRunnable(mapName, key);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
