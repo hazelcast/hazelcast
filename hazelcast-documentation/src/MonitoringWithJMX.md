@@ -13,7 +13,7 @@
     - `-Dcom.sun.management.jmxremote.authenticate=false` (to disable JMX auth) (*optional*)
 
 
--   Enable Hazelcast property `hazelcast.jmx` (refer to [System Property](#system-property));
+-   Enable Hazelcast property `hazelcast.jmx` (please refer to [Advanced Configuration Properties](#advanced-configuration-properties));
 
     -   using Hazelcast configuration (API, XML, Spring)
 
