@@ -445,22 +445,40 @@ public class ClientNearCacheTest {
         });
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testNearCacheContainsNullKey() {
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+        map.containsKey(null);
+    }
+
     @Test
-    @Category(ProblematicTest.class) // one can see stale value on the near cache after map.remove
     public void testNearCacheContainsKey() {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+        final Object key = "key";
 
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
+        map.put(key, "value");
+        map.get(key);
 
-        map.get("key1");
-        map.get("key2");
-        map.get("key3");
-        map.remove("key1");
+        assertTrue(map.containsKey(key));
+    }
 
-        assertFalse(map.containsKey("key5"));
-        assertTrue(map.containsKey("key2"));
-        assertFalse(map.containsKey("key1"));
+    @Test
+    public void testNearCacheContainsKey_whenKeyAbsent() {
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+
+        assertFalse(map.containsKey("NOT_THERE"));
+    }
+
+    @Test
+    @Category(ProblematicTest.class) // one can see stale value on the near cache after map.remove
+    public void testNearCacheContainsKey_afterRemove() {
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+        final Object key = "key";
+
+        map.put(key, "value");
+        map.get(key);
+        map.remove(key);
+
+        assertFalse(map.containsKey(key));
     }
 }
