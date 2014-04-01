@@ -44,8 +44,8 @@ public class ValidationUtil {
     private ValidationUtil() {
     }
 
-    public static void isNotNegative(int permits, String argumentName) {
-        if (permits < 0) {
+    public static void isNotNegative(long value, String argumentName) {
+        if (value < 0) {
             throw new IllegalArgumentException(argumentName + " cannot be negative!");
         }
     }

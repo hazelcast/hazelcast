@@ -65,8 +65,7 @@ public class ClientMultiMapListenersTest {
         mm.addLocalEntryListener(myEntryListener);
     }
 
-    @Test(expected = NullPointerException.class)
-    @Category(ProblematicTest.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testAddListener_whenListenerNull() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
         mm.addEntryListener(null, true);

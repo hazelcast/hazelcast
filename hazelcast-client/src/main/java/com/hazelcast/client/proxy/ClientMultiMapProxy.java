@@ -29,8 +29,11 @@ import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ThreadUtil;
 
+import com.hazelcast.util.ValidationUtil;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.ValidationUtil.*;
 
 /**
  * @author ali 5/19/13
@@ -148,6 +151,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
+        isNotNull(listener, "listener");
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, null, includeValue);
         EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
         return listen(request, handler);
@@ -172,6 +176,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
+        isNotNegative(leaseTime, "leaseTime");
         final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
                 getTimeInMillis(leaseTime, timeUnit), -1, name);
