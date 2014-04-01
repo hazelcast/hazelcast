@@ -640,7 +640,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitCallablePartitionAware_With() throws Exception{
+    public void submitCallablePartitionAware_WithExecutionCallback() throws Exception{
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String mapName = randomString();
