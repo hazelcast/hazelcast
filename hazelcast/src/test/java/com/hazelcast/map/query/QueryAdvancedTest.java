@@ -77,10 +77,15 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance h1 = createHazelcastInstance(cfg);
 
         IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", false);
+        imap.addIndex("active", true);
+
         int passiveEmployees = 5;
         int activeEmployees = 5;
+        int allEmployees = passiveEmployees+activeEmployees;
 
-        final  CountDownLatch latch =  new CountDownLatch(passiveEmployees+activeEmployees);
+        final  CountDownLatch latch =  new CountDownLatch(allEmployees);
         imap.addEntryListener(new EntryAdapter() {
             @Override
             public void entryEvicted(EntryEvent event) {
