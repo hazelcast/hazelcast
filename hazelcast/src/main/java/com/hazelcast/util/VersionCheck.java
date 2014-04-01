@@ -29,11 +29,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.logging.Level;
 
 public class VersionCheck {
 
-    private VersionCheck(){}
+    private VersionCheck() {
+    }
 
     public static void check(final Node hazelcastNode, final String buildDate, final String version) {
         if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {
@@ -52,10 +52,12 @@ public class VersionCheck {
         try {
             Document doc = fetchWebService(urlStr);
             if (doc != null) {
-                org.w3c.dom.Node nodeFinal = (org.w3c.dom.Node) XPathFactory.newInstance().newXPath().evaluate("/hazelcast-version/final", doc, XPathConstants.NODE);
+                org.w3c.dom.Node nodeFinal = (org.w3c.dom.Node) XPathFactory.newInstance().newXPath()
+                        .evaluate("/hazelcast-version/final", doc, XPathConstants.NODE);
                 String finalVersion = nodeFinal.getAttributes().getNamedItem("version").getTextContent();
                 String finalDate = nodeFinal.getAttributes().getNamedItem("date").getTextContent();
-                org.w3c.dom.Node nodeSnapshot = (org.w3c.dom.Node) XPathFactory.newInstance().newXPath().evaluate("/hazelcast-version/snapshot", doc, XPathConstants.NODE);
+                org.w3c.dom.Node nodeSnapshot = (org.w3c.dom.Node) XPathFactory.newInstance().newXPath()
+                        .evaluate("/hazelcast-version/snapshot", doc, XPathConstants.NODE);
                 String snapshotVersion = nodeSnapshot.getAttributes().getNamedItem("version").getTextContent();
                 String snapshotDate = nodeSnapshot.getAttributes().getNamedItem("date").getTextContent();
                 if (!version.contains("SNAPSHOT")) {

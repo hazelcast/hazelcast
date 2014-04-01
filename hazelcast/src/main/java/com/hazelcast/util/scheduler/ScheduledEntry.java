@@ -18,10 +18,8 @@ package com.hazelcast.util.scheduler;
 
 import java.util.Map;
 
-/**
- * @author mdogan 2/25/13
- */
-public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
+public final class ScheduledEntry<K, V> implements Map.Entry<K, V> {
+
     private final K key;
 
     private final V value;
@@ -31,7 +29,6 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
     private final int actualDelaySeconds;
 
     private final long scheduleTimeNanos;
-
 
     public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds) {
         this.key = key;
@@ -49,10 +46,12 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
         this.scheduleTimeNanos = scheduleTimeNanos;
     }
 
+    @Override
     public K getKey() {
         return key;
     }
 
+    @Override
     public V getValue() {
         return value;
     }

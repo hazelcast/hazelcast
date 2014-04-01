@@ -21,7 +21,6 @@ import java.util.Set;
 /**
  * Schedules (or reschedules) the execution of given entry.
  */
-
 public interface EntryTaskScheduler<K, V> {
     /**
      * Schedules (or reschedules) the execution of given entry. Key parameter is
@@ -31,7 +30,7 @@ public interface EntryTaskScheduler<K, V> {
      * @param key         key of this scheduling.
      * @param object      user object to pass back when it is time to execute.
      * @return returns true if this call resulted in a new scheduling,
-     *         false otherwise.
+     * false otherwise.
      */
     boolean schedule(long delayMillis, K key, V object);
 
