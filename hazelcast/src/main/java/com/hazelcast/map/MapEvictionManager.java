@@ -12,6 +12,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.MemoryUnit;
 
 import java.util.Map;
 import java.util.Set;
@@ -149,8 +150,8 @@ public class MapEvictionManager {
                 return false;
             }
             final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-            final int maxSize = maxSizeConfig.getSize();
-            return maxSize < (usedHeapSize / 1024 / 1024);
+            final int maxSizeInMegaBytes = maxSizeConfig.getSize();
+            return maxSizeInMegaBytes < MemoryUnit.BYTES.toMegaBytes(usedHeapSize);
         }
 
         private boolean isEvictableHeapPercentage(final MapContainer mapContainer) {
@@ -159,9 +160,9 @@ public class MapEvictionManager {
                 return false;
             }
             final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-            final int maxSize = maxSizeConfig.getSize();
+            final int maxSizePercentage = maxSizeConfig.getSize();
             final long total = Runtime.getRuntime().totalMemory();
-            return maxSize < (100d * usedHeapSize / total);
+            return maxSizePercentage < (100d * usedHeapSize / total);
         }
 
         private long getUsedHeapSize(final MapContainer mapContainer) {
