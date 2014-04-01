@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -195,5 +196,10 @@ public class ClientLockTest {
         boolean lockObtained = lockB.tryLock();
 
         assertFalse("Lock obtained by 2 client ", lockObtained);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testNewCondition() throws Exception {
+        l.newCondition();
     }
 }
