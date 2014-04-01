@@ -77,6 +77,9 @@ src/Management.md
 #	src/MemcacheServer.md
 #	src/REST.md
 src/Security.md
+	src/Encryption.md
+	src/SSL.md
+	src/EnablingSecurityforHE.md
 	src/Credentials.md
 	src/ClusterLoginModule.md
 	src/ClusterMemberSecurity.md
@@ -92,9 +95,6 @@ src/Config.md
 		src/ConfigTcpIp.md
 		src/ConfigSpecifyInterfaces.md
 		src/EC2AutoDiscovery.md
-		src/SSL.md
-		src/Encryption.md
-		src/SocketInterceptor.md
 		src/IPv6.md
 		src/OutboundPorts.md
 	src/PartitionGroupConfig.md

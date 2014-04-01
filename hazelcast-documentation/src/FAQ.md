@@ -2,8 +2,34 @@
 
 # Frequently Asked Questions
 
+**1\. Why 271 as the Default Partition Count**
 
-**1\. How Do I Choose Keys Properly**
+The partition count 271, being a prime number, is a good choice since it will be distributed to the nodes almost evenly. For a small to medium sized cluster, the count 271 gives almost even partition distribution and optimal sized partitions.  As your cluster becomes bigger, this count should be made bigger to have evenly distributed partitions.
+
+**2\. How Do Nodes Discover One Other**
+
+
+When a node is started in a cluster, it will dynamically and automatically be discovered. There are three types of discovery.
+
+-	One is the multicast. Nodes in a cluster discover each other by multicast, by default. 
+-	Second is discovery by TCP/IP. The first node created in the cluster (leader) will form a list of IP addresses of other joining nodes and send this list to these nodes. So, nodes will know each other.
+-	And, if your application is placed on Amazon EC2, Hazelcast has an automatic discovery mechanism, as the third discovery type. You will just give your Amazon credentials and the joining node will be discovered automatically.
+
+Once nodes are discovered, all the communication between them will be via TCP/IP.
+
+**3\. What Happens When a Node Goes Down**
+
+Once a node is gone (e.g.crashes) and since data in each node has a backup in other nodes:
+
+-	First, the backups in other nodes are restored
+-	Then, data from these restored backups are recovered
+-	And finally, backups for these recovered data are formed
+
+So, eventually, no data is lost.
+
+
+
+**4\. How Do I Choose Keys Properly**
 
 When you store a key & value in a distributed Map, Hazelcast serializes the key and value, and stores the byte array version of them in local ConcurrentHashMaps. These ConcurrentHashMaps use `equals` and `hashCode` methods of byte array version of your key. It does not take into account the actual `equals` and `hashCode` implementations of your objects. So it is important that you choose your keys in a proper way. 
 
@@ -11,7 +37,7 @@ Implementing `equals` and `hashCode` is not enough, it is also important that th
 
 Note that the distributed Set and List store their entries as the keys in a distributed Map. So the notes above apply to the objects you store in Set and List.
 
-**2\. How Do I Reflect Value Modification in Distributed Data Structures**
+**4\. How Do I Reflect Value Modification in Distributed Data Structures**
 
 Hazelcast always return a clone copy of a value. Modifying the returned value does not change the actual value in the map (or multimap, list, set). You should put the modified value back to make changes visible to all nodes.
 
@@ -24,14 +50,6 @@ map.put(key, value);
 If `cache-value` is true (default is true), Hazelcast caches that returned value for fast access in the local node. Modifications done to this cached value without putting it back to map will be visible to only local node. Successive `get` calls will return the same cached value. To reflect modifications to distributed map, you should put modified value back into map.
 
 Collections which return values of methods such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`, contain cloned values. These collections are NOT backup by related Hazelcast objects. So changes to the these are **NOT** reflected in the originals, and vice-versa.
-
-**3\. RuntimeInterruptedException**
-
-Most of the Hazelcast operations throw an `RuntimeInterruptedException` (which is unchecked version of `InterruptedException`) if a user thread is interrupted while waiting a response. Hazelcast uses RuntimeInterruptedException to pass InterruptedException up through interfaces that don't have InterruptedException in their signatures. Users should be able to catch and handle `RuntimeInterruptedException` in such cases as if their threads are interrupted on a blocking operation.
-
-**4\. ConcurrentModificationException**
-
-Some of Hazelcast operations can throw `ConcurrentModificationException` under transaction while trying to acquire a resource, although operation signatures don't define such an exception. Exception is thrown if resource can not be acquired in a specific time. Users should be able to catch and handle `ConcurrentModificationException` while they are using Hazelcast transactions.
 
 **5\. How Do I Test My Hazelcast Cluster**
 
@@ -140,9 +158,19 @@ public void cleanup() throws Exception {
 }
 ```
 
-Need more info? [Check out existing tests.](https://github.com/hazelcast/hazelcast/tree/master/hazelcast/src/test/java/com/hazelcast/cluster)
+For more information please [check our existing tests.](https://github.com/hazelcast/hazelcast/tree/master/hazelcast/src/test/java/com/hazelcast/cluster)
 
-**6\. How is the Split-Brain Syndrome Handled**
+
+**6\. When **`RuntimeInterruptedException`** is Thrown**
+
+Most of the Hazelcast operations throw an `RuntimeInterruptedException` (which is unchecked version of `InterruptedException`) if a user thread is interrupted while waiting a response. Hazelcast uses RuntimeInterruptedException to pass InterruptedException up through interfaces that do not have InterruptedException in their signatures. The users should be able to catch and handle `RuntimeInterruptedException` in such cases as if their threads are interrupted on a blocking operation.
+
+**7\. When **`ConcurrentModificationException`** is Thrown**
+
+Some of Hazelcast operations can throw `ConcurrentModificationException` under transaction while trying to acquire a resource, although operation signatures do not define such an exception. Exception is thrown if resource cannot be acquired in a specific time. The users should be able to catch and handle `ConcurrentModificationException` while they are using Hazelcast transactions.
+
+
+**8\. How is the Split-Brain Syndrome Handled**
 
 Imagine that you have 10-node cluster and for some reason the network is divided into two in a way that 4 servers cannot see the other 6. As a result you ended up having two separate clusters; 4-node cluster and 6-node cluster. Members in each sub-cluster are thinking that the other nodes are dead even though they are not. This situation is called Network Partitioning (a.k.a. Split-Brain Syndrome).
 
