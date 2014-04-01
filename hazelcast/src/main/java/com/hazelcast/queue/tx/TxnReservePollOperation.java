@@ -18,6 +18,7 @@ package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -25,14 +26,10 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/27/13
- */
 public class TxnReservePollOperation extends QueueOperation implements WaitSupport {
 
-    long reservedOfferId;
-
-    String transactionId;
+    private long reservedOfferId;
+    private String transactionId;
 
     public TxnReservePollOperation() {
     }
@@ -43,32 +40,41 @@ public class TxnReservePollOperation extends QueueOperation implements WaitSuppo
         this.transactionId = transactionId;
     }
 
+    @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().txnPollReserve(reservedOfferId, transactionId);
+        QueueContainer container = getOrCreateContainer();
+        response = container.txnPollReserve(reservedOfferId, transactionId);
     }
 
+    @Override
     public WaitNotifyKey getWaitKey() {
-        return getOrCreateContainer().getPollWaitNotifyKey();
+        QueueContainer container = getOrCreateContainer();
+        return container.getPollWaitNotifyKey();
     }
 
+    @Override
     public boolean shouldWait() {
         return getWaitTimeout() != 0 && getOrCreateContainer().size() == 0;
     }
 
+    @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_RESERVE_POLL;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(reservedOfferId);
         out.writeUTF(transactionId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         reservedOfferId = in.readLong();

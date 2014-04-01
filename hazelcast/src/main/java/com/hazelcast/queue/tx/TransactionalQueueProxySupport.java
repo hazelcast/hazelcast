@@ -22,7 +22,10 @@ import com.hazelcast.queue.QueueItem;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.queue.SizeOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
@@ -35,17 +38,15 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-/**
- * @author ali 3/25/13
- */
-public abstract class TransactionalQueueProxySupport extends AbstractDistributedObject<QueueService> implements TransactionalObject {
+public abstract class TransactionalQueueProxySupport extends AbstractDistributedObject<QueueService>
+        implements TransactionalObject {
 
     protected final String name;
     protected final TransactionSupport tx;
     protected final int partitionId;
+    protected final QueueConfig config;
     private final LinkedList<QueueItem> offeredQueue = new LinkedList<QueueItem>();
     private final Set<Long> itemIdSet = new HashSet<Long>();
-    protected final QueueConfig config;
 
     protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, TransactionSupport tx) {
         super(nodeEngine, service);
@@ -55,24 +56,28 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         config = nodeEngine.getConfig().findQueueConfig(name);
     }
 
-    protected void checkTransactionState(){
-        if(!tx.getState().equals(Transaction.State.ACTIVE)) {
+    protected void checkTransactionState() {
+        if (!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }
 
     public boolean offerInternal(Data data, long timeout) {
         throwExceptionIfNull(data);
-        TxnReserveOfferOperation operation = new TxnReserveOfferOperation(name, timeout, offeredQueue.size(), tx.getTxnId());
+        TxnReserveOfferOperation operation
+                = new TxnReserveOfferOperation(name, timeout, offeredQueue.size(), tx.getTxnId());
         try {
-            Future<Long> f = getNodeEngine().getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+            Future<Long> f = invoke(operation);
             Long itemId = f.get();
             if (itemId != null) {
                 if (!itemIdSet.add(itemId)) {
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
                 offeredQueue.offer(new QueueItem(null, itemId, data));
-                tx.addTransactionLog(new QueueTransactionLog(tx.getTxnId(), itemId, name, partitionId, new TxnOfferOperation(name, itemId, data)));
+                TxnOfferOperation txnOfferOperation = new TxnOfferOperation(name, itemId, data);
+                QueueTransactionLog transactionLog = new QueueTransactionLog(
+                        tx.getTxnId(), itemId, name, partitionId, txnOfferOperation);
+                tx.addTransactionLog(transactionLog);
                 return true;
             }
         } catch (Throwable t) {
@@ -83,9 +88,10 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
 
     public Data pollInternal(long timeout) {
         QueueItem reservedOffer = offeredQueue.peek();
-        TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout, reservedOffer == null ? -1 : reservedOffer.getItemId(), tx.getTxnId());
+        long itemId = reservedOffer == null ? -1 : reservedOffer.getItemId();
+        TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout, itemId, tx.getTxnId());
         try {
-            Future<QueueItem> f = getNodeEngine().getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+            Future<QueueItem> f = invoke(operation);
             QueueItem item = f.get();
             if (item != null) {
                 if (reservedOffer != null && item.getItemId() == reservedOffer.getItemId()) {
@@ -98,7 +104,10 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
                 if (!itemIdSet.add(item.getItemId())) {
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
-                tx.addTransactionLog(new QueueTransactionLog(tx.getTxnId(), item.getItemId(), name, partitionId, new TxnPollOperation(name, item.getItemId())));
+                TxnPollOperation op = new TxnPollOperation(name, item.getItemId());
+                QueueTransactionLog transactionLog
+                        = new QueueTransactionLog(tx.getTxnId(), item.getItemId(), name, partitionId, op);
+                tx.addTransactionLog(transactionLog);
                 return item.getData();
             }
         } catch (Throwable t) {
@@ -109,9 +118,10 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
 
     public Data peekInternal(long timeout) {
         final QueueItem offer = offeredQueue.peek();
-        final TxnPeekOperation operation = new TxnPeekOperation(name, timeout, offer == null ? -1 : offer.getItemId(), tx.getTxnId());
+        long itemId = offer == null ? -1 : offer.getItemId();
+        final TxnPeekOperation operation = new TxnPeekOperation(name, timeout, itemId, tx.getTxnId());
         try {
-            final Future<QueueItem> f = getNodeEngine().getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+            final Future<QueueItem> f = invoke(operation);
             final QueueItem item = f.get();
             if (item != null) {
                 if (offer != null && item.getItemId() == offer.getItemId()) {
@@ -129,12 +139,17 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         checkTransactionState();
         SizeOperation operation = new SizeOperation(name);
         try {
-            Future<Integer> f = getNodeEngine().getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+            Future<Integer> f = invoke(operation);
             Integer size = f.get();
             return size + offeredQueue.size();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+    }
+
+    private <E> InternalCompletableFuture<E> invoke(Operation operation) {
+        OperationService operationService = getNodeEngine().getOperationService();
+        return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
     }
 
     public String getName() {

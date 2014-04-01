@@ -26,15 +26,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * User: ali
- * Date: 11/21/12
- * Time: 11:23 AM
- */
-
 public class QueueReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
-    Map<String, QueueContainer> migrationData;
+    private Map<String, QueueContainer> migrationData;
 
     public QueueReplicationOperation() {
     }
@@ -44,6 +38,7 @@ public class QueueReplicationOperation extends AbstractOperation implements Iden
         this.migrationData = migrationData;
     }
 
+    @Override
     public void run() {
         QueueService service = getService();
         for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
@@ -55,6 +50,7 @@ public class QueueReplicationOperation extends AbstractOperation implements Iden
         }
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
@@ -64,6 +60,7 @@ public class QueueReplicationOperation extends AbstractOperation implements Iden
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
         migrationData = new HashMap<String, QueueContainer>(mapSize);
@@ -75,14 +72,17 @@ public class QueueReplicationOperation extends AbstractOperation implements Iden
         }
     }
 
+    @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.QUEUE_REPLICATION;
     }

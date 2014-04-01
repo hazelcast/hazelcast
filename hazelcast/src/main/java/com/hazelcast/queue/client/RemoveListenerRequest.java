@@ -24,11 +24,7 @@ import com.hazelcast.security.permission.QueuePermission;
 
 import java.security.Permission;
 
-/**
- * @author ali 23/12/13
- */
 public class RemoveListenerRequest extends BaseClientRemoveListenerRequest {
-
 
     public RemoveListenerRequest() {
     }
@@ -37,19 +33,23 @@ public class RemoveListenerRequest extends BaseClientRemoveListenerRequest {
         super(name, registrationId);
     }
 
+    @Override
     public Object call() throws Exception {
         final QueueService service = getService();
         return service.removeItemListener(name, registrationId);
     }
 
+    @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return QueuePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.REMOVE_LISTENER;
     }

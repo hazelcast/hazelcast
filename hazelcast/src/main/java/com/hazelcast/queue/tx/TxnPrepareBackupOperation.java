@@ -18,20 +18,18 @@ package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/27/13
- */
 public class TxnPrepareBackupOperation extends QueueOperation implements BackupOperation {
 
-    long itemId;
-    boolean pollOperation;
-    String transactionId;
+    private long itemId;
+    private boolean pollOperation;
+    private String transactionId;
 
     public TxnPrepareBackupOperation() {
     }
@@ -43,16 +41,18 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
         this.transactionId = transactionId;
     }
 
+    @Override
     public void run() throws Exception {
-        if (pollOperation){
-            response = getOrCreateContainer().txnPollBackupReserve(itemId, transactionId);
-        }
-        else {
-            getOrCreateContainer().txnOfferBackupReserve(itemId, transactionId);
+        QueueContainer container = getOrCreateContainer();
+        if (pollOperation) {
+            response = container.txnPollBackupReserve(itemId, transactionId);
+        } else {
+            container.txnOfferBackupReserve(itemId, transactionId);
             response = true;
         }
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
@@ -60,6 +60,7 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
         out.writeUTF(transactionId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
@@ -67,6 +68,7 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
         transactionId = in.readUTF();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_PREPARE_BACKUP;
     }

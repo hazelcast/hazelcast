@@ -23,9 +23,6 @@ import com.hazelcast.queue.QueueOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/27/13
- */
 public class TxnPollBackupOperation extends QueueOperation {
 
     long itemId;
@@ -38,20 +35,24 @@ public class TxnPollBackupOperation extends QueueOperation {
         this.itemId = itemId;
     }
 
+    @Override
     public void run() throws Exception {
         response = getOrCreateContainer().txnCommitPollBackup(itemId);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_POLL_BACKUP;
     }

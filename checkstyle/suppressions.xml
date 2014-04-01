@@ -115,6 +115,18 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
 
+    <!-- Queue -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="MethodLength" files="com.hazelcast.queue.QueuePortableHook"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.queue.QueuePortableHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.queue.QueuePortableHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.queue.QueueDataSerializerHook"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.queue.QueueDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.queue.QueueDataSerializerHook"/>
+
     <!-- SPI -->
     <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.spi[\\/]"/>

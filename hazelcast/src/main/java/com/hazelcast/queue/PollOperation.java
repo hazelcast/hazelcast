@@ -23,9 +23,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
-/**
- * @author ali 12/6/12
- */
 public final class PollOperation extends QueueBackupAwareOperation
         implements WaitSupport, Notifier, IdentifiedDataSerializable {
 
@@ -38,6 +35,7 @@ public final class PollOperation extends QueueBackupAwareOperation
         super(name, timeoutMillis);
     }
 
+    @Override
     public void run() {
         item = getOrCreateContainer().poll();
         if (item != null) {
@@ -45,6 +43,7 @@ public final class PollOperation extends QueueBackupAwareOperation
         }
     }
 
+    @Override
     public void afterRun() throws Exception {
         if (response != null) {
             getQueueService().getLocalQueueStatsImpl(name).incrementPolls();
@@ -54,38 +53,47 @@ public final class PollOperation extends QueueBackupAwareOperation
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return response != null;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new PollBackupOperation(name, item.getItemId());
     }
 
+    @Override
     public boolean shouldNotify() {
         return response != null;
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
+    @Override
     public WaitNotifyKey getWaitKey() {
         return getOrCreateContainer().getPollWaitNotifyKey();
     }
 
+    @Override
     public boolean shouldWait() {
         return getWaitTimeout() != 0 && getOrCreateContainer().size() == 0;
     }
 
+    @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
     }
 
+    @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.POLL;
     }

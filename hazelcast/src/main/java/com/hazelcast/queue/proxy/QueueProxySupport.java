@@ -22,10 +22,25 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.queue.*;
+import com.hazelcast.queue.AddAllOperation;
+import com.hazelcast.queue.ClearOperation;
+import com.hazelcast.queue.CompareAndRemoveOperation;
+import com.hazelcast.queue.ContainsOperation;
+import com.hazelcast.queue.DrainOperation;
+import com.hazelcast.queue.IteratorOperation;
+import com.hazelcast.queue.OfferOperation;
+import com.hazelcast.queue.PeekOperation;
+import com.hazelcast.queue.PollOperation;
+import com.hazelcast.queue.QueueOperation;
+import com.hazelcast.queue.QueueService;
+import com.hazelcast.queue.RemoveOperation;
+import com.hazelcast.queue.SizeOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -33,11 +48,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
 
-/**
- * User: ali
- * Date: 11/14/12
- * Time: 12:47 AM
- */
 abstract class QueueProxySupport extends AbstractDistributedObject<QueueService> implements InitializingObject {
 
     final String name;
@@ -59,7 +69,8 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
             ItemListener listener = itemListenerConfig.getImplementation();
             if (listener == null && itemListenerConfig.getClassName() != null) {
                 try {
-                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), itemListenerConfig.getClassName());
+                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
+                            itemListenerConfig.getClassName());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
@@ -76,36 +87,33 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     boolean offerInternal(Data data, long timeout) throws InterruptedException {
         throwExceptionIfNull(data);
         OfferOperation operation = new OfferOperation(name, timeout, data);
-        final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, getPartitionId());
-            return (Boolean) nodeEngine.toObject(f.get());
+            return invokeAndGet(operation);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrowAllowInterrupted(throwable);
         }
     }
 
+
     public int size() {
         SizeOperation operation = new SizeOperation(name);
-        return (Integer) invoke(operation);
+        return (Integer) invokeAndGet(operation);
     }
 
     public void clear() {
         ClearOperation operation = new ClearOperation(name);
-        invoke(operation);
+        invokeAndGet(operation);
     }
 
     Object peekInternal() {
         PeekOperation operation = new PeekOperation(name);
-        return invokeData(operation);
+        return invokeAndGetData(operation);
     }
 
     Object pollInternal(long timeout) throws InterruptedException {
         PollOperation operation = new PollOperation(name, timeout);
-        final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, getPartitionId());
-            return f.get();
+            return invokeAndGet(operation);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrowAllowInterrupted(throwable);
         }
@@ -114,36 +122,35 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     boolean removeInternal(Data data) {
         throwExceptionIfNull(data);
         RemoveOperation operation = new RemoveOperation(name, data);
-        return (Boolean) invoke(operation);
+        return (Boolean) invokeAndGet(operation);
     }
 
     boolean containsInternal(Collection<Data> dataList) {
         ContainsOperation operation = new ContainsOperation(name, dataList);
-        return (Boolean) invoke(operation);
+        return (Boolean) invokeAndGet(operation);
     }
 
     List<Data> listInternal() {
         IteratorOperation operation = new IteratorOperation(name);
-        SerializableCollection collectionContainer = invoke(operation);
+        SerializableCollection collectionContainer = invokeAndGet(operation);
         return (List<Data>) collectionContainer.getCollection();
     }
 
     Collection<Data> drainInternal(int maxSize) {
         DrainOperation operation = new DrainOperation(name, maxSize);
-        SerializableCollection collectionContainer = invoke(operation);
+        SerializableCollection collectionContainer = invokeAndGet(operation);
         return collectionContainer.getCollection();
     }
 
     boolean addAllInternal(Collection<Data> dataList) {
         AddAllOperation operation = new AddAllOperation(name, dataList);
-        return (Boolean) invoke(operation);
+        return (Boolean) invokeAndGet(operation);
     }
 
     boolean compareAndRemove(Collection<Data> dataList, boolean retain) {
         CompareAndRemoveOperation operation = new CompareAndRemoveOperation(name, dataList, retain);
-        return (Boolean) invoke(operation);
+        return (Boolean) invokeAndGet(operation);
     }
-
 
     private int getPartitionId() {
         return partitionId;
@@ -155,30 +162,39 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         }
     }
 
-    private <T> T invoke(QueueOperation operation) {
+    private <T> T invokeAndGet(QueueOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME,operation,partitionId);
+            Future f = invoke(operation);
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
     }
 
-    private Object invokeData(QueueOperation operation) {
+    private InternalCompletableFuture invoke(Operation operation) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+        return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, getPartitionId());
+    }
+
+    private Object invokeAndGetData(QueueOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME,operation,partitionId);
+            OperationService operationService = nodeEngine.getOperationService();
+            Future f = operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
     }
 
+    @Override
     public final String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
 
+    @Override
     public final String getName() {
         return name;
     }

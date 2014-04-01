@@ -16,11 +16,9 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.spi.impl.SerializableCollection;
 
-/**
- * @author ali 12/18/12
- */
 public class IteratorOperation extends QueueOperation {
 
     public IteratorOperation() {
@@ -30,14 +28,18 @@ public class IteratorOperation extends QueueOperation {
         super(name);
     }
 
+    @Override
     public void run() {
         response = new SerializableCollection(getOrCreateContainer().getAsDataList());
     }
 
+    @Override
     public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+        LocalQueueStatsImpl localQueueStatsImpl = getQueueService().getLocalQueueStatsImpl(name);
+        localQueueStatsImpl.incrementOtherOperations();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.ITERATOR;
     }

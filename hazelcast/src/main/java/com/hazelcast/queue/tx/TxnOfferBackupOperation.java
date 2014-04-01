@@ -19,20 +19,17 @@ package com.hazelcast.queue.tx;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/27/13
- */
 public class TxnOfferBackupOperation extends QueueOperation implements BackupOperation {
 
-    long itemId;
-
-    Data data;
+    private long itemId;
+    private Data data;
 
     public TxnOfferBackupOperation() {
     }
@@ -43,16 +40,20 @@ public class TxnOfferBackupOperation extends QueueOperation implements BackupOpe
         this.data = data;
     }
 
+    @Override
     public void run() throws Exception {
-        getOrCreateContainer().txnCommitOffer(itemId, data, true);
+        QueueContainer container = getOrCreateContainer();
+        container.txnCommitOffer(itemId, data, true);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
         data.writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
@@ -60,6 +61,7 @@ public class TxnOfferBackupOperation extends QueueOperation implements BackupOpe
         data.readData(in);
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_OFFER_BACKUP;
     }

@@ -17,10 +17,12 @@
 package com.hazelcast.queue.tx;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueBackupAwareOperation;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
@@ -28,13 +30,10 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/25/13
- */
 public class TxnPollOperation extends QueueBackupAwareOperation implements Notifier {
 
-    long itemId;
-    Data data;
+    private long itemId;
+    private Data data;
 
     public TxnPollOperation() {
     }
@@ -44,48 +43,59 @@ public class TxnPollOperation extends QueueBackupAwareOperation implements Notif
         this.itemId = itemId;
     }
 
+    @Override
     public void run() throws Exception {
-        data = getOrCreateContainer().txnCommitPoll(itemId);
+        QueueContainer container = getOrCreateContainer();
+        data = container.txnCommitPoll(itemId);
         response = data != null;
     }
 
+    @Override
     public void afterRun() throws Exception {
+        LocalQueueStatsImpl queueStats = getQueueService().getLocalQueueStatsImpl(name);
         if (response != null) {
-            getQueueService().getLocalQueueStatsImpl(name).incrementPolls();
+            queueStats.incrementPolls();
             publishEvent(ItemEventType.REMOVED, data);
         } else {
-            getQueueService().getLocalQueueStatsImpl(name).incrementEmptyPolls();
+            queueStats.incrementEmptyPolls();
         }
     }
 
+    @Override
     public boolean shouldNotify() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getOrCreateContainer().getOfferWaitNotifyKey();
+        QueueContainer container = getOrCreateContainer();
+        return container.getOfferWaitNotifyKey();
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new TxnPollBackupOperation(name, itemId);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_POLL;
     }
-
 }

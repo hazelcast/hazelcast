@@ -16,7 +16,11 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
@@ -32,9 +36,6 @@ import com.hazelcast.spi.impl.PortableItemEvent;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/9/13
- */
 public class AddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
@@ -48,46 +49,55 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
         this.includeValue = includeValue;
     }
 
+    @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return QueuePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.ADD_LISTENER;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeBoolean("i",includeValue);
+        writer.writeUTF("n", name);
+        writer.writeBoolean("i", includeValue);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         includeValue = reader.readBoolean("i");
     }
 
+    @Override
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
         final QueueService service = getService();
 
         ItemListener listener = new ItemListener() {
+            @Override
             public void itemAdded(ItemEvent item) {
                 send(item);
             }
 
+            @Override
             public void itemRemoved(ItemEvent item) {
                 send(item);
             }
 
-            private void send(ItemEvent event){
-                if (endpoint.live()){
+            private void send(ItemEvent event) {
+                if (endpoint.live()) {
                     Data item = clientEngine.toData(event.getItem());
-                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
+                    PortableItemEvent portableItemEvent = new PortableItemEvent(
+                            item, event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableItemEvent, getCallId());
                 }
             }
@@ -97,6 +107,7 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
         return registrationId;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_LISTEN);
     }

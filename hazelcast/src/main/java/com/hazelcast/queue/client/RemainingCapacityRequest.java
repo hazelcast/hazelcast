@@ -29,9 +29,6 @@ import com.hazelcast.security.permission.QueuePermission;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/23/13
- */
 public class RemainingCapacityRequest extends CallableClientRequest implements RetryableRequest {
 
     protected String name;
@@ -43,32 +40,39 @@ public class RemainingCapacityRequest extends CallableClientRequest implements R
         this.name = name;
     }
 
+    @Override
     public int getFactoryId() {
         return QueuePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.REMAINING_CAPACITY;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
     }
 
+    @Override
     public Object call() throws Exception {
         QueueService service = getService();
         QueueContainer container = service.getOrCreateContainer(name, false);
         return container.getConfig().getMaxSize() - container.size();
     }
 
+    @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_READ);
     }

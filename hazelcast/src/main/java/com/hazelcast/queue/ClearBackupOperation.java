@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author ali 12/11/12
- */
 public class ClearBackupOperation extends QueueOperation implements BackupOperation {
 
     private Set<Long> itemIdSet;
@@ -39,28 +36,32 @@ public class ClearBackupOperation extends QueueOperation implements BackupOperat
         this.itemIdSet = itemIdSet;
     }
 
+    @Override
     public void run() throws Exception {
         getOrCreateContainer().clearBackup(itemIdSet);
         response = true;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(itemIdSet.size());
-        for (Long itemId: itemIdSet){
+        for (Long itemId : itemIdSet) {
             out.writeLong(itemId);
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
         itemIdSet = new HashSet<Long>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             itemIdSet.add(in.readLong());
         }
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.CLEAR_BACKUP;
     }
