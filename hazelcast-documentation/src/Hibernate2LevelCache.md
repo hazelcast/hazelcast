@@ -1,4 +1,6 @@
-# Hibernate Second Level Cache
+
+
+## Hibernate Second Level Cache
 
 Hazelcast provides distributed second level cache for your Hibernate entities, collections and queries. Hazelcast has two implementations of Hibernate 2nd level cache, one for *hibernate-pre-3.3* and one for *hibernate-3.3.x* versions. In your Hibernate configuration file (e.g. `hibernate.cfg.xml`), add these properties:
 
