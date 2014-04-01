@@ -1,4 +1,7 @@
 
+
+
+
 ## REST Client
 Hazelcast provides REST interface, i.e. it provides an HTTP service in each node so that your `map` and `queue` can be accessed using HTTP protocol. Assuming `mapName` and `queueName` are already configured in your Hazelcast, its structure is shown below:
 
@@ -118,3 +121,5 @@ RESTful access is provided through any member of your cluster. So you can even p
 
 
 ***Note***: *You need to handle the failures on REST polls as there is no transactional guarantee.*
+
+

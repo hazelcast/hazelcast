@@ -1,6 +1,6 @@
 
 
-## Distributed MultiMap
+## MultiMap
 
 `MultiMap` is a specialized map where you can associate a key with multiple values. Just like any other distributed data structure implementation in Hazelcast, `MultiMap` is distributed/partitioned and thread-safe.
 

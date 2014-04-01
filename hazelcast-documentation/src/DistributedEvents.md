@@ -1,5 +1,5 @@
 
-## Distributed Events
+# Distributed Events
 
 Hazelcast allows you to register for entry events to get notified when entries added, updated or removed. Listeners are cluster wide. When a member adds a listener, it is actually registering for events originated at any member in the cluster. When a new member joins, events originated at the new member will also be delivered. All events are ordered, i.e. listeners will receive and process the events in the order they are actually occurred.
 

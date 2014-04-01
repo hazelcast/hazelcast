@@ -1,6 +1,6 @@
 
 
-# WAN Replication
+## WAN Replication
 
 There are cases where you would need to synchronize multiple clusters. Synchronization of clusters is named as WAN (Wide Area Network) Replication because it is mainly used for replicating different clusters running on WAN. 
 
