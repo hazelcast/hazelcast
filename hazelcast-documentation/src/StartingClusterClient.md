@@ -80,6 +80,6 @@ public class GettingStartedClient {
 ```
 -   When you run it, you will see the client properly connecting to the cluster and printing the map size as **3**.
 
-Hazelcast also offers a tool, **Management Center**, that enables monitoring your cluster. To able to use it, deploy the `mancenter-`*`<version>`*`.war` included in the ZIP file to your web server. You can use it to monitor your maps, queues, other distributed data structures and nodes. Please see [Management Center](#management-center) for usage explanations. 
+Hazelcast also offers a tool, **Management Center**, that enables monitoring your cluster. To be able to use it, deploy the `mancenter-`*`<version>`*`.war` included in the ZIP file to your web server. You can use it to monitor your maps, queues, other distributed data structures and nodes. Please see [Management Center](#management-center) for usage explanations. 
 
 
