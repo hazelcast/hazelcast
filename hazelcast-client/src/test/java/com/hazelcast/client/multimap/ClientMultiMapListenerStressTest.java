@@ -5,6 +5,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -40,6 +41,7 @@ public class ClientMultiMapListenerStressTest {
         Hazelcast.shutdownAll();
     }
 
+    @Category(ProblematicTest.class)
     @Test
     public void listenerAddStressTest() throws InterruptedException {
         final PutItemsThread[] putThreads = new PutItemsThread[NUMBER_OF_CLIENTS * THREADS_PER_CLIENT];
