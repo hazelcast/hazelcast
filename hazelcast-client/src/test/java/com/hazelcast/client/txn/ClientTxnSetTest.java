@@ -37,11 +37,12 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class ClientTxnSetTest {
     static HazelcastInstance client;
-    static HazelcastInstance server;
+    static HazelcastInstance server1;
+    static HazelcastInstance server2;
 
     @BeforeClass
     public static void init(){
-        server = Hazelcast.newHazelcastInstance();
+        server1 = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 

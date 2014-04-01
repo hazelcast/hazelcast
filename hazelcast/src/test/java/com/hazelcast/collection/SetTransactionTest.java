@@ -20,11 +20,13 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class SetTransactionTest {
 
-    static HazelcastInstance instance;
+    static HazelcastInstance instance1;
+    static HazelcastInstance instance2;
 
     @BeforeClass
     public static void init() {
-        instance = Hazelcast.newHazelcastInstance();
+        instance1 = Hazelcast.newHazelcastInstance();
+        instance2 = Hazelcast.newHazelcastInstance();
     }
 
     @AfterClass
@@ -36,9 +38,9 @@ public class SetTransactionTest {
     public void testAdd_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
-        final ISet set = instance.getSet(setName);
+        final ISet set = instance1.getSet(setName);
 
-        final TransactionContext context = instance.newTransactionContext();
+        final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
         final TransactionalSet<Object> txnSet = context.getSet(setName);
@@ -52,9 +54,9 @@ public class SetTransactionTest {
     public void testSetSizeAfterAdd_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
-        final ISet set = instance.getSet(setName);
+        final ISet set = instance1.getSet(setName);
 
-        final TransactionContext context = instance.newTransactionContext();
+        final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
         final TransactionalSet<Object> txnSet = context.getSet(setName);
@@ -69,10 +71,10 @@ public class SetTransactionTest {
     public void testRemove_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
-        final ISet set = instance.getSet(setName);
+        final ISet set = instance1.getSet(setName);
         set.add(element);
 
-        final TransactionContext context = instance.newTransactionContext();
+        final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
         final TransactionalSet<Object> txnSet = context.getSet(setName);
@@ -87,10 +89,10 @@ public class SetTransactionTest {
     public void testSetSizeAfterRemove_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
-        final ISet set = instance.getSet(setName);
+        final ISet set = instance1.getSet(setName);
         set.add(element);
 
-        final TransactionContext context = instance.newTransactionContext();
+        final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
         final TransactionalSet<Object> txnSet = context.getSet(setName);
@@ -106,24 +108,24 @@ public class SetTransactionTest {
         final String element = "item1";
         final String setName = randomString();
 
-        final TransactionContext context = instance.newTransactionContext();
+        final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
         final TransactionalSet<Object> txnSet = context.getSet(setName);
         assertTrue(txnSet.add(element));
         assertFalse(txnSet.add(element));
         context.commitTransaction();
-        assertEquals(1, instance.getSet(setName).size());
+        assertEquals(1, instance1.getSet(setName).size());
     }
 
     @Test
     public void testAddExistingElement_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
-        final ISet set = instance.getSet(setName);
+        final ISet set = instance1.getSet(setName);
         set.add(element);
 
-        final TransactionContext context = instance.newTransactionContext();
+        final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
         final TransactionalSet<Object> txnSet = context.getSet(setName);
@@ -137,10 +139,10 @@ public class SetTransactionTest {
     public void testSetSizeAfterAddingDuplicateElement_withinTxn() throws Exception {
         final String element = "item1";
         final String setName = randomString();
-        final ISet set = instance.getSet(setName);
+        final ISet set = instance1.getSet(setName);
         set.add(element);
 
-        final TransactionContext context = instance.newTransactionContext();
+        final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
 
         final TransactionalSet<Object> txnSet = context.getSet(setName);
@@ -152,11 +154,11 @@ public class SetTransactionTest {
     @Test
     public void testAddRollBack() throws Exception {
         final String setName = randomString();
-        final ISet set = instance.getSet(setName);
+        final ISet set = instance1.getSet(setName);
 
         set.add("item1");
 
-        final TransactionContext context = instance.newTransactionContext();
+        final TransactionContext context = instance1.newTransactionContext();
         context.beginTransaction();
         final TransactionalSet<Object> setTxn = context.getSet(setName);
         setTxn.add("item2");
