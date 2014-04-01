@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -399,6 +400,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final int instanceCount = 1;
         final int size = 10000;
         Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
         MapConfig mc = cfg.getMapConfig(mapName);
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
         mc.setEvictionPercentage(20);
@@ -441,6 +443,7 @@ public class EvictionTest extends HazelcastTestSupport {
             final int size = 10000;
             final String mapName = randomMapName("testEvictionLFU2");
             Config cfg = new Config();
+            cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
             MapConfig mc = cfg.getMapConfig(mapName);
             mc.setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
             mc.setEvictionPercentage(90);
