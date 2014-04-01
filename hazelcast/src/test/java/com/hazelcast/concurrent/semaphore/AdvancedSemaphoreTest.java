@@ -1,6 +1,5 @@
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -93,10 +92,9 @@ public class AdvancedSemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testMutex() throws InterruptedException {
-        final int k = 5;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-        final HazelcastInstance[] instances = factory.newInstances();
-        final CountDownLatch latch = new CountDownLatch(k);
+        final int threadCount = 2;
+        final HazelcastInstance[] instances = createHazelcastInstanceFactory(threadCount).newInstances();
+        final CountDownLatch latch = new CountDownLatch(threadCount);
         final int loopCount = 1000;
 
         class Counter {
@@ -114,18 +112,14 @@ public class AdvancedSemaphoreTest extends HazelcastTestSupport {
 
         assertTrue(instances[0].getSemaphore("test").init(1));
 
-        for (int i = 0; i < k; i++) {
+        for (int i = 0; i < threadCount; i++) {
             final ISemaphore semaphore = instances[i].getSemaphore("test");
             new Thread() {
                 public void run() {
                     for (int j = 0; j < loopCount; j++) {
                         try {
                             semaphore.acquire();
-                        } catch (InterruptedException e) {
-                            return;
-                        }
-                        try {
-                            sleep((int) (Math.random() * 3));
+                            sleepMillis((int) (Math.random() * 3));
                             counter.inc();
                         } catch (InterruptedException e) {
                             return;
@@ -137,7 +131,7 @@ public class AdvancedSemaphoreTest extends HazelcastTestSupport {
                 }
             }.start();
         }
-        assertTrue(latch.await(60, TimeUnit.SECONDS));
-        assertEquals(loopCount * k, counter.get());
+        assertOpenEventually(latch);
+        assertEquals(loopCount * threadCount, counter.get());
     }
 }
