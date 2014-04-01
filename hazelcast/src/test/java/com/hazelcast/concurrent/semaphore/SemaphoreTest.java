@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,10 +29,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 
 /**
@@ -185,9 +181,8 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 30000)
     public void testMutex() throws InterruptedException {
-        final int k = 5;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-        final HazelcastInstance[] instances = factory.newInstances();
+        final int k = 2;
+        final HazelcastInstance[] instances = createHazelcastInstanceFactory(k).newInstances();
         final CountDownLatch latch = new CountDownLatch(k);
         final int loopCount = 1000;
 
@@ -213,11 +208,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
                     for (int j = 0; j < loopCount; j++) {
                         try {
                             semaphore.acquire();
-                        } catch (InterruptedException e) {
-                            return;
-                        }
-                        try {
-                            sleep((int) (Math.random() * 3));
+                            sleepMillis((int) (Math.random() * 3));
                             counter.inc();
                         } catch (InterruptedException e) {
                             return;
@@ -229,7 +220,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
                 }
             }.start();
         }
-        assertTrue(latch.await(60, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertEquals(loopCount * k, counter.get());
     }
 
