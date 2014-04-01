@@ -140,6 +140,10 @@ public class Node {
         buildInfo = BUILD_INFO_CONSTRUCTOR.createNew(null);
         serializationService = (SerializationServiceImpl) ss;
         systemLogService = new SystemLogService(groupProperties.SYSTEM_LOG_ENABLED.getBoolean());
+
+        String loggingType = groupProperties.LOGGING_TYPE.getString();
+        loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
+                loggingType, buildInfo);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
             addressPicker.pickAddress();
@@ -150,9 +154,7 @@ public class Node {
         address = addressPicker.getPublicAddress();
         final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
         localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
-        String loggingType = groupProperties.LOGGING_TYPE.getString();
-        loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
-                loggingType, localMember, buildInfo);
+        loggingService.setThisMember(localMember);
         logger = loggingService.getLogger(Node.class.getName());
         initializer = NodeInitializerFactory.create(configClassLoader);
         try {
