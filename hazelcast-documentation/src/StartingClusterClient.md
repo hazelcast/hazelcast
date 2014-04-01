@@ -2,7 +2,7 @@
 ### Starting the Cluster and Client
 
 
-Having `hazelcast-`*`<version>`*`.jar` added to you classpath, it is time to get started. 
+Having `hazelcast-`*`<version>`*`.jar` added to your classpath, it is time to get started. 
 
 In this short tutorial, we will:
 

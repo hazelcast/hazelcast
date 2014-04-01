@@ -1,7 +1,9 @@
 
 
 
-## Elastic Memory - Enterprise Only
+## Elastic Memory
+
+![](images/enterprise-onlycopy.jpg)
 
 
 By default, Hazelcast stores your distributed data (map entries, queue items) into Java heap which is subject to garbage collection (GC). As your heap gets bigger, garbage collection might cause your application to pause tens of seconds, badly effecting your application performance and response times. Elastic Memory is Hazelcast with off-heap (direct) memory storage to avoid GC pauses. Even if you have terabytes of cache in-memory with lots of updates, GC will have almost no effect; resulting in more predictable latency and throughput.

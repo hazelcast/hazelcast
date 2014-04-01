@@ -2,7 +2,10 @@
 
 
 
-### C++ Client (Enterprise Only)
+### C++ Client
+
+![](images/enterprise-onlycopy.jpg)
+
 
 You can use Native C++ Client to connect to Hazelcast nodes and perform almost all operations that a node can perform. Different from nodes, clients do not hold data. It is by default a smart client, i.e. it knows where the data is and asks directly to the correct node. This feature can be disabled (using `ClientConfig::setSmart` method) if you do not want the clients to connect every node.
 
