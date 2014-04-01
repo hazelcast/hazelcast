@@ -1,5 +1,7 @@
 # What's New in Hazelcast 3.2
 
+
+
 ## Release Notes
 
 ### New Features
@@ -115,7 +117,8 @@ This section lists issues solved for Hazelcast 3.2 release.
 
 ### Known Issues & Workarounds
 
-Plese see [here](https://github.com/hazelcast/hazelcast/issues?labels=defect&milestone=29&state=open) for the known issues.
+Please see [here](https://github.com/hazelcast/hazelcast/issues?labels=defect&milestone=29&state=open) for the known issues.
+
 
 
 

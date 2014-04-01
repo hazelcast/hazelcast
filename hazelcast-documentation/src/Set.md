@@ -1,6 +1,6 @@
 
 
-## Distributed Set
+## Set
 
 Distributed Set is distributed and concurrent implementation of`java.util.Set`. Set does not allow duplicate elements.
 

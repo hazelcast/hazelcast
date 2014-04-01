@@ -1,6 +1,6 @@
 
 
-## Distributed Lock
+## Lock
 
 ```java
 import com.hazelcast.core.Hazelcast;
