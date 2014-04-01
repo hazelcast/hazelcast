@@ -1,7 +1,10 @@
 
 	
 
-### C# Client (Enterprise Only)
+### C# Client
+
+![](images/enterprise-onlycopy.jpg)
+
 
 You can use native C# client to connect to Hazelcast nodes. All you need is to add `HazelcastClient3x.dll` into your C# project references. The API is very similar to Java native client. Sample code is shown below.
 
