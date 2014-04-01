@@ -30,7 +30,7 @@ import java.util.logging.LogRecord;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class LoggingServiceImpl implements LoggingService {
-    private volatile MemberImpl thisMember; // = new MemberImpl();
+    private volatile MemberImpl thisMember = new MemberImpl();
     private final SystemLogService systemLogService;
     private final String groupName;
     private final CopyOnWriteArrayList<LogListenerRegistration> listeners
