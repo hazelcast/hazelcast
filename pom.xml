@@ -169,6 +169,18 @@
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration combine.self="override">
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+
+
+                    <!--Changes suggested by CloudBees-->
+                    <!-- 1C means 1 process per cpu core -->
+                    <forkCount>3</forkCount>
+                    <reuseForks>true</reuseForks>
+
+                    <!--Enables parallel execution-->
+                    <!--<parallel>methods</parallel>-->
+                    <!--<threadCount>1</threadCount>-->
+
+
                     <!-- 1C means 1 process per cpu core -->
                     <!-- forkCount>1C</forkCount>
                     <reuseForks>true</reuseForks>
