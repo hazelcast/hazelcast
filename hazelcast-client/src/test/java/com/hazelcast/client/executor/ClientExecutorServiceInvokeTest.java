@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,8 +58,22 @@ public class ClientExecutorServiceInvokeTest {
         Hazelcast.shutdownAll();
     }
 
+    @Test
+    public void testInvokeAll() throws Throwable {
+        IExecutorService service = client.getExecutorService(randomString());
+        String msg = randomString();
+        Collection c = new ArrayList();
+        c.add(new AppendCallable(msg));
+        c.add(new AppendCallable(msg));
+
+        List<Future> results =  service.invokeAll(c);
+        for(Future result : results){
+            assertEquals(msg + AppendCallable.APPENDAGE,  result.get() );
+        }
+    }
+
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAll() throws Throwable, InterruptedException {
+    public void testInvokeAll_withTimeOut() throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
         Collection c = new ArrayList();
         c.add(new AppendCallable());

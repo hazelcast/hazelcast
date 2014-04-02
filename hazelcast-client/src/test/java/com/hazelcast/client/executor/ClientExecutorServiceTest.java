@@ -100,7 +100,7 @@ public class ClientExecutorServiceTest {
     public void testAwaitTermination() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
         final boolean result = service.awaitTermination(9999, TimeUnit.DAYS);
-        fail("marked problematic at the method awaitTermination really just returns false and in fact dose nothing !");
+        fail("marked problematic at the method awaitTermination really just returns false and in fact dose nothing !!");
     }
 
     @Test(expected = TimeoutException.class)
@@ -176,5 +176,14 @@ public class ClientExecutorServiceTest {
         }catch(ExecutionException e){
             throw e.getCause();
         }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testExecute_withNoMemberSelected() {
+        final IExecutorService service = client.getExecutorService(randomString());
+        final String mapName = randomString();
+        final MemberSelector selector = new SelectNoMembers();
+
+        service.execute( new MapPutRunnable(mapName), selector);
     }
 }

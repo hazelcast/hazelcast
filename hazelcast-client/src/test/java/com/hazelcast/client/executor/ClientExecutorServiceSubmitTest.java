@@ -21,6 +21,7 @@ import com.hazelcast.client.executor.tasks.*;
 import com.hazelcast.core.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -58,6 +59,14 @@ public class ClientExecutorServiceSubmitTest {
     public static void destroy() {
         client.shutdown();
         Hazelcast.shutdownAll();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSubmitCallableNullTask() throws Exception {
+        final IExecutorService service = client.getExecutorService(randomString());
+        Callable callable = null;
+
+        final Future<String> f = service.submit(callable);
     }
 
     @Test
@@ -540,5 +549,124 @@ public class ClientExecutorServiceSubmitTest {
 
         assertOpenEventually(responseLatch, 5);
         assertEquals(msg + AppendCallable.APPENDAGE, result.get());
+    }
+
+
+    @Test
+    public void submitRunnablePartitionAware() throws Exception{
+        final IExecutorService service = client.getExecutorService(randomString());
+
+        final String mapName = randomString();
+        final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
+        final Member member = instance2.getCluster().getLocalMember();
+
+        //this task should execute on a node owning the given key argument,
+        //the action is to put the UUid of the executing node into a map with the given name
+        final Runnable runnable = new MapPutPartitionAwareRunnable(mapName, key);
+        final CountDownLatch responseLatch = new CountDownLatch(1);
+
+        service.submit(runnable);
+        final IMap map = client.getMap(mapName);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertTrue(map.containsKey(member.getUuid()));
+            }
+        });
+    }
+
+    @Test
+    public void submitRunnablePartitionAware_withResult() throws Exception{
+        final IExecutorService service = client.getExecutorService(randomString());
+
+        final String expectedResult = "result";
+        final String mapName = randomString();
+        final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
+        final Member member = instance2.getCluster().getLocalMember();
+
+        final Runnable runnable = new MapPutPartitionAwareRunnable(mapName, key);
+
+        Future result = service.submit(runnable, expectedResult);
+        final IMap map = client.getMap(mapName);
+
+        assertEquals(expectedResult, result.get());
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertTrue(map.containsKey(member.getUuid()));
+            }
+        });
+    }
+
+    @Test
+    public void submitRunnablePartitionAware_withExecutionCallback() throws Exception{
+        final IExecutorService service = client.getExecutorService(randomString());
+
+        final String expectedResult = "result";
+        final String mapName = randomString();
+        final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
+        final Member member = instance2.getCluster().getLocalMember();
+        final Runnable runnable = new MapPutPartitionAwareRunnable(mapName, key);
+        final CountDownLatch responseLatch = new CountDownLatch(1);
+
+        service.submit(runnable, new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                responseLatch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        });
+        final IMap map = client.getMap(mapName);
+
+        assertOpenEventually(responseLatch);
+        assertTrue(map.containsKey(member.getUuid()));
+    }
+
+    @Test
+    public void submitCallablePartitionAware() throws Exception{
+        final IExecutorService service = client.getExecutorService(randomString());
+
+        final String mapName = randomString();
+        final IMap map = client.getMap(mapName);
+        final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
+        final Member member = instance2.getCluster().getLocalMember();
+
+        final Callable runnable = new MapPutPartitionAwareCallable(mapName, key);
+        final Future result = service.submit(runnable);
+
+        assertEquals(member.getUuid(), result.get());
+        assertTrue(map.containsKey(member.getUuid()));
+    }
+
+    @Test
+    public void submitCallablePartitionAware_WithExecutionCallback() throws Exception{
+        final IExecutorService service = client.getExecutorService(randomString());
+
+        final String mapName = randomString();
+        final IMap map = client.getMap(mapName);
+        final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
+        final Member member = instance2.getCluster().getLocalMember();
+
+        final Callable runnable = new MapPutPartitionAwareCallable(mapName, key);
+
+        final AtomicReference result = new AtomicReference();
+        final CountDownLatch responseLatch = new CountDownLatch(1);
+        service.submit(runnable, new ExecutionCallback() {
+            public void onResponse(Object response) {
+                result.set(response);
+                responseLatch.countDown();
+            }
+
+            public void onFailure(Throwable t) {
+
+            }
+        });
+
+        assertOpenEventually(responseLatch);
+        assertEquals(member.getUuid(), result.get());
+        assertTrue(map.containsKey(member.getUuid()));
     }
 }
