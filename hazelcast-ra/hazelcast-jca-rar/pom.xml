@@ -36,7 +36,7 @@
         <atomikos-version>3.9.2</atomikos-version>
 
         <!-- needed for checkstyle/findbugs -->
-        <main.basedir>${project.parent.basedir}</main.basedir>
+        <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>
 
     <dependencies>
