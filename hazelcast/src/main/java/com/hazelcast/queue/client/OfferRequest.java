@@ -30,12 +30,9 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/8/13
- */
 public class OfferRequest extends QueueRequest {
 
-    Data data;
+    private Data data;
 
     public OfferRequest() {
     }
@@ -50,20 +47,24 @@ public class OfferRequest extends QueueRequest {
         this.data = data;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new OfferOperation(name, timeoutMillis, data);
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.OFFER;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         data.writeData(out);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
@@ -71,6 +72,7 @@ public class OfferRequest extends QueueRequest {
         data.readData(in);
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_ADD);
     }

@@ -23,12 +23,9 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 12/11/12
- */
 public final class PollBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
 
-    long itemId;
+    private long itemId;
 
     public PollBackupOperation() {
     }
@@ -38,19 +35,23 @@ public final class PollBackupOperation extends QueueOperation implements BackupO
         this.itemId = itemId;
     }
 
+    @Override
     public void run() throws Exception {
         getOrCreateContainer().pollBackup(itemId);
         response = Boolean.TRUE;
     }
 
+    @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.POLL_BACKUP;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);

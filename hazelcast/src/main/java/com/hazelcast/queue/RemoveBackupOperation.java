@@ -22,9 +22,6 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 12/11/12
- */
 public class RemoveBackupOperation extends QueueOperation implements BackupOperation {
 
     private long itemId;
@@ -37,21 +34,25 @@ public class RemoveBackupOperation extends QueueOperation implements BackupOpera
         this.itemId = itemId;
     }
 
+    @Override
     public void run() throws Exception {
         getOrCreateContainer().removeBackup(itemId);
         response = true;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.REMOVE_BACKUP;
     }

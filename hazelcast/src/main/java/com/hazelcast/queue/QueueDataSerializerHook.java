@@ -16,44 +16,56 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.serialization.*;
-import com.hazelcast.queue.tx.*;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.tx.QueueTransactionRollbackOperation;
+import com.hazelcast.queue.tx.TxnOfferBackupOperation;
+import com.hazelcast.queue.tx.TxnOfferOperation;
+import com.hazelcast.queue.tx.TxnPeekOperation;
+import com.hazelcast.queue.tx.TxnPollBackupOperation;
+import com.hazelcast.queue.tx.TxnPollOperation;
+import com.hazelcast.queue.tx.TxnPrepareBackupOperation;
+import com.hazelcast.queue.tx.TxnPrepareOperation;
+import com.hazelcast.queue.tx.TxnReserveOfferOperation;
+import com.hazelcast.queue.tx.TxnReservePollOperation;
+import com.hazelcast.queue.tx.TxnRollbackBackupOperation;
+import com.hazelcast.queue.tx.TxnRollbackOperation;
 import com.hazelcast.util.ConstructorFunction;
 
-/**
- * @author mdogan 8/24/12
- */
 public final class QueueDataSerializerHook implements DataSerializerHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_DS_FACTORY, -11);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_DS_FACTORY, -11);
 
-    static final int OFFER = 0;
-    static final int POLL = 1;
-    static final int PEEK = 2;
+    public static final int OFFER = 0;
+    public static final int POLL = 1;
+    public static final int PEEK = 2;
 
-    static final int OFFER_BACKUP = 3;
-    static final int POLL_BACKUP = 4;
+    public static final int OFFER_BACKUP = 3;
+    public static final int POLL_BACKUP = 4;
 
-    static final int ADD_ALL_BACKUP = 5;
-    static final int ADD_ALL = 6;
-    static final int CLEAR_BACKUP = 7;
-    static final int CLEAR = 8;
-    static final int COMPARE_AND_REMOVE_BACKUP = 9;
-    static final int COMPARE_AND_REMOVE = 10;
-    static final int CONTAINS = 11;
-    static final int DRAIN_BACKUP = 12;
-    static final int DRAIN = 13;
-    static final int ITERATOR = 14;
-    static final int QUEUE_EVENT = 15;
-    static final int QUEUE_EVENT_FILTER = 16;
-    static final int QUEUE_ITEM = 17;
-    static final int QUEUE_REPLICATION = 18;
-    static final int REMOVE_BACKUP = 19;
-    static final int REMOVE = 20;
-//    static final int EMPTY_ID = 21;
-    static final int SIZE = 22;
+    public static final int ADD_ALL_BACKUP = 5;
+    public static final int ADD_ALL = 6;
+    public static final int CLEAR_BACKUP = 7;
+    public static final int CLEAR = 8;
+    public static final int COMPARE_AND_REMOVE_BACKUP = 9;
+    public static final int COMPARE_AND_REMOVE = 10;
+    public static final int CONTAINS = 11;
+    public static final int DRAIN_BACKUP = 12;
+    public static final int DRAIN = 13;
+    public static final int ITERATOR = 14;
+    public static final int QUEUE_EVENT = 15;
+    public static final int QUEUE_EVENT_FILTER = 16;
+    public static final int QUEUE_ITEM = 17;
+    public static final int QUEUE_REPLICATION = 18;
+    public static final int REMOVE_BACKUP = 19;
+    public static final int REMOVE = 20;
+    //    static final int EMPTY_ID = 21;
+    public static final int SIZE = 22;
 
-    public static final int TXN_OFFER_BACKUP= 23;
+    public static final int TXN_OFFER_BACKUP = 23;
     public static final int TXN_OFFER = 24;
     public static final int TXN_POLL_BACKUP = 25;
     public static final int TXN_POLL = 26;
@@ -77,13 +89,13 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[TXN_PEEK+1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[TXN_PEEK + 1];
         constructors[OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new OfferOperation();
             }
         };
-        
+
         constructors[OFFER_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new OfferBackupOperation();
@@ -265,7 +277,6 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
                 return new TxnPeekOperation();
             }
         };
-
 
         return new ArrayDataSerializableFactory(constructors);
     }

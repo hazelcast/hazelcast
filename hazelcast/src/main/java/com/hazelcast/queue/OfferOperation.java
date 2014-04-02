@@ -29,11 +29,6 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-/**
- * User: ali
- * Date: 11/14/12
- * Time: 12:14 AM
- */
 public final class OfferOperation extends QueueBackupAwareOperation
         implements WaitSupport, Notifier, IdentifiedDataSerializable {
 
@@ -48,6 +43,7 @@ public final class OfferOperation extends QueueBackupAwareOperation
         this.data = data;
     }
 
+    @Override
     public void run() {
         QueueContainer container = getOrCreateContainer();
         if (container.hasEnoughCapacity()) {
@@ -58,6 +54,7 @@ public final class OfferOperation extends QueueBackupAwareOperation
         }
     }
 
+    @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
             getQueueService().getLocalQueueStatsImpl(name).incrementOffers();
@@ -67,49 +64,60 @@ public final class OfferOperation extends QueueBackupAwareOperation
         }
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new OfferBackupOperation(name, data, itemId);
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public boolean shouldNotify() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getPollWaitNotifyKey();
     }
 
+    @Override
     public WaitNotifyKey getWaitKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
+    @Override
     public boolean shouldWait() {
         QueueContainer container = getOrCreateContainer();
         return getWaitTimeout() != 0 && !container.hasEnoughCapacity();
     }
 
+    @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(Boolean.FALSE);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         data.writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         data = IOUtil.readData(in);
     }
 
+    @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.OFFER;
     }

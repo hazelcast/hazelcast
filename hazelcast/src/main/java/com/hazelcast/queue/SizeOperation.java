@@ -17,11 +17,6 @@
 package com.hazelcast.queue;
 
 
-/**
- * User: ali
- * Date: 11/19/12
- * Time: 11:37 AM
- */
 public class SizeOperation extends QueueOperation {
 
     public SizeOperation() {
@@ -31,14 +26,17 @@ public class SizeOperation extends QueueOperation {
         super(name);
     }
 
+    @Override
     public void run() {
         response = getOrCreateContainer().size();
     }
 
+    @Override
     public void afterRun() throws Exception {
         getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.SIZE;
     }

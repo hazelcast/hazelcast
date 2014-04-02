@@ -14,29 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.client;
-
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.queue.PeekOperation;
-import com.hazelcast.queue.QueuePortableHook;
-import com.hazelcast.spi.Operation;
-
-public class PeekRequest extends QueueRequest implements RetryableRequest {
-
-    public PeekRequest() {
-    }
-
-    public PeekRequest(String name) {
-        super(name);
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return new PeekOperation(name);
-    }
-
-    @Override
-    public int getClassId() {
-        return QueuePortableHook.PEEK;
-    }
-}
+/**
+ * <p>This package contains the IQueue functionality.<br/>
+ *
+ * The {@link com.hazelcast.core.IQueue} is the distributed version of the {@link java.util.concurrent.BlockingQueue}.
+ *
+ */
+package com.hazelcast.queue;

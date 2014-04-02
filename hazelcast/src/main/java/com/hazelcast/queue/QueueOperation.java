@@ -17,20 +17,23 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
 import java.util.Collection;
 
-/**
- * @author ali 12/6/12
- */
-public abstract class QueueOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable {
+public abstract class QueueOperation extends Operation
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
@@ -62,10 +65,12 @@ public abstract class QueueOperation extends Operation implements PartitionAware
         return container;
     }
 
+    @Override
     public final Object getResponse() {
         return response;
     }
 
+    @Override
     public final String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
@@ -74,12 +79,15 @@ public abstract class QueueOperation extends Operation implements PartitionAware
         return name;
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }
@@ -93,25 +101,29 @@ public abstract class QueueOperation extends Operation implements PartitionAware
     public void publishEvent(ItemEventType eventType, Data data) {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
+        Address thisAddress = getNodeEngine().getThisAddress();
         for (EventRegistration registration : registrations) {
             QueueEventFilter filter = (QueueEventFilter) registration.getFilter();
-            QueueEvent event = new QueueEvent(name, filter.isIncludeValue() ? data : null, eventType, getNodeEngine().getThisAddress());
+            QueueEvent event = new QueueEvent(name, filter.isIncludeValue() ? data : null, eventType, thisAddress);
             eventService.publishEvent(getServiceName(), registration, event, name.hashCode());
         }
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
     }
 
-    protected QueueService getQueueService(){
+    protected QueueService getQueueService() {
         return getService();
     }
 
+    @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
     }

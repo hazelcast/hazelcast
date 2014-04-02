@@ -14,29 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * <p>This package contains client requests for the IQueue.<br/>
+ */
 package com.hazelcast.queue.client;
-
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.queue.PeekOperation;
-import com.hazelcast.queue.QueuePortableHook;
-import com.hazelcast.spi.Operation;
-
-public class PeekRequest extends QueueRequest implements RetryableRequest {
-
-    public PeekRequest() {
-    }
-
-    public PeekRequest(String name) {
-        super(name);
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return new PeekOperation(name);
-    }
-
-    @Override
-    public int getClassId() {
-        return QueuePortableHook.PEEK;
-    }
-}

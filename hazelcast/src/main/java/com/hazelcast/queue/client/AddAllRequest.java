@@ -32,9 +32,6 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * @author ali 5/8/13
- */
 public class AddAllRequest extends QueueRequest {
 
     private Collection<Data> dataList;
@@ -47,35 +44,40 @@ public class AddAllRequest extends QueueRequest {
         this.dataList = dataList;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new AddAllOperation(name, dataList);
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.ADD_ALL;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeInt("s",dataList.size());
+        writer.writeInt("s", dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
-        for (Data data: dataList){
+        for (Data data : dataList) {
             data.writeData(out);
         }
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         int size = reader.readInt("s");
         final ObjectDataInput in = reader.getRawDataInput();
         dataList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             Data data = new Data();
             data.readData(in);
             dataList.add(data);
         }
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_ADD);
     }

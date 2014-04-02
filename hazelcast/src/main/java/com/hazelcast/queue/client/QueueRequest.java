@@ -30,9 +30,6 @@ import com.hazelcast.security.permission.QueuePermission;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/8/13
- */
 public abstract class QueueRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     protected String name;
@@ -51,29 +48,35 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
         this.timeoutMillis = timeoutMillis;
     }
 
+    @Override
     protected int getPartition() {
         final String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
         return getClientEngine().getPartitionService().getPartitionId(partitionKey);
     }
 
+    @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return QueuePortableHook.F_ID;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeLong("t",timeoutMillis);
+        writer.writeUTF("n", name);
+        writer.writeLong("t", timeoutMillis);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         timeoutMillis = reader.readLong("t");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_READ);
     }

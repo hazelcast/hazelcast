@@ -16,9 +16,6 @@
 
 package com.hazelcast.queue.tx;
 
-/**
- * @ali 9/5/13
- */
 class TransactionLogKey {
 
     private final long itemId;
@@ -31,13 +28,21 @@ class TransactionLogKey {
     }
 
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof TransactionLogKey)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TransactionLogKey)) {
+            return false;
+        }
 
         TransactionLogKey that = (TransactionLogKey) o;
 
-        if (itemId != that.itemId) return false;
-        if (!name.equals(that.name)) return false;
+        if (itemId != that.itemId) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
 
         return true;
     }

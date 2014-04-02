@@ -17,10 +17,12 @@
 package com.hazelcast.queue.tx;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueBackupAwareOperation;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
@@ -28,14 +30,10 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/27/13
- */
 public class TxnOfferOperation extends QueueBackupAwareOperation implements Notifier {
 
-    long itemId;
-
-    Data data;
+    private long itemId;
+    private Data data;
 
     public TxnOfferOperation() {
     }
@@ -46,41 +44,51 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
         this.data = data;
     }
 
+    @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().txnCommitOffer(itemId, data, false);
+        QueueContainer container = getOrCreateContainer();
+        response = container.txnCommitOffer(itemId, data, false);
     }
 
+    @Override
     public void afterRun() throws Exception {
+        LocalQueueStatsImpl queueStats = getQueueService().getLocalQueueStatsImpl(name);
         if (Boolean.TRUE.equals(response)) {
-            getQueueService().getLocalQueueStatsImpl(name).incrementOffers();
+            queueStats.incrementOffers();
             publishEvent(ItemEventType.ADDED, data);
         } else {
-            getQueueService().getLocalQueueStatsImpl(name).incrementRejectedOffers();
+            queueStats.incrementRejectedOffers();
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new TxnOfferBackupOperation(name, itemId, data);
     }
 
+    @Override
     public boolean shouldNotify() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getPollWaitNotifyKey();
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
         data.writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
@@ -88,6 +96,7 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
         data.readData(in);
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_OFFER;
     }
