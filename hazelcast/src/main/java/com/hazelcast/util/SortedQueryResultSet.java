@@ -16,11 +16,12 @@
 
 package com.hazelcast.util;
 
-import java.util.*;
+import java.util.AbstractSet;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeSet;
 
-/**
- * @ali 08/12/13
- */
 public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
 
     private final TreeSet<Map.Entry> entries;
@@ -33,6 +34,7 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         this.pageSize = pageSize;
     }
 
+    @Override
     public boolean add(Map.Entry entry) {
         if (entries.add(entry)) {
             if (entries.size() > pageSize) {
@@ -43,6 +45,7 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         return false;
     }
 
+    @Override
     public Iterator iterator() {
         return new SortedIterator();
     }
@@ -58,10 +61,12 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
 
         final Iterator<Map.Entry> iter = entries.iterator();
 
+        @Override
         public boolean hasNext() {
             return iter.hasNext();
         }
 
+        @Override
         public Object next() {
             Map.Entry entry = iter.next();
             if (iterationType == IterationType.VALUE) {
@@ -73,11 +78,13 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
             }
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
     }
 
+    @Override
     public int size() {
         return entries.size();
     }

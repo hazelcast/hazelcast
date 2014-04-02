@@ -20,7 +20,8 @@ public final class ThreadUtil {
 
     private static final ThreadLocal<Long> threadLocal = new ThreadLocal<Long>();
 
-    private ThreadUtil(){}
+    private ThreadUtil() {
+    }
 
     public static long getThreadId() {
         final Long threadId = threadLocal.get();
@@ -37,5 +38,4 @@ public final class ThreadUtil {
     public static void removeThreadId() {
         threadLocal.remove();
     }
-
 }

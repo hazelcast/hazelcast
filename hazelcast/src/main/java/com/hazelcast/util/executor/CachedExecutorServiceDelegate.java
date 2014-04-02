@@ -35,9 +35,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * @author mdogan 2/18/13
- */
 public final class CachedExecutorServiceDelegate implements ExecutorService, ManagedExecutorService {
 
     private final AtomicLong executedCount = new AtomicLong();
@@ -50,12 +47,12 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     private volatile int size;
 
     public CachedExecutorServiceDelegate(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor,
-            int maxPoolSize) {
+                                         int maxPoolSize) {
         this(nodeEngine, name, cachedExecutor, maxPoolSize, Integer.MAX_VALUE);
     }
 
     public CachedExecutorServiceDelegate(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor,
-            int maxPoolSize, int queueCapacity) {
+                                         int maxPoolSize, int queueCapacity) {
         if (maxPoolSize <= 0) {
             throw new IllegalArgumentException("Max pool size must be positive!");
         }
@@ -69,30 +66,37 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         this.nodeEngine = nodeEngine;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public long getCompletedTaskCount() {
         return executedCount.get();
     }
 
+    @Override
     public int getMaximumPoolSize() {
         return maxPoolSize;
     }
 
+    @Override
     public int getPoolSize() {
         return size;
     }
 
+    @Override
     public int getQueueSize() {
         return taskQ.size();  // LBQ size handled by an atomic int
     }
 
+    @Override
     public int getRemainingQueueCapacity() {
         return taskQ.remainingCapacity();
     }
 
+    @Override
     public void execute(Runnable command) {
         if (!taskQ.offer(command)) {
             throw new RejectedExecutionException("Executor[" + name + "] is overloaded!");
@@ -100,18 +104,21 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         addNewWorkerIfRequired();
     }
 
+    @Override
     public <T> Future<T> submit(Callable<T> task) {
         final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, getAsyncExecutor());
         execute(rf);
         return rf;
     }
 
+    @Override
     public <T> Future<T> submit(Runnable task, T result) {
         final RunnableFuture<T> rf = new CompletableFutureTask<T>(task, result, getAsyncExecutor());
         execute(rf);
         return rf;
     }
 
+    @Override
     public Future<?> submit(Runnable task) {
         return submit(task, null);
     }
@@ -134,40 +141,51 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         }
     }
 
-       public void shutdown() {
+    @Override
+    public void shutdown() {
         taskQ.clear();
     }
 
+    @Override
     public List<Runnable> shutdownNow() {
         shutdown();
         return null;
     }
 
+    @Override
     public boolean isShutdown() {
         return false;
     }
 
+    @Override
     public boolean isTerminated() {
         return false;
     }
 
+    @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         return false;
     }
 
+    @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
         throw new UnsupportedOperationException();
     }
 
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
+    @Override
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
+                                         long timeout, TimeUnit unit) throws InterruptedException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
         throw new UnsupportedOperationException();
     }
 
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    @Override
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+            throws InterruptedException, ExecutionException, TimeoutException {
         throw new UnsupportedOperationException();
     }
 
@@ -177,6 +195,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
 
     private class Worker implements Runnable {
 
+        @Override
         public void run() {
             try {
                 Runnable r;
@@ -207,5 +226,4 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
             }
         }
     }
-
 }
