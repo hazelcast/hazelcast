@@ -25,14 +25,13 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -401,6 +400,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final int instanceCount = 1;
         final int size = 10000;
         Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
         MapConfig mc = cfg.getMapConfig(mapName);
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
         mc.setEvictionPercentage(20);
@@ -443,6 +443,7 @@ public class EvictionTest extends HazelcastTestSupport {
             final int size = 10000;
             final String mapName = randomMapName("testEvictionLFU2");
             Config cfg = new Config();
+            cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
             MapConfig mc = cfg.getMapConfig(mapName);
             mc.setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
             mc.setEvictionPercentage(90);
@@ -623,42 +624,28 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testMapPutTTLWithListener() throws InterruptedException {
-        Config cfg = new Config();
-        final HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(cfg);
-        warmUpPartitions(instances);
+        final HazelcastInstance instance = createHazelcastInstance();
 
-        final int k = 10;
-        final int putCount = 1000;
-        final CountDownLatch latch = new CountDownLatch(k * putCount);
-        final IMap map = instances[0].getMap("testMapPutTTLWithListener");
+        final int putCount = 100;
+        final CountDownLatch latch = new CountDownLatch(putCount);
+        final IMap map = instance.getMap("testMapPutTTLWithListener");
 
         final AtomicBoolean error = new AtomicBoolean(false);
         final Set<Long> times = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
 
         map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(final EntryEvent event) {
-                final Long expectedEvictionTime = (Long) (event.getOldValue());
-                long timeDifference = System.currentTimeMillis() - expectedEvictionTime;
-                if (timeDifference > 5000) {
-                    error.set(true);
-                    times.add(timeDifference);
-                }
                 latch.countDown();
             }
         }, true);
 
-        for (int i = 0; i < k; i++) {
-            final int threadId = i;
-            int ttl = (int) (Math.random() * 5000 + 3000);
+            int ttl = (int) (Math.random() * 3000);
             for (int j = 0; j < putCount; j++) {
-                final long expectedEvictionTime = ttl + System.currentTimeMillis();
-                map.put(j + putCount * threadId, expectedEvictionTime, ttl, TimeUnit.MILLISECONDS);
+                map.put(j, j, ttl, TimeUnit.MILLISECONDS);
             }
-        }
 
         // wait until eviction is completed.
         assertOpenEventually(latch);
-        assertFalse("Some evictions took more than 5 seconds! -> late eviction count:" + times.size(), error.get());
     }
 
     /**

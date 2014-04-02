@@ -58,8 +58,7 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
     /**
      * Creates a BlockJUnit4ClassRunner to run {@code klass}
      *
-     * @throws org.junit.runners.model.InitializationError
-     *          if the test class is malformed.
+     * @throws org.junit.runners.model.InitializationError if the test class is malformed.
      */
     public AbstractHazelcastClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
@@ -75,11 +74,23 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
         final Statement statement = super.methodBlock(method);
-        final Repeat repeatable = method.getAnnotation(Repeat.class);
+        final Repeat repeatable = getRepeatable(method);
         if (repeatable == null || repeatable.value() < 2) {
             return statement;
         }
         return new TestRepeater(statement, method.getMethod(), repeatable.value());
+    }
+
+    /**
+     * Gets repeat annotation, if any.
+     * Method level definition overrides class level definition.
+     */
+    private Repeat getRepeatable(FrameworkMethod method) {
+        Repeat repeatable = method.getAnnotation(Repeat.class);
+        if (repeatable == null) {
+            repeatable = super.getTestClass().getJavaClass().getAnnotation(Repeat.class);
+        }
+        return repeatable;
     }
 
     private class TestRepeater extends Statement {

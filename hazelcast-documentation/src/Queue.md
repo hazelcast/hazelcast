@@ -1,4 +1,4 @@
-## Distributed Queue
+## Queue
 
 Hazelcast distributed queue is an implementation of `java.util.concurrent.BlockingQueue`.
 

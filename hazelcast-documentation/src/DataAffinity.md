@@ -1,6 +1,6 @@
 
 
-# Data Affinity
+## Data Affinity
 
 **Co-location of related data and computation**
 

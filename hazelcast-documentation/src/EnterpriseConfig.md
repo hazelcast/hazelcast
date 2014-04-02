@@ -1,4 +1,7 @@
-## Setting License Key (Enterprise Only)
+## Setting License Key
+
+![](images/enterprise-onlycopy.jpg)
+
 
 To be able to use Hazelcast Enterprise Edition, you need to set license key in configuration.
 

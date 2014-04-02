@@ -1,5 +1,7 @@
 
-### Entry Processor
+
+
+## Entry Processor
 
 Hazelcast supports entry processing. The interface EntryProcessor gives you the ability to execute your code on an entry in an atomic way. You do not need any explicit lock on entry. Practically, Hazelcast locks the entry, runs the EntryProcessor, and then unlocks the entry. If entry processing is the major operation for a map and the map consists of complex objects, then using object type as `in-memory-format` is recommended to minimize serialization cost.
 
@@ -43,12 +45,7 @@ There are below methods in IMap interface for entry processing:
     Map<K,Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 	```
 
-Using `executeOnEntries	` method, if the number of entries is high and you do not need the results, then returning null in `process(..)` method is a good practice. 
-
--	If you would like to update your object in the `process()` method, you need to call `entry.setValue(V)` method. Otherwise, the entry will not be updated. 
--	If you want to remove the entry, the method `entry.setValue(V)` should be called with the parameter `null` (i.e. `entry.setValue(null)`). 
-
-
+Using `executeOnEntries	` method, if the number of entries is high and you do need the results, then returning null in `process(..)` method is a good practice.
 
 Here is the EntryProcessor interface:
 

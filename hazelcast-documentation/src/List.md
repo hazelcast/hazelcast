@@ -1,6 +1,6 @@
 
 
-## Distributed List
+## List
 
 Distributed List is very similar to distributed set, but it allows duplicate elements.
 

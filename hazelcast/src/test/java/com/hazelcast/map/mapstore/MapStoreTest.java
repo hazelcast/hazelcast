@@ -17,29 +17,29 @@
 package com.hazelcast.map.mapstore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.MapLoaderLifecycleSupport;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
-import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
@@ -50,41 +50,36 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Collection;
-import java.util.Random;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.TreeSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.query.SampleObjects.Employee;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 
 /**
@@ -460,7 +455,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testOneMemberWriteBehindWithMaxIdle() throws Exception {
-        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        final TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 5);
         config.getMapConfig("default").setMaxIdleSeconds(10);
         HazelcastInstance h1 = createHazelcastInstance(config);
@@ -474,12 +469,19 @@ public class MapStoreTest extends HazelcastTestSupport {
             }
         }, true);
 
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(10));
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.getEvents().poll());
+            }
+        });
 
         for (int i = 0; i < total; i++) {
             map.put(i, "value" + i);
         }
-        latch.await(30, TimeUnit.SECONDS);
+
+        assertOpenEventually(latch);
         assertEquals(0, map.size());
         assertEquals(total, testMapStore.getStore().size());
     }
@@ -612,23 +614,44 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testOneMemberWriteBehind2() throws Exception {
-        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        final TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 1);
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = createHazelcastInstance(config);
         IMap map = h1.getMap("default");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(2));
-        assertEquals(0, map.size());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.getEvents().poll());
+            }
+        });
+
         map.put("1", "value1");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(2));
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(2));
-        assertEquals(1, map.size());
-        assertEquals(1, testMapStore.getStore().size());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.getEvents().poll());
+            }
+        });
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.getEvents().poll());
+            }
+        });
+
         map.remove("1");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.waitForEvent(5));
-        assertEquals(0, map.size());
-        assertEquals(0, testMapStore.getStore().size());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.getEvents().poll());
+            }
+        });
+
     }
 
     @Test
@@ -1703,6 +1726,8 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
 
         protected final Map<K, V> store = new ConcurrentHashMap();
+
+
         protected final BlockingQueue events = new LinkedBlockingQueue();
         protected final AtomicInteger storeCount = new AtomicInteger();
         protected final AtomicInteger storeAllCount = new AtomicInteger();
@@ -1722,6 +1747,10 @@ public class MapStoreTest extends HazelcastTestSupport {
             this.properties = properties;
             this.mapName = mapName;
             initCount.incrementAndGet();
+        }
+
+        public BlockingQueue getEvents() {
+            return events;
         }
 
         public void destroy() {
@@ -1753,10 +1782,6 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         public Properties getProperties() {
             return properties;
-        }
-
-        Object waitForEvent(int seconds) throws InterruptedException {
-            return events.poll(seconds, TimeUnit.SECONDS);
         }
 
         Map getStore() {
