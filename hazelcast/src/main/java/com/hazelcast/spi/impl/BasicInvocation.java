@@ -66,8 +66,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
 
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
-    private Address invTarget;
-    private MemberImpl invTargetMember;
 
     static class InternalResponse {
 
@@ -99,10 +97,11 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
     private volatile int invokeCount = 0;
-    private volatile Address target;
     boolean remote = false;
     private final String executorName;
     final boolean resultDeserialized;
+    private Address invTarget;
+    private MemberImpl invTargetMember;
 
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
@@ -219,7 +218,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
 
         invTarget = getTarget();
-        target = invTarget;
         invokeCount++;
         final Address thisAddress = nodeEngine.getThisAddress();
         if (invTarget == null) {
@@ -426,7 +424,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         sb.append(", tryPauseMillis=").append(tryPauseMillis);
         sb.append(", invokeCount=").append(invokeCount);
         sb.append(", callTimeout=").append(callTimeout);
-        sb.append(", target=").append(target);
+        sb.append(", target=").append(invTarget);
         sb.append('}');
         return sb.toString();
     }
@@ -474,7 +472,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                     }
                 }
 
-                if (nodeEngine.getClusterService().getMember(target) != null) {
+                if (nodeEngine.getClusterService().getMember(invTarget) != null) {
                     synchronized (BasicInvocation.this) {
                         if (BasicInvocation.this.potentialResponse != null) {
                             invocationFuture.set(BasicInvocation.this.potentialResponse);

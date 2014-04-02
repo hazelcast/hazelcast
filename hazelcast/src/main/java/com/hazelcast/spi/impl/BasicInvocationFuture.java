@@ -119,7 +119,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                 //it can be that this invocation future already received an answer, e.g. when a an invocation
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
-                basicInvocation.logger.info("The InvocationFuture.set method can only be called once");
+                basicInvocation.logger.info("The InvocationFuture.set method of "+basicInvocation+" can only be called once");
                 return;
             }
             this.response = response;
