@@ -81,7 +81,6 @@ public class SetTransactionTest {
 
     }
 
-    @Repeat(10)
     @Test
     public void testSetSizeAfterRemove_withinTxn() throws Exception {
         final String element = "item1";
