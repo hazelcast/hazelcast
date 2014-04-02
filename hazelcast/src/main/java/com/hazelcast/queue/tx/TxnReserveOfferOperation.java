@@ -26,14 +26,11 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/27/13
- */
 public class TxnReserveOfferOperation extends QueueOperation implements WaitSupport {
 
-    int txSize;
+    private int txSize;
 
-    String transactionId;
+    private String transactionId;
 
     public TxnReserveOfferOperation() {
     }
@@ -44,36 +41,44 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
         this.transactionId = transactionId;
     }
 
+    @Override
     public void run() throws Exception {
         QueueContainer container = getOrCreateContainer();
-        if (container.hasEnoughCapacity(txSize+1)) {
+        if (container.hasEnoughCapacity(txSize + 1)) {
             response = container.txnOfferReserve(transactionId);
         }
     }
 
+    @Override
     public WaitNotifyKey getWaitKey() {
-        return getOrCreateContainer().getOfferWaitNotifyKey();
+        QueueContainer container = getOrCreateContainer();
+        return container.getOfferWaitNotifyKey();
     }
 
+    @Override
     public boolean shouldWait() {
         QueueContainer container = getOrCreateContainer();
-        return getWaitTimeout() != 0 && !container.hasEnoughCapacity(txSize+1);
+        return getWaitTimeout() != 0 && !container.hasEnoughCapacity(txSize + 1);
     }
 
+    @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_RESERVE_OFFER;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(txSize);
         out.writeUTF(transactionId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         txSize = in.readInt();

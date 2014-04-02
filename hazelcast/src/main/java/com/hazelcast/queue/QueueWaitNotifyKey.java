@@ -18,9 +18,6 @@ package com.hazelcast.queue;
 
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 
-/**
- * @author mdogan 1/15/13
- */
 public class QueueWaitNotifyKey extends AbstractWaitNotifyKey {
 
     private final String type;
@@ -32,13 +29,21 @@ public class QueueWaitNotifyKey extends AbstractWaitNotifyKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         QueueWaitNotifyKey that = (QueueWaitNotifyKey) o;
 
-        if (!type.equals(that.type)) return false;
+        if (!type.equals(that.type)) {
+            return false;
+        }
 
         return true;
     }

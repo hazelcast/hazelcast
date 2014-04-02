@@ -16,17 +16,18 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-/**
- * @author mdogan 1/18/13
- */
 public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
     private final ICompletableFuture future;
@@ -51,6 +52,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
         this.hasDefaultValue = true;
     }
 
+    @Override
     public final V get() throws InterruptedException, ExecutionException {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -60,6 +62,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
         }
     }
 
+    @Override
     public final V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (!done) {
             synchronized (this) {
@@ -101,15 +104,19 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
         return (V) object;
     }
 
+
+    @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         done = true;
         return false;
     }
 
+    @Override
     public boolean isCancelled() {
         return false;
     }
 
+    @Override
     public final boolean isDone() {
         return done ? done : future.isDone();
     }

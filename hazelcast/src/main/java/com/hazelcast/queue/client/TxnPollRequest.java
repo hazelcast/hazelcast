@@ -33,13 +33,10 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 6/7/13
- */
 public class TxnPollRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
-    String name;
-    long timeout;
+    private String name;
+    private long timeout;
 
     public TxnPollRequest() {
     }
@@ -49,6 +46,7 @@ public class TxnPollRequest extends BaseTransactionRequest implements Portable, 
         this.timeout = timeout;
     }
 
+    @Override
     public Object innerCall() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final TransactionContext context = endpoint.getTransactionContext(txnId);
@@ -56,30 +54,36 @@ public class TxnPollRequest extends BaseTransactionRequest implements Portable, 
         return queue.poll(timeout, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return QueuePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.TXN_POLL;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeUTF("n",name);
-        writer.writeLong("t",timeout);
+        writer.writeUTF("n", name);
+        writer.writeLong("t", timeout);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         name = reader.readUTF("n");
         timeout = reader.readLong("t");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }

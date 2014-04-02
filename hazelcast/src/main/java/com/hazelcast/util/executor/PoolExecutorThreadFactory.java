@@ -22,9 +22,6 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @author mdogan 1/10/13
- */
 public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
     private final String threadNamePrefix;
@@ -36,6 +33,7 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
         this.threadNamePrefix = threadNamePrefix;
     }
 
+    @Override
     protected Thread createThread(Runnable r) {
         Integer id = idQ.poll();
         if (id == null) {

@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 public class ClientNearCacheConfigTest {
 
     @Test
-    public void testSpecificNearCacheConfig(){
+    public void testSpecificNearCacheConfig_whenAsteriskAtTheEnd(){
         final ClientConfig clientConfig = new ClientConfig();
         final NearCacheConfig genericNearCacheConfig = new NearCacheConfig();
         genericNearCacheConfig.setName("map*");
@@ -47,7 +47,42 @@ public class ClientNearCacheConfigTest {
 
         assertEquals(genericNearCacheConfig, mapFoo);
         assertEquals(specificNearCacheConfig, mapStudentFoo);
+    }
 
+    @Test
+    public void testSpecificNearCacheConfig_whenAsteriskAtTheBeginning(){
+        final ClientConfig clientConfig = new ClientConfig();
+        final NearCacheConfig genericNearCacheConfig = new NearCacheConfig();
+        genericNearCacheConfig.setName("*Map");
+        clientConfig.addNearCacheConfig(genericNearCacheConfig);
+
+        final NearCacheConfig specificNearCacheConfig = new NearCacheConfig();
+        specificNearCacheConfig.setName("*MapStudent");
+        clientConfig.addNearCacheConfig(specificNearCacheConfig);
+
+        final NearCacheConfig mapFoo = clientConfig.getNearCacheConfig("fooMap");
+        final NearCacheConfig mapStudentFoo = clientConfig.getNearCacheConfig("fooMapStudent");
+
+        assertEquals(genericNearCacheConfig, mapFoo);
+        assertEquals(specificNearCacheConfig, mapStudentFoo);
+    }
+
+    @Test
+    public void testSpecificNearCacheConfig_whenAsteriskInTheMiddle(){
+        final ClientConfig clientConfig = new ClientConfig();
+        final NearCacheConfig genericNearCacheConfig = new NearCacheConfig();
+        genericNearCacheConfig.setName("map*Bar");
+        clientConfig.addNearCacheConfig(genericNearCacheConfig);
+
+        final NearCacheConfig specificNearCacheConfig = new NearCacheConfig();
+        specificNearCacheConfig.setName("mapStudent*Bar");
+        clientConfig.addNearCacheConfig(specificNearCacheConfig);
+
+        final NearCacheConfig mapFoo = clientConfig.getNearCacheConfig("mapFooBar");
+        final NearCacheConfig mapStudentFoo = clientConfig.getNearCacheConfig("mapStudentFooBar");
+
+        assertEquals(genericNearCacheConfig, mapFoo);
+        assertEquals(specificNearCacheConfig, mapStudentFoo);
     }
 
 }

@@ -17,12 +17,13 @@
 package com.hazelcast.util.executor;
 
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * @mdogan 6/11/13
- */
 public final class StripedExecutor implements Executor {
 
     private final int size;
@@ -51,14 +52,15 @@ public final class StripedExecutor implements Executor {
         }
     }
 
-    public int getWorkQueueSize(){
+    public int getWorkQueueSize() {
         int size = 0;
-        for(Worker worker: workers){
-            size+=worker.workQueue.size();
+        for (Worker worker : workers) {
+            size += worker.workQueue.size();
         }
         return size;
     }
 
+    @Override
     public void execute(Runnable command) {
         final int key;
         if (command instanceof StripedRunnable) {
@@ -90,6 +92,7 @@ public final class StripedExecutor implements Executor {
 
         private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumQueueSize);
 
+        @Override
         public void execute(Runnable command) {
             long timeout = 0;
             TimeUnit timeUnit = TimeUnit.SECONDS;
@@ -133,6 +136,7 @@ public final class StripedExecutor implements Executor {
             }
         }
 
+        @Override
         public void run() {
             try {
                 Runnable r;

@@ -25,9 +25,6 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-/**
- * @author ali 5/8/13
- */
 public class ClearRequest extends QueueRequest implements RetryableRequest {
 
     public ClearRequest() {
@@ -37,14 +34,17 @@ public class ClearRequest extends QueueRequest implements RetryableRequest {
         super(name);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new ClearOperation(name);
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.CLEAR;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }

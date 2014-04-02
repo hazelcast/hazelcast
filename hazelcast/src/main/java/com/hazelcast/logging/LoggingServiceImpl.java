@@ -41,6 +41,8 @@ public class LoggingServiceImpl implements LoggingService {
 
     private final ConstructorFunction<String, ILogger> loggerConstructor
             = new ConstructorFunction<String, ILogger>() {
+
+        @Override
         public ILogger createNew(String key) {
             return new DefaultLogger(key);
         }

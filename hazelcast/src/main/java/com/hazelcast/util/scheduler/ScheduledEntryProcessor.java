@@ -18,7 +18,8 @@ package com.hazelcast.util.scheduler;
 
 import java.util.Collection;
 
-public interface ScheduledEntryProcessor<K,V> {
+public interface ScheduledEntryProcessor<K, V> {
+
     /**
      * Processes all entries. Implementation has to
      * handle the failures and can possibly reschedule it for a future time.
@@ -28,5 +29,5 @@ public interface ScheduledEntryProcessor<K,V> {
      * @param scheduler
      * @param entries
      */
-    void process(EntryTaskScheduler<K,V> scheduler, Collection<ScheduledEntry<K, V>> entries);
+    void process(EntryTaskScheduler<K, V> scheduler, Collection<ScheduledEntry<K, V>> entries);
 }

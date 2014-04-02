@@ -1,14 +1,14 @@
 package com.hazelcast.collection;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -20,18 +20,14 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class SetTransactionTest {
 
-    static HazelcastInstance instance1;
-    static HazelcastInstance instance2;
+    HazelcastInstance instance1;
+    HazelcastInstance instance2;
 
-    @BeforeClass
-    public static void init() {
-        instance1 = Hazelcast.newHazelcastInstance();
-        instance2 = Hazelcast.newHazelcastInstance();
-    }
-
-    @AfterClass
-    public static void destroy() {
-        Hazelcast.shutdownAll();
+    @Before
+    public void init() {
+        TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(2);
+        instance1 = instanceFactory.newHazelcastInstance();
+        instance2 = instanceFactory.newHazelcastInstance();
     }
 
     @Test
@@ -47,7 +43,7 @@ public class SetTransactionTest {
         assertTrue(txnSet.add(element));
         assertEquals(1, txnSet.size());
         context.commitTransaction();
-        assertEquals(1,set.size());
+        assertEquals(1, set.size());
     }
 
     @Test

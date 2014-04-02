@@ -28,6 +28,7 @@ public abstract class AbstractExecutorThreadFactory implements ThreadFactory {
         this.classLoader = classLoader;
     }
 
+    @Override
     public final Thread newThread(Runnable r) {
         final Thread t = createThread(r);
         ClassLoader cl = classLoader != null ? classLoader : Thread.currentThread().getContextClassLoader();
@@ -42,5 +43,4 @@ public abstract class AbstractExecutorThreadFactory implements ThreadFactory {
     }
 
     protected abstract Thread createThread(Runnable r);
-
 }

@@ -53,6 +53,7 @@ public abstract class CollectionContainer implements DataSerializable {
 
     public void init(NodeEngine nodeEngine){
         this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     protected abstract CollectionConfig getConfig();

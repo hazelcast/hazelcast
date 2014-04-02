@@ -99,6 +99,7 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNotNullListener(1);
         final String id = mm.addEntryListener(listener, true);
         final String id2 = mm.addEntryListener(listener, true);
+        fail("this test is marked problematic as we cannot determine the desired behaviour from API");
     }
 
     @Test

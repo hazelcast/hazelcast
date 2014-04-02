@@ -25,12 +25,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author ali 12/20/12
- */
 public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
 
-    Map<Long, Data> dataMap;
+    private Map<Long, Data> dataMap;
 
     public AddAllBackupOperation() {
     }
@@ -40,14 +37,16 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
         this.dataMap = dataMap;
     }
 
+    @Override
     public void run() throws Exception {
         getOrCreateContainer().addAllBackup(dataMap);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(dataMap.size());
-        for (Map.Entry<Long, Data> entry: dataMap.entrySet()) {
+        for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
             long itemId = entry.getKey();
             Data value = entry.getValue();
             out.writeLong(itemId);
@@ -55,6 +54,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
@@ -67,6 +67,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
         }
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.ADD_ALL_BACKUP;
     }

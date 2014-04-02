@@ -21,35 +21,34 @@ import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Iterator;
 
-/**
- * @author ali 12/18/12
- */
 public class QueueIterator<E> implements Iterator<E> {
 
-    final Iterator<Data> iter;
-    final SerializationService serializationService;
+    private final Iterator<Data> iterator;
+    private final SerializationService serializationService;
+    private final boolean binary;
 
-    final boolean binary;
-
-    public QueueIterator(Iterator<Data> iter, SerializationService serializationService, boolean binary) {
-        this.iter = iter;
+    public QueueIterator(Iterator<Data> iterator, SerializationService serializationService, boolean binary) {
+        this.iterator = iterator;
         this.serializationService = serializationService;
         this.binary = binary;
     }
 
+    @Override
     public boolean hasNext() {
-        return iter.hasNext();
+        return iterator.hasNext();
     }
 
+    @Override
     public E next() {
-        Data data = iter.next();
+        Data data = iterator.next();
         if (binary) {
             return (E) data;
         }
         return (E) serializationService.toObject(data);
     }
 
+    @Override
     public void remove() {
-        iter.remove();
+        iterator.remove();
     }
 }

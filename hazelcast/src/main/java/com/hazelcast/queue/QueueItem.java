@@ -25,9 +25,6 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-/**
- * @author ali 12/12/12
- */
 public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem> {
 
     protected long itemId;
@@ -69,35 +66,55 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         return creationTime;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
         IOUtil.writeNullableData(out, data);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         itemId = in.readLong();
         data = IOUtil.readNullableData(in);
     }
 
+    @Override
     public int compareTo(QueueItem o) {
-        if (itemId < o.getItemId()){
+        if (itemId < o.getItemId()) {
             return -1;
-        }
-        else if (itemId > o.getItemId()){
+        } else if (itemId > o.getItemId()) {
             return 1;
         }
         return 0;
     }
 
     @Override
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.QUEUE_ITEM;
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof QueueItem)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof QueueItem)) {
+            return false;
+        }
 
         QueueItem item = (QueueItem) o;
 
-        if (itemId != item.itemId) return false;
-        if (data != null ? !data.equals(item.data) : item.data != null) return false;
+        if (itemId != item.itemId) {
+            return false;
+        }
+        if (data != null ? !data.equals(item.data) : item.data != null) {
+            return false;
+        }
 
         return true;
     }
@@ -107,13 +124,5 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         int result = (int) (itemId ^ (itemId >>> 32));
         result = 31 * result + (data != null ? data.hashCode() : 0);
         return result;
-    }
-
-    public int getFactoryId() {
-        return QueueDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return QueueDataSerializerHook.QUEUE_ITEM;
     }
 }

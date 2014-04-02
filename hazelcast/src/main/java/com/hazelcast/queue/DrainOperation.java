@@ -17,6 +17,7 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,13 +30,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-/**
- * @author ali 12/19/12
- */
 public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
 
-    int maxSize;
-   Map<Long, Data> dataMap;
+    private int maxSize;
+    private Map<Long, Data> dataMap;
 
     public DrainOperation() {
     }
@@ -45,46 +43,55 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
         this.maxSize = maxSize;
     }
 
+    @Override
     public void run() throws Exception {
         QueueContainer container = getOrCreateContainer();
         dataMap = container.drain(maxSize);
-
         response = new SerializableCollection(new ArrayList<Data>(dataMap.values()));
     }
 
+    @Override
     public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+        LocalQueueStatsImpl localQueueStatsImpl = getQueueService().getLocalQueueStatsImpl(name);
+        localQueueStatsImpl.incrementOtherOperations();
         for (Data data : dataMap.values()) {
             publishEvent(ItemEventType.REMOVED, data);
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return dataMap.size() > 0;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new DrainBackupOperation(name, dataMap.keySet());
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(maxSize);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         maxSize = in.readInt();
     }
 
+    @Override
     public boolean shouldNotify() {
         return dataMap.size() > 0;
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.DRAIN;
     }

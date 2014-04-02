@@ -21,9 +21,6 @@ import com.hazelcast.queue.PeekOperation;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author ali 5/8/13
- */
 public class PeekRequest extends QueueRequest implements RetryableRequest {
 
     public PeekRequest() {
@@ -33,10 +30,12 @@ public class PeekRequest extends QueueRequest implements RetryableRequest {
         super(name);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new PeekOperation(name);
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.PEEK;
     }

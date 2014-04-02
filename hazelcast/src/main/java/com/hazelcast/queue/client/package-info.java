@@ -14,28 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
-
-public final class ThreadUtil {
-
-    private static final ThreadLocal<Long> threadLocal = new ThreadLocal<Long>();
-
-    private ThreadUtil() {
-    }
-
-    public static long getThreadId() {
-        final Long threadId = threadLocal.get();
-        if (threadId != null) {
-            return threadId;
-        }
-        return Thread.currentThread().getId();
-    }
-
-    public static void setThreadId(long threadId) {
-        threadLocal.set(threadId);
-    }
-
-    public static void removeThreadId() {
-        threadLocal.remove();
-    }
-}
+/**
+ * <p>This package contains client requests for the IQueue.<br/>
+ */
+package com.hazelcast.queue.client;

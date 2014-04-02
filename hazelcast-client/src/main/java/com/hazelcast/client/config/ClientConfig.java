@@ -394,16 +394,19 @@ public class ClientConfig {
      */
     private static int getMatchingPoint(final String name, final String pattern) {
         final int index = pattern.indexOf('*');
-        if (index != -1) {
-            final String firstPart = pattern.substring(0, index);
-            final int indexFirstPart = name.indexOf(firstPart, 0);
-            if (indexFirstPart == -1) {
-                return -1;
-            }
-            final String secondPart = pattern.substring(index + 1);
-            final int indexSecondPart = name.indexOf(secondPart, index + 1);
-            return indexSecondPart;
+        if (index == -1) {
+            return -1;
         }
-        return -1;
+        final String firstPart = pattern.substring(0, index);
+        final int indexFirstPart = name.indexOf(firstPart, 0);
+        if (indexFirstPart == -1) {
+            return -1;
+        }
+        final String secondPart = pattern.substring(index + 1);
+        final int indexSecondPart = name.indexOf(secondPart, index + 1);
+        if (indexSecondPart == -1) {
+            return -1;
+        }
+        return firstPart.length()+secondPart.length();
     }
 }

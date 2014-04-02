@@ -20,15 +20,12 @@ import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.IteratorOperation;
 import com.hazelcast.queue.QueuePortableHook;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.SerializableCollection;
-import com.hazelcast.spi.Operation;
 
 import java.util.Collection;
 
-/**
- * @author ali 5/8/13
- */
 public class IteratorRequest extends QueueRequest implements RetryableRequest {
 
     public IteratorRequest() {
@@ -38,17 +35,21 @@ public class IteratorRequest extends QueueRequest implements RetryableRequest {
         super(name);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new IteratorOperation(name);
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.ITERATOR;
     }
 
+    @Override
     protected Object filter(Object response) {
-        if (response instanceof SerializableCollection){
-             Collection<Data> coll = ((SerializableCollection) response).getCollection();
+        if (response instanceof SerializableCollection) {
+            SerializableCollection serializableCollection = (SerializableCollection) response;
+            Collection<Data> coll = serializableCollection.getCollection();
             return new PortableCollection(coll);
         }
         return super.filter(response);

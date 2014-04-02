@@ -53,6 +53,23 @@ public class WebfilterTestCase extends AbstractWebfilterTestCase {
     }
 
     @Test(timeout = 60000)
+    public void test_github_issue_2187() throws Exception {
+        IMap<String, String> map = hz.getMap("default");
+
+        CookieStore cookieStore = new BasicCookieStore();
+        String value = executeRequest("read", serverPort1, cookieStore);
+        assertEquals("null", value);
+
+        executeRequest("write", serverPort1, cookieStore);
+
+        Set<Entry<String, String>> entrySet = map.entrySet();
+        assertEquals(2, entrySet.size());
+
+        value = executeRequest("read", serverPort1, cookieStore);
+        assertEquals("value", value);
+    }
+
+    @Test(timeout = 60000)
     public void testAttributeDistribution() throws Exception {
         IMap<String, Object> map = hz.getMap("default");
 

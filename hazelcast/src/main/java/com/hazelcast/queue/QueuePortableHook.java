@@ -16,19 +16,37 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.serialization.*;
-import com.hazelcast.queue.client.*;
+import com.hazelcast.nio.serialization.ArrayPortableFactory;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.queue.client.AddAllRequest;
+import com.hazelcast.queue.client.AddListenerRequest;
+import com.hazelcast.queue.client.ClearRequest;
+import com.hazelcast.queue.client.CompareAndRemoveRequest;
+import com.hazelcast.queue.client.ContainsRequest;
+import com.hazelcast.queue.client.DrainRequest;
+import com.hazelcast.queue.client.IteratorRequest;
+import com.hazelcast.queue.client.OfferRequest;
+import com.hazelcast.queue.client.PeekRequest;
+import com.hazelcast.queue.client.PollRequest;
+import com.hazelcast.queue.client.RemainingCapacityRequest;
+import com.hazelcast.queue.client.RemoveListenerRequest;
+import com.hazelcast.queue.client.RemoveRequest;
+import com.hazelcast.queue.client.SizeRequest;
+import com.hazelcast.queue.client.TxnOfferRequest;
+import com.hazelcast.queue.client.TxnPeekRequest;
+import com.hazelcast.queue.client.TxnPollRequest;
+import com.hazelcast.queue.client.TxnSizeRequest;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-/**
- * @author ali 5/8/13
- */
 public class QueuePortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_PORTABLE_FACTORY, -11);
-
 
     public static final int OFFER = 1;
     public static final int SIZE = 2;
@@ -57,7 +75,7 @@ public class QueuePortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
 
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[REMOVE_LISTENER+1];
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[REMOVE_LISTENER + 1];
 
         constructors[OFFER] = new ConstructorFunction<Integer, Portable>() {
             @Override
@@ -171,6 +189,7 @@ public class QueuePortableHook implements PortableHook {
         return new ArrayPortableFactory(constructors);
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }
