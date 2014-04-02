@@ -172,7 +172,9 @@ final IMap<Integer, Student> map = instance.getMap("students");
 Hazelcast distributed queries will run on each member in parallel and only results will return the conn. When a query runs on a member, Hazelcast will iterate through the entire owned entries and find the matching ones. This can be made faster by indexing the mostly queried fields. Just like you would do for your database. Of course, indexing will add overhead for each `write` operation but queries will be a lot faster. If you are querying your map a lot, make sure to add indexes for most frequently queried fields. So, if your `active and age < 30 ` query, for example, is used a lot, make sure you add index for `active` and `age` fields. Here is how:
 
 ```java
-IMap imap = Hazelcast.getMap("employees");
+Config cfg = new Config();
+HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+IMap imap = instance.getMap("employees");
 imap.addIndex("age", true);        // ordered, since we have ranged queries for this field
 imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
 ```
