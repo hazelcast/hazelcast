@@ -67,7 +67,7 @@ public class AtomicLongTest extends HazelcastTestSupport {
 
     @Test
     @ClientCompatibleTest
-    public void testMultipleThreadAtomicLong() throws InterruptedException {
+    public void testMultipleThreadAtomicLong() {
         final HazelcastInstance instance = createHazelcastInstance();
         final int k = 10;
         final CountDownLatch countDownLatch = new CountDownLatch(k);
@@ -86,12 +86,8 @@ public class AtomicLongTest extends HazelcastTestSupport {
                 }
             }.start();
         }
-        try {
-            countDownLatch.await(50, TimeUnit.SECONDS);
-            assertEquals(0, atomicLong.get());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        assertOpenEventually(countDownLatch, 50);
+        assertEquals(0, atomicLong.get());
     }
 
     @Test
