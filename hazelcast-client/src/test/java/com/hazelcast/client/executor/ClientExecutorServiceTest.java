@@ -100,7 +100,7 @@ public class ClientExecutorServiceTest {
     public void testAwaitTermination() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
         final boolean result = service.awaitTermination(9999, TimeUnit.DAYS);
-        fail("marked problematic at the method awaitTermination really just returns false and in fact dose nothing !");
+        fail("marked problematic at the method awaitTermination really just returns false and in fact dose nothing !!");
     }
 
     @Test(expected = TimeoutException.class)
