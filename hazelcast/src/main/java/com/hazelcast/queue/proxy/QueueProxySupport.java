@@ -88,7 +88,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         throwExceptionIfNull(data);
         OfferOperation operation = new OfferOperation(name, timeout, data);
         try {
-            return invokeAndGet(operation);
+            return (Boolean) invokeAndGet(operation);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrowAllowInterrupted(throwable);
         }
