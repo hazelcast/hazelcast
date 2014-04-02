@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -272,4 +273,34 @@ public class IssuesTest extends HazelcastTestSupport {
         }
     }
 
+    @Test // Issue #1795
+    public void testMapClearDoesNotTriggerEqualsOrHashCodeOnKeyObject() {
+        int n = 1;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
+        final HazelcastInstance instance = factory.newHazelcastInstance();
+        final IMap map = instance.getMap(randomString());
+        final CompositeKey key = new CompositeKey();
+        map.put(key, "value");
+        map.clear();
+        assertFalse("hashCode method should not have been called on key during clear", CompositeKey.hashCodeCalled);
+        assertFalse("equals method should not have been called on key during clear", CompositeKey.equalsCalled);
+    }
+
+    public static class CompositeKey implements Serializable
+    {
+        static boolean hashCodeCalled = false;
+        static boolean equalsCalled = false;
+
+        @Override
+        public int hashCode() {
+            hashCodeCalled = true;
+            return super.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            equalsCalled = true;
+            return super.equals(o);
+        }
+    }
 }
