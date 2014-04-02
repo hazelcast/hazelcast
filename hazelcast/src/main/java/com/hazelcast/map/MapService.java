@@ -444,21 +444,33 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void putNearCache(String mapName, Data key, Data value) {
+        if(!isNearCacheEnabled(mapName)){
+            return;
+        }
         NearCache nearCache = getNearCache(mapName);
         nearCache.put(key, value);
     }
 
     public void invalidateNearCache(String mapName, Data key) {
+        if(!isNearCacheEnabled(mapName)){
+            return;
+        }
         NearCache nearCache = getNearCache(mapName);
         nearCache.invalidate(key);
     }
 
     public void invalidateNearCache(String mapName, Set<Data> keys) {
+        if(!isNearCacheEnabled(mapName)){
+            return;
+        }
         NearCache nearCache = getNearCache(mapName);
         nearCache.invalidate(keys);
     }
 
     public void clearNearCache(String mapName) {
+        if(!isNearCacheEnabled(mapName)){
+            return;
+        }
         final NearCache nearCache = nearCacheMap.get(mapName);
         if (nearCache != null) {
             nearCache.clear();
@@ -466,6 +478,9 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void invalidateAllNearCaches(String mapName, Data key) {
+        if(!isNearCacheEnabled(mapName)){
+            return;
+        }
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
@@ -489,7 +504,15 @@ public class MapService implements ManagedService, MigrationAwareService,
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
     }
 
+    public boolean isNearCacheEnabled(String mapName) {
+        final MapContainer mapContainer = getMapContainer(mapName);
+        return mapContainer.isNearCacheEnabled();
+    }
+
     public void invalidateAllNearCaches(String mapName, Set<Data> keys) {
+        if(!isNearCacheEnabled(mapName)){
+            return;
+        }
         if (keys == null || keys.isEmpty()) return;
         //send operation.
         Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys).setServiceName(SERVICE_NAME);
