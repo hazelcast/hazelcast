@@ -519,7 +519,7 @@ public class WebFilter implements Filter {
         public void removeAttribute(final String name) {
             if (deferredWrite) {
                 LocalCacheEntry entry = localCache.get(name);
-                if (entry != null) {
+                if (entry != null && entry != NULL_ENTRY) {
                     entry.value = null;
                     entry.removed = true;
                     // dirty needs to be set as last value for memory visibility reasons!
@@ -539,7 +539,7 @@ public class WebFilter implements Filter {
             }
             if (deferredWrite) {
                 LocalCacheEntry entry = localCache.get(name);
-                if (entry == null) {
+                if (entry == null || entry == NULL_ENTRY) {
                     entry = new LocalCacheEntry();
                     localCache.put(name, entry);
                 }
