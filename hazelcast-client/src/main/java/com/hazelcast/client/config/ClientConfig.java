@@ -394,16 +394,67 @@ public class ClientConfig {
      */
     private static int getMatchingPoint(final String name, final String pattern) {
         final int index = pattern.indexOf('*');
-        if (index != -1) {
-            final String firstPart = pattern.substring(0, index);
-            final int indexFirstPart = name.indexOf(firstPart, 0);
-            if (indexFirstPart == -1) {
-                return -1;
-            }
-            final String secondPart = pattern.substring(index + 1);
-            final int indexSecondPart = name.indexOf(secondPart, index + 1);
-            return indexSecondPart;
+        if (index == -1) {
+            return -1;
         }
-        return -1;
+        final String firstPart = pattern.substring(0, index);
+        final int indexFirstPart = name.indexOf(firstPart, 0);
+        if (indexFirstPart == -1) {
+            return -1;
+        }
+        final String secondPart = pattern.substring(index + 1);
+        final int indexSecondPart = name.indexOf(secondPart, index + 1);
+        if (indexSecondPart == -1) {
+            return -1;
+        }
+        return firstPart.length()+secondPart.length();
+    }
+
+    public static void main(String[] args) {
+        String pattern1 = "*ali";
+        String pattern2 = "*veliali";
+        int matches = getMatchingPoint("mapveliali", pattern1);
+        System.err.println(matches);
+
+        matches = getMatchingPoint("mapveliali", pattern2);
+        System.err.println(matches);
+
+        pattern1 = "ali*";
+        pattern2 = "aliveli*";
+
+        matches = getMatchingPoint("alivelideli", pattern1);
+        System.err.println(matches);
+
+        matches = getMatchingPoint("alivelideli", pattern2);
+        System.err.println(matches);
+
+
+        pattern1 = "ali*foo";
+        pattern2 = "aliveli*foo";
+
+        matches = getMatchingPoint("alivelidelifoo", pattern1);
+        System.err.println(matches);
+
+        matches = getMatchingPoint("alivelidelifoo", pattern2);
+        System.err.println(matches);
+
+        pattern1 = "ali*foo";
+        pattern2 = "aliveli*barfoo";
+
+        matches = getMatchingPoint("alivelidelibarfoo", pattern1);
+        System.err.println(matches);
+
+        matches = getMatchingPoint("alivelidelibarfoo", pattern2);
+        System.err.println(matches);
+
+        pattern1 = "*Bar";
+        pattern2 = "Foo*";
+
+        matches = getMatchingPoint("FooBar", pattern1);
+        System.err.println(matches);
+
+        matches = getMatchingPoint("FooBar", pattern2);
+        System.err.println(matches);
+
     }
 }
