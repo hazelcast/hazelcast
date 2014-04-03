@@ -2,6 +2,7 @@
 
 ## Hazelcast Overview
 
+
 Hazelcast is a clustering and highly scalable data distribution platform for Java. Hazelcast helps architects and developers to easily design and develop faster, highly scalable and reliable applications for their businesses.
 
 -   Distributed implementations of `java.util.{Queue, Set, List, Map}`
@@ -10,7 +11,7 @@ Hazelcast is a clustering and highly scalable data distribution platform for Jav
 
 -   Distributed implementation of `java.util.concurrency.locks.Lock`
 
--   Distributed `Topic` for publish/subscribe messaging
+-   Distributed Topic for publish/subscribe messaging
 
 -   Transaction support and J2EE container integration via JCA
 

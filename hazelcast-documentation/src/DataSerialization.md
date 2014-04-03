@@ -2,7 +2,7 @@
 
 
 
-### Data Serialization
+## Data Serialization
 
 For a faster serialization of objects, Hazelcast recommends to implement `com.hazelcast.nio.serialization.IdentifiedDataSerializable` which is slightly better version of `com.hazelcast.nio.serialization.DataSerializable`.
 

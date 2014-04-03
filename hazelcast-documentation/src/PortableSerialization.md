@@ -1,7 +1,7 @@
 
 
 
-### Portable Serialization
+## Portable Serialization
 
 As an alternative to the existing serialization methods, Hazelcast offers a Portable serialization that have the following advantages:
 

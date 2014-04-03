@@ -1,5 +1,5 @@
 
-### Custom Serialization
+## Custom Serialization
 
 Hazelcast lets you plug a custom serializer to be used for serialization of objects.
 
