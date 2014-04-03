@@ -24,6 +24,10 @@ public class QueryContext {
     }
 
     public Index getIndex(String attributeName) {
-        return (indexService == null) ? null : indexService.getIndex(attributeName);
+        if (indexService == null) {
+            return null;
+        } else {
+            return indexService.getIndex(attributeName);
+        }
     }
 }

@@ -18,10 +18,14 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -30,8 +34,9 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     private final List<Set<QueryableEntry>> otherIndexedResults;
     private final List<Predicate> lsNoIndexPredicates;
 
-    public AndResultSet(Set<QueryableEntry> setSmallest, List<Set<QueryableEntry>> otherIndexedResults, List<Predicate> lsNoIndexPredicates) {
-        this.setSmallest = isNotNull(setSmallest,"setSmallest");
+    public AndResultSet(Set<QueryableEntry> setSmallest, List<Set<QueryableEntry>> otherIndexedResults,
+                        List<Predicate> lsNoIndexPredicates) {
+        this.setSmallest = isNotNull(setSmallest, "setSmallest");
         this.otherIndexedResults = otherIndexedResults;
         this.lsNoIndexPredicates = lsNoIndexPredicates;
     }
@@ -87,7 +92,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     class It implements Iterator<QueryableEntry> {
 
-        QueryableEntry currentEntry = null;
+        QueryableEntry currentEntry;
         final Iterator<QueryableEntry> it = setSmallest.iterator();
 
         @Override
@@ -96,7 +101,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
                 return true;
             }
 
-            for (; it.hasNext(); ) {
+            for (; it.hasNext();) {
                 QueryableEntry entry = it.next();
 
                 if (checkOtherIndexedResults(entry) && checkNoIndexPredicates(entry)) {
@@ -137,7 +142,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
         @Override
         public QueryableEntry next() {
-            if(!hasNext()){
+            if (!hasNext()) {
                 throw new NoSuchElementException();
             }
 

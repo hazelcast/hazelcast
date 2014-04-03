@@ -25,12 +25,21 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class is a special Predicate which helps to get a page-by-page result of a query
  * Can be constructed with a page-size, an inner predicate for filtering, A comparator for sorting  \
- * This class is not thread-safe and stateless. To be able to reuse for another query, one should call {@link PagingPredicate#reset()}
+ * This class is not thread-safe and stateless. To be able to reuse for another query, one should call
+ * {@link PagingPredicate#reset()}
  */
 public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
@@ -58,6 +67,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * results will not be filtered
      * results will be natural ordered
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     *
      * @param pageSize
      */
     public PagingPredicate(int pageSize) {
@@ -73,6 +83,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * results will be natural ordered
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
      * throws {@link IllegalArgumentException} if inner predicate is also {@link PagingPredicate}
+     *
      * @param predicate
      * @param pageSize
      */
@@ -86,6 +97,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * results will not be filtered
      * results will be ordered via comparator
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
+     *
      * @param comparator
      * @param pageSize
      */
@@ -100,6 +112,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * results will be ordered via comparator
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
      * throws {@link IllegalArgumentException} if inner predicate is also {@link PagingPredicate}
+     *
      * @param predicate
      * @param comparator
      * @param pageSize
@@ -123,6 +136,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * @param queryContext
      * @return
      */
+    @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
             Set<QueryableEntry> set = ((IndexAwarePredicate) predicate).filter(queryContext);
@@ -153,6 +167,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * @param queryContext
      * @return
      */
+    @Override
     public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
             return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
@@ -166,6 +181,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * @param mapEntry
      * @return
      */
+    @Override
     public boolean apply(Map.Entry mapEntry) {
         if (predicate != null) {
             return predicate.apply(mapEntry);
@@ -241,6 +257,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return anchorMap.get(page);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(predicate);
         out.writeObject(comparator);
@@ -256,6 +273,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         predicate = in.readObject();
         comparator = in.readObject();
@@ -270,5 +288,4 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
             anchorMap.put(key, new AbstractMap.SimpleImmutableEntry(anchorKey, anchorValue));
         }
     }
-
 }

@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 public interface IndexStore {
+
     void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to);
 
     void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue);

@@ -21,9 +21,7 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Date;
 
-class TypeConverters {
-    private TypeConverters(){}
-
+final class TypeConverters {
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
     public static final TypeConverter BIG_DECIMAL_CONVERTER = new BigDecimalConverter();
     public static final TypeConverter DOUBLE_CONVERTER = new DoubleConverter();
@@ -40,11 +38,15 @@ class TypeConverters {
     public static final TypeConverter SQL_TIMESTAMP_CONVERTER = new SqlTimestampConverter();
     public static final TypeConverter DATE_CONVERTER = new DateConverter();
 
+    private TypeConverters() {
+    }
+
     public interface TypeConverter {
         Comparable convert(Comparable value);
     }
 
     static class EnumConverter implements TypeConverter {
+        @Override
         public Comparable convert(Comparable value) {
             if (value == null) {
                 return null;
@@ -59,9 +61,11 @@ class TypeConverters {
     }
 
     static class SqlDateConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof java.sql.Date) return value;
+            if (value instanceof java.sql.Date) {
+                return value;
+            }
             if (value instanceof String) {
                 return DateHelper.parseSqlDate((String) value);
             }
@@ -74,9 +78,11 @@ class TypeConverters {
     }
 
     static class SqlTimestampConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof Timestamp) return value;
+            if (value instanceof Timestamp) {
+                return value;
+            }
             if (value instanceof String) {
                 return DateHelper.parseTimeStamp((String) value);
             }
@@ -89,9 +95,11 @@ class TypeConverters {
     }
 
     static class DateConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof Date) return value;
+            if (value instanceof Date) {
+                return value;
+            }
             if (value instanceof String) {
                 return DateHelper.parseDate((String) value);
             }
@@ -104,9 +112,11 @@ class TypeConverters {
     }
 
     static class DoubleConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof Double) return value;
+            if (value instanceof Double) {
+                return value;
+            }
             if (value instanceof String) {
                 return Double.parseDouble((String) value);
             }
@@ -119,9 +129,11 @@ class TypeConverters {
     }
 
     static class LongConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof Long) return value;
+            if (value instanceof Long) {
+                return value;
+            }
             if (value instanceof String) {
                 return Long.parseLong((String) value);
             }
@@ -134,26 +146,34 @@ class TypeConverters {
     }
 
     static class BigIntegerConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof BigInteger) return value;
+            if (value instanceof BigInteger) {
+                return value;
+            }
             return new BigInteger(value.toString());
         }
     }
 
     static class BigDecimalConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof BigDecimal) return value;
-            if (value instanceof BigInteger) return new BigDecimal((BigInteger) value);
+            if (value instanceof BigDecimal) {
+                return value;
+            }
+            if (value instanceof BigInteger) {
+                return new BigDecimal((BigInteger) value);
+            }
             return new BigDecimal(value.toString());
         }
     }
 
     static class IntegerConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof Integer) return value;
+            if (value instanceof Integer) {
+                return value;
+            }
             if (value instanceof String) {
                 return Integer.parseInt((String) value);
             }
@@ -166,18 +186,24 @@ class TypeConverters {
     }
 
     static class StringConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof String) return value;
-            if (value == null) return IndexImpl.NULL;
+            if (value instanceof String) {
+                return value;
+            }
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             return value.toString();
         }
     }
 
     static class FloatConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof Float) return value;
+            if (value instanceof Float) {
+                return value;
+            }
             if (value instanceof String) {
                 return Float.parseFloat((String) value);
             }
@@ -190,9 +216,11 @@ class TypeConverters {
     }
 
     static class ShortConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof Short) return value;
+            if (value instanceof Short) {
+                return value;
+            }
             if (value instanceof String) {
                 return Short.parseShort((String) value);
             }
@@ -205,9 +233,11 @@ class TypeConverters {
     }
 
     static class BooleanConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof Boolean) return value;
+            if (value instanceof Boolean) {
+                return value;
+            }
             if (value instanceof String) {
                 return Boolean.parseBoolean((String) value);
             }
@@ -220,9 +250,11 @@ class TypeConverters {
     }
 
     static class ByteConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof Byte) return value;
+            if (value instanceof Byte) {
+                return value;
+            }
             if (value instanceof String) {
                 return Byte.parseByte((String) value);
             }
@@ -235,10 +267,14 @@ class TypeConverters {
     }
 
     static class CharConverter implements TypeConverter {
-
+        @Override
         public Comparable convert(Comparable value) {
-            if (value.getClass() == char.class) return value;
-            if (value instanceof Character) return value;
+            if (value.getClass() == char.class) {
+                return value;
+            }
+            if (value instanceof Character) {
+                return value;
+            }
             if (value instanceof String) {
                 return ((String) value).charAt(0);
             }
