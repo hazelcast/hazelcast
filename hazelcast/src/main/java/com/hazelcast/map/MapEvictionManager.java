@@ -100,12 +100,13 @@ public class MapEvictionManager {
             int nodeTotalSize = 0;
             final MapService mapService = MapEvictionManager.this.mapService;
             final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-            final int maxSize = maxSizeConfig.getSize();
+            final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
             final String mapName = mapContainer.getName();
             final NodeEngine nodeEngine = mapService.getNodeEngine();
             final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-            for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-                Address owner = partitionService.getPartitionOwner(i);
+            final int partitionCount = partitionService.getPartitionCount();
+            for (int i = 0; i < partitionCount; i++) {
+                final Address owner = partitionService.getPartitionOwner(i);
                 if (nodeEngine.getThisAddress().equals(owner)) {
                     final PartitionContainer container = mapService.getPartitionContainer(i);
                     if (container == null) {
@@ -119,11 +120,19 @@ public class MapEvictionManager {
             }
             return false;
         }
+        /**
+         * used when deciding evictable or not.
+         * */
+        private int getApproximateMaxSize(int maxSizeFromConfig){
+            // because not to exceed the max size much we start eviction early.
+            // so decrease the max size with ratio .95 below
+            return maxSizeFromConfig * 95 / 100;
+        }
 
         private boolean isEvictablePerPartition(final MapContainer mapContainer) {
             final MapService mapService = MapEvictionManager.this.mapService;
             final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-            final int maxSize = maxSizeConfig.getSize();
+            final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
             final String mapName = mapContainer.getName();
             final NodeEngine nodeEngine = mapService.getNodeEngine();
             final InternalPartitionService partitionService = nodeEngine.getPartitionService();
@@ -149,9 +158,8 @@ public class MapEvictionManager {
                 return false;
             }
             final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-            final int maxSize = maxSizeConfig.getSize();
-            final boolean result = maxSize < (usedHeapSize / 1024 / 1024);
-            return result;
+            final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
+            return maxSize < (usedHeapSize / 1024 / 1024);
         }
 
         private boolean isEvictableHeapPercentage(final MapContainer mapContainer) {
@@ -160,7 +168,7 @@ public class MapEvictionManager {
                 return false;
             }
             final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-            final int maxSize = maxSizeConfig.getSize();
+            final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
             final long total = Runtime.getRuntime().totalMemory();
             final boolean result = maxSize < (100d * usedHeapSize / total);
             return result;
@@ -287,43 +295,42 @@ public class MapEvictionManager {
         }
     }
 
-    private List<Record> getEvictableRecords(RecordStore recordStore, int evictableSize, MapConfig.EvictionPolicy evictionPolicy) {
-        if (evictableSize <= 0) {
-            return Collections.EMPTY_LIST;
+    private List<Record> getEvictableRecords(final RecordStore recordStore, final int evictableSize, final MapConfig.EvictionPolicy evictionPolicy) {
+        if (evictableSize <= 0 || recordStore.size() == 0L) {
+            return Collections.emptyList();
         }
         final Map<Data, Record> entries = recordStore.getReadonlyRecordMap();
         final int size = entries.size();
+        // size have a tendency to change to here so check again.
+        if(size == 0) {
+            return Collections.emptyList();
+        }
         // criteria is a long value, like last access times or hits, used for calculating LFU or LRU.
         final long[] criterias = new long[size];
         int index = 0;
         for (final Record record : entries.values()) {
-            if (record.getStatistics() == null) {
-                criterias[index] = 0L;
-            }
-            else {
-                final long criteriaValue = getEvictionCriteriaValue(record, evictionPolicy);
-                criterias[index] = criteriaValue;
-            }
+            criterias[index] = getEvictionCriteriaValue(record, evictionPolicy);
             index++;
             //in case size may change when iterating.
             if (index == size) {
                 break;
             }
         }
-
+        if (criterias.length == 0) {
+            return Collections.emptyList();
+        }
         Arrays.sort(criterias);
-
         final List<Record> evictableRecords = new ArrayList<Record>(evictableSize);
-        final long criteriaValue = criterias[evictableSize - 1];
-        int evictionCounter = 0;
+        // check in case record store size may be smaller than evictable size.
+        final int evictableBaseIndex = Math.min(evictableSize, criterias.length - 1);
+        final long criteriaValue = criterias[evictableBaseIndex];
         for (final Map.Entry<Data, Record> entry : entries.entrySet()) {
             final Record record = entry.getValue();
             final long value = getEvictionCriteriaValue(record, evictionPolicy);
             if (value <= criteriaValue) {
                 evictableRecords.add(record);
-                evictionCounter++;
             }
-            if (evictionCounter >= evictableSize) {
+            if (evictableRecords.size() >= evictableSize) {
                 break;
             }
         }
@@ -334,10 +341,8 @@ public class MapEvictionManager {
         long value;
         switch (evictionPolicy) {
             case LRU:
-                value = record.getStatistics().getLastAccessTime();
-                break;
             case LFU:
-                value = record.getStatistics().getHits();
+                value = record.getAccessCounter();
                 break;
             default:
                 throw new IllegalArgumentException("Not an appropriate eviction policy [" + evictionPolicy + ']');
