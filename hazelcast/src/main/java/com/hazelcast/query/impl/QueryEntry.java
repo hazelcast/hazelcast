@@ -16,7 +16,11 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 
@@ -25,7 +29,7 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 public class QueryEntry implements QueryableEntry {
 
-    private static final PortableExtractor extractor = new PortableExtractor();
+    private static final PortableExtractor EXTRACTOR = new PortableExtractor();
 
     private final SerializationService serializationService;
     private final Data indexKey;
@@ -36,9 +40,15 @@ public class QueryEntry implements QueryableEntry {
     private PortableReader reader;
 
     public QueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
-        if (indexKey == null) throw new IllegalArgumentException("index keyData cannot be null");
-        if (key == null) throw new IllegalArgumentException("keyData cannot be null");
-        if (value == null) throw new IllegalArgumentException("value cannot be null");
+        if (indexKey == null) {
+            throw new IllegalArgumentException("index keyData cannot be null");
+        }
+        if (key == null) {
+            throw new IllegalArgumentException("keyData cannot be null");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value cannot be null");
+        }
         this.indexKey = indexKey;
         if (key instanceof Data) {
             this.key = (Data) key;
@@ -53,6 +63,7 @@ public class QueryEntry implements QueryableEntry {
         }
     }
 
+    @Override
     public Object getValue() {
         if (valueObject == null && serializationService != null) {
             valueObject = serializationService.toObject(value);
@@ -60,6 +71,7 @@ public class QueryEntry implements QueryableEntry {
         return valueObject;
     }
 
+    @Override
     public Object getKey() {
         if (keyObject == null && serializationService != null) {
             keyObject = serializationService.toObject(key);
@@ -67,13 +79,14 @@ public class QueryEntry implements QueryableEntry {
         return keyObject;
     }
 
+    @Override
     public Comparable getAttribute(String attributeName) throws QueryException {
         final Data data = getValueData();
         if (data != null && data.isPortable()) {
             FieldDefinition fd = data.getClassDefinition().get(attributeName);
             if (fd != null) {
                 PortableReader reader = getOrCreatePortableReader();
-                return extractor.extract(reader, attributeName, fd.getType().getId());
+                return EXTRACTOR.extract(reader, attributeName, fd.getType().getId());
             }
         }
         return extractViaReflection(attributeName);
@@ -87,9 +100,9 @@ public class QueryEntry implements QueryableEntry {
                 return (Comparable) getValue();
             }
 
-            if(attributeName.startsWith(KEY_ATTRIBUTE_NAME)){
+            if (attributeName.startsWith(KEY_ATTRIBUTE_NAME)) {
                 return ReflectionHelper.extractValue(this, attributeName, getKey());
-            }else{
+            } else {
                 return ReflectionHelper.extractValue(this, attributeName, getValue());
             }
         } catch (Exception e) {
@@ -97,6 +110,7 @@ public class QueryEntry implements QueryableEntry {
         }
     }
 
+    @Override
     public AttributeType getAttributeType(String attributeName) {
         final Data data = getValueData();
         if (data != null && data.isPortable()) {
@@ -125,19 +139,6 @@ public class QueryEntry implements QueryableEntry {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        QueryEntry that = (QueryEntry) o;
-        if (!indexKey.equals(that.indexKey)) return false;
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return indexKey.hashCode();
-    }
-
     public Data getKeyData() {
         if (key == null && serializationService != null) {
             key = serializationService.toData(keyObject);
@@ -145,6 +146,7 @@ public class QueryEntry implements QueryableEntry {
         return key;
     }
 
+    @Override
     public Data getValueData() {
         if (value == null && serializationService != null) {
             value = serializationService.toData(valueObject);
@@ -152,17 +154,41 @@ public class QueryEntry implements QueryableEntry {
         return value;
     }
 
+    @Override
     public Data getIndexKey() {
         return indexKey;
     }
 
+    @Override
     public Object setValue(Object value) {
         throw new UnsupportedOperationException();
     }
 
     private PortableReader getOrCreatePortableReader() {
-        if (reader != null) return reader;
-        return reader = serializationService.createPortableReader(value);
+        if (reader == null) {
+            reader = serializationService.createPortableReader(value);
+        }
+        return reader;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        QueryEntry that = (QueryEntry) o;
+        if (!indexKey.equals(that.indexKey)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return indexKey.hashCode();
     }
 
     private static class PortableExtractor {
@@ -189,54 +215,63 @@ public class QueryEntry implements QueryableEntry {
         }
 
         static class PortableIntegerFieldExtractor implements PortableFieldExtractor {
+            @Override
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readInt(fieldName);
             }
         }
 
         static class PortableByteFieldExtractor implements PortableFieldExtractor {
+            @Override
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readByte(fieldName);
             }
         }
 
         static class PortableLongFieldExtractor implements PortableFieldExtractor {
+            @Override
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readLong(fieldName);
             }
         }
 
         static class PortableDoubleFieldExtractor implements PortableFieldExtractor {
+            @Override
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readDouble(fieldName);
             }
         }
 
         static class PortableFloatFieldExtractor implements PortableFieldExtractor {
+            @Override
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readFloat(fieldName);
             }
         }
 
         static class PortableShortFieldExtractor implements PortableFieldExtractor {
+            @Override
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readShort(fieldName);
             }
         }
 
         static class PortableUtfFieldExtractor implements PortableFieldExtractor {
+            @Override
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readUTF(fieldName);
             }
         }
 
         static class PortableCharFieldExtractor implements PortableFieldExtractor {
+            @Override
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readChar(fieldName);
             }
         }
 
         static class PortableBooleanFieldExtractor implements PortableFieldExtractor {
+            @Override
             public Comparable extract(PortableReader reader, String fieldName) throws IOException {
                 return reader.readBoolean(fieldName);
             }

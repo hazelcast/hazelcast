@@ -62,7 +62,6 @@ After that you can configure Hazelcast instance (node) as shown below.
                 max-size="0"
                 eviction-percentage="30"
                 read-backup-data="true"
-                cache-value="true"
                 eviction-policy="NONE"
                 merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/>
     </hz:config>

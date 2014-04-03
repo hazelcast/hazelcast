@@ -60,6 +60,7 @@ public class XAResourceImpl implements XAResource {
                     transactionManager.addManagedTransaction(xid, transaction);
                     transaction.begin();
                 } catch (IllegalStateException e) {
+                    logger.severe(e);
                     throw new XAException(XAException.XAER_INVAL);
                 }
                 break;
@@ -74,7 +75,7 @@ public class XAResourceImpl implements XAResource {
     @Override
     public synchronized void end(Xid xid, int flags) throws XAException {
         nullCheck(xid);
-        final TransactionImpl transaction = (TransactionImpl)getTransaction();
+        final TransactionImpl transaction = (TransactionImpl) getTransaction();
         final SerializableXID sXid = transaction.getXid();
         if (sXid == null || !sXid.equals(xid)) {
             logger.severe("started xid: " + sXid + " and given xid : " + xid + " not equal!!!");
@@ -86,13 +87,9 @@ public class XAResourceImpl implements XAResource {
                 //successfully end.
                 break;
             case XAResource.TMFAIL:
-                try {
-                    transaction.rollback();
-                    transactionManager.removeManagedTransaction(xid);
-                } catch (IllegalStateException e) {
-                    throw new XAException(XAException.XAER_RMERR);
-                }
-                break;
+                transaction.setRollbackOnly();
+                throw new XAException(XAException.XA_RBROLLBACK);
+//                break;
             case XAResource.TMSUSPEND:
                 break;
             default:
@@ -103,7 +100,7 @@ public class XAResourceImpl implements XAResource {
     @Override
     public synchronized int prepare(Xid xid) throws XAException {
         nullCheck(xid);
-        final TransactionImpl transaction = (TransactionImpl)getTransaction();
+        final TransactionImpl transaction = (TransactionImpl) getTransaction();
         final SerializableXID sXid = transaction.getXid();
         if (sXid == null || !sXid.equals(xid)) {
             logger.severe("started xid: " + sXid + " and given xid : " + xid + " not equal!!!");
@@ -143,7 +140,8 @@ public class XAResourceImpl implements XAResource {
     public synchronized void rollback(Xid xid) throws XAException {
         nullCheck(xid);
         final Transaction transaction = getTransaction(xid);
-        validateTx(transaction, State.NO_TXN); //NO_TXN means do not validate state
+        //NO_TXN means do not validate state
+        validateTx(transaction, State.NO_TXN);
         try {
             transaction.rollback();
             transactionManager.removeManagedTransaction(xid);

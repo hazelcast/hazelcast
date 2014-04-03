@@ -35,11 +35,12 @@ public enum AttributeType {
     SQL_DATE(48, TypeConverters.SQL_DATE_CONVERTER),
     DATE(49, TypeConverters.DATE_CONVERTER);
 
-    private static final AttributeType[] types = new AttributeType[50];
+    private static final int TYPES_LENGTH = 50;
+    private static final AttributeType[] TYPES = new AttributeType[TYPES_LENGTH];
 
     static {
         for (AttributeType cop : AttributeType.values()) {
-            types[cop.getId()] = cop;
+            TYPES[cop.getId()] = cop;
         }
     }
 
@@ -60,6 +61,6 @@ public enum AttributeType {
     }
 
     public static AttributeType getAttributeType(int id) {
-        return types[id];
+        return TYPES[id];
     }
 }

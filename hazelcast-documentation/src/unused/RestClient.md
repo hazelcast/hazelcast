@@ -66,7 +66,7 @@ You can use POST call to create an item on the queue. A sample is shown below.
 ```
 $ curl -v -X POST -H "Content-Type: text/plain" -d "foo" \http://10.20.17.1:5701/hazelcast/rest/queues/myEvents
 ```
-Above call is equivalent to `Hazelcast.getQueue("myEvents").offer("foo");`.
+Above call is equivalent to `HazelcastInstance#getQueue("myEvents").offer("foo");`.
 
 
 **Retrieving Items from a Queue**
@@ -76,7 +76,7 @@ DELETE call can be used for retrieving. Note that, poll timeout should be stated
 ```
 $ curl -v -X DELETE \http://10.20.17.1:5701/hazelcast/rest/queues/myEvents/10
 ```
-Above call is equivalent to `Hazelcast.getQueue("myEvents").poll(10, SECONDS);`. Below is the returns of above call.
+Above call is equivalent to `HazelcastInstance#getQueue("myEvents").poll(10, SECONDS);`. Below is the returns of above call.
 
 ```
 < HTTP/1.1 200 OK

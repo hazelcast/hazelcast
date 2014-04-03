@@ -21,14 +21,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -287,7 +288,7 @@ public class PortableTest {
 
     //https://github.com/hazelcast/hazelcast/issues/1096
     @Test
-    public void test_1096_ByteArrayContentSame(){
+    public void test_1096_ByteArrayContentSame() {
         SerializationService ss = new SerializationServiceBuilder()
                 .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
 
@@ -307,6 +308,86 @@ public class PortableTest {
             assertEquals(data1, data2);
         }
     }
+
+    //https://github.com/hazelcast/hazelcast/issues/2172
+    @Test
+    public void test_issue2172_WritePortableArray() {
+        final SerializationService ss = new SerializationServiceBuilder().setInitialOutputBufferSize(16).build();
+
+        final TestObject2[] testObject2s = new TestObject2[100];
+        for (int i = 0; i < testObject2s.length; i++) {
+            testObject2s[i] = new TestObject2();
+        }
+        final TestObject1 testObject1 = new TestObject1(testObject2s);
+
+        ss.toData(testObject1);
+
+    }
+
+    class TestObject1 implements Portable {
+
+        private Portable[] portables;
+
+        public TestObject1() {
+        }
+
+        public TestObject1(Portable[] p) {
+            portables = p;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return 1;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writePortableArray("list", portables);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+
+    }
+
+    class TestObject2 implements Portable {
+
+        private String shortString;
+
+        public TestObject2() {
+            shortString = "Hello World";
+        }
+
+        @Override
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return 2;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeUTF("shortString", shortString);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
 
     public static class TestPortableFactory implements PortableFactory {
 
@@ -866,7 +947,6 @@ public class PortableTest {
             return sb.toString();
         }
     }
-
 
 
 }

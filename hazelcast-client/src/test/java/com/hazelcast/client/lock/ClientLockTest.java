@@ -196,4 +196,9 @@ public class ClientLockTest {
 
         assertFalse("Lock obtained by 2 client ", lockObtained);
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testNewCondition() throws Exception {
+        l.newCondition();
+    }
 }
