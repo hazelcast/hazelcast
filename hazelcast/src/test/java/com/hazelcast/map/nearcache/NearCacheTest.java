@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.map.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -25,6 +25,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.NearCache;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
