@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -36,18 +35,11 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
     private long lastStoredTime;
     private long lastUpdateTime;
     private long version;
+    private long accessCounter;
 
-    public SimpleEntryView(K key, V value, RecordStatistics statistics, long cost, long recordVersion) {
+    public SimpleEntryView(K key, V value) {
         this.key = key;
         this.value = value;
-        this.cost = cost;
-        creationTime = statistics == null ? -1 : statistics.getCreationTime();
-        expirationTime = statistics == null ? -1 : statistics.getExpirationTime();
-        hits = statistics == null ? -1 : statistics.getHits();
-        lastAccessTime = statistics == null ? -1 : statistics.getLastAccessTime();
-        lastStoredTime = statistics == null ? -1 : statistics.getLastStoredTime();
-        lastUpdateTime = statistics == null ? -1 : statistics.getLastUpdateTime();
-        version = recordVersion;
     }
 
     public SimpleEntryView() {
@@ -133,6 +125,14 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         this.version = version;
     }
 
+    public long getAccessCounter() {
+        return accessCounter;
+    }
+
+    public void setAccessCounter(long accessCounter) {
+        this.accessCounter = accessCounter;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(key);
@@ -145,6 +145,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
+        out.writeLong(accessCounter);
     }
 
     @Override
@@ -159,6 +160,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         version = in.readLong();
+        accessCounter = in.readLong();
     }
 
     public int getFactoryId() {

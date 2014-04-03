@@ -291,7 +291,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
                         public void run() {
-                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), toData(record.getValue()), record.getStatistics(), record.getCost(), record.getVersion());
+                            final SimpleEntryView entryView = createSimpleEntryView(record.getKey(), toData(record.getValue()),record);
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
                             try {
                                 int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
@@ -497,7 +497,6 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
 
-
     public boolean isNearCacheAndInvalidationEnabled(String mapName) {
         final MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled()
@@ -513,7 +512,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (!isNearCacheEnabled(mapName)) {
             return;
         }
-        if (keys == null || keys.isEmpty()){
+        if (keys == null || keys.isEmpty()) {
             return;
         }
         //send operation.
@@ -742,6 +741,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     public void applyRecordInfo(Record record, String mapName, RecordInfo replicationInfo) {
         record.setStatistics(replicationInfo.getStatistics());
         record.setVersion(replicationInfo.getVersion());
+        record.setAccessCounter(replicationInfo.getAccessCounter());
 
         if (replicationInfo.getIdleDelayMillis() >= 0) {
             scheduleIdleEviction(mapName, record.getKey(), replicationInfo.getIdleDelayMillis());
@@ -773,6 +773,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         final RecordInfo info = new RecordInfo();
         info.setStatistics(record.getStatistics());
         info.setVersion(record.getVersion());
+        info.setAccessCounter(record.getAccessCounter());
         setDelays(mapContainer, info, record.getKey(), extraDelay);
         return info;
     }
@@ -809,6 +810,24 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
         }
         return -1;
+    }
+
+    public <K,V> SimpleEntryView<K,V> createSimpleEntryView(K key, V value, Record record) {
+        final SimpleEntryView simpleEntryView = new SimpleEntryView(key, value);
+        simpleEntryView.setCost(record.getCost());
+        simpleEntryView.setVersion(record.getVersion());
+        simpleEntryView.setAccessCounter(record.getAccessCounter());
+
+        final RecordStatistics statistics = record.getStatistics();
+        if (statistics != null) {
+            simpleEntryView.setHits(statistics.getHits());
+            simpleEntryView.setCreationTime(statistics.getCreationTime());
+            simpleEntryView.setExpirationTime(statistics.getExpirationTime());
+            simpleEntryView.setLastAccessTime(statistics.getLastAccessTime());
+            simpleEntryView.setLastStoredTime(statistics.getLastStoredTime());
+            simpleEntryView.setLastUpdateTime(statistics.getLastUpdateTime());
+        }
+       return simpleEntryView;
     }
 
     public long findDelayMillis(ScheduledEntry entry) {
