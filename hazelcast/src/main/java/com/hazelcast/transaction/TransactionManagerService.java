@@ -16,15 +16,11 @@
 
 package com.hazelcast.transaction;
 
-/**
- * @author mdogan 2/26/13
- */
-public interface TransactionManagerService  {
+public interface TransactionManagerService {
 
     <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
 
     TransactionContext newTransactionContext(TransactionOptions options);
 
     TransactionContext newClientTransactionContext(TransactionOptions options, String clientUuid);
-
 }
