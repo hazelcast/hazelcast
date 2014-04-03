@@ -47,13 +47,13 @@ public final class StripedExecutor implements Executor {
     private final ILogger logger;
     private volatile boolean live = true;
 
-    public StripedExecutor(ILogger logger, String threadNamePrefix, int threadCount, int maximumQueueSize) {
+    public StripedExecutor(ILogger logger, String threadNamePrefix, ThreadGroup threadGroup, int threadCount, int maximumQueueSize) {
         this.logger = logger;
         this.maximumQueueSize = maximumQueueSize;
         this.size = threadCount;
         this.workers = new Worker[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            Worker worker = new Worker(threadNamePrefix);
+            Worker worker = new Worker(threadGroup,threadNamePrefix);
             worker.start();
             workers[i] = worker;
         }
@@ -131,8 +131,8 @@ public final class StripedExecutor implements Executor {
 
         private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumQueueSize);
 
-        private Worker(String threadNamePrefix) {
-            super(threadNamePrefix + "-" + THREAD_ID_GENERATOR.incrementAndGet());
+        private Worker(ThreadGroup threadGroup, String threadNamePrefix) {
+            super(threadGroup, threadNamePrefix+ "-" + THREAD_ID_GENERATOR.incrementAndGet());
         }
 
         private void schedule(Runnable command) {

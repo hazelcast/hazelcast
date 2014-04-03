@@ -78,7 +78,11 @@ public class EventServiceImpl implements EventService {
         this.eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
         this.eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
         this.eventExecutor = new StripedExecutor(
-                node.getLogger(EventServiceImpl.class),"eventServiceThread",eventThreadCount, eventQueueCapacity);
+                node.getLogger(EventServiceImpl.class),
+                node.getThreadNamePrefix("event"),
+                node.threadGroup,
+                eventThreadCount,
+                eventQueueCapacity);
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 
