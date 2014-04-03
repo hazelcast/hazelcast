@@ -156,7 +156,7 @@ public class DefaultPortableWriter implements PortableWriter {
         out.writeInt(len);
         if (len > 0) {
             final int offset = out.position();
-            out.position(offset + len * 4);
+            out.writeZeroBytes(len * 4);
             for (int i = 0; i < portables.length; i++) {
                 out.writeInt(offset + i * 4, out.position());
                 final Portable portable = portables[i];
