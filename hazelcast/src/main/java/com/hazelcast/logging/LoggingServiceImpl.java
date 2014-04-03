@@ -30,12 +30,12 @@ import java.util.logging.LogRecord;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class LoggingServiceImpl implements LoggingService {
-    private final MemberImpl thisMember;
+    private volatile MemberImpl thisMember;
     private final SystemLogService systemLogService;
     private final String groupName;
     private final CopyOnWriteArrayList<LogListenerRegistration> listeners
             = new CopyOnWriteArrayList<LogListenerRegistration>();
-    private final String thisAddressString;
+    private volatile String thisAddressString;
 
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
 
@@ -51,13 +51,16 @@ public class LoggingServiceImpl implements LoggingService {
     private volatile Level minLevel = Level.OFF;
 
     public LoggingServiceImpl(SystemLogService systemLogService, String groupName, String loggingType,
-                              MemberImpl thisMember, BuildInfo buildInfo) {
+                              BuildInfo buildInfo) {
         this.systemLogService = systemLogService;
         this.groupName = groupName;
-        this.thisMember = thisMember;
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
-        this.thisAddressString = "[" + thisMember.getAddress().getHost() + "]:" + thisMember.getAddress().getPort();
         this.buildInfo = buildInfo;
+    }
+
+    public void setThisMember(MemberImpl thisMember) {
+        this.thisMember = thisMember;
+        this.thisAddressString = "[" + thisMember.getAddress().getHost() + "]:" + thisMember.getAddress().getPort();
     }
 
     @Override
