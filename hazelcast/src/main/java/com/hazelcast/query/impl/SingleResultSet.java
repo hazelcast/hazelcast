@@ -32,12 +32,18 @@ public class SingleResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public boolean contains(Object mapEntry) {
-        return records != null && records.containsKey(((QueryableEntry) mapEntry).getKeyData());
+        if (records == null) {
+            return false;
+        }
+
+        Data keyData = ((QueryableEntry) mapEntry).getKeyData();
+        return records.containsKey(keyData);
     }
 
     @Override
     public Iterator<QueryableEntry> iterator() {
         if (records == null) {
+            //todo: why are we not returning Collections.EMPTY_SET.iterator?
             return new HashSet<QueryableEntry>().iterator();
         } else {
             return records.values().iterator();
@@ -46,6 +52,10 @@ public class SingleResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public int size() {
-        return (records == null) ? 0 : records.size();
+        if (records == null) {
+            return 0;
+        } else {
+            return records.size();
+        }
     }
 }

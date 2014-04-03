@@ -32,10 +32,11 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 public class ReflectionHelper {
 
-    private final static ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
-    private final static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
+    private static final  ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
+    private static final  ConcurrentMap<String, Getter> GETTER_CACHE = new ConcurrentHashMap<String, Getter>(1000);
 
-    private ReflectionHelper(){}
+    private ReflectionHelper() {
+    }
 
     public static AttributeType getAttributeType(Class klass) {
         if (klass == String.class) {
@@ -71,7 +72,7 @@ public class ReflectionHelper {
     }
 
     public static void reset() {
-        getterCache.clear();
+        GETTER_CACHE.clear();
     }
 
     public static AttributeType getAttributeType(QueryableEntry entry, String attribute) {
@@ -91,7 +92,7 @@ public class ReflectionHelper {
 
         Class clazz = obj.getClass();
         final String cacheKey = clazz.getName() + ":" + attribute;
-        Getter getter = getterCache.get(cacheKey);
+        Getter getter = GETTER_CACHE.get(cacheKey);
         if (getter != null) {
             return getter;
         }
@@ -143,15 +144,16 @@ public class ReflectionHelper {
                     }
                 }
                 if (localGetter == null) {
-                    throw new IllegalArgumentException("There is no suitable accessor for '" + name + "' on class '"+clazz+"'");
+                    throw new IllegalArgumentException("There is no suitable accessor for '"
+                            + name + "' on class '" + clazz + "'");
                 }
                 parent = localGetter;
             }
             getter = parent;
             if (getter.isCacheable()) {
-                Getter foundGetter = getterCache.putIfAbsent(cacheKey, getter);
-                if(foundGetter != null){
-                     getter = foundGetter;
+                Getter foundGetter = GETTER_CACHE.putIfAbsent(cacheKey, getter);
+                if (foundGetter != null) {
+                    getter = foundGetter;
                 }
             }
             return getter;
@@ -164,7 +166,7 @@ public class ReflectionHelper {
         return (Comparable) createGetter(queryEntry, attributeName).getValue(object);
     }
 
-    private static abstract class Getter {
+    private abstract static class Getter {
         protected final Getter parent;
 
         public Getter(final Getter parent) {
@@ -214,11 +216,13 @@ public class ReflectionHelper {
             this.field = field;
         }
 
+        @Override
         Object getValue(Object obj) throws Exception {
             obj = parent != null ? parent.getValue(obj) : obj;
             return obj != null ? field.get(obj) : null;
         }
 
+        @Override
         Class getReturnType() {
             return this.field.getType();
         }

@@ -14,29 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * Contains the implementation classes of the query functionality.
+ */
 package com.hazelcast.query.impl;
-
-import com.hazelcast.nio.serialization.Data;
-
-import java.util.Set;
-
-public interface Index {
-
-    void saveEntryIndex(QueryableEntry e) throws QueryException;
-
-    void clear();
-
-    void removeEntryIndex(Data indexKey);
-
-    Set<QueryableEntry> getRecords(Comparable[] values);
-
-    Set<QueryableEntry> getRecords(Comparable value);
-
-    Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to);
-
-    Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);
-
-    String getAttributeName();
-
-    boolean isOrdered();
-}

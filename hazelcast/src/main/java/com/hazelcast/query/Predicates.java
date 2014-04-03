@@ -20,11 +20,22 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.query.impl.*;
+import com.hazelcast.query.impl.AndResultSet;
+import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.ComparisonType;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.OrResultSet;
+import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryException;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,7 +45,8 @@ import java.util.regex.Pattern;
 public final class Predicates {
 
     //we don't want instances.
-    private Predicates(){}
+    private Predicates() {
+    }
 
     public static Predicate instanceOf(final Class klass) {
         return new InstanceOfPredicate(klass);
@@ -118,6 +130,7 @@ public final class Predicates {
             this.to = to;
         }
 
+        @Override
         public boolean apply(Map.Entry entry) {
             Comparable entryValue = readAttribute(entry);
             if (entryValue == null) {
@@ -131,17 +144,20 @@ public final class Predicates {
             return entryValue.compareTo(fromConvertedValue) >= 0 && entryValue.compareTo(toConvertedValue) <= 0;
         }
 
+        @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index index = getIndex(queryContext);
             return index.getSubRecordsBetween(from, to);
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             super.writeData(out);
             out.writeObject(to);
             out.writeObject(from);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             super.readData(in);
             to = in.readObject();
@@ -164,14 +180,17 @@ public final class Predicates {
         public NotPredicate() {
         }
 
+        @Override
         public boolean apply(Map.Entry mapEntry) {
             return !predicate.apply(mapEntry);
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(predicate);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             predicate = in.readObject();
         }
@@ -194,6 +213,7 @@ public final class Predicates {
             this.values = values;
         }
 
+        @Override
         public boolean apply(Map.Entry entry) {
             Comparable entryValue = readAttribute(entry);
             Set<Comparable> set = convertedInValues;
@@ -207,6 +227,7 @@ public final class Predicates {
             return entryValue != null && set.contains(entryValue);
         }
 
+        @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index index = getIndex(queryContext);
             if (index != null) {
@@ -216,6 +237,7 @@ public final class Predicates {
             }
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             super.writeData(out);
             out.writeInt(values.length);
@@ -224,6 +246,7 @@ public final class Predicates {
             }
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             super.readData(in);
             int len = in.readInt();
@@ -239,7 +262,9 @@ public final class Predicates {
             sb.append(attribute);
             sb.append(" IN (");
             for (int i = 0; i < values.length; i++) {
-                if (i > 0) sb.append(",");
+                if (i > 0) {
+                    sb.append(",");
+                }
                 sb.append(values[i]);
             }
             sb.append(")");
@@ -260,6 +285,7 @@ public final class Predicates {
             this.regex = regex;
         }
 
+        @Override
         public boolean apply(Map.Entry entry) {
             Comparable attribute = readAttribute(entry, this.attribute);
             String firstVal = attribute == IndexImpl.NULL ? null : (String) attribute;
@@ -276,11 +302,13 @@ public final class Predicates {
             }
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(attribute);
             out.writeUTF(regex);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             attribute = in.readUTF();
             regex = in.readUTF();
@@ -305,6 +333,7 @@ public final class Predicates {
             this.second = second;
         }
 
+        @Override
         public boolean apply(Map.Entry entry) {
             Comparable attribute = readAttribute(entry, this.attribute);
             String firstVal = attribute == IndexImpl.NULL ? null : (String) attribute;
@@ -318,10 +347,14 @@ public final class Predicates {
                     // at the end we have a regex pattern look like : \QSOME_STRING\E.*\QSOME_OTHER_STRING\E
                     final String quoted = Pattern.quote(second);
                     String regex = quoted
-                            .replaceAll("(?<!\\\\)[%]", "\\\\E.*\\\\Q")//escaped %
-                            .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")//escaped _
-                            .replaceAll("\\\\%", "%")//non escaped %
-                            .replaceAll("\\\\_", "_");//non escaped _
+                            //escaped %
+                            .replaceAll("(?<!\\\\)[%]", "\\\\E.*\\\\Q")
+                                    //escaped _
+                            .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")
+                                    //non escaped %
+                            .replaceAll("\\\\%", "%")
+                                    //non escaped _
+                            .replaceAll("\\\\_", "_");
                     int flags = getFlags();
                     pattern = Pattern.compile(regex, flags);
                 }
@@ -330,27 +363,31 @@ public final class Predicates {
             }
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(attribute);
             out.writeUTF(second);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             attribute = in.readUTF();
             second = in.readUTF();
         }
 
+
+        protected int getFlags() {
+            //no flags
+            return 0;
+        }
+
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder(attribute)
+            StringBuffer builder = new StringBuffer(attribute)
                     .append(" LIKE '")
                     .append(second)
                     .append("'");
             return builder.toString();
-        }
-
-        protected int getFlags() {
-            return 0; //no flags
         }
     }
 
@@ -365,7 +402,7 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder(attribute)
+            StringBuffer builder = new StringBuffer(attribute)
                     .append(" ILIKE '")
                     .append(second)
                     .append("'");
@@ -377,7 +414,6 @@ public final class Predicates {
         protected int getFlags() {
             return Pattern.CASE_INSENSITIVE;
         }
-
     }
 
     public static class AndPredicate implements IndexAwarePredicate, DataSerializable {
@@ -391,6 +427,7 @@ public final class Predicates {
             this.predicates = predicates;
         }
 
+        @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Set<QueryableEntry> smallestIndexedResult = null;
             List<Set<QueryableEntry>> otherIndexedResults = new LinkedList<Set<QueryableEntry>>();
@@ -430,6 +467,7 @@ public final class Predicates {
             return new AndResultSet(smallestIndexedResult, otherIndexedResults, lsNoIndexPredicates);
         }
 
+        @Override
         public boolean isIndexed(QueryContext queryContext) {
             for (Predicate predicate : predicates) {
                 if (predicate instanceof IndexAwarePredicate) {
@@ -442,9 +480,12 @@ public final class Predicates {
             return false;
         }
 
+        @Override
         public boolean apply(Map.Entry mapEntry) {
             for (Predicate predicate : predicates) {
-                if (!predicate.apply(mapEntry)) return false;
+                if (!predicate.apply(mapEntry)) {
+                    return false;
+                }
             }
             return true;
         }
@@ -493,6 +534,7 @@ public final class Predicates {
             this.predicates = predicates;
         }
 
+        @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             List<Set<QueryableEntry>> indexedResults = new LinkedList<Set<QueryableEntry>>();
             for (Predicate predicate : predicates) {
@@ -511,6 +553,7 @@ public final class Predicates {
             return indexedResults.isEmpty() ? null : new OrResultSet(indexedResults);
         }
 
+        @Override
         public boolean isIndexed(QueryContext queryContext) {
             for (Predicate predicate : predicates) {
                 if (predicate instanceof IndexAwarePredicate) {
@@ -525,27 +568,16 @@ public final class Predicates {
             return true;
         }
 
+        @Override
         public boolean apply(Map.Entry mapEntry) {
             for (Predicate predicate : predicates) {
-                if (predicate.apply(mapEntry)) return true;
+                if (predicate.apply(mapEntry)) {
+                    return true;
+                }
             }
             return false;
         }
 
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("(");
-            int size = predicates.length;
-            for (int i = 0; i < size; i++) {
-                if (i > 0) {
-                    sb.append(" OR ");
-                }
-                sb.append(predicates[i]);
-            }
-            sb.append(")");
-            return sb.toString();
-        }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
@@ -563,11 +595,26 @@ public final class Predicates {
                 predicates[i] = in.readObject();
             }
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("(");
+            int size = predicates.length;
+            for (int i = 0; i < size; i++) {
+                if (i > 0) {
+                    sb.append(" OR ");
+                }
+                sb.append(predicates[i]);
+            }
+            sb.append(")");
+            return sb.toString();
+        }
     }
 
     public static class GreaterLessPredicate extends EqualPredicate {
-        boolean equal = false;
-        boolean less = false;
+        boolean equal;
+        boolean less;
 
         public GreaterLessPredicate() {
         }
@@ -578,6 +625,7 @@ public final class Predicates {
             this.less = less;
         }
 
+        @Override
         public boolean apply(Map.Entry mapEntry) {
             final Comparable entryValue = readAttribute(mapEntry);
             final Comparable attributeValue = convert(mapEntry, entryValue, value);
@@ -585,6 +633,7 @@ public final class Predicates {
             return equal && result == 0 || (less ? (result < 0) : (result > 0));
         }
 
+        @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index index = getIndex(queryContext);
             final ComparisonType comparisonType;
@@ -615,7 +664,9 @@ public final class Predicates {
             final StringBuilder sb = new StringBuilder();
             sb.append(attribute);
             sb.append(less ? "<" : ">");
-            if (equal) sb.append("=");
+            if (equal) {
+                sb.append("=");
+            }
             sb.append(value);
             return sb.toString();
         }
@@ -629,10 +680,12 @@ public final class Predicates {
             super(attribute, value);
         }
 
+        @Override
         public boolean apply(Map.Entry entry) {
             return !super.apply(entry);
         }
 
+        @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index index = getIndex(queryContext);
             if (index != null) {
@@ -659,11 +712,13 @@ public final class Predicates {
             this.value = value;
         }
 
+        @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index index = getIndex(queryContext);
             return index.getRecords(value);
         }
 
+        @Override
         public boolean apply(Map.Entry mapEntry) {
             Comparable entryValue = readAttribute(mapEntry);
             if (entryValue == null) {
@@ -673,11 +728,13 @@ public final class Predicates {
             return entryValue.equals(value);
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             super.writeData(out);
             out.writeObject(value);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             super.readData(in);
             value = in.readObject();
@@ -689,10 +746,10 @@ public final class Predicates {
         }
     }
 
-    public static abstract class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
+    public abstract static class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
 
         protected String attribute;
-        private volatile transient AttributeType attributeType;
+        private transient volatile AttributeType attributeType;
 
         protected AbstractPredicate() {
         }
@@ -702,10 +759,10 @@ public final class Predicates {
         }
 
         protected Comparable convert(Map.Entry mapEntry, Comparable entryValue, Comparable attributeValue) {
-            if (attributeValue == null ) {
+            if (attributeValue == null) {
                 return null;
             }
-            if( attributeValue instanceof IndexImpl.NullObject ){
+            if (attributeValue instanceof IndexImpl.NullObject) {
                 return IndexImpl.NULL;
             }
             AttributeType type = attributeType;
@@ -729,6 +786,7 @@ public final class Predicates {
             }
         }
 
+        @Override
         public boolean isIndexed(QueryContext queryContext) {
             return getIndex(queryContext) != null;
         }
@@ -746,10 +804,12 @@ public final class Predicates {
             return val;
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(attribute);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             attribute = in.readUTF();
         }
@@ -765,7 +825,9 @@ public final class Predicates {
         @Override
         public boolean apply(Map.Entry mapEntry) {
             Object value = mapEntry.getValue();
-            if (value == null) return false;
+            if (value == null) {
+                return false;
+            }
             return klass.isAssignableFrom(value.getClass());
         }
 
@@ -780,7 +842,7 @@ public final class Predicates {
             try {
                 klass = in.getClassLoader().loadClass(klassName);
             } catch (ClassNotFoundException e) {
-                throw new HazelcastSerializationException("Failed to load class: "+klass,e);
+                throw new HazelcastSerializationException("Failed to load class: " + klass, e);
             }
         }
 

@@ -38,7 +38,7 @@
     <suppress checks="" files="[\\/]map[\\/]"/>
     <suppress checks="" files="[\\/]multimap[\\/]"/>
     <suppress checks="" files="[\\/]nio[\\/]"/>
-    <suppress checks="" files="[\\/]query[\\/]"/>
+    <suppress checks="" files="com.hazelcast.query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
     <suppress checks="" files="[\\/]spi.impl[\\/]"/>
     <suppress checks="" files="[\\/]storage[\\/]"/>
@@ -126,6 +126,13 @@
     <suppress checks="MethodLength" files="com.hazelcast.queue.QueueDataSerializerHook"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.queue.QueueDataSerializerHook"/>
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.queue.QueueDataSerializerHook"/>
+
+    <!-- monitor -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.query[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.query[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.query[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.query[\\/]"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.query.Parser"/>
 
     <!-- SPI -->
     <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
