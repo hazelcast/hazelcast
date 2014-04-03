@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author ali 14/02/14
- */
 public class RecoveredTransaction implements DataSerializable {
 
     private List<TransactionLog> txLogs;
