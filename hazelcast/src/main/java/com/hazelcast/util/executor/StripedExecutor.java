@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * When a task is 'executed' on the StripedExecutor, the task is checked if it is a StripedRunnable. If it
  * is, the right worker is looked up and the task put in the queue of that worker. If the task is not a
  * StripedRunnable, a random worker is looked up.
- *
+ * <p/>
  * If the queue is full and the runnable implements TimeoutRunnable, then a configurable amount of blocking is
  * done on the queue. If the runnable doesn't implement TimeoutRunnable or when the blocking times out,
  * then the task is rejected and a RejectedExecutionException is thrown.
@@ -72,6 +72,30 @@ public final class StripedExecutor implements Executor {
         return size;
     }
 
+    /**
+     * Shuts down this StripedExecutor.
+     * <p/>
+     * No checking is done if the StripedExecutor already is shut down, so it should be called only once.
+     * <p/>
+     * If there is any pending work, it will be thrown away.
+     */
+    public void shutdown() {
+        live = false;
+
+        for (Worker worker : workers) {
+            worker.workQueue.clear();
+        }
+    }
+
+    /**
+     * Checks if this StripedExecutor is alive (so not shut down).
+     *
+     * @return
+     */
+    public boolean isLive() {
+        return live;
+    }
+
     @Override
     public void execute(Runnable command) {
         if (command == null) {
@@ -103,30 +127,6 @@ public final class StripedExecutor implements Executor {
         return workers[index];
     }
 
-    /**
-     * Shuts down this StripedExecutor.
-     *
-     * No checking is done if the StripedExecutor already is shut down, so it should be called only once.
-     *
-     * If there is any pending work, it will be thrown away.
-     */
-    public void shutdown() {
-        live = false;
-
-        for (Worker worker : workers) {
-            worker.workQueue.clear();
-        }
-    }
-
-    /**
-     * Checks if this StripedExecutor is alive (so not shut down).
-     *
-     * @return
-     */
-    public boolean isLive() {
-        return live;
-    }
-
     private class Worker extends Thread {
 
         private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumQueueSize);
@@ -156,14 +156,14 @@ public final class StripedExecutor implements Executor {
             }
 
             if (!offered) {
-                throw new RejectedExecutionException("Worker queue is full!");
+                throw new RejectedExecutionException("Task: " + command + " is rejected, the worker queue is full!");
             }
         }
 
         @Override
         public void run() {
-            try {
-                for (; ; ) {
+            for (; ; ) {
+                try {
                     try {
                         Runnable task = workQueue.take();
                         process(task);
@@ -172,16 +172,18 @@ public final class StripedExecutor implements Executor {
                             return;
                         }
                     }
+                } catch (Throwable t) {
+                    //This should not happen because the process method is protected against failure.
+                    //So if this happens, something very seriously is going wrong.
+                    logger.severe(getName() + " caught an exception", t);
                 }
-            } catch (Throwable t) {
-                logger.severe(getName() + " caught an exception", t);
             }
         }
 
         private void process(Runnable task) {
             try {
                 task.run();
-            } catch (RuntimeException e) {
+            } catch (Throwable e) {
                 logger.severe(getName() + " caught an exception while processing task:" + task, e);
             }
         }
