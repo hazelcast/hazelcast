@@ -86,12 +86,8 @@ public class AtomicLongTest extends HazelcastTestSupport {
                 }
             }.start();
         }
-        try {
-            countDownLatch.await(50, TimeUnit.SECONDS);
-            assertEquals(0, atomicLong.get());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        assertOpenEventually(countDownLatch, 50);
+        assertEquals(0, atomicLong.get());
     }
 
     @Test

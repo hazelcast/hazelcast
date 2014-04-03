@@ -45,7 +45,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
     private final Map<Object, TransactionLog> txLogMap = new HashMap<Object, TransactionLog>();
     private final String txnId;
-    private final long threadId = Thread.currentThread().getId();
+    private Long threadId ;
     private final long timeoutMillis;
     private final int durability;
     private final TransactionType transactionType;
@@ -137,20 +137,23 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     }
 
     private void checkThread() {
-        if (!checkThreadAccess && threadId != Thread.currentThread().getId()) {
+        if (!checkThreadAccess && threadId != null && threadId.longValue() != Thread.currentThread().getId()) {
             throw new IllegalStateException("Transaction cannot span multiple threads!");
         }
     }
 
     public void begin() throws IllegalStateException {
+        //init caller thread
+        if(threadId != null){
+            threadId = Thread.currentThread().getId();
+            setThreadFlag(Boolean.TRUE);
+        }
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
-        checkThread();
         if (threadFlag.get() != null) {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
-        setThreadFlag(Boolean.TRUE);
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
 
@@ -230,35 +233,37 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     }
 
     public void commit() throws TransactionException, IllegalStateException {
-        if (transactionType.equals(TransactionType.TWO_PHASE) && state != PREPARED) {
-            throw new IllegalStateException("Transaction is not prepared");
-        }
-        if (transactionType.equals(TransactionType.LOCAL) && state != ACTIVE) {
-            throw new IllegalStateException("Transaction is not active");
-        }
-        checkThread();
-        checkTimeout();
         try {
-            final List<Future> futures = new ArrayList<Future>(txLogs.size());
-            state = COMMITTING;
-            for (TransactionLog txLog : txLogs) {
-                futures.add(txLog.commit(nodeEngine));
+            if (transactionType.equals(TransactionType.TWO_PHASE) && state != PREPARED) {
+                throw new IllegalStateException("Transaction is not prepared");
             }
-            for (Future future : futures) {
-                try {
-                    future.get(5, TimeUnit.MINUTES);
-                } catch (Throwable e) {
-                    nodeEngine.getLogger(getClass()).warning("Error during commit!", e);
+            if (transactionType.equals(TransactionType.LOCAL) && state != ACTIVE) {
+                throw new IllegalStateException("Transaction is not active");
+            }
+            checkThread();
+            checkTimeout();
+            try {
+                final List<Future> futures = new ArrayList<Future>(txLogs.size());
+                state = COMMITTING;
+                for (TransactionLog txLog : txLogs) {
+                    futures.add(txLog.commit(nodeEngine));
                 }
-            }
-            state = COMMITTED;
+                for (Future future : futures) {
+                    try {
+                        future.get(5, TimeUnit.MINUTES);
+                    } catch (Throwable e) {
+                        nodeEngine.getLogger(getClass()).warning("Error during commit!", e);
+                    }
+                }
+                state = COMMITTED;
 
-            // purge tx backup
-            purgeTxBackups();
-        } catch (Throwable e) {
-            state = COMMIT_FAILED;
-            throw ExceptionUtil.rethrow(e, TransactionException.class);
-        } finally {
+                // purge tx backup
+                purgeTxBackups();
+            } catch (Throwable e) {
+                state = COMMIT_FAILED;
+                throw ExceptionUtil.rethrow(e, TransactionException.class);
+            }
+        }finally {
             setThreadFlag(null);
         }
     }
@@ -270,54 +275,62 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     }
 
     public void rollback() throws IllegalStateException {
-        if (state == NO_TXN || state == ROLLED_BACK) {
-            throw new IllegalStateException("Transaction is not active");
-        }
-        checkThread();
-        state = ROLLING_BACK;
-        try {
-            final List<Future> futures = new ArrayList<Future>(txLogs.size());
-            final OperationService operationService = nodeEngine.getOperationService();
+        try{
+            if (state == NO_TXN || state == ROLLED_BACK) {
+                throw new IllegalStateException("Transaction is not active");
+            }
+            checkThread();
+            state = ROLLING_BACK;
+            try {
+                final List<Future> futures = new ArrayList<Future>(txLogs.size());
+                final OperationService operationService = nodeEngine.getOperationService();
 
-            // rollback tx backup
-            if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
-                for (Address backupAddress : backupAddresses) {
-                    if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                        final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                                new RollbackTxBackupOperation(txnId), backupAddress);
-                        futures.add(f);
+                // rollback tx backup
+                if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
+                    for (Address backupAddress : backupAddresses) {
+                        if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
+                            final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                                    new RollbackTxBackupOperation(txnId), backupAddress);
+                            futures.add(f);
+                        }
                     }
+                    for (Future future : futures) {
+                        try {
+                            future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                        } catch (Throwable e) {
+                            nodeEngine.getLogger(getClass()).warning("Error during tx rollback backup!", e);
+                        }
+                    }
+                    futures.clear();
+                }
+
+                final ListIterator<TransactionLog> iter = txLogs.listIterator(txLogs.size());
+                while (iter.hasPrevious()) {
+                    final TransactionLog txLog = iter.previous();
+                    futures.add(txLog.rollback(nodeEngine));
                 }
                 for (Future future : futures) {
                     try {
-                        future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                        future.get(5, TimeUnit.MINUTES);
                     } catch (Throwable e) {
-                        nodeEngine.getLogger(getClass()).warning("Error during tx rollback backup!", e);
+                        nodeEngine.getLogger(getClass()).warning("Error during rollback!", e);
                     }
                 }
-                futures.clear();
+                // purge tx backup
+                purgeTxBackups();
+            } catch (Throwable e) {
+                throw ExceptionUtil.rethrow(e);
+            } finally {
+                state = ROLLED_BACK;
             }
-
-            final ListIterator<TransactionLog> iter = txLogs.listIterator(txLogs.size());
-            while (iter.hasPrevious()) {
-                final TransactionLog txLog = iter.previous();
-                futures.add(txLog.rollback(nodeEngine));
-            }
-            for (Future future : futures) {
-                try {
-                    future.get(5, TimeUnit.MINUTES);
-                } catch (Throwable e) {
-                    nodeEngine.getLogger(getClass()).warning("Error during rollback!", e);
-                }
-            }
-            // purge tx backup
-            purgeTxBackups();
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrow(e);
         } finally {
-            state = ROLLED_BACK;
             setThreadFlag(null);
         }
+
+    }
+
+    public void setRollbackOnly(){
+        state = ROLLING_BACK;
     }
 
     private void purgeTxBackups() {

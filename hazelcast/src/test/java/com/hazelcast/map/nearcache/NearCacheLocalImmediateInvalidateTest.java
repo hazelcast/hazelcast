@@ -1,11 +1,12 @@
-package com.hazelcast.map;
+package com.hazelcast.map.nearcache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -22,13 +23,17 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
+/**
+ * Invalidates any map operation starter node's near cache immediately.
+ *
+ */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
+public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport {
 
     private static final int numIterations = 1000;
 
@@ -38,7 +43,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
 
     private static final TimeUnit timeunit = TimeUnit.MILLISECONDS;
 
-    private static final String mapName = NearCacheLocalInvalidationTest.class.getCanonicalName();
+    private static final String mapName = NearCacheLocalImmediateInvalidateTest.class.getCanonicalName();
 
     private HazelcastInstance hcInstance;
 
@@ -53,7 +58,6 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setEvictionPolicy("NONE");
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        nearCacheConfig.setCacheLocalEntries(true); // this enables the local caching
         mapConfig.setNearCacheConfig(nearCacheConfig);
         // create Hazelcast instance
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
@@ -365,7 +369,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
         }
     }
 
-    private static String getMapName(){
+    private static String getMapName() {
         return randomMapName(mapName);
     }
 
