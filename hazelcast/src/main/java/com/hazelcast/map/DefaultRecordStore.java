@@ -923,8 +923,7 @@ public class DefaultRecordStore implements RecordStore {
                 record.setAccessCounter(++lruAccessCounter);
                 break;
             case LFU:
-                long lfuCounter = record.getAccessCounter();
-                record.setAccessCounter(++lfuCounter);
+                record.setAccessCounter(record.getAccessCounter() + 1L);
                 break;
             case NONE:
                 break;
