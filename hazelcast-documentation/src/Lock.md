@@ -18,7 +18,7 @@ try {
 } 
  
 ```
-`java.util.concurrent.locks.Lock.tryLock()` with timeout is also supported. All operations on the Lock that `Hazelcast.getLock(Object obj)` returns are cluster-wide and Lock behaves just like `java.util.concurrent.lock.ReentrantLock`.
+`java.util.concurrent.locks.Lock.tryLock()` with timeout is also supported. All operations on the Lock that `HazelcastInstance#getLock(Object obj)` returns are cluster-wide and Lock behaves just like `java.util.concurrent.lock.ReentrantLock`.
 
 ```java
 if (lock.tryLock (5000, TimeUnit.MILLISECONDS)) {

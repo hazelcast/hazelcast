@@ -109,39 +109,42 @@ So instead, why not moving the computation over to the member (JVM) where your c
 Here is a sample code:
 
 ```java
+static Config cfg = new Config();
+static HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+
 public static int removeOrder(long customerId, long orderId) throws Exception {
-    ExecutorService es = instance.getExecutorService();
+    IExecutorService es = instance.getExecutorService("ExecutorService");
     OrderDeletionTask task = new OrderDeletionTask(customerId, orderId);
-    Future future = es.submit(task);
+    Future<Integer> future = es.submit(task);
     int remainingOrders = future.get();
     return remainingOrders;
 }
 
 public static class OrderDeletionTask implements Callable<Integer>, PartitionAware, Serializable {
 
-   private long customerId;
-   private long orderId;
+    private long customerId;
+    private long orderId;
 
-   public OrderDeletionTask() {
-   }
-   public OrderDeletionTask(long customerId, long orderId) {
-       super();
-       this.customerId = customerId;
-       this.orderId = orderId;
-   }
-   public Integer call () {
-       IMap<Long, Customer> mapCustomers = Hazelcast.getMap("customers");
-       mapCustomers.lock (customerId);
-       Customer customer = mapCustomers. get(customerId);
-       customer.removeOrder (orderId);
-       mapCustomers.put(customerId, customer);
-       mapCustomers.unlock(customerId);
-       return customer.getOrderCount();
-   }
+    public OrderDeletionTask() {
+    }
+    public OrderDeletionTask(long customerId, long orderId) {
+        super();
+        this.customerId = customerId;
+        this.orderId = orderId;
+    }
+    public Integer call () {
+        IMap<Long, Customer> mapCustomers = instance.getMap("customers");
+        mapCustomers.lock (customerId);
+        Customer customer = mapCustomers.get(customerId);
+        customer.removeOrder (orderId);
+        mapCustomers.put(customerId, customer);
+        mapCustomers.unlock(customerId);
+        return customer.getOrderCount();
+    }
 
-   public Object getPartitionKey() {
-       return customerId;
-   }
+    public Object getPartitionKey() {
+        return customerId;
+    }
 }
 ```
 
