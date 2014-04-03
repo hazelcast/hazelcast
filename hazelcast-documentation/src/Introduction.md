@@ -29,11 +29,11 @@ Hazelcast is a clustering and highly scalable data distribution platform for Jav
 
 -   Dynamic fail-over
 
--   Super simple to use; include a single jar
+-	A very small JAR file
+
+-	Super simple to use; include a single jar
 
 -   Super fast; thousands of operations per sec.
-
--   Super small; only 3 MB
 
 -   Super efficient; very nice to CPU and RAM
 
