@@ -22,6 +22,8 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class SetTransactionTest {
 
+    @Test
+    public void test(){}
 //    HazelcastInstance instance1;
 //    HazelcastInstance instance2;
 //
