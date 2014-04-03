@@ -58,7 +58,7 @@
                 <connectionfactory-impl-class>com.hazelcast.jca.ConnectionFactoryImpl</connectionfactory-impl-class>
                 
                 <connection-interface>javax.resource.cci.Connection</connection-interface>
-                <connection-impl-class>com.hazelcast.jca.ConnectionImpl</connection-impl-class>
+                <connection-impl-class>com.hazelcast.jca.HazelcastConnectionImpl</connection-impl-class>
             </connection-definition>
 
             <transaction-support>XATransaction</transaction-support>

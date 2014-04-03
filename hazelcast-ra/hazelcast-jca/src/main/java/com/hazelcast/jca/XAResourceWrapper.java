@@ -16,6 +16,7 @@
 
 package com.hazelcast.jca;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.transaction.TransactionContext;
 
 import javax.transaction.xa.XAException;
@@ -45,17 +46,17 @@ public class XAResourceWrapper implements XAResource {
 
         switch (flags){
             case TMNOFLAGS:
-                validateInner(false);
                 setInner();
-                inner.start(xid, flags);
                 break;
             case TMRESUME:
             case TMJOIN:
-                validateInner(true);
-                inner.start(xid, flags);
                 break;
             default:
                 throw new XAException(XAException.XAER_INVAL);
+        }
+
+        if(inner != null){
+            inner.start(xid, flags);
         }
 
     }
@@ -63,28 +64,28 @@ public class XAResourceWrapper implements XAResource {
     @Override
     public void end(Xid xid, int flags) throws XAException {
         managedConnection.log(Level.FINEST, "XA end: " + xid + ", " + flags);
-        validateInner(true);
+        validateInner();
         inner.end(xid, flags);
     }
 
     @Override
     public int prepare(Xid xid) throws XAException {
         managedConnection.log(Level.FINEST, "XA prepare: " + xid);
-        validateInner(true);
+        validateInner();
         return inner.prepare(xid);
     }
 
     @Override
     public void commit(Xid xid, boolean onePhase) throws XAException {
         managedConnection.log(Level.FINEST, "XA commit: " + xid);
-        validateInner(true);
+        validateInner();
         inner.commit(xid, onePhase);
     }
 
     @Override
     public void rollback(Xid xid) throws XAException {
         managedConnection.log(Level.FINEST, "XA rollback: " + xid);
-        validateInner(true);
+        validateInner();
         inner.rollback(xid);
     }
 
@@ -95,10 +96,13 @@ public class XAResourceWrapper implements XAResource {
 
     @Override
     public boolean isSameRM(XAResource xaResource) throws XAException {
-        if (inner == null) {
-            setInner();
+        if (xaResource instanceof XAResourceWrapper ){
+            final ManagedConnectionImpl otherManagedConnection = ((XAResourceWrapper) xaResource).managedConnection;
+            final HazelcastInstance hazelcastInstance = managedConnection.getHazelcastInstance();
+            final HazelcastInstance otherHazelcastInstance = otherManagedConnection.getHazelcastInstance();
+            return hazelcastInstance != null && hazelcastInstance.equals(otherHazelcastInstance);
         }
-        return inner.isSameRM(xaResource);
+        return false;
     }
 
     @Override
@@ -120,11 +124,9 @@ public class XAResourceWrapper implements XAResource {
         return false;
     }
 
-    private final void validateInner(boolean shouldExist) throws XAException {
-        if (shouldExist && inner == null) {
-
-        } else if (!shouldExist && inner != null) {
-            throw new XAException(XAException.XAER_DUPID);
+    private final void validateInner() throws XAException {
+        if (inner == null) {
+            throw new XAException(XAException.XAER_NOTA);
         }
     }
 
@@ -134,15 +136,4 @@ public class XAResourceWrapper implements XAResource {
         inner = transactionContext.getXaResource();
     }
 
-    public String toString() {
-        if (inner == null) {
-            try {
-                setInner();
-                return inner.toString();
-            } catch (XAException e) {
-                e.printStackTrace();
-            }
-        }
-        return super.toString();
-    }
 }

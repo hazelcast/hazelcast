@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,6 +42,8 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     @Override
     public void run() throws Exception {
         if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), 10000L)) {
+            ILogger logger = getLogger();
+            logger.severe(recordStore.isLocked(getKey())+":"+getKey());
             throw new TransactionException("Lock is not owned by the transaction! Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }
     }
