@@ -71,14 +71,15 @@ public class EventServiceImpl implements EventService {
 
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        logger = nodeEngine.getLogger(EventService.class.getName());
+        this.logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         GroupProperties groupProperties = node.getGroupProperties();
-        eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
-        eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
-        eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
-        eventExecutor = new StripedExecutor(nodeEngine.executionService.getCachedExecutor(), eventThreadCount, eventQueueCapacity);
-        segments = new ConcurrentHashMap<String, EventServiceSegment>();
+        this.eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
+        this.eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
+        this.eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
+        this.eventExecutor = new StripedExecutor(
+                node.getLogger(EventServiceImpl.class),"eventServiceThread",eventThreadCount, eventQueueCapacity);
+        this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 
     @Override
