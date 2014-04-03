@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -59,7 +60,10 @@ public class DefaultRecordStore implements RecordStore {
     private final LockStore lockStore;
     private final RecordFactory recordFactory;
     private final ILogger logger;
-
+    /**
+     * used for lru when statistics are disabled.
+     */
+    private long lruAccessCounter;
     final SizeEstimator sizeEstimator;
     final AtomicBoolean loaded = new AtomicBoolean(false);
 
@@ -235,6 +239,7 @@ public class DefaultRecordStore implements RecordStore {
         cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
+        resetAccessCounter();
     }
 
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
@@ -446,6 +451,7 @@ public class DefaultRecordStore implements RecordStore {
 
         clearRecordsMap(lockedRecords);
         cancelAssociatedSchedulers(keysToDelete);
+        resetAccessCounter();
     }
 
     public void reset() {
@@ -453,6 +459,11 @@ public class DefaultRecordStore implements RecordStore {
         cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
+        resetAccessCounter();
+    }
+
+    private void resetAccessCounter() {
+        lruAccessCounter = 0L;
     }
 
     public Object remove(Data dataKey) {
@@ -734,8 +745,8 @@ public class DefaultRecordStore implements RecordStore {
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             Object oldValue = record.getValue();
-            EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()),
-                    record.getStatistics(), record.getCost(), record.getVersion());
+            EntryView existingEntry = mapService.createSimpleEntryView(mapService.toObject(record.getKey()),
+                    mapService.toObject(record.getValue()), record);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) { // existing entry will be removed
                 removeIndex(dataKey);
@@ -885,10 +896,26 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void accessRecord(Record record) {
+        increaseRecordEvictionCounter(record, mapContainer.getMapConfig().getEvictionPolicy());
         record.onAccess();
         final int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
             mapService.scheduleIdleEviction(name, record.getKey(), TimeUnit.SECONDS.toMillis(maxIdleSeconds));
+        }
+    }
+
+    private void increaseRecordEvictionCounter(Record record, MapConfig.EvictionPolicy evictionPolicy) {
+        switch (evictionPolicy) {
+            case LRU:
+                record.setAccessCounter(++lruAccessCounter);
+                break;
+            case LFU:
+                record.setAccessCounter(record.getAccessCounter() + 1L);
+                break;
+            case NONE:
+                break;
+            default:
+                throw new IllegalArgumentException("Not an appropriate eviction policy [" + evictionPolicy + ']');
         }
     }
 
