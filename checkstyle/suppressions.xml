@@ -32,7 +32,6 @@
     <suppress checks="CyclomaticComplexityCheck" files="StartServer.java"/>
     <suppress checks="NPathComplexityCheck" files="StartServer.java"/>
 
-    <suppress checks="" files="[\\/]instance[\\/]"/>
     <suppress checks="" files="[\\/]jmx[\\/]"/>
     <suppress checks="" files="[\\/]management[\\/]"/>
     <suppress checks="" files="[\\/]map[\\/]"/>
@@ -104,7 +103,7 @@
     <suppress checks="MethodCount" files="com.hazelcast.client.ClientEngineImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.ClientEngineImpl"/>
 
-    <!-- monitor -->
+    <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.monitor[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
@@ -127,12 +126,19 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.queue.QueueDataSerializerHook"/>
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.queue.QueueDataSerializerHook"/>
 
-    <!-- monitor -->
+    <!-- Query -->
     <suppress checks="JavadocMethod" files="com.hazelcast.query[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.query[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.query[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.query[\\/]"/>
     <suppress checks="MagicNumber" files="com.hazelcast.query.Parser"/>
+
+    <!-- Instance -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.instance[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.instance[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.instance[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.instance[\\/]"/>
+    <suppress checks="" files="com.hazelcast.instance.GroupProperties"/>
 
     <!-- SPI -->
     <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>

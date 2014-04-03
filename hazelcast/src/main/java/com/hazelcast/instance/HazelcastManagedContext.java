@@ -16,13 +16,10 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.spi.NodeAware;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.spi.NodeAware;
 
-/**
- * @author mdogan 4/6/12
- */
 public final class HazelcastManagedContext implements ManagedContext {
 
     private final HazelcastInstanceImpl instance;
@@ -35,7 +32,7 @@ public final class HazelcastManagedContext implements ManagedContext {
         hasExternalContext = this.externalContext != null;
     }
 
-    public final Object initialize(Object obj) {
+    public Object initialize(Object obj) {
         if (obj instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) obj).setHazelcastInstance(instance);
         }

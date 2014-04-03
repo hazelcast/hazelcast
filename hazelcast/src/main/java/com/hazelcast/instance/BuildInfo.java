@@ -16,9 +16,6 @@
 
 package com.hazelcast.instance;
 
-/**
- * @author : ahmetmircik
- */
 public class BuildInfo {
 
     private final String version;

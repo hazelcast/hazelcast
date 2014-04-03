@@ -17,16 +17,31 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.TcpIpJoiner;
-import com.hazelcast.config.*;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 
-import java.net.*;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 
@@ -105,20 +120,21 @@ class DefaultAddressPicker implements AddressPicker {
                         port++;
                         error = e;
                     } else {
-                        String msg = "Port [" + port + "] is already in use and auto-increment is " +
-                                "disabled. Hazelcast cannot start.";
+                        String msg = "Port [" + port + "] is already in use and auto-increment is "
+                                + "disabled. Hazelcast cannot start.";
                         logger.severe(msg, e);
                         throw new HazelcastException(msg, error);
                     }
                 }
             }
             if (serverSocket == null || !serverSocket.isBound()) {
-                throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start! " +
-                        "config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
+                throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start! "
+                        + "config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
             }
             serverSocketChannel.configureBlocking(false);
             bindAddress = createAddress(bindAddressDef, port);
-            log(Level.INFO, "Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
+            log(Level.INFO, "Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is "
+                    + bindAny);
             AddressDefinition publicAddressDef = getPublicAddress(node.getConfig(), port);
             if (publicAddressDef != null) {
                 publicAddress = createAddress(publicAddressDef, publicAddressDef.port);
@@ -163,8 +179,8 @@ class DefaultAddressPicker implements AddressPicker {
                         throw new RuntimeException(msg);
                     } else {
                         if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
-                            logger.warning("Could not find a matching address to start with! " +
-                                    "Picking one of non-loopback addresses.");
+                            logger.warning("Could not find a matching address to start with! "
+                                    + "Picking one of non-loopback addresses.");
                         }
                         addressDef = pickMatchingAddress(null);
                     }
@@ -218,14 +234,14 @@ class DefaultAddressPicker implements AddressPicker {
                             + "' is not an IP address! Removing from interface list.");
                 }
             }
-            log(Level.INFO, "Interfaces is enabled, trying to pick one address matching " +
-                    "to one of: " + interfaces);
+            log(Level.INFO, "Interfaces is enabled, trying to pick one address matching "
+                    + "to one of: " + interfaces);
         } else if (tcpIpConfig.isEnabled()) {
             for (Entry<String, String> entry : addressDomainMap.entrySet()) {
                 interfaces.add(new InterfaceDefinition(entry.getValue(), entry.getKey()));
             }
-            log(Level.INFO, "Interfaces is disabled, trying to pick one address from TCP-IP config " +
-                    "addresses: " + interfaces);
+            log(Level.INFO, "Interfaces is disabled, trying to pick one address from TCP-IP config "
+                    + "addresses: " + interfaces);
         }
         return interfaces;
     }
@@ -366,11 +382,19 @@ class DefaultAddressPicker implements AddressPicker {
 
         @Override
         public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             final InterfaceDefinition that = (InterfaceDefinition) o;
-            if (address != null ? !address.equals(that.address) : that.address != null) return false;
-            if (host != null ? !host.equals(that.host) : that.host != null) return false;
+            if (address != null ? !address.equals(that.address) : that.address != null) {
+                return false;
+            }
+            if (host != null ? !host.equals(that.host) : that.host != null) {
+                return false;
+            }
             return true;
         }
 
@@ -407,14 +431,24 @@ class DefaultAddressPicker implements AddressPicker {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)){
+                return false;
+            }
 
             AddressDefinition that = (AddressDefinition) o;
 
-            if (port != that.port) return false;
-            if (inetAddress != null ? !inetAddress.equals(that.inetAddress) : that.inetAddress != null) return false;
+            if (port != that.port) {
+                return false;
+            }
+            if (inetAddress != null ? !inetAddress.equals(that.inetAddress) : that.inetAddress != null) {
+                return false;
+            }
 
             return true;
         }

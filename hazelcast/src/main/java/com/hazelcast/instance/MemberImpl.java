@@ -48,16 +48,13 @@ import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
     private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
-
     private boolean localMember;
     private Address address;
     private String uuid;
-
     private volatile HazelcastInstanceImpl instance;
-
-    private volatile long lastRead = 0;
-    private volatile long lastWrite = 0;
-    private volatile long lastPing = 0;
+    private volatile long lastRead;
+    private volatile long lastWrite;
+    private volatile long lastPing;
     private volatile ILogger logger;
 
     public MemberImpl() {
@@ -71,18 +68,19 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         this(address, localMember, uuid, instance, null);
     }
 
-    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance, Map<String, Object> attributes) {
-        this();
+    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance,
+                      Map<String, Object> attributes) {
         this.localMember = localMember;
         this.address = address;
         this.lastRead = Clock.currentTimeMillis();
         this.uuid = uuid;
         this.instance = instance;
-        if (attributes != null) this.attributes.putAll(attributes);
+        if (attributes != null) {
+            this.attributes.putAll(attributes);
+        }
     }
 
     public MemberImpl(MemberImpl member) {
-        this();
         this.localMember = member.localMember;
         this.address = member.address;
         this.lastRead = member.lastRead;
@@ -109,6 +107,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
+    @Override
     public InetSocketAddress getInetSocketAddress() {
         return getSocketAddress();
     }
@@ -125,6 +124,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
+    @Override
     public boolean localMember() {
         return localMember;
     }
@@ -157,10 +157,12 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         this.uuid = uuid;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
 
+    @Override
     public Map<String, Object> getAttributes() {
         return Collections.unmodifiableMap(attributes);
     }
@@ -258,9 +260,14 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         setAttribute(key, value);
     }
 
+    @Override
     public void removeAttribute(String key) {
-        if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
-        if (key == null) throw new IllegalArgumentException("key must not be null");
+        if (!localMember) {
+            throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+        }
+        if (key == null) {
+            throw new IllegalArgumentException("key must not be null");
+        }
         Object value = attributes.remove(key);
         if (value == null) {
             return;
@@ -286,6 +293,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
+    @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         if (hazelcastInstance instanceof HazelcastInstanceImpl) {
             instance = (HazelcastInstanceImpl) hazelcastInstance;
@@ -294,6 +302,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
@@ -306,6 +315,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeUTF(uuid);
@@ -315,44 +325,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
             out.writeUTF(entry.getKey());
             IOUtil.writeAttributeValue(entry.getValue(), out);
         }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Member [");
-        sb.append(address.getHost());
-        sb.append("]");
-        sb.append(":");
-        sb.append(address.getPort());
-        if (localMember) {
-            sb.append(" this");
-        }
-        return sb.toString();
-    }
-
-    @Override
-    public int hashCode() {
-        final int PRIME = 31;
-        int result = 1;
-        result = PRIME * result + ((address == null) ? 0 : address.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        final MemberImpl other = (MemberImpl) obj;
-        if (address == null) {
-            if (other.address != null)
-                return false;
-        } else if (!address.equals(other.address))
-            return false;
-        return true;
     }
 
     public int getFactoryId() {
@@ -369,13 +341,20 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     private void setAttribute(String key, Object value) {
-        if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
-        if (key == null) throw new IllegalArgumentException("key must not be null");
-        if (value == null) throw new IllegalArgumentException("value must not be null");
+        if (!localMember) {
+            throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+        }
+        if (key == null) {
+            throw new IllegalArgumentException("key must not be null");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value must not be null");
+        }
         Object oldValue = attributes.put(key, value);
         if (value.equals(oldValue)) {
             return;
         }
+
         if (instance != null) {
             NodeEngineImpl nodeEngine = instance.node.nodeEngine;
             OperationService os = nodeEngine.getOperationService();
@@ -395,6 +374,50 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
                 throw ExceptionUtil.rethrow(t);
             }
         }
+    }
+
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Member [");
+        sb.append(address.getHost());
+        sb.append("]");
+        sb.append(":");
+        sb.append(address.getPort());
+        if (localMember) {
+            sb.append(" this");
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((address == null) ? 0 : address.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final MemberImpl other = (MemberImpl) obj;
+        if (address == null) {
+            if (other.address != null) {
+                return false;
+            }
+        } else if (!address.equals(other.address)) {
+            return false;
+        }
+        return true;
     }
 
 }

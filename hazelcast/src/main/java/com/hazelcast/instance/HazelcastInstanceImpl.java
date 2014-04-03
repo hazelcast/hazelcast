@@ -18,24 +18,45 @@ package com.hazelcast.instance;
 
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.lock.LockProxy;
-import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
+import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.ManagedContext;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.ProxyService;
@@ -53,10 +74,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
-
-/**
- * @author mdogan 7/31/12
- */
 
 @SuppressWarnings("unchecked")
 @PrivateApi
@@ -109,14 +126,14 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         }
 
         HealthMonitorLevel healthLevel = HealthMonitorLevel.valueOf(node.getGroupProperties().HEALTH_MONITORING_LEVEL.getString());
-        if(healthLevel!=HealthMonitorLevel.OFF){
+        if (healthLevel != HealthMonitorLevel.OFF) {
             logger.finest("Starting health monitor");
             int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
-            new HealthMonitor(this,healthLevel,delaySeconds).start();
+            new HealthMonitor(this, healthLevel, delaySeconds).start();
         }
     }
 
-    public ManagementService getManagementService(){
+    public ManagementService getManagementService() {
         return managementService;
     }
 
@@ -124,10 +141,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return threadMonitoringService;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public <K, V> IMap<K, V> getMap(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a map instance with a null name is not allowed!");
@@ -135,6 +154,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
+    @Override
     public <E> IQueue<E> getQueue(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a queue instance with a null name is not allowed!");
@@ -142,6 +162,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(QueueService.SERVICE_NAME, name);
     }
 
+    @Override
     public <E> ITopic<E> getTopic(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a topic instance with a null name is not allowed!");
@@ -149,6 +170,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(TopicService.SERVICE_NAME, name);
     }
 
+    @Override
     public <E> ISet<E> getSet(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a set instance with a null name is not allowed!");
@@ -156,6 +178,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(SetService.SERVICE_NAME, name);
     }
 
+    @Override
     public <E> IList<E> getList(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a list instance with a null name is not allowed!");
@@ -163,6 +186,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(ListService.SERVICE_NAME, name);
     }
 
+    @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a multi-map instance with a null name is not allowed!");
@@ -170,6 +194,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
     }
 
+    @Override
     public JobTracker getJobTracker(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a job tracker instance with a null name is not allowed!");
@@ -187,6 +212,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getLock(name);
     }
 
+    @Override
     public ILock getLock(String key) {
         if (key == null) {
             throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
@@ -194,22 +220,27 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(LockService.SERVICE_NAME, key);
     }
 
+    @Override
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
         return executeTransaction(TransactionOptions.getDefault(), task);
     }
 
+    @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         return node.nodeEngine.getTransactionManagerService().executeTransaction(options, task);
     }
 
+    @Override
     public TransactionContext newTransactionContext() {
         return newTransactionContext(TransactionOptions.getDefault());
     }
 
+    @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
         return node.nodeEngine.getTransactionManagerService().newTransactionContext(options);
     }
 
+    @Override
     public IExecutorService getExecutorService(final String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving an executor instance with a null name is not allowed!");
@@ -217,6 +248,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
     }
 
+    @Override
     public IdGenerator getIdGenerator(final String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving an id-generator instance with a null name is not allowed!");
@@ -224,6 +256,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
     }
 
+    @Override
     public IAtomicLong getAtomicLong(final String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving an atomic-long instance with a null name is not allowed!");
@@ -231,6 +264,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
+    @Override
     public <E> IAtomicReference<E> getAtomicReference(final String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving an atomic-reference instance with a null name is not allowed!");
@@ -238,6 +272,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
     }
 
+    @Override
     public ICountDownLatch getCountDownLatch(final String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a countdown-latch instance with a null name is not allowed!");
@@ -245,6 +280,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
     }
 
+    @Override
     public ISemaphore getSemaphore(final String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a semaphore instance with a null name is not allowed!");
@@ -252,38 +288,47 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
     }
 
+    @Override
     public Cluster getCluster() {
         return node.clusterService.getClusterProxy();
     }
 
+    @Override
     public Member getLocalEndpoint() {
         return node.clusterService.getLocalMember();
     }
 
+    @Override
     public Collection<DistributedObject> getDistributedObjects() {
         return node.nodeEngine.getProxyService().getAllDistributedObjects();
     }
 
+    @Override
     public Config getConfig() {
         return node.getConfig();
     }
 
+    @Override
     public ConcurrentMap<String, Object> getUserContext() {
         return userContext;
     }
 
+    @Override
     public PartitionService getPartitionService() {
         return node.partitionService.getPartitionServiceProxy();
     }
 
+    @Override
     public ClientService getClientService() {
         return node.clientEngine.getClientService();
     }
 
+    @Override
     public LoggingService getLoggingService() {
         return node.loggingService;
     }
 
+    @Override
     public LifecycleServiceImpl getLifecycleService() {
         return lifecycleService;
     }
@@ -307,11 +352,13 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return (T) node.nodeEngine.getProxyService().getDistributedObject(serviceName, name);
     }
 
+    @Override
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         final ProxyService proxyService = node.nodeEngine.getProxyService();
         return proxyService.addProxyListener(distributedObjectListener);
     }
 
+    @Override
     public boolean removeDistributedObjectListener(String registrationId) {
         final ProxyService proxyService = node.nodeEngine.getProxyService();
         return proxyService.removeProxyListener(registrationId);
@@ -321,7 +368,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return threadGroup;
     }
 
-    public final SerializationService getSerializationService() {
+    public SerializationService getSerializationService() {
         return node.getSerializationService();
     }
 
