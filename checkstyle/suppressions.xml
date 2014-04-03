@@ -52,6 +52,7 @@
     <suppress checks="" files="com.hazelcast.web[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
     <suppress checks="" files="com.hazelcast.cluster[\\/]"/>
+    <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
 
     <!--Code Smells -->
 
