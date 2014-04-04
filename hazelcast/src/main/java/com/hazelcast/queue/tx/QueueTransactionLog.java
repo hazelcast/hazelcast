@@ -19,24 +19,23 @@ package com.hazelcast.queue.tx;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
 
-/**
- * @author ali 3/25/13
- */
 public class QueueTransactionLog implements KeyAwareTransactionLog {
 
-    long itemId;
-    String name;
-    Operation op;
-    int partitionId;
-    String transactionId;
+    private long itemId;
+    private String name;
+    private Operation op;
+    private int partitionId;
+    private String transactionId;
 
     public QueueTransactionLog() {
     }
@@ -49,34 +48,44 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
         this.op = op;
     }
 
+    @Override
     public Future prepare(NodeEngine nodeEngine) {
         boolean pollOperation = op instanceof TxnPollOperation;
         TxnPrepareOperation operation = new TxnPrepareOperation(name, itemId, pollOperation, transactionId);
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+            return invoke(nodeEngine, operation);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    private InternalCompletableFuture invoke(NodeEngine nodeEngine, Operation operation) {
+        OperationService operationService = nodeEngine.getOperationService();
+        return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+    }
+
+    @Override
     public Future commit(NodeEngine nodeEngine) {
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, op, partitionId);
+            OperationService operationService = nodeEngine.getOperationService();
+            return operationService.invokeOnPartition(QueueService.SERVICE_NAME, op, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    @Override
     public Future rollback(NodeEngine nodeEngine) {
         boolean pollOperation = op instanceof TxnPollOperation;
         TxnRollbackOperation operation = new TxnRollbackOperation(name, itemId, pollOperation);
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+            return invoke(nodeEngine, operation);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(transactionId);
         out.writeLong(itemId);
@@ -85,6 +94,7 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
         out.writeObject(op);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         transactionId = in.readUTF();
         itemId = in.readLong();
@@ -93,6 +103,7 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
         op = in.readObject();
     }
 
+    @Override
     public Object getKey() {
         return new TransactionLogKey(itemId, name);
     }

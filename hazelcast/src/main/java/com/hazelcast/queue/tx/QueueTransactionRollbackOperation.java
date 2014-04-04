@@ -18,17 +18,15 @@ package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 
 import java.io.IOException;
 
-/**
- * @ali 9/5/13
- */
 public class QueueTransactionRollbackOperation extends QueueOperation {
 
-    String transactionId;
+    private String transactionId;
 
     public QueueTransactionRollbackOperation() {
     }
@@ -38,24 +36,30 @@ public class QueueTransactionRollbackOperation extends QueueOperation {
         this.transactionId = transactionId;
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.CHECK_EVICT;
     }
 
+    @Override
     public void run() throws Exception {
-        getOrCreateContainer().rollbackTransaction(transactionId);
+        QueueContainer container = getOrCreateContainer();
+        container.rollbackTransaction(transactionId);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(transactionId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         transactionId = in.readUTF();
     }
 
+    @Override
     public boolean returnsResponse() {
         return false;
     }

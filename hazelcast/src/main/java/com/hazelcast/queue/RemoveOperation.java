@@ -27,13 +27,10 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-/**
- * @author ali 12/6/12
- */
 public class RemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Data data;
-    long itemId = -1;
+    private long itemId = -1;
 
     public RemoveOperation() {
     }
@@ -43,12 +40,14 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
         this.data = data;
     }
 
+    @Override
     public void run() throws Exception {
         QueueContainer container = getOrCreateContainer();
         itemId = container.remove(data);
         response = itemId != -1;
     }
 
+    @Override
     public void afterRun() throws Exception {
         getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
         if (itemId != -1) {
@@ -56,32 +55,39 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new RemoveBackupOperation(name, itemId);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         data.writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         data = IOUtil.readData(in);
     }
 
+    @Override
     public boolean shouldNotify() {
         return itemId != -1;
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.REMOVE;
     }

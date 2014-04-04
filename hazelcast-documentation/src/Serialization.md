@@ -1,7 +1,7 @@
 
 
 
-## Serialization
+# Serialization
 
 All your distributed objects such as your key and value objects, objects you offer into distributed queue and your distributed callable/runnable objects have to be `Serializable`.
 

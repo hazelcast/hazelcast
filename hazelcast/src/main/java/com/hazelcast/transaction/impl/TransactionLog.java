@@ -21,9 +21,6 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.Future;
 
-/**
- * @author mdogan 3/25/13
- */
 public interface TransactionLog extends DataSerializable {
 
     Future prepare(NodeEngine nodeEngine);

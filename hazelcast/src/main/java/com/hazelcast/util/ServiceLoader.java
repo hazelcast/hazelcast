@@ -25,7 +25,11 @@ import com.hazelcast.nio.IOUtil;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * @author mdogan 10/2/12
@@ -48,9 +52,9 @@ public class ServiceLoader {
     public static <T> Iterator<T> iterator(final Class<T> clazz, final String factoryId, final ClassLoader classLoader) throws Exception {
         final Set<ServiceDefinition> serviceDefinitions = parse(factoryId, classLoader);
         // If we are in a multi class-loader environment like JEE we need to ask the Hazelcast class-loader for default services
-        final ClassLoader systemClassLoader = ServiceLoader.class.getClassLoader();
-        if (classLoader != null && systemClassLoader != classLoader) {
-            final Set<ServiceDefinition> systemDefinitions = parse(factoryId, systemClassLoader);
+        final ClassLoader hazelcastClassLoader = ServiceLoader.class.getClassLoader();
+        if (hazelcastClassLoader != classLoader) {
+            final Set<ServiceDefinition> systemDefinitions = parse(factoryId, hazelcastClassLoader);
             serviceDefinitions.addAll(systemDefinitions);
         }
         if (serviceDefinitions.isEmpty()) {

@@ -18,20 +18,17 @@ package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/27/13
- */
 public class TxnRollbackBackupOperation extends QueueOperation implements BackupOperation {
 
-    long itemId;
-
-    boolean pollOperation;
+    private long itemId;
+    private boolean pollOperation;
 
     public TxnRollbackBackupOperation() {
     }
@@ -42,27 +39,31 @@ public class TxnRollbackBackupOperation extends QueueOperation implements Backup
         this.pollOperation = pollOperation;
     }
 
+    @Override
     public void run() throws Exception {
-        if (pollOperation){
-            response = getOrCreateContainer().txnRollbackPoll(itemId, true);
-        }
-        else {
-            response = getOrCreateContainer().txnRollbackOfferBackup(itemId);
+        QueueContainer container = getOrCreateContainer();
+        if (pollOperation) {
+            response = container.txnRollbackPoll(itemId, true);
+        } else {
+            response = container.txnRollbackOfferBackup(itemId);
         }
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
         out.writeBoolean(pollOperation);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
         pollOperation = in.readBoolean();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_ROLLBACK_BACKUP;
     }

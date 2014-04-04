@@ -47,7 +47,7 @@ public boolean isActive() {
 
 Now you are looking for the employees who are active and with age less than 30. Hazelcast allows you to find these entries in two different ways:
 
-**Distributed SQL Query**
+### Distributed SQL Query
 
 `SqlPredicate` takes regular SQL `where` clause. Here is an example:
 
@@ -120,7 +120,7 @@ Examples:
 
 -   `age IN (20, 30, 40) AND salary BETWEEN (50000, 80000)`
 
-**Criteria API**
+### Criteria API
 
 If SQL is not enough or programmable queries are preferred, then JPA criteria like API can be used. Here is an example:
 
@@ -142,7 +142,7 @@ Predicate predicate = e.is("active").and(e.get("age").lessThan(30));
 Set<Employee> employees = (Set<Employee>) map.values(predicate);
 ```
 
-**Paging Predicate (Order & Limit)**
+### Paging Predicate (Order & Limit)
 
 Hazelcast provides paging for defined predicates. For this purpose, `PagingPredicate` class has been developed. You may want to get collection of keys, values or entries page by page, by filtering the them with predicates and giving the size of pages. Also, you can sort the entries by specifying comparators.
 
@@ -172,16 +172,17 @@ final IMap<Integer, Student> map = instance.getMap("students");
 Hazelcast distributed queries will run on each member in parallel and only results will return the conn. When a query runs on a member, Hazelcast will iterate through the entire owned entries and find the matching ones. This can be made faster by indexing the mostly queried fields. Just like you would do for your database. Of course, indexing will add overhead for each `write` operation but queries will be a lot faster. If you are querying your map a lot, make sure to add indexes for most frequently queried fields. So, if your `active and age < 30 ` query, for example, is used a lot, make sure you add index for `active` and `age` fields. Here is how:
 
 ```java
-IMap imap = Hazelcast.getMap("employees");
+Config cfg = new Config();
+HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+IMap imap = instance.getMap("employees");
 imap.addIndex("age", true);        // ordered, since we have ranged queries for this field
 imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
 ```
 
 `IMap.addIndex(fieldName, ordered)` is used for adding index. For each indexed field, if you have ranged queries such as `age>30`, `age BETWEEN 40 AND 60`, then `ordered` parameter should be`true`. Otherwise, set it to`false`.
 
-Also, you can define `IMap` indexes in configuration.
+Also, you can define `IMap` indexes in configuration, a sample of which is shown below.
 
--   *Hazelcast XML configuration*
 
 	```xml
 	<map name="default">
@@ -190,16 +191,21 @@ Also, you can define `IMap` indexes in configuration.
 	        <index ordered="false">name</index>
 	        <index ordered="true">age</index>
 	    </indexes>
-	</map>
-```
--   *API Configuration*
+	</map>```
+
+
+This sample in programmatic configuration looks like below.
+
+
 
 	```java
 	mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
-	mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));
-```
+	mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));```
 
--   *Spring XML configuration*
+
+And, the following is the Spring declarative configuration for the same sample.
+ 
+
 
 	```xml
 	<hz:map name="default">

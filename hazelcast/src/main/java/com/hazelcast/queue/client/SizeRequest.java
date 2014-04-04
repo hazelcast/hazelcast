@@ -21,9 +21,6 @@ import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.SizeOperation;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author ali 5/8/13
- */
 public class SizeRequest extends QueueRequest implements RetryableRequest {
 
     public SizeRequest() {
@@ -33,10 +30,12 @@ public class SizeRequest extends QueueRequest implements RetryableRequest {
         super(name);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new SizeOperation(name);
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.SIZE;
     }

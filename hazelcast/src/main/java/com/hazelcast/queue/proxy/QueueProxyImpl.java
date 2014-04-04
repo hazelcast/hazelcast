@@ -23,24 +23,25 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-/**
- * User: ali
- * Date: 11/14/12
- * Time: 13:23 AM
- */
 public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, InitializingObject {
 
     public QueueProxyImpl(String name, QueueService queueService, NodeEngine nodeEngine) {
         super(name, queueService, nodeEngine);
     }
 
+    @Override
     public LocalQueueStats getLocalQueueStats() {
         return getService().createLocalQueueStats(name, partitionId);
     }
 
+    @Override
     public boolean add(E e) {
         if (offer(e)) {
             return true;
@@ -48,6 +49,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         throw new IllegalStateException("Queue is full!");
     }
 
+    @Override
     public boolean offer(E e) {
         try {
             return offer(e, 0, TimeUnit.SECONDS);
@@ -56,36 +58,43 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         }
     }
 
+    @Override
     public void put(E e) throws InterruptedException {
         offer(e, -1, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public boolean offer(E e, long timeout, TimeUnit timeUnit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(e);
         return offerInternal(data, timeUnit.toMillis(timeout));
     }
 
+    @Override
     public E take() throws InterruptedException {
         return poll(-1, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         final Object data = pollInternal(timeUnit.toMillis(timeout));
         return nodeEngine.toObject(data);
     }
 
+    @Override
     public int remainingCapacity() {
         return config.getMaxSize() - size();
     }
 
+    @Override
     public boolean remove(Object o) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(o);
         return removeInternal(data);
     }
 
+    @Override
     public boolean contains(Object o) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(o);
@@ -94,10 +103,12 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         return containsInternal(dataSet);
     }
 
+    @Override
     public int drainTo(Collection<? super E> objects) {
         return drainTo(objects, -1);
     }
 
+    @Override
     public int drainTo(Collection<? super E> objects, int i) {
         final NodeEngine nodeEngine = getNodeEngine();
         if (this.equals(objects)) {
@@ -111,6 +122,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         return dataList.size();
     }
 
+    @Override
     public E remove() {
         final E res = poll();
         if (res == null) {
@@ -119,15 +131,17 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         return res;
     }
 
-
+    @Override
     public E poll() {
         try {
             return poll(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            //todo: interrupt status is lost
             return null;
         }
     }
 
+    @Override
     public E element() {
         final E res = peek();
         if (res == null) {
@@ -136,21 +150,25 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         return res;
     }
 
+    @Override
     public E peek() {
         final NodeEngine nodeEngine = getNodeEngine();
         final Object data = peekInternal();
         return nodeEngine.toObject(data);
     }
 
+    @Override
     public boolean isEmpty() {
         return size() == 0;
     }
 
+    @Override
     public Iterator<E> iterator() {
         final NodeEngine nodeEngine = getNodeEngine();
         return new QueueIterator<E>(listInternal().iterator(), nodeEngine.getSerializationService(), false);
     }
 
+    @Override
     public Object[] toArray() {
         final NodeEngine nodeEngine = getNodeEngine();
         List<Data> list = listInternal();
@@ -162,6 +180,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         return array;
     }
 
+    @Override
     public <T> T[] toArray(T[] ts) {
         final NodeEngine nodeEngine = getNodeEngine();
         List<Data> list = listInternal();
@@ -175,28 +194,24 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         return ts;
     }
 
+    @Override
     public boolean containsAll(Collection<?> objects) {
         return containsInternal(getDataList(objects));
     }
 
+    @Override
     public boolean addAll(Collection<? extends E> es) {
         return addAllInternal(getDataList(es));
     }
 
+    @Override
     public boolean removeAll(Collection<?> objects) {
         return compareAndRemove(getDataList(objects), false);
     }
 
+    @Override
     public boolean retainAll(Collection<?> objects) {
         return compareAndRemove(getDataList(objects), true);
-    }
-
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("IQueue");
-        sb.append("{name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
     }
 
     private List<Data> getDataList(Collection<?> objects) {
@@ -208,4 +223,12 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         return dataList;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("IQueue");
+        sb.append("{name='").append(name).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }

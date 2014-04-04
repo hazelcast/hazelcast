@@ -16,9 +16,6 @@
 
 package com.hazelcast.query;
 
-/**
- * @author mdogan 10/22/13
- */
 public final class QueryConstants {
 
     public static final String KEY_ATTRIBUTE_NAME = "__key";

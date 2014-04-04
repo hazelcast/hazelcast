@@ -29,19 +29,19 @@ public final class StringUtil {
     }
 
     public static String bytesToString(byte bytes[], int offset, int length) {
-        return new String(bytes,offset,length);
+        return new String(bytes, offset, length);
     }
 
-    public static String bytesToString(byte[] bytes){
+    public static String bytesToString(byte[] bytes) {
         return new String(bytes);
     }
 
-    public static byte[] stringToBytes(String s){
+    public static byte[] stringToBytes(String s) {
         return s.getBytes();
     }
 
-    public static boolean isNullOrEmpty(String s){
-        if(s == null){
+    public static boolean isNullOrEmpty(String s) {
+        if (s == null) {
             return true;
         }
         return s.isEmpty();

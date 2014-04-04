@@ -19,21 +19,19 @@ package com.hazelcast.queue.tx;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.queue.QueueBackupAwareOperation;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/27/13
- */
 public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
-    long itemId;
+    private long itemId;
 
-    boolean pollOperation;
+    private boolean pollOperation;
 
-    String transactionId;
+    private String transactionId;
 
     public TxnPrepareOperation() {
     }
@@ -45,18 +43,23 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
         this.transactionId = transactionId;
     }
 
+    @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().txnEnsureReserve(itemId);
+        QueueContainer container = getOrCreateContainer();
+        response = container.txnEnsureReserve(itemId);
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new TxnPrepareBackupOperation(name, itemId, pollOperation, transactionId);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
@@ -64,6 +67,7 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
         out.writeUTF(transactionId);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
@@ -71,6 +75,7 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
         transactionId = in.readUTF();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_PREPARE;
     }

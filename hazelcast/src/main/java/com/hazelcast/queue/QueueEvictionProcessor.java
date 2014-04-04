@@ -16,37 +16,39 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.Collection;
 
-/**
- * @ali 7/23/13
- */
 public class QueueEvictionProcessor implements ScheduledEntryProcessor<String, Void> {
 
-    final NodeEngine nodeEngine;
-
-    final QueueService service;
+    private final NodeEngine nodeEngine;
+    private final QueueService service;
 
     public QueueEvictionProcessor(NodeEngine nodeEngine, QueueService service) {
         this.nodeEngine = nodeEngine;
         this.service = service;
     }
 
+    @Override
     public void process(EntryTaskScheduler<String, Void> scheduler, Collection<ScheduledEntry<String, Void>> entries) {
-        if (entries.isEmpty()){
+        if (entries.isEmpty()) {
             return;
         }
+
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        OperationService operationService = nodeEngine.getOperationService();
+
         for (ScheduledEntry<String, Void> entry : entries) {
             String name = entry.getKey();
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
+            int partitionId = partitionService.getPartitionId(nodeEngine.toData(name));
             CheckAndEvictOperation op = new CheckAndEvictOperation(entry.getKey());
-            nodeEngine.getOperationService().invokeOnPartition(QueueService.SERVICE_NAME,op,partitionId).getSafely();
+            operationService.invokeOnPartition(QueueService.SERVICE_NAME, op, partitionId).getSafely();
         }
-
     }
 }

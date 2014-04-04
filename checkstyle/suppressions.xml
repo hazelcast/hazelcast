@@ -38,11 +38,10 @@
     <suppress checks="" files="[\\/]map[\\/]"/>
     <suppress checks="" files="[\\/]multimap[\\/]"/>
     <suppress checks="" files="[\\/]nio[\\/]"/>
-    <suppress checks="" files="[\\/]query[\\/]"/>
+    <suppress checks="" files="com.hazelcast.query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
     <suppress checks="" files="[\\/]spi.impl[\\/]"/>
     <suppress checks="" files="[\\/]storage[\\/]"/>
-    <suppress checks="" files="[\\/]transaction[\\/]"/>
     <suppress checks="" files="[\\/]util[\\/]"/>
     <suppress checks="" files="[\\/]wan[\\/]"/>
 
@@ -53,6 +52,7 @@
     <suppress checks="" files="com.hazelcast.web[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
     <suppress checks="" files="com.hazelcast.cluster[\\/]"/>
+    <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
 
     <!--Code Smells -->
 
@@ -115,6 +115,25 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
 
+    <!-- Queue -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="MethodLength" files="com.hazelcast.queue.QueuePortableHook"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.queue.QueuePortableHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.queue.QueuePortableHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.queue.QueueDataSerializerHook"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.queue.QueueDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.queue.QueueDataSerializerHook"/>
+
+    <!-- monitor -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.query[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.query[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.query[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.query[\\/]"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.query.Parser"/>
+
     <!-- SPI -->
     <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.spi[\\/]"/>
@@ -124,12 +143,19 @@
     <suppress checks="IllegalType" files="com.hazelcast.spi.DistributedObjectAccessor"/>
     <suppress checks="" files="com.hazelcast.spi.Operation"/>
 
+    <!-- Transaction -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.transaction[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.transaction[\\/]"/>
+
     <!-- OSGI -->
     <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.osgi[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.osgi[\\/]"/>
 
+    <!-- Security -->
     <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.security[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
@@ -139,11 +165,14 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.security.permission.ActionConstants"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.security.permission.InstancePermission"/>
 
+    <!-- Logging -->
     <suppress checks="JavadocMethod" files="com.hazelcast.logging[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.logging[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.logging[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.logging[\\/]"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.logging.Slf4jFactory"/>
 
+    <!-- Partition -->
     <suppress checks="JavadocMethod" files="com.hazelcast.partition[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.partition[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.partition[\\/]"/>
@@ -155,14 +184,14 @@
     <suppress checks="MagicNumber" files="com.hazelcast.partition[\\/]"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.partition.MigrationInfo"/>
 
-
+    <!-- topic -->
     <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="VisibilityModifier" files="com.hazelcast.topic.TopicEvent"/>
 
-
+    <!-- executor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.executor[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>
@@ -172,5 +201,4 @@
     <!-- the invokeAll is so scary that Peter doesn't dare to touch it. Need get someone involved who write it-->
     <suppress checks="" files="com.hazelcast.executor.ExecutorServiceProxy"/>
 
-    <suppress checks="ReturnCount" files="com.hazelcast.logging.Slf4jFactory"/>
 </suppressions>

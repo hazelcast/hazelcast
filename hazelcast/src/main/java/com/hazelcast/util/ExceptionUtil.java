@@ -108,5 +108,6 @@ public final class ExceptionUtil {
     }
 
     //we don't want instances
-    private ExceptionUtil(){}
+    private ExceptionUtil() {
+    }
 }

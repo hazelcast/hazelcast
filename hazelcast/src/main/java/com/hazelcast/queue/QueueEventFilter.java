@@ -23,12 +23,9 @@ import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
-/**
- * @author ali 12/24/12
- */
 public class QueueEventFilter implements EventFilter, IdentifiedDataSerializable {
 
-    boolean includeValue;
+    private boolean includeValue;
 
     public QueueEventFilter() {
     }
@@ -41,22 +38,27 @@ public class QueueEventFilter implements EventFilter, IdentifiedDataSerializable
         return includeValue;
     }
 
+    @Override
     public boolean eval(Object arg) {
         return false;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(includeValue);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         includeValue = in.readBoolean();
     }
 
+    @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.QUEUE_EVENT_FILTER;
     }

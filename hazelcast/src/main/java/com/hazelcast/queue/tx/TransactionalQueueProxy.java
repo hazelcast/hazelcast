@@ -24,15 +24,13 @@ import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 3/25/13
- */
 public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport implements TransactionalQueue<E> {
 
     public TransactionalQueueProxy(NodeEngine nodeEngine, QueueService service, String name, TransactionSupport tx) {
         super(nodeEngine, service, name, tx);
     }
 
+    @Override
     public boolean offer(E e) {
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
@@ -41,20 +39,24 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         return false;
     }
 
+    @Override
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         checkTransactionState();
         Data data = getNodeEngine().toData(e);
         return offerInternal(data, unit.toMillis(timeout));
     }
 
+    @Override
     public E poll() {
         try {
             return poll(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
+            //todo: interrupt status swallowed
         }
         return null;
     }
 
+    @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         checkTransactionState();
         Data data = pollInternal(unit.toMillis(timeout));
@@ -66,6 +68,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         try {
             return peek(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
+            //todo: interrupt status swallowed
         }
         return null;
     }

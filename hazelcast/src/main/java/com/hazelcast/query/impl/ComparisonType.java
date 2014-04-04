@@ -16,9 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-/**
- * @author mdogan 9/5/12
- */
 public enum ComparisonType {
     NOT_EQUAL,
     LESSER,

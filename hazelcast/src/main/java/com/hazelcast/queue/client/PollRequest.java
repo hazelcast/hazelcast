@@ -24,9 +24,6 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-/**
- * @author ali 5/8/13
- */
 public class PollRequest extends QueueRequest {
 
     public PollRequest() {
@@ -40,14 +37,17 @@ public class PollRequest extends QueueRequest {
         super(name, timeoutMillis);
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new PollOperation(name, timeoutMillis);
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.POLL;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }

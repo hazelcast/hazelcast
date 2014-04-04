@@ -24,19 +24,12 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author ali 12/19/12
- */
 public class DrainBackupOperation extends QueueOperation implements BackupOperation {
 
     //can be null
-    Set<Long> itemIdSet;
+    private Set<Long> itemIdSet;
 
     public DrainBackupOperation() {
-    }
-
-    public DrainBackupOperation(String name) {
-        super(name);
     }
 
     public DrainBackupOperation(String name, Set<Long> itemIdSet) {
@@ -44,35 +37,38 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
         this.itemIdSet = itemIdSet;
     }
 
+    @Override
     public void run() throws Exception {
         getOrCreateContainer().drainFromBackup(itemIdSet);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (itemIdSet == null){
+        if (itemIdSet == null) {
             out.writeBoolean(false);
-        }
-        else {
+        } else {
             out.writeBoolean(true);
             out.writeInt(itemIdSet.size());
-            for (Long itemId: itemIdSet){
+            for (Long itemId : itemIdSet) {
                 out.writeLong(itemId);
             }
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        if (in.readBoolean()){
+        if (in.readBoolean()) {
             int size = in.readInt();
             itemIdSet = new HashSet<Long>(size);
-            for (int i=0; i<size; i++){
+            for (int i = 0; i < size; i++) {
                 itemIdSet.add(in.readLong());
             }
         }
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.DRAIN_BACKUP;
     }

@@ -16,13 +16,9 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-/**
- * User: ali
- * Date: 11/23/12
- * Time: 3:56 AM
- */
 public final class PeekOperation extends QueueOperation implements IdentifiedDataSerializable {
 
     public PeekOperation() {
@@ -32,19 +28,24 @@ public final class PeekOperation extends QueueOperation implements IdentifiedDat
         super(name);
     }
 
+    @Override
     public void run() {
         QueueItem item = getOrCreateContainer().peek();
         response = item != null ? item.getData() : null;
     }
 
+    @Override
     public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+        LocalQueueStatsImpl localQueueStatsImpl = getQueueService().getLocalQueueStatsImpl(name);
+        localQueueStatsImpl.incrementOtherOperations();
     }
 
+    @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.PEEK;
     }

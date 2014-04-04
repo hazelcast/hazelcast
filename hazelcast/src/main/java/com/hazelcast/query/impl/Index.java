@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.Set;
 
 public interface Index {
+
     void saveEntryIndex(QueryableEntry e) throws QueryException;
 
     void clear();

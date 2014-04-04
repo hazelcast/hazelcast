@@ -111,6 +111,10 @@ Here is MapLoader initialization flow;
 
 5.  Each node puts its owned entries into the map by calling `IMap.putTransient(key,value)`
 
+
+***Warning:** If the load mode is LAZY and when *`clear()`* method is called (which triggers *`MapStore.deleteAll()`*), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (LAZY mode), please note that there may be still entries in your datastore.*
+
+
 #### Post Processing Map Store: ####
 
 In some scenarios, you may need to modify the object after storing it into the map store.

@@ -16,11 +16,7 @@
 
 package com.hazelcast.util.executor;
 
-/**
- * @mdogan 6/11/13
- */
 public interface StripedRunnable extends Runnable {
 
     int getKey();
-
 }

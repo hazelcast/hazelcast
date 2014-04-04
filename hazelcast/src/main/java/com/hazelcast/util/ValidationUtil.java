@@ -23,29 +23,30 @@ import static java.lang.String.format;
  */
 public class ValidationUtil {
 
-    public static String hasText(String argument, String argName){
-        isNotNull(argument,argName);
+    public static String hasText(String argument, String argName) {
+        isNotNull(argument, argName);
 
-        if(argument.isEmpty()){
-            throw new IllegalArgumentException(format("argument '%s' can't be an empty string",argName));
+        if (argument.isEmpty()) {
+            throw new IllegalArgumentException(format("argument '%s' can't be an empty string", argName));
         }
 
         return argument;
     }
 
-    public static <E> E isNotNull(E argument, String argName){
-        if(argument == null){
-           throw new IllegalArgumentException(format("argument '%s' can't be null",argName));
+    public static <E> E isNotNull(E argument, String argName) {
+        if (argument == null) {
+            throw new IllegalArgumentException(format("argument '%s' can't be null", argName));
         }
 
         return argument;
     }
 
-    private ValidationUtil(){}
+    private ValidationUtil() {
+    }
 
-    public static void isNotNegative(int permits, String argumentName) {
-        if (permits < 0) {
-            throw new IllegalArgumentException(argumentName+" cannot be negative!");
+    public static void isNotNegative(long value, String argumentName) {
+        if (value < 0) {
+            throw new IllegalArgumentException(argumentName + " cannot be negative!");
         }
     }
 }

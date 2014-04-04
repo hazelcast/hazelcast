@@ -24,9 +24,6 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.util.Map;
 
-/**
- * @author ali 12/6/12
- */
 public class ClearOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Map<Long, Data> dataMap;
@@ -38,11 +35,13 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
         super(name);
     }
 
+    @Override
     public void run() {
         dataMap = getOrCreateContainer().clear();
         response = true;
     }
 
+    @Override
     public void afterRun() throws Exception {
         getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
         for (Data data : dataMap.values()) {
@@ -50,22 +49,27 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
         }
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new ClearBackupOperation(name, dataMap.keySet());
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(!dataMap.isEmpty());
     }
 
+    @Override
     public boolean shouldNotify() {
         return Boolean.TRUE.equals(!dataMap.isEmpty());
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.CLEAR;
     }

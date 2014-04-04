@@ -26,9 +26,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-/**
- * @author ali 12/24/12
- */
 public class QueueEvent implements IdentifiedDataSerializable {
 
     String name;
@@ -49,6 +46,7 @@ public class QueueEvent implements IdentifiedDataSerializable {
         this.caller = caller;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(eventType.getType());
@@ -56,6 +54,7 @@ public class QueueEvent implements IdentifiedDataSerializable {
         IOUtil.writeNullableData(out, data);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         eventType = ItemEventType.getByType(in.readInt());
@@ -64,10 +63,12 @@ public class QueueEvent implements IdentifiedDataSerializable {
         data = IOUtil.readNullableData(in);
     }
 
+    @Override
     public int getFactoryId() {
         return QueueDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.QUEUE_EVENT;
     }

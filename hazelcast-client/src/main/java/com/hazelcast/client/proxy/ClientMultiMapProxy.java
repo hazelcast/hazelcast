@@ -23,14 +23,37 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.multimap.operations.client.*;
+import com.hazelcast.multimap.operations.client.AddEntryListenerRequest;
+import com.hazelcast.multimap.operations.client.ClearRequest;
+import com.hazelcast.multimap.operations.client.ContainsEntryRequest;
+import com.hazelcast.multimap.operations.client.CountRequest;
+import com.hazelcast.multimap.operations.client.EntrySetRequest;
+import com.hazelcast.multimap.operations.client.GetAllRequest;
+import com.hazelcast.multimap.operations.client.KeySetRequest;
+import com.hazelcast.multimap.operations.client.MultiMapIsLockedRequest;
+import com.hazelcast.multimap.operations.client.MultiMapLockRequest;
+import com.hazelcast.multimap.operations.client.MultiMapUnlockRequest;
+import com.hazelcast.multimap.operations.client.PortableEntrySetResponse;
+import com.hazelcast.multimap.operations.client.PutRequest;
+import com.hazelcast.multimap.operations.client.RemoveAllRequest;
+import com.hazelcast.multimap.operations.client.RemoveEntryListenerRequest;
+import com.hazelcast.multimap.operations.client.RemoveRequest;
+import com.hazelcast.multimap.operations.client.SizeRequest;
+import com.hazelcast.multimap.operations.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ThreadUtil;
-
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.ValidationUtil.isNotNegative;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * @author ali 5/19/13
@@ -148,6 +171,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
+        isNotNull(listener, "listener");
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, null, includeValue);
         EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
         return listen(request, handler);
@@ -172,6 +196,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
+        isNotNegative(leaseTime, "leaseTime");
         final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
                 getTimeInMillis(leaseTime, timeUnit), -1, name);

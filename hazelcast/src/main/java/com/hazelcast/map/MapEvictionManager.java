@@ -313,15 +313,13 @@ public class MapEvictionManager {
 
         final List<Record> evictableRecords = new ArrayList<Record>(evictableSize);
         final long criteriaValue = criterias[evictableSize - 1];
-        int evictionCounter = 0;
         for (final Map.Entry<Data, Record> entry : entries.entrySet()) {
             final Record record = entry.getValue();
             final long value = getEvictionCriteriaValue(record, evictionPolicy);
             if (value <= criteriaValue) {
                 evictableRecords.add(record);
-                evictionCounter++;
             }
-            if (evictionCounter >= evictableSize) {
+            if (evictableRecords.size() >= evictableSize) {
                 break;
             }
         }

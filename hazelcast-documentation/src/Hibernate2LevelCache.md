@@ -55,9 +55,7 @@ To setup Native Client properly, you should add Hazelcast **group-name**, **grou
 <property name="hibernate.cache.hazelcast.native_client_password">dev-pass</property>
 ```
 
-***Note***: *To use Native Client you should add `hazelcast-client-<version>.jar` into your classpath.*
-
-[Read more about Native Client](#native-client).
+***Note***: *To use Native Client you should add `hazelcast-client-<version>.jar` into your classpath. Refer to [Native Clients](#native-client) for more information.*
 
 -   To define Hibernate RegionFactory, add following property.
 
