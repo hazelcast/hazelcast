@@ -13,9 +13,9 @@ To use built-in adaptors, you should set `hazelcast.logging.type` property to on
 
 -   **none**: disable logging
 
-You can set `hazelcast.logging.type` through XML configuration, API configuration or JVM system property.
+You can set `hazelcast.logging.type` through declarative configuration, programmatic configuration or JVM system property.
 
--   **XML Configuration**
+-   **Declarative Configuration**
 
 ```xml
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config
@@ -32,7 +32,7 @@ You can set `hazelcast.logging.type` through XML configuration, API configuratio
 </hazelcast>
 ```
 
--   **API Configuration**
+-   **Programmatic Configuration**
 
 ```java
 Config cfg = new Config() ;

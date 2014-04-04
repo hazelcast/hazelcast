@@ -22,7 +22,7 @@ Here are the steps to enable Elastic Memory:
 
 - Configure maps that will use Elastic Memory by setting `InMemoryFormat` to **OFFHEAP**. Default value is **BINARY**.
 
-Using XML configuration:
+Below is the declarative configuration.
 
 ```xml
 <hazelcast>
@@ -31,10 +31,10 @@ Using XML configuration:
         ...
         <in-memory-format>OFFHEAP</in-memory-format>
     </map>
-</hazelcast>
-```
+</hazelcast>```
 
-Using Config API:
+
+And, the programmatic configuration:
 
 ```java
 MapConfig mapConfig = new MapConfig();

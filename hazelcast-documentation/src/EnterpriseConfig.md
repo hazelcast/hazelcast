@@ -3,9 +3,9 @@
 ![](images/enterprise-onlycopy.jpg)
 
 
-To be able to use Hazelcast Enterprise Edition, you need to set license key in configuration.
+To be able to use Hazelcast Enterprise, you need to set license the key in configuration.
 
--   **Hazelcast XML Configuration**
+-   **Declarative Configuration**
 
 ```xml
 <hazelcast>
@@ -14,7 +14,7 @@ To be able to use Hazelcast Enterprise Edition, you need to set license key in c
     ...
 </hazelcast>
 ```
--   **Hazelcast Config API**
+-   **Programmatic Configuration**
 
 ```java
 Config config = new Config();

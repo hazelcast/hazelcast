@@ -54,7 +54,7 @@ Hazelcast provides a default SSLContextFactory; `com.hazelcast.nio.ssl.BasicSSLC
 </hazelcast>
 ```
 
-Hazelcast client has SSL support too. Client SSL configuration can be defined using Config API as shown below.
+Hazelcast client has SSL support too. Client SSL configuration can be defined using programmatic configuration as shown below.
 
 ````java
 Properties props = new Properties();

@@ -69,18 +69,16 @@ public class MyPortableFactory implements PortableFactory {
 }            
 ```
 
-The last step is to register the `Factory` to the `SerializationConfig`.
+The last step is to register the `Factory` to the `SerializationConfig`. Below are the programmatic and declarative configurations for this step in order.
 
--	**Programmatic Configuration**
 
-	```java
+```java
 Config config = new Config();
 config.getSerializationConfig().addPortableFactory(1, new MyPortableFactory());
-                ```
+```
 
--	**XML Configuration**
 
-	```xml
+```xml
 <hazelcast>
     <serialization>
         <portable-version>0</portable-version>
@@ -88,8 +86,9 @@ config.getSerializationConfig().addPortableFactory(1, new MyPortableFactory());
             <portable-factory factory-id="1">com.hazelcast.nio.serialization.MyPortableFactory</portable-factory>
         </portable-factories>
     </serialization>
-</hazelcast>               
+</hazelcast>
 ```
+
 
 Note that the `id` that is passed to the `SerializationConfig` is same as the `factoryId` that `Foo` class returns.
 
