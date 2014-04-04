@@ -34,7 +34,7 @@ public class CustomLoginModule implements LoginModule {
 }
 ```
 
-\* To use default Hazelcast permission policy, an instance of `com.hazelcast.security.ClusterPrincipal` that holding `Credentials` object must be created and added to `Subject.principals onLoginModule.commit()`.
+To use default Hazelcast permission policy, an instance of `com.hazelcast.security.ClusterPrincipal` that holding `Credentials` object must be created and added to `Subject.principals onLoginModule.commit()` as shown below.
 
 ```java
 public class MyCustomLoginModule implements LoginModule {
