@@ -35,7 +35,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
     private long lastStoredTime;
     private long lastUpdateTime;
     private long version;
-    private long accessCounter;
+    private long evictionCriteriaNumber;
 
     public SimpleEntryView(K key, V value) {
         this.key = key;
@@ -125,12 +125,12 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         this.version = version;
     }
 
-    public long getAccessCounter() {
-        return accessCounter;
+    public long getEvictionCriteriaNumber() {
+        return evictionCriteriaNumber;
     }
 
-    public void setAccessCounter(long accessCounter) {
-        this.accessCounter = accessCounter;
+    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
+        this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
     @Override
@@ -145,7 +145,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         out.writeLong(lastStoredTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
-        out.writeLong(accessCounter);
+        out.writeLong(evictionCriteriaNumber);
     }
 
     @Override
@@ -160,7 +160,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         version = in.readLong();
-        accessCounter = in.readLong();
+        evictionCriteriaNumber = in.readLong();
     }
 
     public int getFactoryId() {
