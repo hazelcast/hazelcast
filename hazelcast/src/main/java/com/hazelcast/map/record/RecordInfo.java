@@ -29,7 +29,7 @@ public class RecordInfo implements DataSerializable {
     protected long mapStoreWriteDelayMillis = -1;
     protected long mapStoreDeleteDelayMillis = -1;
     protected long version;
-    protected long accessCounter;
+    protected long evictionCriteriaNumber;
 
     public RecordInfo() {
     }
@@ -41,7 +41,7 @@ public class RecordInfo implements DataSerializable {
         this.mapStoreWriteDelayMillis = recordInfo.mapStoreWriteDelayMillis;
         this.mapStoreDeleteDelayMillis = recordInfo.mapStoreDeleteDelayMillis;
         this.version = recordInfo.version;
-        this.accessCounter = recordInfo.accessCounter;
+        this.evictionCriteriaNumber = recordInfo.evictionCriteriaNumber;
     }
 
     public RecordStatistics getStatistics() {
@@ -92,12 +92,12 @@ public class RecordInfo implements DataSerializable {
         this.version = version;
     }
 
-    public long getAccessCounter() {
-        return accessCounter;
+    public long getEvictionCriteriaNumber() {
+        return evictionCriteriaNumber;
     }
 
-    public void setAccessCounter(long accessCounter) {
-        this.accessCounter = accessCounter;
+    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
+        this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
     @Override
@@ -113,7 +113,7 @@ public class RecordInfo implements DataSerializable {
         out.writeLong(mapStoreWriteDelayMillis);
         out.writeLong(mapStoreDeleteDelayMillis);
         out.writeLong(version);
-        out.writeLong(accessCounter);
+        out.writeLong(evictionCriteriaNumber);
 
     }
 
@@ -129,7 +129,7 @@ public class RecordInfo implements DataSerializable {
         mapStoreWriteDelayMillis = in.readLong();
         mapStoreDeleteDelayMillis = in.readLong();
         version = in.readLong();
-        accessCounter = in.readLong();
+        evictionCriteriaNumber = in.readLong();
     }
 
     @Override
@@ -141,7 +141,7 @@ public class RecordInfo implements DataSerializable {
                 ", mapStoreWriteDelayMillis=" + mapStoreWriteDelayMillis +
                 ", mapStoreDeleteDelayMillis=" + mapStoreDeleteDelayMillis +
                 ", version=" + version +
-                ", accessCounter=" + accessCounter +
+                ", evictionCriteriaNumber=" + evictionCriteriaNumber +
                 '}';
     }
 }

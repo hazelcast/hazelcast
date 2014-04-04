@@ -738,7 +738,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     public void applyRecordInfo(Record record, String mapName, RecordInfo replicationInfo) {
         record.setStatistics(replicationInfo.getStatistics());
         record.setVersion(replicationInfo.getVersion());
-        record.setAccessCounter(replicationInfo.getAccessCounter());
+        record.setEvictionCriteriaNumber(replicationInfo.getEvictionCriteriaNumber());
 
         if (replicationInfo.getIdleDelayMillis() >= 0) {
             scheduleIdleEviction(mapName, record.getKey(), replicationInfo.getIdleDelayMillis());
@@ -772,7 +772,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         final RecordInfo info = new RecordInfo();
         info.setStatistics(record.getStatistics());
         info.setVersion(record.getVersion());
-        info.setAccessCounter(record.getAccessCounter());
+        info.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
         setDelays(mapContainer, info, record.getKey(), extraDelay);
         return info;
     }
@@ -815,7 +815,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         final SimpleEntryView simpleEntryView = new SimpleEntryView(key, value);
         simpleEntryView.setCost(record.getCost());
         simpleEntryView.setVersion(record.getVersion());
-        simpleEntryView.setAccessCounter(record.getAccessCounter());
+        simpleEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
 
         final RecordStatistics statistics = record.getStatistics();
         if (statistics != null) {

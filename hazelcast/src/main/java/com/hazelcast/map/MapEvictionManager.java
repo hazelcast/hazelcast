@@ -342,7 +342,7 @@ public class MapEvictionManager {
         switch (evictionPolicy) {
             case LRU:
             case LFU:
-                value = record.getAccessCounter();
+                value = record.getEvictionCriteriaNumber();
                 break;
             default:
                 throw new IllegalArgumentException("Not an appropriate eviction policy [" + evictionPolicy + ']');

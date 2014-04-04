@@ -60,12 +60,12 @@ public class DefaultRecordStore implements RecordStore {
     private final LockStore lockStore;
     private final RecordFactory recordFactory;
     private final ILogger logger;
+    private final SizeEstimator sizeEstimator;
+    private final AtomicBoolean loaded = new AtomicBoolean(false);
     /**
-     * used for lru when statistics are disabled.
+     * used for lru eviction.
      */
-    private long lruAccessCounter;
-    final SizeEstimator sizeEstimator;
-    final AtomicBoolean loaded = new AtomicBoolean(false);
+    private long lruAccessSequenceNumber;
 
     public DefaultRecordStore(String name, MapService mapService, int partitionId) {
         this.name = name;
@@ -239,7 +239,7 @@ public class DefaultRecordStore implements RecordStore {
         cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        resetAccessCounter();
+        resetAccessSequenceNumber();
     }
 
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
@@ -451,7 +451,7 @@ public class DefaultRecordStore implements RecordStore {
 
         clearRecordsMap(lockedRecords);
         cancelAssociatedSchedulers(keysToDelete);
-        resetAccessCounter();
+        resetAccessSequenceNumber();
     }
 
     public void reset() {
@@ -459,11 +459,11 @@ public class DefaultRecordStore implements RecordStore {
         cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        resetAccessCounter();
+        resetAccessSequenceNumber();
     }
 
-    private void resetAccessCounter() {
-        lruAccessCounter = 0L;
+    private void resetAccessSequenceNumber() {
+        lruAccessSequenceNumber = 0L;
     }
 
     public Object remove(Data dataKey) {
@@ -907,10 +907,11 @@ public class DefaultRecordStore implements RecordStore {
     private void increaseRecordEvictionCounter(Record record, MapConfig.EvictionPolicy evictionPolicy) {
         switch (evictionPolicy) {
             case LRU:
-                record.setAccessCounter(++lruAccessCounter);
+                ++lruAccessSequenceNumber;
+                record.setEvictionCriteriaNumber(lruAccessSequenceNumber);
                 break;
             case LFU:
-                record.setAccessCounter(record.getAccessCounter() + 1L);
+                record.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber() + 1L);
                 break;
             case NONE:
                 break;
