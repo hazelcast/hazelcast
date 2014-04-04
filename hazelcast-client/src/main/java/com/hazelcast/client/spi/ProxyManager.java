@@ -182,6 +182,7 @@ public final class ProxyManager {
             throw new IllegalArgumentException("No factory registered for service: " + service);
         }
         final ClientProxy clientProxy = factory.create(id);
+        clientProxy.setContext(new ClientContext(client, this));
         final ClientProxy current = proxies.putIfAbsent(ns, clientProxy);
         if (current != null){
             return current;
@@ -202,8 +203,6 @@ public final class ProxyManager {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        final ClientContext clientContext = new ClientContext(client, this);
-        clientProxy.setContext(clientContext);
     }
 
     public Collection<? extends DistributedObject> getDistributedObjects(){
