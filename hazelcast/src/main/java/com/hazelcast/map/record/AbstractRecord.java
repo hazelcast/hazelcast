@@ -28,7 +28,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
     /**
     *  this may be used for LRU or LFU eviction depending on configuration.
     * */
-    protected long evictionCriteriaNumber;
+    protected volatile long evictionCriteriaNumber;
 
     public AbstractRecord(Data key, boolean statisticsEnabled) {
         this.key = key;
