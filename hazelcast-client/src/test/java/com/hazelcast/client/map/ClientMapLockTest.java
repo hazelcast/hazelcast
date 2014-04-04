@@ -392,163 +392,206 @@ public class ClientMapLockTest {
         checkingKey.countDown();
     }
 
-
-    /*
-
     @Test
-    public void testLockPlay() throws Exception {
-        final IMap map = createMap();
-        map.put("key1", "value1");
-        assertEquals("value1", map.get("key1"));
-        map.lock("key1");
-        final CountDownLatch latch = new CountDownLatch(1);
+    public void testLockKey_thenTryPutOnKey() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
+        final String value = "value";
+
+        map.put(key, value);
+        map.lock(key);
+
+        final CountDownLatch tryPutReturned = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                map.tryPut("key1", "value2", 1, TimeUnit.SECONDS);
-                latch.countDown();
+                map.tryPut(key, "NEW_VALUE", 1, TimeUnit.SECONDS);
+                tryPutReturned.countDown();
             }
         }.start();
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
-        assertEquals("value1", map.get("key1"));
-        map.forceUnlock("key1");
+
+        assertOpenEventually(tryPutReturned);
+        assertEquals(value, map.get(key));
     }
 
     @Test
-    public void testLockTtl() throws Exception {
-        final IMap map = createMap();
-        map.put("key1", "value1");
-        assertEquals("value1", map.get("key1"));
-        map.lock("key1", 2, TimeUnit.SECONDS);
-        final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                map.tryPut("key1", "value2", 5, TimeUnit.SECONDS);
-                latch.countDown();
-            }
-        }.start();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        assertFalse(map.isLocked("key1"));
-        assertEquals("value2", map.get("key1"));
-        map.forceUnlock("key1");
+    public void testLockTTLExpires_usingIsLocked() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
+        map.lock(key, 3, TimeUnit.SECONDS);
+
+        final boolean isLockedBeforeSleep = map.isLocked(key);
+        sleepSeconds(4);
+        final boolean isLockedAfterSleep = map.isLocked(key);
+
+        assertTrue(isLockedBeforeSleep);
+        assertFalse(isLockedAfterSleep);
     }
 
     @Test
-    public void testLockTtl2() throws Exception {
-        final IMap map = createMap();
-        map.lock("key1", 3, TimeUnit.SECONDS);
-        final CountDownLatch latch = new CountDownLatch(2);
+    public void testLockTTLExpires() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
+        final String oldValue = "value";
+        final String newValue = "NEW_VALUE";
+
+        map.put(key, oldValue);
+        map.lock(key, 4, TimeUnit.SECONDS);
+
+        final CountDownLatch tryPutReturned = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                if (!map.tryLock("key1")) {
-                    latch.countDown();
-                }
-                try {
-                    if (map.tryLock("key1", 5, TimeUnit.SECONDS)) {
-                        latch.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                map.tryPut(key, newValue, 8, TimeUnit.SECONDS);
+                tryPutReturned.countDown();
             }
         }.start();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        map.forceUnlock("key1");
+
+        assertOpenEventually(tryPutReturned);
+        assertEquals(newValue, map.get(key));
     }
 
     @Test
-    public void testTryLock() throws Exception {
-        final IMap map = createMap();
-        final IMap tempMap = map;
+    public void testLockTTLExpires_onAbsentKey() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
+        final String value = "value";
 
-        assertTrue(tempMap.tryLock("key1", 2, TimeUnit.SECONDS));
-        final CountDownLatch latch = new CountDownLatch(1);
+        map.lock(key, 4, TimeUnit.SECONDS);
+
+        final CountDownLatch tryPutReturned = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                try {
-                    if (!tempMap.tryLock("key1", 2, TimeUnit.SECONDS)) {
-                        latch.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                map.tryPut(key, value, 8, TimeUnit.SECONDS);
+                tryPutReturned.countDown();
             }
         }.start();
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
 
-        assertTrue(tempMap.isLocked("key1"));
-
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                try {
-                    if (tempMap.tryLock("key1", 20, TimeUnit.SECONDS)) {
-                        latch2.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
-        Thread.sleep(1000);
-        tempMap.unlock("key1");
-        assertTrue(latch2.await(100, TimeUnit.SECONDS));
-        assertTrue(tempMap.isLocked("key1"));
-        tempMap.forceUnlock("key1");
+        assertOpenEventually(tryPutReturned);
+        assertEquals(value, map.get(key));
     }
 
     @Test
-    public void testForceUnlockPlay() throws Exception {
-        final IMap map = createMap();
-        map.lock("key1");
-        final CountDownLatch latch = new CountDownLatch(1);
+    public void testisLocked_whenLockedFromOtherThread() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
+
+        final CountDownLatch lockedLatch = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                map.forceUnlock("key1");
-                latch.countDown();
+                map.lock(key);
+                lockedLatch.countDown();
             }
         }.start();
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
-        assertFalse(map.isLocked("key1"));
+
+        assertOpenEventually(lockedLatch);
+        assertTrue(map.isLocked(key));
     }
 
+    @Test(expected = IllegalMonitorStateException.class)
+    public void testUnLocked_whenLockedFromOtherThread() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
 
+        final CountDownLatch lockedLatch = new CountDownLatch(1);
+        new Thread() {
+            public void run() {
+                map.lock(key);
+                lockedLatch.countDown();
+            }
+        }.start();
+
+        assertOpenEventually(lockedLatch);
+        map.unlock(key);
+    }
 
     @Test
-    public void testTryPutRemove() throws Exception {
-        final IMap map = createMap();
-        assertTrue(map.tryPut("key1", "value1", 1, TimeUnit.SECONDS));
-        assertTrue(map.tryPut("key2", "value2", 1, TimeUnit.SECONDS));
-        map.lock("key1");
-        map.lock("key2");
+    public void testForceUnLocked_whenLockedFromOtherThread() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
 
-        final CountDownLatch latch = new CountDownLatch(2);
-
+        final CountDownLatch lockedLatch = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                boolean result = map.tryPut("key1", "value3", 1, TimeUnit.SECONDS);
-                if (!result) {
-                    latch.countDown();
-                }
+                map.lock(key);
+                map.lock(key);
+                lockedLatch.countDown();
             }
         }.start();
 
-        new Thread() {
-            public void run() {
-                boolean result = map.tryRemove("key2", 1, TimeUnit.SECONDS);
-                if (!result) {
-                    latch.countDown();
-                }
-            }
-        }.start();
-
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
-        assertEquals("value1", map.get("key1"));
-        assertEquals("value2", map.get("key2"));
-        map.forceUnlock("key1");
-        map.forceUnlock("key2");
-
+        lockedLatch.await(10, TimeUnit.SECONDS);
+        map.forceUnlock(key);
+        assertFalse(map.isLocked(key));
     }
 
-*/
+    @Test
+    public void testTryPut_whenLockedFromOtherThread() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
 
+        final CountDownLatch lockedLatch = new CountDownLatch(1);
+        new Thread() {
+            public void run() {
+                map.lock(key);
+                lockedLatch.countDown();
+            }
+        }.start();
+
+        assertOpenEventually(lockedLatch);
+        assertFalse(map.tryPut(key, "value", 1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testTryRemove_whenLockedFromOtherThread() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
+
+        final CountDownLatch lockedLatch = new CountDownLatch(1);
+        new Thread() {
+            public void run() {
+                map.lock(key);
+                lockedLatch.countDown();
+            }
+        }.start();
+
+        assertOpenEventually(lockedLatch);
+        assertFalse(map.tryRemove(key, 1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testTryLock_whenLockedFromOtherThread() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
+
+        final CountDownLatch lockedLatch = new CountDownLatch(1);
+        new Thread() {
+            public void run() {
+                map.lock(key);
+                lockedLatch.countDown();
+            }
+        }.start();
+
+        assertOpenEventually(lockedLatch);
+        assertFalse(map.tryLock(key));
+    }
+
+    @Test
+    public void testLock_whenUnLockedFromOtherThread() throws Exception {
+        final IMap map = client.getMap(randomString());
+        final String key = "key";
+
+        map.lock(key);
+
+        final CountDownLatch beforeLock = new CountDownLatch(1);
+        final CountDownLatch afterLock = new CountDownLatch(1);
+        new Thread() {
+            public void run() {
+                beforeLock.countDown();
+                map.lock(key);
+                afterLock.countDown();
+            }
+        }.start();
+
+        beforeLock.await();
+        map.unlock(key);
+        assertOpenEventually(afterLock);
+    }
 }
