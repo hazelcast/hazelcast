@@ -54,16 +54,16 @@ src/IntegratedClustering.md
 src/Storage.md
 	src/ElasticMemory.md
 src/Clients.md
-	src/Serialization.md
-		src/DataSerialization.md
-		src/PortableSerialization.md
-		src/CustomSerialization.md
 	src/NativeClients.md
 		src/JavaClient.md
 		src/CPlusClient.md
 		src/CSharpClient.md
 	src/RESTClient.md
 	src/MemcacheClient.md
+src/Serialization.md
+	src/DataSerialization.md
+	src/PortableSerialization.md
+	src/CustomSerialization.md
 src/Management.md
 #	src/StatisticsAPIPerNode.md
 #	src/JMXAPIPerNode.md
