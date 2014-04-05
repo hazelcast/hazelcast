@@ -70,10 +70,10 @@ public final class BasicOperationScheduler {
     private final BasicOperationProcessor processor;
 
     //all operations for specific partitions will be executed on these threads, .e.g map.put(key,value).
-    private final OperationThread[] partitionOperationThreads;
+    final OperationThread[] partitionOperationThreads;
 
     //all operations that are not specific for a partition will be executed here, e.g heartbeat or map.size
-    private final OperationThread[] genericOperationThreads;
+    final OperationThread[] genericOperationThreads;
 
     //The genericOperationRandom is used when a generic operation is scheduled, and a generic OperationThread
     //needs to be selected.
@@ -229,7 +229,7 @@ public final class BasicOperationScheduler {
         return responseThread.workQueue.size();
     }
 
-    public void execute(Operation op){
+    public void execute(Operation op) {
         String executorName = op.getExecutorName();
         if (executorName == null) {
             int partitionId = getPartitionIdForExecution(op);
@@ -256,7 +256,7 @@ public final class BasicOperationScheduler {
         executor.execute(new LocalOperationProcessor(op));
     }
 
-    public void execute(Packet packet){
+    public void execute(Packet packet) {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 //it is an response packet.
@@ -396,7 +396,7 @@ public final class BasicOperationScheduler {
         }
 
         private void doRun() {
-            for (;;) {
+            for (; ; ) {
                 Object task;
                 try {
                     task = workQueue.take();
@@ -425,7 +425,7 @@ public final class BasicOperationScheduler {
         }
 
         private void processPriorityMessages() {
-            for (;;) {
+            for (; ; ) {
                 Object task = priorityQueue.poll();
                 if (task == null) {
                     return;
@@ -440,15 +440,15 @@ public final class BasicOperationScheduler {
         }
     }
 
-    private class ResponseThread extends Thread{
+    private class ResponseThread extends Thread {
         private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
 
-        public ResponseThread(){
+        public ResponseThread() {
             super(node.threadGroup, node.getThreadNamePrefix("response"));
             setContextClassLoader(node.getConfigClassLoader());
         }
 
-        public void run(){
+        public void run() {
             try {
                 doRun();
             } catch (OutOfMemoryError e) {
@@ -459,7 +459,7 @@ public final class BasicOperationScheduler {
         }
 
         private void doRun() {
-            for (;;) {
+            for (; ; ) {
                 Object task;
                 try {
                     task = workQueue.take();

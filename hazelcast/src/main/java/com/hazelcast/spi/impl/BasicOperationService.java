@@ -126,12 +126,12 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getPartitionOperationThreadCount() {
-        return 1;//todo: scheduler.getPartitionOperationThreadCount();
+        return scheduler.partitionOperationThreads.length;
     }
 
     @Override
     public int getGenericOperationThreadCount() {
-        return 1;//todo: scheduler.getGenericOperationThreadCount();
+        return scheduler.genericOperationThreads.length;
     }
 
     @Override
