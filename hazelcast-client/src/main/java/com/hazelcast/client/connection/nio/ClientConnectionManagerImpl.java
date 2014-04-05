@@ -285,14 +285,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (socketOptions.getLingerSeconds() > 0) {
             socket.setSoLinger(true, socketOptions.getLingerSeconds());
         }
-        socket.setSoTimeout(5000);
         int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
         if (bufferSize < 0) {
             bufferSize = BUFFER_SIZE;
         }
         socket.setSendBufferSize(bufferSize);
         socket.setReceiveBufferSize(bufferSize);
-        socketChannel.connect(address.getInetSocketAddress());
+        socketChannel.socket().connect(address.getInetSocketAddress(), 5000);
         SocketChannelWrapper socketChannelWrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
         final ClientConnection clientConnection = new ClientConnection(this, inSelector, outSelector,
                 connectionIdGen.incrementAndGet(), socketChannelWrapper, client.getClientExecutionService());
