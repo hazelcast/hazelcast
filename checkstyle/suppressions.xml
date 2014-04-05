@@ -70,7 +70,10 @@
 
     <!-- current.atomiclong-->
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook.java"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
+    <suppress checks="AnonInnerLength" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
 
     <!-- concurrent.atomicreference -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook"/>

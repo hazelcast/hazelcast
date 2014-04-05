@@ -16,17 +16,20 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AtomicLongReplicationOperation extends AbstractOperation {
+public class AtomicLongReplicationOperation extends AbstractOperation
+        implements IdentifiedDataSerializable {
 
     private Map<String, Long> migrationData;
 
@@ -51,6 +54,16 @@ public class AtomicLongReplicationOperation extends AbstractOperation {
     @Override
     public String getServiceName() {
         return AtomicLongService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AtomicLongDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.REPLICATION;
     }
 
     @Override
