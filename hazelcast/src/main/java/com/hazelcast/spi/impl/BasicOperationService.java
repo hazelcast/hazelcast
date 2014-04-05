@@ -108,7 +108,6 @@ final class BasicOperationService implements InternalOperationService {
     private final AtomicLong callIdGen = new AtomicLong(1);
 
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-
     final ConcurrentMap<Long, BasicInvocation> invocations;
 
     private final ExecutorService responseExecutor;
@@ -122,22 +121,21 @@ final class BasicOperationService implements InternalOperationService {
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
         this.defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.executionService = nodeEngine.getExecutionService();
+
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= 8;
         int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
+        this.executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
+        this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
 
-        this.executionService = nodeEngine.getExecutionService();
-
+        this.scheduler = new BasicOperationScheduler(node, executionService, new BasicOperationProcessorImpl());
         this.responseExecutor = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,
                 responseWorkQueue,
                 new SingleExecutorThreadFactory(node.threadGroup,
                         node.getConfigClassLoader(), node.getThreadNamePrefix("response"))
         );
-
-        this.executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
-        this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
-        this.scheduler = new BasicOperationScheduler(node, executionService, new BasicOperationProcessorImpl());
     }
 
     @Override

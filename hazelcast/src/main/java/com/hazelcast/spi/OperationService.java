@@ -34,20 +34,28 @@ import java.util.Map;
  */
 public interface OperationService {
 
+    //todo: remove
     int getResponseQueueSize();
 
+    //todo: remove
     int getOperationExecutorQueueSize();
 
+    //todo: remove
     int getPriorityOperationExecutorQueueSize();
 
+    //todo: remove
     int getRunningOperationsCount();
 
+    //todo: remove
     int getRemoteOperationsCount();
 
+    //todo: remove
     int getPartitionOperationThreadCount();
 
+    //todo: remove
     int getGenericOperationThreadCount();
 
+    //todo: remove
     long getExecutedOperationCount();
 
     /**
