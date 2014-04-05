@@ -116,6 +116,9 @@ public final class BasicOperationScheduler {
 
         this.responseThread = new ResponseThread();
         responseThread.start();
+
+        logger.info("Starting with " + genericOperationThreads.length + "generic operation threads and "
+                + partitionOperationThreads.length + " partition operation threads.");
     }
 
     private static void initOperationThreads(OperationThread[] operationThreads, ThreadFactory threadFactory) {

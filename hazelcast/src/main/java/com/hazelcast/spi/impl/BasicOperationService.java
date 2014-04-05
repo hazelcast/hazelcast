@@ -120,7 +120,6 @@ final class BasicOperationService implements InternalOperationService {
         int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
         this.executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
-
         this.scheduler = new BasicOperationScheduler(node, executionService, new BasicOperationProcessorImpl());
     }
 
@@ -165,7 +164,7 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public InvocationBuilder createInvocationBuilder(String serviceName, Operation op,  int partitionId) {
+    public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         if (partitionId < 0) {
             throw new IllegalArgumentException("Partition id cannot be negative!");
         }
@@ -185,6 +184,7 @@ final class BasicOperationService implements InternalOperationService {
     public void receive(final Packet packet) {
         scheduler.execute(packet);
     }
+
     /**
      * Runs operation in calling thread.
      *
@@ -201,7 +201,7 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-      /**
+    /**
      * Executes operation in operation executor pool.
      *
      * @param op
@@ -227,9 +227,9 @@ final class BasicOperationService implements InternalOperationService {
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
-   // =============================== processing response  ===============================
+    // =============================== processing response  ===============================
 
-    private void processResponsePacket(Packet packet){
+    private void processResponsePacket(Packet packet) {
         try {
             final Data data = packet.getData();
             final Response response = (Response) nodeEngine.toObject(data);
@@ -563,10 +563,9 @@ final class BasicOperationService implements InternalOperationService {
         Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(
                 nodeEngine.getPartitionService().getPartitionCount());
 
-        int x= 0;
+        int x = 0;
         for (Map.Entry<Address, Future> response : responses.entrySet()) {
             try {
-                System.out.println("x:"+x);
                 Future future = response.getValue();
                 PartitionResponse result = (PartitionResponse) nodeEngine.toObject(future.get());
                 partitionResults.putAll(result.asMap());
@@ -636,6 +635,9 @@ final class BasicOperationService implements InternalOperationService {
 
     private boolean send(final Operation op, final Connection connection) {
         Data data = nodeEngine.toData(op);
+
+        //enable this line to get some logging of sizes of operations.
+        //System.out.println(op.getClass()+" "+data.bufferSize());
         final int partitionId = scheduler.getPartitionIdForExecution(op);
         Packet packet = new Packet(data, partitionId, nodeEngine.getSerializationContext());
         packet.setHeader(Packet.HEADER_OP);
@@ -722,10 +724,10 @@ final class BasicOperationService implements InternalOperationService {
             } else if (o instanceof Operation) {
                 processOperation((Operation) o);
             } else if (o instanceof Packet) {
-                Packet packet = (Packet)o;
-                if(packet.isHeaderSet(Packet.HEADER_RESPONSE)){
+                Packet packet = (Packet) o;
+                if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                     processResponsePacket(packet);
-                }else {
+                } else {
                     processOperationPacket(packet);
                 }
             } else if (o instanceof Runnable) {
