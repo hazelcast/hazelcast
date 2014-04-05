@@ -44,7 +44,9 @@ public interface OperationService {
 
     int getRemoteOperationsCount();
 
-    int getOperationThreadCount();
+    int getPartitionOperationThreadCount();
+
+    int getGenericOperationThreadCount();
 
     long getExecutedOperationCount();
 

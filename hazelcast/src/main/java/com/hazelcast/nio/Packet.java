@@ -179,6 +179,9 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public String toString() {
         final StringBuilder sb = new StringBuilder("Packet{");
         sb.append("header=").append(header);
+        sb.append(", isResponse=").append(isHeaderSet(Packet.HEADER_RESPONSE));
+        sb.append(", isOperation=").append(isHeaderSet(Packet.HEADER_OP));
+        sb.append(", isEvent=").append(isHeaderSet(Packet.HEADER_EVENT));
         sb.append(", partitionId=").append(partitionId);
         sb.append(", conn=").append(conn);
         sb.append('}');

@@ -53,7 +53,6 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.util.ArrayList;
@@ -114,43 +113,41 @@ final class BasicOperationService implements InternalOperationService {
 
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
-    private final int operationThreadCount;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
     private final ExecutionService executionService;
-    private final BasicOperationScheduler executor;
+    private final BasicOperationScheduler scheduler;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
-        defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= 8;
         int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
-        int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
-        operationThreadCount = opThreadCount > 0 ? opThreadCount : coreSize * 2;
 
-        executionService = nodeEngine.getExecutionService();
-        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize * 5, coreSize * 100000,
-                ExecutorType.CONCRETE);
+        this.executionService = nodeEngine.getExecutionService();
 
-        responseExecutor = new ThreadPoolExecutor(1, 1,
+        this.responseExecutor = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,
                 responseWorkQueue,
                 new SingleExecutorThreadFactory(node.threadGroup,
                         node.getConfigClassLoader(), node.getThreadNamePrefix("response"))
         );
 
-        executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
-        invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
-
-        this.executor = new BasicOperationScheduler(
-                node, executionService, operationThreadCount, new BasicOperationProcessorImpl());
+        this.executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
+        this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
+        this.scheduler = new BasicOperationScheduler(node, executionService, new BasicOperationProcessorImpl());
     }
 
     @Override
-    public int getOperationThreadCount() {
-        return operationThreadCount;
+    public int getPartitionOperationThreadCount() {
+        return 1;//todo: scheduler.getPartitionOperationThreadCount();
+    }
+
+    @Override
+    public int getGenericOperationThreadCount() {
+        return 1;//todo: scheduler.getGenericOperationThreadCount();
     }
 
     @Override
@@ -175,23 +172,27 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getOperationExecutorQueueSize() {
-        return executor.getOperationExecutorQueueSize();
+        return scheduler.getOperationExecutorQueueSize();
     }
 
     @Override
     public int getPriorityOperationExecutorQueueSize() {
-        return executor.getPriorityOperationExecutorQueueSize();
+        return scheduler.getPriorityOperationExecutorQueueSize();
     }
 
     @Override
-    public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
-        if (partitionId < 0) throw new IllegalArgumentException("Partition id cannot be negative!");
+    public InvocationBuilder createInvocationBuilder(String serviceName, Operation op,  int partitionId) {
+        if (partitionId < 0) {
+            throw new IllegalArgumentException("Partition id cannot be negative!");
+        }
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, partitionId);
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        if (target == null) throw new IllegalArgumentException("Target cannot be null!");
+        if (target == null) {
+            throw new IllegalArgumentException("Target cannot be null!");
+        }
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, target);
     }
 
@@ -204,7 +205,7 @@ final class BasicOperationService implements InternalOperationService {
             } else {
                 int partitionId = packet.getPartitionId();
                 boolean systemOperation = packet.isUrgent();
-                executor.execute(packet, partitionId, systemOperation);
+                scheduler.execute(packet, partitionId, systemOperation);
             }
         } catch (RejectedExecutionException e) {
             if (nodeEngine.isActive()) {
@@ -235,12 +236,12 @@ final class BasicOperationService implements InternalOperationService {
 
     //todo: move to BasicOperationScheduler
     boolean isAllowedToRunInCurrentThread(Operation op) {
-        return executor.isAllowedToRunInCurrentThread(getPartitionIdForExecution(op));
+        return scheduler.isAllowedToRunInCurrentThread(getPartitionIdForExecution(op));
     }
 
     //todo: move to BasicOperationScheduler
     boolean isInvocationAllowedFromCurrentThread(Operation op) {
-        return executor.isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
+        return scheduler.isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
     }
 
     /**
@@ -254,7 +255,7 @@ final class BasicOperationService implements InternalOperationService {
         if (executorName == null) {
             int partitionId = getPartitionIdForExecution(op);
             boolean urgent = op.isUrgent();
-            executor.execute(op, partitionId, urgent);
+            scheduler.execute(op, partitionId, urgent);
         } else {
             ExecutorService executor = executionService.getExecutor(executorName);
             if (executor == null) {
@@ -567,10 +568,11 @@ final class BasicOperationService implements InternalOperationService {
     private Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                     Map<Address, List<Integer>> memberPartitions) throws Exception {
         final Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof BasicOperationScheduler.PartitionThread) {
+        if (currentThread instanceof BasicOperationScheduler.OperationThread) {
             throw new IllegalThreadStateException(currentThread + " cannot make invocation on multiple partitions!");
         }
         final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
+
         for (Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
             final Address address = mp.getKey();
             final List<Integer> partitions = mp.getValue();
@@ -580,9 +582,13 @@ final class BasicOperationService implements InternalOperationService {
         }
         Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(
                 nodeEngine.getPartitionService().getPartitionCount());
+
+        int x= 0;
         for (Map.Entry<Address, Future> response : responses.entrySet()) {
             try {
-                PartitionResponse result = (PartitionResponse) nodeEngine.toObject(response.getValue().get());
+                System.out.println("x:"+x);
+                Future future = response.getValue();
+                PartitionResponse result = (PartitionResponse) nodeEngine.toObject(future.get());
                 partitionResults.putAll(result.asMap());
             } catch (Throwable t) {
                 if (logger.isFinestEnabled()) {
@@ -595,6 +601,7 @@ final class BasicOperationService implements InternalOperationService {
                     partitionResults.put(partition, t);
                 }
             }
+            x++;
         }
         final List<Integer> failedPartitions = new LinkedList<Integer>();
         for (Map.Entry<Integer, Object> partitionResult : partitionResults.entrySet()) {
@@ -724,7 +731,7 @@ final class BasicOperationService implements InternalOperationService {
             invocation.notify(response);
         }
         invocations.clear();
-        executor.shutdown();
+        scheduler.shutdown();
     }
 
     public class BasicOperationProcessorImpl implements BasicOperationProcessor {
