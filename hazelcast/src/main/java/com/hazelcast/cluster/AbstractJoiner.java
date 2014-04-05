@@ -239,7 +239,7 @@ public abstract class AbstractJoiner implements Joiner {
         final PrepareMergeOperation prepareMergeOperation = new PrepareMergeOperation(targetAddress);
         prepareMergeOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
                 .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-        operationService.runOperation(prepareMergeOperation);
+        operationService.runOperationOnCallingThread(prepareMergeOperation);
 
 
         for (MemberImpl member : memberList) {
@@ -253,7 +253,7 @@ public abstract class AbstractJoiner implements Joiner {
         final MergeClustersOperation mergeClustersOperation = new MergeClustersOperation(targetAddress);
         mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
                 .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-        operationService.runOperation(mergeClustersOperation);
+        operationService.runOperationOnCallingThread(mergeClustersOperation);
     }
 
     @Override

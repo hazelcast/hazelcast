@@ -189,7 +189,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
             BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-            if (!operationService.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
+            if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
@@ -270,8 +270,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             op.setResponseHandler(this);
 
             //todo: should move to the operationService.
-            if (operationService.isAllowedToRunInCurrentThread(op)) {
-                operationService.runOperation(op);
+            if (operationService.scheduler.isAllowedToRunInCurrentThread(op)) {
+                operationService.runOperationOnCallingThread(op);
             } else {
                 operationService.executeOperation(op);
             }

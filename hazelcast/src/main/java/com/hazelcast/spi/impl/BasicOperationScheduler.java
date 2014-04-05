@@ -16,15 +16,22 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +66,7 @@ public final class BasicOperationScheduler {
     private final ILogger logger;
 
     private final Node node;
+    private final ExecutionService executionService;
     private final BasicOperationProcessor processor;
 
     //all operations for specific partitions will be executed on these threads, .e.g map.put(key,value).
@@ -73,6 +81,10 @@ public final class BasicOperationScheduler {
     //We could have a look at the ThreadLocalRandom, but it requires java 7. So some kind of reflection
     //could to the trick to use something less painful.
     private final Random genericOperationRandom = new Random();
+
+    private final ResponseThread responseThread;
+
+    private volatile boolean shutdown;
 
     //The trigger is used when a priority message is send and offered to the operation-thread priority queue.
     //To wakeup the thread, a priorityTaskTrigger is send to the regular blocking queue to wake up the operation
@@ -91,6 +103,7 @@ public final class BasicOperationScheduler {
     public BasicOperationScheduler(Node node,
                                    ExecutionService executionService,
                                    BasicOperationProcessor processor) {
+        this.executionService = executionService;
         this.logger = node.getLogger(BasicOperationScheduler.class);
         this.node = node;
         this.processor = processor;
@@ -100,6 +113,9 @@ public final class BasicOperationScheduler {
 
         this.partitionOperationThreads = new OperationThread[getPartitionOperationThreadCount()];
         initOperationThreads(partitionOperationThreads, new PartitionOperationThreadFactory());
+
+        this.responseThread = new ResponseThread();
+        responseThread.start();
     }
 
     private static void initOperationThreads(OperationThread[] operationThreads, ThreadFactory threadFactory) {
@@ -126,6 +142,18 @@ public final class BasicOperationScheduler {
             threadCount = coreSize * 2;
         }
         return threadCount;
+    }
+
+    int getPartitionIdForExecution(Operation op) {
+        return op instanceof PartitionAwareOperation ? op.getPartitionId() : -1;
+    }
+
+    boolean isAllowedToRunInCurrentThread(Operation op) {
+        return isAllowedToRunInCurrentThread(getPartitionIdForExecution(op));
+    }
+
+    boolean isInvocationAllowedFromCurrentThread(Operation op) {
+        return isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
     }
 
     boolean isAllowedToRunInCurrentThread(int partitionId) {
@@ -197,7 +225,56 @@ public final class BasicOperationScheduler {
         return size;
     }
 
-    public void execute(final Object task, int partitionId, boolean priority) {
+    public int getResponseQueueSize() {
+        return responseThread.workQueue.size();
+    }
+
+    public void execute(Operation op){
+        String executorName = op.getExecutorName();
+        if (executorName == null) {
+            int partitionId = getPartitionIdForExecution(op);
+            boolean hasPriority = op.isUrgent();
+            execute(op, partitionId, hasPriority);
+        } else {
+            executeOnExternalExecutor(op, executorName);
+        }
+    }
+
+    private void executeOnExternalExecutor(Operation op, String executorName) {
+        ExecutorService executor = executionService.getExecutor(executorName);
+        if (executor == null) {
+            throw new IllegalStateException("Could not found executor with name: " + executorName);
+        }
+        if (op instanceof PartitionAware) {
+            throw new IllegalStateException("PartitionAwareOperation " + op + " can't be executed on a " +
+                    "custom executor with name: " + executorName);
+        }
+        if (op instanceof UrgentSystemOperation) {
+            throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom " +
+                    "executor with name: " + executorName);
+        }
+        executor.execute(new LocalOperationProcessor(op));
+    }
+
+    public void execute(Packet packet){
+        try {
+            if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+                //it is an response packet.
+                responseThread.workQueue.add(packet);
+            } else {
+                //it is an must be an operation packet
+                int partitionId = packet.getPartitionId();
+                boolean hasPriority = packet.isUrgent();
+                execute(packet, partitionId, hasPriority);
+            }
+        } catch (RejectedExecutionException e) {
+            if (node.nodeEngine.isActive()) {
+                throw e;
+            }
+        }
+    }
+
+    private void execute(Object task, int partitionId, boolean priority) {
         if (task == null) {
             throw new NullPointerException();
         }
@@ -239,15 +316,16 @@ public final class BasicOperationScheduler {
     }
 
     public void shutdown() {
-        shutdown(partitionOperationThreads);
-        shutdown(genericOperationThreads);
+        shutdown = true;
+        interruptAll(partitionOperationThreads);
+        interruptAll(genericOperationThreads);
         awaitTermination(partitionOperationThreads);
         awaitTermination(genericOperationThreads);
     }
 
-    private static void shutdown(OperationThread[] operationThreads) {
+    private static void interruptAll(OperationThread[] operationThreads) {
         for (OperationThread thread : operationThreads) {
-            thread.shutdown();
+            thread.interrupt();
         }
     }
 
@@ -275,7 +353,6 @@ public final class BasicOperationScheduler {
         public OperationThread newThread(Runnable ignore) {
             String threadName = node.getThreadPoolNamePrefix("generic-operation") + threadId;
             OperationThread thread = new OperationThread(threadName, false, threadId);
-            thread.setContextClassLoader(node.getConfigClassLoader());
             threadId++;
             return thread;
         }
@@ -288,23 +365,22 @@ public final class BasicOperationScheduler {
         public Thread newThread(Runnable ignore) {
             String threadName = node.getThreadPoolNamePrefix("partition-operation") + threadId;
             OperationThread thread = new OperationThread(threadName, true, threadId);
-            thread.setContextClassLoader(node.getConfigClassLoader());
             threadId++;
             return thread;
         }
     }
 
-    public final class OperationThread extends Thread {
+    final class OperationThread extends Thread {
 
-        final int threadId;
-        final boolean isPartitionSpecific;
+        private final int threadId;
+        private final boolean isPartitionSpecific;
         private final BlockingQueue workQueue = new LinkedBlockingQueue();
         private final Queue priorityQueue = new ConcurrentLinkedQueue();
-        private volatile boolean shutdown;
 
         public OperationThread(String name, boolean isPartitionSpecific, int threadId) {
             super(node.threadGroup, name);
             this.isPartitionSpecific = isPartitionSpecific;
+            setContextClassLoader(node.getConfigClassLoader());
             this.threadId = threadId;
         }
 
@@ -359,20 +435,71 @@ public final class BasicOperationScheduler {
             }
         }
 
-        private void shutdown() {
-            shutdown = true;
-            workQueue.add(new PoisonPill());
-        }
-
         public void awaitTermination(int timeout, TimeUnit unit) throws InterruptedException {
             join(unit.toMillis(timeout));
         }
     }
 
-    private static class PoisonPill {
+    private class ResponseThread extends Thread{
+        private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
+
+        public ResponseThread(){
+            super(node.threadGroup, node.getThreadNamePrefix("response"));
+            setContextClassLoader(node.getConfigClassLoader());
+        }
+
+        public void run(){
+            try {
+                doRun();
+            } catch (OutOfMemoryError e) {
+                onOutOfMemory(e);
+            } catch (Throwable t) {
+                logger.severe(t);
+            }
+        }
+
+        private void doRun() {
+            for (;;) {
+                Object task;
+                try {
+                    task = workQueue.take();
+                } catch (InterruptedException e) {
+                    if (shutdown) {
+                        return;
+                    }
+                    continue;
+                }
+
+                if (shutdown) {
+                    return;
+                }
+
+                process(task);
+            }
+        }
+
+        private void process(Object task) {
+            try {
+                processor.process(task);
+            } catch (Exception e) {
+                logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
+            }
+        }
+    }
+
+    /**
+     * Process the operation that has been send locally to this OperationService.
+     */
+    private class LocalOperationProcessor implements Runnable {
+        private final Operation op;
+
+        private LocalOperationProcessor(Operation op) {
+            this.op = op;
+        }
+
         @Override
-        public String toString() {
-            return "PoisonPill";
+        public void run() {
+            processor.process(op);
         }
     }
 }
