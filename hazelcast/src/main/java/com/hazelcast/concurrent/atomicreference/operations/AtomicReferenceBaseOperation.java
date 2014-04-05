@@ -16,16 +16,19 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-public abstract class AtomicReferenceBaseOperation extends Operation implements PartitionAwareOperation {
+public abstract class AtomicReferenceBaseOperation extends Operation
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
@@ -40,6 +43,11 @@ public abstract class AtomicReferenceBaseOperation extends Operation implements 
     public ReferenceWrapper getReference() {
         AtomicReferenceService service = getService();
         return service.getReference(name);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AtomicReferenceDataSerializerHook.F_ID;
     }
 
     @Override
