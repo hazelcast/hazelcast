@@ -138,7 +138,23 @@
     <suppress checks="JavadocType" files="com.hazelcast.instance[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.instance[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.instance[\\/]"/>
-    <suppress checks="" files="com.hazelcast.instance.GroupProperties"/>
+    <suppress checks="MethodCount" files="com.hazelcast.instance.HazelcastInstanceProxy"/>
+    <suppress checks="MethodCount" files="com.hazelcast.instance.MemberImpl"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.instance.OutOfMemoryErrorDispatcher"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.instance.NodeShutdownLatch"/>
+    <suppress checks="MethodCount" files="com.hazelcast.instance.HazelcastInstanceImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.instance.HazelcastInstanceImpl"/>
+    <suppress checks="VisibilityModifier" files="com.hazelcast.instance.HazelcastInstanceImpl"/>
+    <suppress checks="VisibilityModifier" files="com.hazelcast.instance.GroupProperties"/>
+    <suppress checks="MemberName" files="com.hazelcast.instance.GroupProperties"/>
+    <suppress checks="ConstantName" files="com.hazelcast.instance.GroupProperties"/>
+    <suppress checks="VariableName" files="com.hazelcast.instance.GroupProperties"/>
+    <suppress checks="MethodLength" files="com.hazelcast.instance.GroupProperties"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.instance.GroupProperties"/>
+    <!-- todo-->
+    <suppress checks="" files="com.hazelcast.instance.DefaultAddressPicker"/>
+    <suppress checks="" files="com.hazelcast.instance.HazelcastInstanceFactory"/>
+    <suppress checks="" files="com.hazelcast.instance.Node"/>
 
     <!-- SPI -->
     <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
@@ -190,14 +206,14 @@
     <suppress checks="MagicNumber" files="com.hazelcast.partition[\\/]"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.partition.MigrationInfo"/>
 
-    <!-- topic -->
+    <!-- Topic -->
     <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="VisibilityModifier" files="com.hazelcast.topic.TopicEvent"/>
 
-    <!-- executor -->
+    <!-- Executor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.executor[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>
