@@ -22,11 +22,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
-import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.client.spi.ClientInvocationService;
-import com.hazelcast.client.spi.ClientPartitionService;
-import com.hazelcast.client.spi.ProxyManager;
+import com.hazelcast.client.spi.*;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
@@ -44,28 +40,7 @@ import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientService;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.IdGenerator;
-import com.hazelcast.core.LifecycleService;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.PartitionService;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.core.*;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -105,12 +80,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class HazelcastClient implements HazelcastInstance {
 
+    private static final AtomicInteger CLIENT_ID = new AtomicInteger();
+    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS
+            = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+
     static {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
     }
 
-    private final static AtomicInteger CLIENT_ID = new AtomicInteger();
-    private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
     private final ClientConfig config;
@@ -138,7 +115,8 @@ public final class HazelcastClient implements HazelcastInstance {
             String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
             final PartitioningStrategy partitioningStrategy;
             if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
-                partitioningStrategy = ClassLoaderUtil.newInstance(config.getClassLoader(), partitioningStrategyClassName);
+                partitioningStrategy = ClassLoaderUtil.newInstance(
+                        config.getClassLoader(), partitioningStrategyClassName);
             } else {
                 partitioningStrategy = new DefaultPartitioningStrategy();
             }

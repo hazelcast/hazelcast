@@ -34,7 +34,7 @@ public abstract class ClientRequest implements Portable, SecureRequest {
      * {@link com.hazelcast.cluster.client.ClientPingRequest}
      * if true then request will not be retried
      */
-    private transient boolean singleConnection = false;
+    private transient boolean singleConnection;
 
     /**
      * mark this request as SingleConnection

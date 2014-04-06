@@ -42,13 +42,23 @@
     <suppress checks="" files="[\\/]util[\\/]"/>
     <suppress checks="" files="[\\/]wan[\\/]"/>
 
-    <suppress checks="" files="com.hazelcast.client[\\/]"/>
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
     <suppress checks="" files="com.hazelcast.jca[\\/]"/>
     <suppress checks="" files="com.hazelcast.spring[\\/]"/>
     <suppress checks="" files="com.hazelcast.web[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
     <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
+    <suppress checks="" files="com.hazelcast.client.config"/>
+    <suppress checks="" files="com.hazelcast.client.connection"/>
+    <suppress checks="" files="com.hazelcast.client.examples"/>
+    <suppress checks="" files="com.hazelcast.client.nearcache"/>
+    <suppress checks="" files="com.hazelcast.client.proxy"/>
+    <suppress checks="" files="com.hazelcast.client.spi"/>
+    <suppress checks="" files="com.hazelcast.client.txn"/>
+    <suppress checks="" files="com.hazelcast.client.util"/>
+    <suppress checks="" files="com.hazelcast.client.HazelcastClient"/>
+    <suppress checks="" files="com.hazelcast.client.HazelcastClientProxy"/>
+    <suppress checks="" files="com.hazelcast.client.ClientOutOfMemoryHandler"/>
 
     <!--Code Smells -->
 
