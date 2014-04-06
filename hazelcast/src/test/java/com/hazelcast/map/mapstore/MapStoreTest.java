@@ -1269,6 +1269,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testIssue1085WriteBehindBackup() throws InterruptedException {
         Config config = new Config();
         String name = "testIssue1085WriteBehindBackup";
@@ -1454,6 +1455,7 @@ public class MapStoreTest extends HazelcastTestSupport {
      * {@link com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler}
      */
     @Test
+    @Category(NightlyTest.class)
     public void testWriteBehindWriteRemoveOrderOfSameKey() throws Exception {
         final String mapName = randomMapName("_testWriteBehindWriteRemoveOrderOfSameKey_");
         final int iterationCount = 5;
