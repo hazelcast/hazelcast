@@ -2,6 +2,7 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -37,9 +38,12 @@ public class MapUpdateStressTest extends StressTestSupport {
         super.setUp();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+
         client = HazelcastClient.newHazelcastClient(clientConfig);
         map = client.getMap("map");
+
+        fillMap();
 
         stressThreads = new StressThread[CLIENT_THREAD_COUNT];
         for (int k = 0; k < stressThreads.length; k++) {
@@ -59,23 +63,15 @@ public class MapUpdateStressTest extends StressTestSupport {
 
     //@Test
     public void testChangingCluster() {
-        test(true);
+        runTest(true, stressThreads);
     }
 
     @Test
     public void testFixedCluster() {
-        test(false);
+        runTest(false, stressThreads);
     }
 
-    public void test(boolean clusterChangeEnabled) {
-        setClusterChangeEnabled(clusterChangeEnabled);
-        fillMap();
-        startAndWaitForTestCompletion();
-        joinAll(stressThreads);
-        assertNoUpdateFailures();
-    }
-
-    private void assertNoUpdateFailures() {
+    public void assertResult() {
         int[] increments = new int[MAP_SIZE];
         for (StressThread t : stressThreads) {
             t.addIncrements(increments);
@@ -130,9 +126,11 @@ public class MapUpdateStressTest extends StressTestSupport {
                 int key = random.nextInt(MAP_SIZE);
                 int increment = random.nextInt(10);
                 increments[key] += increment;
+
                 for (; ; ) {
                     int oldValue = map.get(key);
                     if (map.replace(key, oldValue, oldValue + increment)) {
+
                         break;
                     }
                 }

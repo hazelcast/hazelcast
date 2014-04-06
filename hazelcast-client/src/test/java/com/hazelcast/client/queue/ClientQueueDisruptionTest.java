@@ -8,7 +8,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
+import com.hazelcast.test.modularhelpers.ClusterSupport;
 import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,13 +25,13 @@ public class ClientQueueDisruptionTest {
     HazelcastInstance client1;
     HazelcastInstance client2;
 
-    SimpleClusterUtil cluster;
+    ClusterSupport cluster;
 
     @Before
     public void init(){
         Hazelcast.shutdownAll();
 
-        cluster = new SimpleClusterUtil("A", 3);
+        cluster = new ClusterSupport(3);
         cluster.initCluster();
 
         ClientConfig clientConfig = new ClientConfig();

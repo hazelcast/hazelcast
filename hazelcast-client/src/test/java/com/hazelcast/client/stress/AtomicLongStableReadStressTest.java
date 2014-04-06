@@ -2,6 +2,7 @@ package com.hazelcast.client.stress;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.stress.helpers.StressTestSupport;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -31,12 +32,15 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
         super.setUp();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+
         client = HazelcastClient.newHazelcastClient(clientConfig);
         references = new IAtomicLong[REFERENCE_COUNT];
         for (int k = 0; k < references.length; k++) {
             references[k] = client.getAtomicLong("atomicreference:" + k);
         }
+
+        initializeReferences();
 
         stressThreads = new StressThread[CLIENT_THREAD_COUNT];
         for (int k = 0; k < stressThreads.length; k++) {
@@ -54,21 +58,14 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
         }
     }
 
-    @Test
+    //@Test
     public void testChangingCluster() {
-        test(true);
+        runTest(true, stressThreads);
     }
 
     @Test
     public void testFixedCluster() {
-        test(false);
-    }
-
-    public void test(boolean clusterChangeEnabled) {
-        setClusterChangeEnabled(clusterChangeEnabled);
-        initializeReferences();
-        startAndWaitForTestCompletion();
-        joinAll(stressThreads);
+        runTest(false, stressThreads);
     }
 
     private void initializeReferences() {
