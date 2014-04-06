@@ -32,7 +32,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

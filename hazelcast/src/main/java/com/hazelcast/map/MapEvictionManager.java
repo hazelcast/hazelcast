@@ -122,8 +122,8 @@ public class MapEvictionManager {
         }
         /**
          * used when deciding evictable or not.
-         * */
-        private int getApproximateMaxSize(int maxSizeFromConfig){
+         */
+        private int getApproximateMaxSize(int maxSizeFromConfig) {
             // because not to exceed the max size much we start eviction early.
             // so decrease the max size with ratio .95 below
             return maxSizeFromConfig * 95 / 100;
@@ -221,20 +221,13 @@ public class MapEvictionManager {
                     if (values.isEmpty()) {
                         continue;
                     }
-                    int evictSize = getEvictableSize(recordStore.size(), mapConfig);
-                    final List<Record> evictableRecords = getEvictableRecords(recordStore, evictSize, mapConfig.getEvictionPolicy());
+                    final List<Record> evictableRecords = getEvictableRecords(recordStore, mapConfig);
                     if (evictableRecords.isEmpty()) {
                         continue;
                     }
-                    final Set<Record> recordSet = new HashSet<Record>(evictSize);
-                    final Set<Data> keySet = new HashSet<Data>(evictSize);
+                    final Set<Data> keySet = new HashSet<Data>(evictableRecords.size());
                     for (final Record record : evictableRecords) {
-                        if (evictSize == 0) {
-                            break;
-                        }
-                        recordSet.add(record);
                         keySet.add(record.getKey());
-                        evictSize--;
                     }
                     if (keySet.isEmpty()) {
                         continue;
@@ -250,7 +243,7 @@ public class MapEvictionManager {
                     evictKeysOperation.setPartitionId(i);
                     OperationAccessor.setCallerAddress(evictKeysOperation, nodeEngine.getThisAddress());
                     nodeEngine.getOperationService().executeOperation(evictKeysOperation);
-                    for (final Record record : recordSet) {
+                    for (final Record record : evictableRecords) {
                         mapService.publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED,
                                 record.getKey(), mapService.toData(record.getValue()), null);
                     }
@@ -262,55 +255,32 @@ public class MapEvictionManager {
             }
         }
 
-        private int getEvictableSize(int currentPartitionSize, MapConfig mapConfig) {
-            int evictableSize;
-            final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
-            final int evictionPercentage = mapConfig.getEvictionPercentage();
-            switch (maxSizePolicy) {
-                case PER_PARTITION:
-                    int maxSize = mapConfig.getMaxSizeConfig().getSize();
-                    int targetSizePerPartition = Double.valueOf(maxSize * ((100 - evictionPercentage) / 100.0)).intValue();
-                    int diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
-                    int prunedSize = currentPartitionSize * evictionPercentage / 100 + 1;
-                    evictableSize = Math.max(diffFromTargetSize, prunedSize);
-                    break;
-                case PER_NODE:
-                    maxSize = mapConfig.getMaxSizeConfig().getSize();
-                    int memberCount = mapService.getNodeEngine().getClusterService().getMembers().size();
-                    int maxPartitionSize = (maxSize * memberCount / mapService.getNodeEngine().getPartitionService().getPartitionCount());
-                    targetSizePerPartition = Double.valueOf(maxPartitionSize * ((100 - evictionPercentage) / 100.0)).intValue();
-                    diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
-                    prunedSize = currentPartitionSize * evictionPercentage / 100 + 1;
-                    evictableSize = Math.max(diffFromTargetSize, prunedSize);
-                    break;
-                case USED_HEAP_PERCENTAGE:
-                case USED_HEAP_SIZE:
-                    evictableSize = currentPartitionSize * evictionPercentage / 100;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Max size policy is not defined [" + maxSizePolicy + "]");
-            }
-            return evictableSize;
-        }
     }
 
-    private List<Record> getEvictableRecords(final RecordStore recordStore, final int evictableSize, final MapConfig.EvictionPolicy evictionPolicy) {
-        if (evictableSize <= 0 || recordStore.size() == 0L) {
+    private List<Record> getEvictableRecords(final RecordStore recordStore, final MapConfig mapConfig) {
+        final int partitionSize = recordStore.size();
+        if (partitionSize < 1) {
             return Collections.emptyList();
         }
+        final int evictableSize = getEvictableSize(partitionSize, mapConfig);
+        if (evictableSize < 1) {
+            return Collections.emptyList();
+        }
+        final MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         final Map<Data, Record> entries = recordStore.getReadonlyRecordMap();
         final int size = entries.size();
         // size have a tendency to change to here so check again.
-        if(size == 0) {
+        if (entries.isEmpty()) {
             return Collections.emptyList();
         }
-        // criteria is a long value, like last access times or hits, used for calculating LFU or LRU.
+        // criteria is a long value, like last access times or hits,
+        // used for calculating LFU or LRU.
         final long[] criterias = new long[size];
         int index = 0;
         for (final Record record : entries.values()) {
             criterias[index] = getEvictionCriteriaValue(record, evictionPolicy);
             index++;
-            //in case size may change when iterating.
+            //in case size may change (increase or decrease) when iterating.
             if (index == size) {
                 break;
             }
@@ -318,10 +288,18 @@ public class MapEvictionManager {
         if (criterias.length == 0) {
             return Collections.emptyList();
         }
+        // just in case there may be unassigned indexes in criterias array due to size variances
+        // assign them to Long.MAX_VALUE so when sorting asc they will locate
+        // in the upper array indexes and we wont care about them.
+        if (index < criterias.length) {
+            for (int i = index; i < criterias.length; i++) {
+                criterias[i] = Long.MAX_VALUE;
+            }
+        }
         Arrays.sort(criterias);
         final List<Record> evictableRecords = new ArrayList<Record>(evictableSize);
         // check in case record store size may be smaller than evictable size.
-        final int evictableBaseIndex = Math.min(evictableSize, criterias.length - 1);
+        final int evictableBaseIndex = Math.min(evictableSize, index - 1);
         final long criteriaValue = criterias[evictableBaseIndex];
         for (final Map.Entry<Data, Record> entry : entries.entrySet()) {
             final Record record = entry.getValue();
@@ -333,7 +311,41 @@ public class MapEvictionManager {
                 break;
             }
         }
+        if (evictableRecords.isEmpty()) {
+            return Collections.emptyList();
+        }
         return evictableRecords;
+    }
+
+    private int getEvictableSize(int currentPartitionSize, MapConfig mapConfig) {
+        int evictableSize;
+        final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
+        final int evictionPercentage = mapConfig.getEvictionPercentage();
+        switch (maxSizePolicy) {
+            case PER_PARTITION:
+                int maxSize = mapConfig.getMaxSizeConfig().getSize();
+                int targetSizePerPartition = Double.valueOf(maxSize * ((100 - evictionPercentage) / 100.0)).intValue();
+                int diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
+                int prunedSize = currentPartitionSize * evictionPercentage / 100 + 1;
+                evictableSize = Math.max(diffFromTargetSize, prunedSize);
+                break;
+            case PER_NODE:
+                maxSize = mapConfig.getMaxSizeConfig().getSize();
+                int memberCount = mapService.getNodeEngine().getClusterService().getMembers().size();
+                int maxPartitionSize = (maxSize * memberCount / mapService.getNodeEngine().getPartitionService().getPartitionCount());
+                targetSizePerPartition = Double.valueOf(maxPartitionSize * ((100 - evictionPercentage) / 100.0)).intValue();
+                diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
+                prunedSize = currentPartitionSize * evictionPercentage / 100 + 1;
+                evictableSize = Math.max(diffFromTargetSize, prunedSize);
+                break;
+            case USED_HEAP_PERCENTAGE:
+            case USED_HEAP_SIZE:
+                evictableSize = currentPartitionSize * evictionPercentage / 100;
+                break;
+            default:
+                throw new IllegalArgumentException("Max size policy is not defined [" + maxSizePolicy + "]");
+        }
+        return evictableSize;
     }
 
     private long getEvictionCriteriaValue(Record record, MapConfig.EvictionPolicy evictionPolicy) {
