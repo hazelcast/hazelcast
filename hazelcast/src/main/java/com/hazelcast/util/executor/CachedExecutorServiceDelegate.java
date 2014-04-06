@@ -18,6 +18,7 @@ package com.hazelcast.util.executor;
 
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import edu.umd.cs.findbugs.annotations.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -123,6 +124,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         return submit(task, null);
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     private void addNewWorkerIfRequired() {
         if (size < maxPoolSize) {
             try {
