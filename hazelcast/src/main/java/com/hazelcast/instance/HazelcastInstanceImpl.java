@@ -64,6 +64,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.HealthMonitor;
@@ -125,7 +126,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             }
         }
 
-        HealthMonitorLevel healthLevel = HealthMonitorLevel.valueOf(node.getGroupProperties().HEALTH_MONITORING_LEVEL.getString());
+        initHealthMonitor();
+    }
+
+    private void initHealthMonitor() {
+        String healthMonitorLevelString = node.getGroupProperties().HEALTH_MONITORING_LEVEL.getString();
+        HealthMonitorLevel healthLevel = HealthMonitorLevel.valueOf(healthMonitorLevelString);
         if (healthLevel != HealthMonitorLevel.OFF) {
             logger.finest("Starting health monitor");
             int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
@@ -135,10 +141,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public ManagementService getManagementService() {
         return managementService;
-    }
-
-    public ThreadMonitoringService getThreadMonitoringService() {
-        return threadMonitoringService;
     }
 
     @Override
@@ -227,7 +229,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
-        return node.nodeEngine.getTransactionManagerService().executeTransaction(options, task);
+        TransactionManagerService transactionManagerService = node.nodeEngine.getTransactionManagerService();
+        return transactionManagerService.executeTransaction(options, task);
     }
 
     @Override
@@ -237,7 +240,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        return node.nodeEngine.getTransactionManagerService().newTransactionContext(options);
+        TransactionManagerService transactionManagerService = node.nodeEngine.getTransactionManagerService();
+        return transactionManagerService.newTransactionContext(options);
     }
 
     @Override
@@ -300,7 +304,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
-        return node.nodeEngine.getProxyService().getAllDistributedObjects();
+        ProxyService proxyService = node.nodeEngine.getProxyService();
+        return proxyService.getAllDistributedObjects();
     }
 
     @Override
@@ -349,7 +354,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
-        return (T) node.nodeEngine.getProxyService().getDistributedObject(serviceName, name);
+        ProxyService proxyService = node.nodeEngine.getProxyService();
+        return (T) proxyService.getDistributedObject(serviceName, name);
     }
 
     @Override
@@ -374,8 +380,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || !(o instanceof HazelcastInstance)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof HazelcastInstance)) {
+            return false;
+        }
 
         HazelcastInstance that = (HazelcastInstance) o;
         return !(name != null ? !name.equals(that.getName()) : that.getName() != null);

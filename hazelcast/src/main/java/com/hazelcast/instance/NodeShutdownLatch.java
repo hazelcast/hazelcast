@@ -79,6 +79,7 @@ final class NodeShutdownLatch {
             latch.tryAcquire(permits, time, unit);
         } catch (InterruptedException ignored) {
         }
+
         for (Map.Entry<String, HazelcastInstanceImpl> entry : registrations.entrySet()) {
             final HazelcastInstanceImpl instance = entry.getValue();
             try {

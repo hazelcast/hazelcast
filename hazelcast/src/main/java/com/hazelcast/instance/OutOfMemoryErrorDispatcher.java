@@ -32,11 +32,9 @@ public final class OutOfMemoryErrorDispatcher {
     private static final AtomicReference<HazelcastInstance[]> INSTANCES_REF =
             new AtomicReference<HazelcastInstance[]>(EMPTY_INSTANCES);
 
-
     private static volatile OutOfMemoryHandler handler = new DefaultOutOfMemoryHandler();
 
     private static volatile OutOfMemoryHandler clientHandler;
-
 
     private OutOfMemoryErrorDispatcher() {
     }
@@ -167,6 +165,7 @@ public final class OutOfMemoryErrorDispatcher {
 
     private static class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
 
+        @Override
         public void onOutOfMemory(OutOfMemoryError oom, HazelcastInstance[] hazelcastInstances) {
             for (HazelcastInstance instance : hazelcastInstances) {
                 if (instance instanceof HazelcastInstanceImpl) {
@@ -233,5 +232,4 @@ public final class OutOfMemoryErrorDispatcher {
             }
         }
     }
-
 }

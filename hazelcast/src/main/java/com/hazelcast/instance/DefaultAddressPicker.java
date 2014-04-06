@@ -94,9 +94,9 @@ class DefaultAddressPicker implements AddressPicker {
                 /**
                  * Instead of reusing the ServerSocket/ServerSocketChannel, we are going to close and replace them on
                  * every attempt to find a free port. The reason to do this is because in some cases, when concurrent
-                 * threads/processes try to acquire the same port, the ServerSocket gets corrupted and isn't able to find
-                 * any free port at all (no matter if there are more than enough free ports available). We have seen this
-                 * happening on Linux and Windows environments.
+                 * threads/processes try to acquire the same port, the ServerSocket gets corrupted and isn't able to
+                 * find any free port at all (no matter if there are more than enough free ports available). We have
+                 * seen this happening on Linux and Windows environments.
                  */
                 serverSocketChannel = ServerSocketChannel.open();
                 serverSocket = serverSocketChannel.socket();
@@ -157,7 +157,8 @@ class DefaultAddressPicker implements AddressPicker {
                 : new Address(addressDef.inetAddress, port);
     }
 
-    private AddressDefinition pickAddress(final NetworkConfig networkConfig) throws UnknownHostException, SocketException {
+    private AddressDefinition pickAddress(final NetworkConfig networkConfig)
+            throws UnknownHostException, SocketException {
         AddressDefinition addressDef = getSystemConfiguredAddress(node.getConfig());
         if (addressDef == null) {
             final Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
@@ -197,7 +198,8 @@ class DefaultAddressPicker implements AddressPicker {
         return addressDef;
     }
 
-    private Collection<InterfaceDefinition> getInterfaces(final NetworkConfig networkConfig) throws UnknownHostException {
+    private Collection<InterfaceDefinition> getInterfaces(final NetworkConfig networkConfig)
+            throws UnknownHostException {
         final Map<String, String> addressDomainMap; // address -> domain
         final TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
         if (tcpIpConfig.isEnabled()) {
@@ -341,14 +343,17 @@ class DefaultAddressPicker implements AddressPicker {
         return getBindAddress();
     }
 
+    @Override
     public Address getBindAddress() {
         return bindAddress;
     }
 
+    @Override
     public Address getPublicAddress() {
         return publicAddress;
     }
 
+    @Override
     public ServerSocketChannel getServerSocketChannel() {
         return serverSocketChannel;
     }

@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
@@ -49,6 +50,9 @@ public final class HazelcastInstanceFactory {
             = new ConcurrentHashMap<String, InstanceFuture>(5);
 
     private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
+
+    private HazelcastInstanceFactory() {
+    }
 
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
         Set<HazelcastInstance> result = new HashSet<HazelcastInstance>();
@@ -107,8 +111,7 @@ public final class HazelcastInstanceFactory {
             config = new XmlConfigBuilder().build();
         }
 
-        HazelcastInstanceProxy hz = newHazelcastInstance(config, config.getInstanceName(), new DefaultNodeContext());
-        return hz;
+        return newHazelcastInstance(config, config.getInstanceName(), new DefaultNodeContext());
     }
 
     private static String createInstanceName(Config config) {
@@ -144,58 +147,68 @@ public final class HazelcastInstanceFactory {
 
     private static HazelcastInstanceProxy constructHazelcastInstance(Config config, String instanceName,
                                                                      NodeContext nodeContext) {
-        final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         HazelcastInstanceProxy proxy;
         try {
-            if (tccl == null) {
+            if (classLoader == null) {
                 Thread.currentThread().setContextClassLoader(HazelcastInstanceFactory.class.getClassLoader());
             }
-            final HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
+            HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
             OutOfMemoryErrorDispatcher.register(hazelcastInstance);
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
             final Node node = hazelcastInstance.node;
-            final Iterator<Member> iter = node.getClusterService().getMembers().iterator();
-            final boolean firstMember = (iter.hasNext() && iter.next().localMember());
+            final boolean firstMember = isFirstMember(node);
             final int initialWaitSeconds = node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
             if (initialWaitSeconds > 0) {
                 hazelcastInstance.logger.info("Waiting "
                         + initialWaitSeconds + " seconds before completing HazelcastInstance startup...");
                 try {
-                    Thread.sleep(initialWaitSeconds * 1000);
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(initialWaitSeconds));
                     if (firstMember) {
                         node.partitionService.firstArrangement();
                     } else {
-                        Thread.sleep(4 * 1000);
+                        Thread.sleep(TimeUnit.SECONDS.toMillis(4));
                     }
                 } catch (InterruptedException ignored) {
                 }
             }
-            final int initialMinClusterSize = node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
-            while (node.getClusterService().getSize() < initialMinClusterSize) {
-                try {
-                    hazelcastInstance.logger.info("HazelcastInstance waiting for cluster size of " + initialMinClusterSize);
-                    //noinspection BusyWait
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
-            }
-            if (initialMinClusterSize > 1) {
-                if (firstMember) {
-                    node.partitionService.firstArrangement();
-                } else {
-                    Thread.sleep(3 * 1000);
-                }
-                hazelcastInstance.logger.info("HazelcastInstance starting after waiting for cluster size of "
-                        + initialMinClusterSize);
-            }
+            awaitMinimalClusterSize(hazelcastInstance, node, firstMember);
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         } finally {
-            Thread.currentThread().setContextClassLoader(tccl);
+            Thread.currentThread().setContextClassLoader(classLoader);
         }
         return proxy;
+    }
+
+    private static boolean isFirstMember(Node node) {
+        final Iterator<Member> iter = node.getClusterService().getMembers().iterator();
+        return (iter.hasNext() && iter.next().localMember());
+    }
+
+    private static void awaitMinimalClusterSize(HazelcastInstanceImpl hazelcastInstance, Node node, boolean firstMember)
+            throws InterruptedException {
+
+        final int initialMinClusterSize = node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
+        while (node.getClusterService().getSize() < initialMinClusterSize) {
+            try {
+                hazelcastInstance.logger.info("HazelcastInstance waiting for cluster size of " + initialMinClusterSize);
+                //noinspection BusyWait
+                Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            } catch (InterruptedException ignored) {
+            }
+        }
+        if (initialMinClusterSize > 1) {
+            if (firstMember) {
+                node.partitionService.firstArrangement();
+            } else {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(3));
+            }
+            hazelcastInstance.logger.info("HazelcastInstance starting after waiting for cluster size of "
+                    + initialMinClusterSize);
+        }
     }
 
     public static void shutdownAll() {

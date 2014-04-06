@@ -28,6 +28,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
@@ -44,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
@@ -121,6 +123,15 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
                 logger.warning(e);
             }
             return null;
+        }
+    }
+
+    @Override
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+        if (hazelcastInstance instanceof HazelcastInstanceImpl) {
+            instance = (HazelcastInstanceImpl) hazelcastInstance;
+            localMember = instance.node.address.equals(address);
+            logger = instance.node.getLogger(this.getClass().getName());
         }
     }
 
@@ -262,43 +273,61 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 
     @Override
     public void removeAttribute(String key) {
-        if (!localMember) {
-            throw new UnsupportedOperationException("Attributes on remote members must not be changed");
-        }
-        if (key == null) {
-            throw new IllegalArgumentException("key must not be null");
-        }
+        isLocalMamber();
+        isNotNull(key, "key");
+
         Object value = attributes.remove(key);
         if (value == null) {
             return;
         }
+
         if (instance != null) {
-            NodeEngineImpl nodeEngine = instance.node.nodeEngine;
-            OperationService os = nodeEngine.getOperationService();
-            MemberAttributeChangedOperation operation =
-                    new MemberAttributeChangedOperation(REMOVE, key, null);
-            String uuid = nodeEngine.getLocalMember().getUuid();
-            operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
-            try {
-                for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
-                    if (!member.localMember()) {
-                        os.send(operation, member.getAddress());
-                    } else {
-                        os.executeOperation(operation);
-                    }
-                }
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
+            MemberAttributeChangedOperation operation = new MemberAttributeChangedOperation(REMOVE, key, null);
+            invokeOnAllMembers(operation);
         }
     }
 
-    @Override
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        if (hazelcastInstance instanceof HazelcastInstanceImpl) {
-            instance = (HazelcastInstanceImpl) hazelcastInstance;
-            localMember = instance.node.address.equals(address);
-            logger = instance.node.getLogger(this.getClass().getName());
+    private void isLocalMamber() {
+        if (!localMember) {
+            throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+        }
+    }
+
+    private Object getAttribute(String key) {
+        return attributes.get(key);
+    }
+
+    private void setAttribute(String key, Object value) {
+        isLocalMamber();
+        isNotNull(key, "key");
+        isNotNull(value, "value");
+
+        Object oldValue = attributes.put(key, value);
+        if (value.equals(oldValue)) {
+            return;
+        }
+
+        if (instance != null) {
+            MemberAttributeChangedOperation operation = new MemberAttributeChangedOperation(PUT, key, value);
+            invokeOnAllMembers(operation);
+        }
+    }
+
+    private void invokeOnAllMembers(Operation operation) {
+        NodeEngineImpl nodeEngine = instance.node.nodeEngine;
+        OperationService os = nodeEngine.getOperationService();
+        String uuid = nodeEngine.getLocalMember().getUuid();
+        operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
+        try {
+            for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
+                if (!member.localMember()) {
+                    os.send(operation, member.getAddress());
+                } else {
+                    os.executeOperation(operation);
+                }
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -335,47 +364,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     public int getId() {
         return ClusterDataSerializerHook.MEMBER;
     }
-
-    private Object getAttribute(String key) {
-        return attributes.get(key);
-    }
-
-    private void setAttribute(String key, Object value) {
-        if (!localMember) {
-            throw new UnsupportedOperationException("Attributes on remote members must not be changed");
-        }
-        if (key == null) {
-            throw new IllegalArgumentException("key must not be null");
-        }
-        if (value == null) {
-            throw new IllegalArgumentException("value must not be null");
-        }
-        Object oldValue = attributes.put(key, value);
-        if (value.equals(oldValue)) {
-            return;
-        }
-
-        if (instance != null) {
-            NodeEngineImpl nodeEngine = instance.node.nodeEngine;
-            OperationService os = nodeEngine.getOperationService();
-            MemberAttributeChangedOperation operation =
-                    new MemberAttributeChangedOperation(PUT, key, value);
-            String uuid = nodeEngine.getLocalMember().getUuid();
-            operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
-            try {
-                for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
-                    if (!member.localMember()) {
-                        os.send(operation, member.getAddress());
-                    } else {
-                        os.executeOperation(operation);
-                    }
-                }
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        }
-    }
-
 
     @Override
     public String toString() {
