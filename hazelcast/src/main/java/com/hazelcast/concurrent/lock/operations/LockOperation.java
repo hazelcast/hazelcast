@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.serialization.Data;
@@ -28,10 +29,6 @@ import com.hazelcast.spi.WaitSupport;
 public class LockOperation extends BaseLockOperation implements WaitSupport, BackupAwareOperation {
 
     public LockOperation() {
-    }
-
-    public LockOperation(ObjectNamespace namespace, Data key, long threadId) {
-        super(namespace, key, threadId);
     }
 
     public LockOperation(ObjectNamespace namespace, Data key, long threadId, long timeout) {
@@ -65,6 +62,11 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
     @Override
     public final boolean shouldWait() {
         return getWaitTimeout() != 0 && !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.LOCK;
     }
 
     @Override
