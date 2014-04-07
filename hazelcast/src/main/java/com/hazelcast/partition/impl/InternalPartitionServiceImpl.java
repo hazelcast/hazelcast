@@ -375,7 +375,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
             ArrayList<MigrationInfo> migrationInfos = new ArrayList<MigrationInfo>(completedMigrations);
             final long clusterTime = node.getClusterService().getClusterTime();
-            return new PartitionRuntimeState(memberInfos, partitions, migrationInfos, clusterTime, stateVersion.get());
+            ILogger logger = node.getLogger(PartitionRuntimeState.class);
+            return new PartitionRuntimeState(
+                    logger, memberInfos, partitions, migrationInfos, clusterTime, stateVersion.get());
         } finally {
             lock.unlock();
         }
@@ -709,7 +711,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         if (target != null) {
             if (target.equals(nodeEngine.getThisAddress())) {
                 if (force) {
-                    throw new IllegalStateException("Replica target cannot be this node -> partitionId: " + partitionId
+                    Address thisAddress = node.nodeEngine.getThisAddress();
+                    throw new IllegalStateException("Replica target cannot be this node -> thisNode: "
+                            + thisAddress +" partitionId: " + partitionId
                             + ", replicaIndex: " + replicaIndex + ", partition-info: " + partitionImpl);
                 } else {
                     if (logger.isFinestEnabled()) {
