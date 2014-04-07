@@ -18,9 +18,6 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.spi.AbstractOperation;
 
-/**
- * @author mdogan 12/6/12
- */
 abstract class AbstractClusterOperation extends AbstractOperation implements JoinOperation {
 
     @Override

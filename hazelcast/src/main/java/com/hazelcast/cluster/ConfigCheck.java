@@ -24,9 +24,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 6/11/13
- */
 public final class ConfigCheck implements IdentifiedDataSerializable {
 
     private String groupName;
@@ -54,12 +51,14 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         }
         if (!partitionGroupEnabled && other.partitionGroupEnabled
                 || partitionGroupEnabled && !other.partitionGroupEnabled) {
-            throw new HazelcastException("Incompatible partition groups! " +
-                    "this: " + (partitionGroupEnabled ? "enabled" : "disabled") + " / " + memberGroupType +
-                    ", other: " + (other.partitionGroupEnabled ? "enabled" : "disabled") + " / " + other.memberGroupType);
+            throw new HazelcastException("Incompatible partition groups! "
+                    + "this: " + (partitionGroupEnabled ? "enabled" : "disabled") + " / " + memberGroupType
+                    + ", other: " + (other.partitionGroupEnabled ? "enabled" : "disabled")
+                    + " / " + other.memberGroupType);
         }
         if (partitionGroupEnabled && memberGroupType != other.memberGroupType) {
-            throw new HazelcastException("Incompatible partition groups! this: " + memberGroupType + ", other: " + other.memberGroupType);
+            throw new HazelcastException("Incompatible partition groups! this: " + memberGroupType + ", other: "
+                    + other.memberGroupType);
         }
         return true;
     }

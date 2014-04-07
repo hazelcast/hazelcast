@@ -24,9 +24,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 8/2/12
- */
 public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
     private JoinRequest joinRequest;
