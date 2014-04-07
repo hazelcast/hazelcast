@@ -115,7 +115,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
             InternalPartition partition = partitionService.getPartition(partitionId);
 
-            if (thisAddress.equals(partition.getOwner())) {
+            if (thisAddress.equals(partition.getOwnerOrNull())) {
                 Operation op = new SemaphoreDeadMemberOperation(name, caller)
                         .setPartitionId(partitionId)
                         .setResponseHandler(createEmptyResponseHandler())
