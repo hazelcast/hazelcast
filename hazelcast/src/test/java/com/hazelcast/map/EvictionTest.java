@@ -394,6 +394,93 @@ public class EvictionTest extends HazelcastTestSupport {
         assertTrue(recentlyUsedEvicted == 0);
     }
 
+
+    @Test
+    public void testEvictionLRU_statisticsDisabled() {
+        final int nodeCount = 2;
+        final int size = 100000;
+        final String mapName = randomMapName("_testEvictionLRU_statisticsDisabled_");
+
+        Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
+        MapConfig mc = cfg.getMapConfig(mapName);
+        mc.setStatisticsEnabled(false);
+        mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
+        mc.setEvictionPercentage(10);
+        MaxSizeConfig msc = new MaxSizeConfig();
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
+        msc.setSize(size);
+        mc.setMaxSizeConfig(msc);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
+        IMap<Object, Object> map = instances[0].getMap(mapName);
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+            if (i < size / 2) {
+                map.get(i);
+            }
+        }
+        // give some time to eviction thread run.
+        sleepSeconds(3);
+
+        int recentlyUsedEvicted = 0;
+        for (int i = 0; i < size/2; i++) {
+            if (map.get(i) == null) {
+                recentlyUsedEvicted++;
+            }
+        }
+        assertEquals(0, recentlyUsedEvicted);
+    }
+
+    @Test
+    public void testEvictionLFU_statisticsDisabled(){
+        final String mapName = randomMapName("_testEvictionLFU_statisticsDisabled_");
+        final int instanceCount = 1;
+        final int size = 10000;
+
+        Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
+        MapConfig mc = cfg.getMapConfig(mapName);
+        mc.setStatisticsEnabled(false);
+        mc.setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
+        mc.setEvictionPercentage(20);
+        MaxSizeConfig msc = new MaxSizeConfig();
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
+        msc.setSize(size);
+        mc.setMaxSizeConfig(msc);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
+        final int atLeastShouldEvict = size / 40;
+        final CountDownLatch latch = new CountDownLatch(atLeastShouldEvict);
+        IMap<Object, Object> map = instances[0].getMap(mapName);
+        map.addLocalEntryListener(new EntryAdapter<Object, Object>() {
+            @Override
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+                latch.countDown();
+            }
+        });
+        // these are frequently used entries.
+        for (int i = 0; i < size / 2; i++) {
+            map.put(i, i);
+            map.get(i);
+        }
+        // expecting these entries to be evicted.
+        for (int i = size / 2; i < size; i++) {
+            map.put(i, i);
+        }
+        assertOpenEventually(latch, 120);
+        assertFalse("No eviction!?!?!?", map.size() == size);
+        // these entries should exist in map after evicting LFU.
+        for (int i = 0; i < size / 2; i++) {
+            assertNotNull(map.get(i));
+        }
+    }
+
+
+
+
     @Test
     public void testEvictionLFU() {
         final String mapName = "testEvictionLFU_" + randomString();
@@ -639,10 +726,10 @@ public class EvictionTest extends HazelcastTestSupport {
             }
         }, true);
 
-            int ttl = (int) (Math.random() * 3000);
-            for (int j = 0; j < putCount; j++) {
-                map.put(j, j, ttl, TimeUnit.MILLISECONDS);
-            }
+        int ttl = (int) (Math.random() * 3000);
+        for (int j = 0; j < putCount; j++) {
+            map.put(j, j, ttl, TimeUnit.MILLISECONDS);
+        }
 
         // wait until eviction is completed.
         assertOpenEventually(latch);
