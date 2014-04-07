@@ -38,7 +38,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE= 3 * 60;
 
-    private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
 
     private HazelcastInstance[] clusterA = new HazelcastInstance[2];
     private HazelcastInstance[] clusterB = new HazelcastInstance[2];
@@ -73,7 +72,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     private void initCluster(HazelcastInstance[] cluster, Config config){
         for(int i=0; i<cluster.length; i++){
-            cluster[i]= factory.newHazelcastInstance(config);
+            cluster[i]= HazelcastInstanceFactory.newHazelcastInstance(config);
         }
     }
 

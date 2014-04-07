@@ -29,17 +29,19 @@ public final class OutOfMemoryErrorDispatcher {
     private static final int MAX_REGISTERED_INSTANCES = 50;
     private static final HazelcastInstance[] EMPTY_INSTANCES = new HazelcastInstance[0];
 
-    private static final AtomicReference<HazelcastInstance[]> instancesRef =
+    private static final AtomicReference<HazelcastInstance[]> INSTANCES_REF =
             new AtomicReference<HazelcastInstance[]>(EMPTY_INSTANCES);
-
 
     private static volatile OutOfMemoryHandler handler = new DefaultOutOfMemoryHandler();
 
-    private static volatile OutOfMemoryHandler clientHandler = null;
+    private static volatile OutOfMemoryHandler clientHandler;
+
+    private OutOfMemoryErrorDispatcher() {
+    }
 
     //for testing only
     static HazelcastInstance[] current() {
-        return instancesRef.get();
+        return INSTANCES_REF.get();
     }
 
     public static void setHandler(OutOfMemoryHandler outOfMemoryHandler) {
@@ -53,8 +55,8 @@ public final class OutOfMemoryErrorDispatcher {
     public static void register(HazelcastInstance instance) {
         isNotNull(instance, "instance");
 
-        for (; ; ) {
-            HazelcastInstance[] oldInstances = instancesRef.get();
+        for (;;) {
+            HazelcastInstance[] oldInstances = INSTANCES_REF.get();
             if (oldInstances.length == MAX_REGISTERED_INSTANCES) {
                 return;
             }
@@ -63,7 +65,7 @@ public final class OutOfMemoryErrorDispatcher {
             arraycopy(oldInstances, 0, newInstances, 0, oldInstances.length);
             newInstances[oldInstances.length] = instance;
 
-            if (instancesRef.compareAndSet(oldInstances, newInstances)) {
+            if (INSTANCES_REF.compareAndSet(oldInstances, newInstances)) {
                 return;
             }
         }
@@ -72,8 +74,8 @@ public final class OutOfMemoryErrorDispatcher {
     public static void deregister(HazelcastInstance instance) {
         isNotNull(instance, "instance");
 
-        for (; ; ) {
-            HazelcastInstance[] oldInstances = instancesRef.get();
+        for (;;) {
+            HazelcastInstance[] oldInstances = INSTANCES_REF.get();
             int indexOf = indexOf(oldInstances, instance);
             if (indexOf == -1) {
                 return;
@@ -90,7 +92,7 @@ public final class OutOfMemoryErrorDispatcher {
                 }
             }
 
-            if (instancesRef.compareAndSet(oldInstances, newInstances)) {
+            if (INSTANCES_REF.compareAndSet(oldInstances, newInstances)) {
                 return;
             }
         }
@@ -106,7 +108,7 @@ public final class OutOfMemoryErrorDispatcher {
     }
 
     static void clear() {
-        instancesRef.set(EMPTY_INSTANCES);
+        INSTANCES_REF.set(EMPTY_INSTANCES);
     }
 
     public static void inspectOutputMemoryError(Throwable throwable) {
@@ -153,9 +155,9 @@ public final class OutOfMemoryErrorDispatcher {
     }
 
     private static HazelcastInstance[] removeRegisteredInstances() {
-        for (; ; ) {
-            HazelcastInstance[] instances = instancesRef.get();
-            if (instancesRef.compareAndSet(instances, EMPTY_INSTANCES)) {
+        for (;;) {
+            HazelcastInstance[] instances = INSTANCES_REF.get();
+            if (INSTANCES_REF.compareAndSet(instances, EMPTY_INSTANCES)) {
                 return instances;
             }
         }
@@ -163,6 +165,7 @@ public final class OutOfMemoryErrorDispatcher {
 
     private static class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
 
+        @Override
         public void onOutOfMemory(OutOfMemoryError oom, HazelcastInstance[] hazelcastInstances) {
             for (HazelcastInstance instance : hazelcastInstances) {
                 if (instance instanceof HazelcastInstanceImpl) {
@@ -228,8 +231,5 @@ public final class OutOfMemoryErrorDispatcher {
             } catch (Throwable ignored) {
             }
         }
-    }
-
-    private OutOfMemoryErrorDispatcher() {
     }
 }

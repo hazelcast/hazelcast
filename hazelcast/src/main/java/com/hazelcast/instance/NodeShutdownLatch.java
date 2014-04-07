@@ -16,17 +16,19 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author mdogan 02/12/13
- */
 final class NodeShutdownLatch {
 
     private final Map<String, HazelcastInstanceImpl> registrations;
@@ -50,7 +52,8 @@ final class NodeShutdownLatch {
                     HazelcastInstanceImpl instance = entry.getValue();
                     if (instance.node.isActive()) {
                         try {
-                            final String id = instance.node.clusterService.addMembershipListener(new ShutdownMembershipListener());
+                            ClusterServiceImpl clusterService = instance.node.clusterService;
+                            final String id = clusterService.addMembershipListener(new ShutdownMembershipListener());
                             registrations.put(id, instance);
                         } catch (Throwable ignored) {
                         }
@@ -62,36 +65,44 @@ final class NodeShutdownLatch {
     }
 
     void await(long time, TimeUnit unit) {
-        if (!registrations.isEmpty()) {
-            int permits = registrations.size();
-            for (HazelcastInstanceImpl instance : registrations.values()) {
-                if (!instance.node.isActive()) {
-                    permits--;
-                }
-            }
-            try {
-                latch.tryAcquire(permits, time, unit);
-            } catch (InterruptedException ignored) {
-            }
-            for (Map.Entry<String, HazelcastInstanceImpl> entry : registrations.entrySet()) {
-                final HazelcastInstanceImpl instance = entry.getValue();
-                try {
-                    instance.node.clusterService.removeMembershipListener(entry.getKey());
-                } catch (Throwable ignored) {
-                }
-            }
-            registrations.clear();
+        if (registrations.isEmpty()) {
+            return;
         }
+
+        int permits = registrations.size();
+        for (HazelcastInstanceImpl instance : registrations.values()) {
+            if (!instance.node.isActive()) {
+                permits--;
+            }
+        }
+        try {
+            latch.tryAcquire(permits, time, unit);
+        } catch (InterruptedException ignored) {
+        }
+
+        for (Map.Entry<String, HazelcastInstanceImpl> entry : registrations.entrySet()) {
+            final HazelcastInstanceImpl instance = entry.getValue();
+            try {
+                instance.node.clusterService.removeMembershipListener(entry.getKey());
+            } catch (Throwable ignored) {
+            }
+        }
+        registrations.clear();
     }
 
     private class ShutdownMembershipListener implements MembershipListener {
+        @Override
         public void memberAdded(MembershipEvent membershipEvent) {
         }
+
+        @Override
         public void memberRemoved(MembershipEvent event) {
             if (localMember.equals(event.getMember())) {
                 latch.release();
             }
         }
+
+        @Override
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
         }
     }

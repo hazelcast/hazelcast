@@ -29,6 +29,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
     protected String version;
     protected String build;
 
+    @Override
     public void beforeInitialize(Node node) {
         this.node = node;
         systemLogger = node.getLogger("com.hazelcast.system");
@@ -36,12 +37,14 @@ public class DefaultNodeInitializer implements NodeInitializer {
         parseSystemProps();
     }
 
+    @Override
     public void printNodeInfo(Node node) {
         systemLogger.info("Hazelcast Community Edition " + version + " ("
                 + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Copyright (C) 2008-2014 Hazelcast.com");
     }
 
+    @Override
     public void afterInitialize(Node node) {
     }
 
@@ -50,6 +53,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
         build = node.getBuildInfo().getBuild();
     }
 
+    @Override
     public SecurityContext getSecurityContext() {
         logger.warning("Security features are only available on Hazelcast Enterprise Edition!");
         return null;
@@ -60,6 +64,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
         throw new UnsupportedOperationException("Offheap feature is only available on Hazelcast Enterprise Edition!");
     }
 
+    @Override
     public void destroy() {
         logger.info("Destroying node initializer.");
     }
