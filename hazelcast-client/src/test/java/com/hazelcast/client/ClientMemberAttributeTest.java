@@ -63,7 +63,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
             localMember.setStringAttribute("key" + i, HazelcastTestSupport.randomString());
         }
 
-        assertOpenEventually(countDownLatch, 30);
+        assertOpenEventually(countDownLatch);
     }
 
     @Test(timeout = 120000)
@@ -183,7 +183,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         m1.setIntAttribute("Test2", 321);
 
         // Force sleep to distribute value
-        latch.await(2, TimeUnit.SECONDS);
+        assertOpenEventually(latch);
 
         assertNotNull(member.getIntAttribute("Test2"));
         assertEquals(321, (int) member.getIntAttribute("Test2"));
@@ -239,7 +239,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         m1.setIntAttribute("Test", 321);
 
         // Force sleep to distribute value
-        latch.await(2, TimeUnit.SECONDS);
+        assertOpenEventually(latch);
 
         assertNotNull(member.getIntAttribute("Test"));
         assertEquals(321, (int) member.getIntAttribute("Test"));
@@ -295,7 +295,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         m1.removeAttribute("Test");
 
         // Force sleep to distribute value
-        latch.await(2, TimeUnit.SECONDS);
+        assertOpenEventually(latch);
 
         assertNull(member.getIntAttribute("Test"));
 
