@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -40,6 +41,11 @@ public class SetBackupOperation extends AtomicReferenceBaseOperation implements 
     public void run() throws Exception {
         ReferenceWrapper reference = getReference();
         reference.set(newValue);
+    }
+
+    @Override
+    public int getId() {
+        return AtomicReferenceDataSerializerHook.SET_BACKUP;
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,6 +40,11 @@ public class SetOperation extends AtomicLongBackupAwareOperation {
     public void run() throws Exception {
         LongWrapper number = getNumber();
         number.set(newValue);
+    }
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.SET_OPERATION;
     }
 
     @Override

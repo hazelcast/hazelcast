@@ -83,10 +83,16 @@
 
     <!-- current.atomiclong-->
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook.java"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
+    <suppress checks="AnonInnerLength" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
 
     <!-- concurrent.atomicreference -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
+    <suppress checks="AnonInnerLength" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
 
     <!-- concurrent.countdownlatch -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
@@ -104,6 +110,9 @@
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockStoreImpl"/>
     <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
+    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
 
     <!-- Storage -->
     <suppress checks="JavadocMethod" files="com.hazelcast.storage[\\/]"/>
@@ -233,6 +242,7 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.topic[\\/]"/>
     <suppress checks="VisibilityModifier" files="com.hazelcast.topic.TopicEvent"/>
+    <suppress checks="Todo" files="com.hazelcast.topic.TopicEvent"/>
 
     <!-- Executor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>

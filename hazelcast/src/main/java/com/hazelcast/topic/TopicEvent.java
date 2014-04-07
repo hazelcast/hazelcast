@@ -21,15 +21,17 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-public class TopicEvent implements DataSerializable {
+public class TopicEvent implements IdentifiedDataSerializable {
 
     public String name;
     public long publishTime;
+    //TODO: Do we really want to drag along the member? It is a big object. It should be enough
+    //to pass the address.
     public Member publishingMember;
     public Data data;
 
@@ -41,6 +43,16 @@ public class TopicEvent implements DataSerializable {
         this.publishingMember = publishingMember;
         this.name = name;
         this.data = data;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return TopicDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return TopicDataSerializerHook.TOPIC_EVENT;
     }
 
     @Override

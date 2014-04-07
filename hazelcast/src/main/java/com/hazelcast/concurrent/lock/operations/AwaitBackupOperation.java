@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.ConditionKey;
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -50,6 +51,11 @@ public class AwaitBackupOperation extends BaseLockOperation
         lockStore.removeSignalKey(conditionKey);
         lockStore.removeAwait(key, conditionId, originalCaller, threadId);
         response = true;
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.AWAIT_BACKUP;
     }
 
     @Override
