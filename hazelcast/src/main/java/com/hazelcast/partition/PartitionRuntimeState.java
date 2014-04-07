@@ -97,8 +97,8 @@ public class PartitionRuntimeState implements DataSerializable {
         if (!unmatchAddresses.isEmpty()) {
             //it can happen that the master address at any given moment is not known. Perhaps because
             //of migration, perhaps because the system has not yet been initialized.
-            logger.warning("Unknown owner addresses in partition state! " +
-                    unmatchAddresses);
+            logger.warning("Unknown owner addresses in partition state! "
+                    + unmatchAddresses);
         }
     }
 
