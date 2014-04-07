@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains Hazelcast MBean classes.
+ * Contains Hazelcast map module classes.
  */
 package com.hazelcast.map;
