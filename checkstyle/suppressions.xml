@@ -104,6 +104,9 @@
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockStoreImpl"/>
     <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
+    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
 
     <!-- Storage -->
     <suppress checks="JavadocMethod" files="com.hazelcast.storage[\\/]"/>

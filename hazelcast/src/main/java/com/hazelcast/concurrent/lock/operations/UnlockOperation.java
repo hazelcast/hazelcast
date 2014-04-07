@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.ConditionKey;
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
@@ -111,6 +112,11 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
         } else {
             return conditionKey;
         }
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.UNLOCK;
     }
 
     @Override
