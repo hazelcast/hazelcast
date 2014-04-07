@@ -67,7 +67,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(key);
         member.writeData(out);
-        out.writeByte(operationType.id);
+        out.writeByte(operationType.getId());
         if (operationType == PUT) {
             IOUtil.writeAttributeValue(value,out);
         }

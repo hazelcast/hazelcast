@@ -29,11 +29,10 @@ import java.util.Map;
 public class JoinRequest extends JoinMessage implements DataSerializable {
 
     private Credentials credentials;
-    private int tryCount = 0;
+    private int tryCount;
     private Map<String, Object> attributes;
 
     public JoinRequest() {
-        super();
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,

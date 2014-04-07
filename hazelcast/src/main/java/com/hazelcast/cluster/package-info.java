@@ -14,25 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * <p>This package contains the cluster functionality.<br/>
+ */
 package com.hazelcast.cluster;
-
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-public final class HeartbeatOperation extends AbstractClusterOperation
-        implements JoinOperation, IdentifiedDataSerializable {
-
-    @Override
-    public void run() {
-        // do nothing ...
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ClusterDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return ClusterDataSerializerHook.HEARTBEAT;
-    }
-}

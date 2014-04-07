@@ -48,7 +48,7 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(key);
-        out.writeByte(operationType.id);
+        out.writeByte(operationType.getId());
         if (operationType == PUT) {
             out.writeObject(value);
         }
@@ -63,5 +63,4 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
             value = in.readObject();
         }
     }
-
 }

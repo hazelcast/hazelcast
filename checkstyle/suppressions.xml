@@ -11,7 +11,6 @@
 
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
     <suppress checks="" files="[\\/]ascii[\\/]"/>
-    <suppress checks="" files="[\\/]cluster[\\/]"/>
     <suppress checks="" files="[\\/]collection[\\/]"/>
     <suppress checks="" files="[\\/]config[\\/]"/>
     <suppress checks="" files="[\\/]core[\\/]"/>
@@ -51,7 +50,6 @@
     <suppress checks="" files="com.hazelcast.spring[\\/]"/>
     <suppress checks="" files="com.hazelcast.web[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
-    <suppress checks="" files="com.hazelcast.cluster[\\/]"/>
     <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
 
     <!--Code Smells -->
@@ -61,6 +59,23 @@
 
     <!-- Exclude implementation packages from JavaDoc on public methods checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
+
+
+    <!-- Cluster -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.cluster[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.cluster[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.cluster[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.cluster[\\/]"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.cluster.ClusterDataSerializerHook"/>
+    <suppress checks="" files="com.hazelcast.cluster.AbstractJoiner"/>
+    <suppress checks="" files="com.hazelcast.cluster.ClusterServiceImpl"/>
+    <suppress checks="" files="com.hazelcast.cluster.MulticastJoiner"/>
+    <suppress checks="" files="com.hazelcast.cluster.MulticastService"/>
+    <suppress checks="" files="com.hazelcast.cluster.TcpIpJoiner"/>
+    <suppress checks="" files="com.hazelcast.cluster.ConfigCheck"/>
+    <suppress checks="" files="com.hazelcast.cluster.FinalizeJoinOperation"/>
+    <suppress checks="" files="com.hazelcast.cluster.JoinCheckOperation"/>
+
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>

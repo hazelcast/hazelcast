@@ -18,7 +18,6 @@ package com.hazelcast.cluster.client;
 
 import com.hazelcast.cluster.ClusterDataSerializerHook;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,9 +26,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 5/15/13
- */
 public final class ClientMembershipEvent implements IdentifiedDataSerializable {
 
     public static final int MEMBER_ADDED = MembershipEvent.MEMBER_ADDED;

@@ -19,12 +19,11 @@ package com.hazelcast.cluster;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.*;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-/**
- * @author mdogan 8/24/12
- */
 public final class ClusterDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = Data.FACTORY_ID;
@@ -45,44 +44,26 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable> ctors[] = new ConstructorFunction[10];
-        ctors[DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Data();
+        return new DataSerializableFactory() {
+            @Override
+            public IdentifiedDataSerializable create(int typeId) {
+                switch (typeId) {
+                    case DATA:
+                        return new Data();
+                    case ADDRESS:
+                        return new Address();
+                    case MEMBER:
+                        return new MemberImpl();
+                    case HEARTBEAT:
+                        return new HeartbeatOperation();
+                    case CONFIG_CHECK:
+                        return new ConfigCheck();
+                    case MEMBERSHIP_EVENT:
+                        return new ClientMembershipEvent();
+                    default:
+                        return null;
+                }
             }
         };
-
-        ctors[ADDRESS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Address();
-            }
-        };
-
-        ctors[MEMBER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MemberImpl();
-            }
-        };
-
-        ctors[HEARTBEAT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HeartbeatOperation();
-            }
-        };
-        ctors[CONFIG_CHECK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ConfigCheck();
-            }
-        };
-
-
-        ctors[MEMBERSHIP_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClientMembershipEvent();
-            }
-        };
-
-
-        return new ArrayDataSerializableFactory(ctors);
     }
 }

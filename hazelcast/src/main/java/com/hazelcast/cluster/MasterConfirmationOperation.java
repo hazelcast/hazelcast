@@ -19,12 +19,8 @@ package com.hazelcast.cluster;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.OperationService;
 
-import java.util.logging.Level;
-
-/**
- * @author mdogan 9/28/12
- */
 public class MasterConfirmationOperation extends AbstractClusterOperation {
 
     @Override
@@ -36,16 +32,17 @@ public class MasterConfirmationOperation extends AbstractClusterOperation {
         final ClusterServiceImpl clusterService = getService();
         final ILogger logger = getNodeEngine().getLogger(MasterConfirmationOperation.class.getName());
         final MemberImpl member = clusterService.getMember(endpoint);
-        if (member != null) {
+        if (member == null) {
+            logger.warning("MasterConfirmation has been received from " + endpoint
+                    + ", but it is not a member of this cluster!");
+            OperationService operationService = getNodeEngine().getOperationService();
+            operationService.send(new MemberRemoveOperation(clusterService.getThisAddress()), endpoint);
+        } else {
             if (clusterService.isMaster()) {
                 clusterService.acceptMasterConfirmation(member);
             } else {
                 logger.warning(endpoint + " has sent MasterConfirmation, but this node is not master!");
             }
-        } else {
-            logger.warning("MasterConfirmation has been received from " + endpoint
-                                      + ", but it is not a member of this cluster!");
-            getNodeEngine().getOperationService().send(new MemberRemoveOperation(clusterService.getThisAddress()), endpoint);
         }
     }
 

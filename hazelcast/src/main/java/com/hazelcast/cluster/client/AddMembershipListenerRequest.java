@@ -34,9 +34,6 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * @author mdogan 5/13/13
- */
 public final class AddMembershipListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     public AddMembershipListenerRequest() {
