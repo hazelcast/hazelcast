@@ -19,14 +19,11 @@ package com.hazelcast.map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * User: ahmet
- * Date: 06.09.2013
- * <p/>
- * Time: 07:51
+ * Size estimator for near cache.
  */
 class NearCacheSizeEstimator implements SizeEstimator<NearCache.CacheRecord> {
 
-    private final AtomicLong _size = new AtomicLong(0L);
+    private final AtomicLong size = new AtomicLong(0L);
 
     protected NearCacheSizeEstimator() {
         super();
@@ -41,25 +38,27 @@ class NearCacheSizeEstimator implements SizeEstimator<NearCache.CacheRecord> {
         final long cost = record.getCost();
         // if  cost is zero, type of cached object is not Data.
         // then omit.
-        if (cost == 0) return 0;
-
+        if (cost == 0) {
+            return 0;
+        }
+        final int numberOfIntegers = 4;
         long size = 0;
         // entry size in CHM
-        size += 4 * ((Integer.SIZE / Byte.SIZE));
+        size += numberOfIntegers * ((Integer.SIZE / Byte.SIZE));
         size += cost;
         return size;
     }
 
     @Override
     public long getSize() {
-        return _size.longValue();
+        return size.longValue();
     }
 
     public void add(long size) {
-        _size.addAndGet(size);
+        this.size.addAndGet(size);
     }
 
     public void reset() {
-        _size.set(0L);
+        size.set(0L);
     }
 }

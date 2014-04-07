@@ -20,23 +20,23 @@ import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.map.record.Record;
 
 /**
- * User: ahmet
- * Date: 06.09.2013
+ *  Size estimator for map.
+ *  @param <T> : An instance of {@link com.hazelcast.map.record.Record}.
  */
 class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
 
-    private volatile long _size;
+    private volatile long size;
 
     public long getSize() {
-        return _size;
+        return size;
     }
 
     public void add(long size) {
-        _size += size;
+        this.size += size;
     }
 
     public void reset() {
-        _size = 0;
+        size = 0;
     }
 
     public long getCost(T record) {
@@ -46,8 +46,9 @@ class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
         if (record instanceof ObjectRecord) {
             return 0L;
         }
+        final int numberOfIntegers = 4;
         // entry size in CHM
-        long refSize = 4 * ((Integer.SIZE / Byte.SIZE));
+        long refSize = numberOfIntegers * ((Integer.SIZE / Byte.SIZE));
         final long valueSize = record.getCost();
         return refSize + valueSize;
     }
