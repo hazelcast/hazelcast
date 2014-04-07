@@ -18,8 +18,7 @@ package com.hazelcast.map;
 
 
 /**
- * User: ahmet
- * Date: 08.09.2013
+ * Static factory methods for corresponding size estimators.
  */
 public final class SizeEstimators {
 
