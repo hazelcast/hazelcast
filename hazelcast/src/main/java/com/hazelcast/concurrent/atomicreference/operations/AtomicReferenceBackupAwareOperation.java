@@ -35,6 +35,7 @@ public abstract class AtomicReferenceBackupAwareOperation extends AtomicReferenc
         return shouldBackup;
     }
 
+
     @Override
     public int getSyncBackupCount() {
         return 1;

@@ -87,6 +87,9 @@
 
     <!-- concurrent.atomicreference -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
+    <suppress checks="AnonInnerLength" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
 
     <!-- concurrent.countdownlatch -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
