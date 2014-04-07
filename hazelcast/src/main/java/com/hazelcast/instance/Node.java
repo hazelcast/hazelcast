@@ -137,7 +137,7 @@ public class Node {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        buildInfo = BUILD_INFO_CONSTRUCTOR.createNew(null);
+        buildInfo = BuildInfoProvider.getBuildInfo();
         serializationService = (SerializationServiceImpl) ss;
         systemLogService = new SystemLogService(groupProperties.SYSTEM_LOG_ENABLED.getBoolean());
 
@@ -638,14 +638,4 @@ public class Node {
         return attributes;
     }
 
-    private static final ConstructorFunction<String, BuildInfo> BUILD_INFO_CONSTRUCTOR = new ConstructorFunction<String, BuildInfo>() {
-
-        public BuildInfo createNew(String key) {
-            String version = HazelcastUtil.getVersion();
-            String build = HazelcastUtil.getBuild();
-            int buildNumber = HazelcastUtil.getBuildNumber();
-            boolean enterprise = HazelcastUtil.isEnterprise();
-            return new BuildInfo(version, build, buildNumber, enterprise);
-        }
-    };
 }
