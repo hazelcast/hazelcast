@@ -40,7 +40,6 @@
     <suppress checks="" files="com.hazelcast.query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
     <suppress checks="" files="[\\/]spi.impl[\\/]"/>
-    <suppress checks="" files="[\\/]storage[\\/]"/>
     <suppress checks="" files="[\\/]util[\\/]"/>
     <suppress checks="" files="[\\/]wan[\\/]"/>
 
@@ -106,6 +105,13 @@
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockStoreImpl"/>
     <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
+
+    <!-- Storage -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.storage[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.storage[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.storage[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.storage[\\/]"/>
+
 
     <!-- client -->
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
