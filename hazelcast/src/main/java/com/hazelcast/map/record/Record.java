@@ -43,4 +43,8 @@ public interface Record<V> {
     long getVersion();
 
     void setVersion(long version);
+
+    void setEvictionCriteriaNumber(long evictionCriteriaNumber);
+
+    long getEvictionCriteriaNumber();
 }

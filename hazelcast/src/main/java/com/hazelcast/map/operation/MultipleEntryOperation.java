@@ -9,7 +9,6 @@ import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
-import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -111,14 +110,9 @@ public class MultipleEntryOperation extends AbstractMapOperation
                     if (EntryEventType.REMOVED.equals(eventType)) {
                         mapService.publishWanReplicationRemove(name, key, Clock.currentTimeMillis());
                     } else {
-                        Record r = recordStore.getRecord(key);
-
+                        Record record = recordStore.getRecord(key);
                         Data tempValue = mapService.toData(dataValue);
-                        RecordStatistics statistics = r.getStatistics();
-                        long cost = r.getCost();
-                        long version = r.getVersion();
-
-                        SimpleEntryView entryView = new SimpleEntryView(key, tempValue, statistics, cost, version);
+                        final SimpleEntryView entryView = mapService.createSimpleEntryView(key, tempValue, record);
                         mapService.publishWanReplicationUpdate(name, entryView);
                     }
                 }
@@ -188,7 +182,8 @@ public class MultipleEntryOperation extends AbstractMapOperation
         }
 
     }
-    private long getLatencyFrom(long begin){
+
+    private long getLatencyFrom(long begin) {
         return Clock.currentTimeMillis() - begin;
     }
 

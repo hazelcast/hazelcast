@@ -25,6 +25,10 @@ public abstract class AbstractRecord<V> implements Record<V> {
     protected RecordStatistics statistics;
     protected Data key;
     protected long version;
+    /**
+    *  this may be used for LRU or LFU eviction depending on configuration.
+    * */
+    protected long evictionCriteriaNumber;
 
     public AbstractRecord(Data key, boolean statisticsEnabled) {
         this.key = key;
@@ -75,14 +79,24 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
+    public long getEvictionCriteriaNumber() {
+        return evictionCriteriaNumber;
+    }
+
+    @Override
+    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
+       this.evictionCriteriaNumber = evictionCriteriaNumber;
+    }
+
+    @Override
     public long getCost() {
         int size = 0 ;
         // statistics
         size += 4 + (statistics == null ? 0 : statistics.size());
-
         // add size of version.
         size += (Long.SIZE / Byte.SIZE);
-
+        // add size of evictionCriteriaNumber.
+        size += (Long.SIZE / Byte.SIZE);
         // add key size.
         size += 4 + key.getHeapCost();
         return size;
