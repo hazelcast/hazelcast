@@ -1277,7 +1277,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
         int size = 1000;
-        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 20);
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 120);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackup.setMapStoreConfig(mapStoreConfig);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
