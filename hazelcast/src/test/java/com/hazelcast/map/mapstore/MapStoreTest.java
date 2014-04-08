@@ -17,63 +17,63 @@
 package com.hazelcast.map.mapstore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.MapLoaderLifecycleSupport;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
-import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Collection;
-import java.util.Random;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.TreeSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -246,12 +246,12 @@ public class MapStoreTest extends HazelcastTestSupport {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                    sleepSeconds(3);
-                    instance1.getLifecycleService().terminate();
-                    sleepSeconds(3);
-                    final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
-                    assertEquals(size, map.size());
-                    countDownLatch.countDown();
+                sleepSeconds(3);
+                instance1.getLifecycleService().terminate();
+                sleepSeconds(3);
+                final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
+                assertEquals(size, map.size());
+                countDownLatch.countDown();
 
             }
         }).start();
@@ -907,28 +907,67 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap map1 = h1.getMap("default");
-        IMap map2 = h2.getMap("default");
+        final IMap map1 = h1.getMap("default");
+        final IMap map2 = h2.getMap("default");
         checkIfMapLoaded("default", h1);
         checkIfMapLoaded("default", h2);
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1000, map1.size());
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1000, map2.size());
+            }
+        });
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        IMap map3 = h3.getMap("default");
+        final IMap map3 = h3.getMap("default");
         checkIfMapLoaded("default", h3);
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals("value1", map3.get(1));
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
-        assertEquals(1000, map3.size());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1000, map1.size());
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1000, map2.size());
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1000, map3.size());
+            }
+        });
+
         h3.shutdown();
+
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
-        assertEquals(1000, map1.size());
-        assertEquals(1000, map2.size());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1000, map1.size());
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1000, map2.size());
+            }
+        });
     }
 
     private boolean checkIfMapLoaded(String mapName, HazelcastInstance instance) throws InterruptedException {
@@ -1243,7 +1282,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
         int size = 1000;
-        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 20);
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 120);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackup.setMapStoreConfig(mapStoreConfig);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
@@ -1290,7 +1329,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         // wait store ops. finish.
         mapStore.awaitStores();
         // we should reach expected store count.
-        assertEquals(expectedStoreCount,mapStore.count.intValue());
+        assertEquals(expectedStoreCount, mapStore.count.intValue());
     }
 
 
@@ -1402,7 +1441,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int numIterations = 10;
         final int writeDelaySeconds = 10;
         // create map store implementation
-        final RecordingMapStore store = new RecordingMapStore(numIterations,numIterations);
+        final RecordingMapStore store = new RecordingMapStore(numIterations, numIterations);
         // create hazelcast config
         final Config config = newConfig(mapName, store, writeDelaySeconds);
         // start hazelcast instance
