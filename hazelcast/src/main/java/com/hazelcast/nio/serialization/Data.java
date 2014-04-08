@@ -37,6 +37,7 @@ public final class Data implements IdentifiedDataSerializable {
     public Data() {
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP2")
     public Data(int type, byte[] bytes) {
         this.type = type;
         this.buffer = bytes;
@@ -191,6 +192,7 @@ public final class Data implements IdentifiedDataSerializable {
         return classDefinition;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
     public byte[] getBuffer() {
         return buffer;
     }

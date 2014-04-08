@@ -241,6 +241,8 @@ public class NodeEngineImpl implements NodeEngine {
             this.target = target;
         }
 
+        //retries is incremented by a single thread, but will be read by multiple. So there is no problem.
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
         @Override
         public void run() {
             retries++;

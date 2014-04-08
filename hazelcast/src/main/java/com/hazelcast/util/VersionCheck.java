@@ -94,6 +94,7 @@ public class VersionCheck {
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("REC_CATCH_EXCEPTION")
     private static Document fetchWebService(String urlStr) {
         InputStream in = null;
         try {
