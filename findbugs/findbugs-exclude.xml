@@ -14,7 +14,7 @@
     </Match>
 
     <Match>
-        <Class name="com.hazelcast.client.examples"/>
+        <Package name="com.hazelcast.client.examples"/>
     </Match>
 
     <!-- all these issues below need to be resolved in 3.3-->
