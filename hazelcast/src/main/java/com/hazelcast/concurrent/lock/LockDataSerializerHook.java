@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.countdownlatch.operations.AwaitOperation;
+import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.concurrent.lock.operations.AwaitBackupOperation;
 import com.hazelcast.concurrent.lock.operations.BeforeAwaitBackupOperation;
 import com.hazelcast.concurrent.lock.operations.BeforeAwaitOperation;
