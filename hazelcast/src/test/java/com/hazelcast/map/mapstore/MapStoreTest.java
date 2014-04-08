@@ -1260,27 +1260,39 @@ public class MapStoreTest extends HazelcastTestSupport {
     @Test
     @Category(NightlyTest.class)
     public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() throws InterruptedException {
-        final int size = 1000;
+        final String name = randomMapName("testIssue1085WriteBehindBackup");
+        final int expectedStoreCount = 3;
+        final int nodeCount = 3;
         Config config = new Config();
-        String name = "testIssue1085WriteBehindBackup";
-        config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "50");
+        config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "10");
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
-        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 120, 10);
+        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 120, 10);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackupConfig.setMapStoreConfig(mapStoreConfig);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        final IMap map = instance.getMap(name);
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-        instance2.getLifecycleService().terminate();
+        // create nodes.
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        HazelcastInstance node3 = factory.newHazelcastInstance(config);
+        // create corresponding keys.
+        final String keyOwnedByNode1 = generateKeyOwnedBy(node1);
+        final String keyOwnedByNode2 = generateKeyOwnedBy(node2);
+        final String keyOwnedByNode3 = generateKeyOwnedBy(node3);
+        // put one key value pair per node.
+        final IMap map = node1.getMap(name);
+        map.put(keyOwnedByNode1, 1);
+        map.put(keyOwnedByNode2, 2);
+        map.put(keyOwnedByNode3, 3);
+        // terminate node2.
+        node2.getLifecycleService().terminate();
+        // wait store ops. finish.
         mapStore.awaitStores();
+        // we should reach expected store count.
+        assertEquals(expectedStoreCount,mapStore.count.intValue());
     }
+
 
     @Test
     @Category(NightlyTest.class)
