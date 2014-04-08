@@ -181,8 +181,10 @@ public class ClientTestApp implements EntryListener, ItemListener, MessageListen
     /**
      * A line reader
      */
+
     static class DefaultLineReader implements LineReader {
 
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_DEFAULT_ENCODING")
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
         public String readLine() throws Exception {
@@ -526,6 +528,7 @@ public class ClientTestApp implements EntryListener, ItemListener, MessageListen
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_DEFAULT_ENCODING")
     private void handleAt(String first) {
         if (first.length() == 1) {
             println("usage: @<file-name>");
@@ -566,6 +569,8 @@ public class ClientTestApp implements EntryListener, ItemListener, MessageListen
         }
     }
 
+
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_GC")
     private void handleJvm() {
         System.gc();
         println("Memory max: " + Runtime.getRuntime().maxMemory() / ONE_KB / ONE_KB

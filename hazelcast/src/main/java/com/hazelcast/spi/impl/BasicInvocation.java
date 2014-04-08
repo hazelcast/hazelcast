@@ -433,6 +433,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     private volatile NormalResponse potentialResponse;
     private volatile int expectedBackupCount;
 
+    //availableBackups is incremented while a lock is hold.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     public void signalOneBackupComplete() {
         synchronized (this) {
             availableBackups++;

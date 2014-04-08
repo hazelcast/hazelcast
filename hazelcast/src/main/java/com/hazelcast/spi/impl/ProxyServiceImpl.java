@@ -344,7 +344,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         }
     }
 
-    private class DistributedObjectFuture {
+    private static class DistributedObjectFuture {
 
         volatile DistributedObject proxy;
 

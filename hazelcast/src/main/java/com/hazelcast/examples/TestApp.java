@@ -43,6 +43,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
+import edu.umd.cs.findbugs.annotations.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -218,6 +219,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
      *
      * @param commandInputted
      */
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_EXIT")
     protected void handleCommand(String commandInputted) {
 
         String command = commandInputted;
@@ -583,6 +585,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_GC")
     private void handleJvm() {
         System.gc();
         println("Memory max: " + Runtime.getRuntime().maxMemory() / ONE_KB / ONE_KB
@@ -1003,7 +1006,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    @SuppressWarnings("LockAcquiredButNotSafelyReleased")
+    @java.lang.SuppressWarnings("LockAcquiredButNotSafelyReleased")
     protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
