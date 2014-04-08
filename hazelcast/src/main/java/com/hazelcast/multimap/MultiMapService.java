@@ -153,7 +153,7 @@ public class MultiMapService implements ManagedService, RemoteService,
             if (multiMapContainer == null) {
                 continue;
             }
-            if (thisAddress.equals(partition.getOwner())) {
+            if (thisAddress.equals(partition.getOwnerOrNull())) {
                 keySet.addAll(multiMapContainer.keySet());
             }
         }
@@ -271,7 +271,7 @@ public class MultiMapService implements ManagedService, RemoteService,
             if (multiMapContainer == null) {
                 continue;
             }
-            Address owner = partition.getOwner();
+            Address owner = partition.getOwnerOrNull();
             if (owner == null) {
                 //no-op because the owner is not yet set.
             } else if (owner.equals(thisAddress)) {

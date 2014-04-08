@@ -992,7 +992,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         Address thisAddress = clusterService.getThisAddress();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
             InternalPartition partition = partitionService.getPartition(partitionId);
-            Address owner = partition.getOwner();
+            Address owner = partition.getOwnerOrNull();
             if (owner == null) {
                 //no-op because no owner is set yet. Therefor we don't know anything about the map
                 continue;

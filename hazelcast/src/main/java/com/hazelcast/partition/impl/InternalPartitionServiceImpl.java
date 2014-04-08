@@ -181,10 +181,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         if (!initialized) {
             firstArrangement();
         }
-        if (partitions[partitionId].getOwner() == null && !node.isMaster() && node.joined()) {
+        if (partitions[partitionId].getOwnerOrNull() == null && !node.isMaster() && node.joined()) {
             notifyMasterToAssignPartitions();
         }
-        return partitions[partitionId].getOwner();
+        return partitions[partitionId].getOwnerOrNull();
     }
 
     private void notifyMasterToAssignPartitions() {
@@ -303,7 +303,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             pauseMigration();
             for (InternalPartitionImpl partition : partitions) {
                 boolean promote = false;
-                if (deadAddress.equals(partition.getOwner()) && thisAddress.equals(partition.getReplicaAddress(1))) {
+                if (deadAddress.equals(partition.getOwnerOrNull()) && thisAddress.equals(partition.getReplicaAddress(1))) {
                     promote = true;
                 }
                 // shift partition table up.
@@ -559,7 +559,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                             if (source || destination) {
                                 int partitionId = migrationInfo.getPartitionId();
                                 InternalPartitionImpl migratingPartition = getPartitionImpl(partitionId);
-                                Address ownerAddress = migratingPartition.getOwner();
+                                Address ownerAddress = migratingPartition.getOwnerOrNull();
                                 boolean success = migrationInfo.getDestination().equals(ownerAddress);
                                 MigrationEndpoint endpoint = source ? MigrationEndpoint.SOURCE : MigrationEndpoint.DESTINATION;
                                 FinalizeMigrationOperation op = new FinalizeMigrationOperation(endpoint, success);
@@ -705,7 +705,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             throw new IllegalArgumentException("Invalid replica index: " + replicaIndex);
         }
         final InternalPartitionImpl partitionImpl = getPartition(partitionId);
-        final Address target = partitionImpl.getOwner();
+        final Address target = partitionImpl.getOwnerOrNull();
         if (target != null) {
             if (target.equals(nodeEngine.getThisAddress())) {
                 if (force) {
@@ -777,7 +777,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     @Override
     public InternalPartitionImpl getPartition(int partitionId) {
         InternalPartitionImpl p = getPartitionImpl(partitionId);
-        if (p.getOwner() == null) {
+        if (p.getOwnerOrNull() == null) {
             // probably ownerships are not set yet.
             // force it.
             getPartitionOwner(partitionId);
@@ -893,7 +893,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         };
         int notOwnedCount = 0;
         for (InternalPartitionImpl partition : partitions) {
-            Address owner = partition.getOwner();
+            Address owner = partition.getOwnerOrNull();
             if (thisAddress.equals(owner)) {
                 if (partition.getReplicaAddress(1) != null) {
                     SyncReplicaVersion op = new SyncReplicaVersion(1, callback);
@@ -1198,7 +1198,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (node.isActive() && migrationActive.get()) {
                 final Address thisAddress = node.getThisAddress();
                 for (final InternalPartitionImpl partition : partitions) {
-                    if (thisAddress.equals(partition.getOwner())) {
+                    if (thisAddress.equals(partition.getOwnerOrNull())) {
                         for (int index = 1; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
                             if (partition.getReplicaAddress(index) != null) {
                                 SyncReplicaVersion op = new SyncReplicaVersion(index, null);
@@ -1245,7 +1245,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
                         Address[] replicas = newState[partitionId];
                         InternalPartitionImpl currentPartition = partitions[partitionId];
-                        Address currentOwner = currentPartition.getOwner();
+                        Address currentOwner = currentPartition.getOwnerOrNull();
                         Address newOwner = replicas[0];
 
                         if (currentOwner == null) {
@@ -1349,7 +1349,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             try {
                 MigrationInfo info = migrationInfo;
                 InternalPartitionImpl partition = partitions[info.getPartitionId()];
-                if (!partition.getOwner().equals(info.getSource())) {
+                if (!partition.getOwnerOrNull().equals(info.getSource())) {
                     logger.severe("ERROR: partition owner is not the source of migration! -> "
                             + partition + " -VS- " + info);
                 }
