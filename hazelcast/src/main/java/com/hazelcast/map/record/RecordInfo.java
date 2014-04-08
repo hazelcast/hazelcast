@@ -134,14 +134,23 @@ public class RecordInfo implements DataSerializable {
 
     @Override
     public String toString() {
-        return "RecordInfo{" +
-                "statistics=" + statistics +
-                ", idleDelayMillis=" + idleDelayMillis +
-                ", ttlDelayMillis=" + ttlDelayMillis +
-                ", mapStoreWriteDelayMillis=" + mapStoreWriteDelayMillis +
-                ", mapStoreDeleteDelayMillis=" + mapStoreDeleteDelayMillis +
-                ", version=" + version +
-                ", evictionCriteriaNumber=" + evictionCriteriaNumber +
-                '}';
+        final StringBuilder builder = new StringBuilder();
+        builder.append("RecordInfo{");
+        builder.append("statistics=");
+        builder.append(statistics);
+        builder.append(", idleDelayMillis=");
+        builder.append(idleDelayMillis);
+        builder.append(", ttlDelayMillis=");
+        builder.append(ttlDelayMillis);
+        builder.append(", mapStoreWriteDelayMillis=");
+        builder.append(mapStoreWriteDelayMillis);
+        builder.append(", mapStoreDeleteDelayMillis=");
+        builder.append(mapStoreDeleteDelayMillis);
+        builder.append(", version=");
+        builder.append(version);
+        builder.append(", evictionCriteriaNumber=");
+        builder.append(evictionCriteriaNumber);
+        builder.append('}');
+        return builder.toString();
     }
 }

@@ -26,8 +26,8 @@ public abstract class AbstractRecord<V> implements Record<V> {
     protected Data key;
     protected long version;
     /**
-    *  this may be used for LRU or LFU eviction depending on configuration.
-    * */
+     *  this may be used for LRU or LFU eviction depending on configuration.
+     * */
     protected long evictionCriteriaNumber;
 
     public AbstractRecord(Data key, boolean statisticsEnabled) {
@@ -62,13 +62,15 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     public final void onAccess() {
-        if (statistics != null)
+        if (statistics != null) {
             statistics.access();
+        }
     }
 
     public final void onStore() {
-        if (statistics != null)
+        if (statistics != null) {
             statistics.store();
+        }
     }
 
     public final void onUpdate() {
@@ -85,33 +87,34 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-       this.evictionCriteriaNumber = evictionCriteriaNumber;
+        this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
     @Override
     public long getCost() {
-        int size = 0 ;
+        int size = 0;
+        final int objectReferenceInBytes = 4;
         // statistics
-        size += 4 + (statistics == null ? 0 : statistics.size());
+        size += objectReferenceInBytes + (statistics == null ? 0 : statistics.size());
         // add size of version.
         size += (Long.SIZE / Byte.SIZE);
         // add size of evictionCriteriaNumber.
         size += (Long.SIZE / Byte.SIZE);
         // add key size.
-        size += 4 + key.getHeapCost();
+        size += objectReferenceInBytes + key.getHeapCost();
         return size;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AbstractRecord that = (AbstractRecord) o;
-
-        if (!key.equals(that.key)) return false;
-
-        return true;
+        return key.equals(that.key);
     }
 
     @Override
