@@ -99,15 +99,14 @@ public final class HazelcastInstanceFactory {
             config = new XmlConfigBuilder().build();
         }
 
-        HazelcastInstanceProxy hz = newHazelcastInstance(config, config.getInstanceName(), new DefaultNodeContext());
-        return hz;
+        return newHazelcastInstance(config, config.getInstanceName(), new DefaultNodeContext());
     }
 
     private static String createInstanceName(Config config) {
         return "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
     }
 
-    public static HazelcastInstanceProxy newHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
+    public static HazelcastInstance newHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
