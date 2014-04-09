@@ -79,14 +79,16 @@ public class MapService implements ManagedService, MigrationAwareService,
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final AtomicReference<List<Integer>> ownedPartitions;
     private final Map<String, MapMergePolicy> mergePolicyMap;
-    // we added following latency to be sure the ongoing migration is completed if the owner of the record could not complete task before migration
+    // we added following latency to be sure the ongoing migration is completed if the owner of
+    // the record could not complete task before migration
     private final Integer replicaWaitSecondsForScheduledTasks;
     private final MapEvictionManager mapEvictionManager;
 
     public MapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.mapEvictionManager = new MapEvictionManager(this);
-        this.replicaWaitSecondsForScheduledTasks = getNodeEngine().getGroupProperties().MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
+        this.replicaWaitSecondsForScheduledTasks =
+                getNodeEngine().getGroupProperties().MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         ownedPartitions = new AtomicReference<List<Integer>>();
