@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNotNull;
  * annotation.
  * */
 @RunWith(CustomSpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
+@ContextConfiguration(locations = {"test-application-context.xml"})
 @Category(QuickTest.class)
 public class TestAutoWire {
 
