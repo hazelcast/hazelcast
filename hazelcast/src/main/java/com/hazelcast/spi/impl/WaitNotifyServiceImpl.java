@@ -116,7 +116,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     if (waitingOp.shouldWait()) {
                         return;
                     }
-                    nodeEngine.operationService.runOperation(op);
+                    nodeEngine.operationService.runOperationOnCallingThread(op);
                 }
                 waitingOp.setValid(false);
             }

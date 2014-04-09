@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -53,8 +52,6 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.ExecutorType;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,14 +60,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -109,48 +102,35 @@ final class BasicOperationService implements InternalOperationService {
     private final AtomicLong callIdGen = new AtomicLong(1);
 
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-
     final ConcurrentMap<Long, BasicInvocation> invocations;
 
-    private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
-    private final int operationThreadCount;
-    private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
     private final ExecutionService executionService;
-    private final BasicOperationScheduler executor;
+    final BasicOperationScheduler scheduler;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
-        defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.executionService = nodeEngine.getExecutionService();
+
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= 8;
         int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
-        int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
-        operationThreadCount = opThreadCount > 0 ? opThreadCount : coreSize * 2;
-
-        executionService = nodeEngine.getExecutionService();
-        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize * 5, coreSize * 100000,
-                ExecutorType.CONCRETE);
-
-        responseExecutor = new ThreadPoolExecutor(1, 1,
-                0L, TimeUnit.MILLISECONDS,
-                responseWorkQueue,
-                new SingleExecutorThreadFactory(node.threadGroup,
-                        node.getConfigClassLoader(), node.getThreadNamePrefix("response"))
-        );
-
-        executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
-        invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
-
-        this.executor = new BasicOperationScheduler(
-                node, executionService, operationThreadCount, new BasicOperationProcessorImpl());
+        this.executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
+        this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
+        this.scheduler = new BasicOperationScheduler(node, executionService, new BasicOperationProcessorImpl());
     }
 
     @Override
-    public int getOperationThreadCount() {
-        return operationThreadCount;
+    public int getPartitionOperationThreadCount() {
+        return scheduler.partitionOperationThreads.length;
+    }
+
+    @Override
+    public int getGenericOperationThreadCount() {
+        return scheduler.genericOperationThreads.length;
     }
 
     @Override
@@ -170,51 +150,39 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getResponseQueueSize() {
-        return responseWorkQueue.size();
+        return scheduler.getResponseQueueSize();
     }
 
     @Override
     public int getOperationExecutorQueueSize() {
-        return executor.getOperationExecutorQueueSize();
+        return scheduler.getOperationExecutorQueueSize();
     }
 
     @Override
     public int getPriorityOperationExecutorQueueSize() {
-        return executor.getPriorityOperationExecutorQueueSize();
+        return scheduler.getPriorityOperationExecutorQueueSize();
     }
 
     @Override
-    public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
-        if (partitionId < 0) throw new IllegalArgumentException("Partition id cannot be negative!");
+    public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
+        if (partitionId < 0) {
+            throw new IllegalArgumentException("Partition id cannot be negative!");
+        }
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, partitionId);
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        if (target == null) throw new IllegalArgumentException("Target cannot be null!");
+        if (target == null) {
+            throw new IllegalArgumentException("Target cannot be null!");
+        }
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, target);
     }
 
     @PrivateApi
     @Override
     public void receive(final Packet packet) {
-        try {
-            if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                responseExecutor.execute(new ResponseProcessor(packet));
-            } else {
-                int partitionId = packet.getPartitionId();
-                boolean systemOperation = packet.isUrgent();
-                executor.execute(packet, partitionId, systemOperation);
-            }
-        } catch (RejectedExecutionException e) {
-            if (nodeEngine.isActive()) {
-                throw e;
-            }
-        }
-    }
-
-    private int getPartitionIdForExecution(Operation op) {
-        return op instanceof PartitionAwareOperation ? op.getPartitionId() : -1;
+        scheduler.execute(packet);
     }
 
     /**
@@ -224,23 +192,13 @@ final class BasicOperationService implements InternalOperationService {
      */
     @Override
     //todo: move to BasicOperationScheduler
-    public void runOperation(Operation op) {
-        if (isAllowedToRunInCurrentThread(op)) {
+    public void runOperationOnCallingThread(Operation op) {
+        if (scheduler.isAllowedToRunInCurrentThread(op)) {
             processOperation(op);
         } else {
             throw new IllegalThreadStateException("Operation: " + op + " cannot be run in current thread! -> " +
                     Thread.currentThread());
         }
-    }
-
-    //todo: move to BasicOperationScheduler
-    boolean isAllowedToRunInCurrentThread(Operation op) {
-        return executor.isAllowedToRunInCurrentThread(getPartitionIdForExecution(op));
-    }
-
-    //todo: move to BasicOperationScheduler
-    boolean isInvocationAllowedFromCurrentThread(Operation op) {
-        return executor.isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
     }
 
     /**
@@ -250,26 +208,7 @@ final class BasicOperationService implements InternalOperationService {
      */
     @Override
     public void executeOperation(final Operation op) {
-        String executorName = op.getExecutorName();
-        if (executorName == null) {
-            int partitionId = getPartitionIdForExecution(op);
-            boolean urgent = op.isUrgent();
-            executor.execute(op, partitionId, urgent);
-        } else {
-            ExecutorService executor = executionService.getExecutor(executorName);
-            if (executor == null) {
-                throw new IllegalStateException("Could not found executor with name: " + executorName);
-            }
-            if (op instanceof PartitionAware) {
-                throw new IllegalStateException("PartitionAwareOperation " + op + " can't be executed on a " +
-                        "custom executor with name: " + executorName);
-            }
-            if (op instanceof UrgentSystemOperation) {
-                throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom " +
-                        "executor with name: " + executorName);
-            }
-            executor.execute(new LocalOperationProcessor(op));
-        }
+        scheduler.execute(op);
     }
 
     @Override
@@ -288,7 +227,50 @@ final class BasicOperationService implements InternalOperationService {
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
-    private void processPacket(Packet packet) {
+    // =============================== processing response  ===============================
+
+    private void processResponsePacket(Packet packet) {
+        try {
+            final Data data = packet.getData();
+            final Response response = (Response) nodeEngine.toObject(data);
+
+            if (response instanceof NormalResponse) {
+                notifyRemoteCall((NormalResponse) response);
+            } else if (response instanceof BackupResponse) {
+                notifyBackupCall(response.getCallId());
+            } else {
+                throw new IllegalStateException("Unrecognized response type: " + response);
+            }
+        } catch (Throwable e) {
+            logger.severe("While processing response...", e);
+        }
+    }
+
+    // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
+    private void notifyRemoteCall(NormalResponse response) {
+        BasicInvocation invocation = invocations.get(response.getCallId());
+        if (invocation == null) {
+            throw new HazelcastException("No invocation for response:" + response);
+        }
+
+        invocation.notify(response);
+    }
+
+    @Override
+    public void notifyBackupCall(long callId) {
+        try {
+            final BasicInvocation invocation = invocations.get(callId);
+            if (invocation != null) {
+                invocation.signalOneBackupComplete();
+            }
+        } catch (Exception e) {
+            ReplicaErrorLogger.log(e, logger);
+        }
+    }
+
+    // =============================== processing operation  ===============================
+
+    private void processOperationPacket(Packet packet) {
         final Connection conn = packet.getConn();
         try {
             final Address caller = conn.getEndPoint();
@@ -407,7 +389,6 @@ final class BasicOperationService implements InternalOperationService {
             afterCallExecution(op, callKey);
         }
     }
-
 
     private static boolean retryDuringMigration(Operation op) {
         return !(op instanceof ReadonlyOperation || OperationAccessor.isMigrationOperation(op));
@@ -567,10 +548,11 @@ final class BasicOperationService implements InternalOperationService {
     private Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                     Map<Address, List<Integer>> memberPartitions) throws Exception {
         final Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof BasicOperationScheduler.PartitionThread) {
+        if (currentThread instanceof BasicOperationScheduler.OperationThread) {
             throw new IllegalThreadStateException(currentThread + " cannot make invocation on multiple partitions!");
         }
         final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
+
         for (Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
             final Address address = mp.getKey();
             final List<Integer> partitions = mp.getValue();
@@ -580,9 +562,12 @@ final class BasicOperationService implements InternalOperationService {
         }
         Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(
                 nodeEngine.getPartitionService().getPartitionCount());
+
+        int x = 0;
         for (Map.Entry<Address, Future> response : responses.entrySet()) {
             try {
-                PartitionResponse result = (PartitionResponse) nodeEngine.toObject(response.getValue().get());
+                Future future = response.getValue();
+                PartitionResponse result = (PartitionResponse) nodeEngine.toObject(future.get());
                 partitionResults.putAll(result.asMap());
             } catch (Throwable t) {
                 if (logger.isFinestEnabled()) {
@@ -595,6 +580,7 @@ final class BasicOperationService implements InternalOperationService {
                     partitionResults.put(partition, t);
                 }
             }
+            x++;
         }
         final List<Integer> failedPartitions = new LinkedList<Integer>();
         for (Map.Entry<Integer, Object> partitionResult : partitionResults.entrySet()) {
@@ -624,9 +610,9 @@ final class BasicOperationService implements InternalOperationService {
         }
         if (nodeEngine.getThisAddress().equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
-        } else {
-            return send(op, node.getConnectionManager().getOrConnect(target));
         }
+
+        return send(op, node.getConnectionManager().getOrConnect(target));
     }
 
     @Override
@@ -649,7 +635,10 @@ final class BasicOperationService implements InternalOperationService {
 
     private boolean send(final Operation op, final Connection connection) {
         Data data = nodeEngine.toData(op);
-        final int partitionId = getPartitionIdForExecution(op);
+
+        //enable this line to get some logging of sizes of operations.
+        //System.out.println(op.getClass()+" "+data.bufferSize());
+        final int partitionId = scheduler.getPartitionIdForExecution(op);
         Packet packet = new Packet(data, partitionId, nodeEngine.getSerializationContext());
         packet.setHeader(Packet.HEADER_OP);
         if (op instanceof UrgentSystemOperation) {
@@ -718,16 +707,16 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public void shutdown() {
         logger.finest("Stopping operation threads...");
-        responseExecutor.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
         for (BasicInvocation invocation : invocations.values()) {
             invocation.notify(response);
         }
         invocations.clear();
-        executor.shutdown();
+        scheduler.shutdown();
     }
 
     public class BasicOperationProcessorImpl implements BasicOperationProcessor {
+
         @Override
         public void process(Object o) {
             if (o == null) {
@@ -735,7 +724,12 @@ final class BasicOperationService implements InternalOperationService {
             } else if (o instanceof Operation) {
                 processOperation((Operation) o);
             } else if (o instanceof Packet) {
-                processPacket((Packet) o);
+                Packet packet = (Packet) o;
+                if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+                    processResponsePacket(packet);
+                } else {
+                    processOperationPacket(packet);
+                }
             } else if (o instanceof Runnable) {
                 ((Runnable) o).run();
             } else {
@@ -757,54 +751,6 @@ final class BasicOperationService implements InternalOperationService {
         @Override
         public void run() {
             processOperation(op);
-        }
-    }
-
-    @Override
-    public void notifyBackupCall(long callId) {
-        try {
-            final BasicInvocation invocation = invocations.get(callId);
-            if (invocation != null) {
-                invocation.signalOneBackupComplete();
-            }
-        } catch (Exception e) {
-            ReplicaErrorLogger.log(e, logger);
-        }
-    }
-
-    private class ResponseProcessor implements Runnable {
-        final Packet packet;
-
-        public ResponseProcessor(Packet packet) {
-            this.packet = packet;
-        }
-
-        // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
-        private void notifyRemoteCall(NormalResponse response) {
-            BasicInvocation invocation = invocations.get(response.getCallId());
-            if (invocation == null) {
-                throw new HazelcastException("No invocation for response:" + response);
-            }
-
-            invocation.notify(response);
-        }
-
-        @Override
-        public void run() {
-            try {
-                final Data data = packet.getData();
-                final Response response = (Response) nodeEngine.toObject(data);
-
-                if (response instanceof NormalResponse) {
-                    notifyRemoteCall((NormalResponse) response);
-                } else if (response instanceof BackupResponse) {
-                    notifyBackupCall(response.getCallId());
-                } else {
-                    throw new IllegalStateException("Unrecognized response type: " + response);
-                }
-            } catch (Throwable e) {
-                logger.severe("While processing response...", e);
-            }
         }
     }
 

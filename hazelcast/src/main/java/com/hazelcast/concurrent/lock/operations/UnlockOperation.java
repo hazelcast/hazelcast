@@ -83,7 +83,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
         AwaitOperation awaitResponse = lockStore.pollExpiredAwaitOp(key);
         if (awaitResponse != null) {
             OperationService operationService = getNodeEngine().getOperationService();
-            operationService.runOperation(awaitResponse);
+            operationService.runOperationOnCallingThread(awaitResponse);
         }
         shouldNotify = awaitResponse == null;
     }

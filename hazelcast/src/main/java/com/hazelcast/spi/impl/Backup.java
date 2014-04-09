@@ -92,7 +92,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
             OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
 
             final OperationService operationService = nodeEngine.getOperationService();
-            operationService.runOperation(backupOp);
+            operationService.runOperationOnCallingThread(backupOp);
         }
     }
 

@@ -75,7 +75,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                 OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
                 OperationAccessor.setConnection(postJoinOp, getConnection());
                 postJoinOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                nodeEngine.getOperationService().runOperation(postJoinOp);
+                nodeEngine.getOperationService().runOperationOnCallingThread(postJoinOp);
             }
 
             if (calls != null) {
