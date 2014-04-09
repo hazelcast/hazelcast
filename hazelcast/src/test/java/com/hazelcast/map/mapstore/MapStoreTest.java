@@ -1303,7 +1303,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int expectedStoreCount = 3;
         final int nodeCount = 3;
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "10");
+        config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "30");
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
