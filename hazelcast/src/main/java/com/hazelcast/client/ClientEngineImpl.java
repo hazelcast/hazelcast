@@ -581,7 +581,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                         .setResponseHandler(createEmptyResponseHandler());
 
                 if (member.localMember()) {
-                    operationService.runOperation(op);
+                    operationService.runOperationOnCallingThread(op);
                 } else {
                     operationService.send(op, member.getAddress());
                 }

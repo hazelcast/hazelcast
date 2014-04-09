@@ -48,11 +48,6 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     private volatile int size;
 
     public CachedExecutorServiceDelegate(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor,
-                                         int maxPoolSize) {
-        this(nodeEngine, name, cachedExecutor, maxPoolSize, Integer.MAX_VALUE);
-    }
-
-    public CachedExecutorServiceDelegate(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor,
                                          int maxPoolSize, int queueCapacity) {
         if (maxPoolSize <= 0) {
             throw new IllegalArgumentException("Max pool size must be positive!");
