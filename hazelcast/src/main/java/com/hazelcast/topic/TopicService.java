@@ -16,9 +16,12 @@
 
 package com.hazelcast.topic;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -34,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
@@ -53,6 +57,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
                 }
             };
     private EventService eventService;
+    private ILogger logger;
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -61,6 +66,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
             orderingLocks[i] = new ReentrantLock();
         }
         eventService = nodeEngine.getEventService();
+        this.logger = nodeEngine.getLogger(TopicService.class);
     }
 
     @Override
@@ -110,7 +116,15 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     public void dispatchEvent(Object event, Object listener) {
         TopicEvent topicEvent = (TopicEvent) event;
         Object msgObject = nodeEngine.toObject(topicEvent.data);
-        Message message = new Message(topicEvent.name, msgObject, topicEvent.publishTime, topicEvent.publishingMember);
+        ClusterService clusterService = nodeEngine.getClusterService();
+        MemberImpl member = clusterService.getMember(topicEvent.publisherAddress);
+        if (member == null) {
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("Dropping message " + msgObject + " from unknown address:" + topicEvent.publisherAddress);
+            }
+            return;
+        }
+        Message message = new Message(topicEvent.name, msgObject, topicEvent.publishTime, member);
         incrementReceivedMessages(topicEvent.name);
         MessageListener messageListener = (MessageListener) listener;
         messageListener.onMessage(message);

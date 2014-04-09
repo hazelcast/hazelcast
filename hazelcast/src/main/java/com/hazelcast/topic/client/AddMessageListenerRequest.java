@@ -104,6 +104,7 @@ public class AddMessageListenerRequest extends CallableClientRequest
             if (!endpoint.live()) {
                 return;
             }
+
             Data messageData = clientEngine.toData(message.getMessageObject());
             String publisherUuid = message.getPublishingMember().getUuid();
             PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), publisherUuid);
