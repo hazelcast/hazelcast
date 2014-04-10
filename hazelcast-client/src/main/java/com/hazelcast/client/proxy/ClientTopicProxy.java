@@ -17,6 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ITopic;
@@ -25,6 +26,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.topic.client.AddMessageListenerRequest;
 import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;
@@ -43,18 +45,26 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         this.name = objectId;
     }
 
+    @Override
     public void publish(E message) {
-        final Data data = getContext().getSerializationService().toData(message);
+        SerializationService serializationService = getContext().getSerializationService();
+        final Data data = serializationService.toData(message);
         PublishRequest request = new PublishRequest(name, data);
         invoke(request);
     }
 
+    @Override
     public String addMessageListener(final MessageListener<E> listener) {
         AddMessageListenerRequest request = new AddMessageListenerRequest(name);
+
         EventHandler<PortableMessage> handler = new EventHandler<PortableMessage>() {
+            @Override
             public void handle(PortableMessage event) {
-                E messageObject = (E) getContext().getSerializationService().toObject(event.getMessage());
-                Member member = getContext().getClusterService().getMember(event.getUuid());
+                SerializationService serializationService = getContext().getSerializationService();
+                ClientClusterService clusterService = getContext().getClusterService();
+
+                E messageObject = serializationService.toObject(event.getMessage());
+                Member member = clusterService.getMember(event.getUuid());
                 Message<E> message = new Message<E>(name, messageObject, event.getPublishTime(), member);
                 listener.onMessage(message);
             }
@@ -62,15 +72,18 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         return listen(request, getKey(), handler);
     }
 
+    @Override
     public boolean removeMessageListener(String registrationId) {
         final RemoveMessageListenerRequest request = new RemoveMessageListenerRequest(name, registrationId);
         return stopListening(request, registrationId);
     }
 
+    @Override
     public LocalTopicStats getLocalTopicStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
+    @Override
     protected void onDestroy() {
     }
 
@@ -81,6 +94,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         return key;
     }
 
+    @Override
     protected  <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }

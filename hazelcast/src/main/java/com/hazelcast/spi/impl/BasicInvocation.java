@@ -259,7 +259,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
             if (!sent) {
                 operationService.deregisterInvocation(callId);
-                notify(new RetryableIOException("Packet not responseReceived to -> " + invTarget));
+                notify(new RetryableIOException("Packet not send to -> " + invTarget));
             }
         } else {
             if (op instanceof BackupAwareOperation) {
