@@ -119,7 +119,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                 //it can be that this invocation future already received an answer, e.g. when a an invocation
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
-                basicInvocation.logger.info("The InvocationFuture.set method of "+basicInvocation+" can only be called once");
+                basicInvocation.logger.info("The InvocationFuture.set method of " + basicInvocation + " can only be called once");
                 return;
             }
             this.response = response;
@@ -227,12 +227,31 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                     if (response != null) {
                         continue;
                     }
-                    return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount)
-                            + " ms. Aborting invocation! " + toString());
+                    return newOperationTimeoutException(pollCount, pollTimeoutMs);
                 }
             }
         }
         return BasicInvocation.TIMEOUT_RESPONSE;
+    }
+
+    private Object newOperationTimeoutException(int pollCount, long pollTimeoutMs) {
+        boolean hasResponse = basicInvocation.potentialResponse == null;
+        int backupsExpected = basicInvocation.backupsExpected;
+        int backupsCompleted = basicInvocation.backupsCompleted;
+
+        if (hasResponse) {
+            return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
+                    + " Aborting invocation! " + toString()
+                    + " Not all backups have completed "
+                    + " backups-expected:" + backupsExpected
+                    + " backups-completed: " + backupsCompleted);
+        } else {
+            return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
+                    + " Aborting invocation! " + toString()
+                    + " No response has been send "
+                    + " backups-expected:" + backupsExpected
+                    + " backups-completed: " + backupsCompleted);
+        }
     }
 
     private Object resolveResponseOrThrowException(Object unresolvedResponse)

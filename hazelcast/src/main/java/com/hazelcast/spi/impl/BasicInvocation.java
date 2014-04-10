@@ -102,6 +102,10 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     final boolean resultDeserialized;
     private Address invTarget;
     private MemberImpl invTargetMember;
+    volatile int backupsCompleted;
+    volatile NormalResponse potentialResponse;
+    volatile int backupsExpected;
+
 
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
@@ -206,7 +210,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     private void resetAndReInvoke() {
         invokeCount = 0;
         potentialResponse = null;
-        expectedBackupCount = -1;
+        backupsExpected = -1;
         doInvoke();
     }
 
@@ -429,21 +433,18 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         return sb.toString();
     }
 
-    private volatile int availableBackups;
-    private volatile NormalResponse potentialResponse;
-    private volatile int expectedBackupCount;
 
-    //availableBackups is incremented while a lock is hold.
+    //backupsCompleted is incremented while a lock is hold.
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     public void signalOneBackupComplete() {
         synchronized (this) {
-            availableBackups++;
+            backupsCompleted++;
 
-            if (expectedBackupCount == -1) {
+            if (backupsExpected == -1) {
                 return;
             }
 
-            if (expectedBackupCount != availableBackups) {
+            if (backupsExpected != backupsCompleted) {
                 return;
             }
 
@@ -455,9 +456,9 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     private void waitForBackups(int backupCount, long timeout, TimeUnit unit, NormalResponse response) {
         synchronized (this) {
-            this.expectedBackupCount = backupCount;
+            this.backupsExpected = backupCount;
 
-            if (availableBackups == expectedBackupCount) {
+            if (backupsCompleted == backupsExpected) {
                 invocationFuture.set(response);
                 return;
             }
@@ -469,7 +470,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             @Override
             public void run() {
                 synchronized (BasicInvocation.this) {
-                    if (expectedBackupCount == availableBackups) {
+                    if (backupsExpected == backupsCompleted) {
                         return;
                     }
                 }
