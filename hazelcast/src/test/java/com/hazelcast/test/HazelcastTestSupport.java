@@ -47,7 +47,7 @@ public abstract class HazelcastTestSupport {
     private TestHazelcastInstanceFactory factory;
 
     public static String generateRandomString(int length) {
-        StringBuffer sb = new StringBuffer();
+        StringBuffer sb = new StringBuffer(length);
         Random random = new Random();
         for (int k = 0; k < length; k++) {
             char c = (char) (random.nextInt(26) + 'a');
