@@ -1057,7 +1057,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final SampleObjects.Employee emp = new SampleObjects.Employee("name", 77, true, 10D);
         map.put(1, emp);
 
-        boolean b = node.executeTransaction(options, new TransactionalTask<Boolean>() {
+        node.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
                 txMap.remove(1);
