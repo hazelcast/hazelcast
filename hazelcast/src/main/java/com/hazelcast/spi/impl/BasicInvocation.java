@@ -755,12 +755,31 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                         if (response != null) {
                             continue;
                         }
-                        return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount)
-                                + " ms. Aborting invocation! " + toString());
+                        return newOperationTimeoutException(pollCount,pollTimeoutMs);
                     }
                 }
             }
             return TIMEOUT_RESPONSE;
+        }
+
+        private Object newOperationTimeoutException(int pollCount, long pollTimeoutMs) {
+            boolean hasResponse = potentialResponse == null;
+            int backupsExpected = expectedBackupCount;
+            int backupsCompleted = availableBackups;
+
+            if (hasResponse) {
+                return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
+                        + " Aborting invocation! " + toString()
+                        + " Not all backups have completed "
+                        + " backups-expected: " + backupsExpected
+                        + " backups-completed: " + backupsCompleted);
+            } else {
+                return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
+                        + " Aborting invocation! " + toString()
+                        + " No response has been send "
+                        + " backups-expected: " + backupsExpected
+                        + " backups-completed: " + backupsCompleted);
+            }
         }
 
         private Object resolveResponseOrThrowException(Object unresolvedResponse)
