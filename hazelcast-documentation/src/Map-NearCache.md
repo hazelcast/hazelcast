@@ -10,7 +10,7 @@ Map entries in Hazelcast are partitioned across the cluster. Imagine that you ar
 
 -   Near cache breaks the strong consistency guarantees; you might be reading stale data.
 
-Near cache is highly recommended for the maps that are read-mostly. Here is a near-cache configuration for a map :
+Near cache is highly recommended for the maps that are read-mostly. Here is a near cache configuration for a map:
 
 ```xml
 <hazelcast>
@@ -68,3 +68,4 @@ Near cache is highly recommended for the maps that are read-mostly. Here is a ne
 </hazelcast>
 ```
 
+***Note***: *Programmatically, near cache configuration is done by using the class [NearCacheConfig](https://github.com/hazelcast/hazelcast/blob/607aa5484958af706ee18a1eb15d89afd12ee7af/hazelcast/src/main/java/com/hazelcast/config/NearCacheConfig.java). And this class is used both in nodes and clients. To create a near cache in a client (native Java client), use the method `addNearCacheConfig` in the class `ClientConfig` (please see [Java Client](#java-client) section). Please note that near cache configuration is specific to the node or client itself, a map in a node may not have near cache configured while the same map in a client may have.*
