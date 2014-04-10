@@ -1353,9 +1353,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             try {
                 MigrationInfo info = migrationInfo;
                 InternalPartitionImpl partition = partitions[info.getPartitionId()];
-                if (!partition.getOwnerOrNull().equals(info.getSource())) {
-                    logger.severe("ERROR: partition owner is not the source of migration! -> "
+                Address owner = partition.getOwnerOrNull();
+                if(owner == null){
+                    logger.severe("ERROR: partition owner is not set! -> "
                             + partition + " -VS- " + info);
+                    return;
+                }
+                if (!owner.equals(info.getSource())) {
+                    logger.severe("ERROR: partition owner is not the source of migration! -> "
+                            + partition + " -VS- " + info +" found owner:"+owner);
+                    return;
                 }
                 sendMigrationEvent(migrationInfo, MigrationStatus.STARTED);
                 Boolean result = Boolean.FALSE;
