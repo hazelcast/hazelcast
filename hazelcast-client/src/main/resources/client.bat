@@ -1,1 +1,1 @@
-java -Djava.net.preferIPv4Stack=true -jar ../lib/hazelcast-client-${project.version}.jar
+java -Djava.net.preferIPv4Stack=true -cp "../lib/*" com.hazelcast.client.examples.TestClientApp
