@@ -1378,11 +1378,8 @@ public class MapStoreTest extends HazelcastTestSupport {
             map.put("key" + i, "value" + i);
         }
 
-        assertTrue("store operations must be finished.",
-                testMapStore.latchStoreOpCount.await(30, TimeUnit.SECONDS));
-
-        assertTrue("store all operations must be finished.",
-                testMapStore.latchStoreAllOpCount.await(30, TimeUnit.SECONDS));
+        assertOpenEventually("store operations must be finished.", testMapStore.latchStoreOpCount);
+        assertOpenEventually("store all operations must be finished.", testMapStore.latchStoreAllOpCount);
 
         assertEquals("value" + (size1 - 1), testMapStore.getStore().get("key"));
         assertEquals("value" + (size2 - 1), testMapStore.getStore().get("key" + (size2 - 1)));
