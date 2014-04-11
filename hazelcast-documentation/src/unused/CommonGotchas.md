@@ -11,12 +11,12 @@ Hazelcast is the distributed implementation of several structures that exist in 
 
 2.  Hazelcast always return a clone copy of a value. Modifying the returned value does not change the actual value in the map (or multimap or list or set). You should put modified value back to make changes visible to all nodes.
 
-```java
-V value = map.get(key);
-value.updateSomeProperty();
-map.put(key, value);
-```
-If `cache-value` is true (default is true), Hazelcast caches that returned value for fast access in local node. Modifications done to this cached value without putting it back to map will be visible to only local node, successive `get` calls will return the same cached value. To reflect modifications to distributed map, you should put modified value back into map.
+
+    ```java
+    V value = map.get(key);
+    value.updateSomeProperty();
+    map.put(key, value);
+    ```
 
 3.  Collections which return values of methods such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`, contain cloned values. These collections are NOT backup by related Hazelcast objects. So changes to the these are **NOT** reflected in the originals, and vice-versa.
 
