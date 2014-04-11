@@ -54,6 +54,7 @@ src/IntegratedClustering.md
 src/Storage.md
 	src/ElasticMemory.md
 src/Clients.md
+#	src/ClientTypes.md
 	src/NativeClients.md
 		src/JavaClient.md
 		src/CPlusClient.md
