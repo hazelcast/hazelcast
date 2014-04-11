@@ -47,8 +47,6 @@ value.updateSomeProperty();
 map.put(key, value);
 ```
 
-If `cache-value` is true (default is true), Hazelcast caches that returned value for fast access in the local node. Modifications done to this cached value without putting it back to map will be visible to only local node. Successive `get` calls will return the same cached value. To reflect modifications to distributed map, you should put modified value back into map.
-
 Collections which return values of methods such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`, contain cloned values. These collections are NOT backup by related Hazelcast objects. So changes to the these are **NOT** reflected in the originals, and vice-versa.
 
 **5\. How Do I Test My Hazelcast Cluster**
