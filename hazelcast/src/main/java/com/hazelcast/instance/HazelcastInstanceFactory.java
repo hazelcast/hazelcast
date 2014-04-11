@@ -118,7 +118,7 @@ public final class HazelcastInstanceFactory {
         return "_hzInstance_" + FACTORY_ID_GEN.incrementAndGet() + "_" + config.getGroupConfig().getName();
     }
 
-    public static HazelcastInstanceProxy newHazelcastInstance(Config config, String instanceName,
+    public static HazelcastInstance newHazelcastInstance(Config config, String instanceName,
                                                               NodeContext nodeContext) {
         if (config == null) {
             config = new XmlConfigBuilder().build();

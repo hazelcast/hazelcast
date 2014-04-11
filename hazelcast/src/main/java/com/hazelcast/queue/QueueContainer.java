@@ -699,7 +699,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         out.writeUTF(name);
         out.writeInt(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
-            item.writeData(out);
+            out.writeObject(item);
         }
         out.writeInt(txMap.size());
         for (TxQueueItem item : txMap.values()) {
@@ -712,8 +712,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         name = in.readUTF();
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
-            QueueItem item = new QueueItem(this, -1, null);
-            item.readData(in);
+            QueueItem item = in.readObject();
             getItemQueue().offer(item);
             setId(item.getItemId());
         }

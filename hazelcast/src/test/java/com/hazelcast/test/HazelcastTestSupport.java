@@ -27,6 +27,7 @@ import org.junit.After;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,16 @@ public abstract class HazelcastTestSupport {
     }
 
     private TestHazelcastInstanceFactory factory;
+
+    public static String generateRandomString(int length) {
+        StringBuffer sb = new StringBuffer(length);
+        Random random = new Random();
+        for (int k = 0; k < length; k++) {
+            char c = (char) (random.nextInt(26) + 'a');
+            sb.append(c);
+        }
+        return sb.toString();
+    }
 
     public static void assertJoinable(Thread... threads) {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);

@@ -114,7 +114,7 @@ public class EventServiceTest extends HazelcastTestSupport {
     }
 
     private TopicEvent builTopicEvent(String value, MemberImpl member, SerializationService ss) {
-        return new TopicEvent("foo", ss.toData(value), member);
+        return new TopicEvent("foo", ss.toData(value), member.getAddress());
     }
 
     private EventRegistration findEventRegistration(Address address, Collection<EventRegistration> registrations) {

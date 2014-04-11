@@ -16,7 +16,7 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,17 +30,15 @@ public class TopicEvent implements IdentifiedDataSerializable {
 
     public String name;
     public long publishTime;
-    //TODO: Do we really want to drag along the member? It is a big object. It should be enough
-    //to pass the address.
-    public Member publishingMember;
+    public Address publisherAddress;
     public Data data;
 
     public TopicEvent() {
     }
 
-    public TopicEvent(String name, Data data, Member publishingMember) {
+    public TopicEvent(String name, Data data, Address publisherAddress) {
         publishTime = Clock.currentTimeMillis();
-        this.publishingMember = publishingMember;
+        this.publisherAddress = publisherAddress;
         this.name = name;
         this.data = data;
     }
@@ -59,7 +57,7 @@ public class TopicEvent implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeLong(publishTime);
-        out.writeObject(publishingMember);
+        out.writeObject(publisherAddress);
         IOUtil.writeNullableData(out, data);
     }
 
@@ -67,7 +65,7 @@ public class TopicEvent implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         publishTime = in.readLong();
-        publishingMember = in.readObject();
+        publisherAddress = in.readObject();
         data = IOUtil.readNullableData(in);
     }
 
@@ -76,7 +74,7 @@ public class TopicEvent implements IdentifiedDataSerializable {
         return "TopicEvent{"
                 + "name='" + name + '\''
                 + ", publishTime=" + publishTime
-                + ", publishingMember=" + publishingMember
+                + ", publisherAddress=" + publisherAddress
                 + '}';
     }
 }
