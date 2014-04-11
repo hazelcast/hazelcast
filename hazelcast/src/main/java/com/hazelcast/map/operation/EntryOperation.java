@@ -88,8 +88,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 eventType = EntryEventType.UPDATED;
             }
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
                 dataValue = mapService.toData(entry.getValue());
-                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, dataValue));
             }
         }
     }

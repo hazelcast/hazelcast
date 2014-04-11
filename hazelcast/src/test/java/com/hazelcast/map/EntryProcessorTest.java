@@ -906,6 +906,42 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     }
 
+    /**
+     * Expected serialization count is 1 in Object format
+     * since event publishing needs a Data type.
+     */
+    @Test
+    public void testEntryProcessorSerializationCountWithObjectFormat() {
+        final String mapName = randomMapName();
+        final int expectedSerializationCount = 1;
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        Config cfg = new Config();
+        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, MyObject> map = instance.getMap(mapName);
+        Object result = map.executeOnKey("key", new StoreOperation());
+        assertEquals(1, result);
+        Integer serialized = (Integer) map.executeOnKey("key", new FetchSerializedCount());
+        assertEquals(expectedSerializationCount, serialized.intValue());
+        instance.shutdown();
+    }
+
+    @Test
+    public void testEntryProcessorNoDeserializationWithObjectFormat() {
+        final String mapName = randomMapName();
+        final int expectedDeserializationCount = 0;
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        Config cfg = new Config();
+        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, MyObject> map = instance.getMap(mapName);
+        Object result = map.executeOnKey("key", new StoreOperation());
+        assertEquals(1, result);
+        Integer serialized = (Integer) map.executeOnKey("key", new FetchDeSerializedCount());
+        assertEquals(expectedDeserializationCount, serialized.intValue());
+        instance.shutdown();
+    }
+
     public static class Issue1764Data implements DataSerializable {
 
         public static AtomicInteger serializationCount = new AtomicInteger();
@@ -975,4 +1011,64 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
     }
+
+    private static class MyObject implements DataSerializable {
+
+        int serializedCount = 0;
+        int deserializedCount = 0;
+
+        public MyObject() {
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(++serializedCount);
+            out.writeInt(deserializedCount);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            serializedCount = in.readInt();
+            deserializedCount = in.readInt() + 1;
+        }
+    }
+    private static class StoreOperation implements EntryProcessor {
+
+        @Override
+        public Object process(Map.Entry entry) {
+            MyObject myObject = new MyObject();
+            entry.setValue(myObject);
+            return 1;
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
+        }
+    }
+    private static class FetchSerializedCount implements EntryProcessor<String, MyObject> {
+
+        @Override
+        public Object process(Map.Entry<String, MyObject> entry) {
+            return entry.getValue().serializedCount;
+        }
+
+        @Override
+        public EntryBackupProcessor<String, MyObject> getBackupProcessor() {
+            return null;
+        }
+    }
+    private static class FetchDeSerializedCount implements EntryProcessor<String, MyObject> {
+
+        @Override
+        public Object process(Map.Entry<String, MyObject> entry) {
+            return entry.getValue().deserializedCount;
+        }
+
+        @Override
+        public EntryBackupProcessor<String, MyObject> getBackupProcessor() {
+            return null;
+        }
+    }
+
 }
