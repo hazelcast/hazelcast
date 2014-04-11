@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientMapTryLockTests {
+public class ClientMapTryLockConcurrentTests {
 
     static HazelcastInstance client;
     static HazelcastInstance server;
