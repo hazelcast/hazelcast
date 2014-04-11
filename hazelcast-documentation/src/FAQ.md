@@ -158,17 +158,46 @@ public void cleanup() throws Exception {
 
 For more information please [check our existing tests.](https://github.com/hazelcast/hazelcast/tree/master/hazelcast/src/test/java/com/hazelcast/cluster)
 
+**6\. How Do I Create Separate Clusters**
 
-**6\. When **`RuntimeInterruptedException`** is Thrown**
+By specifying group name and group password, you can separate your clusters in a simple way. Groupings can be by *dev*, *production*, *test*, *app*, etc.
+
+```xml
+<hazelcast>
+    <group>
+        <name>dev</name>
+        <password>dev-pass</password>
+    </group>
+    ...
+</hazelcast>
+```
+
+You can also set the `groupName` with programmatic configuration. JVM can host multiple Hazelcast instances. Each node can only participate in one group and it only joins to its own group, does not mess with others. Following code creates 3 separate Hazelcast nodes, `h1` belongs to `app1` cluster, while `h2` and `h3` belong to `app2` cluster.
+
+```java
+Config configApp1 = new Config();
+configApp1.getGroupConfig().setName("app1");
+
+Config configApp2 = new Config();
+configApp2.getGroupConfig().setName("app2");
+
+HazelcastInstance h1 = Hazelcast.newHazelcastInstance(configApp1);
+HazelcastInstance h2 = Hazelcast.newHazelcastInstance(configApp2);
+HazelcastInstance h3 = Hazelcast.newHazelcastInstance(configApp2);
+```
+
+
+
+**7\. When **`RuntimeInterruptedException`** is Thrown**
 
 Most of the Hazelcast operations throw an `RuntimeInterruptedException` (which is unchecked version of `InterruptedException`) if a user thread is interrupted while waiting a response. Hazelcast uses RuntimeInterruptedException to pass InterruptedException up through interfaces that do not have InterruptedException in their signatures. The users should be able to catch and handle `RuntimeInterruptedException` in such cases as if their threads are interrupted on a blocking operation.
 
-**7\. When **`ConcurrentModificationException`** is Thrown**
+**8\. When **`ConcurrentModificationException`** is Thrown**
 
 Some of Hazelcast operations can throw `ConcurrentModificationException` under transaction while trying to acquire a resource, although operation signatures do not define such an exception. Exception is thrown if resource cannot be acquired in a specific time. The users should be able to catch and handle `ConcurrentModificationException` while they are using Hazelcast transactions.
 
 
-**8\. How is the Split-Brain Syndrome Handled**
+**9\. How is the Split-Brain Syndrome Handled**
 
 Imagine that you have 10-node cluster and for some reason the network is divided into two in a way that 4 servers cannot see the other 6. As a result you ended up having two separate clusters; 4-node cluster and 6-node cluster. Members in each sub-cluster are thinking that the other nodes are dead even though they are not. This situation is called Network Partitioning (a.k.a. Split-Brain Syndrome).
 

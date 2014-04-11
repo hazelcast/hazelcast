@@ -91,7 +91,6 @@ src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 	src/WANReplication.md
 src/Config.md
-	src/ConfigGroup.md
 	src/NetworkConfig.md
 		src/ConfigTcpIp.md
 		src/ConfigSpecifyInterfaces.md
