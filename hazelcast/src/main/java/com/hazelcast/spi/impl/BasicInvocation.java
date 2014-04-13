@@ -200,6 +200,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
 
     private void resetAndReInvoke() {
+        reinvocations++;
         invokeCount = 0;
         potentialResponse = null;
         expectedBackupCount = -1;
@@ -272,7 +273,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             } else {
                 invocationFuture.set(WAIT_RESPONSE);
                 final ExecutionService ex = nodeEngine.getExecutionService();
-                // fast retry for the first few invocations
+                // fast retry for the first few reinvocations
                 if (invokeCount < 5) {
                     getAsyncExecutor().execute(new ReInvocationTask());
                 } else {
@@ -404,6 +405,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return sb.toString();
     }
 
+    private volatile int reinvocations = 0;
     private volatile int availableBackups;
     private volatile NormalResponse potentialResponse;
     private volatile int expectedBackupCount;
@@ -772,13 +774,18 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                         + " Aborting invocation! " + toString()
                         + " Not all backups have completed "
                         + " backups-expected: " + backupsExpected
-                        + " backups-completed: " + backupsCompleted);
+                        + " backups-completed: " + backupsCompleted
+                        + " reinvocations: " + reinvocations
+
+                );
             } else {
                 return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
                         + " Aborting invocation! " + toString()
                         + " No response has been send "
                         + " backups-expected: " + backupsExpected
-                        + " backups-completed: " + backupsCompleted);
+                        + " backups-completed: " + backupsCompleted
+                        + " reinvocations: " + reinvocations
+                );
             }
         }
 
