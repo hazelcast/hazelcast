@@ -763,7 +763,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
 
         private Object newOperationTimeoutException(int pollCount, long pollTimeoutMs) {
-            boolean hasResponse = potentialResponse == null;
+            boolean hasResponse = potentialResponse != null;
             int backupsExpected = expectedBackupCount;
             int backupsCompleted = availableBackups;
 
