@@ -45,7 +45,7 @@ Hazelcast has Spring integration (requires version 2.5 or greater) since 1.9.1 u
 
 -   Use *hz* namespace shortcuts to declare cluster, its items and so on.
 
-After that you can configure Hazelcast instance (node) as shown below.
+After that you can configure Hazelcast instance as shown below.
 
 ```xml
 <hz:hazelcast id="instance">

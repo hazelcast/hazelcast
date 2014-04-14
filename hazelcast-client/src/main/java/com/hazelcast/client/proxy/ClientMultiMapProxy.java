@@ -44,6 +44,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ThreadUtil;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,8 +53,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ValidationUtil.isNotNegative;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
 /**
  * @author ali 5/19/13
@@ -196,7 +197,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
-        isNotNegative(leaseTime, "leaseTime");
+        shouldBePositive(leaseTime, "leaseTime");
         final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
                 getTimeInMillis(leaseTime, timeUnit), -1, name);

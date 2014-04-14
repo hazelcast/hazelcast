@@ -113,6 +113,16 @@ public class MapLockTest extends HazelcastTestSupport {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testLockTTL_whenZeroTimeout() throws Exception {
+        final Config config = new Config();
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        final IMap mm = instance.getMap(randomString());
+        final Object key = "Key";
+        mm.lock(key, 0, TimeUnit.SECONDS);
+    }
+
     @Test(timeout = 100000)
     public void testLockEviction2() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);

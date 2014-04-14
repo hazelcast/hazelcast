@@ -1306,7 +1306,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
-        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 120, 10);
+        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 300, 10);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackupConfig.setMapStoreConfig(mapStoreConfig);
         // create nodes.
@@ -1378,11 +1378,8 @@ public class MapStoreTest extends HazelcastTestSupport {
             map.put("key" + i, "value" + i);
         }
 
-        assertTrue("store operations must be finished.",
-                testMapStore.latchStoreOpCount.await(30, TimeUnit.SECONDS));
-
-        assertTrue("store all operations must be finished.",
-                testMapStore.latchStoreAllOpCount.await(30, TimeUnit.SECONDS));
+        assertOpenEventually("store operations must be finished.", testMapStore.latchStoreOpCount);
+        assertOpenEventually("store all operations must be finished.", testMapStore.latchStoreAllOpCount);
 
         assertEquals("value" + (size1 - 1), testMapStore.getStore().get("key"));
         assertEquals("value" + (size2 - 1), testMapStore.getStore().get("key" + (size2 - 1)));

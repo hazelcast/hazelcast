@@ -1044,4 +1044,29 @@ public class MapTransactionTest extends HazelcastTestSupport {
         h2.shutdown();
     }
 
+
+    @Test
+    public void testValuesWithPredicate_removingExistentEntry() throws TransactionException {
+        final int nodeCount = 1;
+        final String mapName = randomMapName("_testValuesWithPredicate_removingExistentEntry_");
+        final Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance node = factory.newHazelcastInstance(config);
+        final IMap map = node.getMap(mapName);
+
+        final SampleObjects.Employee emp = new SampleObjects.Employee("name", 77, true, 10D);
+        map.put(1, emp);
+
+        node.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
+                txMap.remove(1);
+                Collection<Object> coll = txMap.values(new SqlPredicate("age > 70 "));
+                assertEquals(0, coll.size());
+                return true;
+            }
+        });
+        node.shutdown();
+    }
+
 }

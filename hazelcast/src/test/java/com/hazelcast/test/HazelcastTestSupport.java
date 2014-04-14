@@ -27,11 +27,15 @@ import org.junit.After;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public abstract class HazelcastTestSupport {
 
@@ -45,14 +49,24 @@ public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
+    public static String generateRandomString(int length) {
+        StringBuffer sb = new StringBuffer(length);
+        Random random = new Random();
+        for (int k = 0; k < length; k++) {
+            char c = (char) (random.nextInt(26) + 'a');
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
     public static void assertJoinable(Thread... threads) {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
     }
 
-    public static void interruptCurrentThread(final int delaysMs){
+    public static void interruptCurrentThread(final int delaysMs) {
         final Thread currentThread = Thread.currentThread();
-        new Thread(){
-            public void run(){
+        new Thread() {
+            public void run() {
                 sleepMillis(delaysMs);
                 currentThread.interrupt();
             }
@@ -72,17 +86,17 @@ public abstract class HazelcastTestSupport {
         assertEquals("Iterator and values sizes are not equal", values.length, counter);
     }
 
-    public static void assertSizeEventually(int expectedSize, Collection c){
+    public static void assertSizeEventually(int expectedSize, Collection c) {
         assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds){
+    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("the size of the collection is correct",expectedSize, c.size());
+                assertEquals("the size of the collection is correct", expectedSize, c.size());
             }
-        },timeoutSeconds);
+        }, timeoutSeconds);
     }
 
     public static void assertJoinable(long timeoutSeconds, Thread... threads) {
@@ -111,10 +125,24 @@ public abstract class HazelcastTestSupport {
         assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
+    public static void assertOpenEventually(String message, CountDownLatch latch) {
+        assertOpenEventually(message, latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
     public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
+        assertOpenEventually(null, latch, timeoutSeconds);
+    }
+
+    public static void assertOpenEventually(String message, CountDownLatch latch, long timeoutSeconds) {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
-            assertTrue("CountDownLatch failed to complete within " + timeoutSeconds + " seconds , count left:" + latch.getCount(), completed);
+            if (message == null) {
+                assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d",
+                        timeoutSeconds, latch.getCount()), completed);
+            } else {
+                assertTrue(format("%s, failed to complete within %d seconds , count left: %d",
+                        message, timeoutSeconds, latch.getCount()), completed);
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -127,15 +155,15 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static String randomString(){
+    public static String randomString() {
         return UUID.randomUUID().toString();
     }
 
-    public static String randomMapName(String mapNamePrefix){
+    public static String randomMapName(String mapNamePrefix) {
         return mapNamePrefix + randomString();
     }
 
-    public static String randomMapName(){
+    public static String randomMapName() {
         return randomString();
     }
 
@@ -228,7 +256,7 @@ public abstract class HazelcastTestSupport {
         return TestUtil.getNode(hz);
     }
 
-    protected static void warmUpPartitions(HazelcastInstance... instances){
+    protected static void warmUpPartitions(HazelcastInstance... instances) {
         try {
             TestUtil.warmUpPartitions(instances);
         } catch (InterruptedException e) {
@@ -239,22 +267,22 @@ public abstract class HazelcastTestSupport {
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        for(;;){
-            String id  = UUID.randomUUID().toString();
+        for (;;) {
+            String id = UUID.randomUUID().toString();
             Partition partition = partitionService.getPartition(id);
-            if(localMember.equals(partition.getOwner())){
+            if (localMember.equals(partition.getOwner())) {
                 return id;
             }
         }
     }
 
-    public static String generateKeyNotOwnedBy(HazelcastInstance instance)  {
+    public static String generateKeyNotOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        for(;;){
-            String id  = UUID.randomUUID().toString();
+        for (;;) {
+            String id = UUID.randomUUID().toString();
             Partition partition = partitionService.getPartition(id);
-            if(!localMember.equals(partition.getOwner())){
+            if (!localMember.equals(partition.getOwner())) {
                 return id;
             }
         }

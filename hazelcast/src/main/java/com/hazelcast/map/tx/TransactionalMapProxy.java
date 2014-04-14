@@ -313,7 +313,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 }
             } else {
                 // meanwhile remove values which are not in txMap.
-                valueSet.remove(entry.getValue());
+                valueSet.remove(entry.getValue().value);
             }
         }
 
