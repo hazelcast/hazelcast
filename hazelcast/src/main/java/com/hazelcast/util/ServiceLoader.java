@@ -25,36 +25,42 @@ import com.hazelcast.nio.IOUtil;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
- * @author mdogan 10/2/12
+ * Support class for loading Hazelcast services and hooks based on the Java ServiceLoader specification
+ * but changed in the fact of classloaders to test for given services to work in multi classloader
+ * environments like application or OSGi servers
  */
-public class ServiceLoader {
+public final class ServiceLoader {
 
-    private static final ILogger logger = Logger.getLogger(ServiceLoader.class);
+    private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
 
     private ServiceLoader() {
     }
 
     public static <T> T load(Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
-        final Iterator<T> iter = iterator(clazz, factoryId, classLoader);
-        if (iter.hasNext()) {
-            return iter.next();
+        final Iterator<T> iterator = iterator(clazz, factoryId, classLoader);
+        if (iterator.hasNext()) {
+            return iterator.next();
         }
         return null;
     }
 
-    public static <T> Iterator<T> iterator(final Class<T> clazz, final String factoryId, final ClassLoader classLoader) throws Exception {
-        final Set<ServiceDefinition> serviceDefinitions = parse(factoryId, classLoader);
-        // If we are in a multi class-loader environment like JEE we need to ask the Hazelcast class-loader for default services
-        final ClassLoader hazelcastClassLoader = ServiceLoader.class.getClassLoader();
-        if (hazelcastClassLoader != classLoader) {
-            final Set<ServiceDefinition> systemDefinitions = parse(factoryId, hazelcastClassLoader);
-            serviceDefinitions.addAll(systemDefinitions);
+    public static <T> Iterator<T> iterator(final Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
+        final Set<ServiceDefinition> serviceDefinitions = new HashSet<ServiceDefinition>();
+
+        final Set<ClassLoader> classLoaders = selectClassLoaders(classLoader);
+        for (ClassLoader selectedClassLoader : classLoaders) {
+            serviceDefinitions.addAll(parse(factoryId, selectedClassLoader));
         }
         if (serviceDefinitions.isEmpty()) {
-            Logger.getLogger(ServiceLoader.class).warning("Service loader could not load 'META-INF/services/" + factoryId + "' It may be empty or does not exist.");
+            Logger.getLogger(ServiceLoader.class).warning("Service loader could not load 'META-INF/services/"
+                    + factoryId + "' It may be empty or does not exist.");
         }
 
         return new Iterator<T>() {
@@ -82,12 +88,11 @@ public class ServiceLoader {
     }
 
     private static Set<ServiceDefinition> parse(String factoryId, ClassLoader classLoader) {
-        final ClassLoader cl = (classLoader == null) ? Thread.currentThread().getContextClassLoader() : classLoader;
         final String resourceName = "META-INF/services/" + factoryId;
         try {
             final Enumeration<URL> configs;
-            if (cl != null) {
-                configs = cl.getResources(resourceName);
+            if (classLoader != null) {
+                configs = classLoader.getResources(resourceName);
             } else {
                 configs = ClassLoader.getSystemResources(resourceName);
             }
@@ -110,7 +115,7 @@ public class ServiceLoader {
                         if (name.length() == 0) {
                             continue;
                         }
-                        names.add(new ServiceDefinition(name, cl));
+                        names.add(new ServiceDefinition(name, classLoader));
                     }
                 } finally {
                     IOUtil.closeResource(r);
@@ -118,35 +123,91 @@ public class ServiceLoader {
             }
             return names;
         } catch (Exception e) {
-            logger.severe(e);
+            LOGGER.severe(e);
         }
         return Collections.emptySet();
     }
 
-    private static class ServiceDefinition {
+    static Set<ClassLoader> selectClassLoaders(ClassLoader classLoader) {
+        Set<ClassLoader> classLoaders = new HashSet<ClassLoader>();
+
+        if (classLoader != null) {
+            classLoaders.add(classLoader);
+        }
+
+        // Is TCCL same as given classLoader
+        ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        if (tccl != classLoader) {
+            classLoaders.add(tccl);
+        }
+
+        // Hazelcast core classLoader
+        ClassLoader coreClassLoader = ServiceLoader.class.getClassLoader();
+        if (coreClassLoader != classLoader
+                && coreClassLoader != tccl) {
+            classLoaders.add(coreClassLoader);
+        }
+
+        // Hazelcast client classLoader
+        try {
+            Class<?> hzClientClass = Class.forName("com.hazelcast.client.HazelcastClient");
+            ClassLoader clientClassLoader = hzClientClass.getClassLoader();
+            if (clientClassLoader != classLoader
+                    && clientClassLoader != tccl
+                    && clientClassLoader != coreClassLoader) {
+                classLoaders.add(clientClassLoader);
+            }
+
+            //CHECKSTYLE:OFF
+        } catch (ClassNotFoundException ignore) {
+            // ignore since we does not have HazelcastClient in classpath
+        }
+        //CHECKSTYLE:ON
+
+        return classLoaders;
+    }
+
+    /**
+     * Definition of the internal service based on classloader that is able to load it
+     * and the classname of the found service.
+     */
+    private static final class ServiceDefinition {
         private final String className;
         private final ClassLoader classLoader;
 
         private ServiceDefinition(String className, ClassLoader classLoader) {
+            ValidationUtil.isNotNull(className, "className");
+            ValidationUtil.isNotNull(classLoader, "classLoader");
             this.className = className;
             this.classLoader = classLoader;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             ServiceDefinition that = (ServiceDefinition) o;
 
-            if (className != null ? !className.equals(that.className) : that.className != null) return false;
+            if (!classLoader.equals(that.classLoader)) {
+                return false;
+            }
+            if (!className.equals(that.className)) {
+                return false;
+            }
 
             return true;
         }
 
         @Override
         public int hashCode() {
-            return className != null ? className.hashCode() : 0;
+            int result = className.hashCode();
+            result = 31 * result + classLoader.hashCode();
+            return result;
         }
     }
 
