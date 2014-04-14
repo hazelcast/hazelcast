@@ -44,7 +44,6 @@
 					<description>Comma separated list of FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP and DESTROY to trace connection events</description>
 					<config-property-name>connectionTracingEvents</config-property-name>
 					<config-property-type>java.lang.String</config-property-type>
-					<config-property-value>FACTORY_INIT</config-property-value>
 				</config-property>
                 
                 <config-property>
