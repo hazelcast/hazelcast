@@ -16,17 +16,18 @@
 
 package com.hazelcast.jca;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.resource.ResourceException;
-import javax.resource.cci.*;
+import javax.resource.cci.ConnectionSpec;
+import javax.resource.cci.RecordFactory;
+import javax.resource.cci.ResourceAdapterMetaData;
 import javax.resource.spi.ConnectionManager;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 /**
  * Small facade to bring together container's pooling mechanism and other 

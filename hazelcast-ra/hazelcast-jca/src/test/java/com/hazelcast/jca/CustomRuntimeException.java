@@ -20,7 +20,9 @@ import javax.ejb.ApplicationException;
 
 @ApplicationException(rollback = true)
 public class CustomRuntimeException extends RuntimeException {
-    public CustomRuntimeException(String s) {
+	private static final long serialVersionUID = 536207070729377097L;
+
+	public CustomRuntimeException(String s) {
         super(s);
     }
 }
