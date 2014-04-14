@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
+import static com.hazelcast.util.ValidationUtil.shouldBePositive;
+
 public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
 
     private final String name;
@@ -69,8 +71,9 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     }
 
     @Override
-    public void lock(long ttl, TimeUnit timeUnit) {
-        lockSupport.lock(getNodeEngine(), key, timeUnit.toMillis(ttl));
+    public void lock(long leaseTime, TimeUnit timeUnit) {
+        shouldBePositive(leaseTime, "leaseTime");
+        lockSupport.lock(getNodeEngine(), key, timeUnit.toMillis(leaseTime));
     }
 
     @Override
