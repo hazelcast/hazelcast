@@ -34,6 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
+import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
 /** @author enesakar 1/17/13 */
 public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, InitializingObject {
@@ -238,6 +239,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
+        shouldBePositive(leaseTime, "leaseTime");
         Data k = getService().toData(key, partitionStrategy);
         lockSupport.lock(getNodeEngine(), k, timeUnit.toMillis(leaseTime));
     }
