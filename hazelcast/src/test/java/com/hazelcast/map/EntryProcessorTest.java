@@ -919,8 +919,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, MyObject> map = instance.getMap(mapName);
-        Object result = map.executeOnKey("key", new StoreOperation());
-        assertEquals(1, result);
+        map.executeOnKey("key", new StoreOperation());
         Integer serialized = (Integer) map.executeOnKey("key", new FetchSerializedCount());
         assertEquals(expectedSerializationCount, serialized.intValue());
         instance.shutdown();
@@ -935,8 +934,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, MyObject> map = instance.getMap(mapName);
-        Object result = map.executeOnKey("key", new StoreOperation());
-        assertEquals(1, result);
+        map.executeOnKey("key", new StoreOperation());
         Integer serialized = (Integer) map.executeOnKey("key", new FetchDeSerializedCount());
         assertEquals(expectedDeserializationCount, serialized.intValue());
         instance.shutdown();
