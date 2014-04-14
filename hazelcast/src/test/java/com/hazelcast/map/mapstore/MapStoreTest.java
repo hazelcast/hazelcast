@@ -608,15 +608,15 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(2));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(10));
         assertEquals(0, map.size());
         map.put("1", "value1");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(2));
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(2));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(10));
         assertEquals(1, map.size());
         assertEquals(1, testMapStore.getStore().size());
         map.remove("1");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.waitForEvent(5));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.DELETE, testMapStore.waitForEvent(10));
         assertEquals(0, map.size());
         assertEquals(0, testMapStore.getStore().size());
     }
