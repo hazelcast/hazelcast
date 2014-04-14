@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -39,7 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -127,7 +125,7 @@ public class MapLockTest extends HazelcastTestSupport {
         final IMap map = instance1.getMap(name);
         Random rand = new Random();
         for (int i = 0; i < 5; i++) {
-            map.lock(i, rand.nextInt(5), TimeUnit.SECONDS);
+            map.lock(i, rand.nextInt(5) + 1, TimeUnit.SECONDS);
         }
         final CountDownLatch latch = new CountDownLatch(5);
         Thread t = new Thread(new Runnable() {
