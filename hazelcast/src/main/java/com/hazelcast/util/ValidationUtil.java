@@ -48,4 +48,11 @@ public class ValidationUtil {
             throw new IllegalArgumentException(argumentName+" cannot be negative!");
         }
     }
+
+    public static void shouldBePositive(long value, String argumentName) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(argumentName + " should be positive!");
+        }
+    }
+
 }
