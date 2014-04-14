@@ -23,6 +23,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Collections;
@@ -43,7 +44,9 @@ public final class ServiceLoader {
     private ServiceLoader() {
     }
 
-    public static <T> T load(Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
+    public static <T> T load(Class<T> clazz, String factoryId, ClassLoader classLoader)
+            throws Exception {
+
         final Iterator<T> iterator = iterator(clazz, factoryId, classLoader);
         if (iterator.hasNext()) {
             return iterator.next();
@@ -51,16 +54,23 @@ public final class ServiceLoader {
         return null;
     }
 
-    public static <T> Iterator<T> iterator(final Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
-        final Set<ServiceDefinition> serviceDefinitions = new HashSet<ServiceDefinition>();
+    public static <T> Iterator<T> iterator(final Class<T> clazz, String factoryId, ClassLoader classLoader)
+            throws Exception {
 
         final Set<ClassLoader> classLoaders = selectClassLoaders(classLoader);
+
+        final Set<URLDefinition> factoryUrls = new HashSet<URLDefinition>();
         for (ClassLoader selectedClassLoader : classLoaders) {
-            serviceDefinitions.addAll(parse(factoryId, selectedClassLoader));
+            factoryUrls.addAll(collectFactoryUrls(factoryId, selectedClassLoader));
+        }
+
+        final Set<ServiceDefinition> serviceDefinitions = new HashSet<ServiceDefinition>();
+        for (URLDefinition urlDefinition : factoryUrls) {
+            serviceDefinitions.addAll(parse(urlDefinition));
         }
         if (serviceDefinitions.isEmpty()) {
-            Logger.getLogger(ServiceLoader.class).warning("Service loader could not load 'META-INF/services/"
-                    + factoryId + "' It may be empty or does not exist.");
+            Logger.getLogger(ServiceLoader.class).warning(
+                    "Service loader could not load 'META-INF/services/" + factoryId + "' It may be empty or does not exist.");
         }
 
         return new Iterator<T>() {
@@ -87,7 +97,7 @@ public final class ServiceLoader {
         };
     }
 
-    private static Set<ServiceDefinition> parse(String factoryId, ClassLoader classLoader) {
+    private static Set<URLDefinition> collectFactoryUrls(String factoryId, ClassLoader classLoader) {
         final String resourceName = "META-INF/services/" + factoryId;
         try {
             final Enumeration<URL> configs;
@@ -96,36 +106,84 @@ public final class ServiceLoader {
             } else {
                 configs = ClassLoader.getSystemResources(resourceName);
             }
-            final Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
+
+            Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
-                BufferedReader r = null;
-                try {
-                    r = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
-                    while (true) {
-                        String line = r.readLine();
-                        if (line == null) {
-                            break;
-                        }
-                        int comment = line.indexOf('#');
-                        if (comment >= 0) {
-                            line = line.substring(0, comment);
-                        }
-                        String name = line.trim();
-                        if (name.length() == 0) {
-                            continue;
-                        }
-                        names.add(new ServiceDefinition(name, classLoader));
+
+                ClassLoader highestClassLoader = findHighestReachableClassLoader(url, classLoader, resourceName);
+                urlDefinitions.add(new URLDefinition(url, highestClassLoader));
+            }
+            return urlDefinitions;
+
+        } catch (Exception e) {
+            LOGGER.severe(e);
+        }
+        return Collections.emptySet();
+    }
+
+    private static Set<ServiceDefinition> parse(URLDefinition urlDefinition) {
+        try {
+            final Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
+            BufferedReader r = null;
+            try {
+                URL url = urlDefinition.url;
+                r = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+                while (true) {
+                    String line = r.readLine();
+                    if (line == null) {
+                        break;
                     }
-                } finally {
-                    IOUtil.closeResource(r);
+                    int comment = line.indexOf('#');
+                    if (comment >= 0) {
+                        line = line.substring(0, comment);
+                    }
+                    String name = line.trim();
+                    if (name.length() == 0) {
+                        continue;
+                    }
+                    names.add(new ServiceDefinition(name, urlDefinition.classLoader));
                 }
+            } finally {
+                IOUtil.closeResource(r);
             }
             return names;
         } catch (Exception e) {
             LOGGER.severe(e);
         }
         return Collections.emptySet();
+    }
+
+    private static ClassLoader findHighestReachableClassLoader(URL url, ClassLoader classLoader, String resourceName) {
+        if (classLoader.getParent() == null) {
+            return classLoader;
+        }
+
+        ClassLoader highestClassLoader = classLoader;
+
+        ClassLoader current = classLoader;
+        while (current.getParent() != null) {
+            ClassLoader parent = current.getParent();
+
+            try {
+                Enumeration<URL> enumeration = parent.getResources(resourceName);
+                while (enumeration.hasMoreElements()) {
+                    URL testURL = enumeration.nextElement();
+                    if (url.equals(testURL)) {
+                        highestClassLoader = parent;
+                    }
+                }
+
+                //CHECKSTYLE:OFF
+            } catch (IOException ignore) {
+                // We want to ignore failures and keep searching
+            }
+            //CHECKSTYLE:ON
+
+            // Going on with the search upwards the hierarchy
+            current = current.getParent();
+        }
+        return highestClassLoader;
     }
 
     static Set<ClassLoader> selectClassLoaders(ClassLoader classLoader) {
@@ -143,8 +201,7 @@ public final class ServiceLoader {
 
         // Hazelcast core classLoader
         ClassLoader coreClassLoader = ServiceLoader.class.getClassLoader();
-        if (coreClassLoader != classLoader
-                && coreClassLoader != tccl) {
+        if (coreClassLoader != classLoader && coreClassLoader != tccl) {
             classLoaders.add(coreClassLoader);
         }
 
@@ -152,9 +209,7 @@ public final class ServiceLoader {
         try {
             Class<?> hzClientClass = Class.forName("com.hazelcast.client.HazelcastClient");
             ClassLoader clientClassLoader = hzClientClass.getClassLoader();
-            if (clientClassLoader != classLoader
-                    && clientClassLoader != tccl
-                    && clientClassLoader != coreClassLoader) {
+            if (clientClassLoader != classLoader && clientClassLoader != tccl && clientClassLoader != coreClassLoader) {
                 classLoaders.add(clientClassLoader);
             }
 
@@ -207,6 +262,48 @@ public final class ServiceLoader {
         public int hashCode() {
             int result = className.hashCode();
             result = 31 * result + classLoader.hashCode();
+            return result;
+        }
+    }
+
+    /**
+     * This class keeps track of available service definition URLs and
+     * the corresponding classloaders
+     */
+    private static final class URLDefinition {
+        private final URL url;
+        private final ClassLoader classLoader;
+
+        private URLDefinition(URL url, ClassLoader classLoader) {
+            this.url = url;
+            this.classLoader = classLoader;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            URLDefinition that = (URLDefinition) o;
+
+            if (classLoader != null ? !classLoader.equals(that.classLoader) : that.classLoader != null) {
+                return false;
+            }
+            if (url != null ? !url.equals(that.url) : that.url != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = url != null ? url.hashCode() : 0;
+            result = 31 * result + (classLoader != null ? classLoader.hashCode() : 0);
             return result;
         }
     }

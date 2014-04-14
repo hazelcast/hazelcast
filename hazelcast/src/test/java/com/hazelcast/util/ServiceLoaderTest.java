@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -24,6 +25,8 @@ import org.junit.runner.RunWith;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -72,4 +75,125 @@ public class ServiceLoaderTest {
         assertEquals(3, classLoaders.size());
     }
 
+    @Test
+    public void selectingSameTcclAndGivenClassLoader()
+            throws Exception {
+
+        ClassLoader same = new URLClassLoader(new URL[0]);
+
+        Thread currentThread = Thread.currentThread();
+        ClassLoader tccl = currentThread.getContextClassLoader();
+        currentThread.setContextClassLoader(same);
+        Set<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(same);
+        currentThread.setContextClassLoader(tccl);
+        assertEquals(2, classLoaders.size());
+    }
+
+    @Test
+    public void loadServicesSingleClassLoader()
+            throws Exception {
+
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
+        while (iterator.hasNext()) {
+            implementations.add(iterator.next());
+        }
+
+        assertEquals(1, implementations.size());
+    }
+
+    @Test
+    public void loadServicesSimpleGivenClassLoader()
+            throws Exception {
+
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        ClassLoader given = new URLClassLoader(new URL[0]);
+
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
+        while (iterator.hasNext()) {
+            implementations.add(iterator.next());
+        }
+
+        assertEquals(1, implementations.size());
+    }
+
+    @Test
+    public void loadServicesSimpleDifferentThreadContextClassLoader()
+            throws Exception {
+
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        Thread current = Thread.currentThread();
+        ClassLoader tccl = current.getContextClassLoader();
+        current.setContextClassLoader(new URLClassLoader(new URL[0]));
+
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
+        while (iterator.hasNext()) {
+            implementations.add(iterator.next());
+        }
+
+        current.setContextClassLoader(tccl);
+        assertEquals(1, implementations.size());
+    }
+
+    @Test
+    public void loadServicesTcclAndGivenClassLoader()
+            throws Exception {
+
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        ClassLoader given = new URLClassLoader(new URL[0]);
+
+        Thread current = Thread.currentThread();
+        ClassLoader tccl = current.getContextClassLoader();
+        current.setContextClassLoader(new URLClassLoader(new URL[0]));
+
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
+        while (iterator.hasNext()) {
+            implementations.add(iterator.next());
+        }
+
+        current.setContextClassLoader(tccl);
+        assertEquals(1, implementations.size());
+    }
+
+    @Test
+    public void loadServicesSameTcclAndGivenClassLoader()
+            throws Exception {
+
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        ClassLoader same = new URLClassLoader(new URL[0]);
+
+        Thread current = Thread.currentThread();
+        ClassLoader tccl = current.getContextClassLoader();
+        current.setContextClassLoader(same);
+
+        Set<ServiceLoaderTestInterface> implementations = new HashSet<ServiceLoaderTestInterface>();
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, same);
+        while (iterator.hasNext()) {
+            implementations.add(iterator.next());
+        }
+
+        current.setContextClassLoader(tccl);
+        assertEquals(1, implementations.size());
+    }
+
+    public static interface ServiceLoaderTestInterface {
+    }
+
+    public static class ServiceLoaderTestInterfaceImpl
+            implements ServiceLoaderTestInterface {
+    }
 }
