@@ -95,7 +95,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
             }
         });
     }
-    
+
     @Test
     public void removedPhantomListener_thenFalse() throws Exception {
         assertFalse(client.getCluster().removeMembershipListener("_IamNotHear_"));

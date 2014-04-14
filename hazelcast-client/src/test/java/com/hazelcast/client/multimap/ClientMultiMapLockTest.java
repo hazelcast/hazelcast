@@ -26,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -278,6 +279,7 @@ public class ClientMultiMapLockTest {
     }
 
     @Test
+    @Ignore
     public void testLockTTL_whenZeroTimeout() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "Key";
