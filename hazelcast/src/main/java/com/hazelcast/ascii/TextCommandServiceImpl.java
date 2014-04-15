@@ -16,7 +16,16 @@
 
 package com.hazelcast.ascii;
 
-import com.hazelcast.ascii.memcache.*;
+import com.hazelcast.ascii.memcache.GetCommandProcessor;
+import com.hazelcast.ascii.memcache.Stats;
+import com.hazelcast.ascii.memcache.SetCommandProcessor;
+import com.hazelcast.ascii.memcache.DeleteCommandProcessor;
+import com.hazelcast.ascii.memcache.SimpleCommandProcessor;
+import com.hazelcast.ascii.memcache.StatsCommandProcessor;
+import com.hazelcast.ascii.memcache.ErrorCommandProcessor;
+import com.hazelcast.ascii.memcache.VersionCommandProcessor;
+import com.hazelcast.ascii.memcache.TouchCommandProcessor;
+import com.hazelcast.ascii.memcache.IncrementCommandProcessor;
 import com.hazelcast.ascii.rest.HttpDeleteCommandProcessor;
 import com.hazelcast.ascii.rest.HttpGetCommandProcessor;
 import com.hazelcast.ascii.rest.HttpPostCommandProcessor;
@@ -36,7 +45,29 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.GET;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.SET;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.PARTIAL_GET;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.PREPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.REPLACE;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ADD;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.GET_END;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.DECREMENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.DELETE;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.HTTP_DELETE;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.HTTP_PUT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.HTTP_GET;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.QUIT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.NO_OP;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.STATS;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.VERSION;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.TOUCH;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_SERVER;
 
 public class TextCommandServiceImpl implements TextCommandService, TextCommandConstants {
     private final Node node;

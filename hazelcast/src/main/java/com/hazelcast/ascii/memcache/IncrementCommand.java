@@ -30,7 +30,7 @@ public class IncrementCommand extends AbstractTextCommand {
     String key;
     int value;
     boolean noreply;
-    ByteBuffer response = null;
+    ByteBuffer response;
 
     public IncrementCommand(TextCommandType type, String key, int value, boolean noReply) {
         super(type);

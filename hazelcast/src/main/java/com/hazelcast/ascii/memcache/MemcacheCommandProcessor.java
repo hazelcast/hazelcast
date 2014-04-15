@@ -26,8 +26,12 @@ import com.hazelcast.ascii.TextCommandService;
  */
 public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandProcessor<T> {
 
-    public static final String MapNamePreceder = "hz_memcache_";
-    public static final String DefaultMapName = "hz_memcache_default";
+    public static final String MAP_NAME_PRECEDER = "hz_memcache_";
+    public static final String DEFAULT_MAP_NAME = "hz_memcache_default";
+
+    protected MemcacheCommandProcessor(TextCommandService textCommandService) {
+        super(textCommandService);
+    }
 
     public static byte[] longToByteArray(long v) {
         int len = (int) (v / 256) + 1;
@@ -41,7 +45,9 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
     }
 
     public static int byteArrayToLong(byte[] v) {
-        if (v.length > 8) return -1;
+        if (v.length > 8) {
+            return -1;
+        }
         int r = 0;
         for (int i = 0; i < v.length; i++) {
             int t = (int) v[i];
@@ -51,7 +57,5 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
         return r;
     }
 
-    protected MemcacheCommandProcessor(TextCommandService textCommandService) {
-        super(textCommandService);
-    }
+
 }

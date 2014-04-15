@@ -24,8 +24,9 @@ public class PartialGetCommand extends GetCommand {
 
     @Override
     public String toString() {
-        return "PartialGetCommand{" +
-                "key='" + key + '\'' +
-                '}';
+        return "PartialGetCommand{"
+                + "key='"
+                + key + '\''
+                + '}';
     }
 }
