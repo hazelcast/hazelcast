@@ -20,9 +20,6 @@ import com.hazelcast.multimap.MultiMapContainer;
 import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.spi.BackupOperation;
 
-/**
- * @author ali 1/9/13
- */
 public class ClearBackupOperation extends MultiMapOperation implements BackupOperation {
 
     public ClearBackupOperation() {

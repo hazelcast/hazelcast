@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -32,9 +32,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-/**
- * @author ali 3/29/13
- */
 public class MultiMapTransactionLog implements KeyAwareTransactionLog {
 
     String name;
@@ -59,7 +56,8 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         TxnPrepareOperation operation = new TxnPrepareOperation(name, key, ttl, threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            return nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            final OperationService operationService = nodeEngine.getOperationService();
+            return operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -69,7 +67,8 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         TxnCommitOperation operation = new TxnCommitOperation(name, key, threadId, txVersion, opList);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            return nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            final OperationService operationService = nodeEngine.getOperationService();
+            return operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -79,7 +78,8 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         TxnRollbackOperation operation = new TxnRollbackOperation(name, key, threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            return nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            final OperationService operationService = nodeEngine.getOperationService();
+            return operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -88,7 +88,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(opList.size());
-        for (Operation op: opList){
+        for (Operation op : opList) {
             out.writeObject(op);
         }
         key.writeData(out);
@@ -100,8 +100,8 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         int size = in.readInt();
-        for (int i=0; i<size; i++){
-            opList.add((Operation)in.readObject());
+        for (int i = 0; i < size; i++) {
+            opList.add((Operation) in.readObject());
         }
         key = new Data();
         key.readData(in);
@@ -114,46 +114,45 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         return new TransactionLogKey(name, key);
     }
 
-    public void addOperation(Operation op){
-        if (op instanceof TxnRemoveOperation){
-            TxnRemoveOperation removeOperation = (TxnRemoveOperation)op;
+    public void addOperation(Operation op) {
+        if (op instanceof TxnRemoveOperation) {
+            TxnRemoveOperation removeOperation = (TxnRemoveOperation) op;
             Iterator<Operation> iter = opList.iterator();
-            while (iter.hasNext()){
+            while (iter.hasNext()) {
                 Operation opp = iter.next();
-                if (opp instanceof TxnPutOperation){
-                    TxnPutOperation putOperation = (TxnPutOperation)opp;
-                    if(putOperation.getRecordId() == removeOperation.getRecordId()){
+                if (opp instanceof TxnPutOperation) {
+                    TxnPutOperation putOperation = (TxnPutOperation) opp;
+                    if (putOperation.getRecordId() == removeOperation.getRecordId()) {
                         iter.remove();
                         return;
                     }
                 }
             }
-        }
-        else if (op instanceof TxnRemoveAllOperation){
-            TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation)op;
+        } else if (op instanceof TxnRemoveAllOperation) {
+            TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation) op;
             Collection<Long> recordIds = removeAllOperation.getRecordIds();
             Iterator<Operation> iter = opList.iterator();
-            while (iter.hasNext()){
+            while (iter.hasNext()) {
                 Operation opp = iter.next();
-                if (opp instanceof TxnPutOperation){
-                    TxnPutOperation putOperation = (TxnPutOperation)opp;
-                    if (recordIds.remove(putOperation.getRecordId())){
+                if (opp instanceof TxnPutOperation) {
+                    TxnPutOperation putOperation = (TxnPutOperation) opp;
+                    if (recordIds.remove(putOperation.getRecordId())) {
                         iter.remove();
                     }
                 }
             }
-            if (recordIds.isEmpty()){
+            if (recordIds.isEmpty()) {
                 return;
             }
         }
         opList.add(op);
     }
 
-    public int size(){
+    public int size() {
         int size = 0;
         for (Operation operation : opList) {
             if (operation instanceof TxnRemoveAllOperation) {
-                TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation)operation;
+                TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation) operation;
                 size -= removeAllOperation.getRecordIds().size();
             } else if (operation instanceof TxnRemoveOperation) {
                 size--;

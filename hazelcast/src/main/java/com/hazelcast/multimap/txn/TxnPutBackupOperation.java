@@ -24,13 +24,9 @@ import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 import java.util.Collection;
 
-/**
- * @ali 10/18/13
- */
 public class TxnPutBackupOperation extends MultiMapKeyBasedOperation {
 
     long recordId;
@@ -49,7 +45,7 @@ public class TxnPutBackupOperation extends MultiMapKeyBasedOperation {
         MultiMapContainer container = getOrCreateContainer();
         MultiMapWrapper wrapper = container.getOrCreateMultiMapWrapper(dataKey);
         response = true;
-        if (wrapper.containsRecordId(recordId)){
+        if (wrapper.containsRecordId(recordId)) {
             response = false;
             return;
         }

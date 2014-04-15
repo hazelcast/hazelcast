@@ -21,12 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-
 import java.io.IOException;
 
-/**
- * @author ali 5/9/13
- */
 public abstract class MultiMapKeyBasedRequest extends MultiMapRequest {
 
     Data key;

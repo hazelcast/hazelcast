@@ -26,14 +26,10 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author ali 4/12/13
- */
 public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
 
     List<Operation> opList;
@@ -51,12 +47,12 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
 
     public void run() throws Exception {
         MultiMapWrapper wrapper = getCollectionWrapper();
-        if (wrapper == null || wrapper.getVersion() != version){
+        if (wrapper == null || wrapper.getVersion() != version) {
             notify = false;
             return;
         }
         wrapper.incrementAndGetVersion();
-        for (Operation op: opList){
+        for (Operation op : opList) {
             op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
             op.beforeRun();
             op.run();
@@ -72,9 +68,9 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
     public Operation getBackupOperation() {
         List<Operation> backupOpList = new ArrayList<Operation>();
         for (Operation operation : opList) {
-            if (operation instanceof BackupAwareOperation){
+            if (operation instanceof BackupAwareOperation) {
                 BackupAwareOperation backupAwareOperation = (BackupAwareOperation) operation;
-                if (backupAwareOperation.shouldBackup()){
+                if (backupAwareOperation.shouldBackup()) {
                     backupOpList.add(backupAwareOperation.getBackupOperation());
                 }
             }
@@ -94,7 +90,7 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
         super.writeInternal(out);
         out.writeLong(version);
         out.writeInt(opList.size());
-        for (Operation op: opList){
+        for (Operation op : opList) {
             out.writeObject(op);
         }
     }
@@ -104,8 +100,8 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
         version = in.readLong();
         int size = in.readInt();
         opList = new ArrayList<Operation>(size);
-        for (int i=0; i<size; i++){
-            opList.add((Operation)in.readObject());
+        for (int i = 0; i < size; i++) {
+            opList.add((Operation) in.readObject());
         }
     }
 

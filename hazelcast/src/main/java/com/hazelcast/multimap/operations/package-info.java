@@ -14,28 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * Contains operations for Hazelcast MultiMap module.
+ */
 package com.hazelcast.multimap.operations;
-
-import com.hazelcast.multimap.MultiMapContainer;
-import com.hazelcast.multimap.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.MultiMapService;
-
-public class SizeOperation extends MultiMapOperation {
-
-    public SizeOperation() {
-    }
-
-    public SizeOperation(String name) {
-        super(name);
-    }
-
-    public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
-        response = container.size();
-        ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
-    }
-
-    public int getId() {
-        return MultiMapDataSerializerHook.SIZE;
-    }
-}

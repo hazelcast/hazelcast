@@ -20,9 +20,6 @@ import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
-/**
- * @author ali 1/16/13
- */
 public class RemoveAllBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     public RemoveAllBackupOperation() {

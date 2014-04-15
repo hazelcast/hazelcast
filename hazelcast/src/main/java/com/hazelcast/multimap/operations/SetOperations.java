@@ -16,8 +16,5 @@
 
 package com.hazelcast.multimap.operations;
 
-/**
- * @author ali 1/17/13
- */
 public interface SetOperations {
 }

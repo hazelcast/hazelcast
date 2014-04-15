@@ -23,19 +23,15 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @author ali 5/14/13
- */
 public class PortableEntrySetResponse implements Portable {
 
-    Set<Map.Entry> entrySet = null;
+    Set<Map.Entry> entrySet;
 
     public PortableEntrySetResponse() {
     }
@@ -57,9 +53,9 @@ public class PortableEntrySetResponse implements Portable {
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeInt("s",entrySet.size());
+        writer.writeInt("s", entrySet.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
-        for (Map.Entry<Data, Data> entry: entrySet){
+        for (Map.Entry<Data, Data> entry : entrySet) {
             Data key = entry.getKey();
             Data value = entry.getValue();
             key.writeData(out);
@@ -71,12 +67,12 @@ public class PortableEntrySetResponse implements Portable {
         int size = reader.readInt("s");
         final ObjectDataInput in = reader.getRawDataInput();
         entrySet = new HashSet<Map.Entry>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             Data key = new Data();
             Data value = new Data();
             key.readData(in);
             value.readData(in);
-            entrySet.add(new AbstractMap.SimpleEntry(key,value));
+            entrySet.add(new AbstractMap.SimpleEntry(key, value));
         }
     }
 }

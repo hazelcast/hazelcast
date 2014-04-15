@@ -16,19 +16,41 @@
 
 package com.hazelcast.multimap;
 
-import com.hazelcast.multimap.operations.client.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.multimap.operations.client.AddEntryListenerRequest;
+import com.hazelcast.multimap.operations.client.ClearRequest;
+import com.hazelcast.multimap.operations.client.ContainsEntryRequest;
+import com.hazelcast.multimap.operations.client.CountRequest;
+import com.hazelcast.multimap.operations.client.EntrySetRequest;
+import com.hazelcast.multimap.operations.client.GetAllRequest;
+import com.hazelcast.multimap.operations.client.KeySetRequest;
+import com.hazelcast.multimap.operations.client.MultiMapIsLockedRequest;
+import com.hazelcast.multimap.operations.client.MultiMapLockRequest;
+import com.hazelcast.multimap.operations.client.MultiMapUnlockRequest;
+import com.hazelcast.multimap.operations.client.PortableEntrySetResponse;
+import com.hazelcast.multimap.operations.client.PutRequest;
+import com.hazelcast.multimap.operations.client.RemoveAllRequest;
+import com.hazelcast.multimap.operations.client.RemoveEntryListenerRequest;
+import com.hazelcast.multimap.operations.client.RemoveRequest;
+import com.hazelcast.multimap.operations.client.SizeRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapGetRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapPutRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapRemoveAllRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapRemoveRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapSizeRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapValueCountRequest;
+import com.hazelcast.multimap.operations.client.ValuesRequest;
+import com.hazelcast.nio.serialization.ArrayPortableFactory;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.util.Collection;
 
-/**
- * @author ali 5/9/13
- */
 public class MultiMapPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MULTIMAP_PORTABLE_FACTORY, -12);
-
 
     public static final int CLEAR = 1;
     public static final int CONTAINS_ENTRY = 2;
@@ -58,13 +80,12 @@ public class MultiMapPortableHook implements PortableHook {
     public static final int TXN_MM_REMOVEALL = 25;
 
 
-
     public int getFactoryId() {
         return F_ID;
     }
 
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_MM_REMOVEALL +1];
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[TXN_MM_REMOVEALL + 1];
         constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new ClearRequest();

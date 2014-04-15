@@ -25,13 +25,9 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 6/10/13
- */
 public abstract class TxnMultiMapRequest extends BaseTransactionRequest implements SecureRequest {
 
     String name;
@@ -53,7 +49,7 @@ public abstract class TxnMultiMapRequest extends BaseTransactionRequest implemen
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -61,7 +57,7 @@ public abstract class TxnMultiMapRequest extends BaseTransactionRequest implemen
         name = reader.readUTF("n");
     }
 
-    public Data toData(Object obj){
+    public Data toData(Object obj) {
         return getClientEngine().toData(obj);
     }
 

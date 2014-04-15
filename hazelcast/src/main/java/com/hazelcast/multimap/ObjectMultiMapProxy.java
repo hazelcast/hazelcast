@@ -28,7 +28,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -39,9 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
-/**
- * @author ali 1/2/13
- */
 public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements MultiMap<K, V>, InitializingObject {
 
     public ObjectMultiMapProxy(MultiMapService service, NodeEngine nodeEngine, String name) {

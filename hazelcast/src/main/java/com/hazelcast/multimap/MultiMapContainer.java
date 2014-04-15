@@ -17,21 +17,23 @@
 package com.hazelcast.multimap;
 
 import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
-
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 1/2/13
- */
 public class MultiMapContainer {
 
     final String name;
@@ -76,15 +78,15 @@ public class MultiMapContainer {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
 
-    public boolean txnLock(Data key, String caller, long threadId, long ttl){
+    public boolean txnLock(Data key, String caller, long threadId, long ttl) {
         return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
     }
 
-    public boolean unlock(Data key, String caller, long threadId){
+    public boolean unlock(Data key, String caller, long threadId) {
         return lockStore != null && lockStore.unlock(key, caller, threadId);
     }
 
-    public boolean forceUnlock(Data key){
+    public boolean forceUnlock(Data key) {
         return lockStore != null && lockStore.forceUnlock(key);
     }
 
@@ -105,7 +107,7 @@ public class MultiMapContainer {
         if (wrapper == null) {
             Collection<MultiMapRecord> coll;
             if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
-                coll = new HashSet<MultiMapRecord>(10);
+                coll = new HashSet<MultiMapRecord>();
             } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
                 coll = new LinkedList<MultiMapRecord>();
             } else {
@@ -190,7 +192,7 @@ public class MultiMapContainer {
         Map<Data, MultiMapWrapper> temp = new HashMap<Data, MultiMapWrapper>(locks.size());
         for (Data key : locks) {
             MultiMapWrapper wrapper = multiMapWrappers.get(key);
-            if (wrapper != null){
+            if (wrapper != null) {
                 temp.put(key, wrapper);
             }
         }
