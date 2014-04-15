@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.client;///*
-
+package com.hazelcast.collection.client;
 
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.client.txn.BaseTransactionRequest;
@@ -25,12 +24,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-
 import java.io.IOException;
 
-/**
-* @author ali 6/11/13
-*/
 public abstract class TxnCollectionRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     String name;
@@ -55,7 +50,7 @@ public abstract class TxnCollectionRequest extends BaseTransactionRequest implem
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
         IOUtil.writeNullableData(writer.getRawDataOutput(), value);
     }
 
@@ -65,3 +60,4 @@ public abstract class TxnCollectionRequest extends BaseTransactionRequest implem
         value = IOUtil.readNullableData(reader.getRawDataInput());
     }
 }
+

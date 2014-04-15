@@ -21,12 +21,8 @@ import com.hazelcast.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 
-/**
- * @ali 9/3/13
- */
 public class CollectionPrepareBackupOperation extends CollectionOperation implements BackupOperation {
 
     long itemId;
@@ -56,7 +52,7 @@ public class CollectionPrepareBackupOperation extends CollectionOperation implem
 
     @Override
     public void run() throws Exception {
-        if (removeOperation){
+        if (removeOperation) {
             getOrCreateContainer().reserveRemoveBackup(itemId, transactionId);
         } else {
             getOrCreateContainer().reserveAddBackup(itemId, transactionId);

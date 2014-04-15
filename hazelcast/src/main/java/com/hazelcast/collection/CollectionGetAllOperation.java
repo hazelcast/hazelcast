@@ -18,12 +18,8 @@ package com.hazelcast.collection;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableCollection;
-
 import java.util.Collection;
 
-/**
- * @ali 9/4/13
- */
 public class CollectionGetAllOperation extends CollectionOperation {
 
     public CollectionGetAllOperation() {

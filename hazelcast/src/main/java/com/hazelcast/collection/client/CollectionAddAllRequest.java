@@ -25,14 +25,10 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @ali 9/4/13
- */
 public class CollectionAddAllRequest extends CollectionRequest {
 
     protected List<Data> valueList;
@@ -69,7 +65,7 @@ public class CollectionAddAllRequest extends CollectionRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         final int size = in.readInt();
         valueList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             final Data value = new Data();
             value.readData(in);
             valueList.add(value);

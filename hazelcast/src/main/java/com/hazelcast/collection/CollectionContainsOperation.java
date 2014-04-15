@@ -19,14 +19,10 @@ package com.hazelcast.collection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @ali 9/1/13
- */
 public class CollectionContainsOperation extends CollectionOperation {
 
     Set<Data> valueSet;
@@ -71,7 +67,7 @@ public class CollectionContainsOperation extends CollectionOperation {
         super.readInternal(in);
         final int size = in.readInt();
         valueSet = new HashSet<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             final Data value = new Data();
             value.readData(in);
             valueSet.add(value);

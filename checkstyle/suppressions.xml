@@ -11,7 +11,6 @@
 
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
     <suppress checks="" files="[\\/]ascii[\\/]"/>
-    <suppress checks="" files="[\\/]collection[\\/]"/>
     <suppress checks="" files="[\\/]config[\\/]"/>
     <suppress checks="" files="[\\/]core[\\/]"/>
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
@@ -253,5 +252,26 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.executor.ExecutorServiceProxy"/>
     <!-- the invokeAll is so scary that Peter doesn't dare to touch it. Need get someone involved who write it-->
     <suppress checks="" files="com.hazelcast.executor.ExecutorServiceProxy"/>
+
+    <!-- Collections -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.collection[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.collection[\\/]"/>
+    <suppress checks="MethodCount" files="com.hazelcast.collection.CollectionContainer"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionPortableHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.collection.CollectionPortableHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="DeclarationOrder" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+
+
+    <!-- List -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.collection.list[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.collection.list[\\/]"/>
 
 </suppressions>
