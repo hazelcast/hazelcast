@@ -16,6 +16,8 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.nio.IOUtil;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -28,6 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * This is used to separate Server and Client inside the same JVM on new
+ * standalone client unittests!<br/>
+ * NEVER EVER use this anywhere in production! :D
+ */
 public class FilteringClassLoader
         extends ClassLoader {
 
@@ -87,12 +94,12 @@ public class FilteringClassLoader
             }
 
             URL url = getResource(name.replaceAll("\\.", "/").concat(".class"));
+            FileInputStream fis = null;
             try {
                 File classFile = new File(url.toURI());
                 byte[] data = new byte[(int) classFile.length()];
-                FileInputStream fis = new FileInputStream(classFile);
+                fis = new FileInputStream(classFile);
                 fis.read(data);
-                fis.close();
 
                 clazz = defineClass(name, data, 0, data.length);
                 cache.put(name, clazz);
@@ -100,6 +107,8 @@ public class FilteringClassLoader
 
             } catch (Exception e) {
                 throw new ClassNotFoundException(name, e);
+            } finally {
+                IOUtil.closeResource(fis);
             }
         }
 
