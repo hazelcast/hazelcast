@@ -22,9 +22,6 @@ import com.hazelcast.multimap.operations.CountOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author ali 5/10/13
- */
 public class CountRequest extends MultiMapKeyBasedRequest implements RetryableRequest {
 
     public CountRequest() {

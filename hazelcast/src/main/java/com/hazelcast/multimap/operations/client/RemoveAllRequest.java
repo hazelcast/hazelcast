@@ -27,15 +27,11 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
-
 import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * @author ali 5/10/13
- */
 public class RemoveAllRequest extends MultiMapKeyBasedRequest {
 
     long threadId;
@@ -49,7 +45,7 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest {
     }
 
     protected Operation prepareOperation() {
-        return new RemoveAllOperation(name,key,threadId);
+        return new RemoveAllOperation(name, key, threadId);
     }
 
     public int getClassId() {
@@ -57,7 +53,7 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest {
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeLong("t",threadId);
+        writer.writeLong("t", threadId);
         super.write(writer);
     }
 
@@ -67,13 +63,13 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest {
     }
 
     protected Object filter(Object response) {
-        if (response instanceof MultiMapResponse){
+        if (response instanceof MultiMapResponse) {
             Collection<MultiMapRecord> coll = ((MultiMapResponse) response).getCollection();
-            if (coll == null){
+            if (coll == null) {
                 return new PortableCollection();
             }
             Collection<Data> collection = new ArrayList<Data>(coll.size());
-            for (MultiMapRecord record: coll){
+            for (MultiMapRecord record : coll) {
                 collection.add(getClientEngine().toData(record.getObject()));
             }
             return new PortableCollection(collection);

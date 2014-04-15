@@ -26,13 +26,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/10/13
- */
 public class RemoveRequest extends MultiMapKeyBasedRequest {
 
     Data value;
@@ -49,7 +45,7 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
     }
 
     protected Operation prepareOperation() {
-        return new RemoveOperation(name,key,threadId,value);
+        return new RemoveOperation(name, key, threadId, value);
     }
 
     public int getClassId() {
@@ -57,7 +53,7 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeLong("t",threadId);
+        writer.writeLong("t", threadId);
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         value.writeData(out);

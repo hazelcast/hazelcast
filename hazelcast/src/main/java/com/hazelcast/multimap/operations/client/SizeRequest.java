@@ -20,12 +20,8 @@ import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.spi.OperationFactory;
-
 import java.util.Map;
 
-/**
- * @author ali 5/10/13
- */
 public class SizeRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     public SizeRequest() {
@@ -41,8 +37,8 @@ public class SizeRequest extends MultiMapAllPartitionRequest implements Retryabl
 
     protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
-        for (Object obj: map.values()){
-            total += (Integer)obj;
+        for (Object obj : map.values()) {
+            total += (Integer) obj;
         }
         return total;
     }

@@ -22,14 +22,10 @@ import com.hazelcast.multimap.operations.EntrySetResponse;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @author ali 5/10/13
- */
 public class EntrySetRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     public EntrySetRequest() {
@@ -49,7 +45,7 @@ public class EntrySetRequest extends MultiMapAllPartitionRequest implements Retr
             if (obj == null) {
                 continue;
             }
-            EntrySetResponse response = (EntrySetResponse)obj;
+            EntrySetResponse response = (EntrySetResponse) obj;
             Set<Map.Entry<Data, Data>> entries = response.getDataEntrySet();
             entrySet.addAll(entries);
         }

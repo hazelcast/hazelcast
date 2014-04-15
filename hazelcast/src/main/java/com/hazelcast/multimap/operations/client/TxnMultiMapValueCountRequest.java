@@ -21,12 +21,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.transaction.TransactionContext;
-
 import java.io.IOException;
 
-/**
- * @author ali 6/10/13
- */
 public class TxnMultiMapValueCountRequest extends TxnMultiMapRequest {
 
     Data key;

@@ -21,12 +21,8 @@ import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.util.Collection;
 
-/**
- * @author ali 1/16/13
- */
 public class RemoveAllOperation extends MultiMapBackupAwareOperation {
 
     Collection<MultiMapRecord> coll;

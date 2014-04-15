@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -25,12 +25,8 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
-
 import java.io.IOException;
 
-/**
- * @author ali 1/16/13
- */
 public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation
         implements BackupAwareOperation, WaitSupport {
 

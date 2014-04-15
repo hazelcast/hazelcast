@@ -25,10 +25,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
-/**
- * @author ali 4/4/13
- */
-public class TxnRollbackOperation extends MultiMapBackupAwareOperation implements Notifier{
+public class TxnRollbackOperation extends MultiMapBackupAwareOperation implements Notifier {
 
     public TxnRollbackOperation() {
     }
@@ -39,8 +36,10 @@ public class TxnRollbackOperation extends MultiMapBackupAwareOperation implement
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        if (container.isLocked(dataKey) && !container.unlock(dataKey, getCallerUuid(), threadId)){
-            throw new TransactionException("Lock is not owned by the transaction! Owner: " + container.getLockOwnerInfo(dataKey));
+        if (container.isLocked(dataKey) && !container.unlock(dataKey, getCallerUuid(), threadId)) {
+            throw new TransactionException(
+                    "Lock is not owned by the transaction! Owner: " + container.getLockOwnerInfo(dataKey)
+            );
         }
     }
 

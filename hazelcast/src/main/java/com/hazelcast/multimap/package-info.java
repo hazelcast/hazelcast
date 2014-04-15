@@ -14,26 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.operations.client;
-
-import com.hazelcast.multimap.MultiMapPortableHook;
-import com.hazelcast.transaction.TransactionContext;
-
-public class TxnMultiMapSizeRequest extends TxnMultiMapRequest {
-
-    public TxnMultiMapSizeRequest() {
-    }
-
-    public TxnMultiMapSizeRequest(String name) {
-        super(name);
-    }
-
-    public Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(txnId);
-        return context.getMultiMap(name).size();
-    }
-
-    public int getClassId() {
-        return MultiMapPortableHook.TXN_MM_SIZE;
-    }
-}
+/**
+ * Contains classes for Hazelcast MultiMap module.
+ */
+package com.hazelcast.multimap;

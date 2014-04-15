@@ -16,11 +16,12 @@
 
 package com.hazelcast.multimap;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
-/**
- * @author ali 3/1/13
- */
 public class MultiMapWrapper {
 
     private final Collection<MultiMapRecord> collection;
@@ -40,7 +41,7 @@ public class MultiMapWrapper {
         return collection;
     }
 
-    private Collection<MultiMapRecord> getCopyOfCollection(){
+    private Collection<MultiMapRecord> getCopyOfCollection() {
         if (collection instanceof Set) {
             return new HashSet<MultiMapRecord>(collection);
         } else if (collection instanceof List) {
@@ -49,7 +50,7 @@ public class MultiMapWrapper {
         throw new IllegalArgumentException("No Matching CollectionProxyType!");
     }
 
-    public void incrementHit(){
+    public void incrementHit() {
         hits++;
     }
 
@@ -57,9 +58,9 @@ public class MultiMapWrapper {
         return hits;
     }
 
-    public boolean containsRecordId(long recordId){
-        for (MultiMapRecord record: collection){
-            if (record.getRecordId() == recordId){
+    public boolean containsRecordId(long recordId) {
+        for (MultiMapRecord record : collection) {
+            if (record.getRecordId() == recordId) {
                 return true;
             }
         }
@@ -74,7 +75,7 @@ public class MultiMapWrapper {
         this.version = version;
     }
 
-    public long incrementAndGetVersion(){
+    public long incrementAndGetVersion() {
         return ++version;
     }
 

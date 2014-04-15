@@ -19,12 +19,8 @@ package com.hazelcast.multimap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.io.IOException;
 
-/**
- * @author ali 1/23/13
- */
 public class MultiMapRecord implements DataSerializable {
 
     private long recordId = -1;
@@ -60,12 +56,18 @@ public class MultiMapRecord implements DataSerializable {
     }
 
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof MultiMapRecord)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof MultiMapRecord)) {
+            return false;
+        }
 
         MultiMapRecord record = (MultiMapRecord) o;
 
-        if (!object.equals(record.object)) return false;
+        if (!object.equals(record.object)) {
+            return false;
+        }
 
         return true;
     }

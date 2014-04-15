@@ -23,14 +23,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * @author ali 1/16/13
- */
 public class PutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     long recordId;

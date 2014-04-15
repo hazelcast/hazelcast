@@ -22,14 +22,10 @@ import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.security.Permission;
 import java.util.Map;
 
-/**
- * @author ali 5/10/13
- */
-public class ClearRequest extends MultiMapAllPartitionRequest implements RetryableRequest{
+public class ClearRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     public ClearRequest() {
     }

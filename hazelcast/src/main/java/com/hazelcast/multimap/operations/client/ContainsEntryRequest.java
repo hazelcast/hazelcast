@@ -26,13 +26,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 import java.util.Map;
 
-/**
- * @author ali 5/10/13
- */
 public class ContainsEntryRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     Data key;
@@ -53,8 +49,8 @@ public class ContainsEntryRequest extends MultiMapAllPartitionRequest implements
     }
 
     protected Object reduce(Map<Integer, Object> map) {
-        for (Object obj: map.values()){
-            if (Boolean.TRUE.equals(obj)){
+        for (Object obj : map.values()) {
+            if (Boolean.TRUE.equals(obj)) {
                 return true;
             }
         }

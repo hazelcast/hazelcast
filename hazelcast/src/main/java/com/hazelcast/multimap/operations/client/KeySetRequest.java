@@ -18,20 +18,16 @@ package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
-import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
+import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.PortableCollection;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @author ali 5/10/13
- */
 public class KeySetRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     public KeySetRequest() {
@@ -51,9 +47,9 @@ public class KeySetRequest extends MultiMapAllPartitionRequest implements Retrya
             if (obj == null) {
                 continue;
             }
-            MultiMapResponse response = (MultiMapResponse)obj;
+            MultiMapResponse response = (MultiMapResponse) obj;
             Collection<Data> coll = response.getCollection();
-            if (coll != null){
+            if (coll != null) {
                 keySet.addAll(coll);
             }
         }
