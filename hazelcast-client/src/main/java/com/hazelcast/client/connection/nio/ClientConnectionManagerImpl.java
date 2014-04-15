@@ -31,12 +31,14 @@ import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -64,8 +66,10 @@ import java.net.Socket;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
@@ -73,6 +77,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private static final ILogger logger = Logger.getLogger(ClientConnectionManagerImpl.class);
 
     private int RETRY_COUNT = 20;
+    private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
     static final int KILO_BYTE = 1024;
     public static final int BUFFER_SIZE = 16 << 10; // 32k
@@ -92,6 +97,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile ClientPrincipal principal;
     private final AtomicInteger callIdIncrementer = new AtomicInteger();
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
+    private final ClientExecutionService executionService;
 
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
@@ -121,6 +127,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         this.smartRouting = networkConfig.isSmartRouting();
+        this.executionService = client.getClientExecutionService();
         this.credentials = c;
         router = new Router(loadBalancer);
         inSelector = new ClientInSelectorImpl(client.getThreadGroup());
@@ -190,13 +197,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         inSelector.shutdown();
         outSelector.shutdown();
+        connectionLockMap.clear();
     }
 
     @Override
     public ClientConnection ownerConnection(Address address) throws Exception {
-        ClientConnection clientConnection = connect(address, new ManagerAuthenticator(), true);
-        ownerConnectionAddress = clientConnection.getRemoteEndpoint();
-        return clientConnection;
+        final ManagerAuthenticator authenticator = new ManagerAuthenticator();
+        final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
+        ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
+        try {
+            final ClientConnection clientConnection = future.get(5, TimeUnit.SECONDS);
+            ownerConnectionAddress = clientConnection.getRemoteEndpoint();
+            return clientConnection;
+        } catch (Exception e) {
+            future.cancel(true);
+            throw new RetryableIOException(e);
+        }
     }
 
     @Override
@@ -256,58 +272,85 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         ClientConnection clientConnection = connections.get(address);
         if (clientConnection == null) {
-            //todo:
-            //This is dangerous because a client can't connect to another member during the connection build
-            //of a member. A solution would be to create a lock only for that particular address so that concurrent
-            //calls to the same address are serialized.
-            //Apart from that, synchronizing on this isn't very nice (imagine someone else from the outside synchronized
-            //on the same block. And using a synchronized statement doesn't offer the ability to timeout.
-            synchronized (this) {
+            final Object lock = getLock(address);
+            synchronized (lock) {
                 clientConnection = connections.get(address);
                 if (clientConnection == null) {
-                    clientConnection = connect(address, authenticator, false);
-                    connections.put(clientConnection.getRemoteEndpoint(), clientConnection);
+                    final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, false);
+                    final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
+                    try {
+                        clientConnection = future.get(5, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        future.cancel(true);
+                        throw new RetryableIOException(e);
+                    }
+                    ClientConnection current = connections.putIfAbsent(clientConnection.getRemoteEndpoint(), clientConnection);
+                    if (current != null) {
+                        clientConnection.innerClose();
+                        clientConnection = current;
+                    }
                 }
             }
         }
         return clientConnection;
     }
 
-    private ClientConnection connect(Address address, Authenticator authenticator, boolean isBlock) throws Exception {
-        if (!live) {
-            throw new HazelcastException("ConnectionManager is not active!!!");
-        }
-        SocketChannel socketChannel = SocketChannel.open();
-        Socket socket = socketChannel.socket();
-        socket.setKeepAlive(socketOptions.isKeepAlive());
-        socket.setTcpNoDelay(socketOptions.isTcpNoDelay());
-        socket.setReuseAddress(socketOptions.isReuseAddress());
-        if (socketOptions.getLingerSeconds() > 0) {
-            socket.setSoLinger(true, socketOptions.getLingerSeconds());
-        }
-        int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
-        if (bufferSize < 0) {
-            bufferSize = BUFFER_SIZE;
-        }
-        socket.setSendBufferSize(bufferSize);
-        socket.setReceiveBufferSize(bufferSize);
-        socketChannel.socket().connect(address.getInetSocketAddress(), 5000);
-        SocketChannelWrapper socketChannelWrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
-        final ClientConnection clientConnection = new ClientConnection(this, inSelector, outSelector,
-                connectionIdGen.incrementAndGet(), socketChannelWrapper, client.getClientExecutionService());
-        socketChannel.configureBlocking(true);
-        if (socketInterceptor != null) {
-            socketInterceptor.onConnect(socket);
-        }
-        authenticator.auth(clientConnection);
-        socketChannel.configureBlocking(isBlock);
-        socket.setSoTimeout(0);
-        if (!isBlock) {
-            clientConnection.getReadHandler().register();
-        }
-        return clientConnection;
-    }
+    private class ConnectionProcessor implements Callable<ClientConnection> {
 
+        final Address address;
+        final Authenticator authenticator;
+        final boolean isBlock;
+
+        private ConnectionProcessor(final Address address, final Authenticator authenticator, final boolean isBlock) {
+            this.address = address;
+            this.authenticator = authenticator;
+            this.isBlock = isBlock;
+        }
+
+        @Override
+        public ClientConnection call() throws Exception {
+            if (!live) {
+                throw new HazelcastException("ConnectionManager is not active!!!");
+            }
+            SocketChannel socketChannel = null;
+            try {
+                socketChannel = SocketChannel.open();
+                Socket socket = socketChannel.socket();
+                socket.setKeepAlive(socketOptions.isKeepAlive());
+                socket.setTcpNoDelay(socketOptions.isTcpNoDelay());
+                socket.setReuseAddress(socketOptions.isReuseAddress());
+                if (socketOptions.getLingerSeconds() > 0) {
+                    socket.setSoLinger(true, socketOptions.getLingerSeconds());
+                }
+                int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
+                if (bufferSize < 0) {
+                    bufferSize = BUFFER_SIZE;
+                }
+                socket.setSendBufferSize(bufferSize);
+                socket.setReceiveBufferSize(bufferSize);
+                socketChannel.socket().connect(address.getInetSocketAddress(), 5000);
+                SocketChannelWrapper socketChannelWrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
+                final ClientConnection clientConnection = new ClientConnection(ClientConnectionManagerImpl.this, inSelector,
+                        outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper, executionService);
+                socketChannel.configureBlocking(true);
+                if (socketInterceptor != null) {
+                    socketInterceptor.onConnect(socket);
+                }
+                authenticator.auth(clientConnection);
+                socketChannel.configureBlocking(isBlock);
+                socket.setSoTimeout(0);
+                if (!isBlock) {
+                    clientConnection.getReadHandler().register();
+                }
+                return clientConnection;
+            } catch (Exception e) {
+                if (socketChannel != null) {
+                    socketChannel.close();
+                }
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+    }
 
     public void destroyConnection(ClientConnection clientConnection) {
         Address endpoint = clientConnection.getRemoteEndpoint();
@@ -331,7 +374,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public void handlePacket(ClientPacket packet) {
         final ClientConnection conn = (ClientConnection) packet.getConn();
         conn.incrementPacketCount();
-        client.getClientExecutionService().execute(new ClientPacketProcessor(packet));
+        executionService.execute(new ClientPacketProcessor(packet));
     }
 
     public int newCallId() {
@@ -478,6 +521,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
             return new SSLSocketChannelWrapper(sslContextFactory.getSSLContext(), socketChannel, client);
         }
+    }
+
+    private Object getLock(Address address) {
+        Object lock = connectionLockMap.get(address);
+        if (lock == null) {
+            lock = new Object();
+            Object current = connectionLockMap.putIfAbsent(address, lock);
+            if (current != null) {
+                lock = current;
+            }
+        }
+        return lock;
     }
 
 }
