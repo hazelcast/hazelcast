@@ -22,6 +22,7 @@ import com.hazelcast.client.standalone.model.MyKey;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
 import org.junit.AfterClass;
@@ -36,7 +37,7 @@ import java.util.Arrays;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapStandaloneTest {
 
