@@ -91,8 +91,6 @@ public interface RecordStore {
 
     boolean isLocked(Data key);
 
-    boolean isLockedBy(Data key, String caller, long threadId);
-
     boolean canAcquireLock(Data key, String caller, long threadId);
 
     String getLockOwnerInfo(Data key);
@@ -101,13 +99,9 @@ public interface RecordStore {
 
     Object evict(Data key);
 
-    Collection<Object> valuesObject();
-
     Collection<Data> valuesData();
 
     MapContainer getMapContainer();
-
-    Set<Map.Entry<Data, Object>> entrySetObject();
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
