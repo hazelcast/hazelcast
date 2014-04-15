@@ -18,8 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.nio.IOUtil;
 
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -37,6 +36,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FilteringClassLoader
         extends ClassLoader {
+
+    private static final int BUFFER_SIZE = 1024;
 
     private final Map<String, Class<?>> cache = new ConcurrentHashMap<String, Class<?>>();
 
@@ -93,14 +94,17 @@ public class FilteringClassLoader
                 return clazz;
             }
 
-            URL url = getResource(name.replaceAll("\\.", "/").concat(".class"));
-            FileInputStream fis = null;
+            InputStream is = getResourceAsStream(name.replaceAll("\\.", "/").concat(".class"));
             try {
-                File classFile = new File(url.toURI());
-                byte[] data = new byte[(int) classFile.length()];
-                fis = new FileInputStream(classFile);
-                fis.read(data);
+                byte[] temp = new byte[BUFFER_SIZE];
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
+                int length;
+                while ((length = is.read(temp)) != -1) {
+                    baos.write(temp, 0, length);
+                }
+
+                byte[] data = baos.toByteArray();
                 clazz = defineClass(name, data, 0, data.length);
                 cache.put(name, clazz);
                 return clazz;
@@ -108,7 +112,7 @@ public class FilteringClassLoader
             } catch (Exception e) {
                 throw new ClassNotFoundException(name, e);
             } finally {
-                IOUtil.closeResource(fis);
+                IOUtil.closeResource(is);
             }
         }
 
