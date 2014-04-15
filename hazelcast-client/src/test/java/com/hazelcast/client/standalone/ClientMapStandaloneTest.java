@@ -98,10 +98,12 @@ public class ClientMapStandaloneTest {
         ClassLoader tccl = thread.getContextClassLoader();
         thread.setContextClassLoader(FILTERING_CLASS_LOADER);
 
-        IMap<MyKey, MyElement> map = createMap();
-        map.put(key, element);
-
-        thread.setContextClassLoader(tccl);
+        try {
+            IMap<MyKey, MyElement> map = createMap();
+            map.put(key, element);
+        } finally {
+            thread.setContextClassLoader(tccl);
+        }
     }
 
     @Test
@@ -117,12 +119,14 @@ public class ClientMapStandaloneTest {
         ClassLoader tccl = thread.getContextClassLoader();
         thread.setContextClassLoader(FILTERING_CLASS_LOADER);
 
-        map.put(key, element);
-        MyElement result = map.get(key);
+        try {
+            map.put(key, element);
+            MyElement result = map.get(key);
+            assertEquals(element, result);
+        } finally {
+            thread.setContextClassLoader(tccl);
+        }
 
-        thread.setContextClassLoader(tccl);
-
-        assertEquals(element, result);
     }
 
     @Test
@@ -138,12 +142,13 @@ public class ClientMapStandaloneTest {
         ClassLoader tccl = thread.getContextClassLoader();
         thread.setContextClassLoader(FILTERING_CLASS_LOADER);
 
-        map.put(key, element);
-        MyElement result = map.remove(key);
-
-        thread.setContextClassLoader(tccl);
-
-        assertEquals(element, result);
+        try {
+            map.put(key, element);
+            MyElement result = map.remove(key);
+            assertEquals(element, result);
+        } finally {
+            thread.setContextClassLoader(tccl);
+        }
     }
 
     @Test
@@ -156,11 +161,13 @@ public class ClientMapStandaloneTest {
         ClassLoader tccl = thread.getContextClassLoader();
         thread.setContextClassLoader(FILTERING_CLASS_LOADER);
 
-        MyKey key = new MyKey();
-        MyElement element = new MyElement(randomString());
-        map.put(key, element);
-        map.clear();
-
-        thread.setContextClassLoader(tccl);
+        try {
+            MyKey key = new MyKey();
+            MyElement element = new MyElement(randomString());
+            map.put(key, element);
+            map.clear();
+        } finally {
+            thread.setContextClassLoader(tccl);
+        }
     }
 }
