@@ -56,19 +56,20 @@ public class ClientMapStandaloneTest {
         ClassLoader tccl = thread.getContextClassLoader();
         thread.setContextClassLoader(FILTERING_CLASS_LOADER);
 
-        Class<?> configClazz = FILTERING_CLASS_LOADER.loadClass("com.hazelcast.config.Config");
-        Object config = configClazz.newInstance();
-        Method setClassLoader = configClazz.getDeclaredMethod("setClassLoader", ClassLoader.class);
+        try {
+            Class<?> configClazz = FILTERING_CLASS_LOADER.loadClass("com.hazelcast.config.Config");
+            Object config = configClazz.newInstance();
+            Method setClassLoader = configClazz.getDeclaredMethod("setClassLoader", ClassLoader.class);
 
-        setClassLoader.invoke(config, FILTERING_CLASS_LOADER);
+            setClassLoader.invoke(config, FILTERING_CLASS_LOADER);
 
-        Class<?> hazelcastClazz = FILTERING_CLASS_LOADER.loadClass("com.hazelcast.core.Hazelcast");
-        Method newHazelcastInstance = hazelcastClazz.getDeclaredMethod("newHazelcastInstance", configClazz);
+            Class<?> hazelcastClazz = FILTERING_CLASS_LOADER.loadClass("com.hazelcast.core.Hazelcast");
+            Method newHazelcastInstance = hazelcastClazz.getDeclaredMethod("newHazelcastInstance", configClazz);
 
-        newHazelcastInstance.invoke(hazelcastClazz, config);
-
-        thread.setContextClassLoader(tccl);
-
+            newHazelcastInstance.invoke(hazelcastClazz, config);
+        } finally {
+            thread.setContextClassLoader(tccl);
+        }
         client = HazelcastClient.newHazelcastClient(null);
     }
 
