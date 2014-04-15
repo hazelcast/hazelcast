@@ -27,13 +27,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.transaction.TransactionContext;
-
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 6/10/13
- */
 public class TxnMultiMapRemoveRequest extends TxnMultiMapRequest {
 
     Data key;
@@ -54,7 +50,7 @@ public class TxnMultiMapRemoveRequest extends TxnMultiMapRequest {
 
     public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
-        final TransactionalMultiMap<Object,Object> multiMap = context.getMultiMap(name);
+        final TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(name);
         return multiMap.remove(key, value);
     }
 

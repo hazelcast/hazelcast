@@ -21,19 +21,14 @@ import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
-/**
- * @ali 9/3/13
- */
 public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
 
-    private long itemId = -1;
-
     boolean removeOperation;
-
     String transactionId;
+
+    private long itemId = -1;
 
     public CollectionPrepareOperation() {
     }

@@ -11,9 +11,27 @@
 
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
     <suppress checks="" files="[\\/]ascii[\\/]"/>
-    <suppress checks="" files="[\\/]collection[\\/]"/>
     <suppress checks="" files="[\\/]config[\\/]"/>
     <suppress checks="" files="[\\/]core[\\/]"/>
+    <suppress checks="" files="[\\/]jmx[\\/]"/>
+    <suppress checks="" files="[\\/]management[\\/]"/>
+    <suppress checks="" files="[\\/]map[\\/]"/>
+    <suppress checks="" files="[\\/]nio[\\/]"/>
+    <suppress checks="" files="com.hazelcast.query[\\/]"/>
+    <suppress checks="" files="[\\/]queue[\\/]"/>
+    <suppress checks="" files="[\\/]spi.impl[\\/]"/>
+    <suppress checks="" files="[\\/]util[\\/]"/>
+    <suppress checks="" files="[\\/]wan[\\/]"/>
+
+    <suppress checks="" files="com.hazelcast.client[\\/]"/>
+    <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
+    <suppress checks="" files="com.hazelcast.jca[\\/]"/>
+    <suppress checks="" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="" files="com.hazelcast.web[\\/]"/>
+    <suppress checks="" files="com.hazelcast.aws[\\/]"/>
+    <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
+
+
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
     <suppress checks="MagicNumberCheck" files="[\\/]examples[\\/]"/>
     <suppress checks="FileLengthCheck" files="TestApp.java"/>
@@ -30,25 +48,6 @@
     <suppress checks="MethodLengthCheck" files="StartServer.java"/>
     <suppress checks="CyclomaticComplexityCheck" files="StartServer.java"/>
     <suppress checks="NPathComplexityCheck" files="StartServer.java"/>
-
-    <suppress checks="" files="[\\/]jmx[\\/]"/>
-    <suppress checks="" files="[\\/]management[\\/]"/>
-    <suppress checks="" files="[\\/]map[\\/]"/>
-    <suppress checks="" files="[\\/]multimap[\\/]"/>
-    <suppress checks="" files="[\\/]nio[\\/]"/>
-    <suppress checks="" files="com.hazelcast.query[\\/]"/>
-    <suppress checks="" files="[\\/]queue[\\/]"/>
-    <suppress checks="" files="[\\/]spi.impl[\\/]"/>
-    <suppress checks="" files="[\\/]util[\\/]"/>
-    <suppress checks="" files="[\\/]wan[\\/]"/>
-
-    <suppress checks="" files="com.hazelcast.client[\\/]"/>
-    <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
-    <suppress checks="" files="com.hazelcast.jca[\\/]"/>
-    <suppress checks="" files="com.hazelcast.spring[\\/]"/>
-    <suppress checks="" files="com.hazelcast.web[\\/]"/>
-    <suppress checks="" files="com.hazelcast.aws[\\/]"/>
-    <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
 
     <!--Code Smells -->
 
@@ -254,4 +253,41 @@
     <!-- the invokeAll is so scary that Peter doesn't dare to touch it. Need get someone involved who write it-->
     <suppress checks="" files="com.hazelcast.executor.ExecutorServiceProxy"/>
 
+    <!-- Collections -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.collection[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.collection[\\/]"/>
+    <suppress checks="MethodCount" files="com.hazelcast.collection.CollectionContainer"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionPortableHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.collection.CollectionPortableHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="DeclarationOrder" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+
+
+    <!-- List -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.collection.list[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.collection.list[\\/]"/>
+
+    <!-- Multimap -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.multimap[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.multimap[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.multimap[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.multimap[\\/]"/>
+    <suppress checks="MethodLength" files="com.hazelcast.multimap.MultiMapDataSerializerHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.multimap.MultiMapDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.MultiMapDataSerializerHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.multimap.MultiMapPortableHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.MultiMapPortableHook"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.multimap.MultiMapService"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.multimap.operations.MultiMapOperationFactory"/>
+
+
+
 </suppressions>
+

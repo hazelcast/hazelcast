@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.txn;
-
 /**
- * @author ali 4/4/13
+ * Contains client requests for Hazelcast MultiMap module.
  */
-public interface TxnMultiMapOperation {
-
-    public static final int PUT_OPERATION = 0;
-    public static final int REMOVE_OPERATION = 1;
-    public static final int REMOVE_ALL_OPERATION = 2;
-}
+package com.hazelcast.multimap.operations.client;

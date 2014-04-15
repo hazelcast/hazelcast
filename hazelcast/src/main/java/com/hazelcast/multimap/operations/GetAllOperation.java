@@ -20,12 +20,8 @@ import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ResponseHandler;
-
 import java.util.Collection;
 
-/**
- * @author ali 1/16/13
- */
 public class GetAllOperation extends MultiMapKeyBasedOperation {
 
     public GetAllOperation() {

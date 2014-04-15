@@ -19,20 +19,22 @@ package com.hazelcast.collection;
 import com.hazelcast.collection.list.ListContainer;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-
 import java.io.IOException;
 import java.util.Collection;
 
-/**
- * @ali 8/30/13
- */
-public abstract class CollectionOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable {
+public abstract class CollectionOperation extends Operation
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
@@ -47,7 +49,7 @@ public abstract class CollectionOperation extends Operation implements Partition
         this.name = name;
     }
 
-    protected final ListContainer getOrCreateListContainer(){
+    protected final ListContainer getOrCreateListContainer() {
         if (container == null) {
             ListService service = getService();
             try {
@@ -59,7 +61,7 @@ public abstract class CollectionOperation extends Operation implements Partition
         return (ListContainer) container;
     }
 
-    protected final CollectionContainer getOrCreateContainer(){
+    protected final CollectionContainer getOrCreateContainer() {
         if (container == null) {
             CollectionService service = getService();
             try {
@@ -77,12 +79,14 @@ public abstract class CollectionOperation extends Operation implements Partition
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
         for (EventRegistration registration : registrations) {
             CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
-            CollectionEvent event = new CollectionEvent(name, filter.isIncludeValue() ? data : null, eventType, getNodeEngine().getThisAddress());
+            final Address address = getNodeEngine().getThisAddress();
+            final boolean includeValue = filter.isIncludeValue();
+            CollectionEvent event = new CollectionEvent(name, includeValue ? data : null, eventType, address);
             eventService.publishEvent(getServiceName(), registration, event, name.hashCode());
         }
     }
 
-    public boolean hasEnoughCapacity(int delta){
+    public boolean hasEnoughCapacity(int delta) {
         return getOrCreateContainer().hasEnoughCapacity(delta);
     }
 

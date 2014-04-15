@@ -18,13 +18,9 @@ package com.hazelcast.multimap;
 
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * @author ali 1/2/13
- */
 public class MultiMapPartitionContainer {
 
     final int partitionId;
@@ -51,9 +47,9 @@ public class MultiMapPartitionContainer {
         return container;
     }
 
-    public MultiMapContainer getCollectionContainer(String name){
+    public MultiMapContainer getCollectionContainer(String name) {
         MultiMapContainer container = containerMap.get(name);
-        if (container != null){
+        if (container != null) {
             container.access();
         }
         return container;

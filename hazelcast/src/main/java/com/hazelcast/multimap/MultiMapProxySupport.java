@@ -18,21 +18,26 @@ package com.hazelcast.multimap;
 
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.multimap.operations.*;
+import com.hazelcast.multimap.operations.CountOperation;
+import com.hazelcast.multimap.operations.GetAllOperation;
+import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory.OperationFactoryType;
+import com.hazelcast.multimap.operations.MultiMapResponse;
+import com.hazelcast.multimap.operations.PutOperation;
+import com.hazelcast.multimap.operations.RemoveAllOperation;
+import com.hazelcast.multimap.operations.RemoveOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-/**
- * @author ali 1/2/13
- */
 public abstract class MultiMapProxySupport extends AbstractDistributedObject<MultiMapService> {
 
     protected final MultiMapConfig config;
@@ -91,14 +96,17 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         try {
 
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MultiMapService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.KEY_SET));
+                    .invokeOnAllPartitions(
+                            MultiMapService.SERVICE_NAME,
+                            new MultiMapOperationFactory(name, OperationFactoryType.KEY_SET)
+                    );
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
                 if (result == null) {
                     continue;
                 }
                 MultiMapResponse response = nodeEngine.toObject(result);
-                if (response.getCollection() != null){
+                if (response.getCollection() != null) {
                     keySet.addAll(response.getCollection());
                 }
             }
@@ -112,7 +120,10 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MultiMapService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.VALUES));
+                    .invokeOnAllPartitions(
+                            MultiMapService.SERVICE_NAME,
+                            new MultiMapOperationFactory(name, OperationFactoryType.VALUES)
+                    );
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -123,7 +134,10 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MultiMapService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.ENTRY_SET));
+                    .invokeOnAllPartitions(
+                            MultiMapService.SERVICE_NAME,
+                            new MultiMapOperationFactory(name, OperationFactoryType.ENTRY_SET)
+                    );
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -134,7 +148,10 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MultiMapService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.CONTAINS, key, value));
+                    .invokeOnAllPartitions(
+                            MultiMapService.SERVICE_NAME,
+                            new MultiMapOperationFactory(name, OperationFactoryType.CONTAINS, key, value)
+                    );
             for (Object obj : results.values()) {
                 if (obj == null) {
                     continue;
@@ -154,7 +171,10 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(MultiMapService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.SIZE));
+                    .invokeOnAllPartitions(
+                            MultiMapService.SERVICE_NAME,
+                            new MultiMapOperationFactory(name, OperationFactoryType.SIZE)
+                    );
             int size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
@@ -172,7 +192,10 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     public void clear() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            nodeEngine.getOperationService().invokeOnAllPartitions(MultiMapService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.CLEAR));
+            nodeEngine.getOperationService().invokeOnAllPartitions(
+                    MultiMapService.SERVICE_NAME,
+                    new MultiMapOperationFactory(name, OperationFactoryType.CLEAR)
+            );
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
@@ -252,7 +275,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
 //
 //    protected Boolean compareAndRemoveInternal(Data dataKey, List<Data> dataList, boolean retain) {
 //        try {
-//            CompareAndRemoveOperation operation = new CompareAndRemoveOperation(proxyId, dataKey, getThreadId(), dataList, retain);
+//            CompareAndRemoveOperation operation = new CompareAndRemoveOperation(proxyId, dataKey,
+// getThreadId(), dataList, retain);
 //            return invoke(operation, dataKey);
 //        } catch (Throwable throwable) {
 //            throw ExceptionUtil.rethrow(throwable);
@@ -271,17 +295,20 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
             Object o;
             if (config.isStatisticsEnabled()) {
                 long time = System.currentTimeMillis();
-                f = nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                f = nodeEngine.getOperationService()
+                        .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 o = f.get();
                 if (operation instanceof PutOperation) {
-                    getService().getLocalMultiMapStatsImpl(name).incrementPuts(System.currentTimeMillis() - time);    //TODO @ali should we remove statics from operations ?
+                    //TODO @ali should we remove statics from operations ?
+                    getService().getLocalMultiMapStatsImpl(name).incrementPuts(System.currentTimeMillis() - time);
                 } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation) {
                     getService().getLocalMultiMapStatsImpl(name).incrementRemoves(System.currentTimeMillis() - time);
                 } else if (operation instanceof GetAllOperation) {
                     getService().getLocalMultiMapStatsImpl(name).incrementGets(System.currentTimeMillis() - time);
                 }
             } else {
-                f = nodeEngine.getOperationService().invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                f = nodeEngine.getOperationService()
+                        .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 o = f.get();
             }
             return nodeEngine.toObject(o);
@@ -294,7 +321,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
 //        final NodeEngine nodeEngine = getNodeEngine();
 //        try {
 //            int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-//            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
+//            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(
+// CollectionService.SERVICE_NAME, operation, partitionId).build();
 //            Future f = inv.invoke();
 //            return nodeEngine.toObject(f.get());
 //        } catch (Throwable throwable) {

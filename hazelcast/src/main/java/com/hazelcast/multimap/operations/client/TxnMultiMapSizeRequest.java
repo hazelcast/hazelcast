@@ -19,9 +19,6 @@ package com.hazelcast.multimap.operations.client;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.transaction.TransactionContext;
 
-/**
- * @author ali 6/10/13
- */
 public class TxnMultiMapSizeRequest extends TxnMultiMapRequest {
 
     public TxnMultiMapSizeRequest() {

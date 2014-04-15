@@ -24,14 +24,10 @@ import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-/**
- * @ali 10/18/13
- */
 public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation {
 
     long recordId;
@@ -56,8 +52,8 @@ public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation {
         }
         Collection<MultiMapRecord> coll = wrapper.getCollection(false);
         Iterator<MultiMapRecord> iter = coll.iterator();
-        while (iter.hasNext()){
-            if (iter.next().getRecordId() == recordId){
+        while (iter.hasNext()) {
+            if (iter.next().getRecordId() == recordId) {
                 iter.remove();
                 break;
             }

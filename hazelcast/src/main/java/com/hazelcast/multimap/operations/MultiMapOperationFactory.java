@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 
 public class MultiMapOperationFactory implements OperationFactory {
@@ -50,17 +49,17 @@ public class MultiMapOperationFactory implements OperationFactory {
     }
 
     public Operation createOperation() {
-        if (operationFactoryType == OperationFactoryType.KEY_SET){
+        if (operationFactoryType == OperationFactoryType.KEY_SET) {
             return new KeySetOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.VALUES){
+        } else if (operationFactoryType == OperationFactoryType.VALUES) {
             return new ValuesOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.ENTRY_SET){
+        } else if (operationFactoryType == OperationFactoryType.ENTRY_SET) {
             return new EntrySetOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.CONTAINS){
+        } else if (operationFactoryType == OperationFactoryType.CONTAINS) {
             return new ContainsEntryOperation(name, key, value);
-        } else if (operationFactoryType == OperationFactoryType.SIZE){
+        } else if (operationFactoryType == OperationFactoryType.SIZE) {
             return new SizeOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.CLEAR){
+        } else if (operationFactoryType == OperationFactoryType.CLEAR) {
             return new ClearOperation(name);
         }
 
@@ -81,7 +80,7 @@ public class MultiMapOperationFactory implements OperationFactory {
         value = IOUtil.readNullableData(in);
     }
 
-    public enum OperationFactoryType{
+    public enum OperationFactoryType {
         KEY_SET(1), VALUES(2), ENTRY_SET(3), CONTAINS(4), SIZE(5), CLEAR(6);
 
         final int type;
@@ -90,9 +89,9 @@ public class MultiMapOperationFactory implements OperationFactory {
             this.type = type;
         }
 
-        static OperationFactoryType getByType(int type){
-            for (OperationFactoryType factoryType: values()){
-                if (factoryType.type == type){
+        static OperationFactoryType getByType(int type) {
+            for (OperationFactoryType factoryType : values()) {
+                if (factoryType.type == type) {
                     return factoryType;
                 }
             }

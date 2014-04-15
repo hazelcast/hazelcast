@@ -21,12 +21,8 @@ import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
-/**
- * @ali 9/3/13
- */
 public class CollectionRollbackOperation extends CollectionBackupAwareOperation {
 
     private long itemId;
@@ -63,10 +59,9 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
 
     @Override
     public void run() throws Exception {
-        if (removeOperation){
+        if (removeOperation) {
             getOrCreateContainer().rollbackRemove(itemId);
-        }
-        else {
+        } else {
             getOrCreateContainer().rollbackAdd(itemId);
         }
     }

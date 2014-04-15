@@ -21,9 +21,6 @@ import com.hazelcast.collection.CollectionSizeOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
-/**
- * @ali 9/4/13
- */
 public class CollectionSizeRequest extends CollectionRequest {
 
     public CollectionSizeRequest() {

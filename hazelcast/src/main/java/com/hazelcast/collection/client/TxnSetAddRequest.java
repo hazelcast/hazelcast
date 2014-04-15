@@ -21,12 +21,8 @@ import com.hazelcast.collection.set.SetService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
-
 import java.security.Permission;
 
-/**
- * @ali 9/4/13
- */
 public class TxnSetAddRequest extends TxnCollectionRequest {
 
     public TxnSetAddRequest() {

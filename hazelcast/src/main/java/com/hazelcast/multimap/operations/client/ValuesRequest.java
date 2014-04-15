@@ -19,19 +19,15 @@ package com.hazelcast.multimap.operations.client;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapRecord;
-import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
+import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.PortableCollection;
-
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 
-/**
- * @author ali 5/10/13
- */
 public class ValuesRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     public ValuesRequest() {
@@ -51,12 +47,12 @@ public class ValuesRequest extends MultiMapAllPartitionRequest implements Retrya
             if (obj == null) {
                 continue;
             }
-            MultiMapResponse response = (MultiMapResponse)obj;
+            MultiMapResponse response = (MultiMapResponse) obj;
             Collection<MultiMapRecord> coll = response.getCollection();
-            if (coll == null){
+            if (coll == null) {
                 continue;
             }
-            for (MultiMapRecord record: coll){
+            for (MultiMapRecord record : coll) {
                 list.add(getClientEngine().toData(record.getObject()));
             }
         }

@@ -23,15 +23,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.TransactionSupport;
-
 import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.Future;
 
-/**
-* @author ali 4/16/13
-*/
 public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionProxy<SetService, E>
         implements TransactionalSet<E> {
 
@@ -47,7 +43,7 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
         throwExceptionIfNull(e);
         final NodeEngine nodeEngine = getNodeEngine();
         final Data value = nodeEngine.toData(e);
-        if (!getCollection().add(new CollectionItem(-1, value))){
+        if (!getCollection().add(new CollectionItem(-1, value))) {
             return false;
         }
         CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), value);
@@ -59,7 +55,9 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
                 CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
-                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, getServiceName(), tx.getTxnId(), op));
+                final String txnId = tx.getTxnId();
+                final String serviceName = getServiceName();
+                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, serviceName, txnId, op));
                 return true;
             }
         } catch (Throwable t) {

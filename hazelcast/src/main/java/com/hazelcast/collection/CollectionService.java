@@ -22,14 +22,24 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.TransactionalService;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
-import java.util.*;
-
-/**
- * @ali 8/29/13
- */
-public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {
+public abstract class CollectionService implements ManagedService, RemoteService,
+        EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {
 
     protected NodeEngine nodeEngine;
 
@@ -58,7 +68,9 @@ public abstract class CollectionService implements ManagedService, RemoteService
     }
 
     public abstract CollectionContainer getOrCreateContainer(String name, boolean backup);
+
     public abstract Map<String, ? extends CollectionContainer> getContainerMap();
+
     public abstract String getServiceName();
 
     @Override
@@ -140,7 +152,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         }
     }
 
-    public void  addContainer(String name, CollectionContainer container){
+    public void addContainer(String name, CollectionContainer container) {
         final Map map = getContainerMap();
         map.put(name, container);
     }

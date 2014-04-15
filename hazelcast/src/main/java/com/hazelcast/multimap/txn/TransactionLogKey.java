@@ -30,13 +30,21 @@ class TransactionLogKey {
     }
 
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof TransactionLogKey)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TransactionLogKey)) {
+            return false;
+        }
 
         TransactionLogKey that = (TransactionLogKey) o;
 
-        if (!key.equals(that.key)) return false;
-        if (!name.equals(that.name)) return false;
+        if (!key.equals(that.key)) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
 
         return true;
     }

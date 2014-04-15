@@ -22,12 +22,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.EventFilter;
-
 import java.io.IOException;
 
-/**
- * @author ali 1/9/13
- */
 public class MultiMapEventFilter implements EventFilter, DataSerializable {
 
     boolean includeValue;
