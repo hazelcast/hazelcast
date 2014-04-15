@@ -39,8 +39,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
         if (poolSize <= 0){
-            final int cores = Runtime.getRuntime().availableProcessors();
-            poolSize = cores * 5;
+            poolSize = Runtime.getRuntime().availableProcessors();
         }
         internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
@@ -68,8 +67,16 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
     }
 
+    @Override
     public void executeInternal(Runnable command) {
         internalExecutor.execute(command);
+    }
+
+    @Override
+    public <T> ICompletableFuture<T> submitInternal(final Callable<T> command) {
+        CompletableFutureTask futureTask = new CompletableFutureTask(command, internalExecutor);
+        internalExecutor.submit(command);
+        return futureTask;
     }
 
     @Override
