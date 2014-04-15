@@ -16,7 +16,6 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -27,6 +26,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -39,7 +39,7 @@ public class ServiceLoaderTest {
     public void selectingSimpleSingleClassLoader()
             throws Exception {
 
-        Set<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(null);
+        List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(null);
         assertEquals(1, classLoaders.size());
     }
 
@@ -47,7 +47,7 @@ public class ServiceLoaderTest {
     public void selectingSimpleGivenClassLoader()
             throws Exception {
 
-        Set<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(new URLClassLoader(new URL[0]));
+        List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(new URLClassLoader(new URL[0]));
         assertEquals(2, classLoaders.size());
     }
 
@@ -58,7 +58,7 @@ public class ServiceLoaderTest {
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
         currentThread.setContextClassLoader(new URLClassLoader(new URL[0]));
-        Set<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(null);
+        List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(null);
         currentThread.setContextClassLoader(tccl);
         assertEquals(2, classLoaders.size());
     }
@@ -70,7 +70,7 @@ public class ServiceLoaderTest {
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
         currentThread.setContextClassLoader(new URLClassLoader(new URL[0]));
-        Set<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(new URLClassLoader(new URL[0]));
+        List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(new URLClassLoader(new URL[0]));
         currentThread.setContextClassLoader(tccl);
         assertEquals(3, classLoaders.size());
     }
@@ -84,7 +84,7 @@ public class ServiceLoaderTest {
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
         currentThread.setContextClassLoader(same);
-        Set<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(same);
+        List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(same);
         currentThread.setContextClassLoader(tccl);
         assertEquals(2, classLoaders.size());
     }
