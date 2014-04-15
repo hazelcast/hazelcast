@@ -23,12 +23,8 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
-/**
- * @ali 9/4/13
- */
 public class ListSetRequest extends CollectionRequest {
 
     private int index;

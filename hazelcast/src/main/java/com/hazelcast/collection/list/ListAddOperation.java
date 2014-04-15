@@ -24,12 +24,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
-/**
- * @ali 8/30/13
- */
 public class ListAddOperation extends CollectionAddOperation {
 
     private int index = -1;
@@ -46,11 +42,11 @@ public class ListAddOperation extends CollectionAddOperation {
     public void run() throws Exception {
         final ListContainer container = getOrCreateListContainer();
         response = false;
-        if (!hasEnoughCapacity(1)){
+        if (!hasEnoughCapacity(1)) {
             return;
         }
         final CollectionItem item = container.add(index, value);
-        if (item != null){
+        if (item != null) {
             itemId = item.getItemId();
             response = true;
         }

@@ -21,12 +21,8 @@ import com.hazelcast.collection.list.ListService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
-
 import java.security.Permission;
 
-/**
- * @ali 9/4/13
- */
 public class TxnListAddRequest extends TxnCollectionRequest {
 
     public TxnListAddRequest() {

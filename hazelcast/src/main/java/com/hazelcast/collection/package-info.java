@@ -14,26 +14,7 @@
  * limitations under the License.
  */
 
+/**
+ * <p>This package contains classes related to Collections (IList,ISet etc..) <br/>
+ */
 package com.hazelcast.collection;
-
-import com.hazelcast.spi.BackupAwareOperation;
-
-public abstract class CollectionBackupAwareOperation extends CollectionOperation implements BackupAwareOperation {
-
-    protected CollectionBackupAwareOperation() {
-    }
-
-    protected CollectionBackupAwareOperation(String name) {
-        super(name);
-    }
-
-    @Override
-    public int getSyncBackupCount() {
-        return getOrCreateContainer().getConfig().getBackupCount();
-    }
-
-    @Override
-    public int getAsyncBackupCount() {
-        return getOrCreateContainer().getConfig().getAsyncBackupCount();
-    }
-}

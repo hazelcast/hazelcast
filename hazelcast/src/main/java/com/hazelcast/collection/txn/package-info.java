@@ -14,26 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection;
-
-import com.hazelcast.spi.BackupAwareOperation;
-
-public abstract class CollectionBackupAwareOperation extends CollectionOperation implements BackupAwareOperation {
-
-    protected CollectionBackupAwareOperation() {
-    }
-
-    protected CollectionBackupAwareOperation(String name) {
-        super(name);
-    }
-
-    @Override
-    public int getSyncBackupCount() {
-        return getOrCreateContainer().getConfig().getBackupCount();
-    }
-
-    @Override
-    public int getAsyncBackupCount() {
-        return getOrCreateContainer().getConfig().getAsyncBackupCount();
-    }
-}
+/**
+ * <p>This package contains the Transaction behavior for the Collections.<br/>
+ */
+package com.hazelcast.collection.txn;

@@ -27,13 +27,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.SetPermission;
-
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @ali 9/4/13
- */
 public abstract class CollectionRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     protected String serviceName;
@@ -79,9 +75,9 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
     @Override
     public final Permission getRequiredPermission() {
         final String action = getRequiredAction();
-        if (ListService.SERVICE_NAME.equals(serviceName)){
+        if (ListService.SERVICE_NAME.equals(serviceName)) {
             return new ListPermission(name, action);
-        } else if (SetService.SERVICE_NAME.equals(serviceName)){
+        } else if (SetService.SERVICE_NAME.equals(serviceName)) {
             return new SetPermission(name, action);
         }
         throw new IllegalArgumentException("No service matched!!!");

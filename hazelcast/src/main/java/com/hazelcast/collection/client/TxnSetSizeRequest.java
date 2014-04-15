@@ -20,12 +20,8 @@ import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
-
 import java.security.Permission;
 
-/**
- * @ali 9/4/13
- */
 public class TxnSetSizeRequest extends TxnCollectionRequest {
 
     public TxnSetSizeRequest() {

@@ -16,12 +16,17 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.collection.CollectionEventFilter;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -33,13 +38,9 @@ import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.PortableItemEvent;
-
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @ali 9/4/13
- */
 public class CollectionAddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
@@ -72,16 +73,19 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
                 send(item);
             }
 
-            private void send(ItemEvent event){
-                if (endpoint.live()){
+            private void send(ItemEvent event) {
+                if (endpoint.live()) {
                     Data item = clientEngine.toData(event.getItem());
-                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
+                    final ItemEventType eventType = event.getEventType();
+                    final String uuid = event.getMember().getUuid();
+                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, eventType, uuid);
                     endpoint.sendEvent(portableItemEvent, getCallId());
                 }
             }
         };
         final EventService eventService = clientEngine.getEventService();
-        final EventRegistration registration = eventService.registerListener(getServiceName(), name, new CollectionEventFilter(includeValue), listener);
+        final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
+        final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
         final String registrationId = registration.getId();
         endpoint.setListenerRegistration(getServiceName(), name, registrationId);
         return registrationId;
@@ -120,9 +124,9 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
 
     @Override
     public Permission getRequiredPermission() {
-        if (ListService.SERVICE_NAME.equals(serviceName)){
+        if (ListService.SERVICE_NAME.equals(serviceName)) {
             return new ListPermission(name, ActionConstants.ACTION_LISTEN);
-        } else if (SetService.SERVICE_NAME.equals(serviceName)){
+        } else if (SetService.SERVICE_NAME.equals(serviceName)) {
             return new SetPermission(name, ActionConstants.ACTION_LISTEN);
         }
         throw new IllegalArgumentException("No service matched!!!");

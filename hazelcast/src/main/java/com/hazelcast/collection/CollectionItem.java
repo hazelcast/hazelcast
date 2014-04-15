@@ -21,12 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 
-/**
- * @ali 8/31/13
- */
 public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDataSerializable {
 
     protected long itemId;
@@ -64,9 +60,9 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
     @Override
     public int compareTo(CollectionItem o) {
         long otherItemId = o.getItemId();
-        if (itemId > otherItemId){
+        if (itemId > otherItemId) {
             return 1;
-        } else if (itemId < otherItemId){
+        } else if (itemId < otherItemId) {
             return -1;
         }
         return 0;
@@ -74,12 +70,18 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof CollectionItem)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof CollectionItem)) {
+            return false;
+        }
 
         CollectionItem item = (CollectionItem) o;
 
-        if (value != null ? !value.equals(item.value) : item.value != null) return false;
+        if (value != null ? !value.equals(item.value) : item.value != null) {
+            return false;
+        }
 
         return true;
     }
