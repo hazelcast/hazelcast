@@ -44,10 +44,10 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
         } catch (UnsupportedEncodingException e) {
             throw new HazelcastException(e);
         }
-        String mapName = DefaultMapName;
+        String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MapNamePreceder + key.substring(0, index);
+            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
             key = key.substring(index + 1);
         }
         int ttl = textCommandService.getAdjustedTTLSeconds(touchCommand.getExpiration());

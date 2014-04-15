@@ -99,8 +99,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 res = managementCenterService.clusterWideUpdateManagementCenterUrl(cluster, pass, url);
             }
             command.setResponse(res);
-        }
-        else {
+        } else {
             command.setResponse(HttpCommand.RES_503);
         }
     }

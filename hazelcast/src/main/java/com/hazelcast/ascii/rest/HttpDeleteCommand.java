@@ -19,7 +19,7 @@ package com.hazelcast.ascii.rest;
 import java.nio.ByteBuffer;
 
 public class HttpDeleteCommand extends HttpCommand {
-    boolean nextLine = false;
+    boolean nextLine;
 
     public HttpDeleteCommand(String uri) {
         super(TextCommandType.HTTP_DELETE, uri);

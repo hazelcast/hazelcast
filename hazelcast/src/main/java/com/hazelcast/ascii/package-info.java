@@ -13,29 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.hazelcast.ascii.memcache;
-
-import com.hazelcast.ascii.AbstractTextCommand;
-
-import java.nio.ByteBuffer;
-
-import static com.hazelcast.util.StringUtil.stringToBytes;
-
-public class VersionCommand extends AbstractTextCommand {
-
-    private static final byte[] VERSION = stringToBytes("VERSION Hazelcast\r\n");
-
-    protected VersionCommand(TextCommandType type) {
-        super(type);
-    }
-
-    public boolean writeTo(ByteBuffer destination) {
-        destination.put(VERSION);
-        return true;
-    }
-
-    public boolean readFrom(ByteBuffer source) {
-        return true;
-    }
-}
+/**
+ * <p>This package contains Ascii functionality for Hazelcast.<br/>
+ */
+package com.hazelcast.ascii;

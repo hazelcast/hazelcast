@@ -22,16 +22,12 @@ import com.hazelcast.nio.IOUtil;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
-
-@edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP","MS_MUTABLE_ARRAY","MS_PKGPROTECT"})
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({ "EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT" })
 public abstract class HttpCommand extends AbstractTextCommand {
     public static final String HEADER_CONTENT_TYPE = "content-type: ";
     public static final String HEADER_CONTENT_LENGTH = "content-length: ";
     public static final String HEADER_CHUNKED = "transfer-encoding: chunked";
     public static final String HEADER_EXPECT_100 = "expect: 100";
-
-    protected final String uri;
-    protected ByteBuffer response;
 
     public static final byte[] RES_200 = stringToBytes("HTTP/1.1 200 OK\r\n");
     public static final byte[] RES_400 = stringToBytes("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n");
@@ -45,6 +41,10 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final byte[] CONTENT_LENGTH = stringToBytes("Content-Length: ");
     public static final byte[] CONTENT_TYPE_PLAIN_TEXT = stringToBytes("text/plain");
     public static final byte[] CONTENT_TYPE_BINARY = stringToBytes("application/binary");
+
+    protected final String uri;
+    protected ByteBuffer response;
+
 
     public HttpCommand(TextCommandType type, String uri) {
         super(type);
@@ -126,8 +126,12 @@ public abstract class HttpCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "HttpCommand [" + type + "]{" +
-                "uri='" + uri + '\'' +
-                '}' + super.toString();
+        return "HttpCommand ["
+                + type + "]{"
+                + "uri='"
+                + uri
+                + '\''
+                + '}'
+                + super.toString();
     }
 }
