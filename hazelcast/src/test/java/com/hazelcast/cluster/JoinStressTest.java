@@ -33,11 +33,15 @@ import org.junit.runner.RunWith;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author mdogan 6/17/13
@@ -92,6 +96,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testTCPIPJoinWithManyNodesMultipleGroups() throws UnknownHostException, InterruptedException {
         final int count = 20;
         final int groupCount = 3;

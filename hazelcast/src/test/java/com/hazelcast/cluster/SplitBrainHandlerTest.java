@@ -26,6 +26,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.Before;
@@ -178,6 +179,7 @@ public class SplitBrainHandlerTest {
     }
 
     @Test(timeout = 180000)
+    @Category(ProblematicTest.class)
     public void testTcpIpSplitBrainJoinsCorrectCluster() throws Exception {
 
         // This port selection ensures that when h3 restarts it will try to join h4 instead of joining the nodes in cluster one
