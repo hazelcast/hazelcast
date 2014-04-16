@@ -436,17 +436,20 @@ public class DefaultRecordStore implements RecordStore {
         keysToDelete.removeAll(lockedRecords.keySet());
 
         final MapStoreWrapper store = mapContainer.getStore();
-        // Use an ArrayList so that we don't trigger calls to equals or hashCode on the key objects
-        Collection<Object> keysObject = new ArrayList<Object>(keysToDelete.size());
+        if (store != null) {
+            // Use an ArrayList so that we don't trigger calls to equals or hashCode on the key objects
+            Collection<Object> keysObject = new ArrayList<Object>(keysToDelete.size());
+            for (Data key : keysToDelete) {
+                keysObject.add(mapService.toObject(key));
+            }
+
+            store.deleteAll(keysObject);
+            toBeRemovedKeys.removeAll(keysToDelete);
+        }
+
         for (Data key : keysToDelete) {
             // todo ea have a clear(Keys) method for optimizations
             removeIndex(key);
-            keysObject.add(mapService.toObject(key));
-        }
-
-        if (store != null) {
-            store.deleteAll(keysObject);
-            toBeRemovedKeys.removeAll(keysToDelete);
         }
 
         clearRecordsMap(lockedRecords);
