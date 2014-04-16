@@ -27,8 +27,8 @@ Another main feature is the data being persisted entirely in-memory. This is sup
 
 As it can be seen in the feature list given in [Hazelcast Overview](#hazelcast-overview) section, Hazelcast supports a number of distributed collections and features. Data can be loaded from various sources into diversity of structures, messages can be sent across a cluster, locks can be put to take measures against concurrent operations and events happening in a cluster can be listened. 
 
+**Hazelcast's Distinctive Strengths**
 
-Below, Hazelcast's key properties are listed:
 
 * It is open source.
 * It is a small JAR file. You do not need to install a software.
