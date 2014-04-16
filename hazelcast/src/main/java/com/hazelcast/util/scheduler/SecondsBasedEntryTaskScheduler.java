@@ -331,9 +331,9 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
         @Override
         public int compare(ScheduledEntry o1, ScheduledEntry o2) {
-            if (o1.getScheduleTimeNanos() > o2.getScheduleTimeNanos()) {
+            if (o1.getScheduleStartTimeInNanos() > o2.getScheduleStartTimeInNanos()) {
                 return 1;
-            } else if (o1.getScheduleTimeNanos() < o2.getScheduleTimeNanos()) {
+            } else if (o1.getScheduleStartTimeInNanos() < o2.getScheduleStartTimeInNanos()) {
                 return -1;
             }
             return 0;
