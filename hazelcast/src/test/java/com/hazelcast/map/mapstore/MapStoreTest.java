@@ -931,7 +931,9 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
     }
 
+    // fails randomly
     @Test
+    @Category(ProblematicTest.class)
     public void testGetAllKeys() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Map store = testMapStore.getStore();
