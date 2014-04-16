@@ -26,10 +26,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -40,6 +42,7 @@ import java.util.Set;
 public final class ServiceLoader {
 
     private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
+    private static final String FILTERING_CLASS_LOADER = FilteringClassLoader.class.getCanonicalName();
 
     private ServiceLoader() {
     }
@@ -57,7 +60,7 @@ public final class ServiceLoader {
     public static <T> Iterator<T> iterator(final Class<T> clazz, String factoryId, ClassLoader classLoader)
             throws Exception {
 
-        final Set<ClassLoader> classLoaders = selectClassLoaders(classLoader);
+        final List<ClassLoader> classLoaders = selectClassLoaders(classLoader);
 
         final Set<URLDefinition> factoryUrls = new HashSet<URLDefinition>();
         for (ClassLoader selectedClassLoader : classLoaders) {
@@ -163,6 +166,11 @@ public final class ServiceLoader {
 
         ClassLoader current = classLoader;
         while (current.getParent() != null) {
+            // If we have a filtering classloader in hierarchy we need to stop!
+            if (FILTERING_CLASS_LOADER.equals(current.getClass().getCanonicalName())) {
+                break;
+            }
+
             ClassLoader parent = current.getParent();
 
             try {
@@ -186,8 +194,9 @@ public final class ServiceLoader {
         return highestClassLoader;
     }
 
-    static Set<ClassLoader> selectClassLoaders(ClassLoader classLoader) {
-        Set<ClassLoader> classLoaders = new HashSet<ClassLoader>();
+    static List<ClassLoader> selectClassLoaders(ClassLoader classLoader) {
+        // List prevents reordering!
+        List<ClassLoader> classLoaders = new ArrayList<ClassLoader>();
 
         if (classLoader != null) {
             classLoaders.add(classLoader);
@@ -290,9 +299,6 @@ public final class ServiceLoader {
 
             URLDefinition that = (URLDefinition) o;
 
-            if (classLoader != null ? !classLoader.equals(that.classLoader) : that.classLoader != null) {
-                return false;
-            }
             if (url != null ? !url.equals(that.url) : that.url != null) {
                 return false;
             }
@@ -303,7 +309,6 @@ public final class ServiceLoader {
         @Override
         public int hashCode() {
             int result = url != null ? url.hashCode() : 0;
-            result = 31 * result + (classLoader != null ? classLoader.hashCode() : 0);
             return result;
         }
     }
