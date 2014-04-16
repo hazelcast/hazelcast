@@ -39,7 +39,17 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -322,25 +332,12 @@ public class DefaultRecordStore implements RecordStore {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
 
-    public boolean isLockedBy(Data key, String caller, long threadId) {
-        return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
-    }
-
     public boolean canAcquireLock(Data key, String caller, long threadId) {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
     public String getLockOwnerInfo(Data key) {
         return lockStore != null ? lockStore.getOwnerInfo(key) : null;
-    }
-
-    public Set<Map.Entry<Data, Object>> entrySetObject() {
-        checkIfLoaded();
-        Map<Data, Object> temp = new HashMap<Data, Object>(records.size());
-        for (Data key : records.keySet()) {
-            temp.put(key, mapService.toObject(records.get(key).getValue()));
-        }
-        return temp.entrySet();
     }
 
     public Set<Map.Entry<Data, Data>> entrySetData() {
@@ -402,15 +399,6 @@ public class DefaultRecordStore implements RecordStore {
         return keySet;
     }
 
-    public Collection<Object> valuesObject() {
-        checkIfLoaded();
-        Collection<Object> values = new ArrayList<Object>(records.size());
-        for (Record record : records.values()) {
-            values.add(mapService.toObject(record.getValue()));
-        }
-        return values;
-    }
-
     public Collection<Data> valuesData() {
         checkIfLoaded();
         Collection<Data> values = new ArrayList<Data>(records.size());
@@ -448,10 +436,7 @@ public class DefaultRecordStore implements RecordStore {
             toBeRemovedKeys.removeAll(keysToDelete);
         }
 
-        for (Data key : keysToDelete) {
-            // todo ea have a clear(Keys) method for optimizations
-            removeIndex(key);
-        }
+        removeIndex(keysToDelete);
 
         clearRecordsMap(lockedRecords);
         cancelAssociatedSchedulers(keysToDelete);
@@ -513,6 +498,15 @@ public class DefaultRecordStore implements RecordStore {
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
             indexService.removeEntryIndex(key);
+        }
+    }
+
+    private void removeIndex(Set<Data> keys) {
+        final IndexService indexService = mapContainer.getIndexService();
+        if (indexService.hasIndex()) {
+            for (Data key : keys) {
+                indexService.removeEntryIndex(key);
+            }
         }
     }
 
@@ -587,7 +581,7 @@ public class DefaultRecordStore implements RecordStore {
     public MapEntrySet getAll(Set<Data> keySet) {
         checkIfLoaded();
         final MapEntrySet mapEntrySet = new MapEntrySet();
-        Map<Object, Data> keyMapForLoader = null;
+        Map<Object, Data> keyMapForLoader = Collections.emptyMap();
         if (mapContainer.getStore() != null) {
             keyMapForLoader = new HashMap<Object, Data>();
         }
@@ -752,7 +746,7 @@ public class DefaultRecordStore implements RecordStore {
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object newValue = null;
+        Object newValue;
         if (record == null) {
             newValue = mergingEntry.getValue();
             newValue = writeMapStore(dataKey, newValue, null);
@@ -789,7 +783,7 @@ public class DefaultRecordStore implements RecordStore {
     public Object replace(Data dataKey, Object value) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object oldValue = null;
+        Object oldValue;
         if (record != null && record.getValue() != null) {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
