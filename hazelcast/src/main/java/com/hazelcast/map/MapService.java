@@ -59,6 +59,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -79,14 +80,16 @@ public class MapService implements ManagedService, MigrationAwareService,
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final AtomicReference<List<Integer>> ownedPartitions;
     private final Map<String, MapMergePolicy> mergePolicyMap;
-    // we added following latency to be sure the ongoing migration is completed if the owner of the record could not complete task before migration
-    private final Integer replicaWaitSecondsForScheduledTasks;
+    // we added following latency to be sure the ongoing migration is completed
+    // if the owner of the record could not complete task before migration
+    private final long replicaWaitMillisForScheduledTasks;
     private final MapEvictionManager mapEvictionManager;
 
     public MapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.mapEvictionManager = new MapEvictionManager(this);
-        this.replicaWaitSecondsForScheduledTasks = getNodeEngine().getGroupProperties().MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
+        this.replicaWaitMillisForScheduledTasks = TimeUnit.SECONDS.toMillis(getNodeEngine().getGroupProperties()
+                .MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger());
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         ownedPartitions = new AtomicReference<List<Integer>>();
@@ -412,12 +415,14 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (shouldSchedule) {
             // if ttl is 0 then no eviction. if ttl is -1 then default configured eviction is applied
             if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
-                scheduleTtlEviction(name, record, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000L);
+                final long delay = TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getTimeToLiveSeconds());
+                scheduleTtlEviction(name, record, delay);
             } else if (ttl > 0) {
                 scheduleTtlEviction(name, record, ttl);
             }
             if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
-                scheduleIdleEviction(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000L);
+                final long delay = TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getMaxIdleSeconds());
+                scheduleIdleEviction(name, dataKey, delay);
             }
         }
         return record;
@@ -755,7 +760,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record) {
-        final RecordInfo info = constructRecordInfo(mapContainer, record, replicaWaitSecondsForScheduledTasks);
+        final RecordInfo info = constructRecordInfo(mapContainer, record, replicaWaitMillisForScheduledTasks);
         final RecordReplicationInfo replicationInfo
                 = new RecordReplicationInfo(record.getKey(), toData(record.getValue()), info);
         return replicationInfo;
@@ -763,12 +768,12 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public RecordInfo createRecordInfo(MapContainer mapContainer, Record record) {
         // this info is created to be used in backups.
-        // we added following latency (10 seconds) to be sure the ongoing promotion is completed if the owner of the record could not complete task before promotion
-        final int backupDelay = getNodeEngine().getGroupProperties().MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger() * 1000;
-        return constructRecordInfo(mapContainer, record, backupDelay);
+        // we added following latency (10 seconds) to be sure the ongoing promotion is
+        // completed if the owner of the record could not complete task before promotion
+        return constructRecordInfo(mapContainer, record, replicaWaitMillisForScheduledTasks);
     }
 
-    private RecordInfo constructRecordInfo(MapContainer mapContainer, Record record, int extraDelay) {
+    private RecordInfo constructRecordInfo(MapContainer mapContainer, Record record, long extraDelay) {
         final RecordInfo info = new RecordInfo();
         info.setStatistics(record.getStatistics());
         info.setVersion(record.getVersion());
@@ -777,7 +782,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return info;
     }
 
-    private void setDelays(MapContainer mapContainer, RecordInfo info, Data key, int extraDelay) {
+    private void setDelays(MapContainer mapContainer, RecordInfo info, Data key, long extraDelay) {
         long deleteDelay = -1;
         long writeDelay = -1;
         long idleDelay;
@@ -801,7 +806,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         info.setTtlDelayMillis(ttlDelay);
     }
 
-    private long getDelay(EntryTaskScheduler entryTaskScheduler, Data key, int extraDelay) {
+    private long getDelay(EntryTaskScheduler entryTaskScheduler, Data key, long extraDelay) {
         if (entryTaskScheduler != null) {
             final ScheduledEntry entry = entryTaskScheduler.get(key);
             if (entry != null) {
@@ -830,8 +835,9 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public long findDelayMillis(ScheduledEntry entry) {
-        long diffMillis = (System.nanoTime() - entry.getScheduleTimeNanos()) / 1000000;
-        return Math.max(0, entry.getScheduledDelayMillis() - diffMillis);
+        final long timeElapsedUntilNow = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - entry.getScheduleStartTimeInNanos());
+        final long remainingTime = entry.getScheduledDelayMillis() - timeElapsedUntilNow;
+        return Math.max(0, remainingTime);
     }
 
     public Object toObject(Object data) {
@@ -1023,7 +1029,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     // wait if the partition table is not updated yet
                     while (replicaAddress == null && clusterService.getSize() > backupCount && tryCount-- > 0) {
                         try {
-                            Thread.sleep(100);
+                            TimeUnit.MILLISECONDS.sleep(100);
                         } catch (InterruptedException e) {
                             throw ExceptionUtil.rethrow(e);
                         }

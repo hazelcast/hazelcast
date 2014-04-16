@@ -30,7 +30,7 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
 
     private final int actualDelaySeconds;
 
-    private final long scheduleTimeNanos;
+    private final long scheduleStartTimeInNanos;
 
 
     public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds) {
@@ -38,15 +38,15 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
         this.value = value;
         this.scheduledDelayMillis = scheduledDelayMillis;
         this.actualDelaySeconds = actualDelaySeconds;
-        this.scheduleTimeNanos = System.nanoTime();
+        this.scheduleStartTimeInNanos = System.nanoTime();
     }
 
-    public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds, long scheduleTimeNanos) {
+    public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds, long scheduleStartTimeInNanos) {
         this.key = key;
         this.value = value;
         this.scheduledDelayMillis = scheduledDelayMillis;
         this.actualDelaySeconds = actualDelaySeconds;
-        this.scheduleTimeNanos = scheduleTimeNanos;
+        this.scheduleStartTimeInNanos = scheduleStartTimeInNanos;
     }
 
     public K getKey() {
@@ -70,8 +70,8 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
         return actualDelaySeconds;
     }
 
-    public long getScheduleTimeNanos() {
-        return scheduleTimeNanos;
+    public long getScheduleStartTimeInNanos() {
+        return scheduleStartTimeInNanos;
     }
 
     public long getActualDelayMillis() {
@@ -105,7 +105,7 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
                 ", value=" + value +
                 ", scheduledDelayMillis=" + scheduledDelayMillis +
                 ", actualDelaySeconds=" + actualDelaySeconds +
-                ", scheduleTimeNanos=" + scheduleTimeNanos +
+                ", scheduleStartTimeInNanos=" + scheduleStartTimeInNanos +
                 '}';
     }
 }
