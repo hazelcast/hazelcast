@@ -189,7 +189,25 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
         GetOperation operation = new GetOperation(name, key);
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            final OperationService operationService = nodeEngine.getOperationService();
+            final InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId).setResultDeserialized(false);
+            final InternalCompletableFuture<Data> future = invocationBuilder.invoke();
+            future.andThen(new ExecutionCallback<Data>() {
+                @Override
+                public void onResponse(Data response) {
+                    if (nearCacheEnabled) {
+                        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+                        if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
+                                .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
+                            mapService.putNearCache(name, key, response);
+                        }
+                    }
+                }
+                @Override
+                public void onFailure(Throwable t) {
+                }
+            });
+            return future;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
