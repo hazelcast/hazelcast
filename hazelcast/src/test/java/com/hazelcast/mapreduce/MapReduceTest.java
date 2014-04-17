@@ -46,6 +46,7 @@ import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -121,6 +122,8 @@ public class MapReduceTest
 
         try {
             Map<String, List<Integer>> result = future.get();
+            fail();
+
         } catch (Exception e) {
             e.printStackTrace();
             assertTrue(e.getCause() instanceof NullPointerException);
@@ -159,6 +162,8 @@ public class MapReduceTest
 
         try {
             Map<String, List<Integer>> result = future.get();
+            fail();
+
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
