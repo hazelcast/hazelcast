@@ -27,6 +27,7 @@ import org.osgi.framework.BundleContext;
 
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
+import java.lang.reflect.Method;
 
 /**
  * Hazelcast OSGi bundle activator
@@ -37,21 +38,13 @@ public class Activator implements BundleActivator {
 
     private static final String HAZELCAST_OSGI_START = "hazelcast.osgi.start";
 
+    private static final ILogger LOGGER = Logger.getLogger(Activator.class);
+
     private HazelcastInstance hazelcastInstance;
 
-    private final ILogger logger = Logger.getLogger(Activator.class);
-
     public void start(BundleContext context) throws Exception {
-        final ScriptEngineManager scriptEngineManager = new OSGiScriptEngineManager(context);
-        ScriptEngineManagerContext.setScriptEngineManager(scriptEngineManager);
-
-        if (logger.isFinestEnabled()) {
-            StringBuilder msg = new StringBuilder("Available script engines are:");
-            for (ScriptEngineFactory scriptEngineFactory : scriptEngineManager.getEngineFactories()) {
-                msg.append(scriptEngineFactory.getEngineName()).append('\n');
-            }
-            logger.finest(msg.toString());
-        }
+        // Try to start javax.scripting - JSR 223
+        activateJavaxScripting(context);
 
         if (System.getProperty(HAZELCAST_OSGI_START) != null) {
             hazelcastInstance = Hazelcast.newHazelcastInstance();
@@ -61,6 +54,25 @@ public class Activator implements BundleActivator {
     public void stop(BundleContext context) throws Exception {
         if (System.getProperty("hazelcast.osgi.start") != null) {
             hazelcastInstance.shutdown();
+        }
+    }
+
+    private void activateJavaxScripting(BundleContext context) throws Exception {
+        if (!isJavaxScriptingAvailable()) {
+            LOGGER.warning("javax.scripting is not available, scripts from Management Center cannot be executed!");
+        }
+
+        Class<?> clazz = context.getBundle().loadClass("com.hazelcast.osgi.ScriptEngineActivator");
+        Method register = clazz.getDeclaredMethod("registerOsgiScriptEngineManager", BundleContext.class);
+        register.invoke(clazz, context);
+    }
+
+    private boolean isJavaxScriptingAvailable() {
+        try {
+            Class.forName("javax.script.ScriptEngineManager");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
         }
     }
 
