@@ -17,11 +17,24 @@
 package com.hazelcast.client.executor;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.executor.tasks.*;
-import com.hazelcast.core.*;
+import com.hazelcast.client.executor.tasks.AppendCallable;
+import com.hazelcast.client.executor.tasks.GetMemberUuidTask;
+import com.hazelcast.client.executor.tasks.MapPutPartitionAwareCallable;
+import com.hazelcast.client.executor.tasks.MapPutPartitionAwareRunnable;
+import com.hazelcast.client.executor.tasks.MapPutRunnable;
+import com.hazelcast.client.executor.tasks.SelectAllMembers;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
+import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -31,11 +44,17 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.test.HazelcastTestSupport.*;
-import static org.junit.Assert.*;
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -94,7 +113,7 @@ public class ClientExecutorServiceSubmitTest {
             final Future<String> result = map.get(member);
             String uuid = result.get();
 
-            assertEquals(member.getUuid() , uuid);
+            assertEquals(member.getUuid(), uuid);
         }
     }
 
@@ -108,7 +127,7 @@ public class ClientExecutorServiceSubmitTest {
 
         final Future<String> f = service.submit(callable, selectAll);
 
-        assertEquals( msg + AppendCallable.APPENDAGE, f.get());
+        assertEquals(msg + AppendCallable.APPENDAGE, f.get());
     }
 
     @Test
@@ -124,7 +143,7 @@ public class ClientExecutorServiceSubmitTest {
             final Future<String> result = map.get(member);
             String uuid = result.get();
 
-            assertEquals(member.getUuid() , uuid);
+            assertEquals(member.getUuid(), uuid);
         }
     }
 
@@ -138,12 +157,12 @@ public class ClientExecutorServiceSubmitTest {
         final Map<Member, Future<String>> map = service.submitToAllMembers(callable);
         for (Member member : map.keySet()) {
             final Future<String> result = map.get(member);
-            assertEquals(msg+ AppendCallable.APPENDAGE, result.get());
+            assertEquals(msg + AppendCallable.APPENDAGE, result.get());
         }
     }
 
     @Test
-    public void submitRunnableToMember_withExecutionCallback(){
+    public void submitRunnableToMember_withExecutionCallback() {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String mapName = randomString();
@@ -167,7 +186,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnableToMembers_withMultiExecutionCallback(){
+    public void submitRunnableToMembers_withMultiExecutionCallback() {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String mapName = randomString();
@@ -207,6 +226,7 @@ public class ClientExecutorServiceSubmitTest {
                 result.set(response);
                 responseLatch.countDown();
             }
+
             @Override
             public void onFailure(Throwable t) {
             }
@@ -216,7 +236,14 @@ public class ClientExecutorServiceSubmitTest {
         assertEquals(member.getUuid(), result.get());
     }
 
+
+    /**
+     * fails randomly.
+     * Example stack trace is here:
+     * https://hazelcast-l337.ci.cloudbees.com/job/Hazelcast-3.x-OpenJDK7/com.hazelcast$hazelcast-client/133/testReport/com.hazelcast.client.executor/ClientExecutorServiceSubmitTest/submitCallableToMember_withMultiExecutionCallback/
+     */
     @Test
+    @Category(ProblematicTest.class)
     public void submitCallableToMember_withMultiExecutionCallback() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
@@ -248,7 +275,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnable_withExecutionCallback(){
+    public void submitRunnable_withExecutionCallback() {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final CountDownLatch responseLatch = new CountDownLatch(1);
@@ -272,7 +299,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnableToMembers_withExecutionCallback(){
+    public void submitRunnableToMembers_withExecutionCallback() {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final CountDownLatch responseLatch = new CountDownLatch(CLUSTER_SIZE);
@@ -298,7 +325,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitCallable_withExecutionCallback(){
+    public void submitCallable_withExecutionCallback() {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final CountDownLatch responseLatch = new CountDownLatch(1);
@@ -319,11 +346,11 @@ public class ClientExecutorServiceSubmitTest {
         });
 
         assertOpenEventually(responseLatch);
-        assertEquals(msg+AppendCallable.APPENDAGE, result.get());
+        assertEquals(msg + AppendCallable.APPENDAGE, result.get());
     }
 
     @Test
-    public void submitCallableToMembers_withExecutionCallback(){
+    public void submitCallableToMembers_withExecutionCallback() {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final CountDownLatch responseLatch = new CountDownLatch(CLUSTER_SIZE);
@@ -334,7 +361,7 @@ public class ClientExecutorServiceSubmitTest {
 
         service.submitToMembers(callable, selector, new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
-                if(value.equals(msg + AppendCallable.APPENDAGE)){
+                if (value.equals(msg + AppendCallable.APPENDAGE)) {
                     responseLatch.countDown();
                 }
             }
@@ -403,7 +430,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnable(){
+    public void submitRunnable() {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String mapName = randomString();
@@ -411,7 +438,7 @@ public class ClientExecutorServiceSubmitTest {
 
         service.submit(runnable);
 
-        final  IMap map = client.getMap(mapName);
+        final IMap map = client.getMap(mapName);
 
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
@@ -426,7 +453,7 @@ public class ClientExecutorServiceSubmitTest {
 
         final String mapName = randomString();
         final Object givenResult = "givenResult";
-        final Future future = service.submit( new MapPutRunnable(mapName), givenResult);
+        final Future future = service.submit(new MapPutRunnable(mapName), givenResult);
         final Object result = future.get();
 
         final IMap map = client.getMap(mapName);
@@ -494,7 +521,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitCallableToKeyOwner() throws Exception{
+    public void submitCallableToKeyOwner() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String msg = randomString();
@@ -506,7 +533,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnableToKeyOwner() throws Exception{
+    public void submitRunnableToKeyOwner() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String mapName = randomString();
@@ -553,7 +580,7 @@ public class ClientExecutorServiceSubmitTest {
 
 
     @Test
-    public void submitRunnablePartitionAware() throws Exception{
+    public void submitRunnablePartitionAware() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String mapName = randomString();
@@ -576,7 +603,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnablePartitionAware_withResult() throws Exception{
+    public void submitRunnablePartitionAware_withResult() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String expectedResult = "result";
@@ -598,7 +625,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitRunnablePartitionAware_withExecutionCallback() throws Exception{
+    public void submitRunnablePartitionAware_withExecutionCallback() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String expectedResult = "result";
@@ -626,7 +653,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitCallablePartitionAware() throws Exception{
+    public void submitCallablePartitionAware() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String mapName = randomString();
@@ -642,7 +669,7 @@ public class ClientExecutorServiceSubmitTest {
     }
 
     @Test
-    public void submitCallablePartitionAware_WithExecutionCallback() throws Exception{
+    public void submitCallablePartitionAware_WithExecutionCallback() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String mapName = randomString();
