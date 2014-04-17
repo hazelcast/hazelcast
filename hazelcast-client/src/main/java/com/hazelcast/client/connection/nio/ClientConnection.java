@@ -264,7 +264,7 @@ public class ClientConnection implements Connection, Closeable {
         return (InetSocketAddress) socketChannelWrapper.socket().getLocalSocketAddress();
     }
 
-    private void innerClose() throws IOException {
+    void innerClose() throws IOException {
         if (!live) {
             return;
         }
