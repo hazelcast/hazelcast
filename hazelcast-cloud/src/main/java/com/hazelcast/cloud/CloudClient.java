@@ -36,7 +36,8 @@ import static org.jclouds.compute.predicates.NodePredicates.locationId;
 import org.jclouds.enterprise.config.EnterpriseConfigurationModule;
 
 /**
- * TODO add description
+ * Simple cloud provider client, powered by jclouds, that retrieves private IP
+ * addresses from nodes queried with pre-configured predicates.
  */
 public class CloudClient {
 
