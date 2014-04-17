@@ -186,7 +186,6 @@ public class ClientNearCacheTest {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testGetAsyncPopulatesNearCache() throws Exception {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
 
