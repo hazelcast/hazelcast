@@ -26,8 +26,13 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -299,24 +304,40 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             throw new NullPointerException("Predicate can not be null!");
         }
         final MapService service = getService();
-        final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.VALUE, false);
-        final Set<Object> valueSet = new HashSet<Object>(queryResultSet); //todo: Can't we just use the original set?
+        final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.ENTRY, false);
+        final Set<Object> valueSet = new HashSet<Object>(); //todo: Can't we just use the original set?
+        final Set<Object> keyWontBeIncluded = new HashSet<Object>();
 
+        // delete updated or removed elements from the result set
         for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
-            if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
-                final Object value = entry.getValue().value instanceof Data ?
-                        service.toObject(entry.getValue().value) : entry.getValue().value;
-                final QueryEntry queryEntry = new QueryEntry(null, service.toData(entry.getKey()), entry.getKey(), value);
+            final boolean isRemoved = TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type);
+            final boolean isUpdated = TxnValueWrapper.Type.UPDATED.equals(entry.getValue().type);
+
+            if (isRemoved) {
+                keyWontBeIncluded.add(entry.getKey());
+            } else {
+                if (isUpdated){
+                    keyWontBeIncluded.add(entry.getKey());
+                }
+                final Object entryValue = entry.getValue().value;
+                final Object objectValue = entryValue instanceof Data ?
+                        service.toObject(entryValue) : entryValue;
+                final QueryEntry queryEntry = new QueryEntry(null, service.toData(entry.getKey()), entry.getKey(), objectValue);
                 // apply predicate on txMap.
                 if (predicate.apply(queryEntry)) {
-                    valueSet.add(entry.getValue().value);
+                    valueSet.add(entryValue);
                 }
-            } else {
-                // meanwhile remove values which are not in txMap.
-                valueSet.remove(entry.getValue().value);
             }
         }
 
+        final Iterator<Map.Entry> iterator = queryResultSet.rawIterator();
+        while (iterator.hasNext()){
+            final Map.Entry entry = iterator.next();
+            if (keyWontBeIncluded.contains(entry.getKey())){
+                continue;
+            }
+            valueSet.add(entry.getValue());
+        }
         return valueSet;
     }
 
