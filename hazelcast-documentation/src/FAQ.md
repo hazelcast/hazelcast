@@ -278,4 +278,33 @@ Here is how merge policies are specified per map:
 </hazelcast>
 ```
 
+**10\. Does Hazelcast Support Thousands of Clients?**
+
+Yes. However, there are some points to be considered. First of all, the environment should be LAN with a high stability and the network speed should be 10 Gbps or higher. If number of nodes are high, client type should be selected as Dummy (not Smart Client). In the case of Smart Clients, since each client will open a connection to the nodes, these nodes should be powerful enough (e.g. more cores) to handle hundreds or thousands of connections and client requests. Also, using near caches in clients should be considered to lower the network traffic. And finally, the Hazelcast releases with the NIO implementation should be used (which starts with 3.2).
+
+Also, the clients should be configured attentively. Please refer to [Java Clients](#java-client) section for configuration notes.
+
+**11\. How Do You Give Support**
+
+Support services are divided into two: community and commercial support. Community support is provided through our [Mail Group](https://groups.google.com/forum/#!forum/hazelcast) and Stackoverflow web site. For information on support subscriptions, please see [Hazelcast.com](http://hazelcast.com/support/commercial/).
+
+**12\. Does Hazelcast Persist**
+
+No. But, Hazelcast provides `MapStore` and `MapLoader` interfaces. When you implement, for example, `MapStore` interface, Hazelcast calls your store and load methods whenever needed.
+
+**13\. Can I Use Hazelcast in a Single Server**
+
+Yes. But, please note that, Hazelcast's main design focus is multi-node clusters to be used as a distribution platform. 
+
+**14\. How Can I Monitor Hazelcast**
+
+[Hazelcast Management Center](#management-center) is used to monitor and managethe nodes running Hazelcast. In addition to monitoring overall state of a cluster, data structures can be analyzed and browsed in detail, map configurations can be updated and thread dump from nodes can be taken. 
+
+Moreover, JMX monitoring is also provided. Please see [Monitoring with JMX](#monitoring-with-jmx) section for details.
+
+
+
+
+
+
 
