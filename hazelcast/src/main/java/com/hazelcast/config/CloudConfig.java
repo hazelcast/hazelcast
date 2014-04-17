@@ -13,44 +13,69 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.config;
 
 import static com.hazelcast.util.ValidationUtil.hasText;
 
 /**
- * The AWSConfig contains the configuration for AWS join mechanism.
+ * This class provides the operations needed for cloud-based join mechanism.
+ * Given many providers block traffic such as multicast or broadcast, we need to
+ * use each provider API to look for instances that may become part of the
+ * cluster.
+ * <p>
+ * What happens behind the scenes is that data about the running instances in a
+ * specific region are downloaded using the accesskey/secretkey and necome
+ * potential Hazelcast members.
  *
- * what happens behind the scenes is that data about the running AWS instances in a specific region are downloaded using the
- * accesskey/secretkey and are potential Hazelcast members.
- *
- * <h1>Filtering</h1>
- * There are 2 mechanisms for filtering out AWS instances and these mechanisms can be combined (AND).
- * <ol>
- *     <li>If a securityGroup is configured only instanced within that security group are selected.
- *     </li>
- *     <li>
- *         If a tag key/value is set only instances with that tag key/value will be selected.
- *     </li>
+ * <h1>Filtering</h1> There are two mechanisms for filtering out instances. The
+ * same filters can be combined (AND). <ol> <li>If a group is configured, only
+ * instances within that group are selected. </li> <li> If a tag key/value is
+ * configured, only instances with that tag key/value will be selected. </li>
  * </ol>
  *
- * Once Hazelcast has figured out which instances are available, it will use the private ip addresses of these
- * instances to create a tcp/ip-cluster.
+ * Once Hazelcast has figured out which instances are available, it will use
+ * each instance list of private IP addresse to create a TCP/IP-cluster.
  */
-public class AwsConfig {
+public class CloudConfig {
 
     private boolean enabled = false;
+    private String provider;
     private String accessKey;
     private String secretKey;
-    private String region = "us-east-1";
-    private String securityGroupName;
+    private String region;
+    private String groupName;
     private String tagKey;
     private String tagValue;
-    private String hostHeader = "ec2.amazonaws.com";
     private int connectionTimeoutSeconds = 5;
 
     /**
-     * Gets the access key to access AWS. Returns null if no access key is configured.
+     * Gets the provider identifier. Returns null if no provider identifier is
+     * configured.
+     *
+     * @return the provider identifier.
+     * @see #setProvider(String)
+     */
+    public String getProvider() {
+        return provider;
+    }
+
+    /**
+     * Sets the provider identifier.
+     *
+     * @param provider the provider identifier.
+     * @return the updated CloudConfig.
+     * @throws IllegalArgumentException if provider identifier is null or empty.
+     * @see #getProvider()
+     * @see #setProvider(String)
+     */
+    public CloudConfig setProvider(String provider) {
+        this.provider = hasText(provider, "provider");
+        return this;
+    }
+
+    /**
+     * Gets the access key to access the provider. Returns null if no access key
+     * is configured.
      *
      * @return the access key.
      * @see #setAccessKey(String)
@@ -60,21 +85,22 @@ public class AwsConfig {
     }
 
     /**
-     * Sets the access key to access AWS.
+     * Sets the access key to access the provider.
      *
      * @param accessKey the access key.
-     * @return the updated AwsConfig.
+     * @return the updated CloudConfig.
      * @throws IllegalArgumentException if accessKey is null or empty.
      * @see #getAccessKey()
      * @see #setSecretKey(String)
      */
-    public AwsConfig setAccessKey(String accessKey) {
-        this.accessKey = hasText(accessKey,"accessKey");
+    public CloudConfig setAccessKey(String accessKey) {
+        this.accessKey = hasText(accessKey, "accessKey");
         return this;
     }
 
     /**
-     * Gets the secret key to access AWS. Returns null if no access key is configured.
+     * Gets the secret key to access provider. Returns null if no access key is
+     * configured.
      *
      * @return the secret key.
      * @see #setSecretKey(String)
@@ -84,21 +110,22 @@ public class AwsConfig {
     }
 
     /**
-     * Sets the secret key to access AWS.
+     * Sets the secret key to access the provider.
      *
      * @param secretKey the secret key
-     * @return the updated AwsConfig.
+     * @return the updated CloudConfig.
      * @throw IllegalArgumentException if secretKey is null or empty.
      * @see #getSecretKey()
      * @see #setAccessKey(String)
      */
-    public AwsConfig setSecretKey(String secretKey) {
-        this.secretKey = hasText(secretKey,"secretKey");
+    public CloudConfig setSecretKey(String secretKey) {
+        this.secretKey = hasText(secretKey, "secretKey");
         return this;
     }
 
     /**
-     * Gets the region where the EC2 instances running the Hazelcast members will be running.
+     * Gets the region where the possible Hazelcast member instances are
+     * running.
      *
      * @return the region
      * @see #setRegion(String)
@@ -108,51 +135,31 @@ public class AwsConfig {
     }
 
     /**
-     * Sets the region where the EC2 instances running the Hazelcast members will be running.
+     * Sets the region where the possible Hazelcast member instances are
+     * running.
      *
      * @param region the region
-     * @return the updated AwsConfig
+     * @return the updated CloudConfig
      * @throws IllegalArgumentException if region is null or empty.
      */
-    public AwsConfig setRegion(String region) {
-        this.region = hasText(region,"region");
+    public CloudConfig setRegion(String region) {
+        this.region = hasText(region, "region");
         return this;
     }
 
     /**
-     * Gets the host header; the address the EC2 API can be found.
-     *
-     * @return the host header.
-     */
-    public String getHostHeader() {
-        return hostHeader;
-    }
-
-    /**
-     * Sets the host header; the address the EC2 API can be found.
-     *
-     * @param hostHeader the new host header
-     * @return the updated AwsConfig
-     * @throws IllegalArgumentException if hostHeader is null or an empty string.
-     */
-    public AwsConfig setHostHeader(String hostHeader) {
-        this.hostHeader = hasText(hostHeader,"hostHeader");
-        return this;
-    }
-
-    /**
-     * Enables or disables the aws join mechanism.
+     * Enables or disables the join mechanism.
      *
      * @param enabled true if enabled, false otherwise.
-     * @return the updated AwsConfig.
+     * @return the updated CloudConfig.
      */
-    public AwsConfig setEnabled(boolean enabled) {
+    public CloudConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
     /**
-     * Checks if the aws join mechanism is enabled.
+     * Checks if the join mechanism is enabled.
      *
      * @return true if enabled, false otherwise.
      */
@@ -161,34 +168,34 @@ public class AwsConfig {
     }
 
     /**
-     * Sets the security group name. See the filtering section for more information.
+     * Sets the group name. See the filtering section for more information.
      *
-     * @param securityGroupName  the security group name.
-     * @return the updated AwsConfig.
-     * @see #getSecurityGroupName()
-      */
-    public AwsConfig setSecurityGroupName(String securityGroupName) {
-        this.securityGroupName = securityGroupName;
+     * @param groupName the group name.
+     * @return the updated CloudConfig.
+     * @see #getGroupName()
+     */
+    public CloudConfig setGroupName(String groupName) {
+        this.groupName = groupName;
         return this;
     }
 
     /**
-     * Gets the security group name. If nothing has been configured, null is returned.
+     * Gets the group name. If nothing has been configured, null is returned.
      *
-     * @return the security group name
+     * @return the group name
      */
-    public String getSecurityGroupName() {
-        return securityGroupName;
+    public String getGroupName() {
+        return groupName;
     }
 
     /**
      * Sets the tag key. See the filtering section for more information.
      *
      * @param tagKey the tag key.
-     * @return the updated AwsConfig.
+     * @return the updated CloudConfig.
      * @see #setTagKey(String)
      */
-    public AwsConfig setTagKey(String tagKey) {
+    public CloudConfig setTagKey(String tagKey) {
         this.tagKey = tagKey;
         return this;
     }
@@ -197,11 +204,11 @@ public class AwsConfig {
      * Sets the tag value. see the filtering section for more information.
      *
      * @param tagValue the tag value.
-     * @return the updated AwsConfig.
+     * @return the updated CloudConfig.
      * @see #setTagKey(String)
      * @see #getTagValue()
      */
-    public AwsConfig setTagValue(String tagValue) {
+    public CloudConfig setTagValue(String tagValue) {
         this.tagValue = tagValue;
         return this;
     }
@@ -216,7 +223,7 @@ public class AwsConfig {
     }
 
     /**
-     *  Gets the tag value. If nothing is specified null is returned.
+     * Gets the tag value. If nothing is specified null is returned.
      *
      * @return the tag value.
      */
@@ -235,15 +242,17 @@ public class AwsConfig {
     }
 
     /**
-     * Sets the connect timeout in seconds. See {@link TcpIpConfig#setConnectionTimeoutSeconds(int)} for more information.
+     * Sets the connect timeout in seconds. See
+     * {@link TcpIpConfig#setConnectionTimeoutSeconds(int)} for more
+     * information.
      *
      * @param connectionTimeoutSeconds the connectionTimeoutSeconds to set
-     * @return the updated AwsConfig.
+     * @return the updated CloudConfig.
      * @see #getConnectionTimeoutSeconds()
      * @see TcpIpConfig#setConnectionTimeoutSeconds(int)
      */
-    public AwsConfig setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
-        if(connectionTimeoutSeconds<0){
+    public CloudConfig setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
+        if (connectionTimeoutSeconds < 0) {
             throw new IllegalArgumentException("connection timeout can't be smaller than 0");
         }
         this.connectionTimeoutSeconds = connectionTimeoutSeconds;
@@ -252,15 +261,15 @@ public class AwsConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("AwsConfig{");
+        final StringBuilder sb = new StringBuilder("CloudConfig{");
         sb.append("enabled=").append(enabled);
         sb.append(", region='").append(region).append('\'');
-        sb.append(", securityGroupName='").append(securityGroupName).append('\'');
+        sb.append(", securityGroupName='").append(groupName).append('\'');
         sb.append(", tagKey='").append(tagKey).append('\'');
         sb.append(", tagValue='").append(tagValue).append('\'');
-        sb.append(", hostHeader='").append(hostHeader).append('\'');
         sb.append(", connectionTimeoutSeconds=").append(connectionTimeoutSeconds);
         sb.append('}');
         return sb.toString();
     }
+
 }

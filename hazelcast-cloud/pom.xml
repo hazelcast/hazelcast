@@ -32,6 +32,7 @@
     <properties>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
+        <jclouds.version>1.7.2</jclouds.version>
     </properties>
 
     <build>
@@ -147,6 +148,27 @@
             <scope>test</scope>
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
+        </dependency>
+        <!-- jclouds -->
+        <dependency>
+            <groupId>org.apache.jclouds.driver</groupId>
+            <artifactId>jclouds-enterprise</artifactId>
+            <version>${jclouds.version}</version>
+        </dependency>
+<!--        <dependency>
+            <groupId>org.apache.jclouds.provider</groupId>
+            <artifactId>aws-ec2</artifactId>
+            <version>${jclouds.version}</version>
+        </dependency>-->
+        <dependency>
+            <groupId>org.apache.jclouds.labs</groupId>
+            <artifactId>google-compute-engine</artifactId>
+            <version>${jclouds.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jclouds.labs</groupId>
+            <artifactId>oauth</artifactId>
+            <version>${jclouds.version}</version>
         </dependency>
     </dependencies>
 </project>

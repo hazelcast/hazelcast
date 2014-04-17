@@ -605,16 +605,16 @@ public class Node {
             logger.info("Creating TcpIpJoiner");
             systemLogService.logJoin("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
-        } else if (join.getAwsConfig().isEnabled()) {
+        } else if (join.getCloudConfig().isEnabled()) {
             Class clazz;
             try {
-                logger.info("Creating AWSJoiner");
-                clazz = Class.forName("com.hazelcast.cluster.TcpIpJoinerOverAWS");
+                logger.info("Creating CloudJoiner");
+                clazz = Class.forName("com.hazelcast.cluster.TcpIpJoinerOverCloud");
                 Constructor constructor = clazz.getConstructor(Node.class);
-                systemLogService.logJoin("Creating AWSJoiner");
+                systemLogService.logJoin("Creating CloudJoiner");
                 return (Joiner) constructor.newInstance(this);
             } catch (Exception e) {
-                logger.severe("Error while creating AWSJoiner!", e);
+                logger.severe("Error while creating CloudJoiner!", e);
             }
         }
         return null;

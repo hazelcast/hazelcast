@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.TcpIpJoiner;
-import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CloudConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -333,9 +332,9 @@ class DefaultAddressPicker implements AddressPicker {
                 || node.groupProperties.PREFER_IPv4_STACK.getBoolean();
         // AWS does not support IPv6.
         JoinConfig join = node.getConfig().getNetworkConfig().getJoin();
-        AwsConfig awsConfig = join.getAwsConfig();
-        boolean awsEnabled = awsConfig != null && awsConfig.isEnabled();
-        return preferIPv4Stack || awsEnabled;
+        CloudConfig cloudConfig = join.getCloudConfig();
+        boolean cloudEnabled = cloudConfig != null && cloudConfig.isEnabled();
+        return preferIPv4Stack || cloudEnabled;
     }
 
     @Deprecated

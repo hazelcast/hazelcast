@@ -400,7 +400,8 @@
                                 <include>com/hazelcast/client/exception/**</include>
                                 <include>com/hazelcast/client/spi/*</include>
 
-                                <include>com/hazelcast/cluster/TcpIpJoinerOverAWS.java</include>
+                                <include>com/hazelcast/cloud/CloudClient.java</include>
+                                <include>com/hazelcast/cluster/TcpIpJoinerOverCloud.java</include>
 
                                 <include>com/hazelcast/hibernate/HazelcastCacheRegionFactory.java</include>
                                 <include>com/hazelcast/hibernate/HazelcastLocalCacheRegionFactory.java</include>
@@ -490,7 +491,8 @@
                                 <include>com/hazelcast/client/exception/**</include>
                                 <include>com/hazelcast/client/spi/*</include>
 
-                                <include>com/hazelcast/cluster/TcpIpJoinerOverAWS.java</include>
+                                <include>com/hazelcast/cloud/CloudClient.java</include>
+                                <include>com/hazelcast/cluster/TcpIpJoinerOverCloud.java</include>
 
                                 <include>com/hazelcast/hibernate/HazelcastCacheRegionFactory.java</include>
                                 <include>com/hazelcast/hibernate/HazelcastLocalCacheRegionFactory.java</include>
