@@ -44,10 +44,6 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
@@ -55,6 +51,9 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1044,6 +1043,32 @@ public class MapTransactionTest extends HazelcastTestSupport {
         h2.shutdown();
     }
 
+    @Test
+    public void testValuesWithPredicates_notContains_oldValues() throws TransactionException {
+        Config config = new Config();
+        final String mapName = "testValuesWithPredicate_notContains_oldValues";
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap map = h1.getMap(mapName);
+        final SampleObjects.Employee employeeAtAge22 = new SampleObjects.Employee("emin", 22, true, 10D);
+        final SampleObjects.Employee employeeAtAge23 = new SampleObjects.Employee("emin", 23, true, 10D);
+        map.put(1, employeeAtAge22);
+
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
+                assertEquals(1, txMap.values(new SqlPredicate("age > 21")).size());
+                txMap.put(1, employeeAtAge23);
+                Collection coll = txMap.values(new SqlPredicate("age > 21"));
+                assertEquals(1, coll.size());
+                return true;
+            }
+        });
+        h1.shutdown();
+        h2.shutdown();
+
+    }
 
     @Test
     public void testValuesWithPredicate_removingExistentEntry() throws TransactionException {
