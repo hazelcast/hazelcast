@@ -155,11 +155,11 @@
             <artifactId>jclouds-enterprise</artifactId>
             <version>${jclouds.version}</version>
         </dependency>
-<!--        <dependency>
+        <dependency>
             <groupId>org.apache.jclouds.provider</groupId>
             <artifactId>aws-ec2</artifactId>
             <version>${jclouds.version}</version>
-        </dependency>-->
+        </dependency>
         <dependency>
             <groupId>org.apache.jclouds.labs</groupId>
             <artifactId>google-compute-engine</artifactId>
