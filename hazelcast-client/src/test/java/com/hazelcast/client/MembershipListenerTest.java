@@ -13,6 +13,7 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -27,7 +28,6 @@ import java.util.Vector;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -50,6 +50,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void whenMemberAdded_thenMemberAddedEvent() throws Exception {
         final MemberShipEventLoger listener = new MemberShipEventLoger();
 
