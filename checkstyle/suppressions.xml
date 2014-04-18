@@ -28,7 +28,6 @@
     <suppress checks="" files="com.hazelcast.jca[\\/]"/>
     <suppress checks="" files="com.hazelcast.spring[\\/]"/>
     <suppress checks="" files="com.hazelcast.web[\\/]"/>
-    <suppress checks="" files="com.hazelcast.cloud[\\/]"/>
     <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
 
 
