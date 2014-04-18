@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
+import com.hazelcast.test.annotation.ProblematicTest;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -29,6 +30,7 @@ import org.hibernate.stat.Statistics;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.*;
 
@@ -147,6 +149,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testQuery() {
         final int entityCount = 10;
         final int queryCount = 3;
