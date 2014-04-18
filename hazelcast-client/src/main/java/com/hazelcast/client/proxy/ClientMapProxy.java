@@ -201,6 +201,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Future<V> getAsync(final K key) {
+        initNearCache();
         final Data keyData = toData(key);
         if (nearCache != null) {
             Object cached = nearCache.get(keyData);
@@ -212,7 +213,20 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final MapGetRequest request = new MapGetRequest(name, keyData);
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
-            return new DelegatingFuture<V>(future, getContext().getSerializationService());
+            final DelegatingFuture<V> delegatingFuture = new DelegatingFuture<V>(future, getContext().getSerializationService());
+            delegatingFuture.andThen(new ExecutionCallback<V>() {
+                @Override
+                public void onResponse(V response) {
+                    if (nearCache != null) {
+                        nearCache.put(keyData, response);
+                    }
+                }
+                @Override
+                public void onFailure(Throwable t) {
+
+                }
+            });
+            return delegatingFuture;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
