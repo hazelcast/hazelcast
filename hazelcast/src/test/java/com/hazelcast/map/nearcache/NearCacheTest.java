@@ -441,6 +441,34 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetAsyncPopulatesNearCache() throws Exception {
+        final String mapName = "testGetAsyncPopulatesNearCache";
+        Config config = new Config();
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(false));
+        final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = hazelcastInstanceFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = hazelcastInstanceFactory.newHazelcastInstance(config);
+        final IMap<Object, Object> map = instance1.getMap(mapName);
+        int size = 1000;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            Future async = map.getAsync(i);
+            async.get();
+        }
+        //generate near cache hits with async call
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertTrue("size below 400", 400 < stats.getOwnedEntryCount());
+        assertTrue("hits below 400", 400 < stats.getHits());
+    }
+
+
+    @Test
     public void testGetAsyncIssue1863() throws Exception {
         final String mapName = "testGetAsyncWithNearCacheIssue1863";
         Config config = new Config();
