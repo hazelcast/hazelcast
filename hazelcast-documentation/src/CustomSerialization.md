@@ -85,4 +85,4 @@ config.getSerializationConfig().addSerializerConfig(sc);
 From now on, Hazelcast will use `FooXmlSerializer`
 to serialize Foo objects. This way one can write an adapter (StreamSerializer) for any Serialization framework and plug it into Hazelcast.
 
-
+<br> </br>

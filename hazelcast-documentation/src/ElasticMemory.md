@@ -40,3 +40,5 @@ And, the programmatic configuration:
 MapConfig mapConfig = new MapConfig();
 mapConfig.setInMemoryFormat(InMemoryFormat.OFFHEAP);
 ```
+
+<br> </br>

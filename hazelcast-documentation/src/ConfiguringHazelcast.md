@@ -6,7 +6,11 @@
 Besides declarative configuration, you can configure your cluster programmatically (Programmatic Configuration). Just instantiate a `Config` object and add/remove/modify properties. 
 
 
-**Related Information**
+<br> </br>
 
-Please refer to [Configuration](#configuration) chapter for more information.
+<font color="red">
+***Related Information***
+</font>
+
+*Please refer to [Configuration](#configuration) chapter for more information.*
 

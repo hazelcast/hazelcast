@@ -298,7 +298,7 @@ Yes. But, please note that, Hazelcast's main design focus is multi-node clusters
 
 **14\. How Can I Monitor Hazelcast**
 
-[Hazelcast Management Center](#management-center) is used to monitor and managethe nodes running Hazelcast. In addition to monitoring overall state of a cluster, data structures can be analyzed and browsed in detail, map configurations can be updated and thread dump from nodes can be taken. 
+[Hazelcast Management Center](#management-center) is used to monitor and manage the nodes running Hazelcast. In addition to monitoring overall state of a cluster, data structures can be analyzed and browsed in detail, map configurations can be updated and thread dump from nodes can be taken. 
 
 Moreover, JMX monitoring is also provided. Please see [Monitoring with JMX](#monitoring-with-jmx) section for details.
 

@@ -46,4 +46,6 @@
 
 If Hazelcast resource is used from EJBs, you should configure `ejb-jar.xml` and `jboss.xml` for resource reference and JNDI definitions.
 
+<br> </br>
+
 

@@ -415,3 +415,5 @@ You can go back in time using the slider and/or calendar and check your cluster'
 
 To see the documentation, click on the **Documentation** button located at the toolbar. Management Center manual will appear as a tab.
 
+<br> </br>
+

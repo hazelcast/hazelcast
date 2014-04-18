@@ -37,6 +37,10 @@ Hazelcast allows you to encrypt entire socket level communication among all Haze
 </hazelcast>
 ```
 
-**Related Information**
+<br> </br>
 
-Please see [SSL](#ssl).
+<font color="red">
+***Related Information***
+</font>
+
+*Please see [SSL](#ssl).*
