@@ -137,8 +137,12 @@ public class CloudClient {
         return new Predicate<NodeMetadata>() {
             @Override
             public boolean apply(NodeMetadata nodeMetadata) {
-                return nodeMetadata.getUserMetadata().containsKey(tagKey)
+                if (nodeMetadata == null) {
+                    return false;
+                } else {
+                    return nodeMetadata.getUserMetadata().containsKey(tagKey)
                         && nodeMetadata.getUserMetadata().get(tagKey).equals(tagValue);
+                }
             }
 
             @Override
