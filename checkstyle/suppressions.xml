@@ -273,7 +273,11 @@
     <suppress checks="JavadocType" files="com.hazelcast.ascii[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.ascii[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.ascii[\\/]"/>
+
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.ascii.rest.HttpPostCommand"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.ascii.memcache.IncrementCommandProcessor"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.ascii.memcache.SetCommandProcessor"/>
+
     <suppress checks="MethodLength" files="com.hazelcast.ascii[\\/]"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.ascii[\\/]"/>
     <suppress checks="MagicNumber" files="com.hazelcast.ascii[\\/]"/>
