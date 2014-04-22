@@ -201,6 +201,8 @@
             </hz:multimap>
 
             <hz:topic name="testTopic">
+                <hz:statistics-enabled>false</hz:statistics-enabled>
+                <hz:global-ordering-enabled>true</hz:global-ordering-enabled>
                 <hz:message-listeners>
                     <hz:message-listener class-name="com.hazelcast.spring.DummyMessageListener"/>
                 </hz:message-listeners>

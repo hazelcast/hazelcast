@@ -247,6 +247,8 @@ public class TestFullApplicationContext {
         assertNotNull(testTopicConfig);
         assertEquals("testTopic", testTopicConfig.getName());
         assertEquals(1, testTopicConfig.getMessageListenerConfigs().size());
+        assertEquals(true, testTopicConfig.isGlobalOrderingEnabled());
+        assertEquals(false, testTopicConfig.isStatisticsEnabled());
         ListenerConfig listenerConfig = testTopicConfig.getMessageListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
     }
