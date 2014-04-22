@@ -27,15 +27,15 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.HashSet;
-import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.HashSet;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.test.HazelcastTestSupport.*;
 import static org.junit.Assert.*;
@@ -73,7 +73,7 @@ public class ClientNearCacheTest {
         NearCacheConfig basicConfigNoInvalidation = new NearCacheConfig();
         basicConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         basicConfigNoInvalidation.setInvalidateOnChange(false);
-        clientConfig.addNearCacheConfig(NEAR_CACHE_WITH_NO_INVALIDATION +"*", basicConfigNoInvalidation);
+        clientConfig.addNearCacheConfig(NEAR_CACHE_WITH_NO_INVALIDATION + "*", basicConfigNoInvalidation);
 
         NearCacheConfig maxSizeConfig = new NearCacheConfig();
         maxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
@@ -208,7 +208,6 @@ public class ClientNearCacheTest {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testRemovedKeyValueNotInNearCache() throws Exception {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
 
@@ -310,9 +309,7 @@ public class ClientNearCacheTest {
         assertEquals(size, stats.getMisses());
     }
 
-    // possible cause : https://github.com/hazelcast/hazelcast/issues/2065
     @Test
-    @Category(ProblematicTest.class)
     public void testMapRemove_WithNearCache() {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
 
@@ -469,7 +466,6 @@ public class ClientNearCacheTest {
     }
 
     @Test
-    @Category(ProblematicTest.class) // one can see stale value on the near cache after map.remove
     public void testNearCacheContainsKey_afterRemove() {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
         final Object key = "key";
