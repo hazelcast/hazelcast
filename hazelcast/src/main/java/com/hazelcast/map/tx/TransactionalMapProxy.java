@@ -303,6 +303,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         if (predicate == null) {
             throw new NullPointerException("Predicate can not be null!");
         }
+        if (predicate instanceof PagingPredicate) {
+            throw new IllegalArgumentException("Paging is not supported for Transactional queries");
+        }
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.ENTRY, false);
         final Set<Object> valueSet = new HashSet<Object>(); //todo: Can't we just use the original set?
