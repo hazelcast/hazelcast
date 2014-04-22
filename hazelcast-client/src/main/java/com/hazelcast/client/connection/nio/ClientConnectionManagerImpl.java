@@ -209,10 +209,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private Address waitForOwnerConnection() throws RetryableIOException {
+        if (ownerConnectionAddress != null) {
+            return ownerConnectionAddress;
+        }
+
         synchronized (ownerConnectionLock) {
+            ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
+            int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+            int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+            int waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+
             while (ownerConnectionAddress == null) {
                 try {
-                    ownerConnectionLock.wait(TimeUnit.SECONDS.toMillis(60));
+                    ownerConnectionLock.wait(waitTime);
                 } catch (InterruptedException e) {
                     logger.warning("Wait for owner connection is timed out");
                     throw new RetryableIOException(e);
