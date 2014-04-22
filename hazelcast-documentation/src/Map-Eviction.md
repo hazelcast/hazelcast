@@ -63,7 +63,7 @@ regardless of the eviction policy set. Here is a sample configuration for evicti
 
 **`max-size` Policies**
 
-There are 4 defined policies can be used in max-size configuration.
+Below policies can be used in *max-size* configuration.
 
 1.  **PER\_NODE:** Max map size per instance.
 

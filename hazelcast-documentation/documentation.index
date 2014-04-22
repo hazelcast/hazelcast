@@ -47,6 +47,7 @@ src/Transactions.md
 		src/ResourceAdapterConfiguration.md
 		src/SampleGlassfishConfiguration.md
 		src/SampleJBossConfiguration.md
+#	src/XATransactions.md
 src/IntegratedClustering.md
 	src/Hibernate2LevelCache.md
 	src/HTTPSessionClustering.md
@@ -74,7 +75,7 @@ src/Management.md
 	src/ManagementCenter.md
 #	src/ClusteredJMX.md
 #	src/ClusteredREST.md
-# src/ServerProtocols.md
+#src/ServerProtocols.md
 #	src/HazelcastNetworkProtocol.md
 #	src/MemcacheServer.md
 #	src/REST.md
