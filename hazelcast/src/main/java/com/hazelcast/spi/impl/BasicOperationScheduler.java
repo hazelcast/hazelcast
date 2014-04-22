@@ -69,6 +69,11 @@ public final class BasicOperationScheduler {
     private final ExecutionService executionService;
     private final BasicOperationProcessor processor;
 
+    //the generic workqueues are shared between all generic operation threads, so that work can be stolen
+    //and a task gets processed as quickly as possible.
+    private final BlockingQueue genericWorkQueue = new LinkedBlockingQueue();
+    private final ConcurrentLinkedQueue genericPriorityWorkQueue = new ConcurrentLinkedQueue();
+
     //all operations for specific partitions will be executed on these threads, .e.g map.put(key,value).
     final OperationThread[] partitionOperationThreads;
 
@@ -207,9 +212,7 @@ public final class BasicOperationScheduler {
             size += t.workQueue.size();
         }
 
-        for (OperationThread t : genericOperationThreads) {
-            size += t.workQueue.size();
-        }
+        size += genericWorkQueue.size();
 
         return size;
     }
@@ -218,13 +221,10 @@ public final class BasicOperationScheduler {
         int size = 0;
 
         for (OperationThread t : partitionOperationThreads) {
-            size += t.priorityQueue.size();
+            size += t.priorityWorkQueue.size();
         }
 
-        for (OperationThread t : genericOperationThreads) {
-            size += t.priorityQueue.size();
-        }
-
+        size += genericPriorityWorkQueue.size();
         return size;
     }
 
@@ -282,24 +282,22 @@ public final class BasicOperationScheduler {
             throw new NullPointerException();
         }
 
-        OperationThread operationThread = getOperationThread(partitionId);
-        if (priority) {
-            offerWork(operationThread.priorityQueue, task);
-            offerWork(operationThread.workQueue, priorityTaskTrigger);
-        } else {
-            offerWork(operationThread.workQueue, task);
-        }
-    }
-
-    private OperationThread getOperationThread(int partitionId) {
+        BlockingQueue workQueue;
+        Queue priorityWorkQueue;
         if (partitionId < 0) {
-            //the task can be executed on a generic operation thread
-            int genericThreadIndex = genericOperationRandom.nextInt(genericOperationThreads.length);
-            return genericOperationThreads[genericThreadIndex];
+            workQueue = genericWorkQueue;
+            priorityWorkQueue = genericPriorityWorkQueue;
         } else {
-            //the task needs to be executed on a partition operation thread.
-            int partitionThreadIndex = toPartitionThreadIndex(partitionId);
-            return partitionOperationThreads[partitionThreadIndex];
+            OperationThread partitionOperationThread = partitionOperationThreads[toPartitionThreadIndex(partitionId)];
+            workQueue = partitionOperationThread.workQueue;
+            priorityWorkQueue = partitionOperationThread.priorityWorkQueue;
+        }
+
+        if (priority) {
+            offerWork(priorityWorkQueue, task);
+            offerWork(workQueue, priorityTaskTrigger);
+        } else {
+            offerWork(workQueue, task);
         }
     }
 
@@ -355,7 +353,8 @@ public final class BasicOperationScheduler {
         @Override
         public OperationThread newThread(Runnable ignore) {
             String threadName = node.getThreadPoolNamePrefix("generic-operation") + threadId;
-            OperationThread thread = new OperationThread(threadName, false, threadId);
+            OperationThread thread = new OperationThread(threadName, false, threadId, genericWorkQueue,
+                    genericPriorityWorkQueue);
             threadId++;
             return thread;
         }
@@ -367,7 +366,11 @@ public final class BasicOperationScheduler {
         @Override
         public Thread newThread(Runnable ignore) {
             String threadName = node.getThreadPoolNamePrefix("partition-operation") + threadId;
-            OperationThread thread = new OperationThread(threadName, true, threadId);
+            //each partition operation thread, has its own workqueues because operations are partition specific and can't
+            //be executed by other threads.
+            LinkedBlockingQueue workQueue = new LinkedBlockingQueue();
+            ConcurrentLinkedQueue priorityWorkQueue = new ConcurrentLinkedQueue();
+            OperationThread thread = new OperationThread(threadName, true, threadId, workQueue, priorityWorkQueue);
             threadId++;
             return thread;
         }
@@ -377,13 +380,16 @@ public final class BasicOperationScheduler {
 
         private final int threadId;
         private final boolean isPartitionSpecific;
-        private final BlockingQueue workQueue = new LinkedBlockingQueue();
-        private final Queue priorityQueue = new ConcurrentLinkedQueue();
+        private final BlockingQueue workQueue;
+        private final Queue priorityWorkQueue;
 
-        public OperationThread(String name, boolean isPartitionSpecific, int threadId) {
+        public OperationThread(String name, boolean isPartitionSpecific,
+                               int threadId, BlockingQueue workQueue, Queue priorityWorkQueue) {
             super(node.threadGroup, name);
-            this.isPartitionSpecific = isPartitionSpecific;
             setContextClassLoader(node.getConfigClassLoader());
+            this.isPartitionSpecific = isPartitionSpecific;
+            this.workQueue = workQueue;
+            this.priorityWorkQueue = priorityWorkQueue;
             this.threadId = threadId;
         }
 
@@ -429,7 +435,7 @@ public final class BasicOperationScheduler {
 
         private void processPriorityMessages() {
             for (; ; ) {
-                Object task = priorityQueue.poll();
+                Object task = priorityWorkQueue.poll();
                 if (task == null) {
                     return;
                 }
