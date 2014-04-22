@@ -12,15 +12,14 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.EmptyArrays;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class MapEvictionManager {
@@ -221,13 +220,15 @@ public class MapEvictionManager {
                     if (values.isEmpty()) {
                         continue;
                     }
-                    final List<Record> evictableRecords = getEvictableRecords(recordStore, mapConfig);
-                    if (evictableRecords.isEmpty()) {
+                    final Object[][] evictableKeyValuePairs = getEvictableRecords(recordStore, mapConfig);
+                    if (evictableKeyValuePairs.length == 0) {
                         continue;
                     }
-                    final Set<Data> keySet = new HashSet<Data>(evictableRecords.size());
-                    for (final Record record : evictableRecords) {
-                        keySet.add(record.getKey());
+                    final Set<Data> keySet = new HashSet<Data>(evictableKeyValuePairs.length);
+                    for (final Object[] kvp : evictableKeyValuePairs) {
+                        if (kvp[0] != null) {
+                            keySet.add((Data) kvp[0]);
+                        }
                     }
                     if (keySet.isEmpty()) {
                         continue;
@@ -243,9 +244,11 @@ public class MapEvictionManager {
                     evictKeysOperation.setPartitionId(i);
                     OperationAccessor.setCallerAddress(evictKeysOperation, nodeEngine.getThisAddress());
                     nodeEngine.getOperationService().executeOperation(evictKeysOperation);
-                    for (final Record record : evictableRecords) {
-                        mapService.publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED,
-                                record.getKey(), mapService.toData(record.getValue()), null);
+                    for (final Object[] kvp : evictableKeyValuePairs) {
+                        if (kvp[0] != null) {
+                            mapService.publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED,
+                                    (Data) kvp[0], mapService.toData(kvp[1]), null);
+                        }
                     }
                 }
             }
@@ -257,21 +260,21 @@ public class MapEvictionManager {
 
     }
 
-    private List<Record> getEvictableRecords(final RecordStore recordStore, final MapConfig mapConfig) {
+    private Object[][] getEvictableRecords(final RecordStore recordStore, final MapConfig mapConfig) {
         final int partitionSize = recordStore.size();
         if (partitionSize < 1) {
-            return Collections.emptyList();
+            return EmptyArrays.EMPTY_2D_OBJECT_ARRAY;
         }
         final int evictableSize = getEvictableSize(partitionSize, mapConfig);
         if (evictableSize < 1) {
-            return Collections.emptyList();
+            return EmptyArrays.EMPTY_2D_OBJECT_ARRAY;
         }
         final MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         final Map<Data, Record> entries = recordStore.getReadonlyRecordMap();
         final int size = entries.size();
         // size have a tendency to change to here so check again.
         if (entries.isEmpty()) {
-            return Collections.emptyList();
+            return EmptyArrays.EMPTY_2D_OBJECT_ARRAY;
         }
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
@@ -286,7 +289,7 @@ public class MapEvictionManager {
             }
         }
         if (criterias.length == 0) {
-            return Collections.emptyList();
+            return EmptyArrays.EMPTY_2D_OBJECT_ARRAY;
         }
         // just in case there may be unassigned indexes in criterias array due to size variances
         // assign them to Long.MAX_VALUE so when sorting asc they will locate
@@ -297,7 +300,10 @@ public class MapEvictionManager {
             }
         }
         Arrays.sort(criterias);
-        final List<Record> evictableRecords = new ArrayList<Record>(evictableSize);
+        // we do want to hold references to key&value pairs and don't want to depend on Record
+        // since Record content may be changed.
+        final Object[][] evictableKeyValuePairs = new Object[evictableSize][evictableSize];
+        int indexKVP = 0;
         // check in case record store size may be smaller than evictable size.
         final int evictableBaseIndex = Math.min(evictableSize, index - 1);
         final long criteriaValue = criterias[evictableBaseIndex];
@@ -305,16 +311,18 @@ public class MapEvictionManager {
             final Record record = entry.getValue();
             final long value = getEvictionCriteriaValue(record, evictionPolicy);
             if (value <= criteriaValue) {
-                evictableRecords.add(record);
+                evictableKeyValuePairs[indexKVP][0] = record.getKey();
+                evictableKeyValuePairs[indexKVP][1] = record.getValue();
+                indexKVP++;
             }
-            if (evictableRecords.size() >= evictableSize) {
+            if (indexKVP >= evictableSize) {
                 break;
             }
         }
-        if (evictableRecords.isEmpty()) {
-            return Collections.emptyList();
+        if (evictableKeyValuePairs.length == 0) {
+            return EmptyArrays.EMPTY_2D_OBJECT_ARRAY;
         }
-        return evictableRecords;
+        return evictableKeyValuePairs;
     }
 
     private int getEvictableSize(int currentPartitionSize, MapConfig mapConfig) {
