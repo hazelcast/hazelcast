@@ -27,7 +27,7 @@ import java.util.Arrays;
 /**
  * @author mdogan 12/24/12
  */
-public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation {
+public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation, JoinOperation {
 
     private Operation[] operations;
 
