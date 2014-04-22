@@ -71,7 +71,6 @@ public class GettingStartedClient {
 
     public static void main(String[] args) {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addAddress("127.0.0.1:5701");
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap map = client.getMap("customers");
         System.out.println("Map Size:" + map.size());
@@ -80,6 +79,13 @@ public class GettingStartedClient {
 ```
 -   When you run it, you will see the client properly connecting to the cluster and printing the map size as **3**.
 
-Hazelcast also offers a tool, **Management Center**, that enables monitoring your cluster. To be able to use it, deploy the `mancenter-`*`<version>`*`.war` included in the ZIP file to your web server. You can use it to monitor your maps, queues, other distributed data structures and nodes. Please see [Management Center](#management-center) for usage explanations. 
+Hazelcast also offers a tool, **Management Center**, that enables monitoring your cluster. To be able to use it, deploy the `mancenter-`*`<version>`*`.war` included in the ZIP file to your web server. You can use it to monitor your maps, queues, other distributed data structures and nodes. Please see [Management Center](#management-center) for usage explanations.
 
+<br> </br>
+
+<font color="red">
+***Related Information***
+</font>
+
+*You can also check the video tutorials [here](http://hazelcast.org/getting-started/).*
 

@@ -1,6 +1,8 @@
 
-
 # Configuration
+
+
+
 Hazelcast can be configured declaratively (XML) or programmatically (API) or even by the mix of both.
 
 **1- Declarative Configuration**

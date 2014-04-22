@@ -45,5 +45,5 @@ System.out.println(client.get("key2")); //get from hz_memcache_map2
 
 An entry written with a memcache client can be read by another memcache client written in another language.
 
-
+<br> </br>
 

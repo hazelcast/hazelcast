@@ -452,9 +452,13 @@ In the example configuration above, Hibernate and MySQL is configured. You chang
 
 By default, the key is expected to be the same with ID of the JPA object. You can change this behavior and customize MapStore implementation extending `SpringJPAMapStore` class. 
 
-**Related Information**
+<br> </br>
 
-For more information please see [Spring Data JPA Reference](http://static.springsource.org/spring-data/data-jpa/docs/current/reference/html/).
+<font color="red">
+***Related Information***
+</font>
+
+*For more information please see [Spring Data JPA Reference](http://static.springsource.org/spring-data/data-jpa/docs/current/reference/html/).*
 
 
 
@@ -489,7 +493,12 @@ Then, you can set this as map store for maps that you want to persist into Mongo
 
 By default, the key is set as id of the MongoDB object. You can override `MongoMapStore` class for you custom needs. 
 
-**Related Information**
+<br> </br>
 
-For more information please see [Spring Data MongoDB Reference](http://static.springsource.org/spring-data/data-mongodb/docs/current/reference/html/).
+<font color="red">
+***Related Information***
+</font>
 
+*For more information please see [Spring Data MongoDB Reference](http://static.springsource.org/spring-data/data-mongodb/docs/current/reference/html/).*
+
+<br> </br>

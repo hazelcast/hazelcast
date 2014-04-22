@@ -30,6 +30,10 @@ You need to add *hazelcast-cloud.jar* dependency into your project. Note that it
 
 
 
-**Related Information**
+<br> </br>
 
-You can download the white paper *Hazelcast on AWS: Best Practices for Deployment* from [Hazelcast.com](http://hazelcast.com/resources/hazelcast-on-aws-best-practices-for-deployment/).
+<font color="red">
+***Related Information***
+</font>
+
+*You can download the white paper *"Hazelcast on AWS: Best Practices for Deployment"* from [Hazelcast.com](http://hazelcast.com/resources/hazelcast-on-aws-best-practices-for-deployment/).*

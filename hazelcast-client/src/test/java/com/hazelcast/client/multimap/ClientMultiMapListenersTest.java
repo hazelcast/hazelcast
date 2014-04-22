@@ -94,18 +94,6 @@ public class ClientMultiMapListenersTest {
         assertFalse(mm.removeEntryListener("NOT_THERE"));
     }
 
-    @Test()
-    @Category(ProblematicTest.class)
-    //this test is marked problematic as we cannot determine the desired behaviour from API
-    public void addEntryListener_whenSameListenerAddedMultipleTimes() throws InterruptedException {
-        final MultiMap mm = client.getMultiMap(randomString());
-
-        MyEntryListener listener = new CountDownValueNotNullListener(1);
-        final String id = mm.addEntryListener(listener, true);
-        final String id2 = mm.addEntryListener(listener, true);
-        fail("this test is marked problematic as we cannot determine the desired behaviour from API");
-    }
-
     @Test
     public void testListenerEntryAddEvent() throws InterruptedException {
         final int maxKeys = 12;
