@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation {
+public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation, JoinOperation {
 
     private Operation[] operations;
 
