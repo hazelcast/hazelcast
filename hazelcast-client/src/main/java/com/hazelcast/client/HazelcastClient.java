@@ -105,12 +105,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class HazelcastClient implements HazelcastInstance {
 
+    private static final AtomicInteger CLIENT_ID = new AtomicInteger();
+    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS
+            = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+
     static {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
     }
 
-    private final static AtomicInteger CLIENT_ID = new AtomicInteger();
-    private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
     private final ClientConfig config;
@@ -138,7 +140,8 @@ public final class HazelcastClient implements HazelcastInstance {
             String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
             final PartitioningStrategy partitioningStrategy;
             if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
-                partitioningStrategy = ClassLoaderUtil.newInstance(config.getClassLoader(), partitioningStrategyClassName);
+                partitioningStrategy = ClassLoaderUtil.newInstance(
+                        config.getClassLoader(), partitioningStrategyClassName);
             } else {
                 partitioningStrategy = new DefaultPartitioningStrategy();
             }

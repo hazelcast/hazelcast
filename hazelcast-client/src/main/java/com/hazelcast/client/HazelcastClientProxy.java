@@ -231,11 +231,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     }
 
     @Override
-    public final void shutdown() {
+    public void shutdown() {
         getLifecycleService().shutdown();
     }
 
-    public final SerializationService getSerializationService() {
+    public SerializationService getSerializationService() {
         return getClient().getSerializationService();
     }
 
