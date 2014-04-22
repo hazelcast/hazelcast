@@ -163,6 +163,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public V remove(Object key) {
         final Data keyData = toData(key);
+        invalidateNearCache(keyData);
         MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
         return invoke(request, keyData);
     }
@@ -171,6 +172,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public boolean remove(Object key, Object value) {
         final Data keyData = toData(key);
         final Data valueData = toData(value);
+        invalidateNearCache(keyData);
         MapRemoveIfSameRequest request = new MapRemoveIfSameRequest(name, keyData, valueData, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
@@ -179,6 +181,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public void delete(Object key) {
         final Data keyData = toData(key);
+        invalidateNearCache(keyData);
         MapDeleteRequest request = new MapDeleteRequest(name, keyData, ThreadUtil.getThreadId());
         invoke(request, keyData);
     }
@@ -211,6 +214,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                         nearCache.put(keyData, response);
                     }
                 }
+
                 @Override
                 public void onFailure(Throwable t) {
 
@@ -231,6 +235,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Future<V> putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
         final Data keyData = toData(key);
         final Data valueData = toData(value);
+        invalidateNearCache(keyData);
         MapPutRequest request = new MapPutRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
@@ -243,6 +248,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public Future<V> removeAsync(final K key) {
         final Data keyData = toData(key);
+        invalidateNearCache(keyData);
         MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
@@ -255,6 +261,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
         final Data keyData = toData(key);
+        invalidateNearCache(keyData);
         MapTryRemoveRequest request = new MapTryRemoveRequest(name, keyData, ThreadUtil.getThreadId(), timeunit.toMillis(timeout));
         Boolean result = invoke(request, keyData);
         return result;
@@ -264,6 +271,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
         final Data keyData = toData(key);
         final Data valueData = toData(value);
+        invalidateNearCache(keyData);
         MapTryPutRequest request = new MapTryPutRequest(name, keyData, valueData, ThreadUtil.getThreadId(), timeunit.toMillis(timeout));
         Boolean result = invoke(request, keyData);
         return result;
@@ -273,6 +281,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
         final Data keyData = toData(key);
         final Data valueData = toData(value);
+        invalidateNearCache(keyData);
         MapPutRequest request = new MapPutRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         return invoke(request, keyData);
     }
@@ -281,6 +290,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
         final Data keyData = toData(key);
         final Data valueData = toData(value);
+        invalidateNearCache(keyData);
         MapPutTransientRequest request = new MapPutTransientRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         invoke(request);
     }
@@ -294,6 +304,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
         final Data keyData = toData(key);
         final Data valueData = toData(value);
+        invalidateNearCache(keyData);
         MapPutIfAbsentRequest request = new MapPutIfAbsentRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         return invoke(request, keyData);
     }
@@ -303,6 +314,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         final Data oldValueData = toData(oldValue);
         final Data newValueData = toData(newValue);
+        invalidateNearCache(keyData);
         MapReplaceIfSameRequest request = new MapReplaceIfSameRequest(name, keyData, oldValueData, newValueData, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
@@ -312,6 +324,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public V replace(K key, V value) {
         final Data keyData = toData(key);
         final Data valueData = toData(value);
+        invalidateNearCache(keyData);
         MapReplaceRequest request = new MapReplaceRequest(name, keyData, valueData, ThreadUtil.getThreadId());
         return invoke(request, keyData);
     }
@@ -320,6 +333,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void set(K key, V value, long ttl, TimeUnit timeunit) {
         final Data keyData = toData(key);
         final Data valueData = toData(value);
+        invalidateNearCache(keyData);
         MapSetRequest request = new MapSetRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         invoke(request, keyData);
     }
@@ -450,6 +464,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data value = (Data) entryView.getValue();
         entryView.setKey(key);
         entryView.setValue(toObject(value));
+        //TODO putCache
         return entryView;
     }
 
@@ -790,7 +805,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void putAll(Map<? extends K, ? extends V> m) {
         MapEntrySet entrySet = new MapEntrySet();
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
-            entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(toData(entry.getKey()), toData(entry.getValue())));
+            final Data keyData = toData(entry.getKey());
+            invalidateNearCache(keyData);
+            entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, toData(entry.getValue())));
         }
         MapPutAllRequest request = new MapPutAllRequest(name, entrySet);
         invoke(request);
@@ -853,6 +870,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 }
             }
         };
+    }
+
+    private void invalidateNearCache(Data key) {
+        if (nearCache != null) {
+            nearCache.invalidate(key);
+        }
     }
 
     private void initNearCache() {
