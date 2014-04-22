@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 
@@ -38,12 +39,13 @@ import java.util.AbstractMap;
  */
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
+    private static final EntryEventType NO_NEED_TO_FIRE_EVENT = null;
+
+    protected Object oldValue;
 
     private EntryProcessor entryProcessor;
     private EntryEventType eventType;
     private Object response;
-    protected Object oldValue;
 
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
@@ -69,7 +71,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         final Object valueAfterProcess = entry.getValue();
         // no matching data by key.
         if (oldValue == null && valueAfterProcess == null) {
-            eventType = __NO_NEED_TO_FIRE_EVENT;
+            eventType = NO_NEED_TO_FIRE_EVENT;
         } else if (valueAfterProcess == null) {
             recordStore.remove(dataKey);
             mapStats.incrementRemoves(getLatencyFrom(start));
@@ -78,16 +80,15 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
             if (oldValue == null) {
                 mapStats.incrementPuts(getLatencyFrom(start));
                 eventType = EntryEventType.ADDED;
-            }
+            } else if (!entry.isModified()) {
             // take this case as a read so no need to fire an event.
-            else if (!entry.isModified()) {
                 mapStats.incrementGets(getLatencyFrom(start));
-                eventType = __NO_NEED_TO_FIRE_EVENT;
+                eventType = NO_NEED_TO_FIRE_EVENT;
             } else {
                 mapStats.incrementPuts(getLatencyFrom(start));
                 eventType = EntryEventType.UPDATED;
             }
-            if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+            if (eventType != NO_NEED_TO_FIRE_EVENT) {
                 recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
                 dataValue = mapService.toData(entry.getValue());
             }
@@ -97,7 +98,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     public void afterRun() throws Exception {
         super.afterRun();
-        if (eventType == __NO_NEED_TO_FIRE_EVENT) {
+        if (eventType == NO_NEED_TO_FIRE_EVENT) {
             return;
         }
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(oldValue), dataValue);
@@ -107,7 +108,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(dataKey);
-                final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey,mapService.toData(dataValue),record);
+                final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
                 mapService.publishWanReplicationUpdate(name, entryView);
             }
         }

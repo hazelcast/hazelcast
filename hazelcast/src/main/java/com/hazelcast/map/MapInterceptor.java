@@ -23,7 +23,8 @@ public interface MapInterceptor extends Serializable {
     /**
      * Intercept get operation before returning value.
      * Return another object to change the return value of get(..)
-     * Returning null will cause the get(..) operation return original value, namely return null if you do not want to change anything.
+     * Returning null will cause the get(..) operation return original value,
+     * namely return null if you do not want to change anything.
      * <p/>
      *
      * @param value the original value to be returned as the result of get(..) operation

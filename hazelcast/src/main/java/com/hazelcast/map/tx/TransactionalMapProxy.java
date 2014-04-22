@@ -26,6 +26,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -100,13 +101,14 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 service.toData(value)));
         TxnValueWrapper currentValue = txMap.get(key);
         if (value != null) {
-            TxnValueWrapper wrapper = valueBeforeTxn == null ?
-                    new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) :
-                    new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
+            TxnValueWrapper wrapper = valueBeforeTxn == null
+                    ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW)
+                    : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
             txMap.put(key, wrapper);
         }
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
+
     public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
         checkTransactionState();
         MapService service = getService();
@@ -114,9 +116,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 service.toData(value), ttl, timeUnit));
         TxnValueWrapper currentValue = txMap.get(key);
         if (value != null) {
-            TxnValueWrapper wrapper = valueBeforeTxn == null ?
-                    new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) :
-                    new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
+            TxnValueWrapper wrapper = valueBeforeTxn == null
+                    ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW)
+                    : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
             txMap.put(key, wrapper);
         }
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
@@ -127,7 +129,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         MapService service = getService();
         final Data dataBeforeTxn = putInternal(service.toData(key, partitionStrategy), service.toData(value));
         if (value != null) {
-            TxnValueWrapper wrapper = dataBeforeTxn == null ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
+            TxnValueWrapper wrapper = dataBeforeTxn == null
+                    ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW)
+                    : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
             txMap.put(key, wrapper);
         }
     }
@@ -262,12 +266,13 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.KEY, false);
-        final Set<Object> keySet = new HashSet<Object>(queryResultSet); //todo: Can't we just use the original set?
+        final Set<Object> keySet = new HashSet<Object>(queryResultSet);
+        //todo: Can't we just use the original set?
 
         for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
             if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
-                final Object value = entry.getValue().value instanceof Data ?
-                        service.toObject(entry.getValue().value) : entry.getValue().value;
+                final Object value = entry.getValue().value instanceof Data
+                        ? service.toObject(entry.getValue().value) : entry.getValue().value;
                 final QueryEntry queryEntry = new QueryEntry(null, service.toData(entry.getKey()), entry.getKey(), value);
                 // apply predicate on txMap.
                 if (predicate.apply(queryEntry)) {
@@ -305,7 +310,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.ENTRY, false);
-        final Set<Object> valueSet = new HashSet<Object>(); //todo: Can't we just use the original set?
+        //todo: Can't we just use the original set?
+        final Set<Object> valueSet = new HashSet<Object>();
         final Set<Object> keyWontBeIncluded = new HashSet<Object>();
 
         // delete updated or removed elements from the result set
@@ -316,12 +322,12 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             if (isRemoved) {
                 keyWontBeIncluded.add(entry.getKey());
             } else {
-                if (isUpdated){
+                if (isUpdated) {
                     keyWontBeIncluded.add(entry.getKey());
                 }
                 final Object entryValue = entry.getValue().value;
-                final Object objectValue = entryValue instanceof Data ?
-                        service.toObject(entryValue) : entryValue;
+                final Object objectValue = entryValue instanceof Data
+                        ? service.toObject(entryValue) : entryValue;
                 final QueryEntry queryEntry = new QueryEntry(null, service.toData(entry.getKey()), entry.getKey(), objectValue);
                 // apply predicate on txMap.
                 if (predicate.apply(queryEntry)) {
@@ -331,9 +337,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
 
         final Iterator<Map.Entry> iterator = queryResultSet.rawIterator();
-        while (iterator.hasNext()){
+        while (iterator.hasNext()) {
             final Map.Entry entry = iterator.next();
-            if (keyWontBeIncluded.contains(entry.getKey())){
+            if (keyWontBeIncluded.contains(entry.getKey())) {
                 continue;
             }
             valueSet.add(entry.getValue());

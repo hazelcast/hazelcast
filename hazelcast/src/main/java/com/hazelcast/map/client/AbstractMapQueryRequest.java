@@ -16,7 +16,11 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.InvocationClientRequest;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.ClientEndpoint;
+
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -35,7 +39,12 @@ import com.hazelcast.util.QueryResultSet;
 
 import java.io.IOException;
 import java.security.Permission;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.List;
+import java.util.Collection;
+import java.util.ArrayList;
+
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
@@ -64,7 +73,8 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
             List<Future> flist = new ArrayList<Future>();
             final Predicate predicate = getPredicate();
             for (MemberImpl member : members) {
-                Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).invoke();
+                Future future = createInvocationBuilder(SERVICE_NAME,
+                        new QueryOperation(name, predicate), member.getAddress()).invoke();
                 flist.add(future);
             }
             for (Future future : flist) {

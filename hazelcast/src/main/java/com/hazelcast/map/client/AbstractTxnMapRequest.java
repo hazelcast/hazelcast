@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.SecureRequest;
+
 import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
@@ -124,6 +124,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
                 return getMapValueCollection(map.values());
             case VALUES_BY_PREDICATE:
                 return getMapValueCollection(map.values(getPredicate()));
+            default:
 
         }
         return null;

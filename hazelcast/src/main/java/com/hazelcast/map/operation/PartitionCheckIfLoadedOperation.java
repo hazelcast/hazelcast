@@ -22,7 +22,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
 
-    private boolean isFinished = false;
+    private boolean isFinished;
 
     public PartitionCheckIfLoadedOperation(String name) {
         super(name);

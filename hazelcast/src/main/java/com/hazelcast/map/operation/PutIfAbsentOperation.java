@@ -35,8 +35,9 @@ public class PutIfAbsentOperation extends BasePutOperation {
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     @Override

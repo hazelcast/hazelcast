@@ -24,7 +24,7 @@ import java.io.IOException;
 
 public class TryRemoveOperation extends BaseRemoveOperation {
 
-    private boolean successful = false;
+    private boolean successful;
 
     public TryRemoveOperation(String name, Data dataKey, long timeout) {
         super(name, dataKey);
@@ -40,8 +40,9 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     public Object getResponse() {

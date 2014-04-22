@@ -16,7 +16,11 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
@@ -29,14 +33,22 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.DelegatingFuture;
 
-import java.util.*;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.ArrayList;
+
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
-/** @author enesakar 1/17/13 */
+/**
+ * @author enesakar 1/17/13
+ */
 public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, InitializingObject {
 
     public MapProxyImpl(final String name, final MapService mapService, final NodeEngine nodeEngine) {
@@ -300,7 +312,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Data k = service.toData(key, partitionStrategy);
         Data v = service.toData(value);
         return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit),
-                                       getNodeEngine().getSerializationService());
+                getNodeEngine().getSerializationService());
     }
 
     @Override
@@ -502,7 +514,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
         for (Entry<Data, Data> entry : entries) {
             resultSet.add(new AbstractMap.SimpleImmutableEntry((K) getService().toObject(entry.getKey()),
-                                                               (V) getService().toObject(entry.getValue())));
+                    (V) getService().toObject(entry.getValue())));
         }
         return resultSet;
     }
@@ -565,8 +577,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         MapService service = getService();
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
-        for(K key : keys)
-        {
+        for (K key : keys) {
             dataKeys.add(service.toData(key, partitionStrategy));
         }
         return executeOnKeysInternal(dataKeys, entryProcessor);
@@ -579,8 +590,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         MapService service = getService();
         Data keyData = service.toData(key, partitionStrategy);
-        executeOnKeyInternal(keyData,entryProcessor,callback);
+        executeOnKeyInternal(keyData, entryProcessor, callback);
     }
+
     @Override
     public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
         if (key == null) {
@@ -588,8 +600,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         MapService service = getService();
         Data keyData = service.toData(key, partitionStrategy);
-        ICompletableFuture f = executeOnKeyInternal(keyData,entryProcessor,null);
-        return new DelegatingFuture(f,service.getSerializationService());
+        ICompletableFuture f = executeOnKeyInternal(keyData, entryProcessor, null);
+        return new DelegatingFuture(f, service.getSerializationService());
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {

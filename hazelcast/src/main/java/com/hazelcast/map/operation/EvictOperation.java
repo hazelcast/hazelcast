@@ -27,8 +27,8 @@ import java.io.IOException;
 
 public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    boolean evicted = false;
-    boolean asyncBackup = false;
+    boolean evicted;
+    boolean asyncBackup;
 
     public EvictOperation(String name, Data dataKey, boolean asyncBackup) {
         super(name, dataKey);

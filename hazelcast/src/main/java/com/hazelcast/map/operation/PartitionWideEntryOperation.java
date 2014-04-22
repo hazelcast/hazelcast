@@ -36,6 +36,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
@@ -46,7 +47,7 @@ import java.util.Map;
 public class PartitionWideEntryOperation extends AbstractMapOperation
         implements BackupAwareOperation, PartitionAwareOperation {
 
-    private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
+    private static final EntryEventType NO_NEED_TO_FIRE_EVENT = null;
     EntryProcessor entryProcessor;
     MapEntrySet response;
 
@@ -101,21 +102,20 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
                 if (valueBeforeProcessObject == null) {
                     mapStats.incrementPuts(getLatencyFrom(start));
                     eventType = EntryEventType.ADDED;
-                }
-                // take this case as a read so no need to fire an event.
-                else if (!entry.isModified()) {
+                } else if (!entry.isModified()) {
+                    // take this case as a read so no need to fire an event.
                     mapStats.incrementGets(getLatencyFrom(start));
-                    eventType = __NO_NEED_TO_FIRE_EVENT;
+                    eventType = NO_NEED_TO_FIRE_EVENT;
                 } else {
                     mapStats.incrementPuts(getLatencyFrom(start));
                     eventType = EntryEventType.UPDATED;
                 }
                 // todo if this is a read only operation, record access operations should be done.
-                if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+                if (eventType != NO_NEED_TO_FIRE_EVENT) {
                     recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
                 }
             }
-            if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+            if (eventType != NO_NEED_TO_FIRE_EVENT) {
                 final Data oldValue = mapService.toData(valueBeforeProcess);
                 final Data value = mapService.toData(valueAfterProcess);
                 mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, value);

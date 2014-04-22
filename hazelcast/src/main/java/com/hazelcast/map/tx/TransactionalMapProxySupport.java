@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,8 +18,21 @@ package com.hazelcast.map.tx;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.*;
-import com.hazelcast.map.operation.*;
+
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.NearCache;
+import com.hazelcast.map.MapValueCollection;
+import com.hazelcast.map.QueryResult;
+import com.hazelcast.map.MapKeySet;
+
+import com.hazelcast.map.operation.ContainsKeyOperation;
+import com.hazelcast.map.operation.GetOperation;
+import com.hazelcast.map.operation.SizeOperationFactory;
+import com.hazelcast.map.operation.MapKeySetOperation;
+import com.hazelcast.map.operation.MapValuesOperation;
+import com.hazelcast.map.operation.QueryOperation;
+import com.hazelcast.map.operation.QueryPartitionOperation;
+
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -36,7 +49,14 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -52,7 +72,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     protected final PartitioningStrategy partitionStrategy;
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
 
-    public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, TransactionSupport transaction) {
+    public TransactionalMapProxySupport(String name, MapService mapService
+            , NodeEngine nodeEngine, TransactionSupport transaction) {
         super(nodeEngine, mapService);
         this.name = name;
         this.tx = transaction;
@@ -129,6 +150,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         tx.addTransactionLog(new MapTransactionLog(name, key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
+
     public Data putInternal(Data key, Data value, long ttl, TimeUnit timeUnit) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         final long timeInMillis = getTimeInMillis(ttl, timeUnit);
@@ -150,7 +172,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public Data replaceInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        if (versionedValue.value == null){
+        if (versionedValue.value == null) {
             return null;
         }
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
@@ -160,8 +182,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public boolean replaceIfSameInternal(Data key, Object oldValue, Data newValue) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        if (!getService().compare(name, oldValue, versionedValue.value))
+        if (!getService().compare(name, oldValue, versionedValue.value)) {
             return false;
+        }
         final TxnSetOperation op = new TxnSetOperation(name, key, newValue, versionedValue.version);
         tx.addTransactionLog(new MapTransactionLog(name, key, op, versionedValue.version, tx.getOwnerUuid()));
         return true;
@@ -169,7 +192,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version)
+                , versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -178,7 +202,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         if (!getService().compare(name, versionedValue.value, value)) {
             return false;
         }
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version)
+                , versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
@@ -188,14 +213,17 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             return versionedValue;
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, timeout, tx.getOwnerUuid());
+        TxnLockAndGetOperation operation =
+                new TxnLockAndGetOperation(name, key, timeout, timeout, tx.getOwnerUuid());
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Future<VersionedValue> f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+            Future<VersionedValue> f = nodeEngine.getOperationService()
+                    .invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             versionedValue = f.get();
             if (versionedValue == null) {
-                throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
+                throw new TransactionException("Transaction couldn't obtain lock for the key:"
+                        + getService().toObject(key));
             }
             valueMap.put(key, versionedValue);
             return versionedValue;

@@ -55,8 +55,7 @@ public class EvictKeysBackupOperation extends AbstractNamedOperation implements 
     public void run() {
         final Set<Data> keys = mapKeySet.getKeySet();
         for (Data key : keys) {
-            if (!recordStore.isLocked(key))
-            {
+            if (!recordStore.isLocked(key)) {
                 recordStore.evict(key);
             }
         }
@@ -84,8 +83,8 @@ public class EvictKeysBackupOperation extends AbstractNamedOperation implements 
 
     @Override
     public String toString() {
-        return "EvictKeysBackupOperation{" +
-                '}';
+        return "EvictKeysBackupOperation{"
+                + '}';
     }
 
 }

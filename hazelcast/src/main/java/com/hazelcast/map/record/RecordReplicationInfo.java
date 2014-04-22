@@ -64,9 +64,10 @@ public class RecordReplicationInfo extends RecordInfo implements DataSerializabl
 
     @Override
     public String toString() {
-        return "RecordReplicationInfo{" +
-                "key=" + key +
-                ", value=" + value +
-                "} " + super.toString();
+        return "RecordReplicationInfo{"
+                + "key=" + key
+                + ", value=" + value
+                + "} "
+                + super.toString();
     }
 }

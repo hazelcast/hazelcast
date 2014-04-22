@@ -51,6 +51,9 @@ import java.util.concurrent.TimeUnit;
 
 public class MapContainer {
 
+    static final long DELAY = 20;
+    static final int QUEUE_CAPACITY = 100000;
+
     private final String name;
     private volatile MapConfig mapConfig;
     private final RecordFactory recordFactory;
@@ -105,8 +108,8 @@ public class MapContainer {
                         factory = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), factoryClassName);
                     }
                 }
-                store = (factory == null ? mapStoreConfig.getImplementation() :
-                        factory.newMapStore(name, mapStoreConfig.getProperties()));
+                store = (factory == null ? mapStoreConfig.getImplementation()
+                        : factory.newMapStore(name, mapStoreConfig.getProperties()));
                 if (store == null) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
                     store = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mapStoreClassName);
@@ -128,7 +131,7 @@ public class MapContainer {
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
                 final ExecutionService executionService = nodeEngine.getExecutionService();
-                executionService.register(mapStoreScheduledExecutorName, 1, 100000, ExecutorType.CACHED);
+                executionService.register(mapStoreScheduledExecutorName, 1, QUEUE_CAPACITY, ExecutorType.CACHED);
                 ScheduledExecutorService scheduledExecutor = executionService
                         .getScheduledExecutor(mapStoreScheduledExecutorName);
                 mapStoreScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor,
@@ -196,7 +199,7 @@ public class MapContainer {
             public void run() {
                 initialKeys.clear();
             }
-        }, 20, TimeUnit.MINUTES);
+        }, DELAY, TimeUnit.MINUTES);
     }
 
     public void shutDownMapStoreScheduledExecutor() {

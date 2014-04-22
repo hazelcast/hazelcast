@@ -38,7 +38,8 @@ public class EventData implements DataSerializable {
     public EventData() {
     }
 
-    public EventData(String source, String mapName, Address caller, Data dataKey, Data dataNewValue, Data dataOldValue, int eventType) {
+    public EventData(String source, String mapName, Address caller,
+                     Data dataKey, Data dataNewValue, Data dataOldValue, int eventType) {
         this.source = source;
         this.mapName = mapName;
         this.caller = caller;

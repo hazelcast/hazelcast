@@ -86,8 +86,8 @@ public class DefaultRecordStore implements RecordStore {
         recordFactory = mapContainer.getRecordFactory();
         NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        this.lockStore = lockService == null ? null :
-                lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+        this.lockStore = lockService == null ? null
+                : lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
         final int mapLoadChunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
         final Queue<Map> chunks = new LinkedList<Map>();
@@ -118,7 +118,8 @@ public class DefaultRecordStore implements RecordStore {
                             Map<Data, Object> chunkedKeys;
                             final AtomicInteger checkIfMapLoaded = new AtomicInteger(chunks.size());
                             while ((chunkedKeys = chunks.poll()) != null) {
-                                nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
+                                nodeEngine.getExecutionService().submit("hz:map-load",
+                                        new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
                             }
                         } catch (Throwable t) {
                             throw ExceptionUtil.rethrow(t);
@@ -293,8 +294,9 @@ public class DefaultRecordStore implements RecordStore {
     public boolean containsValue(Object value) {
         checkIfLoaded();
         for (Record record : records.values()) {
-            if (mapService.compare(name, value, record.getValue()))
+            if (mapService.compare(name, value, record.getValue())) {
                 return true;
+            }
         }
         return false;
     }
@@ -536,8 +538,9 @@ public class DefaultRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
-            if (oldValue == null)
+            if (oldValue == null) {
                 return false;
+            }
         } else {
             oldValue = record.getValue();
         }
@@ -758,7 +761,8 @@ public class DefaultRecordStore implements RecordStore {
             EntryView existingEntry = mapService.createSimpleEntryView(mapService.toObject(record.getKey()),
                     mapService.toObject(record.getValue()), record);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
-            if (newValue == null) { // existing entry will be removed
+            // existing entry will be removed
+            if (newValue == null) {
                 removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
                 // reduce size.
@@ -802,8 +806,9 @@ public class DefaultRecordStore implements RecordStore {
     public boolean replace(Data dataKey, Object testValue, Object newValue) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        if (record == null)
+        if (record == null) {
             return false;
+        }
         if (mapService.compare(name, record.getValue(), testValue)) {
             newValue = mapService.interceptPut(name, record.getValue(), newValue);
             newValue = writeMapStore(dataKey, newValue, record);
@@ -993,14 +998,15 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void cancelAssociatedSchedulers(Set<Data> keySet) {
-        if (keySet == null || keySet.isEmpty()) return;
-
+        if (keySet == null || keySet.isEmpty()) {
+            return;
+        }
         for (Data key : keySet) {
             cancelAssociatedSchedulers(key);
         }
     }
 
-    private class MapLoadAllTask implements Runnable {
+    private final class MapLoadAllTask implements Runnable {
         private Map<Data, Object> keys;
         private AtomicInteger checkIfMapLoaded;
 

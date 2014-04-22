@@ -26,7 +26,7 @@ import java.io.IOException;
 public class RemoveIfSameOperation extends BaseRemoveOperation {
 
     private Data testValue;
-    private boolean successful = false;
+    private boolean successful;
 
     public RemoveIfSameOperation(String name, Data dataKey, Data value) {
         super(name, dataKey);
@@ -37,12 +37,13 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-       successful = recordStore.remove(dataKey, testValue);
+        successful = recordStore.remove(dataKey, testValue);
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     @Override

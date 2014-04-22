@@ -57,8 +57,10 @@ public class MapContainsValueRequest extends AllPartitionsClientRequest implemen
     @Override
     protected Object reduce(Map<Integer, Object> map) {
         for (Object contains : map.values()) {
-            if(Boolean.TRUE.equals(contains))
+            if (Boolean.TRUE.equals(contains)) {
                 return true;
+            }
+
         }
         return false;
     }

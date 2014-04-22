@@ -20,11 +20,32 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.*;
+
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryEvent;
+
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.merge.*;
-import com.hazelcast.map.operation.*;
+
+import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
+import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
+import com.hazelcast.map.merge.PassThroughMergePolicy;
+
+import com.hazelcast.map.operation.WanOriginatedDeleteOperation;
+import com.hazelcast.map.operation.PostJoinMapOperation;
+import com.hazelcast.map.operation.MergeOperation;
+import com.hazelcast.map.operation.MapReplicationOperation;
+import com.hazelcast.map.operation.InvalidateNearCacheOperation;
+import com.hazelcast.map.operation.NearCacheKeySetInvalidationOperation;
+
+
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
@@ -47,20 +68,55 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
-import com.hazelcast.spi.*;
+
+
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.transaction.impl.TransactionSupport;
-import com.hazelcast.util.*;
+
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.SortingUtil;
+import com.hazelcast.util.Clock;
+
+
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.wan.WanReplicationEvent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Properties;
+import java.util.Comparator;
+import java.util.Collections;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.ReplicationSupportingService;
 
 /**
  * The SPI Service for the Map.
@@ -71,7 +127,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
 
-    public final static String SERVICE_NAME = "hz:impl:mapService";
+    public static final String SERVICE_NAME = "hz:impl:mapService";
+    static final int TIME_OUT = 100;
+    static final int TRY_COUNT = 30;
 
     private final ILogger logger;
     private final NodeEngine nodeEngine;
@@ -84,6 +142,27 @@ public class MapService implements ManagedService, MigrationAwareService,
     // the record could not complete task before migration
     private final long replicaWaitMillisForScheduledTasks;
     private final MapEvictionManager mapEvictionManager;
+
+    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
+    private final ConstructorFunction<String, LocalMapStatsImpl> localMapStatsConstructorFunction =
+            new ConstructorFunction<String, LocalMapStatsImpl>() {
+                public LocalMapStatsImpl createNew(String key) {
+                    return new LocalMapStatsImpl();
+                }
+            };
+
+    private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
+        public MapContainer createNew(String mapName) {
+            return new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName), MapService.this);
+        }
+    };
+
+    private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
+        public NearCache createNew(String mapName) {
+            return new NearCache(mapName, MapService.this);
+        }
+    };
+
 
     public MapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -100,12 +179,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         mergePolicyMap.put(LatestUpdateMapMergePolicy.class.getName(), new LatestUpdateMapMergePolicy());
     }
 
-    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
-    private final ConstructorFunction<String, LocalMapStatsImpl> localMapStatsConstructorFunction = new ConstructorFunction<String, LocalMapStatsImpl>() {
-        public LocalMapStatsImpl createNew(String key) {
-            return new LocalMapStatsImpl();
-        }
-    };
 
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMapStatsConstructorFunction);
@@ -185,11 +258,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
-    private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
-        public MapContainer createNew(String mapName) {
-            return new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName), MapService.this);
-        }
-    };
 
     public Operation getPostJoinOperation() {
         PostJoinMapOperation o = new PostJoinMapOperation();
@@ -234,7 +302,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
             String mapName = replicationUpdate.getMapName();
             MapContainer mapContainer = getMapContainer(mapName);
-            MergeOperation operation = new MergeOperation(mapName, toData(entryView.getKey(), mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
+            MergeOperation operation = new MergeOperation(mapName, toData(entryView.getKey()
+                    , mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
                 Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
@@ -244,7 +313,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
         } else if (eventObject instanceof MapReplicationRemove) {
             MapReplicationRemove replicationRemove = (MapReplicationRemove) eventObject;
-            WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName(), replicationRemove.getKey());
+            WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName()
+                    , replicationRemove.getKey());
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
                 Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
@@ -294,11 +364,15 @@ public class MapService implements ManagedService, MigrationAwareService,
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
                         public void run() {
-                            final SimpleEntryView entryView = createSimpleEntryView(record.getKey(), toData(record.getValue()),record);
-                            MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
+                            final SimpleEntryView entryView = createSimpleEntryView(record.getKey()
+                                    , toData(record.getValue()), record);
+                            MergeOperation operation = new MergeOperation(mapContainer.getName(),
+                                    record.getKey(), entryView, finalMergePolicy);
                             try {
-                                int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
-                                Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                                int partitionId = nodeEngine.getPartitionService()
+                                        .getPartitionId(record.getKey());
+                                Future f = nodeEngine.getOperationService()
+                                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
                                 f.get();
                             } catch (Throwable t) {
                                 throw ExceptionUtil.rethrow(t);
@@ -351,7 +425,8 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        final MapReplicationOperation operation = new MapReplicationOperation(this, container, event.getPartitionId(), event.getReplicaIndex());
+        final MapReplicationOperation operation = new MapReplicationOperation(this, container
+                , event.getPartitionId(), event.getReplicaIndex());
         return operation.isEmpty() ? null : operation;
     }
 
@@ -375,7 +450,8 @@ public class MapService implements ManagedService, MigrationAwareService,
                     } else {
                         Object value = record.getValue();
                         if (value != null) {
-                            indexService.saveEntryIndex(new QueryEntry(getSerializationService(), record.getKey(), record.getKey(), value));
+                            indexService.saveEntryIndex(new QueryEntry(getSerializationService()
+                                    , record.getKey(), record.getKey(), value));
                         }
                     }
                 }
@@ -438,11 +514,6 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     }
 
-    private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
-        public NearCache createNew(String mapName) {
-            return new NearCache(mapName, MapService.this);
-        }
-    };
 
     public NearCache getNearCache(String mapName) {
         return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
@@ -489,8 +560,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
-                if (member.localMember())
+                if (member.localMember()) {
                     continue;
+                }
                 Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(SERVICE_NAME);
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
@@ -525,8 +597,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
-                if (member.localMember())
+                if (member.localMember()) {
                     continue;
+                }
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 logger.warning(throwable);
@@ -671,12 +744,14 @@ public class MapService implements ManagedService, MigrationAwareService,
         mapContainer.getWanReplicationPublisher().publishReplicationEvent(SERVICE_NAME, replicationEvent);
     }
 
-    public void publishEvent(Address caller, String mapName, EntryEventType eventType, Data dataKey, Data dataOldValue, Data dataValue) {
+    public void publishEvent(Address caller, String mapName, EntryEventType eventType, Data dataKey
+            , Data dataOldValue, Data dataValue) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
-        if (candidates.isEmpty())
+        if (candidates.isEmpty()) {
             return;
+        }
         Object key = null;
         Object value = null;
         Object oldValue = null;
@@ -712,8 +787,9 @@ public class MapService implements ManagedService, MigrationAwareService,
                 }
             }
         }
-        if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
+        if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty()) {
             return;
+        }
         String source = nodeEngine.getThisAddress().toString();
         if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
             dataValue = dataValue != null ? dataValue : dataOldValue;
@@ -725,17 +801,20 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public String addLocalEventListener(EntryListener entryListener, String mapName) {
-        EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, mapName, entryListener);
+        EventRegistration registration = nodeEngine.getEventService()
+                .registerLocalListener(SERVICE_NAME, mapName, entryListener);
         return registration.getId();
     }
 
     public String addLocalEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
-        EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, mapName, eventFilter, entryListener);
+        EventRegistration registration = nodeEngine.getEventService()
+                .registerLocalListener(SERVICE_NAME, mapName, eventFilter, entryListener);
         return registration.getId();
     }
 
     public String addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
-        EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, eventFilter, entryListener);
+        EventRegistration registration = nodeEngine.getEventService()
+                .registerListener(SERVICE_NAME, mapName, eventFilter, entryListener);
         return registration.getId();
     }
 
@@ -817,7 +896,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return -1;
     }
 
-    public <K,V> SimpleEntryView<K,V> createSimpleEntryView(K key, V value, Record record) {
+    public <K, V> SimpleEntryView<K, V> createSimpleEntryView(K key, V value, Record record) {
         final SimpleEntryView simpleEntryView = new SimpleEntryView(key, value);
         simpleEntryView.setCost(record.getCost());
         simpleEntryView.setVersion(record.getVersion());
@@ -832,18 +911,19 @@ public class MapService implements ManagedService, MigrationAwareService,
             simpleEntryView.setLastStoredTime(statistics.getLastStoredTime());
             simpleEntryView.setLastUpdateTime(statistics.getLastUpdateTime());
         }
-       return simpleEntryView;
+        return simpleEntryView;
     }
 
     public long findDelayMillis(ScheduledEntry entry) {
         final long timeElapsedUntilNow = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - entry.getScheduleStartTimeInNanos());
         final long remainingTime = entry.getScheduledDelayMillis() - timeElapsedUntilNow;
         return Math.max(0, remainingTime);
-   }
+    }
 
     public Object toObject(Object data) {
-        if (data == null)
+        if (data == null) {
             return null;
+        }
         if (data instanceof Data) {
             return nodeEngine.toObject(data);
         } else {
@@ -852,8 +932,9 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Data toData(Object object, PartitioningStrategy partitionStrategy) {
-        if (object == null)
+        if (object == null) {
             return null;
+        }
         if (object instanceof Data) {
             return (Data) object;
         } else {
@@ -862,8 +943,9 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Data toData(Object object) {
-        if (object == null)
+        if (object == null) {
             return null;
+        }
         if (object instanceof Data) {
             return (Data) object;
         } else {
@@ -955,8 +1037,9 @@ public class MapService implements ManagedService, MigrationAwareService,
             if (predicate.apply(queryEntry)) {
                 if (pagingPredicate != null) {
                     Map.Entry anchor = pagingPredicate.getAnchor();
-                    if (anchor != null &&
-                            SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), anchor, queryEntry) >= 0) {
+                    if (anchor != null
+                            && SortingUtil.compare(pagingPredicate.getComparator()
+                            , pagingPredicate.getIterationType(), anchor, queryEntry) >= 0) {
                         continue;
                     }
                 }
@@ -1028,11 +1111,11 @@ public class MapService implements ManagedService, MigrationAwareService,
             } else {
                 for (int replica = 1; replica <= backupCount; replica++) {
                     Address replicaAddress = partition.getReplicaAddress(replica);
-                    int tryCount = 30;
+                    int tryCount = TRY_COUNT;
                     // wait if the partition table is not updated yet
                     while (replicaAddress == null && clusterService.getSize() > backupCount && tryCount-- > 0) {
                         try {
-                            TimeUnit.MILLISECONDS.sleep(100);
+                            TimeUnit.MILLISECONDS.sleep(TIME_OUT);
                         } catch (InterruptedException e) {
                             throw ExceptionUtil.rethrow(e);
                         }

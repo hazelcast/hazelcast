@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;

@@ -28,7 +28,7 @@ import java.io.IOException;
 
 public class ContainsValueOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-    private boolean contains = false;
+    private boolean contains;
     private Data testValue;
 
     public ContainsValueOperation(String name, Data testValue) {

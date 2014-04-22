@@ -34,7 +34,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     protected String name;
     protected Data dataKey;
     protected long threadId;
-    protected Data dataValue = null;
+    protected Data dataValue;
     protected long ttl = -1;
 
     protected transient MapService mapService;
@@ -123,9 +123,9 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         }
     }
 
-    protected void invalidateLocalNearCache(Data dataKey){
+    protected void invalidateLocalNearCache(Data dataKey) {
         if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-            mapService.invalidateNearCache(name,dataKey);
+            mapService.invalidateNearCache(name, dataKey);
         }
     }
 

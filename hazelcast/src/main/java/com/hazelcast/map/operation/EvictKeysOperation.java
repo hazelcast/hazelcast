@@ -86,8 +86,8 @@ public class EvictKeysOperation extends AbstractMapOperation implements BackupAw
 
     @Override
     public String toString() {
-        return "EvictKeysOperation{" +
-                '}';
+        return "EvictKeysOperation{"
+                + '}';
     }
 
     @Override

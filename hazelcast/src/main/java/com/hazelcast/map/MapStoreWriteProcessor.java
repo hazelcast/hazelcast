@@ -23,7 +23,12 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
-import java.util.*;
+import java.util.Queue;
+import java.util.Map;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.AbstractMap;
+import java.util.LinkedList;
 
 public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Object> {
 
@@ -42,17 +47,19 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
         try {
             mapContainer.getStore().store(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
         } catch (Exception e) {
-            logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> store failed, " +
-                    "now Hazelcast reschedules this operation ", e);
+            logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> store failed, "
+                    + "now Hazelcast reschedules this operation ", e);
             exception = e;
-            scheduler.schedule(mapContainer.getWriteDelayMillis(), mapService.toData(entry.getKey()), mapService.toData(entry.getValue()));
+            scheduler.schedule(mapContainer.getWriteDelayMillis(), mapService.toData(entry.getKey())
+                    , mapService.toData(entry.getValue()));
         }
         return exception;
     }
 
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        if (entries.isEmpty())
+        if (entries.isEmpty()) {
             return;
+        }
         NodeEngine nodeEngine = mapService.getNodeEngine();
         if (entries.size() == 1) {
             ScheduledEntry<Data, Object> entry = entries.iterator().next();
@@ -64,16 +71,20 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
                     logger.severe(exception);
                 }
             }
-        } else {   // if entries size > 0, we will call storeAll
+            // if entries size > 0, we will call storeAll
+        } else {
             final Queue<ScheduledEntry> duplicateKeys = new LinkedList<ScheduledEntry>();
-            final Map<Object,Object> map = new HashMap<Object,Object>(entries.size());
+            final Map<Object, Object> map = new HashMap<Object, Object>(entries.size());
             for (ScheduledEntry<Data, Object> entry : entries) {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
                 // execute operation if the node is owner of the key (it can be backup)
-                if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
+                if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().
+                        getPartitionOwner(partitionId))) {
                     final Object key = mapService.toObject(entry.getKey());
                     if (map.get(key) != null) {
-                        duplicateKeys.offer(new ScheduledEntry<Object, Object>(key, entry.getValue(), entry.getScheduledDelayMillis(), entry.getActualDelaySeconds(), entry.getScheduleStartTimeInNanos()));
+                        duplicateKeys.offer(new ScheduledEntry<Object, Object>(key, entry.getValue()
+                                , entry.getScheduledDelayMillis(), entry.getActualDelaySeconds()
+                                , entry.getScheduleStartTimeInNanos()));
                         continue;
                     }
                     map.put(key, mapService.toObject(entry.getValue()));
@@ -84,7 +95,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
             for (ScheduledEntry duplicateKey : duplicateKeys) {
                 Object key = duplicateKey.getKey();
                 Object removed = map.remove(key);
-                if(removed != null) {
+                if (removed != null) {
                     final Exception ex = tryStore(scheduler, new AbstractMap.SimpleEntry(key, removed));
                     if (ex != null) {
                         logger.severe(ex);
@@ -96,8 +107,8 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
             try {
                 mapContainer.getStore().storeAll(map);
             } catch (Exception e) {
-                logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> storeAll was failed, " +
-                        "now Hazelcast is trying to store one by one: ", e);
+                logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> storeAll was failed, "
+                        + "now Hazelcast is trying to store one by one: ", e);
                 // if store all throws exception we will try to put insert them one by one.
                 for (ScheduledEntry<Data, Object> entry : entries) {
                     Exception temp = tryStore(scheduler, entry);

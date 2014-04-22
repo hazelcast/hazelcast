@@ -16,9 +16,20 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.map.operation.*;
+import com.hazelcast.map.operation.PutOperation;
+import com.hazelcast.map.operation.PutBackupOperation;
+import com.hazelcast.map.operation.GetOperation;
+import com.hazelcast.map.operation.RemoveOperation;
+import com.hazelcast.map.operation.RemoveBackupOperation;
+
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.nio.serialization.*;
+
+import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.QueryResultSet;
@@ -35,7 +46,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE = 2;
     public static final int PUT_BACKUP = 3;
     public static final int REMOVE_BACKUP = 4;
-//    public static final int DATA_RECORD = 5;
+    //    public static final int DATA_RECORD = 5;
 //    public static final int OBJECT_RECORD = 6;
 //    public static final int CACHED_RECORD = 7;
     public static final int KEY_SET = 8;
@@ -53,7 +64,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     }
 
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[LEN];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
         constructors[PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {

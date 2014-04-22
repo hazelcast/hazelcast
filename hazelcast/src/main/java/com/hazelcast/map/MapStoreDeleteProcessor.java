@@ -44,8 +44,8 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
         try {
             mapContainer.getStore().delete(mapService.toObject(entry.getKey()));
         } catch (Exception e) {
-            logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> delete failed, " +
-                    "now Hazelcast reschedules this operation ", e);
+            logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> delete failed, "
+                    + "now Hazelcast reschedules this operation ", e);
             exception = e;
             scheduler.schedule(mapContainer.getWriteDelayMillis(), entry.getKey(), entry.getValue());
         }
@@ -54,8 +54,9 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
 
 
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        if (entries.isEmpty())
+        if (entries.isEmpty()) {
             return;
+        }
 
         NodeEngine nodeEngine = mapService.getNodeEngine();
         if (entries.size() == 1) {
@@ -81,8 +82,9 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
             try {
                 mapContainer.getStore().deleteAll(keys);
             } catch (Exception ex) {
-                logger.warning(mapContainer.getStore().getMapStore().getClass() + " --> deleteAll was failed, " +
-                        "now Hazelcast is trying to delete one by one: ", ex);
+                logger.warning(mapContainer.getStore().getMapStore().getClass()
+                        + " --> deleteAll was failed, "
+                        + "now Hazelcast is trying to delete one by one: ", ex);
                 // if delete all throws exception we will try to put delete them one by one.
                 for (ScheduledEntry<Data, Object> entry : entries) {
                     Exception temp = tryDelete(scheduler, entry);

@@ -29,7 +29,8 @@ public class MapInterceptorContextImpl implements MapInterceptorContext {
     private Object newValue;
     private Map.Entry existingEntry;
 
-    public MapInterceptorContextImpl(String mapName, MapOperationType operationType, Data key, Object newValue, Map.Entry existingEntry) {
+    public MapInterceptorContextImpl(String mapName, MapOperationType operationType,
+                                     Data key, Object newValue, Map.Entry existingEntry) {
         this.mapName = mapName;
         this.operationType = operationType;
         this.key = key;

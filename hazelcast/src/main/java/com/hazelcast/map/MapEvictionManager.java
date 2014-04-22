@@ -36,7 +36,8 @@ public class MapEvictionManager {
                 .scheduleAtFixedRate(new MapEvictTask(), 1, 1, TimeUnit.SECONDS);
     }
 
-    // todo map evict task is called every second. if load is very high, is it problem? if it is, you can count map-wide puts and fire map-evict in every thousand put
+    // todo map evict task is called every second. if load is very high, is it problem?
+    // todo ++if it is, you can count map-wide puts and fire map-evict in every thousand put
     // todo another "maybe" optimization run clear operation for all maps not just one map
     // todo what if eviction do not complete in 1 second
     private class MapEvictTask implements Runnable {
@@ -120,6 +121,7 @@ public class MapEvictionManager {
             }
             return false;
         }
+
         /**
          * used when deciding evictable or not.
          */
@@ -194,7 +196,7 @@ public class MapEvictionManager {
     }
 
 
-    private class EvictRunner implements Runnable {
+    private final  class EvictRunner implements Runnable {
         private final int mod;
         private final MapConfig mapConfig;
 
@@ -331,8 +333,10 @@ public class MapEvictionManager {
                 break;
             case PER_NODE:
                 maxSize = mapConfig.getMaxSizeConfig().getSize();
-                int memberCount = mapService.getNodeEngine().getClusterService().getMembers().size();
-                int maxPartitionSize = (maxSize * memberCount / mapService.getNodeEngine().getPartitionService().getPartitionCount());
+                int memberCount = mapService.getNodeEngine().getClusterService()
+                        .getMembers().size();
+                int maxPartitionSize = (maxSize * memberCount / mapService.getNodeEngine()
+                        .getPartitionService().getPartitionCount());
                 targetSizePerPartition = Double.valueOf(maxPartitionSize * ((100 - evictionPercentage) / 100.0)).intValue();
                 diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
                 prunedSize = currentPartitionSize * evictionPercentage / 100 + 1;

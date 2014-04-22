@@ -32,7 +32,7 @@ public class MergeOperation extends BasePutOperation {
 
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
-    private boolean merged = false;
+    private boolean merged;
 
     public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView, MapMergePolicy policy) {
         super(name, dataKey, null);
@@ -50,8 +50,9 @@ public class MergeOperation extends BasePutOperation {
         merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
         if (merged) {
             Record record = recordStore.getRecord(dataKey);
-            if (record != null)
+            if (record != null) {
                 dataValue = mapService.toData(record.getValue());
+            }
         }
     }
 
@@ -72,10 +73,9 @@ public class MergeOperation extends BasePutOperation {
     }
 
     public Operation getBackupOperation() {
-        if(dataValue == null) {
+        if (dataValue == null) {
             return new RemoveBackupOperation(name, dataKey);
-        }
-        else {
+        } else {
             RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer,
                     recordStore.getRecord(dataKey));
             return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);

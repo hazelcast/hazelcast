@@ -39,7 +39,17 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.Map;
+import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Comparator;
+
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -55,7 +65,7 @@ public class QueryOperation extends AbstractMapOperation {
         super(mapName);
         this.predicate = predicate;
         if (predicate instanceof PagingPredicate) {
-            pagingPredicate = (PagingPredicate)predicate;
+            pagingPredicate = (PagingPredicate) predicate;
         }
     }
 
@@ -95,7 +105,8 @@ public class QueryOperation extends AbstractMapOperation {
     protected void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final SerializationService ss = getNodeEngine().getSerializationService();
         final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
-        final List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
+        final List<Future<Collection<QueryableEntry>>> lsFutures =
+                new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
         for (final Integer partition : initialPartitions) {
             Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(ss, partition, null));
             lsFutures.add(f);
@@ -113,7 +124,8 @@ public class QueryOperation extends AbstractMapOperation {
     protected void runParallelForPaging(List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final SerializationService ss = getNodeEngine().getSerializationService();
         final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
-        final List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
+        final List<Future<Collection<QueryableEntry>>> lsFutures =
+                new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
 
         final Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
         for (final Integer partition : initialPartitions) {
@@ -126,7 +138,7 @@ public class QueryOperation extends AbstractMapOperation {
             toMerge.addAll(collection);
         }
         Collections.sort(toMerge, wrapperComparator);
-        if (toMerge.size() > pagingPredicate.getPageSize() ) {
+        if (toMerge.size() > pagingPredicate.getPageSize()) {
             toMerge = toMerge.subList(0, pagingPredicate.getPageSize());
         }
         for (QueryableEntry entry : toMerge) {
@@ -163,7 +175,7 @@ public class QueryOperation extends AbstractMapOperation {
         }
     }
 
-    private class PartitionCallable implements Callable<Collection<QueryableEntry>> {
+    private final class PartitionCallable implements Callable<Collection<QueryableEntry>> {
 
         int partition;
         SerializationService ss;
@@ -204,8 +216,8 @@ public class QueryOperation extends AbstractMapOperation {
                     if (pagingPredicate != null) {
                         Map.Entry anchor = pagingPredicate.getAnchor();
                         final Comparator comparator = pagingPredicate.getComparator();
-                        if (anchor != null &&
-                                SortingUtil.compare(comparator, pagingPredicate.getIterationType(), anchor, queryEntry)  >= 0) {
+                        if (anchor != null
+                                && SortingUtil.compare(comparator, pagingPredicate.getIterationType(), anchor, queryEntry) >= 0) {
                             continue;
                         }
                     }

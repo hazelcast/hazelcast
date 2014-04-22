@@ -20,13 +20,18 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 import java.security.Permission;
-import java.util.*;
+
+import java.util.Set;
+import java.util.Map;
+import java.util.Iterator;
+import java.util.HashSet;
+import java.util.Collection;
 
 /**
  * date: 20/12/13
  * author: eminn
  */
-public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest implements Portable,SecureRequest {
+public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest implements Portable, SecureRequest {
 
 
     private String name;
@@ -44,7 +49,7 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MultipleEntryOperationFactory(name,keys,processor);
+        return new MultipleEntryOperationFactory(name, keys, processor);
     }
 
     @Override
@@ -53,8 +58,8 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
         MapService mapService = getService();
         for (Object o : map.values()) {
             if (o != null) {
-                MapEntrySet entrySet = (MapEntrySet)mapService.toObject(o);
-                Set<Map.Entry<Data,Data>> entries = entrySet.getEntrySet();
+                MapEntrySet entrySet = (MapEntrySet) mapService.toObject(o);
+                Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
                     result.add(entry);
                 }
@@ -67,11 +72,12 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
     public Collection<Integer> getPartitions() {
         InternalPartitionService partitionService = getClientEngine().getPartitionService();
         int partitions = partitionService.getPartitionCount();
-        int capacity = Math.min(partitions, keys.size()); //todo: is there better way to estimate size?
+        int capacity = Math.min(partitions, keys.size());
+        //todo: is there better way to estimate size?
         Set<Integer> partitionIds = new HashSet<Integer>(capacity);
 
         Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext() && partitionIds.size() < partitions){
+        while (iterator.hasNext() && partitionIds.size() < partitions) {
             Data key = iterator.next();
             partitionIds.add(partitionService.getPartitionId(key));
         }
@@ -95,7 +101,7 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
         writer.writeInt("size", keys.size());
         ObjectDataOutput output = writer.getRawDataOutput();
         for (Data key : keys) {

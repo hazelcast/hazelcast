@@ -48,7 +48,8 @@ public class MapStoreProcessor implements ScheduledEntryProcessor<Data, Object> 
     }
 
 
-    private void doProcess(EntryTaskScheduler<Data, Object> scheduler, List<ScheduledEntry<Data, Object>> entriesToProcess, ProcessMode mode) {
+    private void doProcess(EntryTaskScheduler<Data, Object> scheduler
+            , List<ScheduledEntry<Data, Object>> entriesToProcess, ProcessMode mode) {
         switch (mode) {
             case DELETE:
                 deleteProcessor.process(scheduler, entriesToProcess);

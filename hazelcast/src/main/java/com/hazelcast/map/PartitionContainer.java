@@ -27,17 +27,18 @@ public class PartitionContainer {
     private final int partitionId;
     private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
 
-    public PartitionContainer(final MapService mapService, final int partitionId) {
-        this.mapService = mapService;
-        this.partitionId = partitionId;
-    }
-
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = new ConstructorFunction<String, RecordStore>() {
         public RecordStore createNew(String name) {
             return new DefaultRecordStore(name, mapService, partitionId);
         }
     };
+
+    public PartitionContainer(final MapService mapService, final int partitionId) {
+        this.mapService = mapService;
+        this.partitionId = partitionId;
+    }
+
 
     public ConcurrentMap<String, RecordStore> getMaps() {
         return maps;
@@ -52,7 +53,7 @@ public class PartitionContainer {
     }
 
     public RecordStore getRecordStore(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(maps, name, this,recordStoreConstructor);
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name, this, recordStoreConstructor);
     }
 
     public RecordStore getExistingRecordStore(String mapName) {
@@ -61,8 +62,9 @@ public class PartitionContainer {
 
     void destroyMap(String name) {
         RecordStore recordStore = maps.remove(name);
-        if (recordStore != null)
+        if (recordStore != null) {
             recordStore.clearPartition();
+        }
     }
 
     void clear() {

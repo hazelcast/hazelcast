@@ -15,7 +15,6 @@
     <suppress checks="" files="[\\/]core[\\/]"/>
     <suppress checks="" files="[\\/]jmx[\\/]"/>
     <suppress checks="" files="[\\/]management[\\/]"/>
-    <suppress checks="" files="[\\/]map[\\/]"/>
     <suppress checks="" files="[\\/]nio[\\/]"/>
     <suppress checks="" files="com.hazelcast.query[\\/]"/>
     <suppress checks="" files="[\\/]queue[\\/]"/>
@@ -90,8 +89,10 @@
     <!-- concurrent.atomicreference -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
-    <suppress checks="AnonInnerLength" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
+    <suppress checks="CyclomaticComplexity"
+              files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
+    <suppress checks="AnonInnerLength"
+              files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
 
     <!-- concurrent.countdownlatch -->
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
@@ -267,6 +268,68 @@
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
     <suppress checks="DeclarationOrder" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
 
+    <!-- Map -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.map[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.map[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.map[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.map[\\/]"/>
+
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.client.AbstractMapQueryRequest"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
+    <suppress checks="MethodCount" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="MethodLength" files="com.hazelcast.map.MapContainer"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.MapContainer"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.MapContainer"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.map.MapContainer"/>
+    <suppress checks="MethodLength" files="com.hazelcast.map.MapDataSerializerHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.map.MapEvictionManager"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.MapEvictionManager"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.MapEvictionManager"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.map.MapEvictionManager"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="AnonInnerLength" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.map.proxy.MapProxyImpl"/>
+
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.proxy.MapProxySupport"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.proxy.MapProxySupport"/>
+    <suppress checks="MethodLength" files="com.hazelcast.map.proxy.MapProxySupport"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.map.proxy.MapProxySupport"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.proxy.MapProxySupport"/>
+    <suppress checks="MethodCount" files="com.hazelcast.map.proxy.MapProxySupport"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.MapService"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.MapService"/>
+    <suppress checks="MethodLength" files="com.hazelcast.map.MapService"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.map.MapService"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.MapService"/>
+    <suppress checks="MethodCount" files="com.hazelcast.map.MapService"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.map.MapService"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.MapStoreDeleteProcessor"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.MapStoreWriteProcessor"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.MapStoreWriteProcessor"/>
+    <suppress checks="MethodLength" files="com.hazelcast.map.MapStoreWriteProcessor"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.operation.MultipleEntryOperation"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.operation.MultipleEntryOperation"/>
+    <suppress checks="MethodLength" files="com.hazelcast.map.operation.MultipleEntryOperation"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.operation.PartitionWideEntryOperation"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.operation.PartitionWideEntryOperation"/>
+    <suppress checks="MethodLength" files="com.hazelcast.map.operation.PartitionWideEntryOperation"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.operation.QueryOperation"/>
+    <suppress checks="TodoComment" files="com.hazelcast.map.operation.QueryOperation"/>
+    <suppress checks="MethodCount" files="com.hazelcast.map.RecordStore"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.map.tx.TransactionalMapProxy"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.tx.TransactionalMapProxySupport"/>
+    <suppress checks="MethodLength" files="com.hazelcast.map.tx.TransactionalMapProxySupport"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.tx.TransactionalMapProxySupport"/>
 
     <!-- List -->
     <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>
@@ -286,7 +349,6 @@
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.MultiMapPortableHook"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.multimap.MultiMapService"/>
     <suppress checks="ReturnCount" files="com.hazelcast.multimap.operations.MultiMapOperationFactory"/>
-
 
 
 </suppressions>

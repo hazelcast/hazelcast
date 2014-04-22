@@ -59,8 +59,8 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
 
     @Override
     public String toString() {
-        return "GetAllOperation{" +
-                '}';
+        return "GetAllOperation{"
+                + '}';
     }
 
     @Override

@@ -27,7 +27,11 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
+import java.util.List;
+import java.util.HashMap;
+import java.util.AbstractMap;
+import java.util.LinkedList;
 
 public class PostJoinMapOperation extends AbstractOperation {
 

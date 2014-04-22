@@ -34,7 +34,7 @@ import java.io.IOException;
 public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOperation {
 
     private long version;
-    private boolean successful = false;
+    private boolean successful;
     private String ownerUuid;
 
     public TxnDeleteOperation() {
@@ -49,7 +49,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     public void run() {
         recordStore.unlock(dataKey, ownerUuid, getThreadId());
         Record record = recordStore.getRecord(dataKey);
-        if (record == null || version == record.getVersion()){
+        if (record == null || version == record.getVersion()) {
             dataOldValue = getNodeEngine().toData(recordStore.remove(dataKey));
             successful = dataOldValue != null;
         }
@@ -61,8 +61,9 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     @Override

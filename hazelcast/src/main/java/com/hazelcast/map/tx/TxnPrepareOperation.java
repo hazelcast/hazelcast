@@ -29,6 +29,7 @@ import java.io.IOException;
 
 public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupAwareOperation {
 
+    static final long TTL = 10000L;
     String ownerUuid;
 
     protected TxnPrepareOperation(String name, Data dataKey, String ownerUuid) {
@@ -41,10 +42,13 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), 10000L)) {
+        if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), TTL)) {
             ILogger logger = getLogger();
-            logger.severe(recordStore.isLocked(getKey())+":"+getKey());
-            throw new TransactionException("Lock is not owned by the transaction! Owner: " + recordStore.getLockOwnerInfo(getKey()));
+            logger.severe(recordStore.isLocked(getKey())
+                    + ":"
+                    + getKey());
+            throw new TransactionException("Lock is not owned by the transaction! Owner: "
+                    + recordStore.getLockOwnerInfo(getKey()));
         }
     }
 

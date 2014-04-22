@@ -35,6 +35,8 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
 
+    static final long TIMEOUT = 30;
+
     final NodeEngine nodeEngine;
     final MapService mapService;
     final String mapName;
@@ -52,7 +54,7 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object> 
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                // execute eviction if the node is owner of the key (it can be backup)
+            // execute eviction if the node is owner of the key (it can be backup)
             if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
                 Operation operation = new EvictOperation(mapName, key, true);
                 try {
@@ -65,7 +67,7 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object> 
         }
         for (Future future : futures) {
             try {
-                future.get(30, TimeUnit.SECONDS);
+                future.get(TIMEOUT, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 logger.finest(e);
             } catch (Exception e) {

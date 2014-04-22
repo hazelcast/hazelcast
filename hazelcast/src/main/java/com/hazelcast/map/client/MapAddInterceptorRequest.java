@@ -83,8 +83,9 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
         Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
         Collection<Address> addresses = new HashSet<Address>();
         for (MemberImpl member : memberList) {
-            if(!member.localMember())
-            addresses.add(member.getAddress());
+            if (!member.localMember()) {
+                addresses.add(member.getAddress());
+            }
         }
         return addresses;
     }

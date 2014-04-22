@@ -35,7 +35,7 @@ import java.io.IOException;
 public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRequest {
 
     private String predicate;
-    transient private Predicate cachedPredicate;
+    private transient Predicate cachedPredicate;
 
     public MapAddEntryListenerSqlRequest() {
         super();

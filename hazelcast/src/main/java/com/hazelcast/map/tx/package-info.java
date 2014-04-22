@@ -14,33 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.operation;
-
-import com.hazelcast.nio.serialization.Data;
-
-public class ContainsKeyOperation extends KeyBasedMapOperation {
-
-    private boolean containsKey;
-
-    public ContainsKeyOperation() {
-    }
-
-    public ContainsKeyOperation(String name, Data dataKey) {
-        super(name, dataKey);
-    }
-
-    public void run() {
-        containsKey = recordStore.containsKey(dataKey);
-    }
-
-    @Override
-    public Object getResponse() {
-        return containsKey;
-    }
-
-    @Override
-    public String toString() {
-        return "ContainsKeyOperation{"
-                + '}';
-    }
-}
+/**
+ * Contains Hazelcast map txn classes.
+ */
+package com.hazelcast.map.tx;

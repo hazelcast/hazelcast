@@ -29,8 +29,9 @@ import java.io.IOException;
 
 public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
-    // todo unlockKey is a logic just used in transactional put operations. It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
-    private boolean unlockKey = false;
+    // todo unlockKey is a logic just used in transactional put operations.
+    // todo ++It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
+    private boolean unlockKey;
     private RecordInfo recordInfo;
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
@@ -49,7 +50,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
 
     public void run() {
         final Record record = recordStore.putBackup(dataKey, dataValue, ttl, false);
-        if(recordInfo != null) {
+        if (recordInfo != null) {
             mapService.applyRecordInfo(record, name, recordInfo);
         }
         if (unlockKey) {

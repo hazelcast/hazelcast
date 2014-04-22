@@ -20,7 +20,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 
 public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
-    boolean success = false;
+    boolean success;
 
     public WanOriginatedDeleteOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -40,9 +40,9 @@ public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
 
     public void afterRun() {
         if (success) {
-          mapService.interceptAfterRemove(name, dataValue);
-          mapService.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
-          invalidateNearCaches();
+            mapService.interceptAfterRemove(name, dataValue);
+            mapService.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
+            invalidateNearCaches();
         }
     }
 
