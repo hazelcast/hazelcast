@@ -29,6 +29,7 @@ import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
@@ -728,7 +729,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         IMap map = inst.getMap("default");
 
-        EntryListener<String, Integer> l = new EntryAdapter<String, Integer>() {};
+        EntryListener<String, Integer> l = new EntryAdapter<String, Integer>() {
+        };
 
         EntryObject e = new PredicateBuilder().getEntryObject();
         Predicate<String, Integer> p = e.equal(1);
@@ -808,7 +810,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
     @Test(expected = TransactionNotActiveException.class)
     public void testTxnMapOuterTransaction() throws Throwable {
-         final HazelcastInstance h1 = createHazelcastInstance();
+        final HazelcastInstance h1 = createHazelcastInstance();
 
         final TransactionContext transactionContext = h1.newTransactionContext();
         transactionContext.beginTransaction();
@@ -1068,6 +1070,29 @@ public class MapTransactionTest extends HazelcastTestSupport {
         h1.shutdown();
         h2.shutdown();
 
+    }
+
+
+    @Test( expected = IllegalArgumentException.class)
+    public void testValuesWithPagingPredicate() throws TransactionException {
+        final int nodeCount = 1;
+        final String mapName = randomMapName("testValuesWithPagingPredicate");
+        final Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance node = factory.newHazelcastInstance(config);
+        final IMap map = node.getMap(mapName);
+
+        final SampleObjects.Employee emp = new SampleObjects.Employee("name", 77, true, 10D);
+        map.put(1, emp);
+
+        node.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
+                PagingPredicate predicate = new PagingPredicate(5);
+                txMap.values(predicate);
+                return true;
+            }
+        });
     }
 
     @Test

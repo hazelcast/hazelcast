@@ -161,4 +161,6 @@ final IMap<Integer, Student> map = instance.getMap("students");
        ...
 ```
 
+Paging Predicate is not supported in Transactional Context.
+
 ***Note***: *Please refer to [here](http://hazelcast.org/docs/latest/javadoc/com/hazelcast/query/Predicates.html) for all predicates.*
