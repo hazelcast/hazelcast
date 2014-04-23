@@ -19,12 +19,8 @@ package com.hazelcast.collection;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.util.Map;
 
-/**
- * @ali 8/31/13
- */
 public class CollectionClearOperation extends CollectionBackupAwareOperation {
 
     private Map<Long, Data> itemIdMap;

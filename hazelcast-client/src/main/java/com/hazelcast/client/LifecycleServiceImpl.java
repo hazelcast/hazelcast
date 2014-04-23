@@ -20,6 +20,8 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.UuidUtil;
@@ -29,7 +31,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 public final class LifecycleServiceImpl implements LifecycleService {
 
@@ -38,17 +43,19 @@ public final class LifecycleServiceImpl implements LifecycleService {
             = new ConcurrentHashMap<String, LifecycleListener>();
     private final Object lifecycleLock = new Object();
     private final AtomicBoolean active = new AtomicBoolean(false);
+    private final BuildInfo buildInfo;
 
     public LifecycleServiceImpl(HazelcastClient client) {
         this.client = client;
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
-        if(listenerConfigs != null && !listenerConfigs.isEmpty()){
+        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
                 if (listenerConfig.getImplementation() instanceof LifecycleListener) {
                     addLifecycleListener((LifecycleListener) listenerConfig.getImplementation());
                 }
             }
         }
+        buildInfo = BuildInfoProvider.getBuildInfo();
         fireLifecycleEvent(STARTING);
     }
 
@@ -68,7 +75,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     public void fireLifecycleEvent(LifecycleEvent.LifecycleState lifecycleState) {
         final LifecycleEvent lifecycleEvent = new LifecycleEvent(lifecycleState);
-        getLogger().info("HazelcastClient[" + client.getName() + "] is " + lifecycleEvent.getState());
+        getLogger().info("HazelcastClient[" + client.getName() + "]" + "[" + buildInfo.getVersion() + "] is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }

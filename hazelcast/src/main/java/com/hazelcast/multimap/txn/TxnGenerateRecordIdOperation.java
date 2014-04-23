@@ -20,10 +20,7 @@ import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.serialization.Data;
 
-/**
- * @author ali 4/12/13
- */
-public class TxnGenerateRecordIdOperation extends MultiMapKeyBasedOperation implements TxnMultiMapOperation{
+public class TxnGenerateRecordIdOperation extends MultiMapKeyBasedOperation {
 
     public TxnGenerateRecordIdOperation() {
     }

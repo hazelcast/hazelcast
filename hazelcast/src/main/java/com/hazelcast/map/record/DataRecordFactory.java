@@ -22,9 +22,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
-/**
- * @author mdogan 10/3/13
- */
 public class DataRecordFactory implements RecordFactory<Data> {
 
     private final SerializationService serializationService;
@@ -32,7 +29,8 @@ public class DataRecordFactory implements RecordFactory<Data> {
     private final boolean optimizeQuery;
     private final boolean statisticsEnabled;
 
-    public DataRecordFactory(MapConfig config, SerializationService serializationService, PartitioningStrategy partitionStrategy) {
+    public DataRecordFactory(MapConfig config, SerializationService serializationService,
+                             PartitioningStrategy partitionStrategy) {
         this.serializationService = serializationService;
         this.partitionStrategy = partitionStrategy;
         this.statisticsEnabled = config.isStatisticsEnabled();

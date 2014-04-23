@@ -27,9 +27,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author ali 13/02/14
- */
 public class RecoverTxnOperation extends Operation {
 
     transient SerializableCollection response;

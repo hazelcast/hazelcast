@@ -26,13 +26,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/10/13
- */
 public class PutRequest extends MultiMapKeyBasedRequest {
 
     Data value;
@@ -60,7 +56,7 @@ public class PutRequest extends MultiMapKeyBasedRequest {
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeInt("i",index);
+        writer.writeInt("i", index);
         writer.writeLong("t", threadId);
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();

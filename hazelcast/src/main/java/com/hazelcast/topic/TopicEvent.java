@@ -16,38 +16,48 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-public class TopicEvent implements DataSerializable {
+public class TopicEvent implements IdentifiedDataSerializable {
 
     public String name;
     public long publishTime;
-    public Member publishingMember;
+    public Address publisherAddress;
     public Data data;
 
     public TopicEvent() {
     }
 
-    public TopicEvent(String name, Data data, Member publishingMember) {
+    public TopicEvent(String name, Data data, Address publisherAddress) {
         publishTime = Clock.currentTimeMillis();
-        this.publishingMember = publishingMember;
+        this.publisherAddress = publisherAddress;
         this.name = name;
         this.data = data;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return TopicDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return TopicDataSerializerHook.TOPIC_EVENT;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeLong(publishTime);
-        out.writeObject(publishingMember);
+        out.writeObject(publisherAddress);
         IOUtil.writeNullableData(out, data);
     }
 
@@ -55,7 +65,7 @@ public class TopicEvent implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         publishTime = in.readLong();
-        publishingMember = in.readObject();
+        publisherAddress = in.readObject();
         data = IOUtil.readNullableData(in);
     }
 
@@ -64,7 +74,7 @@ public class TopicEvent implements DataSerializable {
         return "TopicEvent{"
                 + "name='" + name + '\''
                 + ", publishTime=" + publishTime
-                + ", publishingMember=" + publishingMember
+                + ", publisherAddress=" + publisherAddress
                 + '}';
     }
 }

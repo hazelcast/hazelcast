@@ -49,6 +49,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
@@ -79,7 +80,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.query.SampleObjects.Employee;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -170,9 +175,9 @@ public class MapStoreTest extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     final Integer valueInMap = map.get(index);
-                    final Integer valueInStore = (Integer)store.getStore().get(index);
+                    final Integer valueInStore = (Integer) store.getStore().get(index);
 
-                    assertEquals(valueInMap,valueInStore );
+                    assertEquals(valueInMap, valueInStore);
                 }
             });
 
@@ -251,12 +256,12 @@ public class MapStoreTest extends HazelcastTestSupport {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                    sleepSeconds(3);
-                    instance1.getLifecycleService().terminate();
-                    sleepSeconds(3);
-                    final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
-                    assertEquals(size, map.size());
-                    countDownLatch.countDown();
+                sleepSeconds(3);
+                instance1.getLifecycleService().terminate();
+                sleepSeconds(3);
+                final IMap<Object, Object> map = instance2.getMap("testInitialLoadModeEagerWhileStoppigOneNode");
+                assertEquals(size, map.size());
+                countDownLatch.countDown();
 
             }
         }).start();
@@ -926,7 +931,9 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
     }
 
+    // fails randomly
     @Test
+    @Category(ProblematicTest.class)
     public void testGetAllKeys() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Map store = testMapStore.getStore();
@@ -1269,6 +1276,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testIssue1085WriteBehindBackup() throws InterruptedException {
         Config config = new Config();
         String name = "testIssue1085WriteBehindBackup";
@@ -1276,7 +1284,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
         int size = 1000;
-        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 20);
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 120);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackup.setMapStoreConfig(mapStoreConfig);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
@@ -1291,28 +1299,40 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(NightlyTest.class)
+//    @Category(NightlyTest.class)
+    @Category(ProblematicTest.class)
     public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() throws InterruptedException {
-        final int size = 1000;
+        final String name = randomMapName("testIssue1085WriteBehindBackup");
+        final int expectedStoreCount = 3;
+        final int nodeCount = 3;
         Config config = new Config();
-        String name = "testIssue1085WriteBehindBackup";
-        config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "50");
+        config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "30");
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
-        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 120, 10);
+        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 300, 10);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackupConfig.setMapStoreConfig(mapStoreConfig);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        final IMap map = instance.getMap(name);
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-        instance2.getLifecycleService().terminate();
+        // create nodes.
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        HazelcastInstance node3 = factory.newHazelcastInstance(config);
+        // create corresponding keys.
+        final String keyOwnedByNode1 = generateKeyOwnedBy(node1);
+        final String keyOwnedByNode2 = generateKeyOwnedBy(node2);
+        final String keyOwnedByNode3 = generateKeyOwnedBy(node3);
+        // put one key value pair per node.
+        final IMap map = node1.getMap(name);
+        map.put(keyOwnedByNode1, 1);
+        map.put(keyOwnedByNode2, 2);
+        map.put(keyOwnedByNode3, 3);
+        // terminate node2.
+        node2.getLifecycleService().terminate();
+        // wait store ops. finish.
         mapStore.awaitStores();
+        // we should reach expected store count.
+        assertEquals(expectedStoreCount,mapStore.count.intValue());
     }
 
     @Test
@@ -1362,11 +1382,8 @@ public class MapStoreTest extends HazelcastTestSupport {
             map.put("key" + i, "value" + i);
         }
 
-        assertTrue("store operations must be finished.",
-                testMapStore.latchStoreOpCount.await(30, TimeUnit.SECONDS));
-
-        assertTrue("store all operations must be finished.",
-                testMapStore.latchStoreAllOpCount.await(30, TimeUnit.SECONDS));
+        assertOpenEventually("store operations must be finished.", testMapStore.latchStoreOpCount);
+        assertOpenEventually("store all operations must be finished.", testMapStore.latchStoreAllOpCount);
 
         assertEquals("value" + (size1 - 1), testMapStore.getStore().get("key"));
         assertEquals("value" + (size2 - 1), testMapStore.getStore().get("key" + (size2 - 1)));
@@ -1423,7 +1440,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int numIterations = 10;
         final int writeDelaySeconds = 10;
         // create map store implementation
-        final RecordingMapStore store = new RecordingMapStore(numIterations,numIterations);
+        final RecordingMapStore store = new RecordingMapStore(numIterations, numIterations);
         // create hazelcast config
         final Config config = newConfig(mapName, store, writeDelaySeconds);
         // start hazelcast instance
@@ -1449,11 +1466,11 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     /**
-     *
      * At least sleep 1 second so entries can fall different time slices in
      * {@link com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler}
      */
     @Test
+    @Category(NightlyTest.class)
     public void testWriteBehindWriteRemoveOrderOfSameKey() throws Exception {
         final String mapName = randomMapName("_testWriteBehindWriteRemoveOrderOfSameKey_");
         final int iterationCount = 5;

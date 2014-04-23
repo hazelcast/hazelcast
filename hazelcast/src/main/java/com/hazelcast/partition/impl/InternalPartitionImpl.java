@@ -44,7 +44,7 @@ class InternalPartitionImpl implements InternalPartition {
     }
 
     @Override
-    public Address getOwner() {
+    public Address getOwnerOrNull() {
         return addresses[0];
     }
 

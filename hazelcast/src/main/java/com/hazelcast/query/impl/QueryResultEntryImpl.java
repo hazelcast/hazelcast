@@ -39,12 +39,14 @@ public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryRe
         this.valueData = valueData;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeNullableData(out, getIndexKey());
         IOUtil.writeNullableData(out, getKeyData());
         IOUtil.writeNullableData(out, getValueData());
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         indexKey = IOUtil.readNullableData(in);
         keyData = IOUtil.readNullableData(in);
@@ -52,30 +54,16 @@ public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryRe
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        QueryResultEntryImpl that = (QueryResultEntryImpl) o;
-
-        if (indexKey != null ? !indexKey.equals(that.indexKey) : that.indexKey != null) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return indexKey != null ? indexKey.hashCode() : 0;
-    }
-
     public Data getKeyData() {
         return keyData;
     }
 
+    @Override
     public Data getValueData() {
         return valueData;
     }
 
+    @Override
     public Data getIndexKey() {
         return indexKey;
     }
@@ -88,5 +76,28 @@ public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryRe
     @Override
     public int getId() {
         return MapDataSerializerHook.QUERY_RESULT_ENTRY;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueryResultEntryImpl that = (QueryResultEntryImpl) o;
+
+        if (indexKey != null ? !indexKey.equals(that.indexKey) : that.indexKey != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return indexKey != null ? indexKey.hashCode() : 0;
     }
 }

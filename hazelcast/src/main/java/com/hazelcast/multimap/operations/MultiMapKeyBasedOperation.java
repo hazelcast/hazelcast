@@ -22,13 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
 import java.util.Collection;
 
-/**
- * @author ali 1/16/13
- */
 public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implements PartitionAwareOperation {
 
     protected Data dataKey;

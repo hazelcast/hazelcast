@@ -17,6 +17,7 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,14 +31,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-/**
- * @author ali 12/20/12
- */
 public class CompareAndRemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Collection<Data> dataList;
-    Map<Long, Data> dataMap;
-    boolean retain;
+    private Map<Long, Data> dataMap;
+    private boolean retain;
 
     public CompareAndRemoveOperation() {
     }
@@ -48,13 +46,17 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         this.retain = retain;
     }
 
+    @Override
     public void run() {
-        dataMap = getOrCreateContainer().compareAndRemove(dataList, retain);
+        QueueContainer container = getOrCreateContainer();
+        dataMap = container.compareAndRemove(dataList, retain);
         response = dataMap.size() > 0;
     }
 
+    @Override
     public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+        LocalQueueStatsImpl localQueueStatsImpl = getQueueService().getLocalQueueStatsImpl(name);
+        localQueueStatsImpl.incrementOtherOperations();
         if (hasListener()) {
             for (Data data : dataMap.values()) {
                 publishEvent(ItemEventType.REMOVED, data);
@@ -62,14 +64,17 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new CompareAndRemoveBackupOperation(name, dataMap.keySet());
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(retain);
@@ -79,6 +84,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         retain = in.readBoolean();
@@ -89,14 +95,17 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         }
     }
 
+    @Override
     public boolean shouldNotify() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.COMPARE_AND_REMOVE;
     }

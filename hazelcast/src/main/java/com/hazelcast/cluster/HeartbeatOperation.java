@@ -18,9 +18,6 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-/**
- * @author mdogan 7/25/12
- */
 public final class HeartbeatOperation extends AbstractClusterOperation
         implements JoinOperation, IdentifiedDataSerializable {
 

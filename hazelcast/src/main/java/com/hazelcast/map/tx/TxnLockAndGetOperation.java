@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.operation.LockAwareOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;

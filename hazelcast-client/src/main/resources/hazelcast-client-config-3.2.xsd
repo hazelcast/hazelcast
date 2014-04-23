@@ -99,18 +99,6 @@
             <xs:restriction base="xs:boolean"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="connection-pool-size" default="100">
-        <xs:annotation>
-            <xs:documentation>
-                Limit for the Pool size that is used to pool the connections to the members.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleType>
-            <xs:restriction base="xs:int">
-                <xs:minInclusive value="1"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:element>
     <xs:element name="connection-timeout" default="60000">
         <xs:simpleType>
             <xs:restriction base="xs:int">

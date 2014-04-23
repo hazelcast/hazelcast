@@ -29,6 +29,7 @@ public class RecordInfo implements DataSerializable {
     protected long mapStoreWriteDelayMillis = -1;
     protected long mapStoreDeleteDelayMillis = -1;
     protected long version;
+    protected long evictionCriteriaNumber;
 
     public RecordInfo() {
     }
@@ -40,6 +41,7 @@ public class RecordInfo implements DataSerializable {
         this.mapStoreWriteDelayMillis = recordInfo.mapStoreWriteDelayMillis;
         this.mapStoreDeleteDelayMillis = recordInfo.mapStoreDeleteDelayMillis;
         this.version = recordInfo.version;
+        this.evictionCriteriaNumber = recordInfo.evictionCriteriaNumber;
     }
 
     public RecordStatistics getStatistics() {
@@ -90,6 +92,14 @@ public class RecordInfo implements DataSerializable {
         this.version = version;
     }
 
+    public long getEvictionCriteriaNumber() {
+        return evictionCriteriaNumber;
+    }
+
+    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
+        this.evictionCriteriaNumber = evictionCriteriaNumber;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         if (statistics != null) {
@@ -103,6 +113,7 @@ public class RecordInfo implements DataSerializable {
         out.writeLong(mapStoreWriteDelayMillis);
         out.writeLong(mapStoreDeleteDelayMillis);
         out.writeLong(version);
+        out.writeLong(evictionCriteriaNumber);
 
     }
 
@@ -118,17 +129,28 @@ public class RecordInfo implements DataSerializable {
         mapStoreWriteDelayMillis = in.readLong();
         mapStoreDeleteDelayMillis = in.readLong();
         version = in.readLong();
+        evictionCriteriaNumber = in.readLong();
     }
 
     @Override
     public String toString() {
-        return "RecordInfo{" +
-                "statistics=" + statistics +
-                ", idleDelayMillis=" + idleDelayMillis +
-                ", ttlDelayMillis=" + ttlDelayMillis +
-                ", mapStoreWriteDelayMillis=" + mapStoreWriteDelayMillis +
-                ", mapStoreDeleteDelayMillis=" + mapStoreDeleteDelayMillis +
-                ", version=" + version +
-                '}';
+        final StringBuilder builder = new StringBuilder();
+        builder.append("RecordInfo{");
+        builder.append("statistics=");
+        builder.append(statistics);
+        builder.append(", idleDelayMillis=");
+        builder.append(idleDelayMillis);
+        builder.append(", ttlDelayMillis=");
+        builder.append(ttlDelayMillis);
+        builder.append(", mapStoreWriteDelayMillis=");
+        builder.append(mapStoreWriteDelayMillis);
+        builder.append(", mapStoreDeleteDelayMillis=");
+        builder.append(mapStoreDeleteDelayMillis);
+        builder.append(", version=");
+        builder.append(version);
+        builder.append(", evictionCriteriaNumber=");
+        builder.append(evictionCriteriaNumber);
+        builder.append('}');
+        return builder.toString();
     }
 }

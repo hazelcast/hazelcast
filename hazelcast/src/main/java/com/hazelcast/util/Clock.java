@@ -16,9 +16,6 @@
 
 package com.hazelcast.util;
 
-/**
- * @author mdogan 4/10/12
- */
 public final class Clock {
 
     public static long currentTimeMillis() {
@@ -50,10 +47,12 @@ public final class Clock {
 
     private static final class SystemClock extends ClockImpl {
 
+        @Override
         protected final long currentTimeMillis() {
             return System.currentTimeMillis();
         }
 
+        @Override
         public String toString() {
             return "SystemClock";
         }
@@ -67,6 +66,7 @@ public final class Clock {
             this.offset = offset;
         }
 
+        @Override
         protected final long currentTimeMillis() {
             return System.currentTimeMillis() + offset;
         }
@@ -81,5 +81,6 @@ public final class Clock {
         }
     }
 
-    private Clock() {}
+    private Clock() {
+    }
 }

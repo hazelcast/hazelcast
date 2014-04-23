@@ -332,6 +332,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testSubmitToKeyOwnerCallable() throws Exception {
         final int k = simpleTestNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -359,12 +360,12 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             while (!localMember.equals(instance.getPartitionService().getPartition(++key).getOwner())) ;
             if (i % 2 == 0) {
                 final Future f = service.submitToKeyOwner(new ScriptCallable(script, map), key);
-                assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
+                assertTrue((Boolean) f.get(60, TimeUnit.SECONDS));
             } else {
                 service.submitToKeyOwner(new ScriptCallable(script, map), key, callback);
             }
         }
-        assertTrue(latch.await(30, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertEquals(k / 2, count.get());
     }
 

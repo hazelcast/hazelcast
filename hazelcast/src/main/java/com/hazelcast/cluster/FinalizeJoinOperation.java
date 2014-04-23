@@ -75,7 +75,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                 OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
                 OperationAccessor.setConnection(postJoinOp, getConnection());
                 postJoinOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                nodeEngine.getOperationService().runOperation(postJoinOp);
+                nodeEngine.getOperationService().runOperationOnCallingThread(postJoinOp);
             }
 
             if (calls != null) {
@@ -87,8 +87,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                     } catch (ExecutionException e) {
                         final ILogger logger = nodeEngine.getLogger(FinalizeJoinOperation.class);
                         if (logger.isFinestEnabled()) {
-                            logger.finest( "Error while executing post-join operations -> "
-                                    + e.getClass().getSimpleName() + "[" +e.getMessage() + "]");
+                            logger.finest("Error while executing post-join operations -> "
+                                    + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
                         }
                     }
                 }

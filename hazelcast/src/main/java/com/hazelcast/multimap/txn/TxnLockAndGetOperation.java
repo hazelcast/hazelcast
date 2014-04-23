@@ -16,10 +16,13 @@
 
 package com.hazelcast.multimap.txn;
 
-import com.hazelcast.multimap.*;
+import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.multimap.operations.MultiMapResponse;
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,13 +30,9 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.transaction.TransactionException;
-
 import java.io.IOException;
 
-/**
- * @author ali 4/4/13
- */
-public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements WaitSupport, TxnMultiMapOperation {
+public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements WaitSupport {
 
     long ttl;
     long threadId;
@@ -49,7 +48,7 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
     }
 
     public void run() throws Exception {
-        MultiMapContainer container =  getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainer();
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, ttl)) {
             throw new TransactionException("Transaction couldn't obtain lock!");
         }

@@ -25,14 +25,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-/**
- * @author ali 1/16/13
- */
 public class RemoveOperation extends MultiMapBackupAwareOperation {
 
     Data value;

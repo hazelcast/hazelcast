@@ -93,8 +93,12 @@ public final class ClassLoaderUtil {
             try {
                 return theClassLoader.loadClass(className);
             } catch (ClassNotFoundException ignore) {
+
+                // Reset selected classloader and try with others
+                theClassLoader = null;
             }
         }
+
         // If failed and this is a Hazelcast class try again with our classloader
         if (className.startsWith(HAZELCAST_BASE_PACKAGE) || className.startsWith(HAZELCAST_ARRAY)) {
             theClassLoader = ClassLoaderUtil.class.getClassLoader();

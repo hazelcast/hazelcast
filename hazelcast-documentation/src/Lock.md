@@ -1,6 +1,6 @@
 
 
-## Distributed Lock
+## Lock
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -18,7 +18,7 @@ try {
 } 
  
 ```
-`java.util.concurrent.locks.Lock.tryLock()` with timeout is also supported. All operations on the Lock that `Hazelcast.getLock(Object obj)` returns are cluster-wide and Lock behaves just like `java.util.concurrent.lock.ReentrantLock`.
+`java.util.concurrent.locks.Lock.tryLock()` with timeout is also supported. All operations on the Lock that `HazelcastInstance#getLock(Object obj)` returns are cluster-wide and Lock behaves just like `java.util.concurrent.lock.ReentrantLock`.
 
 ```java
 if (lock.tryLock (5000, TimeUnit.MILLISECONDS)) {
@@ -32,3 +32,5 @@ if (lock.tryLock (5000, TimeUnit.MILLISECONDS)) {
 ```
 
 Locks are fail-safe. If a member holds a lock and some of the members go down, cluster will keep your locks safe and available. Moreover, when a member leaves the cluster, all the locks acquired by this dead member will be removed so that these locks can be available for live members immediately.
+
+<br> </br>

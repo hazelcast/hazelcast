@@ -162,7 +162,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
         executionService.scheduleWithFixedDelay(executorName, new SplitBrainHandler(node),
-                                                mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
+                mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
 
         long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
@@ -276,7 +276,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             if (deadAddresses != null) {
                 for (Address address : deadAddresses) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( "No heartbeat should remove " + address);
+                        logger.finest("No heartbeat should remove " + address);
                     }
                     removeAddress(address);
                 }
@@ -309,7 +309,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         sendHeartbeat(address);
                     } else {
                         if (logger.isFinestEnabled()) {
-                            logger.finest( "Could not connect to " + address + " to send heartbeat");
+                            logger.finest("Could not connect to " + address + " to send heartbeat");
                         }
                     }
                 }
@@ -351,7 +351,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             node.nodeEngine.getOperationService().send(new HeartbeatOperation(), target);
         } catch (Exception e) {
             if (logger.isFinestEnabled()) {
-                logger.finest( "Error while sending heartbeat -> "
+                logger.finest("Error while sending heartbeat -> "
                         + e.getClass().getName() + "[" + e.getMessage() + "]");
             }
         }
@@ -363,16 +363,16 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         final Address masterAddress = getMasterAddress();
         if (masterAddress == null) {
-            logger.finest( "Could not send MasterConfirmation, master is null!");
+            logger.finest("Could not send MasterConfirmation, master is null!");
             return;
         }
         final MemberImpl masterMember = getMember(masterAddress);
         if (masterMember == null) {
-            logger.finest( "Could not send MasterConfirmation, master is null!");
+            logger.finest("Could not send MasterConfirmation, master is null!");
             return;
         }
         if (logger.isFinestEnabled()) {
-            logger.finest( "Sending MasterConfirmation to " + masterMember);
+            logger.finest("Sending MasterConfirmation to " + masterMember);
         }
         nodeEngine.getOperationService().send(new MasterConfirmationOperation(), masterAddress);
     }
@@ -468,8 +468,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         } else {
             node.setMasterAddress(null);
         }
-        if(logger.isFinestEnabled()){
-            logger.finest( "Now Master " + node.getMasterAddress());
+        if (logger.isFinestEnabled()) {
+            logger.finest("Now Master " + node.getMasterAddress());
         }
     }
 
@@ -581,7 +581,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         try {
             if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Handling master response: " + this);
+                    logger.finest("Handling master response: " + this);
                 }
                 final Address currentMaster = node.getMasterAddress();
                 if (currentMaster != null && !currentMaster.equals(masterAddress)) {
@@ -606,7 +606,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     void acceptMasterConfirmation(MemberImpl member) {
         if (member != null) {
             if (logger.isFinestEnabled()) {
-                logger.finest( "MasterConfirmation has been received from " + member);
+                logger.finest("MasterConfirmation has been received from " + member);
             }
             masterConfirmationTimes.put(member, Clock.currentTimeMillis());
         }
@@ -788,7 +788,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     }
                 }
                 if (same) {
-                    logger.finest( "No need to process member update...");
+                    logger.finest("No need to process member update...");
                     return;
                 }
             }
@@ -853,7 +853,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @Override
     public void connectionRemoved(Connection connection) {
         if (logger.isFinestEnabled()) {
-            logger.finest( "Connection is removed " + connection.getEndPoint());
+            logger.finest("Connection is removed " + connection.getEndPoint());
         }
         if (!node.joined()) {
             final Address masterAddress = node.getMasterAddress();
@@ -864,7 +864,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private Future invokeClusterOperation(Operation op, Address target) {
-       return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
+        return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
                 .setTryCount(50).invoke();
     }
 
@@ -927,7 +927,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 sendMembershipEventNotifications(deadMember, unmodifiableSet(new LinkedHashSet<Member>(newMembers.values())), false); // async events
                 if (node.isMaster()) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( deadMember + " is dead. Sending remove to all other members.");
+                        logger.finest(deadMember + " is dead. Sending remove to all other members.");
                     }
                     invokeMemberRemoveOperation(deadMember.getAddress());
                 }
@@ -1044,7 +1044,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public Set<Member> getMembers() {
-        return (Set)membersRef.get();
+        return (Set) membersRef.get();
     }
 
     @Override
@@ -1104,7 +1104,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             } finally {
                 lock.unlock();
             }
-        }  else {
+        } else {
             final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
             return registration.getId();
         }
@@ -1117,7 +1117,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("BC_UNCONFIRMED_CAST")
     @Override
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
-        switch (event.getEventType()){
+        switch (event.getEventType()) {
             case MembershipEvent.MEMBER_ADDED:
                 listener.memberAdded(event);
                 break;
@@ -1129,7 +1129,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 listener.memberAttributeChanged(memberAttributeEvent);
                 break;
             default:
-                throw new IllegalArgumentException("Unhandled event:"+event);
+                throw new IllegalArgumentException("Unhandled event:" + event);
         }
     }
 

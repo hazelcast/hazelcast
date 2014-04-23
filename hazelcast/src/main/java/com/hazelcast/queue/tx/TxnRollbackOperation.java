@@ -19,6 +19,7 @@ package com.hazelcast.queue.tx;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.queue.QueueBackupAwareOperation;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
@@ -26,14 +27,10 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-/**
- * @author ali 3/27/13
- */
 public class TxnRollbackOperation extends QueueBackupAwareOperation implements Notifier {
 
-    long itemId;
-
-    boolean pollOperation;
+    private long itemId;
+    private boolean pollOperation;
 
     public TxnRollbackOperation() {
     }
@@ -44,48 +41,55 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
         this.pollOperation = pollOperation;
     }
 
+    @Override
     public void run() throws Exception {
-        if (pollOperation){
-            response = getOrCreateContainer().txnRollbackPoll(itemId, false);
-        }
-        else {
-            response = getOrCreateContainer().txnRollbackOffer(itemId);
+        QueueContainer container = getOrCreateContainer();
+        if (pollOperation) {
+            response = container.txnRollbackPoll(itemId, false);
+        } else {
+            response = container.txnRollbackOffer(itemId);
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new TxnRollbackBackupOperation(name, itemId, pollOperation);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
         out.writeBoolean(pollOperation);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
         pollOperation = in.readBoolean();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_ROLLBACK;
     }
 
+    @Override
     public boolean shouldNotify() {
         return true;
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
-        if (pollOperation){
+        if (pollOperation) {
             return getOrCreateContainer().getPollWaitNotifyKey();
         }
         return getOrCreateContainer().getOfferWaitNotifyKey();
-
     }
 }

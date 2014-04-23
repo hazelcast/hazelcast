@@ -218,6 +218,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
      *
      * @param commandInputted
      */
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_EXIT")
     protected void handleCommand(String commandInputted) {
 
         String command = commandInputted;
@@ -583,6 +584,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_GC")
     private void handleJvm() {
         System.gc();
         println("Memory max: " + Runtime.getRuntime().maxMemory() / ONE_KB / ONE_KB
@@ -1003,7 +1005,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    @SuppressWarnings("LockAcquiredButNotSafelyReleased")
+    @java.lang.SuppressWarnings("LockAcquiredButNotSafelyReleased")
     protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
@@ -1652,7 +1654,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
             config.addExecutorConfig(new ExecutorConfig("e" + k).setPoolSize(k));
         }
-        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
+        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
         testApp.start(args);
     }
 

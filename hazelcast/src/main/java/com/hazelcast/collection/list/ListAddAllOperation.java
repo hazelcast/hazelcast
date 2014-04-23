@@ -21,13 +21,9 @@ import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 import java.util.List;
 
-/**
- * @ali 9/1/13
- */
 public class ListAddAllOperation extends CollectionAddAllOperation {
 
     private int index = -1;
@@ -47,7 +43,7 @@ public class ListAddAllOperation extends CollectionAddAllOperation {
 
     @Override
     public void run() throws Exception {
-        if (!hasEnoughCapacity(valueList.size())){
+        if (!hasEnoughCapacity(valueList.size())) {
             response = false;
             return;
         }

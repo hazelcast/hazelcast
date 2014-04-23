@@ -1,12 +1,14 @@
 # What's New in Hazelcast 3.2
 
+
+
 ## Release Notes
 
 ### New Features
 This section provides the new features introduced with Hazelcast 3.2 release. 
 
 -	**NIO Client**: New architecture based on NIO introduced to support more scalable and concurrent client usage.
--	**MapReduce Framework**: MapReduce implemented for your key-value collections that need to be reduced by grouping the keys. Please see [the interview](http://www.infoq.com/news/2014/02/hazelcast-mapreduce-api) and [Chapter 14 - Hazelcast MapReduce](#hazelcast-mapreduce).
+-	**MapReduce Framework**: MapReduce implemented for your key-value collections that need to be reduced by grouping the keys. Please see [the interview](http://www.infoq.com/news/2014/02/hazelcast-mapreduce-api) and [MapReduce](#mapreduce) section.
 -	**Order/Limit Support**: Now you can order and limit results returned by queries performed on Hazelcast Distributed Map.
 -	**C++ Client**: Native C++ client developed for C++ users which can connect to a Hazelcast cluster and realize almost all operations that a node can perform. Please see [Native Clients](#native-clients).
 -	**C# Client**: Also, Native C# client that has a very similar API with Native Java client developed. Please see [Native Clients](#native-clients).
@@ -115,7 +117,8 @@ This section lists issues solved for Hazelcast 3.2 release.
 
 ### Known Issues & Workarounds
 
-Plese see [here](https://github.com/hazelcast/hazelcast/issues?labels=defect&milestone=29&state=open) for the known issues.
+Please see [here](https://github.com/hazelcast/hazelcast/issues?labels=defect&milestone=29&state=open) for the known issues.
+
 
 
 

@@ -23,20 +23,18 @@ import com.hazelcast.queue.DrainOperation;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.SerializableCollection;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
 
-/**
- * @author ali 5/8/13
- */
+
 public class DrainRequest extends QueueRequest {
 
-    int maxSize;
+    private int maxSize;
 
     public DrainRequest() {
     }
@@ -46,32 +44,38 @@ public class DrainRequest extends QueueRequest {
         this.maxSize = maxSize;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new DrainOperation(name, maxSize);
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.DRAIN;
     }
 
+    @Override
     protected Object filter(Object response) {
-        if (response instanceof SerializableCollection){
+        if (response instanceof SerializableCollection) {
             Collection<Data> coll = ((SerializableCollection) response).getCollection();
             return new PortableCollection(coll);
         }
         return super.filter(response);
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeInt("m",maxSize);
+        writer.writeInt("m", maxSize);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         maxSize = reader.readInt("m");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }

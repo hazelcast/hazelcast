@@ -65,7 +65,7 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         int replicaIndex = getReplicaIndex();
 
         InternalPartitionImpl partition = partitionService.getPartition(partitionId);
-        Address owner = partition.getOwner();
+        Address owner = partition.getOwnerOrNull();
         long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
         long currentVersion = replicaVersions[replicaIndex - 1];
 

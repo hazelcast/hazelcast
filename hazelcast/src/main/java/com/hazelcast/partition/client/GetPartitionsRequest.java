@@ -51,7 +51,7 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
         InternalPartition[] partitions = service.getPartitions();
         int[] indexes = new int[partitions.length];
         for (int i = 0; i < indexes.length; i++) {
-            Address owner = partitions[i].getOwner();
+            Address owner = partitions[i].getOwnerOrNull();
             int index = -1;
             if (owner != null) {
                 final Integer idx = addressMap.get(owner);

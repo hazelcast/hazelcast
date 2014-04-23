@@ -88,8 +88,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 eventType = EntryEventType.UPDATED;
             }
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
                 dataValue = mapService.toData(entry.getValue());
-                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, dataValue));
             }
         }
     }
@@ -107,7 +107,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(dataKey);
-                SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), record.getStatistics(), record.getCost(), record.getVersion());
+                final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey,mapService.toData(dataValue),record);
                 mapService.publishWanReplicationUpdate(name, entryView);
             }
         }

@@ -27,9 +27,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * @author mdogan 3/25/13
- */
 public final class ReplicateTxOperation extends Operation {
 
     private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
@@ -41,7 +38,8 @@ public final class ReplicateTxOperation extends Operation {
     public ReplicateTxOperation() {
     }
 
-    public ReplicateTxOperation(List<TransactionLog> logs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
+    public ReplicateTxOperation(List<TransactionLog> logs, String callerUuid, String txnId,
+                                long timeoutMillis, long startTime) {
         txLogs.addAll(logs);
         this.callerUuid = callerUuid;
         this.txnId = txnId;
@@ -50,26 +48,26 @@ public final class ReplicateTxOperation extends Operation {
     }
 
     @Override
-    public final void beforeRun() throws Exception {
+    public void beforeRun() throws Exception {
     }
 
     @Override
-    public final void run() throws Exception {
+    public void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
         txManagerService.prepareTxBackupLog(txLogs, callerUuid, txnId, timeoutMillis, startTime);
     }
 
     @Override
-    public final void afterRun() throws Exception {
+    public void afterRun() throws Exception {
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public boolean returnsResponse() {
         return true;
     }
 
     @Override
-    public final Object getResponse() {
+    public Object getResponse() {
         return Boolean.TRUE;
     }
 

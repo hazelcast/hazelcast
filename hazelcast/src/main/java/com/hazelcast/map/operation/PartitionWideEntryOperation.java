@@ -127,8 +127,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
                         mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
                     } else {
                         Record r = recordStore.getRecord(dataKey);
-                        SimpleEntryView entryView = new SimpleEntryView(dataKey,
-                                dataValue, r.getStatistics(), r.getCost(), r.getVersion());
+                        final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey, dataValue, r);
                         mapService.publishWanReplicationUpdate(name, entryView);
                     }
                 }

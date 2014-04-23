@@ -20,9 +20,6 @@ import com.hazelcast.multimap.MultiMapContainer;
 import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapService;
 
-/**
- * @author ali 1/9/13
- */
 public class SizeOperation extends MultiMapOperation {
 
     public SizeOperation() {

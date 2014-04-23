@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -38,7 +39,17 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -59,9 +70,12 @@ public class DefaultRecordStore implements RecordStore {
     private final LockStore lockStore;
     private final RecordFactory recordFactory;
     private final ILogger logger;
-
-    final SizeEstimator sizeEstimator;
-    final AtomicBoolean loaded = new AtomicBoolean(false);
+    private final SizeEstimator sizeEstimator;
+    private final AtomicBoolean loaded = new AtomicBoolean(false);
+    /**
+     * used for lru eviction.
+     */
+    private long lruAccessSequenceNumber;
 
     public DefaultRecordStore(String name, MapService mapService, int partitionId) {
         this.name = name;
@@ -236,6 +250,7 @@ public class DefaultRecordStore implements RecordStore {
         cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
+        resetAccessSequenceNumber();
     }
 
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
@@ -317,25 +332,12 @@ public class DefaultRecordStore implements RecordStore {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
 
-    public boolean isLockedBy(Data key, String caller, long threadId) {
-        return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
-    }
-
     public boolean canAcquireLock(Data key, String caller, long threadId) {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
     public String getLockOwnerInfo(Data key) {
         return lockStore != null ? lockStore.getOwnerInfo(key) : null;
-    }
-
-    public Set<Map.Entry<Data, Object>> entrySetObject() {
-        checkIfLoaded();
-        Map<Data, Object> temp = new HashMap<Data, Object>(records.size());
-        for (Data key : records.keySet()) {
-            temp.put(key, mapService.toObject(records.get(key).getValue()));
-        }
-        return temp.entrySet();
     }
 
     public Set<Map.Entry<Data, Data>> entrySetData() {
@@ -397,15 +399,6 @@ public class DefaultRecordStore implements RecordStore {
         return keySet;
     }
 
-    public Collection<Object> valuesObject() {
-        checkIfLoaded();
-        Collection<Object> values = new ArrayList<Object>(records.size());
-        for (Record record : records.values()) {
-            values.add(mapService.toObject(record.getValue()));
-        }
-        return values;
-    }
-
     public Collection<Data> valuesData() {
         checkIfLoaded();
         Collection<Data> values = new ArrayList<Data>(records.size());
@@ -432,20 +425,22 @@ public class DefaultRecordStore implements RecordStore {
         keysToDelete.removeAll(lockedRecords.keySet());
 
         final MapStoreWrapper store = mapContainer.getStore();
-        Set<Object> keysObject = new HashSet<Object>(keysToDelete.size());
-        for (Data key : keysToDelete) {
-            // todo ea have a clear(Keys) method for optimizations
-            removeIndex(key);
-            keysObject.add(mapService.toObject(key));
-        }
-
         if (store != null) {
+            // Use an ArrayList so that we don't trigger calls to equals or hashCode on the key objects
+            Collection<Object> keysObject = new ArrayList<Object>(keysToDelete.size());
+            for (Data key : keysToDelete) {
+                keysObject.add(mapService.toObject(key));
+            }
+
             store.deleteAll(keysObject);
             toBeRemovedKeys.removeAll(keysToDelete);
         }
 
+        removeIndex(keysToDelete);
+
         clearRecordsMap(lockedRecords);
         cancelAssociatedSchedulers(keysToDelete);
+        resetAccessSequenceNumber();
     }
 
     public void reset() {
@@ -453,6 +448,11 @@ public class DefaultRecordStore implements RecordStore {
         cancelAssociatedSchedulers(records.keySet());
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
+        resetAccessSequenceNumber();
+    }
+
+    private void resetAccessSequenceNumber() {
+        lruAccessSequenceNumber = 0L;
     }
 
     public Object remove(Data dataKey) {
@@ -485,7 +485,7 @@ public class DefaultRecordStore implements RecordStore {
     @Override
     public void removeBackup(Data dataKey) {
         final Record record = records.get(dataKey);
-        if(record == null) {
+        if (record == null) {
             return;
         }
         // reduce size
@@ -498,6 +498,15 @@ public class DefaultRecordStore implements RecordStore {
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
             indexService.removeEntryIndex(key);
+        }
+    }
+
+    private void removeIndex(Set<Data> keys) {
+        final IndexService indexService = mapContainer.getIndexService();
+        if (indexService.hasIndex()) {
+            for (Data key : keys) {
+                indexService.removeEntryIndex(key);
+            }
         }
     }
 
@@ -572,7 +581,7 @@ public class DefaultRecordStore implements RecordStore {
     public MapEntrySet getAll(Set<Data> keySet) {
         checkIfLoaded();
         final MapEntrySet mapEntrySet = new MapEntrySet();
-        Map<Object, Data> keyMapForLoader = null;
+        Map<Object, Data> keyMapForLoader = Collections.emptyMap();
         if (mapContainer.getStore() != null) {
             keyMapForLoader = new HashMap<Object, Data>();
         }
@@ -737,7 +746,7 @@ public class DefaultRecordStore implements RecordStore {
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object newValue = null;
+        Object newValue;
         if (record == null) {
             newValue = mergingEntry.getValue();
             newValue = writeMapStore(dataKey, newValue, null);
@@ -746,8 +755,8 @@ public class DefaultRecordStore implements RecordStore {
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             Object oldValue = record.getValue();
-            EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()),
-                    record.getStatistics(), record.getCost(), record.getVersion());
+            EntryView existingEntry = mapService.createSimpleEntryView(mapService.toObject(record.getKey()),
+                    mapService.toObject(record.getValue()), record);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) { // existing entry will be removed
                 removeIndex(dataKey);
@@ -774,7 +783,7 @@ public class DefaultRecordStore implements RecordStore {
     public Object replace(Data dataKey, Object value) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object oldValue = null;
+        Object oldValue;
         if (record != null && record.getValue() != null) {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
@@ -897,10 +906,27 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void accessRecord(Record record) {
+        increaseRecordEvictionCounter(record, mapContainer.getMapConfig().getEvictionPolicy());
         record.onAccess();
         final int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
             mapService.scheduleIdleEviction(name, record.getKey(), TimeUnit.SECONDS.toMillis(maxIdleSeconds));
+        }
+    }
+
+    private void increaseRecordEvictionCounter(Record record, MapConfig.EvictionPolicy evictionPolicy) {
+        switch (evictionPolicy) {
+            case LRU:
+                ++lruAccessSequenceNumber;
+                record.setEvictionCriteriaNumber(lruAccessSequenceNumber);
+                break;
+            case LFU:
+                record.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber() + 1L);
+                break;
+            case NONE:
+                break;
+            default:
+                throw new IllegalArgumentException("Not an appropriate eviction policy [" + evictionPolicy + ']');
         }
     }
 

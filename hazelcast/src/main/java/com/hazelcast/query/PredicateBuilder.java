@@ -29,9 +29,10 @@ import java.util.Map;
 import java.util.Set;
 
 public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
-    public String attribute = null;
+    public String attribute;
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
 
+    @Override
     public boolean apply(Map.Entry mapEntry) {
         return lsPredicates.get(0).apply(mapEntry);
     }
@@ -43,8 +44,8 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
     public PredicateBuilder and(Predicate predicate) {
         if (predicate != PredicateBuilder.this) {
             throw new QueryException("Illegal and statement expected: "
-                    + PredicateBuilder.class.getSimpleName() + ", found: " +
-                    ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
+                    + PredicateBuilder.class.getSimpleName() + ", found: "
+                    + ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
         }
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
@@ -56,8 +57,8 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
     public PredicateBuilder or(Predicate predicate) {
         if (predicate != PredicateBuilder.this) {
             throw new RuntimeException("Illegal or statement expected: "
-                    + PredicateBuilder.class.getSimpleName() + ", found: " +
-                    ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
+                    + PredicateBuilder.class.getSimpleName() + ", found: "
+                    + ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
         }
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
@@ -67,15 +68,6 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("PredicateBuilder");
-        sb.append("{\n");
-        sb.append(lsPredicates.size() == 0 ? "" : lsPredicates.get(0));
-        sb.append("\n}");
-        return sb.toString();
-    }
-
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Predicate p = lsPredicates.get(0);
         if (p instanceof IndexAwarePredicate) {
@@ -84,6 +76,7 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         return null;
     }
 
+    @Override
     public boolean isIndexed(QueryContext queryContext) {
         Predicate p = lsPredicates.get(0);
         if (p instanceof IndexAwarePredicate) {
@@ -109,5 +102,15 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         for (int i = 0; i < size; i++) {
             lsPredicates.add((Predicate) in.readObject());
         }
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("PredicateBuilder");
+        sb.append("{\n");
+        sb.append(lsPredicates.size() == 0 ? "" : lsPredicates.get(0));
+        sb.append("\n}");
+        return sb.toString();
     }
 }

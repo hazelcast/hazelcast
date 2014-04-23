@@ -41,8 +41,8 @@ public final class EntryTaskSchedulerFactory {
      * <p/>
      * EntryTaskScheduler implementation is thread-safe.
      *
-     * @param scheduledExecutorService  ScheduledExecutorService instance to execute the second
-     * @param entryProcessor bulk processor
+     * @param scheduledExecutorService ScheduledExecutorService instance to execute the second
+     * @param entryProcessor           bulk processor
      * @return EntryTaskScheduler
      */
     public static <K, V> EntryTaskScheduler<K, V> newScheduler(ScheduledExecutorService scheduledExecutorService,

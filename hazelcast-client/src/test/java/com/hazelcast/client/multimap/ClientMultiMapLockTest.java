@@ -17,9 +17,10 @@
 package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -30,8 +31,13 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.HazelcastTestSupport.*;
-import static org.junit.Assert.*;
+import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -277,22 +283,17 @@ public class ClientMultiMapLockTest {
         assertTrue(mm.isLocked(key));
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testLockTTL_whenZeroTimeout() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "Key";
-
         mm.lock(key, 0, TimeUnit.SECONDS);
-        assertFalse(mm.isLocked(key));
     }
 
-    //API definition should we expect an IllegalArgumentException ?
-    @Category(ProblematicTest.class)
     @Test(expected = IllegalArgumentException.class)
     public void testLockTTL_whenNegativeTimeout() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "Key";
-
         mm.lock(key, -1, TimeUnit.SECONDS);
     }
 

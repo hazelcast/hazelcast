@@ -13,9 +13,9 @@ To use built-in adaptors, you should set `hazelcast.logging.type` property to on
 
 -   **none**: disable logging
 
-You can set `hazelcast.logging.type` through XML configuration, API configuration or JVM system property.
+You can set `hazelcast.logging.type` through declarative configuration, programmatic configuration or JVM system property.
 
--   **XML Configuration**
+-   **Declarative Configuration**
 
 ```xml
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config
@@ -32,7 +32,7 @@ You can set `hazelcast.logging.type` through XML configuration, API configuratio
 </hazelcast>
 ```
 
--   **API Configuration**
+-   **Programmatic Configuration**
 
 ```java
 Config cfg = new Config() ;
@@ -59,7 +59,9 @@ LogListener listener = new LogListener() {
         // do something
     }
 }
-LoggingService loggingService = Hazelcast.getLoggingService();
+Config cfg = new Config();
+HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+LoggingService loggingService = instance.getLoggingService();
 loggingService.addLogListener(Level.INFO, listener):
 ```
 Through the `LoggingService`, you can get the current used ILogger implementation and log your own messages, too.

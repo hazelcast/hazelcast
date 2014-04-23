@@ -25,13 +25,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.util.Collection;
 import java.util.Map;
 
-/**
- * @author ali 1/9/13
- */
 public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     Map<Data, Collection<MultiMapRecord>> objects;
@@ -64,7 +60,8 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
             for (Map.Entry<Data, Collection<MultiMapRecord>> entry : objects.entrySet()) {
                 Data key = entry.getKey();
                 if (container.isLocked(key)) {
-                    continue;//key is locked so not removed
+                    //key is locked so not removed
+                    continue;
                 }
                 Collection<MultiMapRecord> coll = entry.getValue();
                 for (MultiMapRecord record : coll) {

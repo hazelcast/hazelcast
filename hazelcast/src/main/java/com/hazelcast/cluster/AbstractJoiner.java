@@ -148,7 +148,7 @@ public abstract class AbstractJoiner implements Joiner {
                 try {
                     validJoinRequest = node.getClusterService().validateJoinMessage(joinRequest);
                 } catch (Exception e) {
-                    logger.finest( e.getMessage());
+                    logger.finest(e.getMessage());
                     validJoinRequest = false;
                 }
                 if (validJoinRequest) {
@@ -156,7 +156,7 @@ public abstract class AbstractJoiner implements Joiner {
                         MemberImpl memberImpl = (MemberImpl) member;
                         if (memberImpl.getAddress().equals(joinRequest.getAddress())) {
                             if (logger.isFinestEnabled()) {
-                                logger.finest( "Should not merge to " + joinRequest.getAddress()
+                                logger.finest("Should not merge to " + joinRequest.getAddress()
                                         + ", because it is already member of this cluster.");
                             }
                             return false;
@@ -169,7 +169,7 @@ public abstract class AbstractJoiner implements Joiner {
                                 + ", because : joinRequest.getMemberCount() > currentMemberCount ["
                                 + (joinRequest.getMemberCount() + " > " + currentMemberCount) + "]");
                         if (logger.isFinestEnabled()) {
-                            logger.finest( joinRequest.toString());
+                            logger.finest(joinRequest.toString());
                         }
                         shouldMerge = true;
                     } else if (joinRequest.getMemberCount() == currentMemberCount) {
@@ -179,12 +179,12 @@ public abstract class AbstractJoiner implements Joiner {
                                     + ", because : node.getThisAddress().hashCode() > joinRequest.address.hashCode() "
                                     + ", this node member count: " + currentMemberCount);
                             if (logger.isFinestEnabled()) {
-                                logger.finest( joinRequest.toString());
+                                logger.finest(joinRequest.toString());
                             }
                             shouldMerge = true;
                         } else {
                             if (logger.isFinestEnabled()) {
-                                logger.finest( joinRequest.getAddress() + " should merge to this node "
+                                logger.finest(joinRequest.getAddress() + " should merge to this node "
                                         + ", because : node.getThisAddress().hashCode() < joinRequest.address.hashCode() "
                                         + ", this node member count: " + currentMemberCount);
                             }
@@ -204,7 +204,7 @@ public abstract class AbstractJoiner implements Joiner {
             final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
             if (conn != null) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "sending join request for " + possibleAddress);
+                    logger.finest("sending join request for " + possibleAddress);
                 }
                 node.clusterService.sendJoinRequest(possibleAddress, true);
             }
@@ -233,13 +233,13 @@ public abstract class AbstractJoiner implements Joiner {
             try {
                 f.get(1, TimeUnit.SECONDS);
             } catch (Exception e) {
-                logger.finest( "While waiting merge response...", e);
+                logger.finest("While waiting merge response...", e);
             }
         }
         final PrepareMergeOperation prepareMergeOperation = new PrepareMergeOperation(targetAddress);
         prepareMergeOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
                 .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-        operationService.runOperation(prepareMergeOperation);
+        operationService.runOperationOnCallingThread(prepareMergeOperation);
 
 
         for (MemberImpl member : memberList) {
@@ -253,7 +253,7 @@ public abstract class AbstractJoiner implements Joiner {
         final MergeClustersOperation mergeClustersOperation = new MergeClustersOperation(targetAddress);
         mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
                 .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-        operationService.runOperation(mergeClustersOperation);
+        operationService.runOperationOnCallingThread(mergeClustersOperation);
     }
 
     @Override

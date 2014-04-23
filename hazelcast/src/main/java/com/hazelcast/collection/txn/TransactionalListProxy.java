@@ -21,13 +21,9 @@ import com.hazelcast.collection.list.ListService;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionSupport;
-
 import java.util.Collection;
 import java.util.LinkedList;
 
-/**
-* @author ali 4/16/13
-*/
 public class TransactionalListProxy<E> extends AbstractTransactionalCollectionProxy<ListService, E>
         implements TransactionalList<E> {
 

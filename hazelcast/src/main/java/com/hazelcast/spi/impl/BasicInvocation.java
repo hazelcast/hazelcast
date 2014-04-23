@@ -22,13 +22,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupCompletionCallback;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallTimeoutException;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -37,21 +38,24 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
-import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
 
 /**
  * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
- *
+ * <p/>
  * A handle to wait for the completion of this BasicInvocation is the
  * {@link com.hazelcast.spi.impl.BasicInvocationFuture}.
  */
-abstract class BasicInvocation implements Callback<Object>, BackupCompletionCallback {
+abstract class BasicInvocation implements ResponseHandler, Runnable {
+
+    private final static AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
 
     static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
@@ -90,11 +94,18 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     protected final ILogger logger;
     private final BasicInvocationFuture invocationFuture;
 
+    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
+    private volatile Boolean responseReceived = Boolean.FALSE;
     private volatile int invokeCount = 0;
-    private volatile Address target;
     boolean remote = false;
     private final String executorName;
     final boolean resultDeserialized;
+    private Address invTarget;
+    private MemberImpl invTargetMember;
+    volatile int backupsCompleted;
+    volatile NormalResponse potentialResponse;
+    volatile int backupsExpected;
+
 
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
@@ -182,7 +193,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
             BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-            if (!operationService.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
+            if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
@@ -199,7 +210,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     private void resetAndReInvoke() {
         invokeCount = 0;
         potentialResponse = null;
-        expectedBackupCount = -1;
+        backupsExpected = -1;
         doInvoke();
     }
 
@@ -210,8 +221,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             return;
         }
 
-        final Address invTarget = getTarget();
-        target = invTarget;
+        invTarget = getTarget();
         invokeCount++;
         final Address thisAddress = nodeEngine.getThisAddress();
         if (invTarget == null) {
@@ -224,8 +234,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             return;
         }
 
-        final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
-        if (!isJoinOperation(op) && member == null) {
+        invTargetMember = nodeEngine.getClusterService().getMember(invTarget);
+        if (!isJoinOperation(op) && invTargetMember == null) {
             notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return;
         }
@@ -247,28 +257,25 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
         remote = !thisAddress.equals(invTarget);
         if (remote) {
-            final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
-            final long callId = operationService.registerRemoteCall(call);
-            if (op instanceof BackupAwareOperation) {
-                registerBackups((BackupAwareOperation) op, callId);
-            }
-            setCallId(op, callId);
+            final long callId = operationService.registerInvocation(this);
+
             boolean sent = operationService.send(op, invTarget);
+
             if (!sent) {
-                operationService.deregisterRemoteCall(callId);
-                operationService.deregisterBackupCall(callId);
-                notify(new RetryableIOException("Packet not sent to -> " + invTarget));
+                operationService.deregisterInvocation(callId);
+                notify(new RetryableIOException("Packet not send to -> " + invTarget));
             }
         } else {
             if (op instanceof BackupAwareOperation) {
-                final long callId = operationService.newCallId();
-                registerBackups((BackupAwareOperation) op, callId);
-                setCallId(op, callId);
+                operationService.registerInvocation(this);
             }
-            ResponseHandlerFactory.setLocalResponseHandler(op, this);
+
+            responseReceived = Boolean.FALSE;
+            op.setResponseHandler(this);
+
             //todo: should move to the operationService.
-            if (operationService.isAllowedToRunInCurrentThread(op)) {
-                operationService.runOperation(op);
+            if (operationService.scheduler.isAllowedToRunInCurrentThread(op)) {
+                operationService.runOperationOnCallingThread(op);
             } else {
                 operationService.executeOperation(op);
             }
@@ -296,66 +303,41 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return (Throwable) response.getValue();
     }
 
+    @Override
+    public void sendResponse(Object obj) {
+        if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
+            throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
+                    + ", current-response: : " + obj);
+        }
+        notify(obj);
+    }
+
+    @Override
+    public boolean isLocal() {
+        return true;
+    }
+
+    public boolean isCallTarget(MemberImpl leftMember) {
+        if (invTargetMember == null) {
+            return leftMember.getAddress().equals(invTarget);
+        } else {
+            return leftMember.getUuid().equals(invTargetMember.getUuid());
+        }
+    }
+
     //this method is called by the operation service to signal the invocation that something has happened, e.g.
     //a response is returned.
-    @Override
+    //@Override
     public void notify(Object obj) {
-        Object response;
-        if (obj == null) {
-            response = NULL_RESPONSE;
-        } else {
-            Throwable error = getError(obj);
-            if (error != null) {
-                if (error instanceof CallTimeoutException) {
-                    response = RETRY_RESPONSE;
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
-                    }
-                    if (op instanceof WaitSupport) {
-                        // decrement wait-timeout by call-timeout
-                        long waitTimeout = op.getWaitTimeout();
-                        waitTimeout -= callTimeout;
-                        op.setWaitTimeout(waitTimeout);
-                    }
-                    invokeCount--;
-                } else {
-                    final ExceptionAction action = onException(error);
-                    final int localInvokeCount = invokeCount;
-                    if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
-                        response = RETRY_RESPONSE;
-                        if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
-                            logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
-                        }
-                    } else if (action == ExceptionAction.CONTINUE_WAIT) {
-                        response = WAIT_RESPONSE;
-                    } else {
-                        response = error;
-                    }
-                }
-            } else {
-                response = obj;
-            }
-        }
+        Object response = resolveResponse(obj);
 
         if (response == RETRY_RESPONSE) {
-            if (invocationFuture.interrupted) {
-                invocationFuture.set(INTERRUPTED_RESPONSE);
-            } else {
-                invocationFuture.set(WAIT_RESPONSE);
-                final ExecutionService ex = nodeEngine.getExecutionService();
-                // fast retry for the first few invocations
-                if (invokeCount < 5) {
-                    getAsyncExecutor().execute(new ReInvocationTask());
-                } else {
-                    ex.schedule(ExecutionService.ASYNC_EXECUTOR, new ReInvocationTask(),
-                            tryPauseMillis, TimeUnit.MILLISECONDS);
-                }
-            }
+            handleRetryResponse();
             return;
         }
 
         if (response == WAIT_RESPONSE) {
-            invocationFuture.set(WAIT_RESPONSE);
+            handleWaitResponse();
             return;
         }
 
@@ -373,16 +355,66 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         invocationFuture.set(response);
     }
 
-    protected abstract Address getTarget();
-
-    private void registerBackups(BackupAwareOperation op, long callId) {
-        final long oldCallId = ((Operation) op).getCallId();
-        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        if (oldCallId != 0) {
-            operationService.deregisterBackupCall(oldCallId);
-        }
-        operationService.registerBackupCall(callId, this);
+    private void handleWaitResponse() {
+        invocationFuture.set(WAIT_RESPONSE);
     }
+
+    private void handleRetryResponse() {
+        if (invocationFuture.interrupted) {
+            invocationFuture.set(INTERRUPTED_RESPONSE);
+        } else {
+            invocationFuture.set(WAIT_RESPONSE);
+            final ExecutionService ex = nodeEngine.getExecutionService();
+            // fast retry for the first few invocations
+            if (invokeCount < 5) {
+                getAsyncExecutor().execute(this);
+            } else {
+                ex.schedule(ExecutionService.ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
+            }
+        }
+    }
+
+    private Object resolveResponse(Object obj) {
+        if (obj == null) {
+            return NULL_RESPONSE;
+        }
+
+        Throwable error = getError(obj);
+        if (error == null) {
+            return obj;
+        }
+
+        if (error instanceof CallTimeoutException) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+            }
+            if (op instanceof WaitSupport) {
+                // decrement wait-timeout by call-timeout
+                long waitTimeout = op.getWaitTimeout();
+                waitTimeout -= callTimeout;
+                op.setWaitTimeout(waitTimeout);
+            }
+            invokeCount--;
+            return RETRY_RESPONSE;
+        }
+
+        final ExceptionAction action = onException(error);
+        final int localInvokeCount = invokeCount;
+        if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
+            if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
+                logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
+            }
+            return RETRY_RESPONSE;
+        }
+
+        if (action == ExceptionAction.CONTINUE_WAIT) {
+            return WAIT_RESPONSE;
+        }
+
+        return error;
+    }
+
+    protected abstract Address getTarget();
 
     @Override
     public String toString() {
@@ -396,25 +428,23 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         sb.append(", tryPauseMillis=").append(tryPauseMillis);
         sb.append(", invokeCount=").append(invokeCount);
         sb.append(", callTimeout=").append(callTimeout);
-        sb.append(", target=").append(target);
+        sb.append(", target=").append(invTarget);
         sb.append('}');
         return sb.toString();
     }
 
-    private volatile int availableBackups;
-    private volatile NormalResponse potentialResponse;
-    private volatile int expectedBackupCount;
 
-    @Override
+    //backupsCompleted is incremented while a lock is hold.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     public void signalOneBackupComplete() {
         synchronized (this) {
-            availableBackups++;
+            backupsCompleted++;
 
-            if (expectedBackupCount == -1) {
+            if (backupsExpected == -1) {
                 return;
             }
 
-            if (expectedBackupCount != availableBackups) {
+            if (backupsExpected != backupsCompleted) {
                 return;
             }
 
@@ -426,9 +456,9 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
     private void waitForBackups(int backupCount, long timeout, TimeUnit unit, NormalResponse response) {
         synchronized (this) {
-            this.expectedBackupCount = backupCount;
+            this.backupsExpected = backupCount;
 
-            if (availableBackups == expectedBackupCount) {
+            if (backupsCompleted == backupsExpected) {
                 invocationFuture.set(response);
                 return;
             }
@@ -440,12 +470,12 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             @Override
             public void run() {
                 synchronized (BasicInvocation.this) {
-                    if (expectedBackupCount == availableBackups) {
+                    if (backupsExpected == backupsCompleted) {
                         return;
                     }
                 }
 
-                if (nodeEngine.getClusterService().getMember(target) != null) {
+                if (nodeEngine.getClusterService().getMember(invTarget) != null) {
                     synchronized (BasicInvocation.this) {
                         if (BasicInvocation.this.potentialResponse != null) {
                             invocationFuture.set(BasicInvocation.this.potentialResponse);
@@ -460,9 +490,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }, timeout, unit);
     }
 
-    private class ReInvocationTask implements Runnable {
-        public void run() {
-            doInvoke();
-        }
+    @Override
+    public void run() {
+        doInvoke();
     }
 }

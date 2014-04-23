@@ -27,26 +27,26 @@ public class NamedThreadPoolExecutor extends ThreadPoolExecutor implements Manag
     private final String name;
 
     public NamedThreadPoolExecutor(String name, int corePoolSize, int maximumPoolSize, long keepAliveTime,
-            TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+                                   TimeUnit unit, BlockingQueue<Runnable> workQueue) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
         this.name = name;
     }
 
     public NamedThreadPoolExecutor(String name, int corePoolSize, int maximumPoolSize, long keepAliveTime,
-            TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory) {
+                                   TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
         this.name = name;
     }
 
     public NamedThreadPoolExecutor(String name, int corePoolSize, int maximumPoolSize, long keepAliveTime,
-            TimeUnit unit, BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler) {
+                                   TimeUnit unit, BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
         this.name = name;
     }
 
     public NamedThreadPoolExecutor(String name, int corePoolSize, int maximumPoolSize, long keepAliveTime,
-            TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory,
-            RejectedExecutionHandler handler) {
+                                   TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory,
+                                   RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
         this.name = name;
     }
@@ -65,8 +65,8 @@ public class NamedThreadPoolExecutor extends ThreadPoolExecutor implements Manag
         return getQueue().remainingCapacity();
     }
 
+    @Override
     public String toString() {
         return "ThreadPoolExecutor{" + "name='" + name + '\'' + '}';
     }
-
 }

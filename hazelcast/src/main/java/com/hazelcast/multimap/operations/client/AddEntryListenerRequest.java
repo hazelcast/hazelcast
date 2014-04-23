@@ -16,9 +16,14 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
@@ -32,14 +37,11 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.PortableEntryEvent;
-
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/10/13
- */
-public class AddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
+public class AddEntryListenerRequest extends CallableClientRequest
+        implements Portable, SecureRequest, RetryableRequest {
 
     String name;
     Data key;
@@ -69,7 +71,9 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
                     Data key = clientEngine.toData(event.getKey());
                     Data value = clientEngine.toData(event.getValue());
                     Data oldValue = clientEngine.toData(event.getOldValue());
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
+                    final EntryEventType type = event.getEventType();
+                    final String uuid = event.getMember().getUuid();
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, type, uuid);
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }

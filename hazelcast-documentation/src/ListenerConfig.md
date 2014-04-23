@@ -40,11 +40,11 @@ queue.addItemListener(listener, true);
 queue.removeItemListener(listener);
 ```
 
-Downside of attaching listeners using API is the possibility of missing events between creation of object and registering listener. To overcome this race condition, Hazelcast introduces registration of listeners in configuration. Listeners can be registered using either Hazelcast XML configuration, configuration API or Spring configuration.
+Downside of attaching listeners using API is the possibility of missing events between creation of object and registering listener. To overcome this race condition, Hazelcast introduces registration of listeners in configuration. Listeners can be registered using either declarative, programmatic or Spring configuration.
 
 -  **MembershipListener**
 
-	-	*Hazelcast XML configuration*
+	-	Declarative Configuration
 
 		```xml
 		<listeners>
@@ -52,13 +52,13 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</listeners>
 ```
 
-	-	*Config API*
+	-	Programmatic Configuration
 
 		```java
 config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MembershipListener"));
 ```
 
-	-	*Spring XML configuration*
+	-	Spring XML configuration
 
 		```xml
 		<hz:listeners>
@@ -69,7 +69,7 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MembershipLi
 
 -   **DistributedObjectListener**
 
-	-	*Hazelcast XML configuration*
+	-	Declarative Configuration
 
 		```xml
 		<listeners>
@@ -77,13 +77,13 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MembershipLi
 			</listeners>
 ```
 
-	-	*Config API*
+	-	Programmatic Configuration
 
 		```java
 config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.DistributedObjectListener"));
 ```
 
-	-	*Spring XML configuration*
+	-	Spring XML configuration
 
 		```xml
 		<hz:listeners>
@@ -94,7 +94,7 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.DistributedO
 
 -   **MigrationListener**
 
-	-	*Hazelcast XML configuration*
+	-	Declarative Configuration
 
 		```xml
 		<listeners>
@@ -102,13 +102,13 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.DistributedO
 		</listeners>
 ```
 
-	-	*Config API*
+	-	Programmatic Configuration
 
 		```java
 config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MigrationListener"));
 ```
 
-	-	*Spring XML configuration*
+	-	Spring XML configuration
 
 		```xml
 		<hz:listeners>
@@ -119,7 +119,7 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MigrationLis
 
 -   **LifecycleListener**
 
-	-	*Hazelcast XML configuration*
+	-	Declarative Configuration
 
 		```xml
 		<listeners>
@@ -127,13 +127,13 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MigrationLis
 		</listeners>
 ```
 
-	-	*Config API*
+	-	Programmatic Configuration
 
 		```java
 config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.LifecycleListener"));
 ```
 
-	-	*Spring XML configuration*
+	-	Spring XML configuration
 
 		```xml
 		<hz:listeners>
@@ -144,7 +144,7 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.LifecycleLis
 
 -   **EntryListener** for IMap
 
-	-	*Hazelcast XML configuration*
+	-	Declarative Configuration
 
 		```xml
 		<map name="default">
@@ -155,13 +155,13 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.LifecycleLis
 		</map>
 ```
 
-	-	*Config API*
+	-	Programmatic Configuration
 
 		```java
 mapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples.EntryListener", false, false));
 ```
 
-	-	*Spring XML configuration*
+	-	Spring XML configuration
 
 		```xml
 		<hz:map name="default">
@@ -174,7 +174,7 @@ mapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples
 
 -   **EntryListener** for MultiMap
 
-	-	*Hazelcast XML configuration*
+	-	Declarative Configuration
 
 		```xml
 		<multimap name="default">
@@ -184,13 +184,13 @@ mapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples
 		    	</entry-listeners>
 		</multimap>
 ```
-	-	*Config API*
+	-	Programmatic Configuration
 
 		```java
 multiMapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.examples.EntryListener", false, false));
 ```
 
-	-	*Spring XML configuration*
+	-	Spring XML configuration
 
 		```xml
 		<hz:multimap name="default" value-collection-type="LIST">
@@ -203,7 +203,7 @@ multiMapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.exa
 
 -   **ItemListener** for IQueue
 
-	-	*Hazelcast XML configuration*
+	-	Declarative Configuration
 
 		```xml
 		<queue name="default">
@@ -214,13 +214,13 @@ multiMapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.exa
 		</queue>
 ```
 
-	-	*Config API*
+	-	Programmatic Configuration
 
 		```java
 queueConfig.addItemListenerConfig(new ItemListenerConfig("com.hazelcast.examples.ItemListener", true));
 ```
 
-	-	*Spring XML configuration*
+	-	Spring XML configuration
 
 		```xml
 		<hz:queue name="default" >
@@ -232,7 +232,7 @@ queueConfig.addItemListenerConfig(new ItemListenerConfig("com.hazelcast.examples
 
 -   **MessageListener** for ITopic
 
-	-	*Hazelcast XML configuration*
+	-	Declarative Configuration
 
 		```xml
 		<topic name="default">
@@ -242,13 +242,13 @@ queueConfig.addItemListenerConfig(new ItemListenerConfig("com.hazelcast.examples
 		</topic>
 ```
 
-	-	*Config API*
+	-	Programmatic Configuration
 
 		```java
 topicConfig.addMessageListenerConfig(new ListenerConfig("com.hazelcast.examples.MessageListener"));
 ```
 
-	-	*Spring XML configuration*
+	-	Spring XML configuration
 
 		```xml
 		<hz:topic name="default">

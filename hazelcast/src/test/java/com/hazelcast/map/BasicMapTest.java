@@ -33,6 +33,7 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import org.junit.Before;
@@ -1143,6 +1144,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testMapLoaderLoadUpdatingIndex() throws Exception {
     	MapConfig mapConfig = getInstance().getConfig().getMapConfig("testMapLoaderLoadUpdatingIndex");
     	List<MapIndexConfig> indexConfigs = mapConfig.getMapIndexConfigs();

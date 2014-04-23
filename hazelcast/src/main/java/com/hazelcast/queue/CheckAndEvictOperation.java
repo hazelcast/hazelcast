@@ -16,9 +16,8 @@
 
 package com.hazelcast.queue;
 
-/**
- * @ali 7/23/13
- */
+import com.hazelcast.spi.ProxyService;
+
 public class CheckAndEvictOperation extends QueueOperation {
 
     public CheckAndEvictOperation() {
@@ -32,10 +31,12 @@ public class CheckAndEvictOperation extends QueueOperation {
         return QueueDataSerializerHook.CHECK_EVICT;
     }
 
+    @Override
     public void run() throws Exception {
         final QueueContainer container = getOrCreateContainer();
-        if (container.isEvictable()){
-            getNodeEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
+        if (container.isEvictable()) {
+            ProxyService proxyService = getNodeEngine().getProxyService();
+            proxyService.destroyDistributedObject(getServiceName(), name);
         }
     }
 }

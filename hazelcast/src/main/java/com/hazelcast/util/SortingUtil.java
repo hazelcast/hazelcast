@@ -5,15 +5,13 @@ import com.hazelcast.query.PagingPredicate;
 import java.util.Comparator;
 import java.util.Map;
 
-/**
- * @author ali 10/12/13
- */
 public final class SortingUtil {
 
     private SortingUtil() {
     }
 
-    public static int compare(Comparator<Map.Entry> comparator, IterationType iterationType, Map.Entry entry1, Map.Entry entry2){
+    public static int compare(Comparator<Map.Entry> comparator, IterationType iterationType,
+                              Map.Entry entry1, Map.Entry entry2) {
         if (comparator != null) {
             int result = comparator.compare(entry1, entry2);
             if (result != 0) {
@@ -51,18 +49,20 @@ public final class SortingUtil {
         return entry1.getKey().hashCode() - entry2.getKey().hashCode();
     }
 
-    public static Comparator<Map.Entry> newComparator(final Comparator<Map.Entry> comparator, final IterationType iterationType){
-        return new Comparator<Map.Entry>(){
+    public static Comparator<Map.Entry> newComparator(final Comparator<Map.Entry> comparator,
+                                                      final IterationType iterationType) {
+        return new Comparator<Map.Entry>() {
             public int compare(Map.Entry entry1, Map.Entry entry2) {
                 return SortingUtil.compare(comparator, iterationType, entry1, entry2);
             }
         };
     }
 
-    public static Comparator<Map.Entry> newComparator(final PagingPredicate pagingPredicate){
-        return new Comparator<Map.Entry>(){
+    public static Comparator<Map.Entry> newComparator(final PagingPredicate pagingPredicate) {
+        return new Comparator<Map.Entry>() {
             public int compare(Map.Entry entry1, Map.Entry entry2) {
-                return SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2);
+                return SortingUtil.compare(pagingPredicate.getComparator(),
+                        pagingPredicate.getIterationType(), entry1, entry2);
             }
         };
     }

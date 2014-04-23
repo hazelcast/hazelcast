@@ -55,8 +55,8 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private void logDroppedMessage(Object msg) {
-        if(logger.isFinestEnabled()){
-            logger.info("Dropped: "+msg);
+        if (logger.isFinestEnabled()) {
+            logger.info("Dropped: " + msg);
         }
     }
 
@@ -85,7 +85,7 @@ public class NodeMulticastListener implements MulticastListener {
             if (joiner instanceof MulticastJoiner) {
                 MulticastJoiner multicastJoiner = (MulticastJoiner) joiner;
                 multicastJoiner.onReceivedJoinRequest((JoinRequest) joinMessage);
-            } else{
+            } else {
                 logDroppedMessage(joinMessage);
             }
         } else {
@@ -98,7 +98,7 @@ public class NodeMulticastListener implements MulticastListener {
                 } else {
                     logJoinMessageDropped(masterHost);
                 }
-            }else{
+            } else {
                 logDroppedMessage(joinMessage);
             }
         }
@@ -124,7 +124,7 @@ public class NodeMulticastListener implements MulticastListener {
             return false;
         }
 
-        JoinMessage joinMessage = (JoinMessage)msg;
+        JoinMessage joinMessage = (JoinMessage) msg;
 
         if (isMessageToSelf(joinMessage)) {
             return false;

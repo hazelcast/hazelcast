@@ -292,6 +292,8 @@
         <xs:sequence>
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
                         default="true"/>
+            <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="false"/>
             <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>

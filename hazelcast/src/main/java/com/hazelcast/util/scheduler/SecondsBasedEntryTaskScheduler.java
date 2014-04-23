@@ -18,7 +18,13 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.util.Clock;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,24 +44,27 @@ import java.util.concurrent.TimeUnit;
  * or
  * b) being able to reschedule (postpone) execution
  */
-
 final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
 
     private static final long initialTimeMillis = Clock.currentTimeMillis();
 
     private final ConcurrentMap<Object, Integer> secondsOfKeys = new ConcurrentHashMap<Object, Integer>(1000);
-    private final ConcurrentMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>> scheduledEntries = new ConcurrentHashMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>>(1000);
+    private final ConcurrentMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>> scheduledEntries
+            = new ConcurrentHashMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>>(1000);
     private final ScheduledExecutorService scheduledExecutorService;
     private final ScheduledEntryProcessor entryProcessor;
     private final ScheduleType scheduleType;
-    private final ConcurrentMap<Integer, ScheduledFuture> scheduledTaskMap = new ConcurrentHashMap<Integer, ScheduledFuture>(1000);
+    private final ConcurrentMap<Integer, ScheduledFuture> scheduledTaskMap
+            = new ConcurrentHashMap<Integer, ScheduledFuture>(1000);
 
-    SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService, ScheduledEntryProcessor entryProcessor, ScheduleType scheduleType) {
+    SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService,
+                                   ScheduledEntryProcessor entryProcessor, ScheduleType scheduleType) {
         this.scheduledExecutorService = scheduledExecutorService;
         this.entryProcessor = entryProcessor;
         this.scheduleType = scheduleType;
     }
 
+    @Override
     public boolean schedule(long delayMillis, K key, V value) {
         if (scheduleType.equals(ScheduleType.POSTPONE)) {
             return schedulePostponeEntry(delayMillis, key, value);
@@ -68,6 +77,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     }
 
+    @Override
     public Set<K> flush(Set<K> keys) {
         if (scheduleType.equals(ScheduleType.FOR_EACH)) {
             return flushComparingTimeKeys(keys);
@@ -115,6 +125,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         return processedKeys;
     }
 
+    @Override
     public ScheduledEntry<K, V> cancel(K key) {
         ScheduledEntry<K, V> result = null;
 
@@ -137,6 +148,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         return result;
     }
 
+    @Override
     public ScheduledEntry<K, V> get(K key) {
         if (scheduleType.equals(ScheduleType.FOR_EACH)) {
             return getComparingTimeKey(key);
@@ -248,7 +260,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         boolean shouldSchedule = false;
         if (entries == null) {
             entries = new ConcurrentHashMap<Object, ScheduledEntry<K, V>>(10);
-            ConcurrentMap<Object, ScheduledEntry<K, V>> existingScheduleKeys = scheduledEntries.putIfAbsent(second, entries);
+            ConcurrentMap<Object, ScheduledEntry<K, V>> existingScheduleKeys
+                    = scheduledEntries.putIfAbsent(second, entries);
             if (existingScheduleKeys != null) {
                 entries = existingScheduleKeys;
             } else {
@@ -277,7 +290,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     }
 
     private void schedule(final Integer second, final int delaySeconds) {
-        ScheduledFuture scheduledFuture = scheduledExecutorService.schedule(new EntryProcessorExecutor(second), delaySeconds, TimeUnit.SECONDS);
+        EntryProcessorExecutor command = new EntryProcessorExecutor(second);
+        ScheduledFuture scheduledFuture = scheduledExecutorService.schedule(command, delaySeconds, TimeUnit.SECONDS);
         scheduledTaskMap.put(second, scheduledFuture);
     }
 
@@ -288,6 +302,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             this.second = second;
         }
 
+        @Override
         public void run() {
             scheduledTaskMap.remove(second);
             final Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
@@ -301,7 +316,6 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             }
             //sort entries asc by schedule times and send to processor.
             entryProcessor.process(SecondsBasedEntryTaskScheduler.this, sortForEntryProcessing(values));
-
         }
     }
 
@@ -312,21 +326,19 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         Collections.sort(sortedEntries, SCHEDULED_ENTRIES_COMPARATOR);
 
         return sortedEntries;
-
     }
 
     private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
         @Override
         public int compare(ScheduledEntry o1, ScheduledEntry o2) {
-            if (o1.getScheduleTimeNanos() > o2.getScheduleTimeNanos()) {
+            if (o1.getScheduleStartTimeInNanos() > o2.getScheduleStartTimeInNanos()) {
                 return 1;
-            } else if (o1.getScheduleTimeNanos() < o2.getScheduleTimeNanos()) {
+            } else if (o1.getScheduleStartTimeInNanos() < o2.getScheduleStartTimeInNanos()) {
                 return -1;
             }
             return 0;
         }
     };
-
 
     @Override
     public int size() {

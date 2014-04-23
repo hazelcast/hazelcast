@@ -28,11 +28,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-/**
- * @author ali 12/14/12
- */
 @SuppressWarnings("unchecked")
 public class QueueStoreWrapper implements QueueStore<Data> {
 
@@ -44,13 +45,13 @@ public class QueueStoreWrapper implements QueueStore<Data> {
 
     private QueueStoreConfig storeConfig;
 
-    private boolean enabled = false;
+    private boolean enabled;
 
     private int memoryLimit = DEFAULT_MEMORY_LIMIT;
 
     private int bulkLoad = DEFAULT_BULK_LOAD;
 
-    private boolean binary = false;
+    private boolean binary;
 
     private final SerializationService serializationService;
 
@@ -63,22 +64,23 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             return;
         }
         store = storeConfig.getStoreImplementation();
-        if (store == null){
+        if (store == null) {
             try {
                 store = ClassLoaderUtil.newInstance(serializationService.getClassLoader(), storeConfig.getClassName());
             } catch (Exception ignored) {
             }
         }
 
-        if (store == null){
+        if (store == null) {
             QueueStoreFactory factory = storeConfig.getFactoryImplementation();
-            if (factory == null){
+            if (factory == null) {
                 try {
-                    factory = ClassLoaderUtil.newInstance(serializationService.getClassLoader(), storeConfig.getFactoryClassName());
+                    factory = ClassLoaderUtil.newInstance(serializationService.getClassLoader(),
+                            storeConfig.getFactoryClassName());
                 } catch (Exception ignored) {
                 }
             }
-            if (factory == null){
+            if (factory == null) {
                 return;
             }
             store = factory.newQueueStore(name, storeConfig.getProperties());
@@ -91,7 +93,6 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         if (bulkLoad < 1) {
             bulkLoad = 1;
         }
-
     }
 
     public boolean isEnabled() {
@@ -110,86 +111,97 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         return bulkLoad;
     }
 
+    @Override
     public void store(Long key, Data value) {
-        if (enabled) {
-            final Object actualValue;
-            if (binary) {
-                // WARNING: we can't pass original Data to the user
-                BufferObjectDataOutput out = serializationService.createObjectDataOutput(value.totalSize());
-                try {
-                    value.writeData(out);
-                    // buffer size is exactly equal to binary size, no need to copy array.
-                    actualValue = out.getBuffer();
-                } catch (IOException e) {
-                    throw new HazelcastException(e);
-                } finally {
-                    IOUtil.closeResource(out);
-                }
-            } else {
-                actualValue = serializationService.toObject(value);
-            }
-            store.store(key, actualValue);
+        if (!enabled) {
+            return;
         }
+        final Object actualValue;
+        if (binary) {
+            // WARNING: we can't pass original Data to the user
+            BufferObjectDataOutput out = serializationService.createObjectDataOutput(value.totalSize());
+            try {
+                value.writeData(out);
+                // buffer size is exactly equal to binary size, no need to copy array.
+                actualValue = out.getBuffer();
+            } catch (IOException e) {
+                throw new HazelcastException(e);
+            } finally {
+                IOUtil.closeResource(out);
+            }
+        } else {
+            actualValue = serializationService.toObject(value);
+        }
+        store.store(key, actualValue);
     }
 
+    @Override
     public void storeAll(Map<Long, Data> map) {
-        if (enabled) {
-            final Map<Long, Object> objectMap = new HashMap<Long, Object>(map.size());
-            if (binary) {
-                // WARNING: we can't pass original Data to the user
-                // TODO: @mm - is there really an advantage of using binary storeAll? since we need to do array copy for each item.
-                BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
-                try {
-                    for (Map.Entry<Long, Data> entry : map.entrySet()) {
-                        entry.getValue().writeData(out);
-                        objectMap.put(entry.getKey(), out.toByteArray());
-                        out.clear();
-                    }
-                } catch (IOException e) {
-                    throw new HazelcastException(e);
-                } finally {
-                    IOUtil.closeResource(out);
-                }
-            } else {
-                for (Map.Entry<Long, Data> entry : map.entrySet()) {
-                    objectMap.put(entry.getKey(), serializationService.toObject(entry.getValue()));
-                }
-            }
-            store.storeAll(objectMap);
+        if (!enabled) {
+            return;
         }
+
+        final Map<Long, Object> objectMap = new HashMap<Long, Object>(map.size());
+        if (binary) {
+            // WARNING: we can't pass original Data to the user
+            // TODO: @mm - is there really an advantage of using binary storeAll?
+            // since we need to do array copy for each item.
+            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
+            try {
+                for (Map.Entry<Long, Data> entry : map.entrySet()) {
+                    entry.getValue().writeData(out);
+                    objectMap.put(entry.getKey(), out.toByteArray());
+                    out.clear();
+                }
+            } catch (IOException e) {
+                throw new HazelcastException(e);
+            } finally {
+                IOUtil.closeResource(out);
+            }
+        } else {
+            for (Map.Entry<Long, Data> entry : map.entrySet()) {
+                objectMap.put(entry.getKey(), serializationService.toObject(entry.getValue()));
+            }
+        }
+        store.storeAll(objectMap);
     }
 
+    @Override
     public void delete(Long key) {
         if (enabled) {
             store.delete(key);
         }
     }
 
+    @Override
     public void deleteAll(Collection<Long> keys) {
         if (enabled) {
             store.deleteAll(keys);
         }
     }
 
+    @Override
     public Data load(Long key) {
-        if (enabled) {
-            final Object val = store.load(key);
-            if (binary) {
-                byte[] dataBuffer = (byte[]) val;
-                ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
-                Data data = new Data();
-                try {
-                    data.readData(in);
-                } catch (IOException e) {
-                    throw new HazelcastException(e);
-                }
-                return data;
-            }
-            return serializationService.toData(val);
+        if (!enabled) {
+            return null;
         }
-        return null;
+
+        final Object val = store.load(key);
+        if (binary) {
+            byte[] dataBuffer = (byte[]) val;
+            ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
+            Data data = new Data();
+            try {
+                data.readData(in);
+            } catch (IOException e) {
+                throw new HazelcastException(e);
+            }
+            return data;
+        }
+        return serializationService.toData(val);
     }
 
+    @Override
     public Map<Long, Data> loadAll(Collection<Long> keys) {
         if (enabled) {
             final Map<Long, ?> map = store.loadAll(keys);
@@ -220,6 +232,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         return null;
     }
 
+    @Override
     public Set<Long> loadAllKeys() {
         if (enabled) {
             return store.loadAllKeys();

@@ -571,6 +571,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
                     topicConfigBuilder.addPropertyValue("messageListenerConfigs", listeners);
                 }
+                else  if ("statistics-enabled".equals(cleanNodeName(childNode))) {
+                    final String statisticsEnabled = getTextContent(childNode);
+                    topicConfigBuilder.addPropertyValue("statisticsEnabled", statisticsEnabled);
+                }
+                else  if ("global-ordering-enabled".equals(cleanNodeName(childNode))) {
+                    final String globalOrderingEnabled = getTextContent(childNode);
+                    topicConfigBuilder.addPropertyValue("globalOrderingEnabled", globalOrderingEnabled);
+                }
             }
             topicManagedMap.put(name, topicConfigBuilder.getBeanDefinition());
         }

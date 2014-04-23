@@ -67,7 +67,22 @@ public class ClientExecutorServiceExecuteTest {
         final String mapName = randomString();
 
         service.execute( new MapPutRunnable(mapName));
+        final IMap map = client.getMap(mapName);
 
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertEquals(1, map.size());
+            }
+        });
+    }
+
+    @Test
+    public void testExecute_withMemberSelector() {
+        final IExecutorService service = client.getExecutorService(randomString());
+        final String mapName = randomString();
+        final MemberSelector selector = new SelectAllMembers();
+
+        service.execute( new MapPutRunnable(mapName), selector);
         final IMap map = client.getMap(mapName);
 
         assertTrueEventually(new AssertTask() {

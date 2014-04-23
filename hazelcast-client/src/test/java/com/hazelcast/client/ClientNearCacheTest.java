@@ -186,6 +186,48 @@ public class ClientNearCacheTest {
     }
 
     @Test
+    public void testGetAsyncPopulatesNearCache() throws Exception {
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+
+        int size = 1239;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            Future async = map.getAsync(i);
+            async.get();
+        }
+        //generate near cache hits with async call
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getOwnedEntryCount());
+        assertEquals(size, stats.getHits());
+    }
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void testRemovedKeyValueNotInNearCache() throws Exception {
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+
+        int size = 1247;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+
+        for (int i = 0; i < size; i++) {
+            map.remove(i);
+            assertNull(map.get(i));
+        }
+    }
+
+    @Test
     public void testNearCachePopulatedAndHitsGenerated() throws Exception {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
 
@@ -252,6 +294,20 @@ public class ClientNearCacheTest {
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(size, stats.getMisses());
         assertEquals(size, stats.getOwnedEntryCount());
+    }
+
+    @Test
+    public void testNearCacheMisses_whenRepeatedOnSameKey() {
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+
+        final int size = 17;
+        for (int i = 0; i < size; i++) {
+            map.get("NOT_THERE");
+        }
+
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(1, stats.getOwnedEntryCount());
+        assertEquals(size, stats.getMisses());
     }
 
     // possible cause : https://github.com/hazelcast/hazelcast/issues/2065
@@ -388,22 +444,40 @@ public class ClientNearCacheTest {
         });
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testNearCacheContainsNullKey() {
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+        map.containsKey(null);
+    }
+
     @Test
-    @Category(ProblematicTest.class) // one can see stale value on the near cache after map.remove
     public void testNearCacheContainsKey() {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+        final Object key = "key";
 
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
+        map.put(key, "value");
+        map.get(key);
 
-        map.get("key1");
-        map.get("key2");
-        map.get("key3");
-        map.remove("key1");
+        assertTrue(map.containsKey(key));
+    }
 
-        assertFalse(map.containsKey("key5"));
-        assertTrue(map.containsKey("key2"));
-        assertFalse(map.containsKey("key1"));
+    @Test
+    public void testNearCacheContainsKey_whenKeyAbsent() {
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+
+        assertFalse(map.containsKey("NOT_THERE"));
+    }
+
+    @Test
+    @Category(ProblematicTest.class) // one can see stale value on the near cache after map.remove
+    public void testNearCacheContainsKey_afterRemove() {
+        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_DEFAULT_CONFIG));
+        final Object key = "key";
+
+        map.put(key, "value");
+        map.get(key);
+        map.remove(key);
+
+        assertFalse(map.containsKey(key));
     }
 }

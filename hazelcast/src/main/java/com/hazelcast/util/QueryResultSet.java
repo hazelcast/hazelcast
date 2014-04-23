@@ -51,7 +51,7 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         this.iterationType = iterationType;
     }
 
-    public Iterator<Map.Entry> rawIterator(){
+    public Iterator<Map.Entry> rawIterator() {
         return new QueryResultIterator(IterationType.ENTRY);
     }
 
@@ -94,8 +94,7 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
                 Data valueData = entry.getValueData();
                 if (data) {
                     return new AbstractMap.SimpleImmutableEntry(keyData, valueData);
-                }
-                else {
+                } else {
                     Object key = serializationService.toObject(keyData);
                     Object value = serializationService.toObject(valueData);
                     return new AbstractMap.SimpleImmutableEntry(key, value);

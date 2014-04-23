@@ -59,22 +59,28 @@ abstract class TopicProxySupport extends AbstractDistributedObject<TopicService>
     private void initialize(ListenerConfig listenerConfig) {
         NodeEngine nodeEngine = getNodeEngine();
 
-        MessageListener listener;
+        MessageListener listener = loadListener(listenerConfig);
+
+        if (listener == null) {
+            return;
+        }
+
+        if (listener instanceof HazelcastInstanceAware) {
+            HazelcastInstanceAware hazelcastInstanceAware = (HazelcastInstanceAware) listener;
+            hazelcastInstanceAware.setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        }
+        addMessageListenerInternal(listener);
+    }
+
+    private MessageListener loadListener(ListenerConfig listenerConfig) {
         try {
-            listener = (MessageListener) listenerConfig.getImplementation();
+            MessageListener listener = (MessageListener) listenerConfig.getImplementation();
             if (listener == null && listenerConfig.getClassName() != null) {
                 listener = ClassLoaderUtil.newInstance(configClassLoader, listenerConfig.getClassName());
             }
+            return listener;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
-        }
-
-        if (listener != null) {
-            if (listener instanceof HazelcastInstanceAware) {
-                HazelcastInstanceAware hazelcastInstanceAware = (HazelcastInstanceAware) listener;
-                hazelcastInstanceAware.setHazelcastInstance(nodeEngine.getHazelcastInstance());
-            }
-            addMessageListenerInternal(listener);
         }
     }
 
@@ -83,7 +89,7 @@ abstract class TopicProxySupport extends AbstractDistributedObject<TopicService>
     }
 
     public void publishInternal(Data message) {
-        TopicEvent topicEvent = new TopicEvent(name, message, localMember);
+        TopicEvent topicEvent = new TopicEvent(name, message, localMember.getAddress());
         topicStats.incrementPublishes();
         topicService.publishEvent(name, topicEvent);
     }

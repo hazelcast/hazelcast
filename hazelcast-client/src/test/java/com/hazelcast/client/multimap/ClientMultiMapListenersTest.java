@@ -17,21 +17,26 @@
 package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.concurrent.CountDownLatch;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.CountDownLatch;
-
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -65,8 +70,7 @@ public class ClientMultiMapListenersTest {
         mm.addLocalEntryListener(myEntryListener);
     }
 
-    @Test(expected = NullPointerException.class)
-    @Category(ProblematicTest.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testAddListener_whenListenerNull() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
         mm.addEntryListener(null, true);
@@ -88,17 +92,6 @@ public class ClientMultiMapListenersTest {
         final MultiMap mm = client.getMultiMap(randomString());
 
         assertFalse(mm.removeEntryListener("NOT_THERE"));
-    }
-
-    @Test()
-    @Category(ProblematicTest.class)
-    //this test is marked problematic as we cannot determine the desired behaviour from API
-    public void addEntryListener_whenSameListenerAddedMultipleTimes() throws InterruptedException {
-        final MultiMap mm = client.getMultiMap(randomString());
-
-        MyEntryListener listener = new CountDownValueNotNullListener(1);
-        final String id = mm.addEntryListener(listener, true);
-        final String id2 = mm.addEntryListener(listener, true);
     }
 
     @Test

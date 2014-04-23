@@ -16,10 +16,10 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
@@ -28,7 +28,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.locks.Lock;
 
-public class PublishOperation extends AbstractNamedOperation {
+public class PublishOperation extends AbstractNamedOperation
+        implements IdentifiedDataSerializable {
 
     private Data message;
 
@@ -42,16 +43,17 @@ public class PublishOperation extends AbstractNamedOperation {
 
     @Override
     public void beforeRun() throws Exception {
-        ((TopicService) getService()).incrementPublishes(name);
+        TopicService service = getService();
+        service.incrementPublishes(name);
     }
 
     @Override
     public void run() throws Exception {
         TopicService service = getService();
-        Member publishingMember = getNodeEngine().getClusterService().getMember(getCallerAddress());
-        TopicEvent topicEvent = new TopicEvent(name, message, publishingMember);
+        TopicEvent topicEvent = new TopicEvent(name, message, getCallerAddress());
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
+
         Lock lock = service.getOrderLock(name);
         lock.lock();
         try {
@@ -64,6 +66,16 @@ public class PublishOperation extends AbstractNamedOperation {
     @Override
     public boolean returnsResponse() {
         return true;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return TopicDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return TopicDataSerializerHook.PUBLISH;
     }
 
     @Override

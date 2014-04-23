@@ -110,6 +110,7 @@ public class IndexImpl implements Index {
         return results;
     }
 
+    @Override
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
         MultiResultSet results = new MultiResultSet();
         indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
@@ -117,7 +118,9 @@ public class IndexImpl implements Index {
     }
 
     private Comparable convert(Comparable value) {
-        if (attributeType == null) return value;
+        if (attributeType == null) {
+            return value;
+        }
         return attributeType.getConverter().convert(value);
     }
 
@@ -135,22 +138,28 @@ public class IndexImpl implements Index {
         return ordered;
     }
 
-    public final static class NullObject implements Comparable {
+    public static final class NullObject implements Comparable {
         @Override
         public int compareTo(Object o) {
-            if (o == this || o instanceof NullObject) return 0;
+            if (o == this || o instanceof NullObject) {
+                return 0;
+            }
             return -1;
         }
 
         @Override
-        public int hashCode(){
+        public int hashCode() {
             return 0;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             return true;
         }
     }

@@ -84,7 +84,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
         InternalPartitionServiceImpl partitionService = getService();
         InternalPartition partition = partitionService.getPartition(migrationInfo.getPartitionId());
-        Address owner = partition.getOwner();
+        Address owner = partition.getOwnerOrNull();
         verifyOwnerExists(owner);
 
         if (!migrationInfo.startProcessing()) {

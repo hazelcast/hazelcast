@@ -17,9 +17,9 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.concurrent.lock.client.AbstractIsLockedRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.concurrent.lock.client.AbstractIsLockedRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -27,13 +27,9 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @author ali 5/23/13
- */
 public class MultiMapIsLockedRequest extends AbstractIsLockedRequest implements RetryableRequest {
 
     String name;

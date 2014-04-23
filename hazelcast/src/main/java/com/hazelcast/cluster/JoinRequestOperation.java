@@ -26,7 +26,6 @@ public class JoinRequestOperation extends AbstractClusterOperation implements Jo
     private JoinRequest message;
 
     public JoinRequestOperation() {
-        super();
     }
 
     public JoinRequestOperation(JoinRequest message) {

@@ -32,7 +32,8 @@ public class GroupProperties {
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
-    public static final String PROP_OPERATION_THREAD_COUNT = "hazelcast.operation.thread.count";
+    public static final String PROP_PARTITION_OPERATION_THREAD_COUNT = "hazelcast.operation.thread.count";
+    public static final String PROP_GENERIC_OPERATION_THREAD_COUNT = "hazelcast.operation.generic.thread.count";
     public static final String PROP_EVENT_THREAD_COUNT = "hazelcast.event.thread.count";
     public static final String PROP_EVENT_QUEUE_CAPACITY = "hazelcast.event.queue.capacity";
     public static final String PROP_EVENT_QUEUE_TIMEOUT_MILLIS = "hazelcast.event.queue.timeout.millis";
@@ -60,14 +61,17 @@ public class GroupProperties {
     public static final String PROP_HEARTBEAT_INTERVAL_SECONDS = "hazelcast.heartbeat.interval.seconds";
     public static final String PROP_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.max.no.heartbeat.seconds";
     public static final String PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS = "hazelcast.max.no.master.confirmation.seconds";
-    public static final String PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS = "hazelcast.master.confirmation.interval.seconds";
-    public static final String PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS = "hazelcast.member.list.publish.interval.seconds";
+    public static final String PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS
+            = "hazelcast.master.confirmation.interval.seconds";
+    public static final String PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS
+            = "hazelcast.member.list.publish.interval.seconds";
     public static final String PROP_ICMP_ENABLED = "hazelcast.icmp.enabled";
     public static final String PROP_ICMP_TIMEOUT = "hazelcast.icmp.timeout";
     public static final String PROP_ICMP_TTL = "hazelcast.icmp.ttl";
     public static final String PROP_INITIAL_MIN_CLUSTER_SIZE = "hazelcast.initial.min.cluster.size";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
-    public static final String PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS = "hazelcast.map.replica.wait.seconds.for.scheduled.tasks";
+    public static final String PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS
+            = "hazelcast.map.replica.wait.seconds.for.scheduled.tasks";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
@@ -98,7 +102,8 @@ public class GroupProperties {
     public final GroupProperty HOSTED_MANAGEMENT_ENABLED;
     public final GroupProperty HOSTED_MANAGEMENT_URL;
 
-    public final GroupProperty OPERATION_THREAD_COUNT;
+    public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;
+    public final GroupProperty GENERIC_OPERATION_THREAD_COUNT;
 
     public final GroupProperty EVENT_THREAD_COUNT;
 
@@ -136,9 +141,11 @@ public class GroupProperties {
 
     public final GroupProperty SOCKET_CLIENT_BIND;
 
-    public final GroupProperty SOCKET_RECEIVE_BUFFER_SIZE; // number of kilobytes
+    // number of kilobytes
+    public final GroupProperty SOCKET_RECEIVE_BUFFER_SIZE;
 
-    public final GroupProperty SOCKET_SEND_BUFFER_SIZE;    // number of kilobytes
+    // number of kilobytes
+    public final GroupProperty SOCKET_SEND_BUFFER_SIZE;
 
     public final GroupProperty SOCKET_LINGER_SECONDS;
 
@@ -226,14 +233,17 @@ public class GroupProperties {
         HOSTED_MANAGEMENT_ENABLED = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_ENABLED, "false");
 
         //todo: we need to pull out the version.
-        HOSTED_MANAGEMENT_URL = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_URL, "http://manage.hazelcast.com/3.2");
+        HOSTED_MANAGEMENT_URL
+                = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_URL, "http://manage.hazelcast.com/3.2");
 
-        HEALTH_MONITORING_LEVEL = new GroupProperty(config,PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
+        HEALTH_MONITORING_LEVEL
+                = new GroupProperty(config, PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
         HEALTH_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_HEALTH_MONITORING_DELAY_SECONDS, "30");
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
-        OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_OPERATION_THREAD_COUNT, "-1");
+        PARTITION_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_PARTITION_OPERATION_THREAD_COUNT, "-1");
+        GENERIC_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_GENERIC_OPERATION_THREAD_COUNT, "-1");
         EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");
         EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "1000000");
         EVENT_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EVENT_QUEUE_TIMEOUT_MILLIS, "250");
@@ -260,15 +270,18 @@ public class GroupProperties {
         MAX_JOIN_MERGE_TARGET_SECONDS = new GroupProperty(config, PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "20");
         HEARTBEAT_INTERVAL_SECONDS = new GroupProperty(config, PROP_HEARTBEAT_INTERVAL_SECONDS, "1");
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
-        MASTER_CONFIRMATION_INTERVAL_SECONDS = new GroupProperty(config, PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "30");
+        MASTER_CONFIRMATION_INTERVAL_SECONDS
+                = new GroupProperty(config, PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "30");
         MAX_NO_MASTER_CONFIRMATION_SECONDS = new GroupProperty(config, PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "300");
-        MEMBER_LIST_PUBLISH_INTERVAL_SECONDS = new GroupProperty(config, PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "300");
+        MEMBER_LIST_PUBLISH_INTERVAL_SECONDS
+                = new GroupProperty(config, PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "300");
         ICMP_ENABLED = new GroupProperty(config, PROP_ICMP_ENABLED, "false");
         ICMP_TIMEOUT = new GroupProperty(config, PROP_ICMP_TIMEOUT, "1000");
         ICMP_TTL = new GroupProperty(config, PROP_ICMP_TTL, "0");
         INITIAL_MIN_CLUSTER_SIZE = new GroupProperty(config, PROP_INITIAL_MIN_CLUSTER_SIZE, "0");
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
-        MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS = new GroupProperty(config, PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "10");
+        MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS
+                = new GroupProperty(config, PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "10");
         PARTITION_COUNT = new GroupProperty(config, PROP_PARTITION_COUNT, "271");
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");

@@ -14,6 +14,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -70,25 +71,35 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Object resp = resolveResponse(response);
+        try {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Object resp = resolveResponse(response);
 
-                    if (resp == null || !(resp instanceof Throwable)) {
-                        callback.onResponse((E) resp);
-                    } else {
-                        callback.onFailure((Throwable) resp);
+                        if (resp == null || !(resp instanceof Throwable)) {
+                            callback.onResponse((E) resp);
+                        } else {
+                            callback.onFailure((Throwable) resp);
+                        }
+                    } catch (Throwable t) {
+                        //todo: improved error message
+                        basicInvocation.logger.severe("Failed to async for " + basicInvocation, t);
                     }
-                } catch (Throwable t) {
-                    //todo: improved error message
-                    basicInvocation.logger.severe("Failed to async for " + basicInvocation, t);
                 }
-            }
-        });
+            });
+        } catch (RejectedExecutionException ignore) {
+            basicInvocation.logger.finest(ignore);
+        }
     }
 
+    /**
+     * Can be called multiple times, but only the first answer will lead to the future getting triggered. All subsequent
+     * 'set' calls are ignored.
+     *
+     * @param response
+     */
     public void set(Object response) {
         if (response == null) {
             throw new IllegalArgumentException("response can't be null");
@@ -105,7 +116,11 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
             if (this.response != null && !(this.response instanceof BasicInvocation.InternalResponse)) {
-                throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
+                //it can be that this invocation future already received an answer, e.g. when a an invocation
+                //already received a response, but before it cleans up itself, it receives a
+                //HazelcastInstanceNotActiveException.
+                basicInvocation.logger.info("The InvocationFuture.set method of " + basicInvocation + " can only be called once");
+                return;
             }
             this.response = response;
             if (response == BasicInvocation.WAIT_RESPONSE) {
@@ -116,9 +131,8 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             this.notifyAll();
         }
 
-        //we need to deregister the backup call to make sure that there is no memory leak.
         BasicOperationService operationService = (BasicOperationService) basicInvocation.nodeEngine.operationService;
-        operationService.deregisterBackupCall(basicInvocation.op.getCallId());
+        operationService.deregisterInvocation(basicInvocation.op.getCallId());
 
         while (callbackChain != null) {
             runAsynchronous(callbackChain.callback, callbackChain.executor);
@@ -213,12 +227,31 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                     if (response != null) {
                         continue;
                     }
-                    return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount)
-                            + " ms. Aborting invocation! " + toString());
+                    return newOperationTimeoutException(pollCount, pollTimeoutMs);
                 }
             }
         }
         return BasicInvocation.TIMEOUT_RESPONSE;
+    }
+
+    private Object newOperationTimeoutException(int pollCount, long pollTimeoutMs) {
+        boolean hasResponse = basicInvocation.potentialResponse == null;
+        int backupsExpected = basicInvocation.backupsExpected;
+        int backupsCompleted = basicInvocation.backupsCompleted;
+
+        if (hasResponse) {
+            return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
+                    + " Aborting invocation! " + toString()
+                    + " Not all backups have completed "
+                    + " backups-expected:" + backupsExpected
+                    + " backups-completed: " + backupsCompleted);
+        } else {
+            return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
+                    + " Aborting invocation! " + toString()
+                    + " No response has been send "
+                    + " backups-expected:" + backupsExpected
+                    + " backups-completed: " + backupsCompleted);
+        }
     }
 
     private Object resolveResponseOrThrowException(Object unresolvedResponse)
@@ -352,7 +385,6 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         sb.append('}');
         return sb.toString();
     }
-
 
     private static class ExecutionCallbackNode<E> {
         private final ExecutionCallback<E> callback;

@@ -222,11 +222,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return getScheduledExecutor(name).scheduleWithFixedDelay(command, initialDelay, period, unit);
     }
 
-    @PrivateApi
-    public Executor getCachedExecutor() {
-        return new ExecutorDelegate(cachedExecutorService);
-    }
-
     @Override
     public ScheduledExecutorService getDefaultScheduledExecutor() {
         return defaultScheduledExecutorServiceDelegate;
@@ -339,19 +334,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 return true;
             }
             return false;
-        }
-    }
-
-    private static class ExecutorDelegate implements Executor {
-        private final Executor executor;
-
-        private ExecutorDelegate(Executor executor) {
-            this.executor = executor;
-        }
-
-        @Override
-        public void execute(Runnable command) {
-            executor.execute(command);
         }
     }
 

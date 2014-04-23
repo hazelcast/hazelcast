@@ -49,7 +49,7 @@ public interface InternalPartition {
      *
      * @return the owner.
      */
-    Address getOwner();
+    Address getOwnerOrNull();
 
     /**
      * Checks if there currently is a migration going on in this partition.

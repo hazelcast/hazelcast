@@ -17,6 +17,7 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,14 +31,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-/**
- * @author ali 12/20/12
- */
-
 public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Collection<Data> dataList;
-    private  Map<Long, Data> dataMap;
+    private Map<Long, Data> dataMap;
 
     public AddAllOperation() {
     }
@@ -47,6 +44,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
         this.dataList = dataList;
     }
 
+    @Override
     public void run() {
         QueueContainer container = getOrCreateContainer();
         if (container.hasEnoughCapacity()) {
@@ -58,8 +56,10 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
 
     }
 
+    @Override
     public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+        LocalQueueStatsImpl localQueueStatsImpl = getQueueService().getLocalQueueStatsImpl(name);
+        localQueueStatsImpl.incrementOtherOperations();
         if (Boolean.TRUE.equals(response)) {
             for (Data data : dataList) {
                 publishEvent(ItemEventType.ADDED, data);
@@ -67,14 +67,17 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new AddAllBackupOperation(name, dataMap);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(dataList.size());
@@ -83,6 +86,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
@@ -92,14 +96,17 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
         }
     }
 
+    @Override
     public boolean shouldNotify() {
         return Boolean.TRUE.equals(response);
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getPollWaitNotifyKey();
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.ADD_ALL;
     }

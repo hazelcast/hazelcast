@@ -41,7 +41,8 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 @SuppressWarnings({"SynchronizedMethod", "CallToNativeMethodWhileLocked"})
 public final class Base64 {
 
-    private Base64(){}
+    private Base64() {
+    }
 
     static private final int BASELENGTH = 255;
     static private final int LOOKUPLENGTH = 64;
@@ -95,7 +96,7 @@ public final class Base64 {
     }
 
     public static boolean isBase64(String isValidString) {
-        if (isValidString == null){
+        if (isValidString == null) {
             return false;
         }
         return isArrayByteBase64(stringToBytes(isValidString));

@@ -31,14 +31,6 @@ public final class ResponseHandlerFactory {
 
     private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
 
-    public static void setLocalResponseHandler(Operation op, Callback<Object> callback) {
-        op.setResponseHandler(createLocalResponseHandler(op, callback));
-    }
-
-    public static ResponseHandler createLocalResponseHandler(Operation op, Callback<Object> callback) {
-        return new LocalInvocationResponseHandler(callback, op.getCallId());
-    }
-
     public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
         op.setResponseHandler(createRemoteResponseHandler(nodeEngine, op));
     }
@@ -129,31 +121,6 @@ public final class ResponseHandlerFactory {
         }
     }
 
-    private static class LocalInvocationResponseHandler implements ResponseHandler {
-
-        private final Callback<Object> callback;
-        private final long callId;
-        private final AtomicBoolean sent = new AtomicBoolean(false);
-
-        private LocalInvocationResponseHandler(Callback<Object> callback, long callId) {
-            this.callback = callback;
-            this.callId = callId;
-        }
-
-        @Override
-        public void sendResponse(Object obj) {
-            if (!sent.compareAndSet(false, true)) {
-                throw new ResponseAlreadySentException("NormalResponse already sent for callback: " + callback
-                        + ", current-response: : " + obj);
-            }
-            callback.notify(obj);
-        }
-
-        @Override
-        public boolean isLocal() {
-            return true;
-        }
-    }
 
     private ResponseHandlerFactory() {
     }

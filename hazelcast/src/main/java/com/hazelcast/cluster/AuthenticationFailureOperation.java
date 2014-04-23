@@ -20,9 +20,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-/**
- * @author mdogan 9/14/12
- */
 public class AuthenticationFailureOperation extends AbstractClusterOperation
         implements JoinOperation {
 

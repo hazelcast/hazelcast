@@ -24,12 +24,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author ali 12/20/12
- */
 public class CompareAndRemoveBackupOperation extends QueueOperation implements BackupOperation {
 
-    Set<Long> keySet;
+    private Set<Long> keySet;
 
     public CompareAndRemoveBackupOperation() {
     }
@@ -39,11 +36,13 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
         this.keySet = keySet;
     }
 
+    @Override
     public void run() throws Exception {
         getOrCreateContainer().compareAndRemoveBackup(keySet);
         response = true;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(keySet.size());
@@ -52,6 +51,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
@@ -61,6 +61,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
         }
     }
 
+    @Override
     public int getId() {
         return QueueDataSerializerHook.COMPARE_AND_REMOVE_BACKUP;
     }

@@ -34,9 +34,6 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 6/5/13
- */
 public class TxnOfferRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     String name;
@@ -52,6 +49,7 @@ public class TxnOfferRequest extends BaseTransactionRequest implements Portable,
         this.data = data;
     }
 
+    @Override
     public Object innerCall() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final TransactionContext context = endpoint.getTransactionContext(txnId);
@@ -59,25 +57,30 @@ public class TxnOfferRequest extends BaseTransactionRequest implements Portable,
         return queue.offer(data, timeout, TimeUnit.MILLISECONDS);
     }
 
+    @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return QueuePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return QueuePortableHook.TXN_OFFER;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeUTF("n",name);
-        writer.writeLong("t",timeout);
+        writer.writeUTF("n", name);
+        writer.writeLong("t", timeout);
         data.writeData(writer.getRawDataOutput());
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         name = reader.readUTF("n");
@@ -86,6 +89,7 @@ public class TxnOfferRequest extends BaseTransactionRequest implements Portable,
         data.readData(reader.getRawDataInput());
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_ADD);
     }

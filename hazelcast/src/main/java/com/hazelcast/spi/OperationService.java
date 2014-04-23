@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * The OperationService is responsible for executing operations.
  * <p/>
- * A single operation can be executed locally using {@link #runOperation(Operation)} and {@link #executeOperation(Operation)}.
+ * A single operation can be executed locally using {@link #runOperationOnCallingThread(Operation)} and {@link #executeOperation(Operation)}.
  * Or it can executed remotely using the one of the send methods.
  * <p/>
  * It also is possible to execute multiple operation one multiple partitions using one of the invoke methods.
@@ -34,18 +34,28 @@ import java.util.Map;
  */
 public interface OperationService {
 
+    //todo: remove
     int getResponseQueueSize();
 
+    //todo: remove
     int getOperationExecutorQueueSize();
 
+    //todo: remove
     int getPriorityOperationExecutorQueueSize();
 
+    //todo: remove
     int getRunningOperationsCount();
 
+    //todo: remove
     int getRemoteOperationsCount();
 
-    int getOperationThreadCount();
+    //todo: remove
+    int getPartitionOperationThreadCount();
 
+    //todo: remove
+    int getGenericOperationThreadCount();
+
+    //todo: remove
     long getExecutedOperationCount();
 
     /**
@@ -53,7 +63,7 @@ public interface OperationService {
      *
      * @param op the operation to execute.
      */
-    void runOperation(Operation op);
+    void runOperationOnCallingThread(Operation op);
 
     /**
      * Executes operation in operation executor pool.

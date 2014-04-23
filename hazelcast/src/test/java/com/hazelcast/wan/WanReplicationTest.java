@@ -15,7 +15,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,7 +37,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE= 3 * 60;
 
-    private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
 
     private HazelcastInstance[] clusterA = new HazelcastInstance[2];
     private HazelcastInstance[] clusterB = new HazelcastInstance[2];
@@ -73,7 +71,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     private void initCluster(HazelcastInstance[] cluster, Config config){
         for(int i=0; i<cluster.length; i++){
-            cluster[i]= factory.newHazelcastInstance(config);
+            cluster[i]= HazelcastInstanceFactory.newHazelcastInstance(config);
         }
     }
 
@@ -226,7 +224,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     // V topo config 1 passive replicar, 2 producers
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_PassThroughMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -259,7 +256,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void Vtopo_TTL_Replication_Issue254(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -313,7 +309,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_PutIfAbsentMapMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PutIfAbsentMapMergePolicy.class.getName());
@@ -340,7 +335,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_LatestUpdateMapMergePolicy (){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", LatestUpdateMapMergePolicy.class.getName());
@@ -368,7 +362,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     //"Issue #1373  this test passes when run in isolation")//TODO
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_HigherHitsMapMergePolicy(){
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", HigherHitsMapMergePolicy.class.getName());
@@ -393,7 +386,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     //("Issue #1368 multi replicar topology cluster A replicates to B and C")
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_2passiveReplicar_1producer_Test(){
 
         String replicaName="multiReplica";
@@ -419,7 +411,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void linkTopo_ActiveActiveReplication_Test(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -448,7 +439,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void linkTopo_ActiveActiveReplication_Threading_Test() throws InterruptedException, BrokenBarrierException {
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -499,7 +489,6 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void linkTopo_ActiveActiveReplication_2clusters_Test_HigherHitsMapMergePolicy(){
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", HigherHitsMapMergePolicy.class.getName());

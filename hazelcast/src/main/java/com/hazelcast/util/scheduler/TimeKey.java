@@ -17,9 +17,8 @@
 package com.hazelcast.util.scheduler;
 
 /**
- * @author enesakar 9/4/13
- *
- * This object is first needed for having different key objects that are created for the same key updated in different times so should be persisted consequently.
+ * This object is first needed for having different key objects that are created for the same key updated in
+ * different times so should be persisted consequently.
  * So using ScheduleType.FOR_EACH, all the updates will be scheduled seperately.
  */
 final class TimeKey {
