@@ -16,13 +16,14 @@
 
 package com.hazelcast.jca;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.transaction.TransactionContext;
+import java.util.logging.Level;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
-import java.util.logging.Level;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.transaction.TransactionContext;
 
 /**
  * XA Resource implementation for Hazelcast.

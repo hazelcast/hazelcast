@@ -18,6 +18,7 @@ package com.hazelcast.jca;
 
 import java.io.FileNotFoundException;
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
@@ -26,8 +27,6 @@ import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.transaction.xa.XAResource;
-import java.util.concurrent.atomic.AtomicInteger;
-
 
 import com.hazelcast.config.ConfigBuilder;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -126,14 +125,14 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 	 * Called by the container
 	 * @param configLocation Hazelcast's configuration location
 	 */
-	public void setConfigLocation(String configLocation) {
+	public void setConfigurationLocation(String configLocation) {
 		this.configurationLocation = configLocation;
 	}
 
 	/**
 	 * @return The configured hazelcast configuration location via RAR deployment descriptor
 	 */
-	public String getConfigLocation() {
+	public String getConfigurationLocation() {
 		return configurationLocation;
 	}
 	

@@ -16,15 +16,16 @@
 
 package com.hazelcast.jca;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionOptions;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionEvent;
 import javax.transaction.xa.XAException;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionOptions;
 
 public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransaction {
 	/** List of former transaction used during transaction restore */

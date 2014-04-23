@@ -16,30 +16,26 @@
 
 package com.hazelcast.jca;
 
-import com.hazelcast.core.TransactionalMap;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.arquillian.junit.InSequence;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import javax.annotation.Resource;
-import javax.inject.Inject;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
-import javax.transaction.UserTransaction;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import javax.annotation.Resource;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+import javax.transaction.UserTransaction;
+
+import org.jboss.arquillian.junit.InSequence;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import com.hazelcast.core.TransactionalMap;
 
 /**
 * Arquillian tests for xa transactions

@@ -16,6 +16,10 @@
 
 package com.hazelcast.jca;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 import javax.resource.cci.ConnectionMetaData;
@@ -24,12 +28,22 @@ import javax.resource.cci.ResultSetInfo;
 import javax.resource.spi.ConnectionEvent;
 import javax.security.auth.Subject;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.TransactionalList;
+import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.transaction.TransactionContext;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 public class HazelcastConnectionImpl implements HazelcastConnection {
 	/** Reference to this creator and access to container infrastructure */
@@ -48,7 +62,7 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     /* (non-Javadoc)
          * @see javax.resource.cci.Connection#close()
          */
-    public void close() throws ResourceException {
+    public void close() {
     	managedConnection.log(Level.FINEST, "close");
     	//important: inform the container!
         managedConnection.fireConnectionEvent(ConnectionEvent.CONNECTION_CLOSED, this);

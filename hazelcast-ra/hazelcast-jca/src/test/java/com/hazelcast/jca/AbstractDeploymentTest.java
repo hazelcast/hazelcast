@@ -16,16 +16,16 @@
 
 package com.hazelcast.jca;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive;
+import static org.junit.Assert.assertNotNull;
 
-import javax.annotation.Resource;
 import java.util.UUID;
 
-import static org.junit.Assert.assertNotNull;
+import javax.annotation.Resource;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive;
 
 /**
 * base class for jca tests

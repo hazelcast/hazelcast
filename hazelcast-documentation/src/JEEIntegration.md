@@ -76,9 +76,94 @@ Notice that, we did not have to put `sun-ra.xml` into the RAR file since it come
 
 If Hazelcast resource is used from EJBs, you should configure `ejb-jar.xml` for resource reference and JNDI definitions, just like we did for `web.xml`.
 
+#### Sample JBoss 7 Enterprise Application Configuration
+- Place the `hazelcast-jca-rar-`*version*`.rar` into `JBOSS_HOME/standalone/deployments/` directory.
+- Add the resource adapter to `JBOSS_HOME/standalone/configuration/standalone.xml (Or live with the defaults from within the RAR archive)
+```xml
+...
+<subsystem xmlns="urn:jboss:domain:resource-adapters:1.0">
+    <resource-adapters>
+        <resource-adapter>
+            <archive>hazelcast-jca-rar-*version*.rar</archive>
+            <config-property name="configurationLocation">hazelcast.xml</config-property>
+            <transaction-support>XATransaction</transaction-support>
+            <connection-definitions>
+                <connection-definition class-name="com.hazelcast.jca.ManagedConnectionFactoryImpl"
+                    jndi-name="java:/HazelcastCF" pool-name="HazelcastConnectionFactory">
+                    <config-property name="connectionTracingEvents"></config-property>
+                    <config-property name="connectionTracingDetail">false</config-property>
+                    <xa-pool>
+                        <min-pool-size>10</min-pool-size>
+                        <max-pool-size>100</max-pool-size>
+                    </xa-pool>
+                    <security>
+                        <application/>
+                    </security>
+                </connection-definition>
+            </connection-definitions>
+        </resource-adapter>
+    </resource-adapters>
+</subsystem>
+...
+```
+- Add the following lines to the `EAR/META-INF/jboss-deployment-structure.xml` file.
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.1">
+    <!-- JBoss 7 specific file to add dependency on hazelcast-ra.rar so that 
+        we can access the RA classes. Note: This will save us efforts to deploy Resource 
+        Adapter as <global-module> -->
+    <sub-deployment name="ejb-file.jar">
+        <dependencies>
+            <module name="deployment.hazelcast-jca-rar-*version*.rar" />
+        </dependencies>
+    </sub-deployment>
+</jboss-deployment-structure> 
+```
+- Use the connection factory to access Hazelcast from within the EJB (contained in ejb-file.jar within the EAR):
+```java
+@Stateless
+public class MyEjb {
+	private static Logger logger = Logger.getLogger(CacheRefresher.class.getName());
+	
+	@Resource(mappedName="java:/HazelcastCF") 
+	protected com.hazelcast.jca.HazelcastConnectionFactory hzFactory;
+	
+    public Object getFromCache() {
+        // Open conneciton to access the methods as via HazelcastInstance
+    	try (HazelcastConnection hazelcast = hzFactory.getConnection()) {
+		    // Retrieve handle for cached set
+    		ISet<Object> rs = hazelcast.getSet("myset");
+			// Retrieve first object from cached set...
+        	Object o = rs.iterator().next();
+			// ... and log it
+	    	logger.log(Level.FINE, "Retrieve first from set {0}", o);
+			
+	    	return o;
+    	} catch (ResourceException e) {
+			throw new RuntimeException(e.getMessage(), e);
+		}
+		// Connection is closed via Autoclosable
+    }
+    
+	// Modifying operation is done transactional
+	@Transactional
+    public void putIntoCache(Object o) {
+	    // Same pattern as with the retrieve: Connection is handled by Autoclosable
+    	try (HazelcastConnection hazelcast = hzFactory.getConnection()) {
+	    	TransactionalSet<Object> rs = hazelcast.getTransactionalSet("myset");
+			rs.add(o);
+	    	logger.log(Level.FINE, "Put {0} into cache", o);
+	    	return s;
+    	} catch (ResourceException e) {
+    		throw new RuntimeException(e.getMessage(), e);
+		}
+    }
+}
 
+```
 
-### Sample JBoss Web Application Configuration
+#### Sample JBoss 5 Web Application Configuration
 
 - Place the `hazelcast-`*version*`.jar` into `JBOSS_HOME/server/deploy/default/lib` directory.
 - Place the `hazelcast-ra-`*version*`.rar` into `JBOSS_HOME/server/deploy/default/deploy` directory
