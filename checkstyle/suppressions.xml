@@ -10,18 +10,18 @@
     <suppress checks="StrictDuplicateCode" files=".java" lines="1-15"/>
 
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
-    <suppress checks="" files="[\\/]ascii[\\/]"/>
-    <suppress checks="" files="[\\/]config[\\/]"/>
-    <suppress checks="" files="[\\/]core[\\/]"/>
-    <suppress checks="" files="[\\/]jmx[\\/]"/>
-    <suppress checks="" files="[\\/]management[\\/]"/>
-    <suppress checks="" files="[\\/]map[\\/]"/>
-    <suppress checks="" files="[\\/]nio[\\/]"/>
+    <suppress checks="" files="com.hazelcast.ascii[\\/]"/>
+    <suppress checks="" files="com.hazelcast.config[\\/]"/>
+    <suppress checks="" files="com.hazelcast.core[\\/]"/>
+    <suppress checks="" files="com.hazelcast.jmx[\\/]"/>
+    <suppress checks="" files="com.hazelcast.management[\\/]"/>
+    <suppress checks="" files="com.hazelcast.map[\\/]"/>
+    <suppress checks="" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="" files="com.hazelcast.query[\\/]"/>
-    <suppress checks="" files="[\\/]queue[\\/]"/>
-    <suppress checks="" files="[\\/]spi.impl[\\/]"/>
-    <suppress checks="" files="[\\/]util[\\/]"/>
-    <suppress checks="" files="[\\/]wan[\\/]"/>
+    <suppress checks="" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="" files="com.hazelcast.spi.impl[\\/]"/>
+    <suppress checks="" files="com.hazelcast.util[\\/]"/>
+    <suppress checks="" files="com.hazelcast.wan[\\/]"/>
 
     <suppress checks="" files="com.hazelcast.client[\\/]"/>
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
