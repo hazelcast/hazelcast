@@ -21,12 +21,6 @@ import com.eclipsesource.json.JsonValue;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,6 +39,7 @@ public class GetMapEntryRequest implements ConsoleRequest {
         this.mapName = mapName;
         this.key = key;
     }
+
     @Override
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MAP_ENTRY;

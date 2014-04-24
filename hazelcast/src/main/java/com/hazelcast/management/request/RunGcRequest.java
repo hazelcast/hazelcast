@@ -19,11 +19,6 @@ package com.hazelcast.management.request;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 //We want to be able to force a gc.
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_GC")
@@ -38,7 +33,7 @@ public class RunGcRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in)  {
+    public Object readResponse(JsonObject in) {
         return "Successfully garbage collected.";
     }
 

@@ -35,7 +35,6 @@ import com.hazelcast.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.management.request.ClusterPropsRequest;
 import com.hazelcast.management.request.ConsoleCommandRequest;
 import com.hazelcast.management.request.ConsoleRequest;
-import com.hazelcast.management.request.EvictLocalMapRequest;
 import com.hazelcast.management.request.ExecuteScriptRequest;
 import com.hazelcast.management.request.GetLogsRequest;
 import com.hazelcast.management.request.GetMapEntryRequest;
@@ -44,7 +43,6 @@ import com.hazelcast.management.request.GetSystemWarningsRequest;
 import com.hazelcast.management.request.MapConfigRequest;
 import com.hazelcast.management.request.MemberConfigRequest;
 import com.hazelcast.management.request.RunGcRequest;
-import com.hazelcast.management.request.RuntimeStateRequest;
 import com.hazelcast.management.request.ShutdownMemberRequest;
 import com.hazelcast.management.request.ThreadDumpRequest;
 import com.hazelcast.management.request.VersionMismatchLogRequest;
@@ -377,10 +375,8 @@ public class ManagementCenterService {
 
         TaskPollThread() {
             super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.Task.Poller"));
-            register(new RuntimeStateRequest());
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
-            register(new EvictLocalMapRequest());
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
             register(new MemberConfigRequest());

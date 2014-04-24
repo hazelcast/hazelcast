@@ -16,6 +16,7 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.instance.Node;
@@ -23,12 +24,6 @@ import com.hazelcast.logging.SystemLogRecord;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -44,35 +39,37 @@ public class GetLogsRequest implements ConsoleRequest {
 
     @Override
     public Object readResponse(JsonObject in) {
-//        List<SystemLogRecord> list = new LinkedList<SystemLogRecord>();
-//        String node = in.readUTF();
-//        int size = in.readInt();
-//        for (int i = 0; i < size; i++) {
-//            SystemLogRecord systemLogRecord = new SystemLogRecord();
-//            systemLogRecord.readData(in);
-//            systemLogRecord.setNode(node);
-//            list.add(systemLogRecord);
-//        }
-//        return list;
-        return null;
+        List<SystemLogRecord> list = new LinkedList<SystemLogRecord>();
+        String node = in.get("node").asString();
+        final JsonArray logs = in.get("logs").asArray();
+        for (JsonValue log : logs) {
+            SystemLogRecord systemLogRecord = new SystemLogRecord();
+            systemLogRecord.fromJson(log.asObject());
+            systemLogRecord.setNode(node);
+            list.add(systemLogRecord);
+        }
+        return list;
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject os) throws Exception {
-//        Node node = mcs.getHazelcastInstance().node;
-//        SystemLogService systemLogService = node.getSystemLogService();
-//        List<SystemLogRecord> logBundle = systemLogService.getLogBundle();
-//        Address address = node.getThisAddress();
-//        dos.writeUTF(address.getHost() + ":" + address.getPort());
-//        dos.writeInt(logBundle.size());
-//        for (SystemLogRecord systemLogRecord : logBundle) {
-//            systemLogRecord.writeData(dos);
-//        }
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
+        final JsonObject result = new JsonObject();
+        Node node = mcs.getHazelcastInstance().node;
+        SystemLogService systemLogService = node.getSystemLogService();
+        List<SystemLogRecord> logBundle = systemLogService.getLogBundle();
+        Address address = node.getThisAddress();
+        result.add("node", address.getHost() + ":" + address.getPort());
+        JsonArray logs = new JsonArray();
+        for (SystemLogRecord systemLogRecord : logBundle) {
+            logs.add(systemLogRecord.toJson());
+        }
+        result.add("logs", logs);
+        root.add("result", result);
     }
 
     @Override
     public JsonValue toJson() {
-        return null;
+        return new JsonObject();
     }
 
     @Override

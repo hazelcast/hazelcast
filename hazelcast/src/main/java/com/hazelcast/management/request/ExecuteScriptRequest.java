@@ -23,17 +23,13 @@ import com.hazelcast.core.Member;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.AddressUtil;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 public class ExecuteScriptRequest implements ConsoleRequest {

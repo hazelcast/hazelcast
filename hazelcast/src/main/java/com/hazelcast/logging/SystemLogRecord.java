@@ -16,13 +16,16 @@
 
 package com.hazelcast.logging;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSerializable {
+public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSerializable, JsonSerializable{
 
     private long date;
     private String node;
@@ -116,5 +119,21 @@ public class SystemLogRecord implements Comparable<SystemLogRecord>, DataSeriali
                 + ", message='" + message + '\''
                 + ", type='" + type + '\''
                 + '}';
+    }
+
+    @Override
+    public JsonValue toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("date", date);
+        root.add("message", message);
+        root.add("type", type);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+        date = json.get("date").asLong();
+        message = json.get("message").asString();
+        type = json.get("type").asString();
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.logging;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -39,9 +40,13 @@ public class SystemLogService {
     }
 
     public List<SystemLogRecord> getSystemWarnings() {
-        ArrayList<SystemLogRecord> systemLogList = new ArrayList<SystemLogRecord>();
+        ArrayList<SystemLog> systemLogList = new ArrayList<SystemLog>();
         ((LinkedBlockingQueue) warningLevelLogs).drainTo(systemLogList);
-        return systemLogList;
+        ArrayList<SystemLogRecord> records = new ArrayList<SystemLogRecord>();
+        for (SystemLog log : systemLogList) {
+            records.add(new SystemLogRecord(log.getDate(), log.toString(), log.getType().toString()));
+        }
+        return records;
     }
 
     public List<SystemLogRecord> getLogBundle() {

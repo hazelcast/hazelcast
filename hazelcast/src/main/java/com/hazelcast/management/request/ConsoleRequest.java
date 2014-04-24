@@ -29,29 +29,4 @@ public interface ConsoleRequest extends JsonSerializable {
 
     void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception;
 
-//    public void setFieldsFromJson(JsonObject fields)
-//    {
-//        Class<?> c = this.getClass();
-//        try {
-//            final Iterator<JsonObject.Member> iterator = fields.iterator();
-//            while (iterator.hasNext()) {
-//                final JsonObject.Member element = iterator.next();
-//                final Field field = c.getDeclaredField(element.getName());
-//                field.setAccessible(true);
-//                final JsonObject value = element.getValue().asObject();
-//                final String type = value.get("type").asString();
-//                Method method = value.asObject().getClass().getMethod("as" + type);
-//                field.set(this, method.invoke(value.get("value")));
-//            }
-//        } catch (NoSuchFieldException e) {
-//            e.printStackTrace();
-//        } catch (IllegalAccessException e) {
-//            e.printStackTrace();
-//        } catch (NoSuchMethodException e) {
-//            e.printStackTrace();
-//        } catch (InvocationTargetException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
 }

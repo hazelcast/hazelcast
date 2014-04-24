@@ -50,7 +50,7 @@ public class VersionMismatchLogRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService managementCenterService, JsonObject dos)  {
+    public void writeResponse(ManagementCenterService managementCenterService, JsonObject dos) {
 //        managementCenterService.signalVersionMismatch();
 //        Node node = managementCenterService.getHazelcastInstance().node;
 //        ILogger logger = node.getLogger(VersionMismatchLogRequest.class);

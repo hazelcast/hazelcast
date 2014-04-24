@@ -20,9 +20,6 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ThreadDumpOperation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.util.AddressUtil;
-import java.net.UnknownHostException;
 
 public class ThreadDumpRequest implements ConsoleRequest {
 
