@@ -16,17 +16,13 @@
 
 package com.hazelcast.osgi;
 
-
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.management.ScriptEngineManagerContext;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
 import java.lang.reflect.Method;
 
 /**
@@ -34,7 +30,8 @@ import java.lang.reflect.Method;
  * <p/>
  * initializes script Engines
  */
-public class Activator implements BundleActivator {
+public class Activator
+        implements BundleActivator {
 
     private static final String HAZELCAST_OSGI_START = "hazelcast.osgi.start";
 
@@ -42,7 +39,8 @@ public class Activator implements BundleActivator {
 
     private HazelcastInstance hazelcastInstance;
 
-    public void start(BundleContext context) throws Exception {
+    public void start(BundleContext context)
+            throws Exception {
         // Try to start javax.scripting - JSR 223
         activateJavaxScripting(context);
 
@@ -51,13 +49,15 @@ public class Activator implements BundleActivator {
         }
     }
 
-    public void stop(BundleContext context) throws Exception {
+    public void stop(BundleContext context)
+            throws Exception {
         if (System.getProperty("hazelcast.osgi.start") != null) {
             hazelcastInstance.shutdown();
         }
     }
 
-    private void activateJavaxScripting(BundleContext context) throws Exception {
+    private void activateJavaxScripting(BundleContext context)
+            throws Exception {
         if (!isJavaxScriptingAvailable()) {
             LOGGER.warning("javax.scripting is not available, scripts from Management Center cannot be executed!");
         }
