@@ -18,6 +18,7 @@ package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation;
@@ -73,14 +74,24 @@ public final class MapReduceUtil {
     }
 
     public static void notifyRemoteException(JobSupervisor supervisor, Throwable throwable) {
-        String name = supervisor.getConfiguration().getName();
-        String jobId = supervisor.getConfiguration().getJobId();
-        NotifyRemoteExceptionOperation operation = new NotifyRemoteExceptionOperation(name, jobId, throwable);
         MapReduceService mapReduceService = supervisor.getMapReduceService();
         NodeEngine nodeEngine = mapReduceService.getNodeEngine();
-        OperationService os = nodeEngine.getOperationService();
-        Address jobOwner = supervisor.getJobOwner();
-        os.send(operation, jobOwner);
+        try {
+            Address jobOwner = supervisor.getJobOwner();
+            if (supervisor.isOwnerNode()) {
+                supervisor.notifyRemoteException(jobOwner, throwable);
+            } else {
+                String name = supervisor.getConfiguration().getName();
+                String jobId = supervisor.getConfiguration().getJobId();
+                NotifyRemoteExceptionOperation operation = new NotifyRemoteExceptionOperation(name, jobId, throwable);
+
+                OperationService os = nodeEngine.getOperationService();
+                os.send(operation, jobOwner);
+            }
+        } catch (Exception e) {
+            ILogger logger = nodeEngine.getLogger(MapReduceUtil.class);
+            logger.warning("Could not notify remote map-reduce owner", e);
+        }
     }
 
     public static JobPartitionState.State stateChange(Address owner, int partitionId, JobPartitionState.State currentState,
