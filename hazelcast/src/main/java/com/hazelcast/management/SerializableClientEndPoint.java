@@ -1,5 +1,7 @@
 package com.hazelcast.management;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.core.Client;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -9,7 +11,7 @@ import java.io.IOException;
 /**
  * A Serializable DTO for {@link com.hazelcast.client.ClientEndpoint}.
  */
-public class SerializableClientEndPoint implements DataSerializable {
+public class SerializableClientEndPoint implements DataSerializable, JsonSerializable {
 
     String uuid;
     String address;
@@ -60,5 +62,19 @@ public class SerializableClientEndPoint implements DataSerializable {
         uuid = in.readUTF();
         address = in.readUTF();
         clientType = in.readUTF();
+    }
+
+    @Override
+    public JsonValue toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("uuid", uuid);
+        root.add("address", address);
+        root.add("clientType", clientType);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+
     }
 }

@@ -64,8 +64,8 @@ public class TimedMemberStateFactory {
         GroupConfig groupConfig = instance.getConfig().getGroupConfig();
         TimedMemberState timedMemberState = new TimedMemberState();
         timedMemberState.setMaster(instance.node.isMaster());
+        timedMemberState.setMemberList(new ArrayList<String>());
         if (timedMemberState.getMaster()) {
-            timedMemberState.setMemberList(new ArrayList<String>());
             Set<Member> memberSet = instance.getCluster().getMembers();
             for (Member member : memberSet) {
                 MemberImpl memberImpl = (MemberImpl) member;
@@ -81,12 +81,12 @@ public class TimedMemberStateFactory {
 
     private void createMemberState(MemberStateImpl memberState) {
         final Node node = instance.node;
-        memberState.setAddress(node.getThisAddress());
         final HashSet<SerializableClientEndPoint> serializableClientEndPoints = new HashSet<SerializableClientEndPoint>();
         for (Client client : instance.node.clientEngine.getClients()) {
             serializableClientEndPoints.add(new SerializableClientEndPoint(client));
         }
         memberState.setClients(serializableClientEndPoints);
+        memberState.setAddress(node.getThisAddress().getHost() + ":" + node.getThisAddress().getPort());
         createJMXBeans(memberState);
         PartitionService partitionService = instance.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();

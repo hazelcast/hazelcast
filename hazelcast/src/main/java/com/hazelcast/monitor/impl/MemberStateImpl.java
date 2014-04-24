@@ -17,16 +17,22 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.management.SerializableClientEndPoint;
+<<<<<<< HEAD
 import com.hazelcast.management.SerializableMXBeans;
+=======
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
+>>>>>>> management center json communication initial commit
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.MemberState;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,6 +45,7 @@ public class MemberStateImpl implements MemberState {
 
     public static final int DEFAULT_PARTITION_COUNT = 271;
 
+<<<<<<< HEAD
     private Address address = new Address();
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
     private Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
@@ -49,10 +56,75 @@ public class MemberStateImpl implements MemberState {
     private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
     private SerializableMXBeans beans = new SerializableMXBeans();
+=======
+    String address;
+    Map<String, Long> runtimeProps = new HashMap<String, Long>();
+    Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
+    Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
+    Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
+    Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
+    Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
+    List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
+    Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
+>>>>>>> management center json communication initial commit
+
+    public MemberStateImpl() {
+    }
 
     @Override
+    public JsonValue toJson() {
+        JsonObject root = new JsonObject();
+        root.add("address", address);
+        JsonObject mapStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
+            mapStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("mapStats", mapStatsObject);
+        JsonObject multimapStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalMultiMapStatsImpl> entry : multiMapStats.entrySet()) {
+            multimapStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("multiMapStats", multimapStatsObject);
+        JsonObject queueStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalQueueStatsImpl> entry : queueStats.entrySet()) {
+            queueStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("queueStats", queueStatsObject);
+        JsonObject topicStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
+            topicStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("topicStats", topicStatsObject);
+        JsonObject executorStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalExecutorStatsImpl> entry : executorStats.entrySet()) {
+            executorStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("executorStats", executorStatsObject);
+        JsonObject runtimePropsObject = new JsonObject();
+        for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
+            runtimePropsObject.add(entry.getKey(), entry.getValue());
+        }
+        root.add("runtimeProps", runtimePropsObject);
+        JsonArray partitionsArray = new JsonArray();
+        for (Integer lsPartition : partitions) {
+            partitionsArray.add(lsPartition);
+        }
+        root.add("partitions", partitionsArray);
+        JsonArray clientsArray = new JsonArray();
+        for (SerializableClientEndPoint client : clients) {
+            clientsArray.add(client.toJson());
+        }
+        root.add("clients", clientsArray);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
-        address.writeData(out);
+        out.writeUTF(address);
         out.writeInt(mapStats.size());
         for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -95,41 +167,42 @@ public class MemberStateImpl implements MemberState {
         beans.writeData(out);
     }
 
-    @Override
     public void readData(ObjectDataInput in) throws IOException {
-        address.readData(in);
+        address = in.readUTF();
+        DataSerializable impl;
+        String name;
         for (int i = in.readInt(); i > 0; i--) {
-            String name = in.readUTF();
-            LocalMapStatsImpl impl = new LocalMapStatsImpl();
+            name = in.readUTF();
+            impl = new LocalMapStatsImpl();
             impl.readData(in);
-            mapStats.put(name, impl);
+            mapStats.put(name, (LocalMapStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            String name = in.readUTF();
-            LocalMultiMapStatsImpl impl = new LocalMultiMapStatsImpl();
+            name = in.readUTF();
+            impl = new LocalMultiMapStatsImpl();
             impl.readData(in);
-            multiMapStats.put(name, impl);
+            multiMapStats.put(name, (LocalMultiMapStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            String name = in.readUTF();
-            LocalQueueStatsImpl impl = new LocalQueueStatsImpl();
+            name = in.readUTF();
+            impl = new LocalQueueStatsImpl();
             impl.readData(in);
-            queueStats.put(name, impl);
+            queueStats.put(name, (LocalQueueStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            String name = in.readUTF();
-            LocalTopicStatsImpl impl = new LocalTopicStatsImpl();
+            name = in.readUTF();
+            impl = new LocalTopicStatsImpl();
             impl.readData(in);
-            topicStats.put(name, impl);
+            topicStats.put(name, (LocalTopicStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            String name = in.readUTF();
-            LocalExecutorStatsImpl impl = new LocalExecutorStatsImpl();
+            name = in.readUTF();
+            impl = new LocalExecutorStatsImpl();
             impl.readData(in);
-            executorStats.put(name, impl);
+            executorStats.put(name, (LocalExecutorStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
-            String name = in.readUTF();
+            name = in.readUTF();
             runtimeProps.put(name, in.readLong());
         }
         for (int i = in.readInt(); i > 0; i--) {
@@ -142,6 +215,7 @@ public class MemberStateImpl implements MemberState {
         }
         beans.readData(in);
     }
+
 
     public void clearPartitions() {
         partitions.clear();
@@ -193,11 +267,11 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
-    public Address getAddress() {
+    public String getAddress() {
         return address;
     }
 
-    public void setAddress(Address address) {
+    public void setAddress(String address) {
         this.address = address;
     }
 
@@ -288,6 +362,7 @@ public class MemberStateImpl implements MemberState {
 
         return true;
     }
+
 
     @Override
     public String toString() {

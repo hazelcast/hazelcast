@@ -16,15 +16,10 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ConsoleCommandHandler;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
-
-import static com.hazelcast.nio.IOUtil.readLongString;
-import static com.hazelcast.nio.IOUtil.writeLongString;
 
 public class ConsoleCommandRequest implements ConsoleRequest {
 
@@ -43,28 +38,32 @@ public class ConsoleCommandRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         ConsoleCommandHandler handler = mcs.getCommandHandler();
+        JsonObject result = new JsonObject();
         try {
             final String output = handler.handleCommand(command);
-            writeLongString(dos, output);
+            result.add("output", output);
         } catch (Throwable e) {
-            writeLongString(dos, "Error: " + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
+            result.add("output", "Error: " + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
         }
+        root.add("result", result);
     }
 
     @Override
-    public Object readResponse(ObjectDataInput in) throws IOException {
-        return readLongString(in);
+    public Object readResponse(JsonObject json) {
+        return json.get("output").asString();
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(command);
+    public JsonValue toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("command", command);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        command = in.readUTF();
+    public void fromJson(JsonObject json) {
+        command = json.get("command").asString();
     }
 }

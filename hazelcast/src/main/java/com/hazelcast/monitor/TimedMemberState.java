@@ -16,21 +16,23 @@
 
 package com.hazelcast.monitor;
 
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class TimedMemberState implements DataSerializable, Cloneable {
+public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     long time;
-    MemberState memberState;
+    MemberStateImpl memberState;
     Set<String> instanceNames;
     List<String> memberList;
     Boolean master;
@@ -48,7 +50,31 @@ public final class TimedMemberState implements DataSerializable, Cloneable {
         return state;
     }
 
+    public JsonValue toJson() {
+        JsonObject root = new JsonObject();
+        root.add("master", master);
+        root.add("clusterName", clusterName);
+        JsonArray instanceNames = new JsonArray();
+        for (String instanceName : this.instanceNames) {
+            instanceNames.add(instanceName);
+        }
+        root.add("instanceNames", instanceNames);
+        if (memberList != null) {
+            JsonArray members = new JsonArray();
+            for (String member : memberList) {
+                members.add(member);
+            }
+            root.add("memberList", members);
+        }
+        root.add("memberState", memberState.toJson());
+        return root;
+    }
+
     @Override
+    public void fromJson(JsonObject json) {
+
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(time);
         out.writeBoolean(master);
@@ -70,7 +96,6 @@ public final class TimedMemberState implements DataSerializable, Cloneable {
         }
     }
 
-    @Override
     public void readData(ObjectDataInput in) throws IOException {
         time = in.readLong();
         master = in.readBoolean();
@@ -130,11 +155,11 @@ public final class TimedMemberState implements DataSerializable, Cloneable {
         this.instanceNames = longInstanceNames;
     }
 
-    public MemberState getMemberState() {
+    public MemberStateImpl getMemberState() {
         return memberState;
     }
 
-    public void setMemberState(MemberState memberState) {
+    public void setMemberState(MemberStateImpl memberState) {
         this.memberState = memberState;
     }
 

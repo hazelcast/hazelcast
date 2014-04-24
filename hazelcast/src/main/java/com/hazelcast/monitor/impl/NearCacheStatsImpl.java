@@ -1,10 +1,11 @@
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -15,7 +16,6 @@ public class NearCacheStatsImpl
             .newUpdater(NearCacheStatsImpl.class, "hits");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> MISSES_UPDATER = AtomicLongFieldUpdater
             .newUpdater(NearCacheStatsImpl.class, "misses");
-
     private long ownedEntryCount;
     private long ownedEntryMemoryCost;
     private long creationTime;
@@ -86,6 +86,7 @@ public class NearCacheStatsImpl
         out.writeLong(ownedEntryMemoryCost);
         out.writeLong(hits);
         out.writeLong(misses);
+        out.writeLong(creationTime);
     }
 
     @Override
@@ -95,6 +96,23 @@ public class NearCacheStatsImpl
         this.ownedEntryMemoryCost = in.readLong();
         HITS_UPDATER.set(this, in.readLong());
         MISSES_UPDATER.set(this, in.readLong());
+        this.creationTime = in.readLong();
+    }
+
+    @Override
+    public JsonValue toJson() {
+        JsonObject root = new JsonObject();
+        root.add("ownedEntryCount", ownedEntryCount);
+        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
+        root.add("creationTime", creationTime);
+        root.add("hits", hits);
+        root.add("misses", misses);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+
     }
 
     @Override

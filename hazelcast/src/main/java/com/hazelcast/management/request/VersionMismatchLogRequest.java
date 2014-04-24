@@ -16,6 +16,8 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.management.ManagementCenterService;
@@ -23,6 +25,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class VersionMismatchLogRequest implements ConsoleRequest {
 
@@ -41,27 +45,26 @@ public class VersionMismatchLogRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(ObjectDataInput in) throws IOException {
+    public Object readResponse(JsonObject in) throws IOException {
         return "SUCCESS";
     }
 
     @Override
-    public void writeResponse(ManagementCenterService managementCenterService, ObjectDataOutput dos) throws Exception {
-        managementCenterService.signalVersionMismatch();
-        Node node = managementCenterService.getHazelcastInstance().node;
-        ILogger logger = node.getLogger(VersionMismatchLogRequest.class);
-        //todo: does this message make sense because to the user it just displays version information we already know.
-        //he has no clue that the management version is not matching with his own.
-        logger.severe("The version of the management center is " + manCenterVersion);
+    public void writeResponse(ManagementCenterService managementCenterService, JsonObject dos)  {
+//        managementCenterService.signalVersionMismatch();
+//        Node node = managementCenterService.getHazelcastInstance().node;
+//        ILogger logger = node.getLogger(VersionMismatchLogRequest.class);
+//        //todo: does this message make sense because to the user it just displays version information we already know.
+//        //he has no clue that the management version is not matching with his own.
+//        logger.severe("The version of the management center is " + manCenterVersion);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(manCenterVersion);
+    public JsonValue toJson() {
+        return null;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        manCenterVersion = in.readUTF();
+    public void fromJson(JsonObject json) {
     }
 }

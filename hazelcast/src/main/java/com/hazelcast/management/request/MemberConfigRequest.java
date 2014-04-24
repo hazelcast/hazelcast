@@ -16,13 +16,11 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
 
 public class MemberConfigRequest implements ConsoleRequest {
 
@@ -35,23 +33,26 @@ public class MemberConfigRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(ObjectDataInput in) throws IOException {
-        return in.readUTF();
+    public Object readResponse(JsonObject in) {
+        return in.get("configXmlString").asString();
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
+        final JsonObject result = new JsonObject();
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true);
         Config config = mcs.getHazelcastInstance().getConfig();
-        String clusterXml = configXmlGenerator.generate(config);
-        dos.writeUTF(clusterXml);
+        String configXmlString = configXmlGenerator.generate(config);
+        result.add("configXmlString", configXmlString);
+        root.add("result", result);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public JsonValue toJson() {
+        return new JsonObject();
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void fromJson(JsonObject json) {
     }
 }

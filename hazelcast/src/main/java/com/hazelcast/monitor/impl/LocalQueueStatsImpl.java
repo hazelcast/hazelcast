@@ -16,11 +16,12 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -39,7 +40,6 @@ public class LocalQueueStatsImpl
             .newUpdater(LocalQueueStatsImpl.class, "numberOfOtherOperations");
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
-
     private int ownedItemCount;
     private int backupItemCount;
     private long minAge;
@@ -58,6 +58,30 @@ public class LocalQueueStatsImpl
     public LocalQueueStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
+
+    @Override
+    public JsonValue toJson() {
+        JsonObject root = new JsonObject();
+        root.add("ownedItemCount", ownedItemCount);
+        root.add("backupItemCount", backupItemCount);
+        root.add("minAge", minAge);
+        root.add("maxAge", maxAge);
+        root.add("aveAge", aveAge);
+        root.add("creationTime", creationTime);
+        root.add("numberOfOffers", numberOfOffers);
+        root.add("numberOfPolls", numberOfPolls);
+        root.add("numberOfRejectedOffers", numberOfRejectedOffers);
+        root.add("numberOfEmptyPolls", numberOfEmptyPolls);
+        root.add("numberOfOtherOperations", numberOfOtherOperations);
+        root.add("numberOfEvents", numberOfEvents);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+
+    }
+
 
     @Override
     public void writeData(ObjectDataOutput out)

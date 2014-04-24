@@ -16,11 +16,15 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 //todo: is this class uses at all since it doesn't execute any logic.
 public class EvictLocalMapRequest implements ConsoleRequest {
@@ -42,27 +46,26 @@ public class EvictLocalMapRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        //todo: unused code: does this Request do anything at all?
-//        EvictLocalMapEntriesCallable call = new EvictLocalMapEntriesCallable(map, percent);
-//        call.setHazelcastInstance(mcs.getHazelcastInstance());
-//        mcs.callOnAllMembers(call);
-    }
-
-    @Override
-    public Object readResponse(ObjectDataInput in) throws IOException {
+    public Object readResponse(JsonObject in) throws IOException {
         return null;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(map);
-        out.writeInt(percent);
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
+        //todo: unused code: does this Request do anything at all?
+//        EvictLocalMapEntriesCallable call = new EvictLocalMapEntriesCallable(map, percent);
+//        call.setHazelcastInstance(mcs.getHazelcastInstance());
+//        mcs.callOnAllMembers(call);
+
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        map = in.readUTF();
-        percent = in.readInt();
+    public JsonValue toJson() {
+        return null;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+
     }
 }

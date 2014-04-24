@@ -16,11 +16,10 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -36,32 +35,33 @@ public class GetMemberSystemPropertiesRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(ObjectDataInput in) throws IOException {
+    public Object readResponse(JsonObject in) {
         Map<String, String> properties = new LinkedHashMap<String, String>();
-        int size = in.readInt();
-        String[] temp;
-        for (int i = 0; i < size; i++) {
-            temp = in.readUTF().split(":#");
-            properties.put(temp[0], temp.length == 1 ? "" : temp[1]);
+        final Iterator<JsonObject.Member> iterator = in.iterator();
+        while (iterator.hasNext()) {
+            final JsonObject.Member property = iterator.next();
+            properties.put(property.getName(), property.getValue().asString());
         }
         return properties;
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
         Properties properties = System.getProperties();
-        dos.writeInt(properties.size());
-
+        JsonObject result = new JsonObject();
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
-            dos.writeUTF(entry.getKey() + ":#" + entry.getValue());
+            result.add(entry.getKey().toString(), entry.getValue().toString());
         }
+        root.add("result", result);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public JsonValue toJson() {
+        return new JsonObject();
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void fromJson(JsonObject json) {
+
     }
 }

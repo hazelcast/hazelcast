@@ -16,13 +16,14 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -73,6 +74,7 @@ public class LocalMapStatsImpl
     private volatile long maxGetLatency;
     private volatile long maxPutLatency;
     private volatile long maxRemoveLatency;
+
 
     private long ownedEntryCount;
     private long backupEntryCount;
@@ -364,6 +366,42 @@ public class LocalMapStatsImpl
     @Override
     public int getId() {
         return MapDataSerializerHook.MAP_STATS;
+    }
+
+    public JsonValue toJson() {
+        JsonObject root = new JsonObject();
+        root.add("getCount", getCount);
+        root.add("putCount", putCount);
+        root.add("removeCount", removeCount);
+        root.add("numberOfOtherOperations", numberOfOtherOperations);
+        root.add("numberOfEvents", numberOfEvents);
+        root.add("lastAccessTime", lastAccessTime);
+        root.add("lastUpdateTime", lastUpdateTime);
+        root.add("hits", hits);
+        root.add("ownedEntryCount", ownedEntryCount);
+        root.add("backupEntryCount", backupEntryCount);
+        root.add("backupCount", backupCount);
+        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
+        root.add("backupEntryMemoryCost", backupEntryMemoryCost);
+        root.add("creationTime", creationTime);
+        root.add("lockedEntryCount", lockedEntryCount);
+        root.add("dirtyEntryCount", dirtyEntryCount);
+        root.add("totalGetLatencies", totalGetLatencies);
+        root.add("totalPutLatencies", totalPutLatencies);
+        root.add("totalRemoveLatencies", totalRemoveLatencies);
+        root.add("maxGetLatency", maxGetLatency);
+        root.add("maxPutLatency", maxPutLatency);
+        root.add("maxRemoveLatency", maxRemoveLatency);
+        root.add("heapCost", heapCost);
+        if (nearCacheStats != null) {
+            root.add("nearCacheStats", nearCacheStats.toJson());
+        }
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+
     }
 
     @Override

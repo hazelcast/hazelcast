@@ -16,40 +16,69 @@
 
 package com.hazelcast.management;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.ascii.rest.HttpCommand;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.management.operation.UpdateManagementCenterUrlOperation;
-import com.hazelcast.management.request.*;
+import com.hazelcast.management.request.ClusterPropsRequest;
+import com.hazelcast.management.request.ConsoleCommandRequest;
+import com.hazelcast.management.request.ConsoleRequest;
+import com.hazelcast.management.request.EvictLocalMapRequest;
+import com.hazelcast.management.request.ExecuteScriptRequest;
+import com.hazelcast.management.request.GetLogsRequest;
+import com.hazelcast.management.request.GetMapEntryRequest;
+import com.hazelcast.management.request.GetMemberSystemPropertiesRequest;
+import com.hazelcast.management.request.GetSystemWarningsRequest;
+import com.hazelcast.management.request.MapConfigRequest;
+import com.hazelcast.management.request.MemberConfigRequest;
+import com.hazelcast.management.request.RunGcRequest;
+import com.hazelcast.management.request.RuntimeStateRequest;
+import com.hazelcast.management.request.ShutdownMemberRequest;
+import com.hazelcast.management.request.ThreadDumpRequest;
+import com.hazelcast.management.request.VersionMismatchLogRequest;
 import com.hazelcast.map.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.serialization.ObjectDataInputStream;
-import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 public class ManagementCenterService {
 
-    private final static AtomicBoolean DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO = new AtomicBoolean(false);
     public static final int HTTP_SUCCESS = 200;
 
     private final HazelcastInstanceImpl instance;
@@ -62,8 +91,6 @@ public class ManagementCenterService {
     private final SerializationService serializationService;
     private final ManagementCenterIdentifier identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
-    private final String clusterId;
-    private final String securityToken;
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged = false;
@@ -73,118 +100,34 @@ public class ManagementCenterService {
         this.instance = instance;
         logger = instance.node.getLogger(ManagementCenterService.class);
         managementCenterConfig = getManagementCenterConfig();
-        securityToken = managementCenterConfig.getSecurityToken();
         managementCenterUrl = getManagementCenterUrl();
-        clusterId = getClusterId();
         commandHandler = new ConsoleCommandHandler(instance);
         taskPollThread = new TaskPollThread();
         stateSendThread = new StateSendThread();
         serializationService = instance.node.getSerializationService();
         identifier = newManagementCenterIdentifier();
         registerListeners();
-        logHostedManagementCenterMessages();
     }
 
-    private void logHostedManagementCenterMessages() {
-        if (isHostedManagementCenterEnabled()) {
-            if (isSecurityTokenAvailable()) {
-                logHostedManagementCenterLoginUrl();
-            } else {
-                logHostedManagementCenterRegisterUrl();
-            }
-        }
-    }
-
-    private boolean isSecurityTokenAvailable() {
-        return !isNullOrEmpty(managementCenterConfig.getSecurityToken());
-    }
 
     private String getManagementCenterUrl() {
-        if (isHostedManagementCenterEnabled()) {
-            return getHostedManagementCenterUrl();
-        } else {
-            return managementCenterConfig.getUrl();
-        }
+        return managementCenterConfig.getUrl();
     }
 
-    private boolean isHostedManagementCenterEnabled() {
-        if (!getGroupProperties().HOSTED_MANAGEMENT_ENABLED.getBoolean()) {
-            return false;
-        }
-
-        return isNullOrEmpty(managementCenterConfig.getUrl());
-    }
 
     private GroupProperties getGroupProperties() {
         return instance.node.getGroupProperties();
     }
 
-    private String getHostedManagementCenterUrl() {
-        return getGroupProperties().HOSTED_MANAGEMENT_URL.getString();
-    }
 
     private void registerListeners() {
-        if(!managementCenterConfig.isEnabled()){
+        if (!managementCenterConfig.isEnabled()) {
             return;
         }
-
         instance.getLifecycleService().addLifecycleListener(new LifecycleListenerImpl());
         instance.getCluster().addMembershipListener(new MemberListenerImpl());
     }
 
-    private void logHostedManagementCenterLoginUrl() {
-        if (managementCenterConfig.isEnabled()) {
-            logger.info("======================================================");
-            logger.info("You can access your Hazelcast instance at:");
-            logger.info(getHostedManagementCenterUrl() + "/start.do?clusterid=" + clusterId);
-            logger.info("======================================================");
-        } else {
-            logger.info("======================================================");
-            logger.info("To see your application on the Hosted Management Center, " +
-                    "you need to enable the ManagementCenterConfig.");
-            logger.info("======================================================");
-        }
-    }
-
-    private void logHostedManagementCenterRegisterUrl() {
-        //we only want to display the page for hosted management registration once. We don't want to pollute
-        //the logfile.
-        if (!DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO.compareAndSet(false, true)) {
-            return;
-        }
-
-        logger.info("======================================================");
-        logger.info("Manage your Hazelcast cluster with the Management Center SaaS Application");
-        logger.info("To register, copy/paste the following url in your browser and follow the instructions.");
-        logger.info(getHostedManagementCenterUrl() + "/register.jsp");
-        logger.info("======================================================");
-    }
-
-    private String getClusterId() {
-        String clusterId = managementCenterConfig.getClusterId();
-
-        if(!isNullOrEmpty(clusterId)){
-            return clusterId;
-        }
-
-        if (!isHostedManagementCenterEnabled()) {
-            return null;
-        }
-
-        return newClusterId();
-    }
-
-    private String newClusterId() {
-        IAtomicReference<String> clusterIdReference = instance.getAtomicReference("___clusterIdGenerator");
-        String id = clusterIdReference.get();
-        if (id == null) {
-            id = UUID.randomUUID().toString().replace("-", "");
-            if (!clusterIdReference.compareAndSet(null, id)) {
-                id = clusterIdReference.get();
-            }
-        }
-        return id;
-    }
 
     private ManagementCenterConfig getManagementCenterConfig() {
         ManagementCenterConfig config = instance.node.config.getManagementCenterConfig();
@@ -205,7 +148,6 @@ public class ManagementCenterService {
         if (url == null) {
             return null;
         }
-
         return url.endsWith("/") ? url : url + '/';
     }
 
@@ -299,6 +241,9 @@ public class ManagementCenterService {
             return s.toString();
         }
     }
+    public Object callOnThis(Operation operation) {
+        return callOnAddress(instance.node.getThisAddress(), operation);
+    }
 
     public Object callOnMember(Member member, Operation operation) {
         Address address = ((MemberImpl) member).getAddress();
@@ -383,10 +328,11 @@ public class ManagementCenterService {
                 HttpURLConnection connection = openConnection(url);
                 OutputStream outputStream = connection.getOutputStream();
                 try {
-                    identifier.write(outputStream);
-                    ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
+                    JsonObject root = new JsonObject();
+                    root.add("identifier", identifier.toJson());
                     TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
-                    timedMemberState.writeData(out);
+                    root.add("timedMemberState", timedMemberState.toJson());
+                    outputStream.write(root.toString().getBytes());
                     outputStream.flush();
                     post(connection);
                 } finally {
@@ -410,26 +356,16 @@ public class ManagementCenterService {
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
-            connection.setRequestMethod("POST");
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestMethod("POST");
             return connection;
         }
 
         private URL newCollectorUrl() throws MalformedURLException {
             String url = cleanupUrl(managementCenterUrl) + "collector.do";
-            if (clusterId != null) {
-                url += "?clusterid=" + clusterId;
-            }
-
-            if (securityToken != null) {
-                if (clusterId == null) {
-                    url += "?securitytoken=" + securityToken;
-                } else {
-                    url += "&securitytoken=" + securityToken;
-                }
-            }
-
             return new URL(url);
         }
     }
@@ -462,26 +398,6 @@ public class ManagementCenterService {
             consoleRequests.put(consoleRequest.getType(), consoleRequest.getClass());
         }
 
-        public void processTaskAndPostResponse(int taskId, ConsoleRequest task) {
-            try {
-                //todo: don't we need to close this connection?
-                HttpURLConnection connection = openPostResponseConnection();
-                OutputStream outputStream = connection.getOutputStream();
-                try {
-                    identifier.write(outputStream);
-                    ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
-                    out.writeInt(taskId);
-                    out.writeInt(task.getType());
-                    task.writeResponse(ManagementCenterService.this, out);
-                    out.flush();
-                    post(connection);
-                } finally {
-                    closeResource(outputStream);
-                }
-            } catch (Exception e) {
-                logger.warning("Failed process task:" + task, e);
-            }
-        }
 
         private HttpURLConnection openPostResponseConnection() throws IOException {
             URL url = newPostResponseUrl();
@@ -522,45 +438,70 @@ public class ManagementCenterService {
         }
 
         private void processTask() {
-            ObjectDataInputStream inputStream = null;
+            InputStream inputStream = null;
             try {
                 //todo: don't we need to close the connection?
                 inputStream = openTaskInputStream();
-                int taskId = inputStream.readInt();
-                if (taskId <= 0) {
-                    return;
+                BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+
+                StringBuilder sb = new StringBuilder();
+                String input;
+                while ((input = in.readLine()) != null) {
+                    sb.append(input);
                 }
 
-                ConsoleRequest task = newTask(inputStream);
-                processTaskAndPostResponse(taskId, task);
+                JsonObject request = JsonObject.readFrom(sb.toString());
+                System.out.println("request = " + request);
+                if (!request.isEmpty()){
+                    JsonObject innerRequest = request.get("request").asObject();
+                    final int type = innerRequest.get("type").asInt();
+                    final int taskId = request.get("taskId").asInt();
+
+                    Class<? extends ConsoleRequest> requestClass = consoleRequests.get(type);
+                    if (requestClass == null) {
+                        throw new RuntimeException("Failed to find a request for requestType:" + type);
+                    }
+                    ConsoleRequest task = requestClass.newInstance();
+                    task.fromJson(innerRequest.get("request").asObject());
+                    processTaskAndSendResponse(taskId, task);
+                }
+
             } catch (Exception e) {
                 //todo: even if there is an internal error with the task, we don't see it. That is kinda shitty
-                logger.finest(e);
+                logger.warning(e);
             } finally {
                 IOUtil.closeResource(inputStream);
             }
         }
 
-        private ObjectDataInputStream openTaskInputStream() throws IOException {
-            URLConnection connection = openGetTaskConnection();
-            InputStream inputStream = connection.getInputStream();
-            return serializationService.createObjectDataInputStream(inputStream);
-        }
-
-        private ConsoleRequest newTask(ObjectDataInputStream inputStream)
-                throws InstantiationException, IllegalAccessException, IOException {
-
-            int requestType = inputStream.readInt();
-
-            Class<? extends ConsoleRequest> requestClass = consoleRequests.get(requestType);
-            if (requestClass == null) {
-                throw new RuntimeException("Failed to find a request for requestType:" + requestType);
+        public void processTaskAndSendResponse(int taskId, ConsoleRequest task) {
+            try {
+                //todo: don't we need to close this connection?
+                HttpURLConnection connection = openPostResponseConnection();
+                OutputStream outputStream = connection.getOutputStream();
+                try {
+                    JsonObject root = new JsonObject();
+                    root.add("identifier", identifier.toJson());
+                    root.add("taskId", taskId);
+                    root.add("type", task.getType());
+                    task.writeResponse(ManagementCenterService.this, root);
+                    outputStream.write(root.toString().getBytes());
+                    outputStream.flush();
+                    post(connection);
+                } finally {
+                    closeResource(outputStream);
+                }
+            } catch (Exception e) {
+                logger.warning("Failed process task:" + task, e);
             }
-
-            ConsoleRequest task = requestClass.newInstance();
-            task.readData(inputStream);
-            return task;
         }
+
+
+        private InputStream openTaskInputStream() throws IOException {
+            URLConnection connection = openGetTaskConnection();
+            return connection.getInputStream();
+        }
+
 
         private URLConnection openGetTaskConnection() throws IOException {
             URL url = newGetTaskUrl();
@@ -582,13 +523,6 @@ public class ManagementCenterService {
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
                     + ":" + localAddress.getPort() + "&cluster=" + groupConfig.getName();
 
-            if (clusterId != null) {
-                urlString += "&clusterid=" + clusterId;
-            }
-
-            if (securityToken != null) {
-                urlString += "&securitytoken=" + securityToken;
-            }
             return new URL(urlString);
         }
     }

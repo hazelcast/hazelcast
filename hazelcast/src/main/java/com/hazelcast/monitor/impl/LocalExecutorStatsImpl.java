@@ -16,16 +16,16 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public class LocalExecutorStatsImpl
-        implements LocalExecutorStats {
+public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> PENDING_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "pending");
@@ -39,7 +39,6 @@ public class LocalExecutorStatsImpl
             .newUpdater(LocalExecutorStatsImpl.class, "totalStartLatency");
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_EXECUTION_TIME_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "totalExecutionTime");
-
     private long creationTime;
 
     // These fields are only accessed through the updaters
@@ -113,8 +112,23 @@ public class LocalExecutorStatsImpl
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public JsonValue toJson() {
+        JsonObject root = new JsonObject();
+        root.add("creationTime", creationTime);
+        root.add("pending", pending);
+        root.add("started", started);
+        root.add("totalStartLatency", totalStartLatency);
+        root.add("completed", completed);
+        root.add("totalExecutionTime", totalExecutionTime);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(pending);
         out.writeLong(started);

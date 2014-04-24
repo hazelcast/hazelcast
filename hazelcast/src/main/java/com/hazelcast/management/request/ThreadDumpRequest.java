@@ -16,27 +16,22 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ThreadDumpOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
-
-import static com.hazelcast.nio.IOUtil.readLongString;
-import static com.hazelcast.nio.IOUtil.writeLongString;
+import com.hazelcast.util.AddressUtil;
+import java.net.UnknownHostException;
 
 public class ThreadDumpRequest implements ConsoleRequest {
 
     private boolean dumpDeadlocks;
-    private Address target;
 
     public ThreadDumpRequest() {
     }
 
-    public ThreadDumpRequest(Address target, boolean dumpDeadlocks) {
-        this.target = target;
+    public ThreadDumpRequest(boolean dumpDeadlocks) {
         this.dumpDeadlocks = dumpDeadlocks;
     }
 
@@ -46,35 +41,37 @@ public class ThreadDumpRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        String threadDump = (String) mcs.callOnAddress(target, new ThreadDumpOperation(dumpDeadlocks));
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
+        final JsonObject result = new JsonObject();
+        String threadDump = (String) mcs.callOnThis(new ThreadDumpOperation(dumpDeadlocks));
         if (threadDump != null) {
-            dos.writeBoolean(true);
-            writeLongString(dos, threadDump);
+            result.add("hasDump", true);
+            result.add("dump", threadDump);
         } else {
-            dos.writeBoolean(false);
+            result.add("hasDump", false);
         }
+        root.add("result", result);
+
     }
 
     @Override
-    public String readResponse(ObjectDataInput in) throws IOException {
-        if (in.readBoolean()) {
-            return readLongString(in);
-        } else {
-            return null;
+    public String readResponse(JsonObject in) {
+        final boolean hasDump = in.get("hasDump").asBoolean();
+        if (hasDump) {
+            return in.get("dump").asString();
         }
+        return null;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        target.writeData(out);
-        out.writeBoolean(dumpDeadlocks);
+    public JsonValue toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("dumpDeadlocks", dumpDeadlocks);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        target = new Address();
-        target.readData(in);
-        dumpDeadlocks = in.readBoolean();
+    public void fromJson(JsonObject json) {
+        dumpDeadlocks = json.get("dumpDeadlocks").asBoolean();
     }
 }
