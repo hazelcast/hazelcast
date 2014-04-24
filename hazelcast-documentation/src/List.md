@@ -2,7 +2,7 @@
 
 ## List
 
-Distributed List is very similar to distributed set, but it allows duplicate elements.
+Hazelcast List is very similar to Hazelcast Set but it allows duplicate elements.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -27,3 +27,9 @@ while (it.hasNext()) {
     //analyze
 }
 ```
+### Features
+
+1. Hazelcast List allows duplicate elements.
+2. Hazelcast List preserves the order of elements.
+3. Hazelcast List is non-partitioned data structure where values and each backup is represented by its own single partition.
+4. Hazelcast List can not scale beyond the capacity of a single machine.
