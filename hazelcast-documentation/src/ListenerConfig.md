@@ -222,3 +222,27 @@ topicConfig.addMessageListenerConfig(new ListenerConfig("com.hazelcast.examples.
 		</hz:topic>
 ```
 
+-   **ClientListener** 
+
+	-	Declarative Configuration
+
+		```xml
+		<listeners>
+		        <listener>com.hazelcast.examples.ClientListener</listener>
+			</listeners>
+```
+
+	-	Programmatic Configuration
+
+		```java
+topicConfig.addMessageListenerConfig(new ListenerConfig("com.hazelcast.examples.ClientListener"));
+```
+
+	-	Spring XML configuration
+
+		```xml
+		<hz:listeners>
+		    <hz:listener class-name="com.hazelcast.spring.DummyClientListener"/>
+		    <hz:listener implementation="dummyClientListener"/>
+		</hz:listeners>
+```
