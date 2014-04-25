@@ -15,7 +15,7 @@ Hazelcast allows you to register for entry events to get notified when events oc
 
 -   **EntryListener** for IMap and MultiMap entry events
 
--   **ItemListener** for IQueue, ISet and IList item events
+-   **ItemListener** for IQueue, ISet and IList item events [todo: add link to related sample Listener examples]
 
 -   **MessageListener** for ITopic message events
 

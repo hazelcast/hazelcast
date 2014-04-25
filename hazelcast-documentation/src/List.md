@@ -4,6 +4,13 @@
 
 Hazelcast List is very similar to Hazelcast Set but it allows duplicate elements.
 
+* Hazelcast List allows duplicate elements.
+* Hazelcast List preserves the order of elements.
+* Hazelcast List is non-partitioned data structure where values and each backup is represented by its own single partition.
+* Hazelcast List can not scale beyond the capacity of a single machine.
+
+### Sample Code
+
 ```java
 import com.hazelcast.core.Hazelcast;
 import java.util.List;
@@ -27,9 +34,44 @@ while (it.hasNext()) {
     //analyze
 }
 ```
-### Features
 
-1. Hazelcast List allows duplicate elements.
-2. Hazelcast List preserves the order of elements.
-3. Hazelcast List is non-partitioned data structure where values and each backup is represented by its own single partition.
-4. Hazelcast List can not scale beyond the capacity of a single machine.
+### Event Registration and Configuration
+
+Hazelcast List uses ItemListener to listen to events which occur when items are added and removed.
+
+
+```java
+import java.util.Queue;
+import java.util.Map; 
+import java.util.Set; 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryEvent; 
+import com.hazelcast.config.Config;
+
+public class Sample implements ItemListener{
+
+    public static void main(String[] args) { 
+        Sample sample = new Sample();
+        Config cfg = new Config();
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+        IList   list   = hz.getList   ("default");
+        list.addItemListener  (sample, true); 
+        
+        Price price = new Price(10, time1)
+        list.add(price);
+        list.remove(price);
+    } 
+
+    public void itemAdded(Object item) {
+        System.out.println("Item added = " + item);
+    }
+
+    public void itemRemoved(Object item) {
+        System.out.println("Item removed = " + item);
+    }     
+}
+       
+```
+please see Advanced Listener Configurations [todo: Link to Listener Configurations]
