@@ -55,10 +55,10 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
     }
 
     protected boolean matches(KeyIn key) {
-        if ((keys == null || keys.size() == 0) && predicate == null) {
+        if ((keys == null || keys.isEmpty()) && predicate == null) {
             return true;
         }
-        if (keys != null && keys.size() > 0) {
+        if (keys != null && !keys.isEmpty()) {
             for (KeyIn matcher : keys) {
                 if (key.equals(matcher)) {
                     return true;
