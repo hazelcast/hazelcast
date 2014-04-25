@@ -28,6 +28,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -42,6 +43,7 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
+@Repeat(10)
 public class ClientNearCacheTest {
 
     private static final int MAX_CACHE_SIZE = 100;
@@ -66,24 +68,33 @@ public class ClientNearCacheTest {
         ClientConfig clientConfig = new ClientConfig();
 
         NearCacheConfig basicConfig = new NearCacheConfig();
+        basicConfig.setName(mapWithBasicCash + "*");
+        basicConfig.setInvalidateOnChange(false);
         basicConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        clientConfig.addNearCacheConfig(mapWithBasicCash + "*", basicConfig);
+        clientConfig.addNearCacheConfig(basicConfig);
 
         NearCacheConfig maxSizeConfig = new NearCacheConfig();
+        maxSizeConfig.setName(mapWithMaxSizeCash + "*");
+        maxSizeConfig.setInvalidateOnChange(false);
         maxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
-        clientConfig.addNearCacheConfig(mapWithMaxSizeCash + "*", maxSizeConfig);
+        clientConfig.addNearCacheConfig(maxSizeConfig);
 
         NearCacheConfig ttlConfig = new NearCacheConfig();
+        ttlConfig.setName(mapWithTTLCash + "*");
+        ttlConfig.setInvalidateOnChange(false);
         ttlConfig.setTimeToLiveSeconds(MAX_TTL_SECONDS);
-        clientConfig.addNearCacheConfig(mapWithTTLCash + "*", ttlConfig);
+        clientConfig.addNearCacheConfig(ttlConfig);
 
         NearCacheConfig idleConfig = new NearCacheConfig();
+        idleConfig.setName(mapWithIdleCash + "*");
+        idleConfig.setInvalidateOnChange(false);
         idleConfig.setMaxIdleSeconds(MAX_IDLE_SECONDS);
-        clientConfig.addNearCacheConfig(mapWithIdleCash + "*", idleConfig);
+        clientConfig.addNearCacheConfig(idleConfig);
 
         NearCacheConfig invalidateConfig = new NearCacheConfig();
+        invalidateConfig.setName(mapWithInvalidateCash + "*");
         invalidateConfig.setInvalidateOnChange(true);
-        clientConfig.addNearCacheConfig(mapWithInvalidateCash + "*", invalidateConfig);
+        clientConfig.addNearCacheConfig(invalidateConfig);
 
         client = HazelcastClient.newHazelcastClient(clientConfig);
     }
@@ -203,7 +214,7 @@ public class ClientNearCacheTest {
 
     @Test
     public void testNearCachePopulatedAndHitsGenerated() throws Exception {
-        final IMap map = client.getMap(mapWithInvalidateCash + randomString());
+        final IMap map = client.getMap(mapWithBasicCash + randomString());
 
         final int size = 1278;
         for (int i = 0; i < size; i++) {
