@@ -1,9 +1,6 @@
 ## Topic
 
-Hazelcast provides distribution mechanism for publishing messages that are delivered to multiple subscribers which is
-also known as *publish/subscribe (pub/sub)* messaging model. Publishing and subcribing operations are cluster wide. When a member
-subscribes for a topic, it is actually registering for messages published by any member in the cluster, including the
-new members joined after you added the listener.
+Hazelcast provides distribution mechanism for publishing messages that are delivered to multiple subscribers which is also known as *publish/subscribe (pub/sub)* messaging model. Publishing and subscribing operations are cluster wide. When a member subscribes for a topic, it is actually registering for messages published by any member in the cluster, including the new members joined after you added the listener.
 
 ### Statistics
 
@@ -18,14 +15,11 @@ Topic has two statistic variables that can be queried. These values are incremen
     myTopic.getLocalTopicStats().getReceiveOperationCount();```
 
 
-`getPublishOperationCount` and `getReceiveOperationCount` returns total number of publishes and received messages since the start of this node, respectively. 
-Please note that, these values are not backed up and if the node goes down, they will be lost.
-
+`getPublishOperationCount` and `getReceiveOperationCount` returns total number of publishes and received messages since the start of this node, respectively. Please note that, these values are not backed up and if the node goes down, they will be lost.
 
 This feature can be disabled with topic configuration. Please see [Topic Configuration](#topic-configuration).
 
 <br> </br>
-
 <font color="red">
 ***Related Information***
 </font>
@@ -35,79 +29,56 @@ These statistics values can be also viewed in Management Center. Please see [Top
 ### Internals
 
 Each node has the list of all registrations in the cluster. When a new node is registered for a topic,
-it will send a registration message to all members in the cluster. Also, when a new node joins the cluster, it will
-receive all registrations made so far in the cluster.
+it will send a registration message to all members in the cluster. Also, when a new node joins the cluster, it will receive all registrations made so far in the cluster.
 
 The behavior of topic varies depending on the value of configuration parameter `globalOrderEnabled`.
 
 - If `globalOrderEnabled` is disabled:
 
-    Messages are ordered, i.e. listeners (subscribers) will process the messages in the order they are actually published.
-    If cluster member M publishes messages *m1*, *m2*, *m3*,...,*mn* to a topic **T**, then Hazelcast makes sure that
-    all of the subscribers of topic **T** will receive and process *m1*, *m2*, *m3*,...,*mn* in the given order.
+Messages are ordered, i.e. listeners (subscribers) will process the messages in the order they are actually published. If cluster member M publishes messages *m1*, *m2*, *m3*,...,*mn* to a topic **T**, then Hazelcast makes sure that all of the subscribers of topic **T** will receive and process *m1*, *m2*, *m3*,...,*mn* in the given order.
 
-    Here is how it works.
-    Let's say that we have three nodes (node1, node2 and node3) and that *node1* and *node2* are registered to
-    a topic named `news`. Notice that, all three nodes know that node1 and node2 registered to `news`.
+Here is how it works. Let's say that we have three nodes (node1, node2 and node3) and that *node1* and *node2* are registered to a topic named `news`. Notice that, all three nodes know that node1 and node2 registered to `news`.
 
-    - Diagram1 showing registrations and nodes.
+- Diagram1 showing registrations and nodes.
 
-    In our example, node1 publishes two messages `a1` and `a2`. And node3 publishes two messages `c1` and `c2`.
-    When node1 and node3 publishes a message, they will check their local list for registered nodes. Discovers that
-    node1 and node2 are in the list. Then fires messages to those nodes. One of the possible order of messages
-    are received can be following.
+In our example, node1 publishes two messages `a1` and `a2`. And node3 publishes two messages `c1` and `c2`. When node1 and node3 publishes a message, they will check their local list for registered nodes. Discovers that node1 and node2 are in the list. Then fires messages to those nodes. One of the possible order of messages are received can be following.
 
-     -Diagram2
-            Node1           Node2    Node3
-             c1               c1
-             b1               c2
-             a2               a1
-             c2               a2
-
+-Diagram2
+Node1           Node2    Node3
+c1               c1
+b1               c2
+a2               a1
+c2               a2
 
 - If `globalOrderEnabled` is enabled:
 
-    When enabled, it guarantees that all nodes listening the same topic will get messages in the same order.
+When enabled, it guarantees that all nodes listening the same topic will get messages in the same order.
 
-    Here is how it works.
-    Lets says that we have three nodes, node1 , node2 and node3. And lets says that node1 and node2 are registered to
-    a topic named `news`. Notice that all three nodes know that node1 and node2 registered to `news`.
+Here is how it works. Lets says that we have three nodes, node1 , node2 and node3. And lets says that node1 and node2 are registered to a topic named `news`. Notice that all three nodes know that node1 and node2 registered to `news`.
 
-     - Diagram1 showing registrations and nodes.
+- Diagram1 showing registrations and nodes.
 
-    In our example, node1 publishes two messages `a1` and `a2`. And node3 publishes two messages `c1` and `c2`.
-    When a node publishes messages over topic `news`, it first calculates which partition `news` id correspond to. Then
-    send an operation to owner of the partition for that node to publish messages. Lets assume that `news` corresponds
-    to a partition that node2 owns. node1 and node3 first sends all messages to node2. Not that following diagram
-    shows only one of the possibilities.
+In our example, node1 publishes two messages `a1` and `a2`. And node3 publishes two messages `c1` and `c2`. When a node publishes messages over topic `news`, it first calculates which partition `news` id correspond to. Then send an operation to owner of the partition for that node to publish messages. Lets assume that `news` corresponds to a partition that node2 owns. node1 and node3 first sends all messages to node2. Not that following diagram shows only one of the possibilities.
 
-    - Diagram2 showing registrations and nodes.
-            Node1           Node2       Node3
-                              a1
-                              c1
-                              a2
-                              c2
+- Diagram2 showing registrations and nodes.
+Node1           Node2       Node3
+a1
+c1
+a2
+c2
 
-    Then node2 publishes these messages by looking at registrations in its local list. It sends these messages to node1
-    and node2(it will make a local dispatch for itself).
+Then node2 publishes these messages by looking at registrations in its local list. It sends these messages to node1 and node2(it will make a local dispatch for itself).
 
-    - Diagram2 showing registrations and nodes.
-            Node1           Node2       Node3
-             a1               a1
-             c1               c1
-             a2               a2
-             c2               c2
+- Diagram2 showing registrations and nodes.
+Node1           Node2       Node3
+a1               a1
+c1               c1
+a2               a2
+c2               c2
 
-    This way we guaranteed that all nodes will see the events in same order.
+This way we guaranteed that all nodes will see the events in same order.
 
-In both cases, there is a striped executor in EventService responsible in for dispatching the received message. For all
-events in Hazelcast, the order that events are generated and the order they are published the user are guaranteed to
-be same via this StripedExecutor. There are 'hazelcast.event.thread.count'(default is 5) threads in StripedExecutor.
-For a specific event source(for topic, for a particular topic name), `hash of that sources name % 5` gives the id of
-responsible thread. Note that there can be another event source (entryListener of a map, item listener of a collection etc)
-corresponding to same thread. In order not to make other messages to block, heavy process should not be done in this thread.
-If there is a time consuming work needs to be done, the work should be handed over to another thread. see
-[this example]#topic-examples
+In both cases, there is a striped executor in EventService responsible in for dispatching the received message. For all events in Hazelcast, the order that events are generated and the order they are published the user are guaranteed to be same via this StripedExecutor. There are 'hazelcast.event.thread.count'(default is 5) threads in StripedExecutor. For a specific event source(for topic, for a particular topic name), `hash of that sources name % 5` gives the id of responsible thread. Note that there can be another event source (entryListener of a map, item listener of a collection etc) corresponding to same thread. In order not to make other messages to block, heavy process should not be done in this thread. If there is a time consuming work needs to be done, the work should be handed over to another thread. see [this example]#topic-examples
 
 ### Topic Configuration
 
