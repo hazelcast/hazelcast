@@ -1,5 +1,4 @@
 
-
 ## Native Clients
 
 Native Clients enable you to perform almost all Hazelcast operations without being a member of the cluster. It connects to one of the cluster members and delegates all cluster wide operations to it (*dummy client*) or connects to all of them and delegate operations smartly (*smart client*). When the relied cluster member dies, client will transparently switch to another live member.
@@ -54,8 +53,8 @@ To configure the other parameters of client-cluster connection, `ClientNetworkCo
 -	`sslConfig`: If SSL is desired to be enabled for the client-cluster connection, this parameter should be set. Once set, the connection (socket) is established out of an SSL factory defined either by a factory class name or factory implementation (please see [SSLConfig.java](https://github.com/hazelcast/hazelcast/blob/8f4072d372b33cb451e1fbb7fbd2c2489b631342/hazelcast/src/main/java/com/hazelcast/config/SSLConfig.java)).
 
 
-
 ### C++ Client (Enterprise Only)
+
 
 You can use Native C++ Client to connect to Hazelcast nodes and perform almost all operations that a node can perform. Different from nodes, clients do not hold data. It is by default a smart client, i.e. it knows where the data is and asks directly to the correct node. This feature can be disabled (using `ClientConfig::setSmart` method) if you do not want the clients to connect every node.
 
@@ -66,26 +65,40 @@ Features of C++ Clients are:
 -	Ability to add cluster listeners to a cluster and entry/item listeners to distributed data structures.
 -	Distributed synchronization mechanisms with ILock, ISemaphore and ICountDownLatch.
 
-Hazelcast C++ Client is shipped with 32/64 bit, shared and static libraries. Compiled static libraries of dependencies are also available in the release. Dependencies are **zlib** and some of the boost libraries. Below boost libraries are required:
 
--	`libboost_atomic`
--	`libboost_system`
--	`libboost_chrono`
--	`libboost_thread`
--	`libboost_date_time`
+#### How to Setup
 
-Downloaded release includes the below folders:
+Hazelcast C++ Client is shipped with 32/64 bit, shared and static libraries. Compiled static libraries of dependencies are also available in the release. Dependencies are **zlib** and **shared_ptr** from the boost libraries. 
 
--	`docs/ html`, where Doxygen documentation is located.
--	`hazelcast/`
-	-	`lib/`, where shared and static library of Hazelcast is located.
-	-	`include/`, where client headers are included.
--	`external/`
-	-	`lib/`, where compiled static libraries of dependencies is located.
-	-	`include/`, where dependency headers are included.
 
-#### Installation
-C++ Client is tested on Linux 32/64, Mac 64 and Windows 32/64 bit machines.
+Downloaded release folder consists of:
+
+-	Mac_64/
+-	Windows_32/
+-	Windows_64/
+-	Linux_32/
+-	Linux_64/
+-	docs/ *(HTML Doxygen documents are here)*
+
+
+And each of the folders above contains the following:
+
+-	examples/
+	-	testApp.exe => example command line client tool to connect hazelcast servers.
+	-	TestApp.cpp => code of the example command line tool.
+
+- hazelcast/
+	-	lib/ => Contains both shared and static library of hazelcast.
+	-	include/ => Contains headers of client
+
+-	external/
+	-	lib/ => Contains compiled static libraries of zlib.
+	-	include/ => Contains headers of dependencies.(zlib and boost::shared_ptr)
+
+
+
+#### Platform Specific Installation Guides
+C++ Client is tested on Linux 32/64, Mac 64 and Windows 32/64 bit machines. For each of the headers above, it is assumed that you are in the correct folder for your platform. Folders are Mac_64, Windows_32, Windows_64, Linux_32 or Linux_64.
 
 ##### Linux
 
@@ -93,25 +106,25 @@ For Linux, there are two distributions; 32 bit and 64 bit.
 
 Sample script to build with static library:
 
-`g++ main.cpp -pthread -I./external/include -I./hazelcast/include ./hazelcast/lib libHazelcastClientStatic_64.a ./external/lib/libz.a ./external/lib/libboost_thread.a ./external/lib/libboost_system.a ./external/lib/libboost_date_time.a ./external/lib/libboost_chrono.a ./external/libboost_atomic.a`
+`g++ main.cpp -pthread -I./external/include -I./hazelcast/include ./hazelcast/lib/libHazelcastClientStatic_64.a ./external/lib/libz.a`
 
 Sample script to build with shared library:
 
-`g++ main.cpp -lpthread -Wl,–no-as-needed -lrt -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/libz.a ./external/lib/libboost_thread.a ./external/lib/libboost_system.a ./external/lib/libboost_date_time.a ./external/lib/libboost_chrono.a ./external/lib/libboost_atomic.a`
+`g++ main.cpp -lpthread -Wl,–no-as-needed -lrt -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/libz.a`
 
 ##### Mac
 For Mac, there is only one distribution which is 64 bit.
 
 Sample script to build with static library:
 
-`g++ main.cpp -I./external/include -I./hazelcast/include ./hazelcast/lib libHazelcastClientStatic_64.a ./external/lib/libz.a ./external/lib libboost_thread.a ./external/lib/libboost_system.a ./external/lib libboost_exception.a ./external/lib/libboost_date_time.a ./external/lib libboost_chrono.a ./external/lib/libboost_atomic.a`
+`g++ main.cpp -I./external/include -I./hazelcast/include ./hazelcast/lib/libHazelcastClientStatic_64.a ./external/lib/darwin/libz.a`
 
 Sample script to build with shared library:
 
-`g++ main.cpp -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/libz.a ./external/lib libboost_thread.a ./external/lib/libboost_system.a ./external/lib libboost_exception.a ./external/lib/libboost_date_time.a ./external/lib libboost_chrono.a ./external/lib/libboost_atomic.a`
+`g++ main.cpp -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/darwin/libz.a`
 
 ##### Windows
-For Windows, there are two distributions; 32 bit and 64 bit.
+For Windows, there are two distributions; 32 bit and 64 bit. Current release have only Visual Studio 2010 compatible libraries. For others, please contact with [support@hazelcast.com](support@hazelcast.com).
 
 #### Code Examples
 A Hazelcast node should be running to make below sample codes work.
