@@ -1,93 +1,102 @@
 # You can now add comments using a hash-sign upfront the line :)
 src/Introduction.md
+	src/WhyHazelcast.md
 	src/GettingStarted.md
+		src/StartingClusterClient.md
+		src/ConfiguringHazelcast.md
+	src/DeploymentTypes.md
+	src/UseCases.md
+	src/Resources.md
 src/Whats_new_3.2.md
-	src/MigrationTo3.md
-	src/RevisionHistory.md
+	src/UpgradingFrom2x.md
+	src/DocumentRevisionHistory.md
 src/Distributed_Data_Structures.md
 	src/Map.md
-		src/MapBackup.md
-		src/MapEviction.md
-		src/MapPersistence.md
-		src/MapQuery.md
-		src/MapIndex.md
-		src/MapContinuousQuery.md
-		src/MapEntryProcessor.md
-		src/MapInterceptor.md
-		src/MapNearCache.md
-		src/MapEntry.md
-		src/MapInMemoryFormat.md
+		src/Map-Backups.md
+		src/Map-Eviction.md
+		src/Map-Persistence.md
+		src/Map-Interceptors.md
+		src/Map-NearCache.md
+		src/Map-EntryStatistics.md
+		src/Map-InMemoryFormat.md
 	src/Queue.md
 	src/MultiMap.md
-	src/Topic.md
 	src/Set.md
 	src/List.md
+	src/Topic.md
 	src/Lock.md
-	src/Events.md
-src/ExecutorService.md
-	src/DistributedExecution.md
-	src/ExecutionCancellation.md
-	src/ExecutionCallback.md
-src/ManagementCenter.md
-	src/MgtCenter_Introduction.md
-	src/Maps.md
-	src/Queues.md
-	src/Topics.md
-	src/MultiMaps.md
-	src/Executors.md
-	src/Members.md
-	src/Scripting.md
-	src/Console.md
-	src/Alerts.md
-	src/Administration.md
-	src/TimeTravel.md
-	src/Documentation.md
-src/JMX.md
-src/Serialization.md
-	src/DataSerializable.md
-	src/Portable.md
-	src/Custom.md
-src/Clients.md
-	src/NativeClient.md
-	src/MemcacheClient.md
-	src/RestClient.md
-src/Elastic_Memory.md
-src/Security.md
-    src/Credentials.md
-    src/ClusterLoginModule.md
-	src/ClusterMemberSecurity.md
-	src/NativeClientSecurity.md
-src/DataAffinity.md
-src/ClusterUtilities.md
-	src/ClusterInterface.md
-	src/IdGenerator.md
+src/DistributedEvents.md
+src/DistributedComputing.md
+	src/ExecutorService.md
+		src/Execution.md
+		src/ExecutionCancellation.md
+		src/ExecutionCallback.md
+	src/EntryProcessor.md
+#	src/UserDefinedServices.md
+src/DistributedQuery.md
+	src/Query.md
+	src/MapReduce.md
+		src/MR-Essentials.md
+		src/MR-Introduction.md
+		src/MR-Architecture.md
+#	src/Aggregators.md
+	src/ContinuousQuery.md
 src/Transactions.md
 	src/TransactionInterface.md
-	src/JEEIntegration.md
-src/mapreduce/Map-Reduce-Index.md
-    src/mapreduce/MapReduce-Essentials.md
-    src/mapreduce/MR-API-Introduction.md
-    src/mapreduce/MR-Architecture.md
-src/HttpSessionClustering.md
-src/WanReplication.md
-src/HibernateSecondLevelCache.md
-src/SpringIntegration.md
-	src/SpringConfig.md
-	src/SpringContext.md
-	src/SpringCache.md
-	src/SpringHibernate.md
-	src/SpringJPA.md
-	src/SpringMongoDB.md
+	src/J2EEIntegration.md
+		src/ResourceAdapterConfiguration.md
+		src/SampleGlassfishConfiguration.md
+		src/SampleJBossConfiguration.md
+#	src/XATransactions.md
+src/IntegratedClustering.md
+	src/Hibernate2LevelCache.md
+	src/HTTPSessionClustering.md
+	src/SpringIntegration.md
+#	src/TomcatClusteredWebSession.md
+src/Storage.md
+	src/ElasticMemory.md
+src/Clients.md
+#	src/ClientTypes.md
+	src/NativeClients.md
+		src/JavaClient.md
+		src/CPlusClient.md
+		src/CSharpClient.md
+	src/RESTClient.md
+	src/MemcacheClient.md
+src/Serialization.md
+	src/DataSerialization.md
+	src/PortableSerialization.md
+	src/CustomSerialization.md
+src/Management.md
+#	src/StatisticsAPIPerNode.md
+#	src/JMXAPIPerNode.md
+	src/MonitoringWithJMX.md
+	src/ClusterUtilities.md
+	src/ManagementCenter.md
+#	src/ClusteredJMX.md
+#	src/ClusteredREST.md
+#src/ServerProtocols.md
+#	src/HazelcastNetworkProtocol.md
+#	src/MemcacheServer.md
+#	src/REST.md
+src/Security.md
+	src/Encryption.md
+	src/SSL.md
+	src/EnablingSecurityforHE.md
+	src/Credentials.md
+	src/ClusterLoginModule.md
+	src/ClusterMemberSecurity.md
+	src/NativeClientSecurity.md
+src/Performance.md
+	src/DataAffinity.md
+src/WAN.md
+#	src/TopologyAwarePartitionManagement.md
+	src/WANReplication.md
 src/Config.md
-	src/ConfigGroup.md
 	src/NetworkConfig.md
 		src/ConfigTcpIp.md
 		src/ConfigSpecifyInterfaces.md
 		src/EC2AutoDiscovery.md
-		src/NetworkPartitioning.md
-		src/SSL.md
-		src/Encryption.md
-		src/SocketInterceptor.md
 		src/IPv6.md
 		src/OutboundPorts.md
 	src/PartitionGroupConfig.md
@@ -96,6 +105,4 @@ src/Config.md
 	src/ConfigurationProperties.md
 	src/Logging.md
 	src/EnterpriseConfig.md
-src/Misc.md
-	src/CommonGotchas.md
-	src/ClusterTestHowTo.md
+src/FAQ.md

@@ -2,6 +2,9 @@
 
 ## Cluster Member Security
 
+![](images/enterprise-onlycopy.jpg)
+
+
 Hazelcast supports standard Java Security (JAAS) based authentication between cluster members. You should configure one or moreLoginModules and an instance of `com.hazelcast.security.ICredentialsFactory`. Although Hazelcast has default implementations using cluster group and group-password and UsernamePasswordCredentials on authentication, it is advised to implement these according to specific needs and environment.
 
 ```xml

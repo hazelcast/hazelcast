@@ -41,6 +41,9 @@ System.out.println(client.get("key1")); //get from hz_memcache_map1
 System.out.println(client.get("key2")); //get from hz_memcache_map2
 ```
 
-*hz\_memcache prefix* is to separate memcache maps from hazelcast maps.
+*hz\_memcache prefix\_* is to separate memcache maps from hazelcast maps.
 
 An entry written with a memcache client can be read by another memcache client written in another language.
+
+<br> </br>
+

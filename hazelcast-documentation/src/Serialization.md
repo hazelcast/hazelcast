@@ -1,5 +1,6 @@
 
 
+
 # Serialization
 
 All your distributed objects such as your key and value objects, objects you offer into distributed queue and your distributed callable/runnable objects have to be `Serializable`.
@@ -37,3 +38,4 @@ Hazelcast also optimizes the following types. However, you can override them by 
 -   `Serializable`
 
 Note that, if the object is not an instance of any explicit type, Hazelcast uses Java Serialization for Serializable and Externalizable objects. The default behavior can be changed using a [Custom Serialization](#custom-serialization).
+

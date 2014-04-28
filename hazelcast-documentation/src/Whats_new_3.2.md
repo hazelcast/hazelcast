@@ -1,12 +1,14 @@
 # What's New in Hazelcast 3.2
 
+
+
 ## Release Notes
 
 ### New Features
 This section provides the new features introduced with Hazelcast 3.2 release. 
 
 -	**NIO Client**: New architecture based on NIO introduced to support more scalable and concurrent client usage.
--	**MapReduce Framework**: MapReduce implemented for your key-value collections that need to be reduced by grouping the keys. Please see [the interview](http://www.infoq.com/news/2014/02/hazelcast-mapreduce-api) and [Chapter 14 - Hazelcast MapReduce](#hazelcast-mapreduce).
+-	**MapReduce Framework**: MapReduce implemented for your key-value collections that need to be reduced by grouping the keys. Please see [the interview](http://www.infoq.com/news/2014/02/hazelcast-mapreduce-api) and [MapReduce](#mapreduce) section.
 -	**Order/Limit Support**: Now you can order and limit results returned by queries performed on Hazelcast Distributed Map.
 -	**C++ Client**: Native C++ client developed for C++ users which can connect to a Hazelcast cluster and realize almost all operations that a node can perform. Please see [Native Clients](#native-clients).
 -	**C# Client**: Also, Native C# client that has a very similar API with Native Java client developed. Please see [Native Clients](#native-clients).
@@ -24,6 +26,32 @@ This section provides the improvements performed for Hazelcast 3.2 release.
 Please see the list of all enhancement issues [here](https://github.com/hazelcast/hazelcast/issues?labels=enhancement&milestone=29&page=3&state=closed).
 
 ### Fixes
+
+**3.2.1 Fixes**
+
+This section lists issues solved for Hazelcast 3.2.1 release.
+
+-	JCA problems have been fixed [#2025](https://github.com/hazelcast/hazelcast/issues/2025).
+-	C++ client compilation problems are fixed.
+-	Redo problem about Java dummy client is fixed.
+-	Round robin load balancer of Java client is improved.
+-	Initial timeout is for the initial connections in Java clients.
+-	Wildcard configuration improvement in near cache configuration.
+-	Unneeded serializations in EntryProcessor should be removed when the object format is *In-Memory* [#2139](https://github.com/hazelcast/hazelcast/issues/2139).
+-	Race condition in near cache has been solved, immediate invalidation of local near cache was needed [#2163](https://github.com/hazelcast/hazelcast/issues/2163).
+-	Predicate issue seen in transactions is solved.
+-	Comparator issue in map eviction is solved.
+-	Map eviction part has been refactored due to a race condition on map listener [#2324](https://github.com/hazelcast/hazelcast/issues/2324).
+-	Stale data problem in client near cache has been solved [#2065](https://github.com/hazelcast/hazelcast/issues/2065).
+-	Many checkstyle and findbugs issues are solved.
+
+Please see [here](https://github.com/hazelcast/hazelcast/issues?labels=defect&milestone=43&page=1&state=open) for the full list of solved issues.
+
+
+
+
+**3.2 Fixes**
+
 This section lists issues solved for Hazelcast 3.2 release.
 
 -	`LocalMapStats.getNearCacheStats()` can return null when it is called before a map get that calls `initNearCache()`. [[#2009]](https://github.com/hazelcast/hazelcast/issues/2009)
@@ -111,11 +139,12 @@ This section lists issues solved for Hazelcast 3.2 release.
 -	`DelegatingFuture.isDone` always returns false until get is called [[#850]](https://github.com/hazelcast/hazelcast/issues/850).
 -	Predicate support for entry processor [[#826]](https://github.com/hazelcast/hazelcast/issues/826).
 -	Full replication of Maps should be performed [[#360]](https://github.com/hazelcast/hazelcast/issues/360).
--	Near cache statistics [[#30]](https://github.com/hazelcast/hazelcast/issues/30).
+
 
 ### Known Issues & Workarounds
 
-Plese see [here](https://github.com/hazelcast/hazelcast/issues?labels=defect&milestone=29&state=open) for the known issues.
+Please see [here](https://github.com/hazelcast/hazelcast/issues?labels=&milestone=43&page=1&state=open) for the known issues.
+
 
 
 

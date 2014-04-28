@@ -1,5 +1,5 @@
 
-### SSL
+## SSL
 
 Hazelcast allows you to use SSL socket communication among all Hazelcast members. You need to implement `com.hazelcast.nio.ssl.SSLContextFactory` and configure SSL section in network configuration.
 
@@ -54,7 +54,7 @@ Hazelcast provides a default SSLContextFactory; `com.hazelcast.nio.ssl.BasicSSLC
 </hazelcast>
 ```
 
-Hazelcast client has SSL support too. Client SSL configuration can be defined using Config API as shown below.
+Hazelcast client has SSL support too. Client SSL configuration can be defined using programmatic configuration as shown below.
 
 ````java
 Properties props = new Properties();

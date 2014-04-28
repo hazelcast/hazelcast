@@ -1,6 +1,6 @@
 
 
-# WAN Replication
+## WAN Replication
 
 There are cases where you would need to synchronize multiple clusters. Synchronization of clusters is named as WAN (Wide Area Network) Replication because it is mainly used for replicating different clusters running on WAN. 
 
@@ -65,6 +65,12 @@ Here we have `my-shared-map` is configured to replicate itself to the cluster ta
 
 Note that, you will also need to define a `merge policy` for merging replica entries and resolving conflicts during the merge.
 
-**Related Information**
+<br> </br>
 
-You can download the white paper *Hazelcast on AWS: Best Practices for Deployment* from [Hazelcast.com](http://hazelcast.com/resources/hazelcast-on-aws-best-practices-for-deployment/).
+<font color="red">
+***Related Information***
+</font>
+
+*You can download the white paper *Hazelcast on AWS: Best Practices for Deployment* from [Hazelcast.com](http://hazelcast.com/resources/hazelcast-on-aws-best-practices-for-deployment/).*
+
+<br> </br>

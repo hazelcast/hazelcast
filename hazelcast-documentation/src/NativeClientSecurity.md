@@ -2,6 +2,9 @@
 
 ## Native Client Security
 
+![](images/enterprise-onlycopy.jpg)
+
+
 Hazelcast's Client security includes both authentication and authorization.
 
 ### Authentication
@@ -300,3 +303,4 @@ Permission policy should return a `PermissionCollection` containing permissions 
 </transaction-permission>
 ```
 
+<br> </br>

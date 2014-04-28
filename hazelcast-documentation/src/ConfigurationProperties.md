@@ -1,8 +1,8 @@
 ## Advanced Configuration Properties
 
-There are some advanced configuration properties to tune some aspects of Hazelcast. These can be set as property name and value pairs through configuration XML, configuration API or JVM system property.
+There are some advanced configuration properties to tune some aspects of Hazelcast. These can be set as property name and value pairs through declarative configuration, programmatic configuration or JVM system property.
 
-### Configuration XML
+### Declarative Configuration
 
 ```xml
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config
@@ -16,7 +16,7 @@ There are some advanced configuration properties to tune some aspects of Hazelca
     </properties>
 </hazelcast>
 ```
-### Configuration API
+### Programmatic Configuration
 
 ```java
 Config cfg = new Config() ;
