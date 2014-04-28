@@ -26,6 +26,9 @@ This feature can be disabled with topic configuration. Please see [Topic Configu
 
 These statistics values can be also viewed in Management Center. Please see [Topics](#topics).
 
+
+
+
 ### Internals
 
 Each node has the list of all registrations in the cluster. When a new node is registered for a topic,
@@ -44,6 +47,7 @@ In this example, *node1* publishes two messages: `a1` and `a2`. And, *node3* pub
 
 
 Node1 -> c1, b1, a2, c2
+
 Node2 -> c1, c2, a1, a2
 
 - If `globalOrderEnabled` is enabled:
@@ -59,6 +63,7 @@ Node1 -> a1, c1, a2, c2
 Then, *node2* publishes these messages by looking at registrations in its local list. It sends these messages to *node1* and *node2* (it will make a local dispatch for itself).
 
 Node1 -> a1, c1, a2, c2
+
 Node2 -> a1, c1, a2, c2
 
 This way we guarantee that all nodes will see the events in same order.
