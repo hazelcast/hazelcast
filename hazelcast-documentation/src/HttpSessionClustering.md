@@ -126,6 +126,14 @@ Here are the steps to setup Hazelcast Session Clustering:
         <param-name>shutdown-on-destroy</param-name>
         <param-value>true</param-value>
     </init-param>
+    <!--
+        Do you want to cache sessions locally in each instance?
+        Default is false.
+    -->
+    <init-param>
+        <param-name>deferred-write</param-name>
+        <param-value>false</param-value>
+    </init-param>
 </filter>
 <filter-mapping>
     <filter-name>hazelcast-filter</filter-name>
@@ -143,6 +151,10 @@ Here are the steps to setup Hazelcast Session Clustering:
 -	Package and deploy your war file as you would normally do.
 
 It is that easy! All HTTP requests will go through Hazelcast `WebFilter` and it will put the session objects into Hazelcast distributed map if needed.
+
+**Caching locally using deferred-write parameter:**
+
+If deferred-write = true , Hazelcast will cache the Session locally and will update the local session on set or deletion of an attribute. Only at the end of request, it will update the distributed map with all the updates. So it will not be updating the distributed map on each attribute update. It will only call it once at the end of request. It will be also caching it. So whenever there is a read for the attribute. It will read it from the cache.If you do not have deferred-write set to true, you will not have the attributes cached on any server. 
 
 **Information about sticky-sessions:**
 
