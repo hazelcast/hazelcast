@@ -302,7 +302,7 @@ public class MapEvictionManager {
         Arrays.sort(criterias);
         // we do want to hold references to key&value pairs and don't want to depend on Record
         // since Record content may be changed.
-        final Object[][] evictableKeyValuePairs = new Object[evictableSize][evictableSize];
+        final Object[][] evictableKeyValuePairs = new Object[evictableSize][2];
         int indexKVP = 0;
         // check in case record store size may be smaller than evictable size.
         final int evictableBaseIndex = Math.min(evictableSize, index - 1);
