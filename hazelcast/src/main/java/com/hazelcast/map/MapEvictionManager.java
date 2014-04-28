@@ -208,7 +208,7 @@ public class MapEvictionManager {
             final String mapName = mapConfig.getName();
             final MapService mapService = MapEvictionManager.this.mapService;
             final NodeEngine nodeEngine = mapService.getNodeEngine();
-            Set<Data> keysGatheredForNearCacheEviction = Collections.EMPTY_SET;
+            Set<Data> keysGatheredForNearCacheEviction = Collections.emptySet();
             for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                 if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
                     continue;
@@ -303,7 +303,7 @@ public class MapEvictionManager {
         Arrays.sort(criterias);
         // we do want to hold references to key&value pairs and don't want to depend on Record
         // since Record content may be changed.
-        final Object[][] evictableKeyValuePairs = new Object[evictableSize][evictableSize];
+        final Object[][] evictableKeyValuePairs = new Object[evictableSize][2];
         int indexKVP = 0;
         // check in case record store size may be smaller than evictable size.
         final int evictableBaseIndex = Math.min(evictableSize, index - 1);
