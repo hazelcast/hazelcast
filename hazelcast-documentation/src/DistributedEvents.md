@@ -17,7 +17,7 @@ As a rule of thumb, event listener should not implement heavy processes in its e
 
 -   **EntryListener** for IMap and MultiMap entry events
 
--   **ItemListener** for IQueue, ISet and IList item events [todo: add link to related sample Listener examples]
+-   **ItemListener** for IQueue, ISet and IList item events (please refer to Event Registration and Configuration sections of [Set](#set) and [List](#list)).
 
 -   **MessageListener** for ITopic message events
 

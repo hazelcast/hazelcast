@@ -2,13 +2,13 @@
 
 ## Set
 
-Hazelcast Set is distributed and concurrent implementation of`java.util.Set`. 
+Hazelcast Set is distributed and concurrent implementation of `java.util.Set`. 
 
 * Hazelcast Set does not allow duplicate elements.
 * Hazelcast Set does not preserve the order of elements.
-* Hazelcast Set is non-partitioned data structure where values and  each backup is represented by its own single partition.
-* Hazelcast Set can not scale beyond the capacity of a single machine.
-* Equals method implementation of Hazelcast Set use serialized byte version of objects compared to `java.util.HashSet`
+* Hazelcast Set is non-partitioned data structure where values and each backup is represented by its own single partition.
+* Hazelcast Set cannot be scaled beyond the capacity of a single machine.
+* Equals method implementation of Hazelcast Set uses serialized byte version of objects compared to `java.util.HashSet`
 
 ### Sample Code
 
@@ -73,4 +73,13 @@ public class Sample implements ItemListener{
 }
        
 ```
-please see Advanced Listener Configurations [todo: Link to Listener Configurations]
+
+<br> </br>
+
+<font color="red">
+***Related Information***
+</font>
+
+*Please refer to [Listener Configurations](#listener-configurations).*
+
+<br> </br>

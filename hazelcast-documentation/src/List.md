@@ -4,10 +4,9 @@
 
 Hazelcast List is very similar to Hazelcast Set but it allows duplicate elements.
 
-* Hazelcast List allows duplicate elements.
-* Hazelcast List preserves the order of elements.
+* Besides allowing duplicate elements, Hazelcast List preserves the order of elements.
 * Hazelcast List is non-partitioned data structure where values and each backup is represented by its own single partition.
-* Hazelcast List can not scale beyond the capacity of a single machine.
+* Hazelcast List cannot be scaled beyond the capacity of a single machine.
 
 ### Sample Code
 
@@ -37,7 +36,7 @@ while (it.hasNext()) {
 
 ### Event Registration and Configuration
 
-Hazelcast List uses ItemListener to listen to events which occur when items are added and removed.
+Hazelcast List uses `ItemListener` to listen to events which occur when items are added and removed.
 
 
 ```java
@@ -74,4 +73,16 @@ public class Sample implements ItemListener{
 }
        
 ```
-please see Advanced Listener Configurations [todo: Link to Listener Configurations]
+
+
+<br> </br>
+
+<font color="red">
+***Related Information***
+</font>
+
+*Please refer to [Listener Configurations](#listener-configurations).*
+
+<br> </br>
+
+

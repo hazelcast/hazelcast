@@ -2,7 +2,7 @@
 
 ## Listener Configurations
 
-Event listeners can be added to and removed from the related object using Hazelcast API. See the samples below.
+Event listeners can be added to and removed from the related object using Hazelcast API.
 
 Downside of attaching listeners using API is the possibility of missing events between creation of object and registering listener. To overcome this race condition, Hazelcast introduces registration of listeners in configuration. Listeners can be registered using either declarative, programmatic or Spring configuration.
 
