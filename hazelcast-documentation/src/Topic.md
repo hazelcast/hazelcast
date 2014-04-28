@@ -1,7 +1,7 @@
 ## Topic
 
 Hazelcast provides distribution mechanism for publishing messages that are delivered to multiple subscribers which is
-also known as publish/subscribe (pub/sub) messaging model. Publish and subscriptions are cluster wide. When a member
+also known as *publish/subscribe (pub/sub)* messaging model. Publishing and subcribing operations are cluster wide. When a member
 subscribes for a topic, it is actually registering for messages published by any member in the cluster, including the
 new members joined after you added the listener.
 
@@ -15,35 +15,40 @@ Topic has two statistic variables that can be queried. These values are incremen
     final ITopic<Object> myTopic = instance.getTopic("myTopicName");
 
     myTopic.getLocalTopicStats().getPublishOperationCount();
-    myTopic.getLocalTopicStats().getReceiveOperationCount();
+    myTopic.getLocalTopicStats().getReceiveOperationCount();```
 
 
-```
+`getPublishOperationCount` and `getReceiveOperationCount` returns total number of publishes and received messages since the start of this node, respectively. 
+Please note that, these values are not backed up and if the node goes down, they will be lost.
 
-getPublishOperationCount returns total number of publishes from start of this node.
-getReceiveOperationCount returns total number of received messages from start of this node.
-Note that this values are not backed up, if node does down, this values will be lost.
 
-These values can be also viewed from Management Center. See [Management Center]#topics
-You can also close this feature with topic configuration. See [Configuration]#topic-configuration
+This feature can be disabled with topic configuration. Please see [Topic Configuration](#topic-configuration).
+
+<br> </br>
+
+<font color="red">
+***Related Information***
+</font>
+
+These statistics values can be also viewed in Management Center. Please see [Topics](#topics).
 
 ### Internals
 
-Each node has list of all registrations in the cluster. When a new node registered for a topic,
-it will send a registration message to all members in the cluster. And also when a new node joins the cluster, it will
+Each node has the list of all registrations in the cluster. When a new node is registered for a topic,
+it will send a registration message to all members in the cluster. Also, when a new node joins the cluster, it will
 receive all registrations made so far in the cluster.
 
-The behaviour of topic is very different for different values of configuration parameter `globalOrderEnabled`.
+The behavior of topic varies depending on the value of configuration parameter `globalOrderEnabled`.
 
-- `globalOrderEnabled` disabled.
+- If `globalOrderEnabled` is disabled:
 
     Messages are ordered, i.e. listeners (subscribers) will process the messages in the order they are actually published.
     If cluster member M publishes messages *m1*, *m2*, *m3*,...,*mn* to a topic **T**, then Hazelcast makes sure that
     all of the subscribers of topic **T** will receive and process *m1*, *m2*, *m3*,...,*mn* in the given order.
 
     Here is how it works.
-    Lets says that we have three nodes, node1 , node2 and node3. And lets says that node1 and node2 are registered to
-    a topic named `news`. Notice that all three nodes know that node1 and node2 registered to `news`.
+    Let's say that we have three nodes (node1, node2 and node3) and that *node1* and *node2* are registered to
+    a topic named `news`. Notice that, all three nodes know that node1 and node2 registered to `news`.
 
     - Diagram1 showing registrations and nodes.
 
@@ -60,7 +65,7 @@ The behaviour of topic is very different for different values of configuration p
              c2               a2
 
 
-- `globalOrderEnabled` enabled.
+- If `globalOrderEnabled` is enabled:
 
     When enabled, it guarantees that all nodes listening the same topic will get messages in the same order.
 
@@ -106,7 +111,7 @@ If there is a time consuming work needs to be done, the work should be handed ov
 
 ### Topic Configuration
 
-- From xml
+- Declarative Configuration
 
     ```xml
     <hazelcast>
@@ -124,7 +129,7 @@ If there is a time consuming work needs to be done, the work should be handed ov
     </hazelcast>
     ```
 
-- Programatically
+- Programmatic Configuration
 
     ```java
 
@@ -147,7 +152,7 @@ If there is a time consuming work needs to be done, the work should be handed ov
 
 Default values are
 
-- Global ordering is false, meaning there is no global order guarantee by default
+- Global ordering is false, meaning there is no global order guarantee by default.
 
 - Statistics are true, meaning statistics are calculated by default.
 
@@ -160,7 +165,7 @@ Topic related but not topic specific configuration parameters
 For these parameters see [Distributed Event Config]#not-availaible-yet
 
 
-### Examples
+### Example
 
 ```java
 import com.hazelcast.core.Topic;
