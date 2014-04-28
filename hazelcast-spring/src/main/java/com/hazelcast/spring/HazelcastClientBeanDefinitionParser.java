@@ -126,7 +126,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSSLConfig(child, networkConfigBuilder);
                 }
             }
-            configBuilder.addPropertyValue("addresses", members);
+            networkConfigBuilder.addPropertyValue("addresses", members);
             configBuilder.addPropertyValue("networkConfig", networkConfigBuilder.getBeanDefinition());
         }
 
