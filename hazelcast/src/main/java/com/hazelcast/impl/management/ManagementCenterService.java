@@ -30,11 +30,13 @@ import com.hazelcast.impl.monitor.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.*;
@@ -254,24 +256,37 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setDoOutput(true);
                         connection.setRequestMethod("POST");
-                        connection.setConnectTimeout(1000);
-                        connection.setReadTimeout(1000);
-                        final DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-                        TimedMemberState ts = getTimedMemberState();
-                        out.writeUTF(getHazelcastInstance().node.initializer.getVersion());
-                        factory.node.getThisAddress().writeData(out);
-                        out.writeUTF(factory.getConfig().getGroupConfig().getName());
-                        ts.writeData(out);
-                        out.flush();
-                        connection.getInputStream();
-                    } catch (Exception e) {
-                        if(firstError) {
-                            logger.log(Level.SEVERE, "Can not connect to Management Center. Check url connectivity:" + webServerUrl);
-                            firstError = false;
+                        connection.setRequestProperty("Connection", "keep-alive");
+                        connection.setConnectTimeout(2000);
+                        connection.setReadTimeout(2000);
+                        final OutputStream outputStream = connection.getOutputStream();
+                        DataOutputStream out = null;
+                        InputStream inputStream = null;
+                        try {
+                            out = new DataOutputStream(outputStream);
+                            TimedMemberState ts = getTimedMemberState();
+                            out.writeUTF(getHazelcastInstance().node.initializer.getVersion());
+                            factory.node.getThisAddress().writeData(out);
+                            out.writeUTF(factory.getConfig().getGroupConfig().getName());
+                            ts.writeData(out);
+                            out.flush();
+                            out.close();
+                            inputStream = connection.getInputStream();
+                            inputStream.close();
+                        } catch (Exception e) {
+                            if(firstError) {
+                                logger.log(Level.SEVERE, "Can not connect to Management Center. Check url connectivity:" + webServerUrl);
+                                firstError = false;
+                            }
+                            else {
+                                logger.log(Level.FINEST, e.getMessage(), e);
+                            }
+                        } finally {
+                            IOUtil.closeResource(out);
+                            IOUtil.closeResource(inputStream);
                         }
-                        else {
-                            logger.log(Level.FINEST, e.getMessage(), e);
-                        }
+                    } catch (IOException e) {
+                        logger.log(Level.FINEST, e.getMessage(), e);
                     }
                     Thread.sleep(updateIntervalMs);
                 }
@@ -321,15 +336,28 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoOutput(true);
                 connection.setRequestMethod("POST");
+                connection.setRequestProperty("Connection", "keep-alive");
                 connection.setConnectTimeout(2000);
                 connection.setReadTimeout(2000);
                 OutputStream outputStream = connection.getOutputStream();
-                DataOutputStream output = new DataOutputStream(outputStream);
-                output.writeInt(taskId);
-                output.writeInt(request.getType());
-                request.writeResponse(ManagementCenterService.this, output);
-                connection.getInputStream();
-            } catch (Exception e) {
+                DataOutputStream output = null;
+                InputStream inputStream = null;
+                try {
+                    output = new DataOutputStream(outputStream);
+                    output.writeInt(taskId);
+                    output.writeInt(request.getType());
+                    request.writeResponse(ManagementCenterService.this, output);
+                    output.flush();
+                    output.close();
+                    inputStream = connection.getInputStream();
+                    inputStream.close();
+                } catch (Exception e) {
+                    logger.log(Level.FINEST, e.getMessage(), e);
+                } finally {
+                    IOUtil.closeResource(inputStream);
+                    IOUtil.closeResource(output);
+                }
+            } catch (IOException e) {
                 logger.log(Level.FINEST, e.getMessage(), e);
             }
         }
@@ -349,19 +377,26 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestProperty("Connection", "keep-alive");
                         InputStream inputStream = connection.getInputStream();
-                        DataInputStream input = new DataInputStream(inputStream);
-                        final int taskId = input.readInt();
-                        if (taskId > 0) {
-                            final int requestType = input.readInt();
-                            if (requestType < consoleRequests.length) {
-                                final ConsoleRequest request = consoleRequests[requestType];
-                                if (request != null) {
-                                    request.readData(input);
-                                    sendResponse(taskId, request);
+                        DataInputStream input = null;
+                        try {
+                        input = new DataInputStream(inputStream);
+                            final int taskId = input.readInt();
+                            if (taskId > 0) {
+                                final int requestType = input.readInt();
+                                if (requestType < consoleRequests.length) {
+                                    final ConsoleRequest request = consoleRequests[requestType];
+                                    if (request != null) {
+                                        request.readData(input);
+                                        sendResponse(taskId, request);
+                                    }
                                 }
                             }
+                        } catch (Exception e) {
+                            logger.log(Level.FINEST, e.getMessage(), e);
+                        } finally {
+                            IOUtil.closeResource(input);
                         }
-                    } catch (Exception e) {
+                    } catch (IOException e) {
                         logger.log(Level.FINEST, e.getMessage(), e);
                     }
                     Thread.sleep(700 + rand.nextInt(300));
