@@ -38,25 +38,22 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  * @author Sandy Gao
  * @version $Id$
  */
-@SuppressWarnings({"SynchronizedMethod", "CallToNativeMethodWhileLocked"})
+@SuppressWarnings({ "SynchronizedMethod", "CallToNativeMethodWhileLocked" })
 public final class Base64 {
 
-    private Base64() {
-    }
-
-    static private final int BASELENGTH = 255;
-    static private final int LOOKUPLENGTH = 64;
-    static private final int TWENTYFOURBITGROUP = 24;
-    static private final int EIGHTBIT = 8;
-    static private final int SIXTEENBIT = 16;
-    static private final int SIXBIT = 6;
-    static private final int FOURBYTE = 4;
-    static private final int SIGN = -128;
-    static private final byte PAD = (byte) '=';
-    static private final boolean fDebug = false;
+    private static final int BASELENGTH = 255;
+    private static final int LOOKUPLENGTH = 64;
+    private static final int TWENTYFOURBITGROUP = 24;
+    private static final int EIGHTBIT = 8;
+    private static final int SIXTEENBIT = 16;
+    private static final int SIXBIT = 6;
+    private static final int FOURBYTE = 4;
+    private static final int SIGN = -128;
+    private static final byte PAD = (byte) '=';
+    private static final boolean F_DEBUG = false;
     @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
-    static private byte[] base64Alphabet = new byte[BASELENGTH];
-    static private byte[] lookUpBase64Alphabet = new byte[LOOKUPLENGTH];
+    private static byte[] base64Alphabet = new byte[BASELENGTH];
+    private static byte[] lookUpBase64Alphabet = new byte[LOOKUPLENGTH];
 
     static {
         for (int i = 0; i < BASELENGTH; i++) {
@@ -73,15 +70,22 @@ public final class Base64 {
         }
         base64Alphabet['+'] = 62;
         base64Alphabet['/'] = 63;
-        for (int i = 0; i <= 25; i++)
+        for (int i = 0; i <= 25; i++) {
             lookUpBase64Alphabet[i] = (byte) ('A' + i);
-        for (int i = 26, j = 0; i <= 51; i++, j++)
+        }
+        for (int i = 26, j = 0; i <= 51; i++, j++) {
             lookUpBase64Alphabet[i] = (byte) ('a' + j);
-        for (int i = 52, j = 0; i <= 61; i++, j++)
+        }
+        for (int i = 52, j = 0; i <= 61; i++, j++) {
             lookUpBase64Alphabet[i] = (byte) ('0' + j);
+        }
         lookUpBase64Alphabet[62] = (byte) '+';
         lookUpBase64Alphabet[63] = (byte) '/';
     }
+
+    private Base64() {
+    }
+
 
     protected static boolean isWhiteSpace(byte octect) {
         return (octect == 0x20 || octect == 0xd || octect == 0xa || octect == 0x9);
@@ -117,24 +121,31 @@ public final class Base64 {
      * @return
      */
     public static synchronized byte[] removeWhiteSpace(byte[] data) {
-        if (data == null)
+        if (data == null) {
             return null;
+        }
         int newSize = 0;
         int len = data.length;
         int i = 0;
         for (; i < len; i++) {
-            if (!isWhiteSpace(data[i]))
+            if (!isWhiteSpace(data[i])) {
                 newSize++;
+            }
         }
-        if (newSize == len)
-            return data;//return input array since no whiteSpace
-        byte[] arrayWithoutSpaces = new byte[newSize];//Allocate new array without whiteSpace
+        if (newSize == len) {
+            //return input array since no whiteSpace
+            return data;
+        }
+        byte[] arrayWithoutSpaces = new byte[newSize];
+        //Allocate new array without whiteSpace
         int j = 0;
         for (i = 0; i < len; i++) {
-            if (isWhiteSpace(data[i]))
+            if (isWhiteSpace(data[i])) {
                 continue;
-            else
-                arrayWithoutSpaces[j++] = data[i];//copy non-WhiteSpace 
+            } else {
+                arrayWithoutSpaces[j++] = data[i];
+                //copy non-WhiteSpace
+            }
         }
         return arrayWithoutSpaces;
     }
@@ -150,21 +161,29 @@ public final class Base64 {
      * @return Encoded Base64 array
      */
     public static synchronized byte[] encode(byte[] binaryData) {
-        if (binaryData == null)
+        if (binaryData == null) {
             return null;
+        }
         int lengthDataBits = binaryData.length * EIGHTBIT;
         int fewerThan24bits = lengthDataBits % TWENTYFOURBITGROUP;
         int numberTriplets = lengthDataBits / TWENTYFOURBITGROUP;
-        byte encodedData[] = null;
-        if (fewerThan24bits != 0) //data not divisible by 24 bit
+        byte[] encodedData = null;
+        if (fewerThan24bits != 0) {
+            //data not divisible by 24 bit
             encodedData = new byte[(numberTriplets + 1) * 4];
-        else // 16 or 8 bit
+        } else {
+            // 16 or 8 bit
             encodedData = new byte[numberTriplets * 4];
-        byte k = 0, l = 0, b1 = 0, b2 = 0, b3 = 0;
+        }
+        byte k = 0;
+        byte l = 0;
+        byte b1 = 0;
+        byte b2 = 0;
+        byte b3 = 0;
         int encodedIndex = 0;
         int dataIndex = 0;
         int i = 0;
-        if (fDebug) {
+        if (F_DEBUG) {
             System.out.println("number of triplets = " + numberTriplets);
         }
         for (i = 0; i < numberTriplets; i++) {
@@ -172,7 +191,7 @@ public final class Base64 {
             b1 = binaryData[dataIndex];
             b2 = binaryData[dataIndex + 1];
             b3 = binaryData[dataIndex + 2];
-            if (fDebug) {
+            if (F_DEBUG) {
                 System.out.println("b1= " + b1 + ", b2= " + b2 + ", b3= " + b3);
             }
             l = (byte) (b2 & 0x0f);
@@ -182,7 +201,7 @@ public final class Base64 {
             byte val2 = ((b2 & SIGN) == 0) ? (byte) (b2 >> 4) : (byte) ((b2) >> 4 ^ 0xf0);
             byte val3 = ((b3 & SIGN) == 0) ? (byte) (b3 >> 6) : (byte) ((b3) >> 6 ^ 0xfc);
             encodedData[encodedIndex] = lookUpBase64Alphabet[val1];
-            if (fDebug) {
+            if (F_DEBUG) {
                 System.out.println("val2 = " + val2);
                 System.out.println("k4   = " + (k << 4));
                 System.out.println("vak  = " + (val2 | (k << 4)));
@@ -197,7 +216,7 @@ public final class Base64 {
         if (fewerThan24bits == EIGHTBIT) {
             b1 = binaryData[dataIndex];
             k = (byte) (b1 & 0x03);
-            if (fDebug) {
+            if (F_DEBUG) {
                 System.out.println("b1=" + b1);
                 System.out.println("b1<<2 = " + (b1 >> 2));
             }
@@ -228,18 +247,29 @@ public final class Base64 {
      * @return Array containind decoded data.
      */
     public static synchronized byte[] decode(byte[] base64Data) {
-        if (base64Data == null)
+        if (base64Data == null) {
             return null;
+        }
         byte[] normalizedBase64Data = removeWhiteSpace(base64Data);
         if (normalizedBase64Data.length % FOURBYTE != 0) {
-            return null;//should be divisible by four
+            //should be divisible by four
+            return null;
         }
         int numberQuadruple = (normalizedBase64Data.length / FOURBYTE);
-        if (numberQuadruple == 0)
+        if (numberQuadruple == 0) {
             return new byte[0];
-        byte decodedData[] = null;
-        byte b1 = 0, b2 = 0, b3 = 0, b4 = 0, marker0 = 0, marker1 = 0;
-        byte d1 = 0, d2 = 0, d3 = 0, d4 = 0;
+        }
+        byte[] decodedData = null;
+        byte b1 = 0;
+        byte b2 = 0;
+        byte b3 = 0;
+        byte b4 = 0;
+        byte marker0 = 0;
+        byte marker1 = 0;
+        byte d1 = 0;
+        byte d2 = 0;
+        byte d3 = 0;
+        byte d4 = 0;
         // Throw away anything not in normalizedBase64Data
         // Adjust size
         int i = 0;
@@ -247,11 +277,13 @@ public final class Base64 {
         int dataIndex = 0;
         decodedData = new byte[(numberQuadruple) * 3];
         for (; i < numberQuadruple - 1; i++) {
-            if (!isData((d1 = normalizedBase64Data[dataIndex++])) ||
-                    !isData((d2 = normalizedBase64Data[dataIndex++])) ||
-                    !isData((d3 = normalizedBase64Data[dataIndex++])) ||
-                    !isData((d4 = normalizedBase64Data[dataIndex++])))
-                return null;//if found "no data" just return null
+            if (!isData((d1 = normalizedBase64Data[dataIndex++]))
+                    || !isData((d2 = normalizedBase64Data[dataIndex++]))
+                    || !isData((d3 = normalizedBase64Data[dataIndex++]))
+                    || !isData((d4 = normalizedBase64Data[dataIndex++]))) {
+                //if found "no data" just return null
+                return null;
+            }
             b1 = base64Alphabet[d1];
             b2 = base64Alphabet[d2];
             b3 = base64Alphabet[d3];
@@ -260,36 +292,46 @@ public final class Base64 {
             decodedData[encodedIndex++] = (byte) (((b2 & 0xf) << 4) | ((b3 >> 2) & 0xf));
             decodedData[encodedIndex++] = (byte) (b3 << 6 | b4);
         }
-        if (!isData((d1 = normalizedBase64Data[dataIndex++])) ||
-                !isData((d2 = normalizedBase64Data[dataIndex++]))) {
-            return null;//if found "no data" just return null
+        if (!isData((d1 = normalizedBase64Data[dataIndex++]))
+                || !isData((d2 = normalizedBase64Data[dataIndex++]))) {
+            //if found "no data" just return null
+            return null;
         }
         b1 = base64Alphabet[d1];
         b2 = base64Alphabet[d2];
         d3 = normalizedBase64Data[dataIndex++];
         d4 = normalizedBase64Data[dataIndex++];
-        if (!isData((d3)) ||
-                !isData((d4))) {//Check if they are PAD characters
-            if (isPad(d3) && isPad(d4)) {               //Two PAD e.g. 3c[Pad][Pad]
-                if ((b2 & 0xf) != 0)//last 4 bits should be zero
+        if (!isData((d3))
+                //Check if they are PAD characters
+                || !isData((d4))) {
+            if (isPad(d3) && isPad(d4)) {
+                //Two PAD e.g. 3c[Pad][Pad]
+                if ((b2 & 0xf) != 0) {
+                    //last 4 bits should be zero
                     return null;
+                }
                 byte[] tmp = new byte[i * 3 + 1];
                 System.arraycopy(decodedData, 0, tmp, 0, i * 3);
                 tmp[encodedIndex] = (byte) (b1 << 2 | b2 >> 4);
                 return tmp;
-            } else if (!isPad(d3) && isPad(d4)) {               //One PAD  e.g. 3cQ[Pad]
+            } else if (!isPad(d3) && isPad(d4)) {
+                //One PAD  e.g. 3cQ[Pad]
                 b3 = base64Alphabet[d3];
-                if ((b3 & 0x3) != 0)//last 2 bits should be zero
+                if ((b3 & 0x3) != 0) {
+                    //last 2 bits should be zero
                     return null;
+                }
                 byte[] tmp = new byte[i * 3 + 2];
                 System.arraycopy(decodedData, 0, tmp, 0, i * 3);
                 tmp[encodedIndex++] = (byte) (b1 << 2 | b2 >> 4);
                 tmp[encodedIndex] = (byte) (((b2 & 0xf) << 4) | ((b3 >> 2) & 0xf));
                 return tmp;
             } else {
-                return null;//an error  like "3c[Pad]r", "3cdX", "3cXd", "3cXX" where X is non data 
+                //an error  like "3c[Pad]r", "3cdX", "3cXd", "3cXX" where X is non data
+                return null;
             }
-        } else { //No PAD e.g 3cQl
+        } else {
+            //No PAD e.g 3cQl
             b3 = base64Alphabet[d3];
             b4 = base64Alphabet[d4];
             decodedData[encodedIndex++] = (byte) (b1 << 2 | b2 >> 4);
@@ -308,15 +350,19 @@ public final class Base64 {
      * @param base64Data
      * @return a -1 would be return if not
      */
-    static public synchronized int getDecodedDataLength(byte[] base64Data) {
-        if (base64Data == null)
+    public static synchronized int getDecodedDataLength(byte[] base64Data) {
+        if (base64Data == null) {
             return -1;
-        if (base64Data.length == 0)
+        }
+        if (base64Data.length == 0) {
             return 0;
+        }
         //byte[] normalizedBase64Data =  removeWhiteSpace( base64Data );//Remove any whiteSpace
         byte[] decodedData = null;
-        if ((decodedData = decode(base64Data)) == null)//decode could return a null byte array
+        if ((decodedData = decode(base64Data)) == null) {
+            //decode could return a null byte array
             return -1;
+        }
         return decodedData.length;
     }
 }

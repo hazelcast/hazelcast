@@ -20,7 +20,6 @@
     <suppress checks="" files="com.hazelcast.query[\\/]"/>
     <suppress checks="" files="com.hazelcast.queue[\\/]"/>
     <suppress checks="" files="com.hazelcast.spi.impl[\\/]"/>
-    <suppress checks="" files="com.hazelcast.util[\\/]"/>
     <suppress checks="" files="com.hazelcast.wan[\\/]"/>
 
     <suppress checks="" files="com.hazelcast.client[\\/]"/>
@@ -293,7 +292,43 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.multimap.MultiMapService"/>
     <suppress checks="ReturnCount" files="com.hazelcast.multimap.operations.MultiMapOperationFactory"/>
 
-
+    <!-- Util -->
+    <suppress checks="" files="com.hazelcast.util.ConcurrentReferenceHashMap"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.util[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.util[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.util[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.util[\\/]"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.util.AddressUtil"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.util.AddressUtil"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.util.AddressUtil"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.util.AddressUtil"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.util.AddressUtil"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.util.AddressUtil"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.util.AddressUtil"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.util.AddressUtil"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.util.Base64"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.util.Base64"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.util.Base64"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.util.Base64"/>
+    <suppress checks="MethodLength" files="com.hazelcast.util.Base64"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.util.Base64"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.util.ByteUtil"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.util.Clock"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.util.executor.CachedExecutorServiceDelegate"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.util.executor.DelegatingFuture"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.util.HazelcastUtil"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.util.HealthMonitor"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.util.HealthMonitor"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.util.HealthMonitor"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.util.executor.PoolExecutorThreadFactory"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.util.ResponseQueueFactory"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.util.scheduler.ScheduledEntry"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.util.SortedHashMap"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.util.SortedHashMap"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.util.SortedHashMap"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.util.UuidUtil"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.util.VersionCheck"/>
 
 </suppressions>
 

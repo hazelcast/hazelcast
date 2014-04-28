@@ -39,6 +39,8 @@ import static java.lang.String.format;
 //http://blog.scoutapp.com/articles/2009/07/31/understanding-load-averages
 //http://docs.oracle.com/javase/7/docs/jre/api/management/extension/com/sun/management/OperatingSystemMXBean.html
 public class HealthMonitor extends Thread {
+
+    private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private final ILogger logger;
     private final Node node;
     private final Runtime runtime;
@@ -225,8 +227,6 @@ public class HealthMonitor extends Thread {
         }
     }
 
-    private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
-
     private static Long get(OperatingSystemMXBean mbean, String methodName, Long defaultValue) {
         try {
             Method method = mbean.getClass().getMethod(methodName);
@@ -265,7 +265,9 @@ public class HealthMonitor extends Thread {
     public static String bytesToString(long bytes) {
         for (int i = 6; i > 0; i--) {
             double step = Math.pow(1024, i);
-            if (bytes > step) return format("%3.1f%s", bytes / step, UNITS[i]);
+            if (bytes > step) {
+                return format("%3.1f%s", bytes / step, UNITS[i]);
+            }
         }
         return Long.toString(bytes);
     }

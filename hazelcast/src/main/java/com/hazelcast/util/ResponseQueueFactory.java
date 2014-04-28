@@ -25,7 +25,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ResponseQueueFactory {
+public final class ResponseQueueFactory {
 
     private ResponseQueueFactory() {
     }
@@ -34,11 +34,12 @@ public class ResponseQueueFactory {
         return new LockBasedResponseQueue();
     }
 
-    private final static class LockBasedResponseQueue extends AbstractQueue implements BlockingQueue {
-        private Object response = null;
+    private static final class LockBasedResponseQueue extends AbstractQueue implements BlockingQueue {
+        private static final Object NULL = new Object();
+        private Object response;
         private final Lock lock = new ReentrantLock();
         private final Condition noValue = lock.newCondition();
-        private final static Object NULL = new Object();
+
 
         public Object take() throws InterruptedException {
             lock.lock();
@@ -58,7 +59,9 @@ public class ResponseQueueFactory {
         }
 
         public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
-            if (timeout < 0) throw new IllegalArgumentException();
+            if (timeout < 0) {
+                throw new IllegalArgumentException();
+            }
             long remaining = unit.toMillis(timeout);
             lock.lock();
             try {

@@ -67,7 +67,7 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         return new QueryResultIterator(iterationType);
     }
 
-    private class QueryResultIterator implements Iterator {
+    private final class QueryResultIterator implements Iterator {
 
         final Iterator<QueryResultEntry> iter = entries.iterator();
 

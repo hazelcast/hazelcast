@@ -27,18 +27,23 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 public class SortedHashMap<K, V> extends AbstractMap<K, V> {
-
     static final int MAXIMUM_CAPACITY = 1 << 30;
     static final int DEFAULT_INITIAL_CAPACITY = 16;
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
-    int modCount = 0;
-    Entry<K, V>[] table;
-    private transient Entry<K, V> header = null;
+    transient volatile Set<K> keySet;
+    transient volatile Collection<V> values;
+
     int size;
     int threshold;
     final float loadFactor;
     final OrderingType orderingType;
+    int modCount;
+
+    Entry<K, V>[] table;
+    private transient Set<Map.Entry<K, V>> entrySet;
+
+    private transient Entry<K, V> header;
 
     public enum OrderingType {
         NONE, LRU, LFU, HASH
@@ -57,18 +62,22 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     }
 
     public SortedHashMap(int initialCapacity, float loadFactor, OrderingType orderingType) {
-        if (initialCapacity < 0)
-            throw new IllegalArgumentException("Illegal initial capacity: " +
-                    initialCapacity);
-        if (initialCapacity > MAXIMUM_CAPACITY)
+        if (initialCapacity < 0) {
+            throw new IllegalArgumentException("Illegal initial capacity: "
+                    + initialCapacity);
+        }
+        if (initialCapacity > MAXIMUM_CAPACITY) {
             initialCapacity = MAXIMUM_CAPACITY;
-        if (loadFactor <= 0 || Float.isNaN(loadFactor))
-            throw new IllegalArgumentException("Illegal load factor: " +
-                    loadFactor);
+        }
+        if (loadFactor <= 0 || Float.isNaN(loadFactor)) {
+            throw new IllegalArgumentException("Illegal load factor: "
+                    + loadFactor);
+        }
         // Find a power of 2 >= initialCapacity
         int capacity = 1;
-        while (capacity < initialCapacity)
+        while (capacity < initialCapacity) {
             capacity <<= 1;
+        }
         this.orderingType = orderingType;
         this.loadFactor = loadFactor;
         threshold = (int) (capacity * loadFactor);
@@ -118,8 +127,9 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
 
     public V get(Object key) {
         Entry<K, V> e = getEntry(key);
-        if (e == null)
+        if (e == null) {
             return null;
+        }
         e.recordAccess(this);
         return e.value;
     }
@@ -128,8 +138,9 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         int hash = hash(k.hashCode());
         int i = indexFor(hash, table.length);
         Entry<K, V> e = table[i];
-        while (e != null && !(e.hash == hash && eq(k, e.key)))
+        while (e != null && !(e.hash == hash && eq(k, e.key))) {
             e = e.next;
+        }
         return e;
     }
 
@@ -140,8 +151,9 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     public void clear() {
         modCount++;
         Entry[] tab = table;
-        for (int i = 0; i < tab.length; i++)
+        for (int i = 0; i < tab.length; i++) {
             tab[i] = null;
+        }
         size = 0;
         header.before = header.after = header;
     }
@@ -161,10 +173,11 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             if ((e.hash == hash) && (k == e.key || k.equals(e.key))) {
                 modCount++;
                 size--;
-                if (prev == e)
+                if (prev == e) {
                     table[i] = next;
-                else
+                } else {
                     prev.next = next;
+                }
                 e.recordRemoval(this);
                 return e;
             }
@@ -175,8 +188,9 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     }
 
     Entry<K, V> removeMapping(Object o) {
-        if (!(o instanceof Map.Entry))
+        if (!(o instanceof Map.Entry)) {
             return null;
+        }
         Map.Entry<K, V> entry = (Map.Entry<K, V>) o;
         Object k = entry.getKey();
         int hash = hash(k.hashCode());
@@ -188,10 +202,11 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
             if (e.hash == hash && e.equals(entry)) {
                 modCount++;
                 size--;
-                if (prev == e)
+                if (prev == e) {
                     table[i] = next;
-                else
+                } else {
                     prev.next = next;
+                }
                 e.recordRemoval(this);
                 return e;
             }
@@ -207,8 +222,9 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         if (removeEldestEntry(eldest)) {
             removeEntryForKey(eldest.key);
         } else {
-            if (size >= threshold)
+            if (size >= threshold) {
                 resize(2 * table.length);
+            }
         }
     }
 
@@ -258,13 +274,17 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
     public boolean containsValue(Object value) {
         // Overridden to take advantage of faster iterator
         if (value == null) {
-            for (Entry<K, V> e = header.after; e != header; e = e.after)
-                if (e.value == null)
+            for (Entry<K, V> e = header.after; e != header; e = e.after) {
+                if (e.value == null) {
                     return true;
+                }
+            }
         } else {
-            for (Entry<K, V> e = header.after; e != header; e = e.after)
-                if (value.equals(e.value))
+            for (Entry<K, V> e = header.after; e != header; e = e.after) {
+                if (value.equals(e.value)) {
                     return true;
+                }
+            }
         }
         return false;
     }
@@ -361,7 +381,9 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
                     moveLRU(lm);
                 } else if (orderingType == OrderingType.HASH) {
                     moveHash(lm);
-                } else throw new RuntimeException("Unknown orderingType:" + lm.orderingType);
+                } else {
+                    throw new RuntimeException("Unknown orderingType:" + lm.orderingType);
+                }
             }
         }
 
@@ -408,7 +430,7 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
 
     private abstract class LinkedHashIterator<T> implements Iterator<T> {
         Entry<K, V> nextEntry = header.after;
-        Entry<K, V> lastReturned = null;
+        Entry<K, V> lastReturned;
 
         int expectedModCount = modCount;
 
@@ -417,20 +439,24 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         }
 
         public void remove() {
-            if (lastReturned == null)
+            if (lastReturned == null) {
                 throw new IllegalStateException();
-            if (modCount != expectedModCount)
+            }
+            if (modCount != expectedModCount) {
                 throw new ConcurrentModificationException();
+            }
             SortedHashMap.this.remove(lastReturned.key);
             lastReturned = null;
             expectedModCount = modCount;
         }
 
         Entry<K, V> nextEntry() {
-            if (modCount != expectedModCount)
+            if (modCount != expectedModCount) {
                 throw new ConcurrentModificationException();
-            if (nextEntry == header)
+            }
+            if (nextEntry == header) {
                 throw new NoSuchElementException();
+            }
             Entry<K, V> e = lastReturned = nextEntry;
             nextEntry = e.after;
             return e;
@@ -468,9 +494,6 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         return new EntryIterator();
     }
 
-    private transient Set<Map.Entry<K, V>> entrySet = null;
-    transient volatile Set<K> keySet = null;
-    transient volatile Collection<V> values = null;
 
     public Set<K> keySet() {
         Set<K> ks = keySet;
@@ -533,8 +556,9 @@ public class SortedHashMap<K, V> extends AbstractMap<K, V> {
         }
 
         public boolean contains(Object o) {
-            if (!(o instanceof Map.Entry))
+            if (!(o instanceof Map.Entry)) {
                 return false;
+            }
             Map.Entry<K, V> e = (Map.Entry<K, V>) o;
             Entry<K, V> candidate = getEntry(e.getKey());
             return candidate != null && candidate.equals(e);
