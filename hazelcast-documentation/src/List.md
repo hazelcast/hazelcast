@@ -8,7 +8,7 @@ Hazelcast List is very similar to Hazelcast Set but it allows duplicate elements
 * Hazelcast List is non-partitioned data structure where values and each backup is represented by its own single partition.
 * Hazelcast List cannot be scaled beyond the capacity of a single machine.
 
-### Sample Code
+### Sample List Code
 
 ```java
 import com.hazelcast.core.Hazelcast;

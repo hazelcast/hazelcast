@@ -10,7 +10,7 @@ Hazelcast Set is distributed and concurrent implementation of `java.util.Set`.
 * Hazelcast Set cannot be scaled beyond the capacity of a single machine.
 * Equals method implementation of Hazelcast Set uses serialized byte version of objects compared to `java.util.HashSet`.
 
-### Sample Code
+### Sample Set Code
 
 ```java
 import com.hazelcast.core.Hazelcast;
