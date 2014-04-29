@@ -164,7 +164,7 @@ It is that easy! All HTTP requests will go through Hazelcast `WebFilter` and it 
 
 **Client Mode vs P2P Mode**
 
-Hazelcast Session Replication works as P2P by default. You need to set `use-client` parameter to true to switch to Client-Server architecture. P2P mode is more flexible and requires no configuration in advance while Client-Service architecture needs to connect an existing Hazelcast Cluster.
+Hazelcast Session Replication works as P2P by default. You need to set `use-client` parameter to true to switch to Client-Server architecture. P2P mode is more flexible and requires no configuration in advance while in Client-Service architecture, clients need to connect an existing Hazelcast Cluster. In case of connection problems, clients will try to reconnect to the cluster. Default retry count is 3.
 
 **Caching locally using deferred-write parameter:**
 
