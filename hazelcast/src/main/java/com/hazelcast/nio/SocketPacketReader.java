@@ -25,7 +25,9 @@ import java.nio.ByteBuffer;
 
 class SocketPacketReader implements SocketReader {
 
-    Packet packet = null;
+    private static final int CONST_BUFFER_NO = 4;
+
+    Packet packet;
 
     final PacketReader packetReader;
     final TcpIpConnection connection;
@@ -75,7 +77,7 @@ class SocketPacketReader implements SocketReader {
         }
     }
 
-    private class SymmetricCipherPacketReader implements PacketReader {
+    private final class SymmetricCipherPacketReader implements PacketReader {
         int size = -1;
         final Cipher cipher;
         ByteBuffer cipherBuffer = ByteBuffer.allocate(ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE);
@@ -100,7 +102,9 @@ class SocketPacketReader implements SocketReader {
             while (inBuffer.hasRemaining()) {
                 try {
                     if (size == -1) {
-                        if (inBuffer.remaining() < 4) return;
+                        if (inBuffer.remaining() < CONST_BUFFER_NO) {
+                            return;
+                        }
                         size = inBuffer.getInt();
                         if (cipherBuffer.capacity() < size) {
                             cipherBuffer = ByteBuffer.allocate(size);

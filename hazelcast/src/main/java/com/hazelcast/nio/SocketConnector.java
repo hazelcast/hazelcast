@@ -20,13 +20,19 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.InetSocketAddress;
+import java.net.Inet6Address;
+import java.net.SocketException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.logging.Level;
 
 public class SocketConnector implements Runnable {
 
+    private static final int TIMEOUT = 3000;
     private final TcpIpConnectionManager connectionManager;
     private final Address address;
     private final ILogger logger;
@@ -68,14 +74,15 @@ public class SocketConnector implements Runnable {
                 final Collection<Inet6Address> possibleInetAddresses = AddressUtil.getPossibleInetAddressesFor(
                         (Inet6Address) address.getInetAddress());
                 final Level level = silent ? Level.FINEST : Level.INFO;
-                if (logger.isLoggable(level)) { //TODO: collection.toString() will likely not produce any useful output!
+                //TODO: collection.toString() will likely not produce any useful output!
+                if (logger.isLoggable(level)) {
                     log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
                 }
                 boolean connected = false;
                 Exception error = null;
                 for (Inet6Address inetAddress : possibleInetAddresses) {
                     try {
-                        tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), 3000);
+                        tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), TIMEOUT);
                         connected = true;
                         break;
                     } catch (Exception e) {

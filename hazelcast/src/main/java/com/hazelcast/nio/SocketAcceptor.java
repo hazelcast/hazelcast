@@ -20,7 +20,11 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
-import java.nio.channels.*;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.Selector;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.ClosedChannelException;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
@@ -46,7 +50,8 @@ public class SocketAcceptor implements Runnable {
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
             while (connectionManager.isLive()) {
-                final int keyCount = selector.select(); // block until new connection or interruption.
+                // block until new connection or interruption.
+                final int keyCount = selector.select();
                 if (Thread.currentThread().isInterrupted()) {
                     break;
                 }
@@ -58,7 +63,8 @@ public class SocketAcceptor implements Runnable {
                 while (it.hasNext()) {
                     final SelectionKey sk = it.next();
                     it.remove();
-                    if (sk.isValid() && sk.isAcceptable()) {  // of course it is acceptable!
+                    // of course it is acceptable!
+                    if (sk.isValid() && sk.isAcceptable()) {
                         acceptSocket();
                     }
                 }
@@ -76,7 +82,7 @@ public class SocketAcceptor implements Runnable {
         if (selector != null) {
             try {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Closing selector " + Thread.currentThread().getName());
+                    logger.finest("Closing selector " + Thread.currentThread().getName());
                 }
                 selector.close();
             } catch (final Exception ignored) {
@@ -85,7 +91,9 @@ public class SocketAcceptor implements Runnable {
     }
 
     private void acceptSocket() {
-        if (!connectionManager.isLive()) return;
+        if (!connectionManager.isLive()) {
+            return;
+        }
         SocketChannelWrapper socketChannelWrapper = null;
         try {
             final SocketChannel socketChannel = serverSocketChannel.accept();
@@ -97,10 +105,10 @@ public class SocketAcceptor implements Runnable {
                 // ClosedChannelException
                 // or AsynchronousCloseException
                 // or ClosedByInterruptException
-                logger.finest( "Terminating socket acceptor thread...", e);
+                logger.finest("Terminating socket acceptor thread...", e);
             } else {
                 String error = "Unexpected error while accepting connection! "
-                               + e.getClass().getName() + ": " + e.getMessage();
+                        + e.getClass().getName() + ": " + e.getMessage();
                 log(Level.WARNING, error);
                 try {
                     serverSocketChannel.close();

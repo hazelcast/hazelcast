@@ -25,15 +25,18 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 /**
-* @author mdogan 06/15/13
-*/
-final class ByteBufferObjectDataInput extends PortableContextAwareInputStream implements BufferObjectDataInput, SerializationContextAware {
+ * @author mdogan 06/15/13
+ */
+final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
+        implements BufferObjectDataInput, SerializationContextAware {
+
+    private static final int UTF_BUFFER_SIZE = 1024;
 
     private final DynamicByteBuffer buffer;
 
     private final SerializationService service;
 
-    private final byte[] utfBuffer = new byte[1024];
+    private final byte[] utfBuffer = new byte[UTF_BUFFER_SIZE];
 
     ByteBufferObjectDataInput(Data data, SerializationService service, ByteOrder order) {
         this(data.buffer, service, order);
@@ -41,7 +44,7 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
         setClassDefinition(cd);
     }
 
-    ByteBufferObjectDataInput(byte buffer[], SerializationService service, ByteOrder order) {
+    ByteBufferObjectDataInput(byte[] buffer, SerializationService service, ByteOrder order) {
         super();
         this.buffer = new DynamicByteBuffer(buffer);
         this.buffer.order(order);
@@ -56,7 +59,7 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
         return buffer.hasRemaining() ? buffer.get(position) : -1;
     }
 
-    public int read(byte b[], int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
         }
@@ -92,22 +95,24 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next byte of this input stream as a signed 8-bit
-     *         <code>byte</code>.
+     * <code>byte</code>.
      * @throws java.io.EOFException if this input stream has reached the end.
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
     public byte readByte() throws IOException {
         final int ch = read();
-        if (ch < 0)
+        if (ch < 0) {
             throw new EOFException();
+        }
         return (byte) (ch);
     }
 
     public byte readByte(int position) throws IOException {
         final int ch = read(position);
-        if (ch < 0)
+        if (ch < 0) {
             throw new EOFException();
+        }
         return (byte) (ch);
     }
 
@@ -119,7 +124,7 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      *
      * @return the next two bytes of this input stream as a Unicode character.
      * @throws java.io.EOFException if this input stream reaches the end before reading two
-     *                      bytes.
+     *                              bytes.
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
@@ -138,9 +143,9 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next eight bytes of this input stream, interpreted as a
-     *         <code>double</code>.
+     * <code>double</code>.
      * @throws java.io.EOFException if this input stream reaches the end before reading eight
-     *                      bytes.
+     *                              bytes.
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.DataInputStream#readLong()
      * @see Double#longBitsToDouble(long)
@@ -160,9 +165,9 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next four bytes of this input stream, interpreted as a
-     *         <code>float</code>.
+     * <code>float</code>.
      * @throws java.io.EOFException if this input stream reaches the end before reading four
-     *                      bytes.
+     *                              bytes.
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.DataInputStream#readInt()
      * @see Float#intBitsToFloat(int)
@@ -175,11 +180,11 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
         return buffer.getFloat(position);
     }
 
-    public void readFully(final byte b[]) throws IOException {
+    public void readFully(final byte[] b) throws IOException {
         read(b);
     }
 
-    public void readFully(final byte b[], final int off, final int len) throws IOException {
+    public void readFully(final byte[] b, final int off, final int len) throws IOException {
         read(b, off, len);
     }
 
@@ -190,9 +195,9 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next four bytes of this input stream, interpreted as an
-     *         <code>int</code>.
+     * <code>int</code>.
      * @throws java.io.EOFException if this input stream reaches the end before reading four
-     *                      bytes.
+     *                              bytes.
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
@@ -215,11 +220,11 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * @see java.io.BufferedReader#readLine()
      * @see java.io.FilterInputStream#in
      * @deprecated This method does not properly convert bytes to characters. As
-     *             of JDK&nbsp;1.1, the preferred way to read lines of text is
-     *             via the <code>BufferedReader.readLine()</code> method.
-     *             Programs that use the <code>DataInputStream</code> class to
-     *             read lines can be converted to use the
-     *             <code>BufferedReader</code> class.
+     * of JDK&nbsp;1.1, the preferred way to read lines of text is
+     * via the <code>BufferedReader.readLine()</code> method.
+     * Programs that use the <code>DataInputStream</code> class to
+     * read lines can be converted to use the
+     * <code>BufferedReader</code> class.
      */
     @Deprecated
     public String readLine() throws IOException {
@@ -233,9 +238,9 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next eight bytes of this input stream, interpreted as a
-     *         <code>long</code>.
+     * <code>long</code>.
      * @throws java.io.EOFException if this input stream reaches the end before reading eight
-     *                      bytes.
+     *                              bytes.
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
@@ -254,9 +259,9 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next two bytes of this input stream, interpreted as a signed
-     *         16-bit number.
+     * 16-bit number.
      * @throws java.io.EOFException if this input stream reaches the end before reading two
-     *                      bytes.
+     *                              bytes.
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
@@ -347,7 +352,7 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next byte of this input stream, interpreted as an unsigned
-     *         8-bit number.
+     * 8-bit number.
      * @throws java.io.EOFException if this input stream has reached the end.
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
@@ -363,9 +368,9 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      * Bytes for this operation are read from the contained input stream.
      *
      * @return the next two bytes of this input stream, interpreted as an
-     *         unsigned 16-bit integer.
+     * unsigned 16-bit integer.
      * @throws java.io.EOFException if this input stream reaches the end before reading two
-     *                      bytes.
+     *                              bytes.
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
@@ -381,10 +386,10 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
      *
      * @return a Unicode string.
      * @throws java.io.EOFException           if this input stream reaches the end before reading all
-     *                                the bytes.
+     *                                        the bytes.
      * @throws java.io.IOException            if an I/O error occurs.
      * @throws java.io.UTFDataFormatException if the bytes do not represent a valid modified UTF-8
-     *                                encoding of a string.
+     *                                        encoding of a string.
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     public String readUTF() throws IOException {

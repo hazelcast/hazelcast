@@ -42,11 +42,11 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         buffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
     }
 
-    public final void handle() {
+    public void handle() {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.live()) {
             String message = "We are being asked to read, but connection is not live so we won't";
-            logger.finest( message);
+            logger.finest(message);
             systemLogService.logConnection(message);
             return;
         }
@@ -67,7 +67,9 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
             return;
         }
         try {
-            if (buffer.position() == 0) return;
+            if (buffer.position() == 0) {
+                return;
+            }
             buffer.flip();
             socketReader.read(buffer);
             if (buffer.hasRemaining()) {
@@ -114,7 +116,7 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         }
     }
 
-    public final void run() {
+    public void run() {
         registerOp(ioSelector.getSelector(), SelectionKey.OP_READ);
     }
 

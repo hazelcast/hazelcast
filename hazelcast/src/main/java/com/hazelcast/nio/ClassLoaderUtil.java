@@ -36,7 +36,8 @@ public final class ClassLoaderUtil {
     public static final String HAZELCAST_ARRAY = "[L" + HAZELCAST_BASE_PACKAGE;
 
     private static final Map<String, Class> PRIMITIVE_CLASSES;
-    private static final int MAX_PRIM_CLASSNAME_LENGTH = 7; // boolean.class.getName().length();
+    // boolean.class.getName().length();
+    private static final int MAX_PRIM_CLASSNAME_LENGTH = 7;
 
     private static final ConstructorCache CONSTRUCTOR_CACHE = new ConstructorCache();
 
@@ -52,6 +53,9 @@ public final class ClassLoaderUtil {
         primitives.put("char", char.class);
         primitives.put("void", void.class);
         PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitives);
+    }
+
+    private ClassLoaderUtil() {
     }
 
     public static <T> T newInstance(ClassLoader classLoader, final String className) throws Exception {
@@ -118,10 +122,10 @@ public final class ClassLoaderUtil {
 
     public static boolean isInternalType(Class type) {
         return type.getClassLoader() == ClassLoaderUtil.class.getClassLoader()
-            && type.getName().startsWith(HAZELCAST_BASE_PACKAGE);
+                && type.getName().startsWith(HAZELCAST_BASE_PACKAGE);
     }
 
-    private static class ConstructorCache {
+    private static final class ConstructorCache {
         private final ConcurrentMap<ClassLoader, ConcurrentMap<String, WeakReference<Constructor>>> cache;
 
         private ConstructorCache() {
@@ -158,5 +162,4 @@ public final class ClassLoaderUtil {
         }
     }
 
-    private ClassLoaderUtil() {}
 }

@@ -30,7 +30,7 @@ import java.util.Collection;
 
 public interface IOService {
 
-    static final int KILO_BYTE = 1024;
+    int KILO_BYTE = 1024;
 
     boolean isActive();
 

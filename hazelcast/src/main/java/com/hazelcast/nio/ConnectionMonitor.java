@@ -19,8 +19,6 @@ package com.hazelcast.nio;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
-import java.util.logging.Level;
-
 public class ConnectionMonitor {
 
     final ILogger logger;
@@ -29,8 +27,8 @@ public class ConnectionMonitor {
     final Address endPoint;
     final long minInterval;
     final int maxFaults;
-    int faults = 0;
-    long lastFaultTime = 0L;
+    int faults;
+    long lastFaultTime;
 
     public ConnectionMonitor(TcpIpConnectionManager connectionManager, Address endPoint) {
         super();
@@ -48,7 +46,7 @@ public class ConnectionMonitor {
 
     public synchronized void onError(Throwable t) {
         String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(t);
-        logger.finest( errorMessage);
+        logger.finest(errorMessage);
         ioService.getSystemLogService().logConnection(errorMessage);
         final long now = Clock.currentTimeMillis();
         final long last = lastFaultTime;
@@ -65,7 +63,7 @@ public class ConnectionMonitor {
 
     public synchronized void reset() {
         String resetMessage = "Resetting connection monitor for endpoint " + endPoint;
-        logger.finest( resetMessage);
+        logger.finest(resetMessage);
         ioService.getSystemLogService().logConnection(resetMessage);
         faults = 0;
         lastFaultTime = 0L;

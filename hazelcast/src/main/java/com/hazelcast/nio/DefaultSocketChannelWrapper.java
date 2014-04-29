@@ -20,7 +20,11 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.Selector;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.ClosedChannelException;
 
 public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
 

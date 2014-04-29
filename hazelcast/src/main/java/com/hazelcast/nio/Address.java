@@ -33,8 +33,8 @@ public final class Address implements IdentifiedDataSerializable {
 
     public static final int ID = 1;
 
-    private static final byte IPv4 = 4;
-    private static final byte IPv6 = 6;
+    private static final byte IPV4 = 4;
+    private static final byte IPV6 = 6;
 
     private int port = -1;
     private String host;
@@ -61,7 +61,7 @@ public final class Address implements IdentifiedDataSerializable {
     }
 
     private Address(final String hostname, final InetAddress inetAddress, final int port) {
-        this.type = (inetAddress instanceof Inet4Address) ? IPv4 : IPv6;
+        this.type = (inetAddress instanceof Inet4Address) ? IPV4 : IPV6;
         final String[] addressArgs = inetAddress.getHostAddress().split("\\%");
         this.host = hostname != null ? hostname : addressArgs[0];
         if (addressArgs.length == 2) {
@@ -125,8 +125,12 @@ public final class Address implements IdentifiedDataSerializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Address)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Address)) {
+            return false;
+        }
         final Address address = (Address) o;
         return port == address.port && this.type == address.type && this.host.equals(address.host);
     }
@@ -139,11 +143,11 @@ public final class Address implements IdentifiedDataSerializable {
     }
 
     public boolean isIPv4() {
-        return type == IPv4;
+        return type == IPV4;
     }
 
     public boolean isIPv6() {
-        return type == IPv6;
+        return type == IPV6;
     }
 
     public String getScopeId() {

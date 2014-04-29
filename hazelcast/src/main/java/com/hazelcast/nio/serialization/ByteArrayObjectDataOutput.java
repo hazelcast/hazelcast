@@ -30,9 +30,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     final int initialSize;
 
-    byte buffer[];
+    byte[] buffer;
 
-    int pos = 0;
+    int pos;
 
     final SerializationService service;
 
@@ -53,9 +53,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         buffer[position] = (byte) b;
     }
 
-    public void write(byte b[], int off, int len) {
-       if ((off < 0) || (off > b.length) || (len < 0) ||
-                ((off + len) > b.length) || ((off + len) < 0)) {
+    public void write(byte[] b, int off, int len) {
+        if ((off < 0) || (off > b.length) || (len < 0)
+                || ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
         } else if (len == 0) {
             return;
@@ -77,8 +77,8 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         write(v);
     }
 
-    public void writeZeroBytes(int count){
-        for(int k=0;k<count;k++){
+    public void writeZeroBytes(int count) {
+        for (int k = 0; k < count; k++) {
             write(0);
         }
     }
@@ -249,7 +249,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         if (available() < len) {
             if (buffer != null) {
                 int newCap = Math.max(buffer.length << 1, buffer.length + len);
-                byte newBuffer[] = new byte[newCap];
+                byte[] newBuffer = new byte[newCap];
                 System.arraycopy(buffer, 0, newBuffer, 0, pos);
                 buffer = newBuffer;
             } else {
@@ -270,8 +270,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void position(int newPos) {
-        if ((newPos > buffer.length) || (newPos < 0))
+        if ((newPos > buffer.length) || (newPos < 0)) {
             throw new IllegalArgumentException();
+        }
 
         pos = newPos;
     }
@@ -288,7 +289,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         if (buffer == null) {
             return new byte[0];
         }
-        final byte newBuffer[] = new byte[pos];
+        final byte[] newBuffer = new byte[pos];
         System.arraycopy(buffer, 0, newBuffer, 0, pos);
         return newBuffer;
     }

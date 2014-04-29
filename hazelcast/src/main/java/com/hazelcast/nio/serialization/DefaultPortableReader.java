@@ -33,14 +33,15 @@ public class DefaultPortableReader implements PortableReader {
     private final BufferObjectDataInput in;
     private final int finalPosition;
     private final int offset;
-    private boolean raw = false;
+    private boolean raw;
 
     public DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
         try {
-            finalPosition = in.readInt();  // final position after portable is read
+            // final position after portable is read
+            finalPosition = in.readInt();
         } catch (IOException e) {
             throw new HazelcastSerializationException(e);
         }

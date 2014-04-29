@@ -25,10 +25,12 @@ import java.nio.ByteBuffer;
 
 class SocketPacketWriter implements SocketWriter<Packet> {
 
-    private final PacketWriter packetWriter;
+    private static final int CONST_BUFFER_NO = 4;
     final TcpIpConnection connection;
     final IOService ioService;
     final ILogger logger;
+
+    private final PacketWriter packetWriter;
 
     SocketPacketWriter(TcpIpConnection connection) {
         this.connection = connection;
@@ -60,7 +62,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
     private class SymmetricCipherPacketWriter implements PacketWriter {
         final Cipher cipher;
         ByteBuffer packetBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize() * IOService.KILO_BYTE);
-        boolean packetWritten = false;
+        boolean packetWritten;
 
         SymmetricCipherPacketWriter() {
             cipher = init();
@@ -80,7 +82,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
 
         public boolean writePacket(Packet packet, ByteBuffer socketBuffer) throws Exception {
             if (!packetWritten) {
-                if (socketBuffer.remaining() < 4) {
+                if (socketBuffer.remaining() < CONST_BUFFER_NO) {
                     return false;
                 }
                 int size = cipher.getOutputSize(packet.size());

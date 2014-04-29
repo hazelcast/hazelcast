@@ -32,7 +32,12 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.*;
+import java.util.Map;
+import java.util.Collections;
+import java.util.Set;
+import java.util.LinkedList;
+import java.util.Collection;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -41,11 +46,20 @@ import java.util.logging.Level;
 
 public class TcpIpConnectionManager implements ConnectionManager {
 
-    private final ILogger logger;
-
     final int socketReceiveBufferSize;
 
+    final IOService ioService;
+
     final int socketSendBufferSize;
+
+    private final ConstructorFunction<Address, ConnectionMonitor> monitorConstructor
+            = new ConstructorFunction<Address, ConnectionMonitor>() {
+        public ConnectionMonitor createNew(Address endpoint) {
+            return new ConnectionMonitor(TcpIpConnectionManager.this, endpoint);
+        }
+    };
+
+    private final ILogger logger;
 
     private final int socketLingerSeconds;
 
@@ -61,17 +75,17 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
-    private final Set<SocketChannelWrapper> acceptedSockets = Collections.newSetFromMap(new ConcurrentHashMap<SocketChannelWrapper, Boolean>());
+    private final Set<SocketChannelWrapper> acceptedSockets =
+            Collections.newSetFromMap(new ConcurrentHashMap<SocketChannelWrapper, Boolean>());
 
-    private final Set<TcpIpConnection> activeConnections = Collections.newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
+    private final Set<TcpIpConnection> activeConnections =
+            Collections.newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
 
     private final AtomicInteger allTextConnections = new AtomicInteger();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    private volatile boolean live = false;
-
-    final IOService ioService;
+    private volatile boolean live;
 
     private final ServerSocketChannel serverSocketChannel;
 
@@ -89,11 +103,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final int outboundPortCount;
 
-    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();  // accessed only in synchronized block
+    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
+    // accessed only in synchronized block
 
     private final SerializationContext serializationContext;
 
-    private volatile Thread socketAcceptorThread; // accessed only in synchronized block
+    private volatile Thread socketAcceptorThread;
+    // accessed only in synchronized block
 
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
@@ -133,7 +149,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             }
             if (implementation != null) {
                 if (!(implementation instanceof MemberSocketInterceptor)) {
-                    logger.severe( "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
+                    logger.severe("SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
                     implementation = null;
                 }
             }
@@ -216,7 +232,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return ioService;
     }
 
-     public MemberSocketInterceptor getMemberSocketInterceptor() {
+    public MemberSocketInterceptor getMemberSocketInterceptor() {
         return memberSocketInterceptor;
     }
 
@@ -230,7 +246,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
         final Address thisAddress = ioService.getThisAddress();
         if (!connection.isClient() && !thisAddress.equals(localEndpoint)) {
-            log(Level.WARNING, "Wrong bind request from " + remoteEndPoint + "! This node is not requested endpoint: " + localEndpoint);
+            log(Level.WARNING, "Wrong bind request from " + remoteEndPoint
+                    + "! This node is not requested endpoint: " + localEndpoint);
             connection.close();
             return false;
         }
@@ -242,7 +259,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (existingConnection != null && existingConnection.live()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {
-                    log(Level.FINEST, existingConnection + " is already bound  to " + remoteEndPoint + ", new one is " + connection);
+                    log(Level.FINEST, existingConnection + " is already bound  to "
+                            + remoteEndPoint + ", new one is " + connection);
                 }
                 activeConnections.add(connection);
             }
@@ -285,11 +303,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel) {
         final int index = nextSelectorIndex();
-        final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index], outSelectors[index], connectionIdGen.incrementAndGet(), channel);
+        final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
+                outSelectors[index], connectionIdGen.incrementAndGet(), channel);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
         connection.getReadHandler().register();
-        log(Level.INFO, channel.socket().getLocalPort() + " accepted socket connection from " + channel.socket().getRemoteSocketAddress());
+        log(Level.INFO, channel.socket().getLocalPort() + " accepted socket connection from "
+                + channel.socket().getRemoteSocketAddress());
         return connection;
     }
 
@@ -320,12 +340,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return connection;
     }
 
-    private final ConstructorFunction<Address, ConnectionMonitor> monitorConstructor
-            = new ConstructorFunction<Address, ConnectionMonitor>() {
-        public ConnectionMonitor createNew(Address endpoint) {
-            return new ConnectionMonitor(TcpIpConnectionManager.this, endpoint);
-        }
-    };
 
     private ConnectionMonitor getConnectionMonitor(Address endpoint, boolean reset) {
         final ConnectionMonitor monitor = ConcurrencyUtil.getOrPutIfAbsent(monitors, endpoint, monitorConstructor);
@@ -370,7 +384,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     public synchronized void start() {
-        if (live) return;
+        if (live) {
+            return;
+        }
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
         for (int i = 0; i < inSelectors.length; i++) {
@@ -419,7 +435,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private void stop() {
         live = false;
         log(Level.FINEST, "Stopping ConnectionManager");
-        shutdownSocketAcceptor(); // interrupt acceptor thread after live=false
+        // interrupt acceptor thread after live=false
+        shutdownSocketAcceptor();
         for (SocketChannelWrapper socketChannel : acceptedSockets) {
             IOUtil.closeResource(socketChannel);
         }
@@ -490,7 +507,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return count;
     }
 
-      public boolean isLive() {
+    public boolean isLive() {
         return live;
     }
 

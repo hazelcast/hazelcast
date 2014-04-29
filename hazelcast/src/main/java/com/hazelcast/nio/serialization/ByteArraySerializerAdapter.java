@@ -79,12 +79,18 @@ final class ByteArraySerializerAdapter implements SerializerAdapter {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ByteArraySerializerAdapter that = (ByteArraySerializerAdapter) o;
 
-        if (serializer != null ? !serializer.equals(that.serializer) : that.serializer != null) return false;
+        if (serializer != null ? !serializer.equals(that.serializer) : that.serializer != null) {
+            return false;
+        }
 
         return true;
     }

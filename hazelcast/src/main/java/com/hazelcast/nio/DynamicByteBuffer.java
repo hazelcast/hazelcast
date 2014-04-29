@@ -317,7 +317,7 @@ public final class DynamicByteBuffer {
         } else {
             final ByteBuffer duplicate = buffer.duplicate();
             duplicate.flip();
-            final byte newBuffer[] = new byte[duplicate.limit()];
+            final byte[] newBuffer = new byte[duplicate.limit()];
             duplicate.get(newBuffer);
             return newBuffer;
         }

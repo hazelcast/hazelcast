@@ -23,7 +23,14 @@ import com.hazelcast.logging.Logger;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.*;
+
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.DESedeKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.DESKeySpec;
+import javax.crypto.spec.PBEKeySpec;
+
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.Provider;
@@ -34,9 +41,10 @@ import java.security.spec.KeySpec;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public final class CipherHelper {
-    private static SymmetricCipherBuilder symmetricCipherBuilder = null;
 
-    final static ILogger logger = Logger.getLogger(CipherHelper.class);
+    static final ILogger LOGGER = Logger.getLogger(CipherHelper.class);
+
+    private static SymmetricCipherBuilder symmetricCipherBuilder;
 
     static {
         try {
@@ -45,11 +53,12 @@ public final class CipherHelper {
                 Security.addProvider((Provider) Class.forName(provider).newInstance());
             }
         } catch (Exception e) {
-            logger.warning(e);
+            LOGGER.warning(e);
         }
     }
 
-    private CipherHelper(){}
+    private CipherHelper() {
+    }
 
     @SuppressWarnings("SynchronizedMethod")
     public static synchronized Cipher createSymmetricReaderCipher(SymmetricEncryptionConfig config) throws Exception {
@@ -90,7 +99,7 @@ public final class CipherHelper {
 
         byte[] createSalt(String saltStr) {
             long hash = 0;
-            char chars[] = saltStr.toCharArray();
+            char[] chars = saltStr.toCharArray();
             for (char c : chars) {
                 hash = 31 * hash + c;
             }
@@ -167,7 +176,7 @@ public final class CipherHelper {
     }
 
     public static void handleCipherException(Exception e, Connection connection) {
-        logger.warning(e);
+        LOGGER.warning(e);
         connection.close();
     }
 }
