@@ -91,6 +91,8 @@ public abstract class BaseManager {
 
     protected final int redoGiveUpThreshold;
 
+    protected final int maxConnectionOutputQueueSize;
+
     protected final SystemLogService systemLogService;
 
     final DistributedTimeoutException distributedTimeoutException = new DistributedTimeoutException();
@@ -114,6 +116,7 @@ public abstract class BaseManager {
         redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
         redoLogThreshold = node.getGroupProperties().REDO_LOG_THRESHOLD.getInteger();
         redoGiveUpThreshold = node.getGroupProperties().REDO_GIVE_UP_THRESHOLD.getInteger();
+        maxConnectionOutputQueueSize = node.getGroupProperties().CONNECTION_MAX_OUTPUT_QUEUE_SIZE.getInteger();
     }
 
     public List<MemberImpl> getMembers() {
@@ -1203,7 +1206,7 @@ public abstract class BaseManager {
                     enqueueEvent(eventType, name, key, /*(includeValue) ? value : null*/ value, callerAddress, true);
                 } else {
                     final Connection conn = node.connectionManager.getConnection(toAddress);
-                    if (conn != null && conn.getWriteHandler().size() > 10000) {
+                    if (conn != null && conn.getWriteHandler().size() > maxConnectionOutputQueueSize) {
                         // flow control
                         if (fireAndForget) {
                             if (logger.isLoggable(Level.FINEST)) {
@@ -1212,7 +1215,7 @@ public abstract class BaseManager {
                             }
                             continue;
                         } else {
-                            while (conn.getWriteHandler().size() > 10000) {
+                            while (conn.getWriteHandler().size() > maxConnectionOutputQueueSize) {
                                 try {
                                     //noinspection BusyWait
                                     Thread.sleep(10);
