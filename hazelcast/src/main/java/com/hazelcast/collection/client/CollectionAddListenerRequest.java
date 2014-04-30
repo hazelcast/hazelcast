@@ -29,7 +29,6 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
@@ -41,7 +40,7 @@ import com.hazelcast.spi.impl.PortableItemEvent;
 import java.io.IOException;
 import java.security.Permission;
 
-public class CollectionAddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
+public class CollectionAddListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     private String name;
 

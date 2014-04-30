@@ -36,7 +36,10 @@ import com.hazelcast.spi.impl.PortableItemEvent;
 import java.io.IOException;
 import java.security.Permission;
 
-public class AddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
+/**
+ * this class is used to attach a listener to targeted node which sends back the events to client for a queue
+ */
+public class AddListenerRequest extends CallableClientRequest implements SecureRequest, RetryableRequest {
 
     private String name;
     private boolean includeValue;

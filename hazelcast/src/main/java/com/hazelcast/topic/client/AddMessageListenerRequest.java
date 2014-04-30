@@ -20,11 +20,9 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
@@ -35,8 +33,7 @@ import com.hazelcast.topic.TopicService;
 import java.io.IOException;
 import java.security.Permission;
 
-public class AddMessageListenerRequest extends CallableClientRequest
-        implements Portable, SecureRequest, RetryableRequest {
+public class AddMessageListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     private String name;
 

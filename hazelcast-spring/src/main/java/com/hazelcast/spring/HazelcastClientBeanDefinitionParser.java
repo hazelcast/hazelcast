@@ -92,6 +92,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 final String nodeName = cleanNodeName(node.getNodeName());
                 if ("group".equals(nodeName)) {
                     createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
+                } else if ("properties".equals(nodeName)) {
+                    handleProperties(node, configBuilder);
                 } else if ("network".equals(nodeName)) {
                     handleNetwork(node);
                 } else if ("listeners".equals(nodeName)) {

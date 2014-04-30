@@ -118,6 +118,7 @@ public class TestClientApplicationContext {
         assertNotNull(client3);
 
         ClientConfig config = client.getClientConfig();
+        assertEquals("13", config.getProperty("hazelcast.client.retry.count"));
         assertEquals(3, config.getNetworkConfig().getConnectionAttemptLimit());
         assertEquals(1000, config.getNetworkConfig().getConnectionTimeout());
         assertEquals(3000, config.getNetworkConfig().getConnectionAttemptPeriod());

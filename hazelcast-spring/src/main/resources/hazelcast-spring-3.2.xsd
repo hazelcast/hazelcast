@@ -293,6 +293,7 @@
                 <xs:extension base="hazelcast-bean">
                     <xs:sequence>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="network" type="network-client" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="security" type="client-security" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>

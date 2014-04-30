@@ -23,6 +23,9 @@
         <name>dev</name>
         <password>dev-pass</password>
     </group>
+    <properties>
+        <property name="hazelcast.client.connection.timeout">10000</property>
+    </properties>
 
     <network>
         <cluster-members>

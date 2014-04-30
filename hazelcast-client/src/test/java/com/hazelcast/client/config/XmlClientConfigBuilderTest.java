@@ -25,6 +25,8 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * This class tests the usage of {@link XmlClientConfigBuilder}
  */
@@ -40,7 +42,21 @@ public class XmlClientConfigBuilderTest {
                         "<executor-pool-size>18</executor-pool-size>" +
                         "</hazelcast-client>";
         final ClientConfig clientConfig = buildConfig(xml);
-        Assert.assertEquals(18, clientConfig.getExecutorPoolSize());
+        assertEquals(18, clientConfig.getExecutorPoolSize());
+    }
+
+    @Test
+    public void readProperties() {
+        String xml =
+                "<hazelcast-client>\n" +
+                        "<properties>" +
+                        "<property name=\"hazelcast.client.connection.timeout\">6000</property>" +
+                        "<property name=\"hazelcast.client.retry.count\">8</property>" +
+                        "</properties>" +
+                        "</hazelcast-client>";
+        final ClientConfig clientConfig = buildConfig(xml);
+        assertEquals("6000", clientConfig.getProperty("hazelcast.client.connection.timeout"));
+        assertEquals("8", clientConfig.getProperty("hazelcast.client.retry.count"));
     }
 
     private ClientConfig buildConfig(String xml) {

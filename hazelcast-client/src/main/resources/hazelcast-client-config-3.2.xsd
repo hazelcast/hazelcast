@@ -25,6 +25,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="group" type="cluster-group" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="executor-pool-size" type="executor-pool-size" minOccurs="0" maxOccurs="1"
                             default="100"/>
