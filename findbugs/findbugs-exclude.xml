@@ -27,9 +27,7 @@
     <Match>
         <Package name="com.hazelcast.spi.impl" />
     </Match>
-    <Match>
-        <Package name="com.hazelcast.nio.serialization" />
-    </Match>
+
     <Match>
         <Package name="com.hazelcast.jca" />
     </Match>
