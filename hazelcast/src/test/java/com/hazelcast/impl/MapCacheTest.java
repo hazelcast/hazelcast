@@ -94,10 +94,6 @@ public class MapCacheTest {
         private boolean checkEquals() {
             int etalon = version.get();
             int hz = hazelcast.get(key);
-            if (etalon == hz)
-                System.out.println(etalon + " == " + hz);
-            else
-                System.out.println(etalon + " != " + hz + " " + (etalon - hz));
             return etalon == hz;
         }
 
