@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.spring;
 
-import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CloudConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
@@ -256,8 +255,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMulticast(child, joinConfigBuilder);
                 } else if ("tcp-ip".equals(name)) {
                     handleTcpIp(child, joinConfigBuilder);
-                } else if ("aws".equals(name)) {
-                    handleAws(child, joinConfigBuilder);
+                } else if ("cloud".equals(name)) {
+                    handleCloud(child, joinConfigBuilder);
                 }
             }
             networkConfigBuilder.addPropertyValue("join", beanDefinition);
@@ -323,8 +322,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             builder.addPropertyValue("members", members);
         }
 
-        public void handleAws(Node node, BeanDefinitionBuilder joinConfigBuilder) {
-            createAndFillBeanBuilder(node, AwsConfig.class, "awsConfig", joinConfigBuilder);
+        public void handleCloud(Node node, BeanDefinitionBuilder joinConfigBuilder) {
+            createAndFillBeanBuilder(node, CloudConfig.class, "cloudConfig",
+                    joinConfigBuilder);
         }
 
         public void handleQueue(Node node) {

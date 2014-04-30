@@ -13,14 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.hazelcast.aws.impl;
-
-public interface Constants {
-
-    String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    String DOC_VERSION = "2011-05-15";
-    String SIGNATURE_METHOD = "HmacSHA256";
-    String SIGNATURE_VERSION = "2";
-    String GET = "GET";
-}
+/**
+ * <p>This package contains cloud provider utilities.</p>
+ */
+package com.hazelcast.cloud;

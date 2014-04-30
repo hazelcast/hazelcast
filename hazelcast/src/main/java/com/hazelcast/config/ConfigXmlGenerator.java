@@ -139,15 +139,15 @@ public class ConfigXmlGenerator {
             xml.append("<required-member>").append(tcpCfg.getRequiredMember()).append("</required-member>");
         }
         xml.append("</tcp-ip>");
-        final AwsConfig awsConfig = join.getAwsConfig();
-        xml.append("<aws enabled=\"").append(awsConfig.isEnabled()).append("\">");
-        xml.append("<access-key>").append(awsConfig.getAccessKey()).append("</access-key>");
-        xml.append("<secret-key>").append(awsConfig.getSecretKey()).append("</secret-key>");
-        xml.append("<region>").append(awsConfig.getRegion()).append("</region>");
-        xml.append("<security-group-name>").append(awsConfig.getSecurityGroupName()).append("</security-group-name>");
-        xml.append("<tag-key>").append(awsConfig.getTagKey()).append("</tag-key>");
-        xml.append("<tag-value>").append(awsConfig.getTagValue()).append("</tag-value>");
-        xml.append("</aws>");
+        final CloudConfig cloudConfig = join.getCloudConfig();
+        xml.append("<cloud enabled=\"").append(cloudConfig.isEnabled()).append("\">");
+        xml.append("<access-key>").append(cloudConfig.getAccessKey()).append("</access-key>");
+        xml.append("<secret-key>").append(cloudConfig.getSecretKey()).append("</secret-key>");
+        xml.append("<region>").append(cloudConfig.getRegion()).append("</region>");
+        xml.append("<group-name>").append(cloudConfig.getGroupName()).append("</group-name>");
+        xml.append("<tag-key>").append(cloudConfig.getTagKey()).append("</tag-key>");
+        xml.append("<tag-value>").append(cloudConfig.getTagValue()).append("</tag-value>");
+        xml.append("</cloud>");
         xml.append("</join>");
         final InterfacesConfig interfaces = netCfg.getInterfaces();
         xml.append("<interfaces enabled=\"").append(interfaces.isEnabled()).append("\">");

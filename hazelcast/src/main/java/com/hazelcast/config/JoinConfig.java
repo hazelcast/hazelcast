@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.config;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
- * Contains the 3 different join configurations; tcp-ip/multicast/aws. Only one of them should be enabled!
+ * Contains the 3 different join configurations; tcp-ip/multicast/cloud. Only
+ * one of them should be enabled!
  */
 public class JoinConfig {
 
@@ -27,7 +27,7 @@ public class JoinConfig {
 
     private TcpIpConfig tcpIpConfig = new TcpIpConfig();
 
-    private AwsConfig awsConfig = new AwsConfig();
+    private CloudConfig cloudConfig = new CloudConfig();
 
     /**
      * @return the multicastConfig
@@ -62,18 +62,18 @@ public class JoinConfig {
     }
 
     /**
-     * @return the awsConfig
+     * @return the cloudConfig
      */
-    public AwsConfig getAwsConfig() {
-        return awsConfig;
+    public CloudConfig getCloudConfig() {
+        return cloudConfig;
     }
 
     /**
-     * @param awsConfig the AwsConfig to set
-     * @throws IllegalArgumentException if awsConfig is null.
+     * @param cloudConfig the CloudConfig to set
+     * @throws IllegalArgumentException if cloudConfig is null.
      */
-    public JoinConfig setAwsConfig(final AwsConfig awsConfig) {
-        this.awsConfig = isNotNull(awsConfig,"awsConfig");
+    public JoinConfig setCloudConfig(final CloudConfig cloudConfig) {
+        this.cloudConfig = isNotNull(cloudConfig, "cloudConfig");
         return this;
     }
 
@@ -82,7 +82,7 @@ public class JoinConfig {
         final StringBuilder sb = new StringBuilder("JoinConfig{");
         sb.append("multicastConfig=").append(multicastConfig);
         sb.append(", tcpIpConfig=").append(tcpIpConfig);
-        sb.append(", awsConfig=").append(awsConfig);
+        sb.append(", cloudConfig=").append(cloudConfig);
         sb.append('}');
         return sb.toString();
     }

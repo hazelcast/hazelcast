@@ -78,39 +78,40 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
-    public void readAwsConfig() {
-        String xml =
-                "<hazelcast>\n" +
-                        "   <group>\n" +
-                        "        <name>dev</name>\n" +
-                        "        <password>dev-pass</password>\n" +
-                        "    </group>\n" +
-                        "    <network>\n" +
-                        "        <port auto-increment=\"true\">5701</port>\n" +
-                        "        <join>\n" +
-                        "            <multicast enabled=\"false\">\n" +
-                        "                <multicast-group>224.2.2.3</multicast-group>\n" +
-                        "                <multicast-port>54327</multicast-port>\n" +
-                        "            </multicast>\n" +
-                        "            <tcp-ip enabled=\"false\">\n" +
-                        "                <interface>127.0.0.1</interface>\n" +
-                        "            </tcp-ip>\n" +
-                        "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n" +
-                        "                <access-key>access</access-key>\n" +
-                        "                <secret-key>secret</secret-key>\n" +
-                        "            </aws>\n" +
-                        "        </join>\n" +
-                        "        <interfaces enabled=\"false\">\n" +
-                        "            <interface>10.10.1.*</interface>\n" +
-                        "        </interfaces>\n" +
-                        "    </network>\n" +
-                        "</hazelcast>";
+    public void readCloudConfig() {
+        String xml
+                = "<hazelcast>\n"
+                + "   <group>\n"
+                + "        <name>dev</name>\n"
+                + "        <password>dev-pass</password>\n"
+                + "    </group>\n"
+                + "    <network>\n"
+                + "        <port auto-increment=\"true\">5701</port>\n"
+                + "        <join>\n"
+                + "            <multicast enabled=\"false\">\n"
+                + "                <multicast-group>224.2.2.3</multicast-group>\n"
+                + "                <multicast-port>54327</multicast-port>\n"
+                + "            </multicast>\n"
+                + "            <tcp-ip enabled=\"false\">\n"
+                + "                <interface>127.0.0.1</interface>\n"
+                + "            </tcp-ip>\n"
+                + "            <cloud enabled=\"true\" connection-timeout-seconds=\"10\" >\n"
+                + "                <provider>aws-ec2</provider>\n"
+                + "                <access-key>access</access-key>\n"
+                + "                <secret-key>secret</secret-key>\n"
+                + "            </cloud>\n"
+                + "        </join>\n"
+                + "        <interfaces enabled=\"false\">\n"
+                + "            <interface>10.10.1.*</interface>\n"
+                + "        </interfaces>\n"
+                + "    </network>\n"
+                + "</hazelcast>";
         Config config = buildConfig(xml);
-        AwsConfig awsConfig = config.getNetworkConfig().getJoin().getAwsConfig();
-        assertTrue(awsConfig.isEnabled());
-        assertEquals(10, config.getNetworkConfig().getJoin().getAwsConfig().getConnectionTimeoutSeconds());
-        assertEquals("access", awsConfig.getAccessKey());
-        assertEquals("secret", awsConfig.getSecretKey());
+        CloudConfig cloudConfig = config.getNetworkConfig().getJoin().getCloudConfig();
+        assertTrue(cloudConfig.isEnabled());
+        assertEquals(10, config.getNetworkConfig().getJoin().getCloudConfig().getConnectionTimeoutSeconds());
+        assertEquals("access", cloudConfig.getAccessKey());
+        assertEquals("secret", cloudConfig.getSecretKey());
     }
 
     @Test

@@ -535,41 +535,41 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleMulticast(child);
             } else if ("tcp-ip".equals(name)) {
                 handleTcpIp(child);
-            } else if ("aws".equals(name)) {
-                handleAWS(child);
+            } else if ("cloud".equals(name)) {
+                handleCloud(child);
             }
         }
     }
 
-    private void handleAWS(Node node) {
+    private void handleCloud(Node node) {
         final JoinConfig join = config.getNetworkConfig().getJoin();
         final NamedNodeMap atts = node.getAttributes();
-        final AwsConfig awsConfig = join.getAwsConfig();
+        final CloudConfig cloudConfig = join.getCloudConfig();
         for (int a = 0; a < atts.getLength(); a++) {
             final Node att = atts.item(a);
             final String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
-                awsConfig.setEnabled(checkTrue(value));
+                cloudConfig.setEnabled(checkTrue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                awsConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, 5));
+                cloudConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, 5));
             }
         }
         for (Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
-            if ("secret-key".equals(cleanNodeName(n.getNodeName()))) {
-                awsConfig.setSecretKey(value);
+            if ("provider".equals(cleanNodeName(n.getNodeName()))) {
+                cloudConfig.setProvider(value);
+            } else if ("secret-key".equals(cleanNodeName(n.getNodeName()))) {
+                cloudConfig.setSecretKey(value);
             } else if ("access-key".equals(cleanNodeName(n.getNodeName()))) {
-                awsConfig.setAccessKey(value);
+                cloudConfig.setAccessKey(value);
             } else if ("region".equals(cleanNodeName(n.getNodeName()))) {
-                awsConfig.setRegion(value);
-            } else if ("host-header".equals(cleanNodeName(n.getNodeName()))) {
-                awsConfig.setHostHeader(value);
-            } else if ("security-group-name".equals(cleanNodeName(n.getNodeName()))) {
-                awsConfig.setSecurityGroupName(value);
+                cloudConfig.setRegion(value);
+            } else if ("group-name".equals(cleanNodeName(n.getNodeName()))) {
+                cloudConfig.setGroupName(value);
             } else if ("tag-key".equals(cleanNodeName(n.getNodeName()))) {
-                awsConfig.setTagKey(value);
+                cloudConfig.setTagKey(value);
             } else if ("tag-value".equals(cleanNodeName(n.getNodeName()))) {
-                awsConfig.setTagValue(value);
+                cloudConfig.setTagValue(value);
             }
         }
     }

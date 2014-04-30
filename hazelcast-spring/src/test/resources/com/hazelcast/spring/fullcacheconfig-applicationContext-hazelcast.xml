@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.2.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE" >
@@ -75,8 +75,8 @@
                         <hz:interface>127.0.0.1:5700</hz:interface>
                         <hz:interface>127.0.0.1:5701</hz:interface>
                     </hz:tcp-ip>
-                    <hz:aws enabled="false" access-key="sample-access-key" secret-key="sample-secret-key"
-                            region="sample-region" security-group-name="sample-group"
+                    <hz:cloud enabled="false" provider="sample-provider" access-key="sample-access-key" secret-key="sample-secret-key"
+                            region="sample-region" group-name="sample-group"
                             tag-key="sample-tag-key" tag-value="sample-tag-value"/>
                 </hz:join>
                 <hz:interfaces enabled="false">

@@ -13,44 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.cluster;
 
-import com.hazelcast.aws.AWSClient;
-import com.hazelcast.config.AwsConfig;
+import com.hazelcast.cloud.CloudClient;
+import com.hazelcast.config.CloudConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
 
-public class TcpIpJoinerOverAWS extends TcpIpJoiner {
+public class TcpIpJoinerOverCloud extends TcpIpJoiner {
 
-    final AWSClient aws;
+    final CloudClient cloud;
     final ILogger logger;
 
-    public TcpIpJoinerOverAWS(Node node) {
+    public TcpIpJoinerOverCloud(Node node) {
         super(node);
         logger = node.getLogger(getClass());
-        AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
-        aws = new AWSClient(awsConfig);
-        if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
-            aws.setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
-        }
+        CloudConfig cloudConfig = node.getConfig().getNetworkConfig().getJoin()
+                .getCloudConfig();
+        cloud = new CloudClient(cloudConfig);
     }
 
     @Override
     protected Collection<String> getMembers() {
         try {
-            List<String> list = aws.getPrivateIpAddresses();
-            if(list.isEmpty()){
-                logger.warning("No EC2 instances found!");
-            }else{
-                if(logger.isFinestEnabled()){
-                    StringBuilder sb = new StringBuilder("Found the following EC2 instances:\n");
-                    for(String ip: list){
+            List<String> list = cloud.getPrivateIpAddresses();
+            if (list.isEmpty()) {
+                logger.warning("No cloud instances found!");
+            } else {
+                if (logger.isFinestEnabled()) {
+                    StringBuilder sb = new StringBuilder(
+                            "Found the following cloud instances:\n");
+                    for (String ip : list) {
                         sb.append("    ").append(ip).append("\n");
                     }
                     logger.finest(sb.toString());
@@ -65,13 +61,13 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
     @Override
     protected int getConnTimeoutSeconds() {
-        AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
-        return awsConfig.getConnectionTimeoutSeconds();
+        CloudConfig cloudConfig = node.getConfig().getNetworkConfig().getJoin()
+                .getCloudConfig();
+        return cloudConfig.getConnectionTimeoutSeconds();
     }
 
     @Override
     public String getType() {
-        return "aws";
+        return "cloud";
     }
 }
-
