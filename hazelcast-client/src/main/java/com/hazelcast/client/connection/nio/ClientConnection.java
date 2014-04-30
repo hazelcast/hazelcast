@@ -365,6 +365,8 @@ public class ClientConnection implements Connection, Closeable {
         }
     }
 
+    //failedHeartBeat is incremented in single thread.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     void heartBeatingFailed() {
         failedHeartBeat++;
         if (failedHeartBeat == connectionManager.maxFailedHeartbeatCount) {

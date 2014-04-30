@@ -149,13 +149,13 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         }
 
         int timeout = client.clientProperties.CONNECTION_TIMEOUT.getInteger();
-        this.connectionTimeout = timeout > 0 ? timeout : Integer.valueOf(PROP_CONNECTION_TIMEOUT_DEFAULT);
+        this.connectionTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_CONNECTION_TIMEOUT_DEFAULT);
 
         int interval = client.clientProperties.HEARTBEAT_INTERVAL.getInteger();
-        this.heartBeatInterval = interval > 0 ? interval : Integer.valueOf(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
 
         int failedHeartbeat = client.clientProperties.MAX_FAILED_HEARTBEAT_COUNT.getInteger();
-        this.maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat : Integer.valueOf(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
+        this.maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
 
         this.smartRouting = networkConfig.isSmartRouting();
         this.executionService = client.getClientExecutionService();

@@ -20,7 +20,6 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
 import com.hazelcast.collection.CollectionEventFilter;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
@@ -40,6 +39,9 @@ import com.hazelcast.spi.impl.PortableItemEvent;
 import java.io.IOException;
 import java.security.Permission;
 
+/**
+ * this class is used to attach a listener to node for collections
+ */
 public class CollectionAddListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     private String name;
