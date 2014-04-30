@@ -239,6 +239,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                             logger.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
                         }
                     }
+
+                    connectionManager.markOwnerAddressAsClosed();
                     IOUtil.closeResource(conn);
                     conn = null;
                     fireConnectionEvent(true);
