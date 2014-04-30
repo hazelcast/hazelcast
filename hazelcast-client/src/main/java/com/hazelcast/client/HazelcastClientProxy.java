@@ -40,6 +40,7 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -52,7 +53,8 @@ import com.hazelcast.transaction.TransactionalTask;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
-public final class HazelcastClientProxy implements HazelcastInstance {
+public final class HazelcastClientProxy
+        implements HazelcastInstance {
 
     volatile HazelcastClient client;
 
@@ -101,6 +103,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     }
 
     @Override
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        return getClient().getReplicatedMap(name);
+    }
+
+    @Override
     public JobTracker getJobTracker(String name) {
         return getClient().getJobTracker(name);
     }
@@ -131,12 +138,14 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     }
 
     @Override
-    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(TransactionalTask<T> task)
+            throws TransactionException {
         return getClient().executeTransaction(task);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task)
+            throws TransactionException {
         return getClient().executeTransaction(options, task);
     }
 
@@ -231,11 +240,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     }
 
     @Override
-    public final void shutdown() {
+    public void shutdown() {
         getLifecycleService().shutdown();
     }
 
-    public final SerializationService getSerializationService() {
+    public SerializationService getSerializationService() {
         return getClient().getSerializationService();
     }
 

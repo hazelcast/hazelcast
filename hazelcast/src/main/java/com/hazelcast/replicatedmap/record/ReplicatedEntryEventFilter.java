@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.nearcache;
+package com.hazelcast.replicatedmap.record;
 
-/**
- * Legal near cache types
- */
-public enum ClientNearCacheType {
-    /**
-     * java.util.concurrent.ConcurrentMap implementation
-     */
-    Map,
+import com.hazelcast.spi.EventFilter;
 
-    /**
-     * com.hazelcast.core.ReplicatedMap implementation
-     */
-    ReplicatedMap
+public class ReplicatedEntryEventFilter
+        implements EventFilter {
+
+    protected Object key = null;
+
+    public ReplicatedEntryEventFilter(Object key) {
+        this.key = key;
+    }
+
+    public Object getKey() {
+        return key;
+    }
+
+    public boolean eval(Object arg) {
+        return key == null || key.equals(arg);
+    }
+
 }

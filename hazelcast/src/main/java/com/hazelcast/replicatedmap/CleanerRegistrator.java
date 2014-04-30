@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.nearcache;
+package com.hazelcast.replicatedmap;
 
-/**
- * Legal near cache types
- */
-public enum ClientNearCacheType {
-    /**
-     * java.util.concurrent.ConcurrentMap implementation
-     */
-    Map,
+import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 
-    /**
-     * com.hazelcast.core.ReplicatedMap implementation
-     */
-    ReplicatedMap
+import java.util.concurrent.ScheduledFuture;
+
+public interface CleanerRegistrator {
+
+    <V> ScheduledFuture<V> registerCleaner(AbstractReplicatedRecordStore replicatedRecordStorage);
+
 }

@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.nearcache;
+package com.hazelcast.replicatedmap;
 
-/**
- * Legal near cache types
- */
-public enum ClientNearCacheType {
-    /**
-     * java.util.concurrent.ConcurrentMap implementation
-     */
-    Map,
+import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
+import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 
-    /**
-     * com.hazelcast.core.ReplicatedMap implementation
-     */
-    ReplicatedMap
+public interface PreReplicationHook {
+
+    void preReplicateMessage(ReplicationMessage message, ReplicationChannel channel);
+
+    void preReplicateMultiMessage(MultiReplicationMessage message, ReplicationChannel channel);
+
 }

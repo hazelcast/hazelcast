@@ -14,19 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.nearcache;
-
 /**
- * Legal near cache types
+ * This package contains client side proxy implementations of the different Hazelcast data structures
+ * and operation types
  */
-public enum ClientNearCacheType {
-    /**
-     * java.util.concurrent.ConcurrentMap implementation
-     */
-    Map,
-
-    /**
-     * com.hazelcast.core.ReplicatedMap implementation
-     */
-    ReplicatedMap
-}
+package com.hazelcast.client.proxy;

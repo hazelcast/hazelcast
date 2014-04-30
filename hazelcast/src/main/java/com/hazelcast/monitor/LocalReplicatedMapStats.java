@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.nearcache;
+package com.hazelcast.monitor;
 
-/**
- * Legal near cache types
- */
-public enum ClientNearCacheType {
-    /**
-     * java.util.concurrent.ConcurrentMap implementation
-     */
-    Map,
+public interface LocalReplicatedMapStats extends LocalMapStats {
 
-    /**
-     * com.hazelcast.core.ReplicatedMap implementation
-     */
-    ReplicatedMap
+    long getReplicationEventCount();
+
 }

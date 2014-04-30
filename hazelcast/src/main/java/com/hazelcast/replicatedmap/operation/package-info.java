@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.nearcache;
-
 /**
- * Legal near cache types
+ * This package contains some remote operations to execute on remote nodes
  */
-public enum ClientNearCacheType {
-    /**
-     * java.util.concurrent.ConcurrentMap implementation
-     */
-    Map,
-
-    /**
-     * com.hazelcast.core.ReplicatedMap implementation
-     */
-    ReplicatedMap
-}
+package com.hazelcast.replicatedmap.operation;
