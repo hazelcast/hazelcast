@@ -68,19 +68,7 @@ final class HazelcastInstanceLoader {
         }
 
         if (useClient) {
-            LOGGER.warning("Creating HazelcastClient for session replication...");
-            LOGGER.warning("make sure this client has access to an already running cluster...");
-            ClientConfig clientConfig = null;
-            if (configUrl == null) {
-                clientConfig = new ClientConfig();
-                clientConfig.getNetworkConfig().setConnectionAttemptLimit(DEFAULT_CONNECTION_ATTEMPT_LIMIT);
-                try {
-                    clientConfig = new XmlClientConfigBuilder(configUrl).build();
-                } catch (IOException e) {
-                    throw new ServletException(e);
-                }
-            }
-            return HazelcastClient.newHazelcastClient(clientConfig);
+            return createClientInstance(configUrl);
         }
 
         Config config;
@@ -94,6 +82,10 @@ final class HazelcastInstanceLoader {
             }
         }
 
+        return createHazelcastInstance(instanceName, config);
+    }
+
+    private static HazelcastInstance createHazelcastInstance(String instanceName, Config config) {
         if (!isEmpty(instanceName)) {
             if (LOGGER.isLoggable(Level.INFO)) {
                 LOGGER.info(format("getOrCreateHazelcastInstance for session replication, using name '%s'", instanceName));
@@ -104,6 +96,23 @@ final class HazelcastInstanceLoader {
             LOGGER.info("Creating a new HazelcastInstance for session replication");
             return Hazelcast.newHazelcastInstance(config);
         }
+    }
+
+    private static HazelcastInstance createClientInstance(URL configUrl) throws ServletException {
+        LOGGER.warning("Creating HazelcastClient for session replication...");
+        LOGGER.warning("make sure this client has access to an already running cluster...");
+        ClientConfig clientConfig;
+        if (configUrl == null) {
+            clientConfig = new ClientConfig();
+            clientConfig.getNetworkConfig().setConnectionAttemptLimit(DEFAULT_CONNECTION_ATTEMPT_LIMIT);
+        } else {
+            try {
+                clientConfig = new XmlClientConfigBuilder(configUrl).build();
+            } catch (IOException e) {
+                throw new ServletException(e);
+            }
+        }
+        return HazelcastClient.newHazelcastClient(clientConfig);
     }
 
     private static URL getConfigURL(final FilterConfig filterConfig, final String configLocation) throws ServletException {
