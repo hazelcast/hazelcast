@@ -1,11 +1,11 @@
 
 ## Session Replication - Enterprise Only
 
-Tomcat6 based Session Replication Module... Eventually it will support all other new Tomcat versions and Tomcat based web containers like Jetty,tcServer etc.
+Session Replication with Hazelcast Enterprise is container specif module where no application change is required to enable session replication for JEE Web Applicaitions. 
 
 Features
 
-1. Seamless Tomcat 6 integration
+1. Seamless Tomcat 6,7,8 integration
 2. Sticky + Non-Sticky sessions supported
 3. Tomcat failover
 4. Deferred write for performance boost
@@ -77,7 +77,7 @@ However, with non-sticky caches load balancing might be super easy as some load 
 
 - Tomcat 6.0.39
 - Tomcat 7.0.54
-- Tomcat 
+- Tomcat 8.0.5
 
 
 
