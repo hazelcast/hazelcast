@@ -70,7 +70,6 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
             private void handleEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.live()) {
-                    System.err.println("asdf sending event key: " + event.getKey());
                     Data key = clientEngine.toData(event.getKey());
                     Data value = clientEngine.toData(event.getValue());
                     Data oldValue = clientEngine.toData(event.getOldValue());
