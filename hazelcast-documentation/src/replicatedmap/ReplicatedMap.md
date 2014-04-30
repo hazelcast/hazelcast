@@ -1,7 +1,7 @@
 
 ## Replicated Map (BETA)
 
-A ReplicatedMap is a fully eventually consistent, distributed key-value storage data structure provided by Hazelcast.
+A ReplicatedMap is a fully weakly consistent, distributed key-value storage data structure provided by Hazelcast.
 
 In difference to all other data structures which are partitioned in design, a ReplicatedMap does not partition data
 (it does not spread data to different cluster members) but replicates the data to all nodes.
@@ -9,7 +9,11 @@ In difference to all other data structures which are partitioned in design, a Re
 This leads to higher memory consumption but faster read and write access since data are available on all notes and
 writes take place on local nodes and eventually being replicated to all other nodes.
 
-It fully implements the `java.util.Map` interface but lacks the methods from `java.util.concurrent.ConcurrentMap` since
+Weakly consistency compared to eventually consistency means that replication is done on best effort. Lost or missing updates
+are neither tracked nor resend to keep the nodes in a consistent state. This kind of data structures is perfect for immutable
+objects, catalogue data or idempotent calculatable data (like HTML pages).
+
+It nearly fully implements the `java.util.Map` interface but lacks the methods from `java.util.concurrent.ConcurrentMap` since
 there are no atomic guarantees to writes or reads.
 
 ```java

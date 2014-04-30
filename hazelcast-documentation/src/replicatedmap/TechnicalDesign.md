@@ -25,7 +25,7 @@ to collect multiple updates and to minimize the operations overhead on replicati
 is build into the system to prevent OutOfMemory situations where you put lots of data into the ReplicatedMap in a really
 short time.
 The delay is configurable and a value of 0 means immediate replication. That way you can configure the trade off between
-replication overhead and time for the value to be eventually consistent.
+replication overhead and time for the value to be replicated.
 
 ** Concurrency Level **
 

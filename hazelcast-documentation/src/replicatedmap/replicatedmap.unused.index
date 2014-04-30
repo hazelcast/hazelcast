@@ -1,6 +1,0 @@
-    src/replicatedmap/ReplicatedMap.md
-        src/replicatedmap/Considerations.md
-        src/replicatedmap/BreakageMapContract.md
-        src/replicatedmap/TechnicalDesign.md
-        src/replicatedmap/InMemoryFormat.md
-        src/replicatedmap/EntryListener.md
