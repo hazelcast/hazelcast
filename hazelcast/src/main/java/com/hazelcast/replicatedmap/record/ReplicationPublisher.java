@@ -189,7 +189,7 @@ public class ReplicationPublisher<K, V>
         }
     }
 
-    public void queueInitialFillup(Address callerAddress, int chunkSize) {
+    public void queuePreProvision(Address callerAddress, int chunkSize) {
         RemoteProvisionTask task = new RemoteProvisionTask(replicatedRecordStore, nodeEngine, callerAddress, chunkSize);
         executionService.execute("hz:replicated-map", task);
     }
@@ -202,10 +202,10 @@ public class ReplicationPublisher<K, V>
         if (members.size() < 2) {
             return;
         }
-        sendInitialFillupRequest(members);
+        sendPreProvisionRequest(members);
     }
 
-    void sendInitialFillupRequest(List<MemberImpl> members) {
+    void sendPreProvisionRequest(List<MemberImpl> members) {
         if (members.size() == 0) {
             return;
         }
@@ -215,9 +215,9 @@ public class ReplicationPublisher<K, V>
         memberMapPairs[0] = new ReplicatedMapPostJoinOperation.MemberMapPair(newMember, name);
 
         OperationService operationService = nodeEngine.getOperationService();
-        operationService
-                .send(new ReplicatedMapPostJoinOperation(memberMapPairs, ReplicatedMapPostJoinOperation.DEFAULT_CHUNK_SIZE),
-                        newMember.getAddress());
+        int defaultChunkSize = ReplicatedMapPostJoinOperation.DEFAULT_CHUNK_SIZE;
+        ReplicatedMapPostJoinOperation op = new ReplicatedMapPostJoinOperation(memberMapPairs, defaultChunkSize);
+        operationService.send(op, newMember.getAddress());
     }
 
     private void processUpdateMessage(ReplicationMessage update) {

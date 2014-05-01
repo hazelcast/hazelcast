@@ -112,7 +112,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         if (members.size() == 0) {
             storage.finishLoading();
         } else {
-            replicationPublisher.sendInitialFillupRequest(members);
+            replicationPublisher.sendPreProvisionRequest(members);
         }
     }
 

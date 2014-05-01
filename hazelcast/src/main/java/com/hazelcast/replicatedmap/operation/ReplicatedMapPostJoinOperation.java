@@ -66,7 +66,7 @@ public class ReplicatedMapPostJoinOperation
 
                 if (recordStorage != null && recordStorage.isLoaded()) {
                     ReplicationPublisher replicationPublisher = recordStorage.getReplicationPublisher();
-                    replicationPublisher.queueInitialFillup(getCallerAddress(), chunkSize);
+                    replicationPublisher.queuePreProvision(getCallerAddress(), chunkSize);
                 } else {
                     OperationService operationService = getNodeEngine().getOperationService();
                     Operation operation = new ReplicatedMapInitChunkOperation(mapName, localMember);
