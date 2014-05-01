@@ -4,7 +4,7 @@
 
 You can gather various statistics from your distributed data structures via Statistics API.
 Since the data structures are distributed in the cluster, the Statistics API provides
-statistics for the local portion (1/Number of Nodes) of data on each node.
+statistics for the local portion (1/Number of Nodes) of data on each node. 
 
 ### Map Statistics
 The `IMap` interface has a `getLocalMapStats()` method which returns a
@@ -15,7 +15,7 @@ The `IMap` interface has a `getLocalMapStats()` method which returns a
   LocalMapStats mapStatistics = customers.getLocalMapStats();
   System.out.println("number of entries owned on this node= " + mapStatistics.getOwnedEntryCount());
 ```
-Here are the list of metrics that can be accessed via `LocalMapStats` object.
+Below is the list of metrics that can be accessed via `LocalMapStats` object.
 
 ```java
   /**
@@ -157,8 +157,8 @@ Near Cache statistics can be accessed from `LocalMapStats` via
   NearCacheStats nearCacheStatistics = mapStatistics.getNearCacheStats();
   System.out.println("near cache hit/miss ratio= " + nearCacheStatistics.getRatio());
 ```
-Here are the list of metrics that can be accessed via `NearCacheStats` object.
-This behaviour applies to both client and node near caches.
+Below is the list of metrics that can be accessed via `NearCacheStats` object.
+This behavior applies to both client and node near caches.
 
 ```java
   /**
@@ -202,7 +202,7 @@ The `MultiMap` interface has a `getLocalMultiMapStats()` method which returns a
   LocalMultiMapStats multiMapStatistics = customers.getLocalMultiMapStats();
   System.out.println("last update time =  " + multiMapStatistics.getLastUpdateTime());
 ```
-Here are the list of metrics that can be accessed via `LocalMultiMapStats` object.
+Below is the list of metrics that can be accessed via `LocalMultiMapStats` object.
 
 ```java
   /**
@@ -341,7 +341,7 @@ The `IQueue` interface has a `getLocalQueueStats()` method which returns a
   System.out.println("average age of items = " + queueStatistics.getAvgAge());
 ```
 
-Here are the list of metrics that can be accessed via `LocalQueueStats` object.
+Below is the list of metrics that can be accessed via `LocalQueueStats` object.
 
 ```java
   /**
@@ -423,7 +423,7 @@ The `ITopic` interface has a `getLocalTopicStats()` method which returns a
   System.out.println("number of publish operations = " + topicStatistics.getPublishOperationCount());
 ```
 
-Here are the list of metrics that can be accessed via `LocalTopicStats` object.
+Below is the list of metrics that can be accessed via `LocalTopicStats` object.
 
 ```java
   /**
@@ -453,7 +453,7 @@ The `IExecutorService` interface has a `getLocalExecutorStats()` method which re
   System.out.println("completed task count = " + executorStatistics.getCompletedTaskCount());
 ```
 
-Here are the list of metrics that can be accessed via `LocalExecutorStats` object.
+Below is the list of metrics that can be accessed via `LocalExecutorStats` object.
 
 ```java
   /**
