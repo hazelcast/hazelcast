@@ -20,6 +20,13 @@ import com.hazelcast.replicatedmap.CleanerRegistrator;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.NodeEngine;
 
+/**
+ * This is a {@link com.hazelcast.config.InMemoryFormat#OBJECT} based
+ * {@link com.hazelcast.replicatedmap.record.ReplicatedRecordStore} implementation
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class ObjectReplicatedRecordStorage<K, V>
         extends AbstractReplicatedRecordStore<K, V> {
 

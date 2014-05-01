@@ -24,6 +24,12 @@ import com.hazelcast.replicatedmap.operation.ReplicatedMapDataSerializerHook;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * A ReplicatedRecord is the actual data holding entity. It also collects statistic metadata.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class ReplicatedRecord<K, V>
         implements IdentifiedDataSerializable {
 
@@ -33,7 +39,7 @@ public class ReplicatedRecord<K, V>
     private K key;
     private V value;
     private VectorClock vectorClock;
-    private int latestUpdateHash = 0;
+    private int latestUpdateHash;
     private long ttlMillis;
     private volatile long updateTime = System.currentTimeMillis();
 
@@ -128,6 +134,8 @@ public class ReplicatedRecord<K, V>
         ttlMillis = in.readLong();
     }
 
+    //CHECKSTYLE:OFF
+    // Deactivated due to complexity of the equals method
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -154,6 +162,7 @@ public class ReplicatedRecord<K, V>
 
         return true;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {

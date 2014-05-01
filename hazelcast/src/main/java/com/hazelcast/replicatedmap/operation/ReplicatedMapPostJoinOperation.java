@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
+import com.hazelcast.replicatedmap.record.ReplicationPublisher;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
@@ -64,7 +65,8 @@ public class ReplicatedMapPostJoinOperation
                         .getReplicatedRecordStore(mapName, false);
 
                 if (recordStorage != null && recordStorage.isLoaded()) {
-                    recordStorage.queueInitialFillup(getCallerAddress(), chunkSize);
+                    ReplicationPublisher replicationPublisher = recordStorage.getReplicationPublisher();
+                    replicationPublisher.queueInitialFillup(getCallerAddress(), chunkSize);
                 } else {
                     OperationService operationService = getNodeEngine().getOperationService();
                     Operation operation = new ReplicatedMapInitChunkOperation(mapName, localMember);

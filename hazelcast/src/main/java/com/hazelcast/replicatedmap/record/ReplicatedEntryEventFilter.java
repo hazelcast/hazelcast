@@ -18,10 +18,13 @@ package com.hazelcast.replicatedmap.record;
 
 import com.hazelcast.spi.EventFilter;
 
+/**
+ * Basic filter implementation for selecting interesting events on the server
+ */
 public class ReplicatedEntryEventFilter
         implements EventFilter {
 
-    protected Object key = null;
+    protected Object key;
 
     public ReplicatedEntryEventFilter(Object key) {
         this.key = key;

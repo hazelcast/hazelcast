@@ -32,6 +32,7 @@ import com.hazelcast.replicatedmap.record.DataReplicatedRecordStore;
 import com.hazelcast.replicatedmap.record.ObjectReplicatedRecordStorage;
 import com.hazelcast.replicatedmap.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.record.ReplicationPublisher;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -50,44 +51,36 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This is the main service implementation to handle replication and manages the backing
+ * {@link com.hazelcast.replicatedmap.record.ReplicatedRecordStore}s that actually hold the data
+ */
 public class ReplicatedMapService
         implements ManagedService, RemoteService, EventPublishingService<Object, Object> {
 
+    /**
+     * Public constant for the internal service name of the ReplicatedMapService
+     */
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
+
+    /**
+     * Public constant for the internal name of the replication topic
+     */
     public static final String EVENT_TOPIC_NAME = SERVICE_NAME + ".replication";
 
-    private final ConcurrentHashMap<String, ReplicatedRecordStore> replicatedStorages = new ConcurrentHashMap<String, ReplicatedRecordStore>();
+    private static final int INITIAL_DELAY = 5;
+    private static final int PERIOD = 5;
+
+    private final ConcurrentHashMap<String, ReplicatedRecordStore> replicatedStorages = initReplicatedRecordStoreMapping();
 
     private final CleanerRegistrator cleanerRegistrator = new CleanerRegistrator() {
         @Override
-        public <V> ScheduledFuture<V> registerCleaner(AbstractReplicatedRecordStore replicatedRecordStorage) {
+        public <V> ScheduledFuture<V> registerCleaner(ReplicatedRecordStore replicatedRecordStorage) {
             return (ScheduledFuture) ReplicatedMapService.this.registerCleaner(replicatedRecordStorage);
         }
     };
 
-    private final ConstructorFunction<String, ReplicatedRecordStore> constructor = new ConstructorFunction<String, ReplicatedRecordStore>() {
-        @Override
-        public ReplicatedRecordStore createNew(String name) {
-            ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(name);
-            InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
-            AbstractReplicatedRecordStore replicatedRecordStorage = null;
-            switch (inMemoryFormat) {
-                case OBJECT:
-                    replicatedRecordStorage = new ObjectReplicatedRecordStorage(name, nodeEngine, cleanerRegistrator,
-                            ReplicatedMapService.this);
-                    break;
-                case BINARY:
-                    replicatedRecordStorage = new DataReplicatedRecordStore(name, nodeEngine, cleanerRegistrator,
-                            ReplicatedMapService.this);
-                    break;
-                case OFFHEAP:
-                    throw new IllegalStateException("offheap not yet supported for replicated map");
-                default:
-                    throw new IllegalStateException("Unhandeled in memory format:" + inMemoryFormat);
-            }
-            return replicatedRecordStorage;
-        }
-    };
+    private final ConstructorFunction<String, ReplicatedRecordStore> constructor = buildConstructorFunction();
 
     private final ILogger logger;
     private final Config config;
@@ -194,31 +187,76 @@ public class ReplicatedMapService
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
-    ScheduledFuture<?> registerCleaner(AbstractReplicatedRecordStore replicatedRecordStorage) {
-        return executionService.scheduleWithFixedDelay(new Cleaner(replicatedRecordStorage), 5, 5, TimeUnit.SECONDS);
+    ScheduledFuture<?> registerCleaner(ReplicatedRecordStore replicatedRecordStorage) {
+        if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
+            AbstractReplicatedRecordStore recordStore = (AbstractReplicatedRecordStore) replicatedRecordStorage;
+            return executionService.scheduleWithFixedDelay(new Cleaner(recordStore), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        }
+        String className = replicatedRecordStorage.getClass().getName();
+        throw new IllegalArgumentException("Unknown ReplicatedRecordStore implementation: " + className);
     }
 
-    private class ReplicationListener
+    private ConcurrentHashMap<String, ReplicatedRecordStore> initReplicatedRecordStoreMapping() {
+        return new ConcurrentHashMap<String, ReplicatedRecordStore>();
+    }
+
+    private ConstructorFunction<String, ReplicatedRecordStore> buildConstructorFunction() {
+        return new ConstructorFunction<String, ReplicatedRecordStore>() {
+
+            @Override
+            public ReplicatedRecordStore createNew(String name) {
+                ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(name);
+                InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
+                AbstractReplicatedRecordStore replicatedRecordStorage = null;
+                switch (inMemoryFormat) {
+                    case OBJECT:
+                        replicatedRecordStorage = new ObjectReplicatedRecordStorage(name, nodeEngine, cleanerRegistrator,
+                                ReplicatedMapService.this);
+                        break;
+                    case BINARY:
+                        replicatedRecordStorage = new DataReplicatedRecordStore(name, nodeEngine, cleanerRegistrator,
+                                ReplicatedMapService.this);
+                        break;
+                    case OFFHEAP:
+                        throw new IllegalStateException("offheap not yet supported for replicated map");
+                    default:
+                        throw new IllegalStateException("Unhandeled in memory format:" + inMemoryFormat);
+                }
+                return replicatedRecordStorage;
+            }
+        };
+    }
+
+    /**
+     * Listener implementation to listen on replication messages from other nodes
+     */
+    private final class ReplicationListener
             implements ReplicatedMessageListener {
 
         public void onMessage(IdentifiedDataSerializable message) {
             if (message instanceof ReplicationMessage) {
                 ReplicationMessage replicationMessage = (ReplicationMessage) message;
                 ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(replicationMessage.getName());
+                ReplicationPublisher replicationPublisher = replicatedRecordStorage.getReplicationPublisher();
                 if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
-                    ((AbstractReplicatedRecordStore) replicatedRecordStorage).queueUpdateMessage(replicationMessage);
+                    replicationPublisher.queueUpdateMessage(replicationMessage);
                 }
             } else if (message instanceof MultiReplicationMessage) {
                 MultiReplicationMessage multiReplicationMessage = (MultiReplicationMessage) message;
                 ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(multiReplicationMessage.getName());
+                ReplicationPublisher replicationPublisher = replicatedRecordStorage.getReplicationPublisher();
                 if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
-                    ((AbstractReplicatedRecordStore) replicatedRecordStorage).queueUpdateMessages(multiReplicationMessage);
+                    replicationPublisher.queueUpdateMessages(multiReplicationMessage);
                 }
             }
         }
     }
 
-    private static class Cleaner
+    /**
+     * The Cleaner is used to removed expired entries from the registered
+     * {@link com.hazelcast.replicatedmap.record.ReplicatedRecordStore}
+     */
+    private static final class Cleaner
             implements Runnable {
 
         private final long ttl = TimeUnit.SECONDS.toMillis(10);

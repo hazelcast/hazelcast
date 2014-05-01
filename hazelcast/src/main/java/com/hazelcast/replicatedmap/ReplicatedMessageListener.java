@@ -18,6 +18,9 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+/**
+ * Simple listener interface used by the ReplicatedMapService
+ */
 public interface ReplicatedMessageListener {
 
     void onMessage(IdentifiedDataSerializable message);

@@ -21,6 +21,7 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
+import com.hazelcast.replicatedmap.record.ReplicationPublisher;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
@@ -31,13 +32,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The internal {@link com.hazelcast.core.ReplicatedMap} implementation proxying the requests to the underlying
+ * {@@code ReplicatedRecordStore}
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public class ReplicatedMapProxy<K, V>
         extends AbstractDistributedObject
         implements ReplicatedMap<K, V>, InitializingObject {
 
-    private final AbstractReplicatedRecordStore replicatedRecordStore;
+    private final AbstractReplicatedRecordStore<K, V> replicatedRecordStore;
 
-    ReplicatedMapProxy(NodeEngine nodeEngine, AbstractReplicatedRecordStore replicatedRecordStore) {
+    ReplicatedMapProxy(NodeEngine nodeEngine, AbstractReplicatedRecordStore<K, V> replicatedRecordStore) {
         super(nodeEngine, replicatedRecordStore.getReplicatedMapService());
         this.replicatedRecordStore = replicatedRecordStore;
     }
@@ -199,7 +207,8 @@ public class ReplicatedMapProxy<K, V>
     }
 
     public void setPreReplicationHook(PreReplicationHook preReplicationHook) {
-        replicatedRecordStore.setPreReplicationHook(preReplicationHook);
+        ReplicationPublisher<K, V> replicationPublisher = replicatedRecordStore.getReplicationPublisher();
+        replicationPublisher.setPreReplicationHook(preReplicationHook);
     }
 
 }

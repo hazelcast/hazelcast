@@ -19,6 +19,9 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 
+/**
+ * This interface represents a channel to send replication messages to
+ */
 public interface ReplicationChannel {
 
     void replicate(ReplicationMessage message);

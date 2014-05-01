@@ -19,6 +19,10 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 
+/**
+ * This is an interceptor interface to hook into the current replication process. This is not meant to be public API
+ * and should not be used in any external application. It might also be prospect to later changes.
+ */
 public interface PreReplicationHook {
 
     void preReplicateMessage(ReplicationMessage message, ReplicationChannel channel);

@@ -25,6 +25,8 @@ import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.record.ReplicatedRecord;
+import com.hazelcast.replicatedmap.record.ReplicationPublisher;
+import com.hazelcast.replicatedmap.record.VectorClock;
 
 import java.io.IOException;
 
@@ -67,16 +69,26 @@ public class ReplicatedMapInitChunkOperation
     public void run()
             throws Exception {
         ReplicatedMapService replicatedMapService = getService();
-        AbstractReplicatedRecordStore recordStorage = (AbstractReplicatedRecordStore) replicatedMapService
-                .getReplicatedRecordStore(name, true);
+
+        AbstractReplicatedRecordStore recordStorage;
+        recordStorage = (AbstractReplicatedRecordStore) replicatedMapService.getReplicatedRecordStore(name, true);
+
+        ReplicationPublisher replicationPublisher = recordStorage.getReplicationPublisher();
+
         if (notYetReadyChooseSomeoneElse) {
-            recordStorage.retryWithDifferentReplicationNode(origin);
+            replicationPublisher.retryWithDifferentReplicationNode(origin);
         } else {
             for (int i = 0; i < recordCount; i++) {
                 ReplicatedRecord record = replicatedRecords[i];
-                ReplicationMessage update = new ReplicationMessage(name, record.getKey(), record.getValue(),
-                        record.getVectorClock(), origin, record.getLatestUpdateHash(), record.getTtlMillis());
-                recordStorage.queueUpdateMessage(update);
+
+                Object key = record.getKey();
+                Object value = record.getValue();
+                VectorClock vectorClock = record.getVectorClock();
+                int updateHash = record.getLatestUpdateHash();
+                long ttlMillis = record.getTtlMillis();
+
+                ReplicationMessage update = new ReplicationMessage(name, key, value, vectorClock, origin, updateHash, ttlMillis);
+                replicationPublisher.queueUpdateMessage(update);
             }
             if (finalChunk) {
                 recordStorage.finalChunkReceived();

@@ -24,6 +24,9 @@ import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.Collection;
 
+/**
+ * Actual eviction processor implementation to remove values to evict values from the replicated map
+ */
 public class ReplicatedMapEvictionProcessor
         implements ScheduledEntryProcessor<Object, Object> {
 

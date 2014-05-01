@@ -21,6 +21,10 @@ import com.hazelcast.replicatedmap.CleanerRegistrator;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.NodeEngine;
 
+/**
+ * This is a {@link com.hazelcast.nio.serialization.Data} based {@link com.hazelcast.replicatedmap.record.ReplicatedRecordStore}
+ * implementation
+ */
 public class DataReplicatedRecordStore
         extends AbstractReplicatedRecordStore<Data, Data> {
 

@@ -44,6 +44,25 @@ public final class VectorClock
         clocks = new ConcurrentHashMap<Member, AtomicInteger>();
     }
 
+    void incrementClock(Member localMember) {
+        final AtomicInteger clock = clocks.get(localMember);
+        if (clock != null) {
+            clock.incrementAndGet();
+        } else {
+            clocks.put(localMember, new AtomicInteger(1));
+        }
+    }
+
+    void applyVector(VectorClock update) {
+        for (Member m : update.clocks.keySet()) {
+            final AtomicInteger currentClock = clocks.get(m);
+            final AtomicInteger updateClock = update.clocks.get(m);
+            if (smaller(currentClock, updateClock)) {
+                clocks.put(m, new AtomicInteger(updateClock.get()));
+            }
+        }
+    }
+
     @Override
     public void writeData(ObjectDataOutput dataOutput)
             throws IOException {
@@ -79,6 +98,12 @@ public final class VectorClock
     @Override
     public String toString() {
         return "Vector{" + "clocks=" + clocks + '}';
+    }
+
+    private boolean smaller(AtomicInteger int1, AtomicInteger int2) {
+        int i1 = int1 == null ? 0 : int1.get();
+        int i2 = int2 == null ? 0 : int2.get();
+        return i1 < i2;
     }
 
     static VectorClock copyVector(VectorClock vectorClock) {

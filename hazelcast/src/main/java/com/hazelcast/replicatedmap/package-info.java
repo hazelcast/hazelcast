@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap;
-
-import com.hazelcast.replicatedmap.record.ReplicatedRecordStore;
-
-import java.util.concurrent.ScheduledFuture;
-
 /**
- * This interface is used to give {@link com.hazelcast.replicatedmap.record.ReplicatedRecordStore} implementations
- * a chance to register themself to being cleaned up from expired entries
+ * This package contains the implementation of the replicated map service itself and some connection interfaces only used
+ * internally - No public API!
  */
-public interface CleanerRegistrator {
-
-    <V> ScheduledFuture<V> registerCleaner(ReplicatedRecordStore replicatedRecordStorage);
-
-}
+package com.hazelcast.replicatedmap;

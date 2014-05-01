@@ -18,14 +18,15 @@ package com.hazelcast.replicatedmap.record;
 
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.replicatedmap.ReplicatedMapService;
-import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This interface describes a common record store for replicated maps and their actual records
+ */
 public interface ReplicatedRecordStore {
 
     String getName();
@@ -66,15 +67,13 @@ public interface ReplicatedRecordStore {
 
     Object marshallValue(Object value);
 
-    ReplicatedMapService getReplicatedMapService();
-
-    void publishReplicatedMessage(ReplicationMessage message);
-
     String addEntryListener(EntryListener listener, Object key);
 
     String addEntryListener(EntryListener listener, Predicate predicate, Object key);
 
     boolean removeEntryListenerInternal(String id);
+
+    ReplicationPublisher getReplicationPublisher();
 
     void destroy();
 

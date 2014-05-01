@@ -27,6 +27,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * This class is a wrapper around the normal {@link java.util.concurrent.ScheduledExecutorService} from Hazelcast
+ */
 class WrappedExecutorService
         implements ScheduledExecutorService {
 
