@@ -68,7 +68,7 @@ src/Serialization.md
 	src/PortableSerialization.md
 	src/CustomSerialization.md
 src/Management.md
-#	src/StatisticsAPIPerNode.md
+	src/StatisticsAPIPerNode.md
 #	src/JMXAPIPerNode.md
 	src/MonitoringWithJMX.md
 	src/ClusterUtilities.md
