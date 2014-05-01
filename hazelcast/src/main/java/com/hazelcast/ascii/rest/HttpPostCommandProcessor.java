@@ -79,7 +79,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
         boolean offerResult = textCommandService.offer(queueName, new RestValue(data, contentType));
         if (offerResult) {
-            command.setResponse(HttpCommand.RES_204);
+            command.send200();
         } else {
             command.setResponse(HttpCommand.RES_503);
         }
@@ -99,8 +99,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 res = managementCenterService.clusterWideUpdateManagementCenterUrl(cluster, pass, url);
             }
             command.setResponse(res);
-        }
-        else {
+        } else {
             command.setResponse(HttpCommand.RES_503);
         }
     }
@@ -111,7 +110,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String key = uri.substring(indexEnd + 1);
         byte[] data = command.getData();
         textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);
-        command.setResponse(HttpCommand.RES_204);
+        command.send200();
     }
 
     public void handleRejection(HttpPostCommand command) {
