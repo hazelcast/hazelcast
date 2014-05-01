@@ -41,9 +41,20 @@ System.out.println(client.get("key1")); //get from hz_memcache_map1
 System.out.println(client.get("key2")); //get from hz_memcache_map2
 ```
 
-*hz\_memcache prefix\_* is to separate memcache maps from hazelcast maps.
+*hz\_memcache prefix\_* is to separate memcache maps from hazelcast maps. If no map name is given, it will be stored
+in default map named as *hz_memcache_default*.
 
 An entry written with a memcache client can be read by another memcache client written in another language.
+
+### Unsupported Operations ###
+
+- CAS operations are not supported. In operations getting CAS parameters like append, CAS values are ignored.
+
+- Only  a subset of statistics are supported. List of supported statistic values are
+
+    - cmd_set , cmd_get, incr_hits, incr_misses , decr_hits, decr_misses.
+
+
 
 <br> </br>
 
