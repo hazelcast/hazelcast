@@ -76,6 +76,12 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * This is the base class for all {@link com.hazelcast.replicatedmap.record.ReplicatedRecordStore} implementations
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public abstract class AbstractReplicatedRecordStore<K, V>
         implements ReplicatedRecordStore, InitializingObject, ReplicationChannel {
 
@@ -445,7 +451,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     public void queueInitialFillup(Address callerAddress, int chunkSize) {
-        executionService.execute("hz:replicated-map", new RemoteFillupTask(callerAddress, chunkSize));
+        executionService.execute("hz:replicated-map", new RemoteProvisionTask(callerAddress, chunkSize));
     }
 
     public void queueUpdateMessage(final ReplicationMessage update) {
@@ -761,7 +767,10 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         }
     }
 
-    private class RemoteFillupTask
+    /**
+     * This class implements the pre-provisioning task on member startup
+     */
+    private class RemoteProvisionTask
             implements Runnable {
 
         private final OperationService operationService = nodeEngine.getOperationService();
@@ -769,9 +778,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         private final int chunkSize;
 
         private ReplicatedRecord[] recordCache;
-        private int recordCachePos = 0;
+        private int recordCachePos;
 
-        private RemoteFillupTask(Address callerAddress, int chunkSize) {
+        private RemoteProvisionTask(Address callerAddress, int chunkSize) {
             this.callerAddress = callerAddress;
             this.chunkSize = chunkSize;
         }
@@ -823,6 +832,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         }
     }
 
+    /**
+     * Simple runnable task to run in the background and execute the actual replication
+     */
     private class ReplicationCachedSenderTask
             implements Runnable {
 
