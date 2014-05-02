@@ -25,7 +25,7 @@ public interface MapInterceptor extends Serializable {
      * Return another object to change the return value of get(..)
      * Returning null will cause the get(..) operation return original value, namely return null if you do not want to change anything.
      * <p/>
-     *
+     * Mutations made to value do not affect the stored value. They do affect the returned value.
      * @param value the original value to be returned as the result of get(..) operation
      * @return the new value that will be returned by get(..) operation
      */
@@ -34,7 +34,7 @@ public interface MapInterceptor extends Serializable {
     /**
      * Called after get(..) operation is completed.
      * <p/>
-     *
+     * Mutations made to value do not affect the stored value.
      * @param value the value returned as the result of get(..) operation
      */
     void afterGet(Object value);
