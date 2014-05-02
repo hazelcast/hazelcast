@@ -54,7 +54,7 @@ public class ReplicatedMapPortableHook
     public static final int MAP_ENTRY_EVENT = 18;
     public static final int CLEAR = 19;
 
-    private static final int LENGTH = MAP_ENTRY_EVENT + 1;
+    private static final int LENGTH = CLEAR + 1;
 
     @Override
     public int getFactoryId() {

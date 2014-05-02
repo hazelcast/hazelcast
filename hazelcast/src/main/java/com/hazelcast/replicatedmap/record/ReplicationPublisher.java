@@ -289,6 +289,7 @@ public class ReplicationPublisher<K, V>
         K marshalledKey = (K) replicatedRecordStore.marshallKey(update.getKey());
         V marshalledValue = (V) replicatedRecordStore.marshallValue(update.getValue());
         long ttlMillis = update.getTtlMillis();
+        long oldTtlMillis = localEntry.getTtlMillis();
         Object oldValue = localEntry.setValue(marshalledValue, update.getUpdateHash(), ttlMillis);
 
         localVectorClock.applyVector(remoteVectorClock);
@@ -299,8 +300,9 @@ public class ReplicationPublisher<K, V>
         }
 
         V unmarshalledOldValue = (V) replicatedRecordStore.unmarshallValue(oldValue);
-        if (unmarshalledOldValue == null || !unmarshalledOldValue.equals(update.getValue()) || update.getTtlMillis() != localEntry
-                .getTtlMillis()) {
+        if (unmarshalledOldValue == null || !unmarshalledOldValue.equals(update.getValue())
+                || update.getTtlMillis() != oldTtlMillis) {
+
             replicatedRecordStore.fireEntryListenerEvent(update.getKey(), unmarshalledOldValue, update.getValue());
         }
     }
