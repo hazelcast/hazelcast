@@ -244,8 +244,8 @@ public class MapContainer {
         if (wanReplicationRef == null) {
             return;
         }
-        wanReplicationPublisher = nodeEngine.getWanReplicationService().getWanReplicationListener(
-                wanReplicationRef.getName());
+        String wanReplicationRefName = wanReplicationRef.getName();
+        wanReplicationPublisher = nodeEngine.getWanReplicationService().getWanReplicationPublisher(wanReplicationRefName);
         wanMergePolicy = mapService.getMergePolicy(wanReplicationRef.getMergePolicy());
     }
 

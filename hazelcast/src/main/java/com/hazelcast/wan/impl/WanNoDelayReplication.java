@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.wan.impl;
 
 import com.hazelcast.cluster.AuthorizationOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;
+import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -32,7 +39,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
+/**
+ * No delaying distribution implementation on WAN replication
+ */
+public class WanNoDelayReplication
+        implements Runnable, WanReplicationEndpoint {
 
     private Node node;
     private ILogger logger;
@@ -57,7 +68,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         WanReplicationEvent replicationEvent = new WanReplicationEvent(serviceName, eventObject);
 
         //if the replication event is published, we are done.
-        if(eventQueue.offer(replicationEvent)){
+        if (eventQueue.offer(replicationEvent)) {
             return;
         }
 
@@ -66,8 +77,8 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         //todo: isn't it dangerous to drop a ReplicationEvent?
         eventQueue.poll();
 
-        if(!eventQueue.offer(replicationEvent)){
-            logger.warning("Could not publish replication event: "+replicationEvent);
+        if (!eventQueue.offer(replicationEvent)) {
+            logger.warning("Could not publish replication event: " + replicationEvent);
         }
     }
 
@@ -114,7 +125,8 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
     }
 
     @SuppressWarnings("BusyWait")
-    Connection getConnection() throws InterruptedException {
+    Connection getConnection()
+            throws InterruptedException {
         final int defaultPort = node.getConfig().getNetworkConfig().getPort();
         while (running) {
             String targetStr = addressQueue.take();
@@ -142,8 +154,9 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
 
     public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
         Operation authorizationCall = new AuthorizationOperation(groupName, groupPassword);
-        Future<Boolean> future = node.nodeEngine.getOperationService().createInvocationBuilder(WanReplicationService.SERVICE_NAME,
-                authorizationCall, target).setTryCount(1).invoke();
+        Future<Boolean> future = node.nodeEngine.getOperationService()
+                                                .createInvocationBuilder(WanReplicationService.SERVICE_NAME, authorizationCall,
+                                                        target).setTryCount(1).invoke();
         try {
             return future.get();
         } catch (Exception ignored) {

@@ -55,7 +55,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
-public class NodeEngineImpl implements NodeEngine {
+public class NodeEngineImpl
+        implements NodeEngine {
 
     private final Node node;
     private final ILogger logger;
@@ -80,7 +81,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = new WanReplicationService(node);
+        wanReplicationService = node.initializer.geWanReplicationService();
     }
 
     @PrivateApi
@@ -196,7 +197,9 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public boolean send(Packet packet, Connection connection) {
-        if (connection == null || !connection.live()) return false;
+        if (connection == null || !connection.live()) {
+            return false;
+        }
         final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
         if (memberImpl != null) {
             memberImpl.didWrite();
@@ -231,10 +234,11 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    private class FutureSend implements Runnable {
+    private class FutureSend
+            implements Runnable {
         private final Packet packet;
         private final Address target;
-        private volatile int retries = 0;
+        private volatile int retries;
 
         private FutureSend(Packet packet, Address target) {
             this.packet = packet;
@@ -354,8 +358,9 @@ public class NodeEngineImpl implements NodeEngine {
             final Operation pjOp = service.getPostJoinOperation();
             if (pjOp != null) {
                 if (pjOp instanceof PartitionAwareOperation) {
-                    logger.severe("Post-join operations cannot implement PartitionAwareOperation!" +
-                            " Service: " + service + ", Operation: " + pjOp);
+                    logger.severe(
+                            "Post-join operations cannot implement PartitionAwareOperation! Service: " + service + ", Operation: "
+                                    + pjOp);
                     continue;
                 }
                 postJoinOps.add(pjOp);

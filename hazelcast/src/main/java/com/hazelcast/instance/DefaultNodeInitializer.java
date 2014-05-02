@@ -20,6 +20,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
+import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
 public class DefaultNodeInitializer implements NodeInitializer {
 
@@ -62,6 +64,11 @@ public class DefaultNodeInitializer implements NodeInitializer {
     @Override
     public Storage<DataRef> getOffHeapStorage() {
         throw new UnsupportedOperationException("Offheap feature is only available on Hazelcast Enterprise Edition!");
+    }
+
+    @Override
+    public WanReplicationService geWanReplicationService() {
+        return new WanReplicationServiceImpl(node);
     }
 
     @Override

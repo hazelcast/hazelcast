@@ -384,7 +384,7 @@ public class TestFullApplicationContext {
         assertNotNull(targetCfg);
         assertEquals("tokyo", targetCfg.getGroupName());
         assertEquals("tokyo-pass", targetCfg.getGroupPassword());
-        assertEquals("com.hazelcast.wan.WanNoDelayReplication", targetCfg.getReplicationImpl());
+        assertEquals("com.hazelcast.wan.impl.WanNoDelayReplication", targetCfg.getReplicationImpl());
         assertEquals(2, targetCfg.getEndpoints().size());
         assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
         assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
