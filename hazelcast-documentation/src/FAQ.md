@@ -296,7 +296,7 @@ No. But, Hazelcast provides `MapStore` and `MapLoader` interfaces. When you impl
 
 Yes. But, please note that, Hazelcast's main design focus is multi-node clusters to be used as a distribution platform. 
 
-## How Can I Monitor Hazelcast?
+## How can I monitor Hazelcast?
 
 [Hazelcast Management Center](#management-center) is used to monitor and manage the nodes running Hazelcast. In addition to monitoring overall state of a cluster, data structures can be analyzed and browsed in detail, map configurations can be updated and thread dump from nodes can be taken. 
 

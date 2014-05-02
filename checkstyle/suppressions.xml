@@ -27,7 +27,6 @@
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
     <suppress checks="" files="com.hazelcast.jca[\\/]"/>
     <suppress checks="" files="com.hazelcast.spring[\\/]"/>
-    <suppress checks="" files="com.hazelcast.web[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
     <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
 
@@ -161,6 +160,13 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.query[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.query[\\/]"/>
     <suppress checks="MagicNumber" files="com.hazelcast.query.Parser"/>
+
+    <!-- hazelcast-wm -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.web[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.web[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.web[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.web[\\/]"/>
+
 
     <!-- Instance -->
     <suppress checks="JavadocMethod" files="com.hazelcast.instance[\\/]"/>
