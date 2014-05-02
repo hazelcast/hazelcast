@@ -52,6 +52,7 @@ public class ReplicatedMapPortableHook
     public static final int ADD_LISTENER = 16;
     public static final int REMOVE_LISTENER = 17;
     public static final int MAP_ENTRY_EVENT = 18;
+    public static final int CLEAR = 19;
 
     private static final int LENGTH = MAP_ENTRY_EVENT + 1;
 
@@ -172,6 +173,12 @@ public class ReplicatedMapPortableHook
                     @Override
                     public Portable createNew(Integer arg) {
                         return new ReplicatedMapPortableEntryEvent();
+                    }
+                };
+                constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
+                    @Override
+                    public Portable createNew(Integer arg) {
+                        return new ClientReplicatedMapClearRequest();
                     }
                 };
             }

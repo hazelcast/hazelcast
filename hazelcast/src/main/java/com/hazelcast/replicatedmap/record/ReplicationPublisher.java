@@ -225,6 +225,14 @@ public class ReplicationPublisher<K, V>
             return;
         }
         mapStats.incrementReceivedReplicationEvents();
+        if (update.getKey() instanceof String) {
+            String key = (String) update.getKey();
+            if (AbstractReplicatedRecordStore.CLEAR_REPLICATION_MAGIC_KEY.equals(key)) {
+                storage.clear();
+                return;
+            }
+        }
+
         K marshalledKey = (K) replicatedRecordStore.marshallKey(update.getKey());
         synchronized (replicatedRecordStore.getMutex(marshalledKey)) {
             final ReplicatedRecord<K, V> localEntry = storage.get(marshalledKey);

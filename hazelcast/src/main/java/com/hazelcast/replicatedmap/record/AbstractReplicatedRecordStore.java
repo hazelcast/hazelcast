@@ -45,6 +45,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractReplicatedRecordStore<K, V>
         extends AbstractBaseReplicatedRecordStore<K, V> {
 
+    static final String CLEAR_REPLICATION_MAGIC_KEY = ReplicatedMapService.SERVICE_NAME + "$CLEAR$MESSAGE$";
+
     public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine, CleanerRegistrator cleanerRegistrator,
                                          ReplicatedMapService replicatedMapService) {
 
@@ -69,9 +71,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 current.setValue(null, 0, -1);
                 vectorClock.incrementClock(localMember);
 
-                ReplicationMessage message = new ReplicationMessage(getName(), key, null, vectorClock, localMember,
-                        localMemberHash, -1);
-
+                ReplicationMessage message = buildReplicationMessage(key, null, vectorClock, -1);
                 replicationPublisher.publishReplicatedMessage(message);
             }
             cancelTtlEntry(marshalledKey);
@@ -131,8 +131,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             final VectorClock vectorClock;
             if (old == null) {
                 vectorClock = new VectorClock();
-                ReplicatedRecord<K, V> record = new ReplicatedRecord(marshalledKey, marshalledValue, vectorClock, localMemberHash,
-                        ttlMillis);
+                ReplicatedRecord<K, V> record = buildReplicatedRecord(marshalledKey, marshalledValue, vectorClock, ttlMillis);
                 storage.put(marshalledKey, record);
             } else {
                 oldValue = (V) old.getValue();
@@ -146,8 +145,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             }
 
             vectorClock.incrementClock(localMember);
-            ReplicationMessage message = new ReplicationMessage(getName(), key, value, vectorClock, localMember, localMemberHash,
-                    ttlMillis);
+            ReplicationMessage message = buildReplicationMessage(key, value, vectorClock, ttlMillis);
             replicationPublisher.publishReplicatedMessage(message);
         }
         Object unmarshalledOldValue = unmarshallValue(oldValue);
@@ -243,7 +241,12 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("clear is not supported on ReplicatedMap");
+        storage.checkState();
+        storage.clear();
+        VectorClock vectorClock = new VectorClock();
+        ReplicationMessage message = buildReplicationMessage(CLEAR_REPLICATION_MAGIC_KEY, null, vectorClock, 0);
+        replicationPublisher.publishReplicatedMessage(message);
+        mapStats.incrementOtherOperations();
     }
 
     @Override
@@ -280,5 +283,13 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         ValidationUtil.isNotNull(id, "id");
         mapStats.incrementOtherOperations();
         return replicatedMapService.removeEventListener(getName(), id);
+    }
+
+    private ReplicationMessage buildReplicationMessage(Object key, Object value, VectorClock vectorClock, long ttlMillis) {
+        return new ReplicationMessage(getName(), key, value, vectorClock, localMember, localMemberHash, ttlMillis);
+    }
+
+    private ReplicatedRecord buildReplicatedRecord(Object key, Object value, VectorClock vectorClock, long ttlMillis) {
+        return new ReplicatedRecord(key, value, vectorClock, localMemberHash, ttlMillis);
     }
 }

@@ -28,6 +28,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.client.ClientReplicatedMapAddEntryListenerRequest;
+import com.hazelcast.replicatedmap.client.ClientReplicatedMapClearRequest;
 import com.hazelcast.replicatedmap.client.ClientReplicatedMapContainsKeyRequest;
 import com.hazelcast.replicatedmap.client.ClientReplicatedMapContainsValueRequest;
 import com.hazelcast.replicatedmap.client.ClientReplicatedMapEntrySetRequest;
@@ -141,7 +142,8 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("clear is not supported on ReplicatedMap");
+        ClientReplicatedMapClearRequest request = new ClientReplicatedMapClearRequest(getName());
+        invoke(request);
     }
 
     @Override

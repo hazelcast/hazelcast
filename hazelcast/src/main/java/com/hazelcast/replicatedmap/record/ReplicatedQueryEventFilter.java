@@ -22,10 +22,13 @@ import com.hazelcast.query.impl.QueryEntry;
 
 import java.util.Map;
 
+/**
+ * This class is used to transfer a predicate as an remote operation and filter values matching the predicate
+ */
 public class ReplicatedQueryEventFilter
         extends ReplicatedEntryEventFilter {
 
-    private Predicate predicate = null;
+    private Predicate predicate;
 
     public ReplicatedQueryEventFilter(Object key, Predicate predicate) {
         super(key);
