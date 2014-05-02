@@ -4,9 +4,9 @@
 There are several technical design decisions that worth mentioning. We strongly suggest reading the following section
 to be aware of the configurable behaviour.
 
-** Initial fill up **
+** Initial provisioning **
 
-If a new member joins there are two ways of handling the initial fill up that is executed to replicate all existing
+If a new member joins there are two ways of handling the initial provisioning that is executed to replicate all existing
 values to the new member.
 
 First of all you can have an async fill up which does not block reads while fill up operation is underway. That way
