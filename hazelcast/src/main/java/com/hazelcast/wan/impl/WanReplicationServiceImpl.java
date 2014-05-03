@@ -43,7 +43,7 @@ public class WanReplicationServiceImpl
     private final Node node;
     private final ILogger logger;
 
-    private final Map<String, WanReplicationPublisherDelegate> wanReplications = new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
+    private final Map<String, WanReplicationPublisherDelegate> wanReplications = initializeWanReplicationPublisherMapping();
 
     public WanReplicationServiceImpl(Node node) {
         this.node = node;
@@ -128,5 +128,9 @@ public class WanReplicationServiceImpl
             }
             wanReplications.clear();
         }
+    }
+
+    private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
+        return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
     }
 }

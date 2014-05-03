@@ -24,7 +24,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;
 import com.hazelcast.wan.ReplicationEventObject;
@@ -44,6 +46,9 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class WanNoDelayReplication
         implements Runnable, WanReplicationEndpoint {
+
+    private static final int RETRY_CONNECTION_MAX = 10;
+    private static final int RETRY_CONNECTION_SLEEP_MILLIS = 1000;
 
     private Node node;
     private ILogger logger;
@@ -94,14 +99,7 @@ public class WanNoDelayReplication
                 if (conn == null) {
                     conn = getConnection();
                     if (conn != null) {
-                        boolean authorized = checkAuthorization(groupName, password, conn.getEndPoint());
-                        if (!authorized) {
-                            conn.close();
-                            conn = null;
-                            if (logger != null) {
-                                logger.severe("Invalid groupName or groupPassword! ");
-                            }
-                        }
+                        conn = authorizeConnection(conn);
                     }
                 }
                 if (conn != null && conn.live()) {
@@ -135,16 +133,16 @@ public class WanNoDelayReplication
                 final Address target = new Address(addressHolder.getAddress(), addressHolder.getPort());
                 final ConnectionManager connectionManager = node.getConnectionManager();
                 Connection conn = connectionManager.getOrConnect(target);
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < RETRY_CONNECTION_MAX; i++) {
                     if (conn == null) {
-                        Thread.sleep(1000);
+                        Thread.sleep(RETRY_CONNECTION_SLEEP_MILLIS);
                     } else {
                         return conn;
                     }
                     conn = connectionManager.getConnection(target);
                 }
             } catch (Throwable e) {
-                Thread.sleep(1000);
+                Thread.sleep(RETRY_CONNECTION_SLEEP_MILLIS);
             } finally {
                 addressQueue.offer(targetStr);
             }
@@ -154,14 +152,27 @@ public class WanNoDelayReplication
 
     public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
         Operation authorizationCall = new AuthorizationOperation(groupName, groupPassword);
-        Future<Boolean> future = node.nodeEngine.getOperationService()
-                                                .createInvocationBuilder(WanReplicationService.SERVICE_NAME, authorizationCall,
-                                                        target).setTryCount(1).invoke();
+        OperationService operationService = node.nodeEngine.getOperationService();
+        String serviceName = WanReplicationService.SERVICE_NAME;
+        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(serviceName, authorizationCall, target);
+        Future<Boolean> future = invocationBuilder.setTryCount(1).invoke();
         try {
             return future.get();
         } catch (Exception ignored) {
+            logger.finest(ignored);
         }
         return false;
     }
 
+    private Connection authorizeConnection(Connection conn) {
+        boolean authorized = checkAuthorization(groupName, password, conn.getEndPoint());
+        if (!authorized) {
+            conn.close();
+            if (logger != null) {
+                logger.severe("Invalid groupName or groupPassword! ");
+            }
+            return null;
+        }
+        return conn;
+    }
 }
