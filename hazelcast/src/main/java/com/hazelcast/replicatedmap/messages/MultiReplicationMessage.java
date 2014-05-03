@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapDataSerializerHook;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.io.IOException;
 
@@ -35,11 +36,15 @@ public class MultiReplicationMessage
     public MultiReplicationMessage() {
     }
 
+    // Findbugs warning suppressed since the array is serialized anyways and is never about to be changed
+    @SuppressWarnings("EI_EXPOSE_REP")
     public MultiReplicationMessage(String name, ReplicationMessage[] replicationMessages) {
         this.name = name;
         this.replicationMessages = replicationMessages;
     }
 
+    // Findbugs warning suppressed since the array is serialized anyways and is never about to be changed
+    @SuppressWarnings("EI_EXPOSE_REP")
     public ReplicationMessage[] getReplicationMessages() {
         return replicationMessages;
     }

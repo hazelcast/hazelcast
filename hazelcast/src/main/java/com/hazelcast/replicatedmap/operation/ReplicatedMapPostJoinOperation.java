@@ -29,6 +29,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * The replicated map post join operation to execute on remote nodes
@@ -49,7 +50,7 @@ public class ReplicatedMapPostJoinOperation
     }
 
     public ReplicatedMapPostJoinOperation(MemberMapPair[] replicatedMaps, int chunkSize) {
-        this.replicatedMaps = replicatedMaps;
+        this.replicatedMaps = Arrays.copyOf(replicatedMaps, replicatedMaps.length);
         this.chunkSize = chunkSize;
     }
 

@@ -27,6 +27,7 @@ import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.record.ReplicationPublisher;
 import com.hazelcast.replicatedmap.record.VectorClock;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.io.IOException;
 
@@ -52,6 +53,8 @@ public class ReplicatedMapInitChunkOperation
         this.notYetReadyChooseSomeoneElse = true;
     }
 
+    // Findbugs warning suppressed since the array is serialized anyways and is never about to be changed
+    @SuppressWarnings("EI_EXPOSE_REP")
     public ReplicatedMapInitChunkOperation(String name, Member origin, ReplicatedRecord[] replicatedRecords, int recordCount,
                                            boolean finalChunk) {
         this.name = name;
