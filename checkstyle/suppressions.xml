@@ -22,7 +22,6 @@
     <suppress checks="" files="com.hazelcast.util[\\/]"/>
     <suppress checks="" files="com.hazelcast.wan[\\/]"/>
 
-
     <suppress checks="" files="com.hazelcast.client[\\/]"/>
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
     <suppress checks="" files="com.hazelcast.jca[\\/]"/>
