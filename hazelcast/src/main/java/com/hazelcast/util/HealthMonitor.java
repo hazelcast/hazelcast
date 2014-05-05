@@ -119,7 +119,7 @@ public class HealthMonitor extends Thread {
                 outputQueueSizes.put(address, size);
             }
 
-            maxOutputQueueSize = node.getGroupProperties().CONNECTION_MAX_OUTPUT_QUEUE_SIZE.getInteger();
+            maxOutputQueueSize = node.getGroupProperties().MAX_CONNECTION_OUTPUT_QUEUE_SIZE.getInteger();
 
             this.packetQueueSize = clusterService.getPacketQueueSize();
             this.processableQueueSize = clusterService.getProcessableQueueSize();

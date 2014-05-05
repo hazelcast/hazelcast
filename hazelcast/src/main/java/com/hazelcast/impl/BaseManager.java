@@ -116,7 +116,7 @@ public abstract class BaseManager {
         redoWaitMillis = node.getGroupProperties().REDO_WAIT_MILLIS.getLong();
         redoLogThreshold = node.getGroupProperties().REDO_LOG_THRESHOLD.getInteger();
         redoGiveUpThreshold = node.getGroupProperties().REDO_GIVE_UP_THRESHOLD.getInteger();
-        maxConnectionOutputQueueSize = node.getGroupProperties().CONNECTION_MAX_OUTPUT_QUEUE_SIZE.getInteger();
+        maxConnectionOutputQueueSize = node.getGroupProperties().MAX_CONNECTION_OUTPUT_QUEUE_SIZE.getInteger();
     }
 
     public List<MemberImpl> getMembers() {

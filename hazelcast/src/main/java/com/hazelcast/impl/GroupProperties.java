@@ -115,7 +115,7 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
     public static final String PROP_SYSTEM_LOG_ENABLED = "hazelcast.system.log.enabled";
-    public static final String PROP_CONNECTION_MAX_OUTPUT_QUEUE_SIZE = "hazelcast.connection.queue.max.size";
+    public static final String PROP_MAX_CONNECTION_OUTPUT_QUEUE_SIZE = "hazelcast.max.connection.queue.size";
 
     public static final GroupProperty SERIALIZER_GZIP_ENABLED = new GroupProperty(null, PROP_SERIALIZER_GZIP_ENABLED, "false");
 
@@ -301,7 +301,7 @@ public class GroupProperties {
 
     public final GroupProperty SYSTEM_LOG_ENABLED;
 
-    public final GroupProperty CONNECTION_MAX_OUTPUT_QUEUE_SIZE;
+    public final GroupProperty MAX_CONNECTION_OUTPUT_QUEUE_SIZE;
 
 
     public GroupProperties(Config config) {
@@ -396,7 +396,7 @@ public class GroupProperties {
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
         SYSTEM_LOG_ENABLED = new GroupProperty(config, PROP_SYSTEM_LOG_ENABLED, "true");
-        CONNECTION_MAX_OUTPUT_QUEUE_SIZE = new GroupProperty(config, PROP_CONNECTION_MAX_OUTPUT_QUEUE_SIZE, "10000");
+        MAX_CONNECTION_OUTPUT_QUEUE_SIZE = new GroupProperty(config, PROP_MAX_CONNECTION_OUTPUT_QUEUE_SIZE, "10000");
     }
 
     public static class GroupProperty {
