@@ -18,7 +18,12 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.multimap.operations.client.*;
+import com.hazelcast.multimap.operations.client.TxnMultiMapGetRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapRemoveAllRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapSizeRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapPutRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapRemoveRequest;
+import com.hazelcast.multimap.operations.client.TxnMultiMapValueCountRequest;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
@@ -32,7 +37,7 @@ import java.util.List;
 /**
  * @author ali 6/10/13
  */
-public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements TransactionalMultiMap<K,V> {
+public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements TransactionalMultiMap<K, V> {
 
     public ClientTxnMultiMapProxy(String name, TransactionContextProxy proxy) {
         super(name, proxy);
@@ -49,13 +54,13 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         final PortableCollection portableCollection = invoke(request);
         final Collection<Data> collection = portableCollection.getCollection();
         Collection<V> coll;
-        if (collection instanceof List){
+        if (collection instanceof List) {
             coll = new ArrayList<V>(collection.size());
         } else {
             coll = new HashSet<V>(collection.size());
         }
         for (Data data : collection) {
-            coll.add((V)toObject(data));
+            coll.add((V) toObject(data));
         }
         return coll;
     }
@@ -71,13 +76,13 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         PortableCollection portableCollection = invoke(request);
         final Collection<Data> collection = portableCollection.getCollection();
         Collection<V> coll;
-        if (collection instanceof List){
+        if (collection instanceof List) {
             coll = new ArrayList<V>(collection.size());
         } else {
             coll = new HashSet<V>(collection.size());
         }
         for (Data data : collection) {
-            coll.add((V)toObject(data));
+            coll.add((V) toObject(data));
         }
         return coll;
     }
@@ -95,7 +100,7 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public String getName() {
-        return (String)getId();
+        return (String) getId();
     }
 
     @Override

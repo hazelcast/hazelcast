@@ -32,11 +32,11 @@ public class RoundRobinLB extends AbstractLoadBalancer {
     private final AtomicInteger indexRef;
 
     public RoundRobinLB() {
-        this((int)System.nanoTime());
+        this((int) System.nanoTime());
     }
 
     public RoundRobinLB(int seed) {
-        indexRef  = new AtomicInteger(seed);
+        indexRef = new AtomicInteger(seed);
     }
 
     @Override

@@ -31,14 +31,19 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
-import static com.hazelcast.transaction.impl.Transaction.State.*;
+import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
+import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
+import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 
 /**
  * @author ali 6/6/13
  */
 final class TransactionProxy {
 
-    private static final ThreadLocal<Boolean> threadFlag = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> THREAD_FLAG = new ThreadLocal<Boolean>();
 
     private final TransactionOptions options;
     private final HazelcastClient client;
@@ -48,7 +53,7 @@ final class TransactionProxy {
     private SerializableXID sXid;
     private String txnId;
     private State state = NO_TXN;
-    private long startTime = 0L;
+    private long startTime;
 
     TransactionProxy(HazelcastClient client, TransactionOptions options, ClientConnection connection) {
         this.options = options;
@@ -74,10 +79,10 @@ final class TransactionProxy {
                 throw new IllegalStateException("Transaction is already active");
             }
             checkThread();
-            if (threadFlag.get() != null) {
+            if (THREAD_FLAG.get() != null) {
                 throw new IllegalStateException("Nested transactions are not allowed!");
             }
-            threadFlag.set(Boolean.TRUE);
+            THREAD_FLAG.set(Boolean.TRUE);
             startTime = Clock.currentTimeMillis();
             txnId = invoke(new CreateTransactionRequest(options, sXid));
             state = ACTIVE;
@@ -152,7 +157,7 @@ final class TransactionProxy {
     }
 
     private void closeConnection() {
-        threadFlag.set(null);
+        THREAD_FLAG.set(null);
 //        try {
 //            connection.release();
 //        } catch (IOException e) {
@@ -178,10 +183,10 @@ final class TransactionProxy {
             ((BaseTransactionRequest) request).setClientThreadId(threadId);
         }
         final SerializationService ss = client.getSerializationService();
-        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)client.getInvocationService();
+        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         try {
             final Future f = invocationService.send(request, connection);
-            return ss.toObject(f.get()) ;
+            return ss.toObject(f.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

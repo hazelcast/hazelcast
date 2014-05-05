@@ -13,19 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.client.txn;
+
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.txn.proxy.*;
+import com.hazelcast.client.txn.proxy.ClientTxnListProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnMapProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnMultiMapProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnQueueProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnSetProxy;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.TransactionalList;
+import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.map.MapService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.transaction.*;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.impl.Transaction;
 
 import javax.transaction.xa.XAResource;
@@ -41,7 +54,8 @@ public class TransactionContextProxy implements TransactionContext {
     final HazelcastClient client;
     final TransactionProxy transaction;
     final ClientConnection connection;
-    private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+    private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap =
+            new HashMap<TransactionalObjectKey, TransactionalObject>(2);
     private XAResourceProxy xaResource;
 
 
@@ -94,8 +108,8 @@ public class TransactionContextProxy implements TransactionContext {
 
     public <T extends TransactionalObject> T getTransactionalObject(String serviceName, String name) {
         if (transaction.getState() != Transaction.State.ACTIVE) {
-            throw new TransactionNotActiveException("No transaction is found while accessing " +
-                    "transactional object -> " + serviceName + "[" + name + "]!");
+            throw new TransactionNotActiveException("No transaction is found while accessing "
+                    + "transactional object -> " + serviceName + "[" + name + "]!");
         }
         TransactionalObjectKey key = new TransactionalObjectKey(serviceName, name);
         TransactionalObject obj = txnObjectMap.get(key);
@@ -108,7 +122,7 @@ public class TransactionContextProxy implements TransactionContext {
                 obj = new ClientTxnMultiMapProxy(name, this);
             } else if (serviceName.equals(ListService.SERVICE_NAME)) {
                 obj = new ClientTxnListProxy(name, this);
-            }else if (serviceName.equals(SetService.SERVICE_NAME)) {
+            } else if (serviceName.equals(SetService.SERVICE_NAME)) {
                 obj = new ClientTxnSetProxy(name, this);
             }
 
@@ -153,13 +167,21 @@ public class TransactionContextProxy implements TransactionContext {
         }
 
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof TransactionalObjectKey)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof TransactionalObjectKey)) {
+                return false;
+            }
 
             TransactionalObjectKey that = (TransactionalObjectKey) o;
 
-            if (!name.equals(that.name)) return false;
-            if (!serviceName.equals(that.serviceName)) return false;
+            if (!name.equals(that.name)) {
+                return false;
+            }
+            if (!serviceName.equals(that.serviceName)) {
+                return false;
+            }
 
             return true;
         }

@@ -24,21 +24,30 @@ import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author mdogan 5/16/13
  */
 public final class ClientExecutionServiceImpl implements ClientExecutionService {
 
-    private static final ILogger logger = Logger.getLogger(ClientExecutionService.class);
+    private static final ILogger LOGGER = Logger.getLogger(ClientExecutionService.class);
 
     private final ExecutorService executor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
-        if (poolSize <= 0){
+        if (poolSize <= 0) {
             poolSize = Runtime.getRuntime().availableProcessors();
         }
         internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
@@ -47,7 +56,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
-                        logger.finest(message);
+                        LOGGER.finest(message);
                         throw new RejectedExecutionException(message);
                     }
                 });
@@ -57,7 +66,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
-                        logger.finest(message);
+                        LOGGER.finest(message);
                         throw new RejectedExecutionException(message);
                     }
                 });

@@ -213,7 +213,7 @@ public class ClientMapReduceProxy
         }
     }
 
-    private class ClientTrackableJob<V>
+    private final class ClientTrackableJob<V>
             implements TrackableJob<V> {
 
         private final String jobId;
