@@ -41,6 +41,8 @@ public enum FieldType {
     FLOAT_ARRAY(16),
     DOUBLE_ARRAY(17);
 
+    private static final FieldType[] ALL = FieldType.values();
+
     private final byte type;
 
     private FieldType(int type) {
@@ -51,10 +53,8 @@ public enum FieldType {
         return type;
     }
 
-    private static final FieldType[] all = FieldType.values();
-
     public static FieldType get(byte type) {
-        return all[type];
+        return ALL[type];
     }
 
 }

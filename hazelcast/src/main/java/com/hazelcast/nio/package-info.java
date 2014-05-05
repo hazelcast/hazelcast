@@ -14,17 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
-
 /**
- * @author mdogan 3/11/13
+ * <p>This package contains classes related to New IO<br/>
  */
-public final class Protocols {
 
-    public static final String CLUSTER = "HZC";
-    public static final String CLIENT_BINARY = "CB1";
-    public static final String TEXT = "TXT";
-
-    private Protocols() {
-    }
-}
+package com.hazelcast.nio;

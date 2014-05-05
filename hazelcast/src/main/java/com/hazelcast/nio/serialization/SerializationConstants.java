@@ -97,5 +97,6 @@ public final class SerializationConstants {
 
     public static final int HIBERNATE_TYPE_HIBERNATE_CACHE_ENTRY = -201;
 
-    private SerializationConstants() {}
+    private SerializationConstants() {
+    }
 }

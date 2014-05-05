@@ -20,7 +20,13 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Externalizable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
@@ -28,12 +34,19 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static com.hazelcast.nio.IOUtil.newObjectInputStream;
-import static com.hazelcast.nio.serialization.SerializationConstants.*;
+
+import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_BIG_INTEGER;
+import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_BIG_DECIMAL;
+import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_DATE;
+import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_CLASS;
+import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_EXTERNALIZABLE;
+import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_OBJECT;
+import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_ENUM;
 
 /**
  * @author mdogan 6/18/12
  */
-public class DefaultSerializers {
+public final class DefaultSerializers {
 
     public static final class BigIntegerSerializer extends SingletonSerializer<BigInteger> {
 

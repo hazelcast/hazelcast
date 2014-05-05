@@ -35,19 +35,22 @@ public class DefaultPortableWriter implements PortableWriter {
     private final int begin;
     private final int offset;
     private final Set<String> writtenFields;
-    private boolean raw = false;
+    private boolean raw;
 
-    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd)throws IOException {
+    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd)
+            throws IOException {
         this.serializer = serializer;
         this.out = out;
         this.cd = cd;
         this.writtenFields = new HashSet<String>(cd.getFieldCount());
         this.begin = out.position();
 
-        out.writeZeroBytes(4);  // room for final offset
+        // room for final offset
+        out.writeZeroBytes(4);
 
         this.offset = out.position();
-        final int fieldIndexesLength = (cd.getFieldCount() + 1) * 4; // one additional for raw data
+        // one additional for raw data
+        final int fieldIndexesLength = (cd.getFieldCount() + 1) * 4;
         out.writeZeroBytes(fieldIndexesLength);
     }
 
@@ -186,7 +189,8 @@ public class DefaultPortableWriter implements PortableWriter {
     public ObjectDataOutput getRawDataOutput() throws IOException {
         if (!raw) {
             int pos = out.position();
-            int index = cd.getFieldCount(); // last index
+            // last index
+            int index = cd.getFieldCount();
             out.writeInt(offset + index * 4, pos);
         }
         raw = true;
@@ -194,6 +198,7 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     void end() throws IOException {
-        out.writeInt(begin, out.position()); // write final offset
+        // write final offset
+        out.writeInt(begin, out.position());
     }
 }

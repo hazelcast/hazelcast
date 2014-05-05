@@ -38,18 +38,19 @@ final class SerializationContextImpl implements SerializationContext {
     final int version;
     final ConcurrentHashMap<Integer, PortableContext> portableContextMap = new ConcurrentHashMap<Integer, PortableContext>();
     final SerializationServiceImpl serializationService;
-    final ConstructorFunction<Integer, PortableContext> constructorFunction = new ConstructorFunction<Integer, PortableContext>() {
-        public PortableContext createNew(Integer arg) {
-            return new PortableContext();
-        }
-    };
+    final ConstructorFunction<Integer, PortableContext> constructorFunction =
+            new ConstructorFunction<Integer, PortableContext>() {
+                public PortableContext createNew(Integer arg) {
+                    return new PortableContext();
+                }
+            };
 
     SerializationContextImpl(SerializationServiceImpl serializationService, Collection<Integer> portableFactories, int version) {
         this.serializationService = serializationService;
         this.version = version;
 
         for (int factoryId : portableFactories) {
-            portableContextMap.put(factoryId, new PortableContext()) ;
+            portableContextMap.put(factoryId, new PortableContext());
         }
     }
 
@@ -129,7 +130,9 @@ final class SerializationContextImpl implements SerializationContext {
         }
 
         ClassDefinition registerClassDefinition(ClassDefinition cd) {
-            if (cd == null) return null;
+            if (cd == null) {
+                return null;
+            }
             final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
             if (cdImpl.getVersion() < 0) {
                 cdImpl.version = getVersion();

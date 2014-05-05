@@ -26,15 +26,17 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
-* @author mdogan 06/15/13
-*/
+ * @author mdogan 06/15/13
+ */
 final class ByteBufferObjectDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
+
+    private static final int UTF_BUFFER_SIZE = 1024;
 
     private final DynamicByteBuffer buffer;
 
     private final SerializationService service;
 
-    private final byte[] utfBuffer = new byte[1024];
+    private final byte[] utfBuffer = new byte[UTF_BUFFER_SIZE];
 
     ByteBufferObjectDataOutput(int size, SerializationService service, ByteOrder order) {
         this.buffer = new DynamicByteBuffer(size, false);
@@ -56,7 +58,7 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
         buffer.put(position, (byte) b);
     }
 
-    public void write(byte b[], int off, int len) {
+    public void write(byte[] b, int off, int len) {
         if (len == 0) {
             return;
         }
@@ -75,8 +77,8 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
         write(v);
     }
 
-    public void writeZeroBytes(int count){
-        for(int k=0;k<count;k++){
+    public void writeZeroBytes(int count) {
+        for (int k = 0; k < count; k++) {
             write(0);
         }
     }
@@ -218,7 +220,7 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
     /**
      * Returns this buffer's position.
      */
-    public final int position() {
+    public int position() {
         return buffer.position();
     }
 
@@ -240,7 +242,7 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
         }
         final DynamicByteBuffer duplicate = buffer.duplicate();
         duplicate.flip();
-        final byte newBuffer[] = new byte[duplicate.limit()];
+        final byte[] newBuffer = new byte[duplicate.limit()];
         duplicate.get(newBuffer);
         return newBuffer;
     }

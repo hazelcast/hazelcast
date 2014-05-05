@@ -53,7 +53,7 @@ public interface PortableReader {
     float readFloat(String fieldName) throws IOException;
 
     short readShort(String fieldName) throws IOException;
-    
+
     <P extends Portable> P readPortable(String fieldName) throws IOException;
 
     byte[] readByteArray(String fieldName) throws IOException;

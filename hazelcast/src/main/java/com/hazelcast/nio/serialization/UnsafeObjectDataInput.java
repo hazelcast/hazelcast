@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 /**
-* @author mdogan 06/16/13
-*/
+ * @author mdogan 06/16/13
+ */
 final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
     UnsafeObjectDataInput(Data data, SerializationService service) {
@@ -160,7 +160,8 @@ final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
         return new short[0];
     }
 
-    private void unsafeMemCopy(final Object destArray, final long destArrayTypeOffset, final int destArrayLength, final int indexScale) throws IOException {
+    private void unsafeMemCopy(final Object destArray, final long destArrayTypeOffset,
+                               final int destArrayLength, final int indexScale) throws IOException {
         if (destArray == null) {
             throw new IllegalArgumentException("Destination array is NULL!");
         }

@@ -18,7 +18,13 @@ package com.hazelcast.nio.ssl;
 
 import com.hazelcast.nio.DefaultSocketChannelWrapper;
 
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLHandshakeException;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -29,10 +35,12 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
 
     private final ByteBuffer in;
     private final ByteBuffer emptyBuffer;
-    private final ByteBuffer netOutBuffer;      // "reliable" write transport
-    private final ByteBuffer netInBuffer;      // "reliable" read transport
+    private final ByteBuffer netOutBuffer;
+    // "reliable" write transport
+    private final ByteBuffer netInBuffer;
+    // "reliable" read transport
     private final SSLEngine sslEngine;
-    private volatile boolean handshakeCompleted = false;
+    private volatile boolean handshakeCompleted;
     private SSLEngineResult sslEngineResult;
 
     public SSLSocketChannelWrapper(SSLContext sslContext, SocketChannel sc, boolean client) throws Exception {
@@ -120,7 +128,8 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
                 }
             }
             if (sslEngineResult.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.FINISHED) {
-                throw new SSLHandshakeException("SSL handshake failed after " + counter + " trials! -> " + sslEngineResult.getHandshakeStatus());
+                throw new SSLHandshakeException("SSL handshake failed after " + counter
+                        + " trials! -> " + sslEngineResult.getHandshakeStatus());
             }
             if (DEBUG) {
                 log("Handshake completed!");

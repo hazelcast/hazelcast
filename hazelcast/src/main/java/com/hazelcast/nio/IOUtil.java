@@ -18,15 +18,22 @@ package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.DataOutput;
+import java.io.DataInput;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+
 import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 public final class IOUtil {
-
-    private IOUtil(){}
 
     public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
     public static final byte PRIMITIVE_TYPE_BYTE = 2;
@@ -37,6 +44,8 @@ public final class IOUtil {
     public static final byte PRIMITIVE_TYPE_DOUBLE = 7;
     public static final byte PRIMITIVE_TYPE_UTF = 8;
 
+    private IOUtil() {
+    }
 
     public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
         int size = (value == null) ? 0 : value.length;
@@ -124,7 +133,9 @@ public final class IOUtil {
     }
 
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
-        if (src == null) return 0;
+        if (src == null) {
+            return 0;
+        }
         int n = Math.min(src.remaining(), dest.remaining());
         if (n > 0) {
             if (n < 16) {
@@ -230,7 +241,7 @@ public final class IOUtil {
         } else if (type.equals(Double.class)) {
             out.writeByte(PRIMITIVE_TYPE_DOUBLE);
             out.writeDouble((Double) value);
-        } else if(type.equals(String.class)) {
+        } else if (type.equals(String.class)) {
             out.writeByte(PRIMITIVE_TYPE_UTF);
             out.writeUTF((String) value);
         } else {
@@ -257,6 +268,7 @@ public final class IOUtil {
                 return in.readDouble();
             case PRIMITIVE_TYPE_UTF:
                 return in.readUTF();
+            default:
         }
         throw new IllegalStateException("Illegal attribute type id found");
     }
