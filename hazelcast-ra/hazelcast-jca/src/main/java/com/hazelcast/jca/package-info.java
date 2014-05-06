@@ -13,14 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.hazelcast.jca;
-
-
 /**
- * Wrapper interface to bundle {@link javax.resource.cci.LocalTransaction} and
- * {@link javax.resource.spi.LocalTransaction} into one interface
+ * <p>This package contains jca functionality</p>
  */
-public interface HazelcastTransaction extends javax.resource.cci.LocalTransaction, javax.resource.spi.LocalTransaction {
-
-}
+package com.hazelcast.jca;

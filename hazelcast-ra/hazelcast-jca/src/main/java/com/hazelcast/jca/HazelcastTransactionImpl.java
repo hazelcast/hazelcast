@@ -27,45 +27,55 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransaction {
-	/** List of former transaction used during transaction restore */
-	//private static final ConcurrentMap<CallContext, CallContext> predecessors = new ConcurrentHashMap<CallContext, CallContext>();
+    /** List of former transaction used during transaction restore */
+    //private static final ConcurrentMap<CallContext,CallContext> predecessors=new ConcurrentHashMap<CallContext,CallContext>();
 
-	/** access to the creator of this {@link #connection} */
-	private final ManagedConnectionFactoryImpl factory;
-	/** access to the creator of this transaction */
-	private final ManagedConnectionImpl connection;
-	/** The hazelcast transaction context itself */
-	private TransactionContext txContext;
-	
-	public HazelcastTransactionImpl(ManagedConnectionFactoryImpl factory, ManagedConnectionImpl connection) {
-		this.setLogWriter(factory.getLogWriter());
+    /**
+     * access to the creator of this {@link #connection}
+     */
+    private final ManagedConnectionFactoryImpl factory;
+    /**
+     * access to the creator of this transaction
+     */
+    private final ManagedConnectionImpl connection;
+    /**
+     * The hazelcast transaction context itself
+     */
+    private TransactionContext txContext;
 
-		this.factory = factory;
-		this.connection = connection;
-	}
+    public HazelcastTransactionImpl(ManagedConnectionFactoryImpl factory, ManagedConnectionImpl connection) {
+        this.setLogWriter(factory.getLogWriter());
 
-	/** Delegates the hazelcast instance access to the @{link #connection} 
-	 * @see ManagedConnectionImpl#getHazelcastInstance() 
-	 */
-	private HazelcastInstance getHazelcastInstance() {
-		return connection.getHazelcastInstance();
-	}
+        this.factory = factory;
+        this.connection = connection;
+    }
 
-	/** Delegates the connection event propagation to the @{link #connection} 
-	 * @see ManagedConnectionImpl#fireConnectionEvent(int) 
-	 */
-	private void fireConnectionEvent(int event) {
-		connection.fireConnectionEvent(event);
-	}
+    /**
+     * Delegates the hazelcast instance access to the @{link #connection}
+     *
+     * @see ManagedConnectionImpl#getHazelcastInstance()
+     */
+    private HazelcastInstance getHazelcastInstance() {
+        return connection.getHazelcastInstance();
+    }
 
-	/* (non-Javadoc)
-	 * @see javax.resource.cci.LocalTransaction#begin()
-	 */
-	public void begin() throws ResourceException {
-		if (null == txContext) {
-			factory.logHzConnectionEvent(this, HzConnectionEvent.TX_START);
+    /**
+     * Delegates the connection event propagation to the @{link #connection}
+     *
+     * @see ManagedConnectionImpl#fireConnectionEvent(int)
+     */
+    private void fireConnectionEvent(int event) {
+        connection.fireConnectionEvent(event);
+    }
 
-            this.txContext=getHazelcastInstance().newTransactionContext();
+    /* (non-Javadoc)
+     * @see javax.resource.cci.LocalTransaction#begin()
+     */
+    public void begin() throws ResourceException {
+        if (null == txContext) {
+            factory.logHzConnectionEvent(this, HzConnectionEvent.TX_START);
+
+            this.txContext = getHazelcastInstance().newTransactionContext();
             this.connection.getTx().setTxContext(txContext);
 
             log(Level.FINEST, "begin");
@@ -73,16 +83,16 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
 
             fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_STARTED);
 
-		} else {
-			log(Level.INFO, "Ignoring duplicate TX begin event");
-		}
-	}
+        } else {
+            log(Level.INFO, "Ignoring duplicate TX begin event");
+        }
+    }
 
-	/* (non-Javadoc)
-	 * @see javax.resource.cci.LocalTransaction#commit()
-	 */
-	public void commit() throws ResourceException {
-		factory.logHzConnectionEvent(this, HzConnectionEvent.TX_COMPLETE);
+    /* (non-Javadoc)
+     * @see javax.resource.cci.LocalTransaction#commit()
+     */
+    public void commit() throws ResourceException {
+        factory.logHzConnectionEvent(this, HzConnectionEvent.TX_COMPLETE);
 
         log(Level.FINEST, "commit");
         if (this.txContext != null) {
@@ -90,16 +100,17 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
             fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_COMMITTED);
             this.txContext = null;
         } else {
-            throw new ResourceException("Invalid transaction context; commit operation invoked without an active transaction context");
+            throw new ResourceException("Invalid transaction context; "
+                    + "commit operation invoked without an active transaction context");
         }
-	}
+    }
 
 
-	/* (non-Javadoc)
-	 * @see javax.resource.cci.LocalTransaction#rollback()
-	 */
-	public void rollback() throws ResourceException {
-		factory.logHzConnectionEvent(this, HzConnectionEvent.TX_COMPLETE);
+    /* (non-Javadoc)
+     * @see javax.resource.cci.LocalTransaction#rollback()
+     */
+    public void rollback() throws ResourceException {
+        factory.logHzConnectionEvent(this, HzConnectionEvent.TX_COMPLETE);
 
         log(Level.FINEST, "rollback");
         if (this.txContext != null) {
@@ -107,11 +118,12 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
             fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_ROLLEDBACK);
             this.txContext = null;
         } else {
-            throw new ResourceException("Invalid transaction context; rollback operation invoked without an active transaction context");
+            throw new ResourceException("Invalid transaction context; "
+                    + "rollback operation invoked without an active transaction context");
         }
-	}
+    }
 
-    public TransactionContext getTxContext(){
+    public TransactionContext getTxContext() {
         return this.txContext;
     }
 
@@ -119,8 +131,8 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
         this.txContext = txContext;
     }
 
-    public static TransactionContext createTransaction(int timeout,HazelcastInstance hazelcastInstance) throws XAException {
-        final TransactionOptions transactionOptions=TransactionOptions.getDefault().setTimeout(timeout, TimeUnit.SECONDS);
+    public static TransactionContext createTransaction(int timeout, HazelcastInstance hazelcastInstance) throws XAException {
+        final TransactionOptions transactionOptions = TransactionOptions.getDefault().setTimeout(timeout, TimeUnit.SECONDS);
         return hazelcastInstance.newTransactionContext(transactionOptions);
     }
 

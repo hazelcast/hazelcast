@@ -21,7 +21,6 @@
 
     <suppress checks="" files="com.hazelcast.client[\\/]"/>
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
-    <suppress checks="" files="com.hazelcast.jca[\\/]"/>
     <suppress checks="" files="com.hazelcast.spring[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
     <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
@@ -163,6 +162,16 @@
 
     <suppress checks="ParameterAssignment" files="com.hazelcast.queue.proxy.QueueProxyImpl"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.queue.tx.TransactionalQueueProxy"/>
+
+    <!-- jca -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.jca[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.jca[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.jca[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.jca[\\/]"/>
+
+    <suppress checks="EmptyStatement" files="com.hazelcast.jca.ResourceAdapterImpl"/>
+    <suppress checks="FileTabCharacter" files="com.hazelcast.jca.HzConnectionEvent"/>
+    <suppress checks="FileTabCharacter" files="com.hazelcast.jca.HazelcastConnectionFactory"/>
 
 
 
