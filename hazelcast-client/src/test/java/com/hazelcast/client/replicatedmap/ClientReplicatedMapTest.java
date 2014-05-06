@@ -172,16 +172,14 @@ public class ClientReplicatedMapTest
         final AtomicBoolean happened = new AtomicBoolean(false);
         for (int i = 0; i < 10; i++) {
             map1.clear();
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run()
-                        throws Exception {
-
-                    assertEquals(0, map1.size());
-                    assertEquals(0, map2.size());
-                    happened.set(true);
-                }
-            });
+            Thread.sleep(1000);
+            try {
+                assertEquals(0, map1.size());
+                assertEquals(0, map2.size());
+                happened.set(true);
+            } catch (AssertionError ignore) {
+                // ignore and retry
+            }
             if (happened.get()) {
                 break;
             }

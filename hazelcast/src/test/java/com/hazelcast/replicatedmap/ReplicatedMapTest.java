@@ -24,7 +24,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.record.ReplicatedRecord;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -193,16 +192,14 @@ public class ReplicatedMapTest
         final AtomicBoolean happened = new AtomicBoolean(false);
         for (int i = 0; i < 10; i++) {
             map1.clear();
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run()
-                        throws Exception {
-
-                    assertEquals(0, map1.size());
-                    assertEquals(0, map2.size());
-                    happened.set(true);
-                }
-            });
+            Thread.sleep(1000);
+            try {
+                assertEquals(0, map1.size());
+                assertEquals(0, map2.size());
+                happened.set(true);
+            } catch (AssertionError ignore) {
+                // ignore and retry
+            }
             if (happened.get()) {
                 break;
             }
