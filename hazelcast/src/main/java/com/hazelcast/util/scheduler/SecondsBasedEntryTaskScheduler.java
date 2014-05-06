@@ -46,7 +46,25 @@ import java.util.concurrent.TimeUnit;
  */
 final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
 
-    private static final long initialTimeMillis = Clock.currentTimeMillis();
+    public static final int INITIAL_CAPACITY = 10;
+
+    public static final double FACTOR = 1000d;
+
+    private static final long INITIAL_TIME_MILLIS = Clock.currentTimeMillis();
+
+
+
+    private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
+        @Override
+        public int compare(ScheduledEntry o1, ScheduledEntry o2) {
+            if (o1.getScheduleStartTimeInNanos() > o2.getScheduleStartTimeInNanos()) {
+                return 1;
+            } else if (o1.getScheduleStartTimeInNanos() < o2.getScheduleStartTimeInNanos()) {
+                return -1;
+            }
+            return 0;
+        }
+    };
 
     private final ConcurrentMap<Object, Integer> secondsOfKeys = new ConcurrentHashMap<Object, Integer>(1000);
     private final ConcurrentMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>> scheduledEntries
@@ -63,7 +81,6 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         this.entryProcessor = entryProcessor;
         this.scheduleType = scheduleType;
     }
-
     @Override
     public boolean schedule(long delayMillis, K key, V value) {
         if (scheduleType.equals(ScheduleType.POSTPONE)) {
@@ -239,27 +256,28 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private boolean scheduleIfNew(long delayMillis, K key, V value) {
         final int delaySeconds = ceilToSecond(delayMillis);
         final Integer newSecond = findRelativeSecond(delayMillis);
-        if (secondsOfKeys.putIfAbsent(key, newSecond) != null)
+        if (secondsOfKeys.putIfAbsent(key, newSecond) != null) {
             return false;
+        }
         doSchedule(key, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
         return true;
     }
 
     private int findRelativeSecond(long delayMillis) {
         long now = Clock.currentTimeMillis();
-        long d = (now + delayMillis - initialTimeMillis);
+        long d = (now + delayMillis - INITIAL_TIME_MILLIS);
         return ceilToSecond(d);
     }
 
     private int ceilToSecond(long delayMillis) {
-        return (int) Math.ceil(delayMillis / 1000d);
+        return (int) Math.ceil(delayMillis / FACTOR);
     }
 
     private void doSchedule(Object mapKey, ScheduledEntry<K, V> entry, Integer second) {
         ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
         boolean shouldSchedule = false;
         if (entries == null) {
-            entries = new ConcurrentHashMap<Object, ScheduledEntry<K, V>>(10);
+            entries = new ConcurrentHashMap<Object, ScheduledEntry<K, V>>(INITIAL_CAPACITY);
             ConcurrentMap<Object, ScheduledEntry<K, V>> existingScheduleKeys
                     = scheduledEntries.putIfAbsent(second, entries);
             if (existingScheduleKeys != null) {
@@ -295,7 +313,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         scheduledTaskMap.put(second, scheduledFuture);
     }
 
-    private class EntryProcessorExecutor implements Runnable {
+    private final class EntryProcessorExecutor implements Runnable {
         private final Integer second;
 
         private EntryProcessorExecutor(Integer second) {
@@ -306,7 +324,9 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         public void run() {
             scheduledTaskMap.remove(second);
             final Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
-            if (entries == null || entries.isEmpty()) return;
+            if (entries == null || entries.isEmpty()) {
+                return;
+            }
             Set<ScheduledEntry<K, V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
             for (Map.Entry<Object, ScheduledEntry<K, V>> entry : entries.entrySet()) {
                 Integer removed = secondsOfKeys.remove(entry.getKey());
@@ -320,7 +340,9 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     }
 
     private List<ScheduledEntry<K, V>> sortForEntryProcessing(Set<ScheduledEntry<K, V>> coll) {
-        if (coll == null || coll.isEmpty()) return Collections.EMPTY_LIST;
+        if (coll == null || coll.isEmpty()) {
+            return Collections.EMPTY_LIST;
+        }
 
         final List<ScheduledEntry<K, V>> sortedEntries = new ArrayList<ScheduledEntry<K, V>>(coll);
         Collections.sort(sortedEntries, SCHEDULED_ENTRIES_COMPARATOR);
@@ -328,17 +350,6 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         return sortedEntries;
     }
 
-    private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
-        @Override
-        public int compare(ScheduledEntry o1, ScheduledEntry o2) {
-            if (o1.getScheduleStartTimeInNanos() > o2.getScheduleStartTimeInNanos()) {
-                return 1;
-            } else if (o1.getScheduleStartTimeInNanos() < o2.getScheduleStartTimeInNanos()) {
-                return -1;
-            }
-            return 0;
-        }
-    };
 
     @Override
     public int size() {
@@ -356,9 +367,13 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
     @Override
     public String toString() {
-        return "EntryTaskScheduler{" +
-                "secondsOfKeys=" + secondsOfKeys.size() +
-                ", scheduledEntries [" + scheduledEntries.size() + "] =" + scheduledEntries.keySet() +
-                '}';
+        return "EntryTaskScheduler{"
+                + "secondsOfKeys="
+                + secondsOfKeys.size()
+                + ", scheduledEntries ["
+                + scheduledEntries.size()
+                + "] ="
+                + scheduledEntries.keySet()
+                + '}';
     }
 }

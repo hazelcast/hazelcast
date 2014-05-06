@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * This package contains classes to support the inner workings of Hazelcast
  * as well as some backports of newer Java features / data structures to

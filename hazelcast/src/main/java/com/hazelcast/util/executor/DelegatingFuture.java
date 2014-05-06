@@ -36,7 +36,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     private final boolean hasDefaultValue;
     private V value;
     private Throwable error;
-    private volatile boolean done = false;
+    private volatile boolean done;
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService) {
         this.future = future;
