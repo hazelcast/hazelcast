@@ -172,6 +172,8 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.jca[\\/]"/>
 
     <suppress checks="EmptyStatement" files="com.hazelcast.jca.ResourceAdapterImpl"/>
+    <suppress checks="FileTabCharacter" files="com.hazelcast.jca.HzConnectionEvent"/>
+    <suppress checks="FileTabCharacter" files="com.hazelcast.jca.HazelcastConnectionFactory"/>
 
 
 
