@@ -326,7 +326,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
             for (DistributedObjectFuture future : proxies.values()) {
                 DistributedObject distributedObject = future.get();
                 if (distributedObject instanceof AbstractDistributedObject) {
-                    DistributedObjectAccessor.onNodeShutdown((AbstractDistributedObject) distributedObject);
+                    ((AbstractDistributedObject) distributedObject).invalidate();
                 }
             }
             proxies.clear();
