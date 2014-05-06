@@ -393,6 +393,7 @@
 
     <!-- ReplicatedMap -->
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.client.proxy.ClientReplicatedMapProxy"/>
+    <suppress checks="MethodCountCheck" files="com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl"/>
 
 </suppressions>
 

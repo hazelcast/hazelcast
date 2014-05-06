@@ -26,7 +26,13 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, IdentifiedDataSerializable {
+/**
+ * This class collects statistics about the replication map usage for management center and is
+ * able to transform those between wire format and instance view
+ */
+public class LocalReplicatedMapStatsImpl
+        implements LocalReplicatedMapStats, IdentifiedDataSerializable {
+
     private final AtomicLong lastAccessTime = new AtomicLong(0);
     private final AtomicLong lastUpdateTime = new AtomicLong(0);
     private final AtomicLong hits = new AtomicLong(0);
@@ -51,7 +57,8 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeLong(getCount.get());
         out.writeLong(putCount.get());
         out.writeLong(removeCount.get());
@@ -71,7 +78,8 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         getCount.set(in.readLong());
         putCount.set(in.readLong());
         removeCount.set(in.readLong());
@@ -294,22 +302,12 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, Ide
     }
 
     public String toString() {
-        return "LocalReplicatedMapStatsImpl{" +
-                "lastAccessTime=" + lastAccessTime +
-                ", lastUpdateTime=" + lastUpdateTime +
-                ", hits=" + hits +
-                ", numberOfOtherOperations=" + numberOfOtherOperations +
-                ", numberOfEvents=" + numberOfEvents +
-                ", numberOfReplicationEvents=" + numberOfReplicationEvents +
-                ", getCount=" + getCount +
-                ", putCount=" + putCount +
-                ", removeCount=" + removeCount +
-                ", totalGetLatencies=" + totalGetLatencies +
-                ", totalPutLatencies=" + totalPutLatencies +
-                ", totalRemoveLatencies=" + totalRemoveLatencies +
-                ", ownedEntryCount=" + ownedEntryCount +
-                ", creationTime=" + creationTime +
-                '}';
+        return "LocalReplicatedMapStatsImpl{" + "lastAccessTime=" + lastAccessTime + ", lastUpdateTime=" + lastUpdateTime
+                + ", hits=" + hits + ", numberOfOtherOperations=" + numberOfOtherOperations + ", numberOfEvents=" + numberOfEvents
+                + ", numberOfReplicationEvents=" + numberOfReplicationEvents + ", getCount=" + getCount + ", putCount=" + putCount
+                + ", removeCount=" + removeCount + ", totalGetLatencies=" + totalGetLatencies + ", totalPutLatencies="
+                + totalPutLatencies + ", totalRemoveLatencies=" + totalRemoveLatencies + ", ownedEntryCount=" + ownedEntryCount
+                + ", creationTime=" + creationTime + '}';
     }
 
     @Override
