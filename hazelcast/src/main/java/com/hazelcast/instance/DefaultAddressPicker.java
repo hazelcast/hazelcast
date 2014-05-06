@@ -230,7 +230,8 @@ class DefaultAddressPicker implements AddressPicker {
             final Collection<String> configInterfaces = networkConfig.getInterfaces().getInterfaces();
             for (String configInterface : configInterfaces) {
                 if (AddressUtil.isIpAddress(configInterface)) {
-                    interfaces.add(new InterfaceDefinition(addressDomainMap.get(configInterface), configInterface));
+                    String hostname = findHostnameMatchingInterface(addressDomainMap, configInterface);
+                    interfaces.add(new InterfaceDefinition(hostname, configInterface));
                 } else {
                     logger.info("'" + configInterface
                             + "' is not an IP address! Removing from interface list.");
@@ -246,6 +247,20 @@ class DefaultAddressPicker implements AddressPicker {
                     + "addresses: " + interfaces);
         }
         return interfaces;
+    }
+
+    private String findHostnameMatchingInterface(Map<String, String> addressDomainMap, String configInterface) {
+        String hostname = addressDomainMap.get(configInterface);
+        if (hostname != null) {
+            return hostname;
+        }
+        for (Entry<String, String> entry : addressDomainMap.entrySet()) {
+            String address = entry.getKey();
+            if (AddressUtil.matchInterface(address, configInterface)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     private Collection<String> resolveDomainNames(final String domainName)
