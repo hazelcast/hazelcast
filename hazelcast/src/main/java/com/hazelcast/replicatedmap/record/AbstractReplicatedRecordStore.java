@@ -250,19 +250,6 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o instanceof AbstractReplicatedRecordStore) {
-            return storage.equals(((AbstractReplicatedRecordStore) o).storage);
-        }
-        return storage.equals(o);
-    }
-
-    @Override
-    public int hashCode() {
-        return storage.hashCode();
-    }
-
-    @Override
     public String addEntryListener(EntryListener listener, Object key) {
         ValidationUtil.isNotNull(listener, "listener");
         EventFilter eventFilter = new ReplicatedEntryEventFilter(marshallKey(key));
