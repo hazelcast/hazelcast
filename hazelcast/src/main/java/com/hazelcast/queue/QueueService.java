@@ -245,11 +245,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
 
         Address owner = partition.getOwnerOrNull();
-        if (owner == null) {
-            //no-op because the owner is not yet set.
-        } else if (thisAddress.equals(owner)) {
+        if (thisAddress.equals(owner)) {
             stats.setOwnedItemCount(container.size());
-        } else {
+        } else if (owner != null) {
             stats.setBackupItemCount(container.backupSize());
         }
         container.setStats(stats);
