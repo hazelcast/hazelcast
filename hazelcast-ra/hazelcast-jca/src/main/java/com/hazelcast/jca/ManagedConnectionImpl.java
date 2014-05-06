@@ -33,157 +33,160 @@ import javax.transaction.xa.XAResource;
 import com.hazelcast.core.HazelcastInstance;
 
 public class ManagedConnectionImpl extends JcaBase implements ManagedConnection {
-	/** Identity generator */
-	private static final AtomicInteger idGen = new AtomicInteger();
-	/** Identity */
-	private transient final int id;
+    /**
+     * Identity generator
+     */
+    private static final AtomicInteger ID_GEN = new AtomicInteger();
+    /**
+     * Identity
+     */
+    private final transient int id;
 
-	private final ManagedConnectionFactoryImpl factory;
-	private final ConnectionRequestInfo cxRequestInfo;
-	
-	private final XAResourceWrapper xaResource;
+    private final ManagedConnectionFactoryImpl factory;
+    private final ConnectionRequestInfo cxRequestInfo;
 
+    private final XAResourceWrapper xaResource;
     private HazelcastTransactionImpl tx;
 
-	// Application server will always register at least one listener
-	private final List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>(1);
+    // Application server will always register at least one listener
+    private final List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>(1);
 
-	public ManagedConnectionImpl(ConnectionRequestInfo cxRequestInfo,ManagedConnectionFactoryImpl factory) {
-		this.setLogWriter(factory.getLogWriter());
-		log(Level.FINEST, "ManagedConnectionImpl");
-		
-		this.factory = factory;
-		this.cxRequestInfo = cxRequestInfo;
+    public ManagedConnectionImpl(ConnectionRequestInfo cxRequestInfo, ManagedConnectionFactoryImpl factory) {
+        this.setLogWriter(factory.getLogWriter());
+        log(Level.FINEST, "ManagedConnectionImpl");
 
-		this.id = idGen.incrementAndGet();
-		this.tx = new HazelcastTransactionImpl(factory, this);
-		this.xaResource = new XAResourceWrapper(this);
-		
-		factory.logHzConnectionEvent(this, HzConnectionEvent.CREATE);
-	}
+        this.factory = factory;
+        this.cxRequestInfo = cxRequestInfo;
 
-	public void addConnectionEventListener(ConnectionEventListener listener) {
-		log(Level.FINEST, "addConnectionEventListener: " + listener);
-		connectionEventListeners.add(listener);
-	}
+        this.id = ID_GEN.incrementAndGet();
+        this.tx = new HazelcastTransactionImpl(factory, this);
+        this.xaResource = new XAResourceWrapper(this);
 
-	public void associateConnection(Object arg0) throws ResourceException {
-		log(Level.FINEST, "associateConnection: " + arg0);
-	}
+        factory.logHzConnectionEvent(this, HzConnectionEvent.CREATE);
+    }
 
-	public void cleanup() throws ResourceException {
-		log(Level.FINEST, "cleanup");
-		factory.logHzConnectionEvent(this, HzConnectionEvent.CLEANUP);
-	}
+    public void addConnectionEventListener(ConnectionEventListener listener) {
+        log(Level.FINEST, "addConnectionEventListener: " + listener);
+        connectionEventListeners.add(listener);
+    }
 
-	public void destroy() throws ResourceException {
-		log(Level.FINEST, "destroy");
-		factory.logHzConnectionEvent(this, HzConnectionEvent.DESTROY);
-	}
+    public void associateConnection(Object arg0) throws ResourceException {
+        log(Level.FINEST, "associateConnection: " + arg0);
+    }
 
-	void fireConnectionEvent(int event) {
-		fireConnectionEvent(event, null);
-	}
+    public void cleanup() throws ResourceException {
+        log(Level.FINEST, "cleanup");
+        factory.logHzConnectionEvent(this, HzConnectionEvent.CLEANUP);
+    }
 
-	void fireConnectionEvent(int event, Connection conn) {
-		log(Level.FINEST, "fireConnectionEvent: " + event);
+    public void destroy() throws ResourceException {
+        log(Level.FINEST, "destroy");
+        factory.logHzConnectionEvent(this, HzConnectionEvent.DESTROY);
+    }
 
-		ConnectionEvent connnectionEvent = new ConnectionEvent(this, event);
+    void fireConnectionEvent(int event) {
+        fireConnectionEvent(event, null);
+    }
 
-		for (ConnectionEventListener listener : connectionEventListeners) {
-			switch (event) {
-			case ConnectionEvent.LOCAL_TRANSACTION_STARTED:
-				if (isDeliverStartedEvent()) {
-					listener.localTransactionStarted(connnectionEvent);
-				}
-				break;
-			case ConnectionEvent.LOCAL_TRANSACTION_COMMITTED:
-				if (isDeliverCommitedEvent()) {
-					listener.localTransactionCommitted(connnectionEvent);
-				}
-				break;
-			case ConnectionEvent.LOCAL_TRANSACTION_ROLLEDBACK:
-				if (isDeliverRolledback()) {
-					listener.localTransactionRolledback(connnectionEvent);
-				}
-				break;
-			case ConnectionEvent.CONNECTION_CLOSED:
-				if (isDeliverClosed()) {
-					//Connection handle is only required for close as per spec 6.5.7
-					connnectionEvent.setConnectionHandle(conn);
-					listener.connectionClosed(connnectionEvent);
-				}
-				break;
-			default:
-				log(Level.WARNING, "Uknown event ignored: " + event);
-			}
-		}
-	}
+    void fireConnectionEvent(int event, Connection conn) {
+        log(Level.FINEST, "fireConnectionEvent: " + event);
 
-	public HazelcastConnection getConnection(Subject subject,
-			ConnectionRequestInfo connectionRequestInfo) {
-		log(Level.FINEST, "getConnection: " + subject + ", "
-				+ connectionRequestInfo);
-		// must be new as per JCA spec
-		return new HazelcastConnectionImpl(this, subject);
-	}
+        ConnectionEvent connnectionEvent = new ConnectionEvent(this, event);
 
-	public ConnectionRequestInfo getCxRequestInfo() {
-		return cxRequestInfo;
-	}
+        for (ConnectionEventListener listener : connectionEventListeners) {
+            switch (event) {
+                case ConnectionEvent.LOCAL_TRANSACTION_STARTED:
+                    if (isDeliverStartedEvent()) {
+                        listener.localTransactionStarted(connnectionEvent);
+                    }
+                    break;
+                case ConnectionEvent.LOCAL_TRANSACTION_COMMITTED:
+                    if (isDeliverCommitedEvent()) {
+                        listener.localTransactionCommitted(connnectionEvent);
+                    }
+                    break;
+                case ConnectionEvent.LOCAL_TRANSACTION_ROLLEDBACK:
+                    if (isDeliverRolledback()) {
+                        listener.localTransactionRolledback(connnectionEvent);
+                    }
+                    break;
+                case ConnectionEvent.CONNECTION_CLOSED:
+                    if (isDeliverClosed()) {
+                        //Connection handle is only required for close as per spec 6.5.7
+                        connnectionEvent.setConnectionHandle(conn);
+                        listener.connectionClosed(connnectionEvent);
+                    }
+                    break;
+                default:
+                    log(Level.WARNING, "Uknown event ignored: " + event);
+            }
+        }
+    }
 
-	HazelcastInstance getHazelcastInstance() {
-		return getResourceAdapter().getHazelcast();
-	}
+    public HazelcastConnection getConnection(Subject subject,
+                                             ConnectionRequestInfo connectionRequestInfo) {
+        log(Level.FINEST, "getConnection: " + subject + ", "
+                + connectionRequestInfo);
+        // must be new as per JCA spec
+        return new HazelcastConnectionImpl(this, subject);
+    }
 
-	public HazelcastTransaction getLocalTransaction() {
-		log(Level.FINEST, "getLocalTransaction");
+    public ConnectionRequestInfo getCxRequestInfo() {
+        return cxRequestInfo;
+    }
+
+    HazelcastInstance getHazelcastInstance() {
+        return getResourceAdapter().getHazelcast();
+    }
+
+    public HazelcastTransaction getLocalTransaction() {
+        log(Level.FINEST, "getLocalTransaction");
         return new HazelcastTransactionImpl(factory, this);
-		//return tx;
-	}
+        //return tx;
+    }
 
-	public ManagedConnectionMetaData getMetaData() {
-		return new ManagedConnectionMetaData();
-	}
+    public ManagedConnectionMetaData getMetaData() {
+        return new ManagedConnectionMetaData();
+    }
 
-	private ResourceAdapterImpl getResourceAdapter() {
-		return factory.getResourceAdapter();
-	}
+    private ResourceAdapterImpl getResourceAdapter() {
+        return factory.getResourceAdapter();
+    }
 
-	public XAResource getXAResource() throws ResourceException {
-		log(Level.FINEST, "getXAResource");
-		// must be the same per JCA spec
-		return xaResource;
-	}
+    public XAResource getXAResource() throws ResourceException {
+        log(Level.FINEST, "getXAResource");
+        // must be the same per JCA spec
+        return xaResource;
+    }
 
     public HazelcastTransactionImpl getTx() {
         return tx;
     }
 
     protected boolean isDeliverClosed() {
-		return true;
-	}
+        return true;
+    }
 
-	protected boolean isDeliverCommitedEvent() {
-		return true;
-	}
+    protected boolean isDeliverCommitedEvent() {
+        return true;
+    }
 
-	protected boolean isDeliverRolledback() {
-		return true;
-	}
+    protected boolean isDeliverRolledback() {
+        return true;
+    }
 
-	protected boolean isDeliverStartedEvent() {
-		return false;
-	}
+    protected boolean isDeliverStartedEvent() {
+        return false;
+    }
 
-	public void removeConnectionEventListener(ConnectionEventListener listener) {
-		log(Level.FINEST, "removeConnectionEventListener: " + listener);
-		connectionEventListeners.remove(listener);
-	}
+    public void removeConnectionEventListener(ConnectionEventListener listener) {
+        log(Level.FINEST, "removeConnectionEventListener: " + listener);
+        connectionEventListeners.remove(listener);
+    }
 
-	@Override
-	public String toString() {
-		return "hazelcast.ManagedConnectionImpl [" + id + "]";
-	}
+    @Override
+    public String toString() {
+        return "hazelcast.ManagedConnectionImpl [" + id + "]";
+    }
 
 }
