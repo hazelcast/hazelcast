@@ -269,8 +269,9 @@ public final class IOUtil {
             case PRIMITIVE_TYPE_UTF:
                 return in.readUTF();
             default:
+                throw new IllegalStateException("Illegal attribute type id found");
         }
-        throw new IllegalStateException("Illegal attribute type id found");
+
     }
 
     /**

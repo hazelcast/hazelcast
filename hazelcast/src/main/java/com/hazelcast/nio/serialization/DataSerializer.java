@@ -114,12 +114,9 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
             }
             throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
                     + factoryId
-                    + ", id: "
-                    + id
-                    + ", class: "
-                    + className
-                    + ", exception: "
-                    + e.getMessage(), e);
+                    + ", id: " + id
+                    + ", class: " + className
+                    + ", exception: " + e.getMessage(), e);
         }
     }
 
