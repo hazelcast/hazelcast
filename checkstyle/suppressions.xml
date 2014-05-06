@@ -15,7 +15,6 @@
     <suppress checks="" files="com.hazelcast.management[\\/]"/>
     <suppress checks="" files="com.hazelcast.map[\\/]"/>
     <suppress checks="" files="com.hazelcast.nio[\\/]"/>
-    <suppress checks="" files="com.hazelcast.query[\\/]"/>
     <suppress checks="" files="com.hazelcast.spi.impl[\\/]"/>
     <suppress checks="" files="com.hazelcast.wan[\\/]"/>
 
@@ -181,7 +180,23 @@
     <suppress checks="JavadocType" files="com.hazelcast.query[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.query[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.query[\\/]"/>
+
     <suppress checks="MagicNumber" files="com.hazelcast.query.Parser"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.query.impl.MultiResultSet"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.query.Parser"/>
+    <suppress checks="VisibilityModifier" files="com.hazelcast.query.PredicateBuilder"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.query.impl.ReflectionHelper"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.query.impl.ReflectionHelper"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.query.impl.ReflectionHelper"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.impl.ReflectionHelper"/>
+    <suppress checks="MethodLength" files="com.hazelcast.query.impl.ReflectionHelper"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.query.impl.ReflectionHelper"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.query.SqlPredicate"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.query.SqlPredicate"/>
+    <suppress checks="MethodLength" files="com.hazelcast.query.SqlPredicate"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.SqlPredicate"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.query.SqlPredicate"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.query.impl.UnsortedIndexStore"/>
 
     <!-- hazelcast-wm -->
     <suppress checks="JavadocMethod" files="com.hazelcast.web[\\/]"/>
