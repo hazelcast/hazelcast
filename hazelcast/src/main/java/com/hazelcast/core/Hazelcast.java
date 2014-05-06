@@ -34,6 +34,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @SuppressWarnings("SynchronizationOnStaticField")
 public final class Hazelcast {
+    // NOTHING IS CHANGED JUST A PR BUILDER TEST
+
+
     @Deprecated
     private static final AtomicReference<HazelcastInstance> defaultInstance = new AtomicReference<HazelcastInstance>();
     @Deprecated
