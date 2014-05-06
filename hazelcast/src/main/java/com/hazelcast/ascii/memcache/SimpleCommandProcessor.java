@@ -16,11 +16,10 @@
 
 package com.hazelcast.ascii.memcache;
 
-import com.hazelcast.ascii.AbstractTextCommandProcessor;
+
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 
-import java.util.logging.Level;
 
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;

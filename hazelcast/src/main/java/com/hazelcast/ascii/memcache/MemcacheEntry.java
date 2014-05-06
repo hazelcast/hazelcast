@@ -96,14 +96,24 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
     }
 
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         MemcacheEntry that = (MemcacheEntry) o;
 
-        if (flag != that.flag) return false;
-        if (!Arrays.equals(bytes, that.bytes)) return false;
-        if (!Arrays.equals(value, that.value)) return false;
+        if (flag != that.flag) {
+            return false;
+        }
+        if (!Arrays.equals(bytes, that.bytes)) {
+            return false;
+        }
+        if (!Arrays.equals(value, that.value)) {
+            return false;
+        }
 
         return true;
     }
@@ -116,9 +126,11 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
     }
 
     public String toString() {
-        return "MemcacheEntry{" +
-                "bytes=" + bytesToString(bytes) +
-                ", flag=" + flag +
-                '}';
+        return "MemcacheEntry{"
+                + "bytes="
+                + bytesToString(bytes)
+                + ", flag="
+                + flag
+                + '}';
     }
 }

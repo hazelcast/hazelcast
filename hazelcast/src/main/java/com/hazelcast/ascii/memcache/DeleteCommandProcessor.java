@@ -36,10 +36,10 @@ public class DeleteCommandProcessor extends MemcacheCommandProcessor<DeleteComma
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(format("failed to decode key [%s] using UTF-8", command.getKey()));
         }
-        String mapName = DefaultMapName;
+        String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MapNamePreceder + key.substring(0, index);
+            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
             key = key.substring(index + 1);
         }
         if (key.equals("")) {

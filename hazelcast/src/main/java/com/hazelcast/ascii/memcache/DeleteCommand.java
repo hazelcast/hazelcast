@@ -21,10 +21,10 @@ import com.hazelcast.ascii.AbstractTextCommand;
 import java.nio.ByteBuffer;
 
 public class DeleteCommand extends AbstractTextCommand {
+    ByteBuffer response;
     private final String key;
     private final int expiration;
     private final boolean noreply;
-    ByteBuffer response = null;
 
     public DeleteCommand(String key, int expiration, boolean noreply) {
         super(TextCommandType.DELETE);
@@ -65,10 +65,10 @@ public class DeleteCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "DeleteCommand [" + type + "]{" +
-                "key='" + key + '\'' +
-                ", expiration=" + expiration +
-                ", noreply=" + noreply +
-                '}' + super.toString();
+        return "DeleteCommand [" + type + "]{"
+                + "key='" + key + '\''
+                + ", expiration=" + expiration
+                + ", noreply=" + noreply + '}'
+                + super.toString();
     }
 }

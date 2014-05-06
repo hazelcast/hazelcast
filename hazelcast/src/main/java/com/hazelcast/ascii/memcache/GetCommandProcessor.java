@@ -22,7 +22,7 @@ import com.hazelcast.logging.ILogger;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.logging.Level;
+
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -43,10 +43,10 @@ public class GetCommandProcessor extends MemcacheCommandProcessor<GetCommand> {
         } catch (UnsupportedEncodingException e) {
             throw new HazelcastException(e);
         }
-        String mapName = DefaultMapName;
+        String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MapNamePreceder + key.substring(0, index);
+            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
             key = key.substring(index + 1);
         }
         Object value = textCommandService.get(mapName, key);
