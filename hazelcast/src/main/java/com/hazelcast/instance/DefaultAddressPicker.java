@@ -17,16 +17,31 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.TcpIpJoiner;
-import com.hazelcast.config.*;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 
-import java.net.*;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 
@@ -211,7 +226,8 @@ class DefaultAddressPicker implements AddressPicker {
             final Collection<String> configInterfaces = networkConfig.getInterfaces().getInterfaces();
             for (String configInterface : configInterfaces) {
                 if (AddressUtil.isIpAddress(configInterface)) {
-                    interfaces.add(new InterfaceDefinition(addressDomainMap.get(configInterface), configInterface));
+                    String hostname = findHostnameMatchingInterface(addressDomainMap, configInterface);
+                    interfaces.add(new InterfaceDefinition(hostname, configInterface));
                 } else {
                     logger.info("'" + configInterface
                             + "' is not an IP address! Removing from interface list.");
@@ -227,6 +243,20 @@ class DefaultAddressPicker implements AddressPicker {
                     "addresses: " + interfaces);
         }
         return interfaces;
+    }
+
+    private String findHostnameMatchingInterface(Map<String, String> addressDomainMap, String configInterface) {
+        String hostname = addressDomainMap.get(configInterface);
+        if (hostname != null) {
+            return hostname;
+        }
+        for (Entry<String, String> entry : addressDomainMap.entrySet()) {
+            String address = entry.getKey();
+            if (AddressUtil.matchInterface(address, configInterface)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     private Collection<String> resolveDomainNames(final String domainName)
