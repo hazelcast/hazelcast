@@ -9,8 +9,6 @@
     <!-- Suppress duplicate checking of copyright notice -->
     <suppress checks="StrictDuplicateCode" files=".java" lines="1-15"/>
 
-    <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
-
     <suppress checks="" files="com.hazelcast.config[\\/]"/>
     <suppress checks="" files="com.hazelcast.core[\\/]"/>
     <suppress checks="" files="com.hazelcast.jmx[\\/]"/>
@@ -28,6 +26,7 @@
     <suppress checks="" files="com.hazelcast.spring[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
     <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
+    <suppress checks="" files="com.hazelcast.wm[\\/]"/>
 
 
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
