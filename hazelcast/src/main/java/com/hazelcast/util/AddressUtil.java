@@ -349,9 +349,9 @@ public final class AddressUtil {
 
     public static class AddressHolder {
 
-        private final String address;
-        private final String scopeId;
-        private final int port;
+        public final String address;
+        public final String scopeId;
+        public final int port;
 
         public AddressHolder(final String address, final int port,
                              final String scopeId) {
