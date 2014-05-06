@@ -186,7 +186,7 @@ public class HealthMonitor extends Thread {
             for (Map.Entry<Address, Integer> entry : outputQueueSizes.entrySet()) {
                 final Integer size = entry.getValue();
                 if (size * 100d / maxOutputQueueSize > threshold) {
-                    sb.append("connection.outputQueue.size=").append(size);
+                    sb.append("connection.outputQueue.size=").append(size).append(" ");
                     sb.append("address=").append(entry.getKey()).append(", ");
                 }
             }
