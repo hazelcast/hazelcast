@@ -197,7 +197,8 @@ class AddressPicker {
             final Collection<String> configInterfaces = networkConfig.getInterfaces().getInterfaces();
             for (String configInterface : configInterfaces) {
                 if (AddressUtil.isIpAddress(configInterface)) {
-                    interfaces.add(new InterfaceDefinition(addressDomainMap.get(configInterface), configInterface));
+                    String hostname = findHostnameMatchingInterface(addressDomainMap, configInterface);
+                    interfaces.add(new InterfaceDefinition(hostname, configInterface));
                 } else {
                     logger.log(Level.INFO, "'" + configInterface
                             + "' is not an IP address! Removing from interface list.");
@@ -213,6 +214,20 @@ class AddressPicker {
                     "addresses: " + interfaces);
         }
         return interfaces;
+    }
+
+    private String findHostnameMatchingInterface(Map<String, String> addressDomainMap, String configInterface) {
+        String hostname = addressDomainMap.get(configInterface);
+        if (hostname != null) {
+            return hostname;
+        }
+        for (Entry<String, String> entry : addressDomainMap.entrySet()) {
+            String address = entry.getKey();
+            if (AddressUtil.matchInterface(address, configInterface)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     private Collection<String> resolveDomainNames(final String domainName)
@@ -298,7 +313,8 @@ class AddressPicker {
 
     private AddressDefinition match(final InetAddress address, final Collection<InterfaceDefinition> interfaces) {
         for (final InterfaceDefinition inf : interfaces) {
-            if (AddressUtil.matchInterface(address.getHostAddress(), inf.address)) {
+            String interfaceMask = inf.address;
+            if (AddressUtil.matchInterface(address.getHostAddress(), interfaceMask)) {
                 return new AddressDefinition(inf.host, address);
             }
         }
