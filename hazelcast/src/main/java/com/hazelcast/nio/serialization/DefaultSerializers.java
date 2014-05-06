@@ -43,9 +43,7 @@ import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYP
 import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_OBJECT;
 import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_ENUM;
 
-/**
- * @author mdogan 6/18/12
- */
+
 public final class DefaultSerializers {
 
     public static final class BigIntegerSerializer extends SingletonSerializer<BigInteger> {

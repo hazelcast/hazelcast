@@ -16,9 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 4/30/13
- */
+
 public final class FactoryIdHelper {
 
     public static final String SPI_DS_FACTORY = "hazelcast.serialization.ds.spi";

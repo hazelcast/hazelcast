@@ -20,9 +20,6 @@ import com.hazelcast.core.ManagedContext;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 12/26/12
- */
 public interface SerializationContext {
 
     int getVersion();

@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author mdogan 12/26/12
- */
 public class DefaultPortableWriter implements PortableWriter {
 
     private final PortableSerializer serializer;

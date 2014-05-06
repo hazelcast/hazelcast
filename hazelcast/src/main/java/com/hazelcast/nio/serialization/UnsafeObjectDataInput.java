@@ -21,9 +21,6 @@ import com.hazelcast.nio.UnsafeHelper;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 06/16/13
- */
 final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
     UnsafeObjectDataInput(Data data, SerializationService service) {

@@ -18,9 +18,6 @@ package com.hazelcast.nio;
 
 import java.nio.channels.SelectionKey;
 
-/**
- * @author mdogan 5/10/13
- */
 final class InSelectorImpl extends AbstractIOSelector {
 
     InSelectorImpl(IOService ioService, int id) {

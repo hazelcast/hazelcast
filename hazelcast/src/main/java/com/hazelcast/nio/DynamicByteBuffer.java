@@ -20,9 +20,6 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 12/31/12
- */
 public final class DynamicByteBuffer {
 
     private ByteBuffer buffer;

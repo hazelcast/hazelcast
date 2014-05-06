@@ -39,9 +39,6 @@ import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TY
 import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DOUBLE_ARRAY;
 
 
-/**
- * @author mdogan 6/18/12
- */
 public final class ConstantSerializers {
 
     public static final class ByteSerializer extends SingletonSerializer<Byte> {

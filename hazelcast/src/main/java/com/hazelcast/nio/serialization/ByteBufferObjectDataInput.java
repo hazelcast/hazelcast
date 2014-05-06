@@ -24,9 +24,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 06/15/13
- */
 final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
         implements BufferObjectDataInput, SerializationContextAware {
 

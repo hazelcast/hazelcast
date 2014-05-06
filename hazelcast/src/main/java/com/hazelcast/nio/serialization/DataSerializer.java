@@ -30,9 +30,6 @@ import java.util.Map;
 
 import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA;
 
-/**
- * @author mdogan 6/19/12
- */
 final class DataSerializer implements StreamSerializer<DataSerializable> {
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";

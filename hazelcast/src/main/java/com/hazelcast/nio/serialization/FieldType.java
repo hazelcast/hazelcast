@@ -16,9 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 2/22/13
- */
 
 public enum FieldType {
 

@@ -27,9 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * @author mdogan 4/12/12
- */
+
 public final class ClassLoaderUtil {
 
     public static final String HAZELCAST_BASE_PACKAGE = "com.hazelcast.";

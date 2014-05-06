@@ -16,9 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 5/17/12
- */
 public final class SerializationConstants {
 
     // WARNING: DON'T CHANGE VALUES!

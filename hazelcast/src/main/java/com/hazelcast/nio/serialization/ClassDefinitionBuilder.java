@@ -21,9 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @author mdogan 2/6/13
- */
 public final class ClassDefinitionBuilder {
 
     private final int factoryId;

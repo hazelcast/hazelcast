@@ -26,10 +26,6 @@ import java.util.Iterator;
 import java.util.Collection;
 import java.util.HashSet;
 
-
-/**
- * @author mdogan 5/8/13
- */
 final class PortableHookLoader {
 
     private static final String FACTORY_ID = "com.hazelcast.PortableHook";

@@ -16,9 +16,6 @@
 
 package com.hazelcast.nio;
 
-/**
- * @author mdogan 3/11/13
- */
 public final class Protocols {
 
     public static final String CLUSTER = "HZC";

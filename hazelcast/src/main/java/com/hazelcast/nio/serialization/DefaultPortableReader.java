@@ -23,9 +23,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import java.io.IOException;
 import java.util.Set;
 
-/**
- * @author mdogan 12/28/12
- */
 public class DefaultPortableReader implements PortableReader {
 
     protected final ClassDefinition cd;

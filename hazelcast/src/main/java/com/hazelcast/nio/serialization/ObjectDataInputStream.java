@@ -25,9 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 1/23/13
- */
 public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable, SerializationContextAware {
 
     private static final int UTF_BUFFER_SIZE = 1024;

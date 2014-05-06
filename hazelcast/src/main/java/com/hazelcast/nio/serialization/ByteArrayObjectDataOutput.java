@@ -23,9 +23,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 12/26/12
- */
 class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
 
     final int initialSize;

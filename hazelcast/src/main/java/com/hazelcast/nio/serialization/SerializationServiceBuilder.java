@@ -30,9 +30,6 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Set;
 
-/**
- * @author mdogan 6/4/13
- */
 public final class SerializationServiceBuilder {
 
     private ClassLoader classLoader;
