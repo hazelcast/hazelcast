@@ -1,18 +1,17 @@
 package com.hazelcast.util;
 
 import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.impl.ExecutorManager;
-import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -29,7 +28,7 @@ public class HealthMonitor extends Thread {
     private final HealthMonitorLevel logLevel;
     private final int delaySeconds;
     private final ThreadMXBean threadMxBean;
-    private double treshold = 70;
+    private double threshold = 70;
 
     public HealthMonitor(Node node, HealthMonitorLevel logLevel, int delaySeconds) {
         super(node.threadGroup, node.getThreadNamePrefix("HealthMonitor"));
@@ -44,7 +43,7 @@ public class HealthMonitor extends Thread {
     }
 
     public void run() {
-        if(logLevel == HealthMonitorLevel.OFF){
+        if (logLevel == HealthMonitorLevel.OFF) {
             return;
         }
 
@@ -57,7 +56,7 @@ public class HealthMonitor extends Thread {
                     break;
                 case SILENT:
                     metrics = new HealthMetrics();
-                    if (metrics.exceedsTreshold()) {
+                    if (metrics.exceedsThreshold()) {
                         logger.log(Level.INFO, metrics.toString());
                     }
                     break;
@@ -97,6 +96,8 @@ public class HealthMonitor extends Thread {
         final int asyncExecutorQueueSize;
         final int eventExecutorQueueSize;
         final int mapStoreExecutorQueueSize;
+        final Map<Address, Integer> outputQueueSizes = new HashMap<Address, Integer>();
+        final int maxOutputQueueSize;
 
         public HealthMetrics() {
             memoryFree = runtime.freeMemory();
@@ -109,7 +110,17 @@ public class HealthMonitor extends Thread {
             systemLoadAverage = get(osMxBean, "getSystemLoadAverage", -1L);
             systemCpuLoad = get(osMxBean, "getSystemCpuLoad", -1L);
 
+
             ClusterService clusterService = node.getClusterService();
+            final Map<Address, Connection> readonlyConnectionMap = node.getConnectionManager().getReadonlyConnectionMap();
+            for (Connection connection : readonlyConnectionMap.values()) {
+                final int size = connection.getWriteHandler().size();
+                final Address address = connection.getEndPoint();
+                outputQueueSizes.put(address, size);
+            }
+
+            maxOutputQueueSize = node.getGroupProperties().MAX_CONNECTION_OUTPUT_QUEUE_SIZE.getInteger();
+
             this.packetQueueSize = clusterService.getPacketQueueSize();
             this.processableQueueSize = clusterService.getProcessableQueueSize();
             this.processablePriorityQueueSize = clusterService.getProcessablePriorityQueueSize();
@@ -126,21 +137,23 @@ public class HealthMonitor extends Thread {
             this.mapStoreExecutorQueueSize = statistics.mapStoreExecutorQueueSize;
         }
 
-        public boolean exceedsTreshold() {
-            if (memoryUsedOfMaxPercentage > treshold) {
+        public boolean exceedsThreshold() {
+            if (memoryUsedOfMaxPercentage > threshold) {
                 return true;
             }
 
-            if (processCpuLoad > treshold) {
+            if (processCpuLoad > threshold) {
                 return true;
             }
 
-            if (systemCpuLoad > treshold) {
+            if (systemCpuLoad > threshold) {
                 return true;
             }
 
-            if (systemCpuLoad > treshold) {
-                return true;
+            for (Integer size : outputQueueSizes.values()) {
+                if (size * 100d / maxOutputQueueSize > threshold) {
+                    return true;
+                }
             }
 
             return false;
@@ -168,7 +181,15 @@ public class HealthMonitor extends Thread {
             sb.append("q.defaultExecutor.size=").append(defaultExecutorQueueSize).append(", ");
             sb.append("q.asyncExecutor.size=").append(asyncExecutorQueueSize).append(", ");
             sb.append("q.eventExecutor.size=").append(eventExecutorQueueSize).append(", ");
-            sb.append("q.mapStoreExecutor.size=").append(mapStoreExecutorQueueSize);
+            sb.append("q.mapStoreExecutor.size=").append(mapStoreExecutorQueueSize).append(", ");
+
+            for (Map.Entry<Address, Integer> entry : outputQueueSizes.entrySet()) {
+                final Integer size = entry.getValue();
+                if (size * 100d / maxOutputQueueSize > threshold) {
+                    sb.append("connection.outputQueue.size=").append(size);
+                    sb.append("address=").append(entry.getKey()).append(", ");
+                }
+            }
 
             return sb.toString();
         }
