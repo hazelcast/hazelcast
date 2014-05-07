@@ -25,6 +25,10 @@ import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 
+/**
+ * This operation will execute the remote clear on replicated map if
+ * {@link com.hazelcast.core.ReplicatedMap#clear()} is called.
+ */
 public class ReplicatedMapClearOperation
         extends AbstractOperation
         implements IdentifiedDataSerializable {
