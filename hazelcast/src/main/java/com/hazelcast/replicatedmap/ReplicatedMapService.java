@@ -106,7 +106,7 @@ public class ReplicatedMapService
     @Override
     public void reset() {
         for (ReplicatedRecordStore replicatedRecordStore : replicatedStorages.values()) {
-            replicatedRecordStore.clear();
+            replicatedRecordStore.clear(false);
         }
     }
 

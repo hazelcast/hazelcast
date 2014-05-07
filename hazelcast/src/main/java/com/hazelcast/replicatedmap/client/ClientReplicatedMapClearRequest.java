@@ -40,7 +40,7 @@ public class ClientReplicatedMapClearRequest
     public Object call()
             throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        recordStore.clear();
+        recordStore.clear(true);
         return Boolean.TRUE;
     }
 

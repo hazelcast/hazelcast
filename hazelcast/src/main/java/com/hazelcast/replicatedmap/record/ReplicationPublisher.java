@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.record;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
@@ -26,17 +27,23 @@ import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.replicatedmap.ReplicationChannel;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
+import com.hazelcast.replicatedmap.operation.ReplicatedMapClearOperation;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapPostJoinOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +61,10 @@ public class ReplicationPublisher<K, V>
 
     private static final String SERVICE_NAME = ReplicatedMapService.SERVICE_NAME;
     private static final String EVENT_TOPIC_NAME = ReplicatedMapService.EVENT_TOPIC_NAME;
+    private static final String EXECUTOR_NAME = "hz:replicated-map";
+
     private static final int MAX_MESSAGE_CACHE_SIZE = 1000;
+    private static final int MAX_CLEAR_EXECUTION_RETRY = 5;
 
     private final List<ReplicationMessage> replicationMessageCache = new ArrayList<ReplicationMessage>();
     private final Lock replicationMessageCacheLock = new ReentrantLock();
@@ -62,6 +72,8 @@ public class ReplicationPublisher<K, V>
 
     private final ScheduledExecutorService executorService;
     private final ExecutionService executionService;
+    private final OperationService operationService;
+    private final ClusterService clusterService;
     private final EventService eventService;
     private final NodeEngine nodeEngine;
 
@@ -84,7 +96,9 @@ public class ReplicationPublisher<K, V>
         this.mapStats = replicatedRecordStore.mapStats;
         this.eventService = nodeEngine.getEventService();
         this.localMember = replicatedRecordStore.localMember;
+        this.clusterService = nodeEngine.getClusterService();
         this.executionService = nodeEngine.getExecutionService();
+        this.operationService = nodeEngine.getOperationService();
         this.replicatedMapConfig = replicatedRecordStore.replicatedMapConfig;
         this.executorService = getExecutorService(nodeEngine, replicatedMapConfig);
 
@@ -176,7 +190,7 @@ public class ReplicationPublisher<K, V>
             Collection<EventRegistration> registrations = filterEventRegistrations(eventRegistrations);
             eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, message, name.hashCode());
         } else {
-            executionService.execute("hz:replicated-map", new Runnable() {
+            executionService.execute(EXECUTOR_NAME, new Runnable() {
                 @Override
                 public void run() {
                     if (message instanceof MultiReplicationMessage) {
@@ -191,7 +205,7 @@ public class ReplicationPublisher<K, V>
 
     public void queuePreProvision(Address callerAddress, int chunkSize) {
         RemoteProvisionTask task = new RemoteProvisionTask(replicatedRecordStore, nodeEngine, callerAddress, chunkSize);
-        executionService.execute("hz:replicated-map", task);
+        executionService.execute(EXECUTOR_NAME, task);
     }
 
     public void retryWithDifferentReplicationNode(Member member) {
@@ -203,6 +217,18 @@ public class ReplicationPublisher<K, V>
             return;
         }
         sendPreProvisionRequest(members);
+    }
+
+    public void distributeClear(boolean emptyReplicationQueue) {
+        if (emptyReplicationQueue) {
+            emptyReplicationQueue();
+        }
+        executionService.execute(EXECUTOR_NAME, new Runnable() {
+            @Override
+            public void run() {
+                executeRemoteClear();
+            }
+        });
     }
 
     void sendPreProvisionRequest(List<MemberImpl> members) {
@@ -218,6 +244,53 @@ public class ReplicationPublisher<K, V>
         int defaultChunkSize = ReplicatedMapPostJoinOperation.DEFAULT_CHUNK_SIZE;
         ReplicatedMapPostJoinOperation op = new ReplicatedMapPostJoinOperation(memberMapPairs, defaultChunkSize);
         operationService.send(op, newMember.getAddress());
+    }
+
+    private void executeRemoteClear() {
+        List<MemberImpl> failedMembers = new ArrayList<MemberImpl>(clusterService.getMemberList());
+        for (int i = 0; i < MAX_CLEAR_EXECUTION_RETRY; i++) {
+            Map<MemberImpl, InternalCompletableFuture> futures = executeClearOnMembers(failedMembers);
+
+            // Clear to collect new failing members
+            failedMembers.clear();
+
+            for (Map.Entry<MemberImpl, InternalCompletableFuture> future : futures.entrySet()) {
+                try {
+                    future.getValue().get();
+                } catch (Exception e) {
+                    nodeEngine.getLogger(ReplicationPublisher.class).finest(e);
+                    failedMembers.add(future.getKey());
+                }
+            }
+
+            if (failedMembers.size() == 0) {
+                break;
+            }
+        }
+    }
+
+    private Map executeClearOnMembers(Collection<MemberImpl> members) {
+        Address thisAddress = clusterService.getThisAddress();
+
+        Map<MemberImpl, InternalCompletableFuture> futures = new HashMap<MemberImpl, InternalCompletableFuture>(members.size());
+        for (MemberImpl member : members) {
+            Address address = member.getAddress();
+            if (!thisAddress.equals(address)) {
+                Operation operation = new ReplicatedMapClearOperation(name);
+                InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
+                futures.put(member, ib.invoke());
+            }
+        }
+        return futures;
+    }
+
+    private void emptyReplicationQueue() {
+        replicationMessageCacheLock.lock();
+        try {
+            replicationMessageCache.clear();
+        } finally {
+            replicationMessageCacheLock.unlock();
+        }
     }
 
     private void processUpdateMessage(ReplicationMessage update) {

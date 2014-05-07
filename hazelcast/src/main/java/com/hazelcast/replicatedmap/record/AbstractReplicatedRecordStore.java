@@ -240,12 +240,12 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     @Override
-    public void clear() {
+    public void clear(boolean distribute) {
         storage.checkState();
         storage.clear();
-        VectorClock vectorClock = new VectorClock();
-        ReplicationMessage message = buildReplicationMessage(CLEAR_REPLICATION_MAGIC_KEY, null, vectorClock, 0);
-        replicationPublisher.publishReplicatedMessage(message);
+        if (distribute) {
+            replicationPublisher.distributeClear(true);
+        }
         mapStats.incrementOtherOperations();
     }
 

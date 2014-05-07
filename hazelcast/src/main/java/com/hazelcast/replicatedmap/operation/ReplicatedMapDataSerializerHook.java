@@ -45,7 +45,8 @@ public class ReplicatedMapDataSerializerHook
     public static final int REPL_MULTI_UPDATE_MESSAGE = 4;
     public static final int OP_INIT_CHUNK = 5;
     public static final int OP_POST_JOIN = 6;
-    public static final int MAP_STATS = 7;
+    public static final int OP_CLEAR = 7;
+    public static final int MAP_STATS = 8;
 
     private static final int LEN = MAP_STATS + 1;
 
@@ -93,6 +94,12 @@ public class ReplicatedMapDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ReplicatedMapPostJoinOperation();
+            }
+        };
+        constructors[OP_CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ReplicatedMapClearOperation();
             }
         };
         constructors[MAP_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
