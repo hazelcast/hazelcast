@@ -55,7 +55,7 @@ public interface ReplicatedRecordStore {
 
     int size();
 
-    void clear(boolean distribute);
+    void clear(boolean distribute, boolean emptyReplicationQueue);
 
     boolean isEmpty();
 

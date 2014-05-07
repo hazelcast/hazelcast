@@ -240,11 +240,14 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     @Override
-    public void clear(boolean distribute) {
+    public void clear(boolean distribute, boolean emptyReplicationQueue) {
         storage.checkState();
+        if (emptyReplicationQueue) {
+            replicationPublisher.emptyReplicationQueue();
+        }
         storage.clear();
         if (distribute) {
-            replicationPublisher.distributeClear(true);
+            replicationPublisher.distributeClear(emptyReplicationQueue);
         }
         mapStats.incrementOtherOperations();
     }

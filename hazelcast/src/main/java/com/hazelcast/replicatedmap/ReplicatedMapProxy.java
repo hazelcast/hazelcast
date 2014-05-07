@@ -117,7 +117,7 @@ public class ReplicatedMapProxy<K, V>
 
     @Override
     public void clear() {
-        replicatedRecordStore.clear(true);
+        replicatedRecordStore.clear(true, true);
     }
 
     @Override

@@ -30,12 +30,14 @@ public class ReplicatedMapClearOperation
         implements IdentifiedDataSerializable {
 
     private String mapName;
+    private boolean emptyReplicationQueue;
 
     public ReplicatedMapClearOperation() {
     }
 
-    public ReplicatedMapClearOperation(String mapName) {
+    public ReplicatedMapClearOperation(String mapName, boolean emptyReplicationQueue) {
         this.mapName = mapName;
+        this.emptyReplicationQueue = emptyReplicationQueue;
     }
 
     @Override
@@ -45,7 +47,7 @@ public class ReplicatedMapClearOperation
         ReplicatedMapService service = getService();
         ReplicatedRecordStore recordStore = service.getReplicatedRecordStore(mapName, false);
         if (recordStore != null) {
-            recordStore.clear(false);
+            recordStore.clear(false, emptyReplicationQueue);
         }
     }
 
@@ -75,6 +77,7 @@ public class ReplicatedMapClearOperation
 
         super.writeInternal(out);
         out.writeUTF(mapName);
+        out.writeBoolean(emptyReplicationQueue);
     }
 
     @Override
@@ -83,5 +86,6 @@ public class ReplicatedMapClearOperation
 
         super.readInternal(in);
         mapName = in.readUTF();
+        emptyReplicationQueue = in.readBoolean();
     }
 }

@@ -221,10 +221,16 @@ public class ReplicationPublisher<K, V>
     }
 
     public void distributeClear(boolean emptyReplicationQueue) {
-        if (emptyReplicationQueue) {
-            emptyReplicationQueue();
+        executeRemoteClear(emptyReplicationQueue);
+    }
+
+    public void emptyReplicationQueue() {
+        replicationMessageCacheLock.lock();
+        try {
+            replicationMessageCache.clear();
+        } finally {
+            replicationMessageCacheLock.unlock();
         }
-        executeRemoteClear();
     }
 
     void sendPreProvisionRequest(List<MemberImpl> members) {
@@ -242,10 +248,10 @@ public class ReplicationPublisher<K, V>
         operationService.send(op, newMember.getAddress());
     }
 
-    private void executeRemoteClear() {
+    private void executeRemoteClear(boolean emptyReplicationQueue) {
         List<MemberImpl> failedMembers = new ArrayList<MemberImpl>(clusterService.getMemberList());
         for (int i = 0; i < MAX_CLEAR_EXECUTION_RETRY; i++) {
-            Map<MemberImpl, InternalCompletableFuture> futures = executeClearOnMembers(failedMembers);
+            Map<MemberImpl, InternalCompletableFuture> futures = executeClearOnMembers(failedMembers, emptyReplicationQueue);
 
             // Clear to collect new failing members
             failedMembers.clear();
@@ -268,28 +274,19 @@ public class ReplicationPublisher<K, V>
         throw new CallTimeoutException("ReplicatedMap::clear couldn't be finished, failed nodes: " + failedMembers);
     }
 
-    private Map executeClearOnMembers(Collection<MemberImpl> members) {
+    private Map executeClearOnMembers(Collection<MemberImpl> members, boolean emptyReplicationQueue) {
         Address thisAddress = clusterService.getThisAddress();
 
         Map<MemberImpl, InternalCompletableFuture> futures = new HashMap<MemberImpl, InternalCompletableFuture>(members.size());
         for (MemberImpl member : members) {
             Address address = member.getAddress();
             if (!thisAddress.equals(address)) {
-                Operation operation = new ReplicatedMapClearOperation(name);
+                Operation operation = new ReplicatedMapClearOperation(name, emptyReplicationQueue);
                 InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
                 futures.put(member, ib.invoke());
             }
         }
         return futures;
-    }
-
-    private void emptyReplicationQueue() {
-        replicationMessageCacheLock.lock();
-        try {
-            replicationMessageCache.clear();
-        } finally {
-            replicationMessageCacheLock.unlock();
-        }
     }
 
     private void processUpdateMessage(ReplicationMessage update) {
