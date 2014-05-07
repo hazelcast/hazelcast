@@ -367,6 +367,18 @@ public final class AddressUtil {
             sb.append('[').append(address).append("]:").append(port);
             return sb.toString();
         }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public String getScopeId() {
+            return scopeId;
+        }
+
+        public int getPort() {
+            return port;
+        }
     }
 
     /**
