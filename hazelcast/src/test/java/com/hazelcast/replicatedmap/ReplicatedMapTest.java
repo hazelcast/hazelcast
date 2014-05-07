@@ -188,7 +188,6 @@ public class ReplicatedMapTest
             assertEquals("bar", entry.getValue());
         }
 
-        // TODO Should clear be a sychronous operation? What happens on lost clear message?
         final AtomicBoolean happened = new AtomicBoolean(false);
         for (int i = 0; i < 10; i++) {
             map1.clear();

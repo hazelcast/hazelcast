@@ -39,11 +39,11 @@ import java.util.concurrent.TimeUnit;
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
- *
  * @since 3.2
  */
 @Beta
-public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
+public interface ReplicatedMap<K, V>
+        extends Map<K, V>, DistributedObject {
 
     /**
      * <p>Associates a given value to the specified key and replicates it to the
@@ -53,19 +53,24 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * to define when the value is outdated and should be removed from the
      * replicated map.</p>
      *
-     * @param key key with which the specified value is to be associated
-     * @param value value to be associated with the specified key
-     * @param ttl ttl to be associated with the specified key-value pair
+     * @param key      key with which the specified value is to be associated
+     * @param value    value to be associated with the specified key
+     * @param ttl      ttl to be associated with the specified key-value pair
      * @param timeUnit TimeUnit to be used for the ttl value
      */
     V put(K key, V value, long ttl, TimeUnit timeUnit);
 
     /**
-     * <p>The clear operation is not supported by Hazelcast since it can result
-     * in an inconsistent state of the ReplicatedMap.</p>
-     * <p>This operation can be achieved using a distributed call to
-     * {@link DistributedObject#destroy()} and wait for all distributed objects are
-     * destroyed before recreating those distributed objects on all nodes.</p>
+     * <p>The clear operation is thought for wiping data out of the replicated maps.
+     * Therefor it is the only synchronous remote operation in this implementation, so
+     * be aware of the fact that this might be a slow operation.</p>
+     * <p>If some node fails on executing the operation it is retried for at most of
+     * 3 times (on the failing nodes only). If not working after the third time this
+     * method throws a {@link com.hazelcast.spi.exception.CallTimeoutException} back
+     * to the caller.</p>
+     *
+     * @throws com.hazelcast.spi.exception.CallTimeoutException thrown if clear could not
+     *                                                          executed on remote nodes
      */
     void clear();
 
@@ -73,9 +78,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * Removes the specified entry listener
      * Returns silently if there is no such listener added before.
      *
-     *
      * @param id id of registered listener
-     *
      * @return true if registration is removed, false otherwise
      */
     boolean removeEntryListener(String id);
@@ -84,7 +87,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * Adds an entry listener for this map. Listener will get notified
      * for all map add/remove/update/evict events.
      *
-     * @param listener     entry listener
+     * @param listener entry listener
      */
     String addEntryListener(EntryListener<K, V> listener);
 
@@ -98,8 +101,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
      *
-     * @param listener     entry listener
-     * @param key          key to listen
+     * @param listener entry listener
+     * @param key      key to listen
      * @throws NullPointerException if the specified key is null
      */
     String addEntryListener(EntryListener<K, V> listener, K key);
@@ -119,7 +122,7 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
      *
      * @param listener  entry listener
      * @param predicate predicate for filtering entries
-     * @param key          key to listen
+     * @param key       key to listen
      */
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key);
 

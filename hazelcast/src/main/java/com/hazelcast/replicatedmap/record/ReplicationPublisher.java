@@ -37,6 +37,7 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.exception.CallTimeoutException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -223,12 +224,7 @@ public class ReplicationPublisher<K, V>
         if (emptyReplicationQueue) {
             emptyReplicationQueue();
         }
-        executionService.execute(EXECUTOR_NAME, new Runnable() {
-            @Override
-            public void run() {
-                executeRemoteClear();
-            }
-        });
+        executeRemoteClear();
     }
 
     void sendPreProvisionRequest(List<MemberImpl> members) {
@@ -264,9 +260,12 @@ public class ReplicationPublisher<K, V>
             }
 
             if (failedMembers.size() == 0) {
-                break;
+                return;
             }
         }
+
+        // If we get here we does not seem to have finished the operation
+        throw new CallTimeoutException("ReplicatedMap::clear couldn't be finished, failed nodes: " + failedMembers);
     }
 
     private Map executeClearOnMembers(Collection<MemberImpl> members) {
