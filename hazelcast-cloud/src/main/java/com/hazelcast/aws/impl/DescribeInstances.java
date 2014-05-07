@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws.impl;
 
+import com.hazelcast.aws.AWSCredentialsProvider;
 import com.hazelcast.aws.security.EC2RequestSigner;
 import com.hazelcast.aws.utility.CloudyUtility;
 import com.hazelcast.config.AwsConfig;
@@ -36,19 +37,19 @@ public class DescribeInstances {
     private final EC2RequestSigner rs;
     private final AwsConfig awsConfig;
 
-    public DescribeInstances(AwsConfig awsConfig) {
+    public DescribeInstances(AwsConfig awsConfig, AWSCredentialsProvider credentialsProvider) {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
         }
         if (awsConfig.getAccessKey() == null) {
             throw new IllegalArgumentException("AWS access key is required!");
         }
-        rs = new EC2RequestSigner(awsConfig.getSecretKey());
+        rs = new EC2RequestSigner(credentialsProvider.getSecretKey());
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
         attributes.put("SignatureVersion", SIGNATURE_VERSION);
         attributes.put("SignatureMethod", SIGNATURE_METHOD);
-        attributes.put("AWSAccessKeyId", awsConfig.getAccessKey());
+        attributes.put("AWSAccessKeyId", credentialsProvider.getAccessKey());
         attributes.put("Timestamp", getFormattedTimestamp());
         this.awsConfig = awsConfig;
     }
