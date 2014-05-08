@@ -85,6 +85,15 @@ public interface HazelcastInstance {
     <K, V> IMap<K, V> getMap(String name);
 
     /**
+     * Returns the replicated map instance with the specified name.
+     *
+     * @param name name of the distributed map
+     * @return replicated map instance with specified name
+     * @since 3.2
+     */
+    <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
+
+    /**
      * Returns the job tracker instance with the specified name.
      *
      * @param name name of the job tracker

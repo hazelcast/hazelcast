@@ -1276,7 +1276,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(NightlyTest.class)
+    @Category(ProblematicTest.class) // random failure - details > http://goo.gl/2xK4Wx
     public void testIssue1085WriteBehindBackup() throws InterruptedException {
         Config config = new Config();
         String name = "testIssue1085WriteBehindBackup";

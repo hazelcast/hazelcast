@@ -301,28 +301,28 @@ public class TcpIpJoiner extends AbstractJoiner {
         final String host = tcpIpConfig.getRequiredMember();
         try {
             final AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getNetworkConfig().getPort());
-            if (AddressUtil.isIpAddress(addressHolder.address)) {
-                return new Address(addressHolder.address, addressHolder.port);
+            if (AddressUtil.isIpAddress(addressHolder.getAddress())) {
+                return new Address(addressHolder.getAddress(), addressHolder.getPort());
             } else {
                 final InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
                 if (interfaces.isEnabled()) {
-                    final InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.address);
+                    final InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.getAddress());
                     if (inetAddresses.length > 1) {
                         for (InetAddress inetAddress : inetAddresses) {
                             if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
                                     interfaces.getInterfaces())) {
-                                return new Address(inetAddress, addressHolder.port);
+                                return new Address(inetAddress, addressHolder.getPort());
                             }
                         }
                     } else {
                         final InetAddress inetAddress = inetAddresses[0];
                         if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
                                 interfaces.getInterfaces())) {
-                            return new Address(addressHolder.address, addressHolder.port);
+                            return new Address(addressHolder.getAddress(), addressHolder.getPort());
                         }
                     }
                 } else {
-                    return new Address(addressHolder.address, addressHolder.port);
+                    return new Address(addressHolder.getAddress(), addressHolder.getPort());
                 }
             }
         } catch (final Exception e) {
@@ -355,12 +355,12 @@ public class TcpIpJoiner extends AbstractJoiner {
         for (String possibleMember : possibleMembers) {
             try {
                 final AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
-                final boolean portIsDefined = addressHolder.port != -1 || !networkConfig.isPortAutoIncrement();
+                final boolean portIsDefined = addressHolder.getPort() != -1 || !networkConfig.isPortAutoIncrement();
                 final int count = portIsDefined ? 1 : MAX_PORT_TRIES;
-                final int port = addressHolder.port != -1 ? addressHolder.port : networkConfig.getPort();
+                final int port = addressHolder.getPort() != -1 ? addressHolder.getPort() : networkConfig.getPort();
                 AddressMatcher addressMatcher = null;
                 try {
-                    addressMatcher = AddressUtil.getAddressMatcher(addressHolder.address);
+                    addressMatcher = AddressUtil.getAddressMatcher(addressHolder.getAddress());
                 } catch (InvalidAddressException ignore) {
                 }
                 if (addressMatcher != null) {
@@ -369,13 +369,13 @@ public class TcpIpJoiner extends AbstractJoiner {
                         matchedAddresses = AddressUtil.getMatchingIpv4Addresses(addressMatcher);
                     } else {
                         // for IPv6 we are not doing wildcard matching
-                        matchedAddresses = Collections.singleton(addressHolder.address);
+                        matchedAddresses = Collections.singleton(addressHolder.getAddress());
                     }
                     for (String matchedAddress : matchedAddresses) {
                         addPossibleAddresses(possibleAddresses, null, InetAddress.getByName(matchedAddress), port, count);
                     }
                 } else {
-                    final String host = addressHolder.address;
+                    final String host = addressHolder.getAddress();
                     final InterfacesConfig interfaces = networkConfig.getInterfaces();
                     if (interfaces.isEnabled()) {
                         final InetAddress[] inetAddresses = InetAddress.getAllByName(host);

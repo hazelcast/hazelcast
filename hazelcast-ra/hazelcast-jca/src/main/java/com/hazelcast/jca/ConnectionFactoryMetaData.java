@@ -19,67 +19,75 @@ package com.hazelcast.jca;
 import javax.resource.cci.ResourceAdapterMetaData;
 
 /**
- * Simple implementation to return Hazelcast's implementation- 
+ * Simple implementation to return Hazelcast's implementation-
  * specific information in a JCA-compatible format
  */
 final class ConnectionFactoryMetaData implements ResourceAdapterMetaData {
-	/** JCA-Connector specific java packge to be used for all information retrieval */
-	private static final Package HZ_PACKAGE = ConnectionFactoryImpl.class.getPackage();
+    /**
+     * JCA-Connector specific java packge to be used for all information retrieval
+     */
+    private static final Package HZ_PACKAGE = ConnectionFactoryImpl.class.getPackage();
 
-	/** @return the implementation title from Hazelast
-	 */
-	public String getAdapterName() {
-		return HZ_PACKAGE.getImplementationTitle();
-	}
+    /**
+     * @return the implementation title from Hazelast
+     */
+    public String getAdapterName() {
+        return HZ_PACKAGE.getImplementationTitle();
+    }
 
-	/** @return the specification title from Hazelast
-	 */
-	public String getAdapterShortDescription() {
-		return HZ_PACKAGE.getSpecificationTitle();
-	}
+    /**
+     * @return the specification title from Hazelast
+     */
+    public String getAdapterShortDescription() {
+        return HZ_PACKAGE.getSpecificationTitle();
+    }
 
-	/** @return Hazelcast's implementation vendor
-	 */
-	public String getAdapterVendorName() {
-		return HZ_PACKAGE.getImplementationVendor();
-	}
+    /**
+     * @return Hazelcast's implementation vendor
+     */
+    public String getAdapterVendorName() {
+        return HZ_PACKAGE.getImplementationVendor();
+    }
 
-	/** @return Hazelcast's implementation version
-	 */
-	public String getAdapterVersion() {
-		return HZ_PACKAGE.getImplementationVersion();
-	}
+    /**
+     * @return Hazelcast's implementation version
+     */
+    public String getAdapterVersion() {
+        return HZ_PACKAGE.getImplementationVersion();
+    }
 
-	/** There is no real specification thus always an empty String array...
-	 */
-	public String[] getInteractionSpecsSupported() {
-		return new String[] {};
-	}
+    /**
+     * There is no real specification thus always an empty String array...
+     */
+    public String[] getInteractionSpecsSupported() {
+        return new String[]{};
+    }
 
-	/** @return Hazelcast's specification version
-	 */
-	public String getSpecVersion() {
-		return HZ_PACKAGE.getSpecificationVersion();
-	}
+    /**
+     * @return Hazelcast's specification version
+     */
+    public String getSpecVersion() {
+        return HZ_PACKAGE.getSpecificationVersion();
+    }
 
-	/* (non-Javadoc)
-	 * @see javax.resource.cci.ResourceAdapterMetaData#supportsExecuteWithInputAndOutputRecord()
-	 */
-	public boolean supportsExecuteWithInputAndOutputRecord() {
-		return false;
-	}
+    /* (non-Javadoc)
+     * @see javax.resource.cci.ResourceAdapterMetaData#supportsExecuteWithInputAndOutputRecord()
+     */
+    public boolean supportsExecuteWithInputAndOutputRecord() {
+        return false;
+    }
 
-	/* (non-Javadoc)
-	 * @see javax.resource.cci.ResourceAdapterMetaData#supportsExecuteWithInputRecordOnly()
-	 */
-	public boolean supportsExecuteWithInputRecordOnly() {
-		return false;
-	}
+    /* (non-Javadoc)
+     * @see javax.resource.cci.ResourceAdapterMetaData#supportsExecuteWithInputRecordOnly()
+     */
+    public boolean supportsExecuteWithInputRecordOnly() {
+        return false;
+    }
 
-	/* (non-Javadoc)
-	 * @see javax.resource.cci.ResourceAdapterMetaData#supportsLocalTransactionDemarcation()
-	 */
-	public boolean supportsLocalTransactionDemarcation() {
-		return false;
-	}
+    /* (non-Javadoc)
+     * @see javax.resource.cci.ResourceAdapterMetaData#supportsLocalTransactionDemarcation()
+     */
+    public boolean supportsLocalTransactionDemarcation() {
+        return false;
+    }
 }

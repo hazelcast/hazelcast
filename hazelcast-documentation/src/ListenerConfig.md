@@ -2,43 +2,7 @@
 
 ## Listener Configurations
 
-Hazelcast provides various event listener extensions to receive specific event types. These are:
-
--   **MembershipListener** for cluster membership events
-
--   **DistributedObjectListener** for distributed object creation and destroy events
-
--   **MigrationListener** for partition migration start and complete events
-
--   **LifecycleListener** for HazelcastInstance lifecycle events
-
--   **EntryListener** for IMap and MultiMap entry events
-
--   **ItemListener** for IQueue, ISet and IList item events
-
--   **MessageListener** for ITopic message events
-
-These listeners can be added to and removed from the related object using Hazelcast API. See the samples below.
-
-```java
-MembershipListener listener = new MyMembershipListener();
-hazelcastInstance.getCluster().addMembershipListener(listener);
-hazelcastInstance.getCluster().removeMembershipListener(listener);
-```
-
-```java
-EntryListener listener = new MyEntryListener();
-IMap map = hazelcastInstance.getMap("default");
-String id =map.addEntryListener(listener, true);
-map.removeEntryListener(id);
-```
-
-```java
-ItemListener listener = new MyItemListener();
-IQueue queue = hazelcastInstance.getQueue("default");
-queue.addItemListener(listener, true);
-queue.removeItemListener(listener);
-```
+Event listeners can be added to and removed from the related object using Hazelcast API.
 
 Downside of attaching listeners using API is the possibility of missing events between creation of object and registering listener. To overcome this race condition, Hazelcast introduces registration of listeners in configuration. Listeners can be registered using either declarative, programmatic or Spring configuration.
 
@@ -258,3 +222,27 @@ topicConfig.addMessageListenerConfig(new ListenerConfig("com.hazelcast.examples.
 		</hz:topic>
 ```
 
+-   **ClientListener** 
+
+	-	Declarative Configuration
+
+		```xml
+		<listeners>
+		        <listener>com.hazelcast.examples.ClientListener</listener>
+			</listeners>
+```
+
+	-	Programmatic Configuration
+
+		```java
+topicConfig.addMessageListenerConfig(new ListenerConfig("com.hazelcast.examples.ClientListener"));
+```
+
+	-	Spring XML configuration
+
+		```xml
+		<hz:listeners>
+		    <hz:listener class-name="com.hazelcast.spring.DummyClientListener"/>
+		    <hz:listener implementation="dummyClientListener"/>
+		</hz:listeners>
+```

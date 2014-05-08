@@ -18,7 +18,7 @@ package com.hazelcast.util;
 
 import java.util.concurrent.ConcurrentMap;
 
-public class ConcurrencyUtil {
+public final class ConcurrencyUtil {
 
     private ConcurrencyUtil() {
     }

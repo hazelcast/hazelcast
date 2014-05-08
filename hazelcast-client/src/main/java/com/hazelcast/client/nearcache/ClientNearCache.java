@@ -96,7 +96,7 @@ public class ClientNearCache<K> {
         }
     }
 
-    private void addInvalidateListener(){
+    private void addInvalidateListener() {
         try {
             ClientRequest request;
             EventHandler handler;
@@ -130,7 +130,7 @@ public class ClientNearCache<K> {
             fireEvictCache();
         }
         Object value;
-        if (object == null){
+        if (object == null) {
             value = NULL_OBJECT;
         } else {
             value = inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toData(object) : object;
@@ -147,7 +147,7 @@ public class ClientNearCache<K> {
                             TreeSet<CacheRecord<K>> records = new TreeSet<CacheRecord<K>>(comparator);
                             records.addAll(cache.values());
                             int evictSize = cache.size() * EVICTION_PERCENTAGE / 100;
-                            int i=0;
+                            int i = 0;
                             for (CacheRecord<K> record : records) {
                                 cache.remove(record.key);
                                 if (++i > evictSize)
@@ -194,6 +194,10 @@ public class ClientNearCache<K> {
         }
     }
 
+    public void invalidate(K key) {
+        cache.remove(key);
+    }
+
     public Object get(K key) {
         fireTtlCleanup();
         CacheRecord<K> record = cache.get(key);
@@ -203,26 +207,26 @@ public class ClientNearCache<K> {
                 clientNearCacheStats.incrementMisses();
                 return null;
             }
-            if (record.value.equals(NULL_OBJECT)){
+            if (record.value.equals(NULL_OBJECT)) {
                 clientNearCacheStats.incrementMisses();
                 return NULL_OBJECT;
             }
             record.access();
-            return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
+            return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data) record.value) : record.value;
         } else {
             clientNearCacheStats.incrementMisses();
             return null;
         }
     }
-    public NearCacheStatsImpl getNearCacheStats()
-    {
+
+    public NearCacheStatsImpl getNearCacheStats() {
         return createNearCacheStats();
     }
 
     private NearCacheStatsImpl createNearCacheStats() {
         long ownedEntryCount = cache.values().size();
         long ownedEntryMemory = 0;
-        for (CacheRecord record : cache.values()){
+        for (CacheRecord record : cache.values()) {
             ownedEntryMemory += record.getCost();
         }
         clientNearCacheStats.setOwnedEntryCount(ownedEntryCount);
@@ -231,7 +235,7 @@ public class ClientNearCache<K> {
     }
 
     public void destroy() {
-        if (registrationId != null){
+        if (registrationId != null) {
             BaseClientRemoveListenerRequest request;
             if (cacheType == ClientNearCacheType.Map) {
                 request = new MapRemoveEntryListenerRequest(mapName, registrationId);
@@ -271,7 +275,7 @@ public class ClientNearCache<K> {
             if (!(value instanceof Data)) return 0;
             if (!(key instanceof Data)) return 0;
             // value is Data
-            return ((Data)key).getHeapCost()
+            return ((Data) key).getHeapCost()
                     + ((Data) value).getHeapCost()
                     + 2 * (Long.SIZE / Byte.SIZE)
                     // sizeof atomic integer
@@ -279,6 +283,7 @@ public class ClientNearCache<K> {
                     // object references (key, value, hit)
                     + 3 * (Integer.SIZE / Byte.SIZE);
         }
+
         boolean expired() {
             long time = Clock.currentTimeMillis();
             return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis) || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);

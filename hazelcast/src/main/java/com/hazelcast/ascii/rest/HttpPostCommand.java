@@ -26,14 +26,14 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
+    boolean nextLine;
+    boolean readyToReadData;
 
-    private ByteBuffer data = null;
-    boolean nextLine = false;
-    boolean readyToReadData = false;
+    private ByteBuffer data;
     private ByteBuffer line = ByteBuffer.allocate(500);
-    private String contentType = null;
+    private String contentType;
     private final SocketTextReader socketTextRequestReader;
-    private boolean chunked = false;
+    private boolean chunked;
 
     public HttpPostCommand(SocketTextReader socketTextRequestReader, String uri) {
         super(TextCommandType.HTTP_POST, uri);
@@ -59,7 +59,9 @@ public class HttpPostCommand extends HttpCommand {
             complete = doActualRead(cb);
         }
         if (complete) {
-            if (data != null) data.flip();
+            if (data != null) {
+                data.flip();
+            }
         }
         return complete;
     }
@@ -75,7 +77,7 @@ public class HttpPostCommand extends HttpCommand {
     public byte[] getContentType() {
         if (contentType == null) {
             return null;
-        }else {
+        } else {
             return stringToBytes(contentType);
         }
     }
@@ -89,7 +91,8 @@ public class HttpPostCommand extends HttpCommand {
                     lineStr = toStringAndClear(line).trim();
                 }
                 if (hasLine) {
-                    int dataSize = lineStr.length() == 0 ? 0 : Integer.parseInt(lineStr, 16); // hex string
+                    // hex string
+                    int dataSize = lineStr.length() == 0 ? 0 : Integer.parseInt(lineStr, 16);
                     if (dataSize == 0) {
                         return true;
                     }
@@ -122,7 +125,9 @@ public class HttpPostCommand extends HttpCommand {
     }
 
     String toStringAndClear(ByteBuffer bb) {
-        if (bb == null) return "";
+        if (bb == null) {
+            return "";
+        }
         String result;
         if (bb.position() == 0) {
             result = "";

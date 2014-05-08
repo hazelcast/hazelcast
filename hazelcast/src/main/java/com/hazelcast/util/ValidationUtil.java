@@ -21,7 +21,10 @@ import static java.lang.String.format;
 /**
  * A utility class for validating arguments and state.
  */
-public class ValidationUtil {
+public final class ValidationUtil {
+
+    private ValidationUtil() {
+    }
 
     public static String hasText(String argument, String argName) {
         isNotNull(argument, argName);
@@ -41,8 +44,6 @@ public class ValidationUtil {
         return argument;
     }
 
-    private ValidationUtil() {
-    }
 
     public static void isNotNegative(long value, String argumentName) {
         if (value < 0) {

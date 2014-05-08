@@ -151,7 +151,8 @@ public class MemcacheTest {
             }
             for (int i = 0; i < 100; i++) {
                 assertEquals(String.valueOf(i), client.get(prefix + String.valueOf(i)));
-                client.set(prefix + String.valueOf(i), 0, String.valueOf(i * 10));
+                final OperationFuture<Boolean> future = client.set(prefix + String.valueOf(i), 0, String.valueOf(i * 10));
+                future.get();
             }
             for (int i = 0; i < 100; i++) {
                 final MemcacheEntry memcacheEntry = (MemcacheEntry) map.get(String.valueOf(i));

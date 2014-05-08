@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.monitor;
 
-import com.hazelcast.spi.annotation.PrivateApi;
+public interface LocalReplicatedMapStats extends LocalMapStats {
 
-@PrivateApi
-public final class DistributedObjectAccessor {
-
-    private DistributedObjectAccessor() {
-    }
-
-    public static void onNodeShutdown(AbstractDistributedObject distributedObject) {
-        distributedObject.invalidate();
-    }
+    long getReplicationEventCount();
 
 }

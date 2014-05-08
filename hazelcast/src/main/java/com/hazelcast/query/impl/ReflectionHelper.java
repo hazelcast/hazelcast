@@ -30,10 +30,11 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
-public class ReflectionHelper {
+public final class ReflectionHelper {
 
     private static final  ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
     private static final  ConcurrentMap<String, Getter> GETTER_CACHE = new ConcurrentHashMap<String, Getter>(1000);
+    private static final int INITIAL_CAPACITY = 3;
 
     private ReflectionHelper() {
     }
@@ -99,7 +100,7 @@ public class ReflectionHelper {
 
         try {
             Getter parent = null;
-            List<String> possibleMethodNames = new ArrayList<String>(3);
+            List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
             for (final String name : attribute.split("\\.")) {
                 Getter localGetter = null;
                 possibleMethodNames.clear();
