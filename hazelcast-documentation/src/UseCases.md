@@ -1,10 +1,8 @@
-
+
+
 ## Use Cases
 
-
-
 Some example usages are listed below. Hazelcast can be used:
-
 -	To share server configuration/information to see how a cluster performs,
 
 
@@ -41,7 +39,7 @@ Some example usages are listed below. Hazelcast can be used:
 
 
 
--	As a multi-tenancy cache where each tenant has its own map, 
+-	As a multi-tenancy cache where each tenant has its own map,
 
 
 
