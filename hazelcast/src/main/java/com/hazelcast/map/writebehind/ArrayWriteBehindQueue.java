@@ -53,7 +53,6 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
         if (list.isEmpty()) {
             return;
         }
-        REMOVE.incrementAndGet();
         list.remove(0);
     }
 
