@@ -143,12 +143,19 @@ public final class StoreHandlerChain {
         }
         final DelayedEntry[] delayeds = delayedEntries.toArray(new DelayedEntry[delayedEntries.size()]);
         final Map<Object, DelayedEntry> batchMap = prepareBatchMap(delayeds);
+
         // if all batch is on same key, call single store.
         if (batchMap.size() == 1) {
             final DelayedEntry delayedEntry = delayeds[delayeds.length - 1];
             return callSingleStoreWithListeners(delayedEntry);
         }
-        return callBatchStoreWithListeners(batchMap);
+        final Collection<DelayedEntry> collection = callBatchStoreWithListeners(batchMap);
+        final Collection<DelayedEntry> failedTries = new ArrayList<DelayedEntry>(collection.size());
+        for (DelayedEntry entry : collection) {
+            final Collection<DelayedEntry> tmpFaileds = callSingleStoreWithListeners(entry);
+            failedTries.addAll(tmpFaileds);
+        }
+        return failedTries;
     }
 
     private Map prepareBatchMap(DelayedEntry[] delayeds) {

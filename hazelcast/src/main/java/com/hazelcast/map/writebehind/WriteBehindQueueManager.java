@@ -81,8 +81,8 @@ class WriteBehindQueueManager implements WriteBehindManager {
     private final ILogger logger;
 
     WriteBehindQueueManager(String mapName, MapService mapService, MapStoreWrapper storeWrapper) {
-        this.scheduledExecutor = getScheduledExecutorService(mapService);
         this.mapName = mapName;
+        this.scheduledExecutor = getScheduledExecutorService(mapName, mapService);
         this.mapService = mapService;
         this.logger = mapService.getNodeEngine().getLogger(WriteBehindQueueManager.class);
         this.executorName = EXECUTOR_NAME_PREFIX + mapName;
@@ -185,7 +185,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
         return keys;
     }
 
-    private ScheduledExecutorService getScheduledExecutorService(MapService mapService) {
+    private ScheduledExecutorService getScheduledExecutorService(String mapName, MapService mapService) {
         final NodeEngine nodeEngine = mapService.getNodeEngine();
         final ExecutionService executionService = nodeEngine.getExecutionService();
         final String executorName = EXECUTOR_NAME_PREFIX + mapName;
@@ -241,7 +241,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
 
         }
 
-        private long getReplicaWaitTimeInNanaos(){
+        private long getReplicaWaitTimeInNanaos() {
             return TimeUnit.SECONDS.toNanos(mapService.getNodeEngine().getGroupProperties()
                     .MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger());
         }

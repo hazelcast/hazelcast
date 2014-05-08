@@ -22,7 +22,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -64,7 +63,7 @@ public class TestWriteBehindException extends HazelcastTestSupport {
             map3.put(i + 20, "value-" + i);
         }
 
-        latch1.await();
+        assertOpenEventually(latch1);
         Thread.sleep(2000);
         assertTrueEventually(new AssertTask() {
             @Override
@@ -76,7 +75,7 @@ public class TestWriteBehindException extends HazelcastTestSupport {
         for (int i = 0; i < 30; i++) {
             map.delete(i);
         }
-        latch2.await();
+        assertOpenEventually(latch2);
         Thread.sleep(2000);
         assertTrueEventually(new AssertTask() {
             @Override

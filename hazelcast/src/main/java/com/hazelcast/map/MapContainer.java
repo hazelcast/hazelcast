@@ -53,7 +53,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Map container.
@@ -129,8 +128,6 @@ public class MapContainer {
         return evictionEnabled;
     }
 
-    public static final AtomicInteger ccc = new AtomicInteger(0);
-
     private void initMapStoreOperations(NodeEngine nodeEngine) {
         if (!isMapStoreEnabled()) {
             return;
@@ -157,7 +154,6 @@ public class MapContainer {
                     final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
                     final RecordStore recordStore = partitionContainer.getRecordStore(name);
                     recordStore.removeFromWriteBehindWaitingDeletions(key);
-                    ccc.incrementAndGet();
                 }
             });
             this.writeBehindQueueManager.start();
