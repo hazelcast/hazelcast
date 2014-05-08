@@ -26,6 +26,12 @@ src/Distributed_Data_Structures.md
 	src/List.md
 	src/Topic.md
 	src/Lock.md
+    src/replicatedmap/ReplicatedMap.md
+        src/replicatedmap/Considerations.md
+        src/replicatedmap/BreakageMapContract.md
+        src/replicatedmap/TechnicalDesign.md
+        src/replicatedmap/InMemoryFormat.md
+        src/replicatedmap/EntryListener.md
 src/DistributedEvents.md
 src/DistributedComputing.md
 		src/Execution.md

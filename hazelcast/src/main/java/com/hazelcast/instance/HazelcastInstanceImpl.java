@@ -48,6 +48,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
@@ -59,6 +60,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
@@ -78,7 +80,8 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 @SuppressWarnings("unchecked")
 @PrivateApi
-public final class HazelcastInstanceImpl implements HazelcastInstance {
+public final class HazelcastInstanceImpl
+        implements HazelcastInstance {
 
     public final Node node;
 
@@ -98,7 +101,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
-    HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) throws Exception {
+    HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
+            throws Exception {
         this.name = name;
         this.threadGroup = new ThreadGroup(name);
         threadMonitoringService = new ThreadMonitoringService(threadGroup);
@@ -223,12 +227,14 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
-    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(TransactionalTask<T> task)
+            throws TransactionException {
         return executeTransaction(TransactionOptions.getDefault(), task);
     }
 
     @Override
-    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task)
+            throws TransactionException {
         TransactionManagerService transactionManagerService = node.nodeEngine.getTransactionManagerService();
         return transactionManagerService.executeTransaction(options, task);
     }
@@ -290,6 +296,14 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             throw new NullPointerException("Retrieving a semaphore instance with a null name is not allowed!");
         }
         return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(final String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a replicated map instance with a null name is not allowed!");
+        }
+        return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
     }
 
     @Override
