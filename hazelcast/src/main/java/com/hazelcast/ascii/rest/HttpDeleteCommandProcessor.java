@@ -33,13 +33,13 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
             if (indexEnd == -1) {
                 String mapName = uri.substring(URI_MAPS.length(), uri.length());
                 textCommandService.deleteAll(mapName);
-                command.send204();
+                command.send200();
 
             } else {
                 String mapName = uri.substring(URI_MAPS.length(), indexEnd);
                 String key = uri.substring(indexEnd + 1);
                 textCommandService.delete(mapName, key);
-                command.send204();
+                command.send200();
             }
         } else if (uri.startsWith(URI_QUEUES)) {
             // Poll an item from the default queue in 3 seconds

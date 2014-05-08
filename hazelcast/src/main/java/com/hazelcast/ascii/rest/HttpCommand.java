@@ -70,12 +70,10 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public void setResponse(byte[] value) {
         this.response = ByteBuffer.wrap(value);
     }
-//    public boolean writeTo(ByteBuffer bb) {
-//        while (bb.hasRemaining() && response.hasRemaining()) {
-//            bb.put(response.get());
-//        }
-//        return !response.hasRemaining();
-//    }
+
+    public void send200(){
+        setResponse(null, null);
+    }
 
     /**
      * HTTP/1.0 200 OK

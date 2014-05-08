@@ -30,16 +30,6 @@
     <packaging>jar</packaging>
 
     <build>
-        <resources>
-            <!-- Include all class files, that should be part of hazelcast-all.jar and should get processed by bnd-tool  -->
-            <resource><directory>../hazelcast/target/classes</directory></resource>
-            <resource><directory>../hazelcast-client/target/classes</directory></resource>
-            <resource><directory>../hazelcast-hibernate/hazelcast-hibernate3/target/classes</directory></resource>
-            <resource><directory>../hazelcast-spring/target/classes</directory></resource>
-            <resource><directory>../hazelcast-cloud/target/classes</directory></resource>
-            <resource><directory>../hazelcast-wm/target/classes</directory></resource>
-        </resources>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.felix</groupId>
@@ -103,75 +93,46 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>${maven.dependency.plugin.version}</version>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>unpack-sources</id>
+                        <id>shade-artifacts</id>
                         <goals>
-                            <goal>unpack</goal>
+                            <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/sources</outputDirectory>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast</artifactId>
-                                    <version>${project.version}</version>
-                                    <classifier>sources</classifier>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-client</artifactId>
-                                    <version>${project.version}</version>
-                                    <classifier>sources</classifier>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-cloud</artifactId>
-                                    <version>${project.version}</version>
-                                    <classifier>sources</classifier>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-hibernate3</artifactId>
-                                    <version>${project.version}</version>
-                                    <classifier>sources</classifier>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-spring</artifactId>
-                                    <version>${project.version}</version>
-                                    <classifier>sources</classifier>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.hazelcast</groupId>
-                                    <artifactId>hazelcast-wm</artifactId>
-                                    <version>${project.version}</version>
-                                    <classifier>sources</classifier>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven.assembly.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>source-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/main/assemble/src.xml</descriptor>
-                            </descriptors>
-                            <finalName>${project.artifactId}-${project.version}</finalName>
-                            <appendAssemblyId>true</appendAssemblyId>
+                            <shadedArtifactId>hazelcast-all</shadedArtifactId>
+                            <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                            <createDependencyReducedPom>true</createDependencyReducedPom>
+                            <minimizeJar>false</minimizeJar>
+                            <createSourcesJar>true</createSourcesJar>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.hazelcast:*:*</include>
+                                </includes>
+                                <excludes>
+                                    <exclude>com.hazelcast:hazelcast-all:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.hazelcast.examples.TestApp</mainClass>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
@@ -184,5 +145,38 @@
             </plugin>
         </plugins>
     </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-cloud</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-hibernate3</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-spring</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-wm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>
