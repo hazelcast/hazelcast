@@ -25,6 +25,7 @@ abstract class AbstractDelayedEntry<K> {
 
     private final long storeTime;
 
+    // TODO really need this?
     private final int partitionId;
 
     protected AbstractDelayedEntry(K key, long storeTime, int partitionId) {
