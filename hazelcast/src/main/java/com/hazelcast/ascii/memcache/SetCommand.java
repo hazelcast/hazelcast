@@ -22,13 +22,13 @@ import com.hazelcast.nio.IOUtil;
 import java.nio.ByteBuffer;
 
 public class SetCommand extends AbstractTextCommand {
+    ByteBuffer response;
     private final String key;
     private final int flag;
     private final int expiration;
     private final int valueLen;
     private final boolean noreply;
     private final ByteBuffer bbValue;
-    ByteBuffer response = null;
 
     public SetCommand(TextCommandType type, String key, int flag, int expiration, int valueLen, boolean noreply) {
         super(type);
@@ -102,13 +102,20 @@ public class SetCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "SetCommand [" + type + "]{" +
-                "key='" + key + '\'' +
-                ", flag=" + flag +
-                ", expiration=" + expiration +
-                ", valueLen=" + valueLen +
-                ", value=" + bbValue +
-                '}' + super.toString();
+        return "SetCommand [" + type + "]{"
+                + "key='"
+                + key
+                + '\''
+                + ", flag="
+                + flag
+                + ", expiration="
+                + expiration
+                + ", valueLen="
+                + valueLen
+                + ", value="
+                + bbValue
+                + '}'
+                + super.toString();
     }
 }
 

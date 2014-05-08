@@ -25,8 +25,14 @@ public final class ByteUtil {
      * Array of bit positions.
      */
     private static final byte[] POWERS = new byte[]{
-            (byte) (1 << 0), (byte) (1 << 1), (byte) (1 << 2), (byte) (1 << 3),
-            (byte) (1 << 4), (byte) (1 << 5), (byte) (1 << 6), (byte) (1 << 7)
+            (byte) (1 << 0),
+            (byte) (1 << 1),
+            (byte) (1 << 2),
+            (byte) (1 << 3),
+            (byte) (1 << 4),
+            (byte) (1 << 5),
+            (byte) (1 << 6),
+            (byte) (1 << 7),
     };
 
     /**

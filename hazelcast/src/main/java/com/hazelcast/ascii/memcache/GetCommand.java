@@ -44,7 +44,9 @@ public class GetCommand extends AbstractTextCommand {
     }
 
     public void setValue(MemcacheEntry entry, boolean singleGet) {
-        if (entry != null) value = entry.toNewBuffer();
+        if (entry != null) {
+            value = entry.toNewBuffer();
+        }
         lastOne = (singleGet) ? ByteBuffer.wrap(END) : null;
     }
 
@@ -61,9 +63,13 @@ public class GetCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "GetCommand{" +
-                "key='" + key +
-                ", value=" + value + '\'' +
-                "} " + super.toString();
+        return "GetCommand{"
+                + "key='"
+                + key
+                + ", value="
+                + value
+                + '\''
+                + "} "
+                + super.toString();
     }
 }
