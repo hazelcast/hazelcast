@@ -3,7 +3,11 @@
 
 ## Entry Processor
 
-Hazelcast supports entry processing. The interface EntryProcessor gives you the ability to execute your code on an entry in an atomic way. You do not need any explicit lock on entry. Practically, Hazelcast locks the entry, runs the EntryProcessor, and then unlocks the entry. If entry processing is the major operation for a map and the map consists of complex objects, then using object type as `in-memory-format` is recommended to minimize serialization cost.
+Hazelcast supports entry processing. Entry processor is a function that can modify or replace the value of a map entry. It gives you the ability to execute your code on an entry in an atomic way. 
+
+Entry processor enables fast in-memory operations on a Map without having to worry about locks or concurrency issues. It can be applied to a single map entry or on all map entries and supports choosing target entries using predicates.
+
+You do not need any explicit lock on entry. Practically, Hazelcast locks the entry, runs the EntryProcessor, and then unlocks the entry. If entry processing is the major operation for a map and the map consists of complex objects, then using object type as `in-memory-format` is recommended to minimize serialization cost.
 
 There are below methods in IMap interface for entry processing:
 
