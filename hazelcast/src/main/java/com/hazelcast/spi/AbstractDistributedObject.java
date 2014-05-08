@@ -82,7 +82,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     public abstract String getServiceName();
 
-    final void invalidate() {
+    public final void invalidate() {
         nodeEngine = null;
         service = null;
     }
