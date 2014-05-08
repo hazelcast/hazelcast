@@ -96,6 +96,9 @@ public class MapContainer {
                 .scheduleAtFixedRate(new ClearExpiredRecordsTask(), 5, 5, TimeUnit.SECONDS);
     }
 
+    /**
+     * Periodically clears expired entries.(ttl & idle)
+     */
     private class ClearExpiredRecordsTask implements Runnable {
 
         public void run() {
@@ -130,17 +133,16 @@ public class MapContainer {
 
     private void initMapStoreOperations(NodeEngine nodeEngine) {
         if (!isMapStoreEnabled()) {
+            this.writeBehindQueueManager = WriteBehindManagers.emptyWriteBehindManager();
             return;
         }
         storeWrapper = createMapStoreWrapper(mapConfig.getMapStoreConfig(), nodeEngine);
         if (storeWrapper != null) {
             initMapStore(storeWrapper.getImpl(), mapConfig.getMapStoreConfig(), nodeEngine);
         }
-        final boolean writeBehindMapStoreEnabled = isWriteBehindMapStoreEnabled();
-        this.writeBehindQueueManager
-                = WriteBehindManagers.createWriteBehindManager(name, mapService,
-                storeWrapper, writeBehindMapStoreEnabled);
-        if (writeBehindMapStoreEnabled) {
+        if (isWriteBehindMapStoreEnabled()) {
+            this.writeBehindQueueManager
+                    = WriteBehindManagers.createWriteBehindManager(name, mapService, storeWrapper);
             this.writeBehindQueueManager.addStoreListener(new StoreListener<DelayedEntry>() {
                 @Override
                 public void beforeStore(StoreEvent<DelayedEntry> storeEvent) {
@@ -152,11 +154,14 @@ public class MapContainer {
                     final Data key = (Data) storeEvent.getSource().getKey();
                     final int partitionId = mapService.getNodeEngine().getPartitionService().getPartitionId(key);
                     final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
-                    final RecordStore recordStore = partitionContainer.getRecordStore(name);
-                    recordStore.removeFromWriteBehindWaitingDeletions(key);
+                    final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+                    if (recordStore != null) {
+                        recordStore.removeFromWriteBehindWaitingDeletions(key);
+                    }
                 }
             });
             this.writeBehindQueueManager.start();
+
         }
     }
 
@@ -198,8 +203,8 @@ public class MapContainer {
                     factory = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), factoryClassName);
                 }
             }
-            store = (factory == null ? mapStoreConfig.getImplementation() :
-                    factory.newMapStore(name, mapStoreConfig.getProperties()));
+            store = (factory == null ? mapStoreConfig.getImplementation()
+                    : factory.newMapStore(name, mapStoreConfig.getProperties()));
             if (store == null) {
                 String mapStoreClassName = mapStoreConfig.getClassName();
                 store = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mapStoreClassName);

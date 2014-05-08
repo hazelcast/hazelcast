@@ -33,13 +33,9 @@ public final class WriteBehindManagers {
     private WriteBehindManagers() {
     }
 
-    public static WriteBehindManager createWriteBehindManager(String mapName, MapService service, MapStoreWrapper storeWrapper) {
+    public static WriteBehindManager createWriteBehindManager(String mapName,
+                                                              MapService service, MapStoreWrapper storeWrapper) {
         return new WriteBehindQueueManager(mapName, service, storeWrapper);
-    }
-
-    public static WriteBehindManager createWriteBehindManager(String mapName, MapService service,
-                                                              MapStoreWrapper storeWrapper, boolean enabled) {
-        return enabled ? createWriteBehindManager(mapName, service, storeWrapper) : emptyWriteBehindManager();
     }
 
     public static WriteBehindManager emptyWriteBehindManager() {
