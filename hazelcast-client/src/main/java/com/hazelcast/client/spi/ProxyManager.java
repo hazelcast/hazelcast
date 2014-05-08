@@ -191,6 +191,7 @@ public final class ProxyManager {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        clientProxy.setContext(new ClientContext(client, this));
     }
 
     public Collection<? extends DistributedObject> getDistributedObjects(){
