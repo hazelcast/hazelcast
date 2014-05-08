@@ -24,7 +24,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.WatchedOperationExecutor;
 import org.junit.After;
@@ -40,6 +39,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 public class ClientReplicatedMapTest
@@ -752,6 +752,45 @@ public class ClientReplicatedMapTest
         }
 
         assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+    }
+
+    @Test
+    public void testRetrieveUnknownValueObjectDelay0()
+            throws Exception {
+
+        testRetrieveUnknownValue(buildConfig(InMemoryFormat.OBJECT, 0));
+    }
+
+    @Test
+    public void testRetrieveUnknownValueObjectDelayDefault()
+            throws Exception {
+
+        testRetrieveUnknownValue(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    @Test
+    public void testRetrieveUnknownValueBinaryDelay0()
+            throws Exception {
+
+        testRetrieveUnknownValue(buildConfig(InMemoryFormat.BINARY, 0));
+    }
+
+    @Test
+    public void testRetrieveUnknownValueBinaryDelayDefault()
+            throws Exception {
+
+        testRetrieveUnknownValue(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    private void testRetrieveUnknownValue(Config config)
+            throws Exception {
+
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance instance2 = HazelcastClient.newHazelcastClient();
+
+        ReplicatedMap<String, String> map = instance2.getReplicatedMap("default");
+        String value = map.get("foo");
+        assertNull(value);
     }
 
     private Config buildConfig(InMemoryFormat inMemoryFormat, long replicationDelay) {
