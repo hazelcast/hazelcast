@@ -65,12 +65,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author enesakar 1/17/13
  */
 public class DefaultRecordStore implements RecordStore {
+
     private static final long DEFAULT_TTL = -1;
-    private static final int POST_READ_CHECK_POINT = 0x3F;
+    /**
+     * Number of reads before clean up.
+     */
+    private static final byte POST_READ_CHECK_POINT = 0x3F;
     private final String name;
     private final int partitionId;
     private final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
-    private final Set<Data> toBeRemovedKeys = new HashSet<Data>();
     private final MapContainer mapContainer;
     private final MapService mapService;
     private final LockStore lockStore;
@@ -78,9 +81,16 @@ public class DefaultRecordStore implements RecordStore {
     private final ILogger logger;
     private final SizeEstimator sizeEstimator;
     private final AtomicBoolean loaded = new AtomicBoolean(false);
-    private WriteBehindQueue writeBehindQueue;
+    private final WriteBehindQueue writeBehindQueue;
     private long lastEvictionTime;
+    /**
+     * If there is no clean-up caused by puts after some time,
+     * count a number of gets and start eviction.
+     */
     private byte readCountBeforeCleanUp;
+    /**
+     * To check if a key has a delayed delete operation or not.
+     */
     private final Set<Data> writeBehindWaitingDeletions;
     /**
      * used for lru eviction.
@@ -226,8 +236,8 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     /**
-     * Size may not give precise size due to the expiration logic.
-     *
+     * Size may not give precise size at a specific moment
+     * due to the expiration logic. But eventually, it should be correct.
      * @return
      */
     public int size() {
@@ -246,12 +256,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     @Override
-    public void setWriteBehindQueue(WriteBehindQueue<DelayedEntry> queue) {
-        this.writeBehindQueue = queue;
-    }
-
-    @Override
-    public List clearExpiredRecordsIfNotLocked() {
+    public List clearUnLockedExpiredRecords() {
         checkIfLoaded();
 
         final List<Object> evictedKeyValueSequence = new ArrayList<Object>();
@@ -420,7 +425,6 @@ public class DefaultRecordStore implements RecordStore {
             }
 
             store.deleteAll(keysObject);
-            toBeRemovedKeys.removeAll(keysToDelete);
         }
 
         removeIndex(keysToDelete);
@@ -970,10 +974,10 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     /**
+     * TODO make checkEvictable fast by carrying threshold logic to partition.
      * This cleanup adds some latency to write operations.
      * But it sweeps records much better under high write loads.
      * <p/>
-     * TODO make checkEvictable fast by carrying threshold logic to partition.
      */
     private void earlyWriteCleanup() {
         if (!mapContainer.isEvictionEnabled()) {
@@ -1039,7 +1043,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     /**
-     * Check if record is reachable according to ttl, idle times.
+     * Check if record is reachable according to ttl or idle times.
      * If not reachable return null.
      *
      * @param record
@@ -1144,21 +1148,6 @@ public class DefaultRecordStore implements RecordStore {
      * @param recordValue
      */
     private void addToDelayedStore(Data dataKey, Object recordValue) {
-        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
-            return;
-        }
-        addToDelayedStore(dataKey, recordValue, 0L);
-    }
-
-    /**
-     * Constructs and adds a {@link com.hazelcast.map.writebehind.DelayedEntry}
-     * instance to write behind queue.
-     *
-     * @param dataKey
-     * @param recordValue
-     * @param shiftInTimeNanos is added to now when constructing DelayedEntry.
-     */
-    private void addToDelayedStore(Data dataKey, Object recordValue, long shiftInTimeNanos) {
         if (!mapContainer.isWriteBehindMapStoreEnabled()) {
             return;
         }

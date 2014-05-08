@@ -42,7 +42,7 @@ public class ClearExpiredOperation extends AbstractMapOperation implements Parti
     public void run() throws Exception {
         final PartitionContainer partitionContainer = mapService.getPartitionContainer(getPartitionId());
         final RecordStore recordStore = partitionContainer.getRecordStore(name);
-        evictedKeyValueSequence = recordStore.clearExpiredRecordsIfNotLocked();
+        evictedKeyValueSequence = recordStore.clearUnLockedExpiredRecords();
     }
 
     @Override
