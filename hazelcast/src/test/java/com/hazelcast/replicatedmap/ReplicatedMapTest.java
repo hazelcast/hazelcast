@@ -212,7 +212,7 @@ public class ReplicatedMapTest
         testAddTtl(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
-    @Test
+//    @Test
     public void testAddTtlObjectDelayDefault()
             throws Exception {
 
@@ -226,7 +226,7 @@ public class ReplicatedMapTest
         testAddTtl(buildConfig(InMemoryFormat.BINARY, 0));
     }
 
-    @Test
+//    @Test
     public void testAddTtlBinaryDelayDefault()
             throws Exception {
 
