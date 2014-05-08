@@ -51,7 +51,10 @@ abstract class AbstractDelayedEntry<K> {
         if (this == obj) {
             return true;
         }
-        final DelayedEntry delayedEntry = (DelayedEntry) obj;
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final AbstractDelayedEntry delayedEntry = (AbstractDelayedEntry) obj;
         if (key == null) {
             return false;
         }
