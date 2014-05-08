@@ -472,6 +472,7 @@ public class DefaultRecordStore implements RecordStore {
         }
         // reduce size
         updateSizeEstimator(-calculateRecordSize(record));
+        deleteRecord(key);
         addToWriteBehindWaitingDeletions(key);
         addToDelayedStore(key, null);
     }
