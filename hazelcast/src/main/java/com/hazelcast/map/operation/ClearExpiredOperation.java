@@ -43,6 +43,9 @@ public class ClearExpiredOperation extends AbstractMapOperation implements Parti
         final PartitionContainer partitionContainer = mapService.getPartitionContainer(getPartitionId());
         // this should be existing record store since we don't want to trigger record store creation.
         final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+        if (recordStore == null) {
+            return;
+        }
         evictedKeyValueSequence = recordStore.clearUnLockedExpiredRecords();
     }
 
