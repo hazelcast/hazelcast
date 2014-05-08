@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * EvictionUtils.
+ * Eviction helper methods.
  */
 public final class EvictionHelper {
 

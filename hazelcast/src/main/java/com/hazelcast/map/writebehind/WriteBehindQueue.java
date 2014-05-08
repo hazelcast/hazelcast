@@ -18,7 +18,6 @@ package com.hazelcast.map.writebehind;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Main contract for write behind queues
@@ -27,9 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <E> Type of entry to be stored.
  */
 public interface WriteBehindQueue<E> {
-
-    public static final AtomicInteger OFFER = new AtomicInteger(0);
-    public static final AtomicInteger REMOVE = new AtomicInteger(0);
     /**
      * adds to the end.
      */
@@ -86,7 +82,7 @@ public interface WriteBehindQueue<E> {
     List<E>  fetchAndRemoveAll();
 
     /**
-     * TODO is enabled really needed?
+     * TODO is "enabled" really needed?
      * <p/>
      * Empty or a real queue.
      */

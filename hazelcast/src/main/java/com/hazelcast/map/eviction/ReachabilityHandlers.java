@@ -22,7 +22,7 @@ import com.hazelcast.map.MapContainer;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Static factory class.
+ * Static factory.
  */
 public final class ReachabilityHandlers {
 

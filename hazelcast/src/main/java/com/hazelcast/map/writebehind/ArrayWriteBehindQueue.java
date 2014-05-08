@@ -45,8 +45,6 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
 
     @Override
     public boolean offer(T entry) {
-//        Thread.dumpStack();
-        OFFER.incrementAndGet();
         return list.add(entry);
     }
 

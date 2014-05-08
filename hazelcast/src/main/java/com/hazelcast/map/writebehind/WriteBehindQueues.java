@@ -123,12 +123,6 @@ public final class WriteBehindQueues {
         public void shrink() {
 
         }
-
-        // Preserves singleton property
-        private Object readResolve() {
-            return EmptyWriteBehindQueueHolder.EMPTY_WRITE_BEHIND_QUEUE;
-        }
-
     }
 
 }

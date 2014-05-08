@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class StoreHandlerChain {
 
-    private static final int RETRY_COUNT_FAILED_STORE = 3;
+    private static final int RETRY_TIMES_OF_A_FAILED_STORE_OPERATION = 3;
 
     private static final int RETRY_STORE_AFTER_WAIT_SECONDS = 1;
 
@@ -272,7 +272,7 @@ public final class StoreHandlerChain {
         boolean result = false;
         Throwable throwable = null;
         int k = 0;
-        for (; k < RETRY_COUNT_FAILED_STORE; k++) {
+        for (; k < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION; k++) {
             try {
                 result = task.run();
             } catch (Throwable t) {

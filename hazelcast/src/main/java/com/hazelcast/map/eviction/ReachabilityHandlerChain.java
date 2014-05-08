@@ -24,10 +24,13 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * EvictionHandlerChain.
+ * ReachabilityHandlerChain.
  */
 public class ReachabilityHandlerChain {
 
+    /**
+     * Compares priority of handlers.
+     */
     private static final Comparator<ReachabilityHandler> NICE_VALUE_COMPARATOR = new Comparator<ReachabilityHandler>() {
         @Override
         public int compare(ReachabilityHandler o1, ReachabilityHandler o2) {
