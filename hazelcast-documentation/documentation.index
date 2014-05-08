@@ -52,7 +52,6 @@ src/IntegratedClustering.md
 	src/SpringIntegration.md
 #	src/TomcatClusteredWebSession.md
 src/Storage.md
-	src/ElasticMemory.md
 src/Clients.md
 #	src/ClientTypes.md
 		src/JavaClient.md
