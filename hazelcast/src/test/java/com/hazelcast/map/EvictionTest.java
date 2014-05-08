@@ -31,7 +31,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -526,10 +525,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
     }
 
-    // this is a wrong test.
-    // because eviction starts when map reach %95 of its size.
     @Test
-    @Category(ProblematicTest.class)
     public void testEvictionLFU2() {
         try {
             final int k = 2;
@@ -568,7 +564,6 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testMapRecordEviction() throws InterruptedException {
         int size = 1000;
         Config cfg = new Config();
