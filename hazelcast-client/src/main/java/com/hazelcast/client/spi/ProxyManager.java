@@ -270,4 +270,14 @@ public final class ProxyManager {
             }
         }
     }
+
+    private <T> T instantiateClientProxy(Class<T> proxyType, String instanceName, String serviceName, String id) {
+        try {
+            final Constructor<T> constructor = proxyType.getConstructor(CONSTRUCTOR_ARGUMENT_TYPES);
+            return constructor.newInstance(instanceName, serviceName, id);
+
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
 }
