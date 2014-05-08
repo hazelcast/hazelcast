@@ -21,10 +21,63 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.*;
-import com.hazelcast.map.operation.*;
+import com.hazelcast.map.EntryEventFilter;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapKeySet;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapValueCollection;
+import com.hazelcast.map.NearCache;
+import com.hazelcast.map.QueryEventFilter;
+import com.hazelcast.map.QueryResult;
+import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.operation.AddIndexOperation;
+import com.hazelcast.map.operation.AddInterceptorOperation;
+import com.hazelcast.map.operation.BasePutOperation;
+import com.hazelcast.map.operation.BaseRemoveOperation;
+import com.hazelcast.map.operation.ClearOperation;
+import com.hazelcast.map.operation.ContainsKeyOperation;
+import com.hazelcast.map.operation.ContainsValueOperationFactory;
+import com.hazelcast.map.operation.EntryOperation;
+import com.hazelcast.map.operation.EvictOperation;
+import com.hazelcast.map.operation.GetEntryViewOperation;
+import com.hazelcast.map.operation.GetOperation;
+import com.hazelcast.map.operation.KeyBasedMapOperation;
+import com.hazelcast.map.operation.MapEntrySetOperation;
+import com.hazelcast.map.operation.MapFlushOperation;
+import com.hazelcast.map.operation.MapGetAllOperationFactory;
+import com.hazelcast.map.operation.MapIsEmptyOperation;
+import com.hazelcast.map.operation.MapKeySetOperation;
+import com.hazelcast.map.operation.MapValuesOperation;
+import com.hazelcast.map.operation.MultipleEntryOperationFactory;
+import com.hazelcast.map.operation.PartitionCheckIfLoadedOperationFactory;
+import com.hazelcast.map.operation.PartitionWideEntryOperationFactory;
+import com.hazelcast.map.operation.PartitionWideEntryWithPredicateOperationFactory;
+import com.hazelcast.map.operation.PutAllOperation;
+import com.hazelcast.map.operation.PutIfAbsentOperation;
+import com.hazelcast.map.operation.PutOperation;
+import com.hazelcast.map.operation.PutTransientOperation;
+import com.hazelcast.map.operation.QueryOperation;
+import com.hazelcast.map.operation.QueryPartitionOperation;
+import com.hazelcast.map.operation.RemoveIfSameOperation;
+import com.hazelcast.map.operation.RemoveInterceptorOperation;
+import com.hazelcast.map.operation.RemoveOperation;
+import com.hazelcast.map.operation.ReplaceIfSameOperation;
+import com.hazelcast.map.operation.ReplaceOperation;
+import com.hazelcast.map.operation.SetOperation;
+import com.hazelcast.map.operation.SizeOperationFactory;
+import com.hazelcast.map.operation.TryPutOperation;
+import com.hazelcast.map.operation.TryRemoveOperation;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -36,13 +89,35 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryResultEntry;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
-import com.hazelcast.util.*;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
+import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.util.SortedQueryResultSet;
+import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -203,6 +278,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                         }
                     }
                 }
+
                 @Override
                 public void onFailure(Throwable t) {
                 }
@@ -1146,3 +1222,4 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
 }
+
