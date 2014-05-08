@@ -252,7 +252,7 @@ public final class ProxyManager {
         return ListenerUtil.stopListening(clientContext, request, id);
     }
 
-    private class ClientProxyFuture {
+    private static class ClientProxyFuture {
 
         volatile ClientProxy proxy;
 
