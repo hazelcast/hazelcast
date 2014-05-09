@@ -19,9 +19,11 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.eviction.EvictionHelper;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
@@ -54,6 +56,10 @@ public class ClearExpiredOperation extends AbstractMapOperation implements Parti
         if (evictedKeyValueSequence == null || evictedKeyValueSequence.isEmpty()) {
             return;
         }
+        NodeEngine nodeEngine = getNodeEngine();
+        Address owner = nodeEngine.getPartitionService().getPartitionOwner(getPartitionId());
+        boolean isOwner = nodeEngine.getThisAddress().equals(owner);
+
         for (int i = 0; i < evictedKeyValueSequence.size(); i += 2) {
             Data key = (Data) evictedKeyValueSequence.get(i);
             Object value = evictedKeyValueSequence.get(i + 1);
@@ -61,7 +67,9 @@ public class ClearExpiredOperation extends AbstractMapOperation implements Parti
             if (mapService.isNearCacheAndInvalidationEnabled(name)) {
                 mapService.invalidateAllNearCaches(name, key);
             }
-            EvictionHelper.fireEvent(key, value, name, mapService);
+            if (isOwner) {
+                EvictionHelper.fireEvent(key, value, name, mapService);
+            }
         }
     }
 

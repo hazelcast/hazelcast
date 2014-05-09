@@ -36,9 +36,9 @@ import com.hazelcast.map.writebehind.WriteBehindManager;
 import com.hazelcast.map.writebehind.WriteBehindManagers;
 import com.hazelcast.map.writebehind.store.StoreEvent;
 import com.hazelcast.map.writebehind.store.StoreListener;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -105,14 +105,12 @@ public class MapContainer {
             final MapService service = mapService;
             final NodeEngine nodeEngine = service.getNodeEngine();
             for (int partitionId = 0; partitionId < nodeEngine.getPartitionService().getPartitionCount(); partitionId++) {
-                final Address owner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-                final boolean isOwner = nodeEngine.getThisAddress().equals(owner);
-                if (!isOwner) {
-                    continue;
+                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+                if (partition.isOwnerOrBackup(nodeEngine.getThisAddress())) {
+                    final Operation expirationOperation = createExpirationOperation(partitionId);
+                    OperationService operationService = mapService.getNodeEngine().getOperationService();
+                    operationService.executeOperation(expirationOperation);
                 }
-                final Operation expirationOperation = createExpirationOperation(partitionId);
-                OperationService operationService = mapService.getNodeEngine().getOperationService();
-                operationService.executeOperation(expirationOperation);
             }
         }
     }
@@ -123,6 +121,7 @@ public class MapContainer {
                 .setNodeEngine(mapService.getNodeEngine())
                 .setCallerUuid(mapService.getNodeEngine().getLocalMember().getUuid())
                 .setPartitionId(partitionId)
+                .setValidateTarget(false)
                 .setService(mapService);
         return clearExpiredOperation;
     }
