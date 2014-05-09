@@ -238,6 +238,7 @@ public class DefaultRecordStore implements RecordStore {
     /**
      * Size may not give precise size at a specific moment
      * due to the expiration logic. But eventually, it should be correct.
+     *
      * @return
      */
     public int size() {
@@ -266,7 +267,7 @@ public class DefaultRecordStore implements RecordStore {
                 continue;
             }
             final Record record = entry.getValue();
-            if (nullIfExpired(record) == null) {
+            if (isReachable(record) == null) {
                 final Object value = record.getValue();
                 evict(key);
 
@@ -1021,7 +1022,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private Record nullIfExpired(Record record) {
-        return evictIfNotReachable(record, -1);
+        return evictIfNotReachable(record);
     }
 
     private void addToWriteBehindWaitingDeletions(Data key) {
@@ -1051,23 +1052,27 @@ public class DefaultRecordStore implements RecordStore {
      * If not reachable return null.
      *
      * @param record
-     * @param criteria
      * @return
      */
-    private Record evictIfNotReachable(Record record, long criteria) {
+    private Record evictIfNotReachable(Record record) {
         if (record == null) {
             return null;
         }
-        final Record result = mapContainer.getReachabilityHandlerChain().isReachable(record,
-                criteria, System.nanoTime());
-        if (result != null) {
-            return result;
+        Record tmpRecord = isReachable(record);
+        if (tmpRecord != null) {
+            return tmpRecord;
         }
         final Data key = record.getKey();
         final Object value = record.getValue();
         evict(key);
         doPostEvictionOperations(key, value);
         return null;
+    }
+
+    private Record isReachable(Record record) {
+        final Record result = mapContainer.getReachabilityHandlerChain().isReachable(record,
+                -1L, System.nanoTime());
+        return result != null ? result : null;
     }
 
     private void doPostEvictionOperations(Data key, Object value) {
