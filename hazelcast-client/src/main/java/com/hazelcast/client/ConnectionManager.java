@@ -268,9 +268,7 @@ public class ConnectionManager implements MembershipListener {
     private Connection searchForAvailableConnection() {
         Connection connection = null;
         popAndPush(clusterMembers);
-        if (clusterMembers.isEmpty()) {
-            clusterMembers.addAll(initialClusterMembers);
-        }
+        clusterMembers.addAll(initialClusterMembers);
         int counter = clusterMembers.size();
         while (counter > 0) {
             try {
