@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * Handles map store write operations.
  */
-class WriteStoreHandler extends AbstactStoreHandler<DelayedEntry> {
+class WriteStoreHandler extends AbstractStoreHandler<DelayedEntry> {
 
     protected WriteStoreHandler(MapStoreWrapper storeWrapper) {
         super(storeWrapper);

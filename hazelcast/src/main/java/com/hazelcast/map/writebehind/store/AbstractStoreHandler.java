@@ -24,13 +24,13 @@ import java.util.Map;
  * TODO add a batching upper limit.
  * @param <T> Type of entry.
  */
-abstract class AbstactStoreHandler<T> implements StoreHandler<T> {
+abstract class AbstractStoreHandler<T> implements StoreHandler<T> {
 
     protected StoreHandler<T> successorHandler;
 
     protected final MapStoreWrapper mapStoreWrapper;
 
-    protected AbstactStoreHandler(MapStoreWrapper storeWrapper) {
+    protected AbstractStoreHandler(MapStoreWrapper storeWrapper) {
         this.mapStoreWrapper = storeWrapper;
     }
 

@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * Handles map store delete operations.
  */
-class DeleteStoreHandler extends AbstactStoreHandler<DelayedEntry> {
+class DeleteStoreHandler extends AbstractStoreHandler<DelayedEntry> {
 
     protected DeleteStoreHandler(MapStoreWrapper storeWrapper) {
         super(storeWrapper);
