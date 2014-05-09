@@ -64,7 +64,7 @@ public final class ProxyManager {
 
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
-    private final ConcurrentMap<ObjectNamespace, ClientProxy> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxy>();
+    private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
@@ -173,26 +173,28 @@ public final class ProxyManager {
 
     public ClientProxy getProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
-        final ClientProxy proxy = proxies.get(ns);
-        if (proxy != null) {
-            return proxy;
+        ClientProxyFuture proxyFuture = proxies.get(ns);
+        if (proxyFuture != null) {
+            return proxyFuture.get();
         }
         final ClientProxyFactory factory = proxyFactories.get(service);
         if (factory == null) {
             throw new IllegalArgumentException("No factory registered for service: " + service);
         }
         final ClientProxy clientProxy = factory.create(id);
-        final ClientProxy current = proxies.putIfAbsent(ns, clientProxy);
+        final ClientProxyFuture future = new ClientProxyFuture();
+        final ClientProxyFuture current = proxies.putIfAbsent(ns, future);
         if (current != null){
-            return current;
+            return current.get();
         }
         initialize(clientProxy);
+        future.set(clientProxy);
         return clientProxy;
     }
 
     public ClientProxy removeProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
-        return proxies.remove(ns);
+        return proxies.remove(ns).get();
     }
 
     private void initialize(ClientProxy clientProxy) {
@@ -207,12 +209,16 @@ public final class ProxyManager {
     }
 
     public Collection<? extends DistributedObject> getDistributedObjects(){
-        return Collections.unmodifiableCollection(proxies.values());
+        Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
+        for (ClientProxyFuture future : proxies.values()) {
+            objects.add(future.get());
+        }
+        return objects;
     }
 
     public void destroy() {
-        for (ClientProxy proxy : proxies.values()) {
-            proxy.onShutdown();
+        for (ClientProxyFuture future : proxies.values()) {
+            future.get().onShutdown();
         }
         proxies.clear();
     }
@@ -222,10 +228,12 @@ public final class ProxyManager {
         final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>(){
             public void handle(PortableDistributedObjectEvent e) {
                 final ObjectNamespace ns = new DefaultObjectNamespace(e.getServiceName(), e.getName());
-                ClientProxy proxy = proxies.get(ns);
+                ClientProxyFuture future = proxies.get(ns);
+                ClientProxy proxy = future == null ? null : future.get();
                 if (proxy == null){
                     proxy = getProxy(e.getServiceName(), e.getName());
                 }
+
                 DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
                 if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())){
                     listener.distributedObjectCreated(event);
@@ -242,5 +250,39 @@ public final class ProxyManager {
         final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
         final ClientContext clientContext = new ClientContext(client, this);
         return ListenerUtil.stopListening(clientContext, request, id);
+    }
+
+    private static class ClientProxyFuture {
+
+        volatile ClientProxy proxy;
+
+        ClientProxy get() {
+            if (proxy == null) {
+                boolean interrupted = false;
+                synchronized (this) {
+                    while (proxy == null) {
+                        try {
+                            wait();
+                        } catch (InterruptedException e) {
+                            interrupted = true;
+                        }
+                    }
+                }
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return proxy;
+        }
+
+        void set(ClientProxy o) {
+            if (o == null) {
+                throw new IllegalArgumentException();
+            }
+            synchronized (this) {
+                proxy = o;
+                notifyAll();
+            }
+        }
     }
 }
