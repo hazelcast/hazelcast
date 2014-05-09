@@ -9,7 +9,7 @@ The metrics are local to the nodes which means they do not reflect cluster wide 
 
 You can find the JMX API definition below with descriptions and the API methods in parenthesis.
 
-** Atomic Long (`IAtomicLong`) **
+**Atomic Long (`IAtomicLong`)**
 
 *  Name ( `name` )
 *  Current Value ( `currentValue` )
@@ -23,19 +23,19 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  Increment and Get ( `incrementAndGet()` )
 *  Partition key ( `partitionKey` )
 
-** Atomic Reference ( `IAtomicReference` ) **
+**Atomic Reference ( `IAtomicReference` )**
 
 *  Name ( `name` )
 *  Partition key  ( `partitionKey`)
 
-** Countdown Latch ( `ICountDownLatch` ) **
+**Countdown Latch ( `ICountDownLatch` )**
 
 *  Name ( `name` )
 *  Current count ( `count`)
 *  Countdown ( `countDown()` )
 *  Partition key  ( `partitionKey`)
 
-** Executor Service ( `IExecutorService` ) **
+**Executor Service ( `IExecutorService` )**
 
 *  Local pending operation count ( `localPendingTaskCount` )
 *  Local started operation count ( `localStartedTaskCount` )
@@ -44,20 +44,20 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  Local total start latency ( `localTotalStartLatency` )
 *  Local total execution latency ( `localTotalExecutionLatency` )
 
-** List ( `IList` ) **
+**List ( `IList` )**
 
 *  Name ( `name` )
 *  Clear list ( `clear` )
 *  Total added item count ( `totalAddedItemCount` )
 *  Total removed item count ( `totalRemovedItemCount` )
 
-** Lock ( `ILock` ) **
+**Lock ( `ILock` )**
 
 *  Name ( `name` )
 *  Lock Object ( `lockObject` )
 *  Partition key ( `partitionKey` )
 
-** Map ( `IMap` ) **
+**Map ( `IMap` )**
 
 *  Name ( `name` )
 *  Size ( `size` )
@@ -94,7 +94,7 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  Values ( `values(p)`)
 *  Entry Set ( `entrySet(p)` )
 
-** MultiMap ( `MultiMap` ) **
+**MultiMap ( `MultiMap` )**
 
 *  Name ( `name` )
 *  Size ( `size` )
@@ -122,7 +122,7 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  Total operation count ( `localTotal` )
 *  Clear ( `clear()` )
 
-** Replicated Map ( `ReplicatedMap` ) **
+**Replicated Map ( `ReplicatedMap` )**
 
 *  Name ( `name` )
 *  Size ( `size` )
@@ -152,7 +152,7 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  Values ( `values()`)
 *  Entry Set ( `entrySet()` )
 
-** Queue ( `IQueue` ) **
+**Queue ( `IQueue` )**
 
 *  Name ( `name` )
 *  Config ( `QueueConfig` )
@@ -172,7 +172,7 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  Total removed item count ( `totalRemovedItemCount` )
 *  Clear ( `clear()` )
 
-** Semaphore ( `ISemaphore` ) **
+**Semaphore ( `ISemaphore` )**
 
 *  Name ( `name` )
 *  Available permits ( `available` )
@@ -181,7 +181,7 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  Shrink available permits by given number ( `reduce(v)` )
 *  Release given number of permits ( `release(v)` )
 
-** Set ( `ISet` ) **
+**Set ( `ISet` )**
 
 *  Name ( `name` )
 *  Partition key ( `partitionKey` )
@@ -189,7 +189,7 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  Total removed item count ( `totalRemovedItemCount` )
 *  Clear ( `clear()` )
 
-** Topic ( `ITopic` ) **
+**Topic ( `ITopic` )**
 
 *  Name ( `name` )
 *  Config ( `config` )
@@ -198,7 +198,7 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  Receive operation count ( `localReceiveOperationCount` )
 *  Total message count ( `totalMessageCount` )
 
-** Hazelcast Instance ( `HazelcastInstance` ) **
+**Hazelcast Instance ( `HazelcastInstance` )**
 
 *  Name ( `name` )
 *  Version ( `version` )
@@ -212,32 +212,32 @@ You can find the JMX API definition below with descriptions and the API methods 
 *  List of members ( `Members` )
 *  Running state ( `running` )
 *  Shutdown the member ( `shutdown()` )
-*  ** Node ( `HazelcastInstance.Node` )**
+*  **Node ( `HazelcastInstance.Node` )**
  *  Address ( `address` )
  *  Master address ( `masterAddress` )
-* ** Event Service ( `HazelcastInstance.EventService` ) **
+* **Event Service ( `HazelcastInstance.EventService` )**
  *  Event thread count  ( `eventThreadCount` )
  *  Event queue size ( `eventQueueSize` )
  *  Event queue capacity ( `eventQueueCapacity` )
-* ** Operation Service ( `HazelcastInstance.OperationService` ) **
+* **Operation Service ( `HazelcastInstance.OperationService` )**
  *  Response queue size  ( `responseQueueSize` )
  *  Operation executor queue size ( `operationExecutorQueueSize` )
  *  Running operation count ( `runningOperationsCount` )
  *  Remote operation count ( `remoteOperationCount` )
  *  Executed operation count ( `executedOperationCount` )
  *  Operation thread count ( `operationThreadCount` )
-* ** Proxy Service ( `HazelcastInstance.ProxyService` ) **
+* **Proxy Service ( `HazelcastInstance.ProxyService` )**
  *  Proxy count ( `proxyCount` )
-* ** Partition Service ( `HazelcastInstance.PartitionService` ) **
+* **Partition Service ( `HazelcastInstance.PartitionService` )**
  *  Partition count ( `partitionCount` )
  *  Active partition count ( `activePartitionCount` )
-* ** Connection Manager ( `HazelcastInstance.ConnectionManager` ) **
+* **Connection Manager ( `HazelcastInstance.ConnectionManager` )**
  *  Client connection count ( `clientConnectionCount` )
  *  Active connection count ( `activeConnectionCount` )
  *  Connection count ( `connectionCount` )
-* ** Client Engine ( `HazelcastInstance.ClientEngine` ) **
+* **Client Engine ( `HazelcastInstance.ClientEngine` )**
  *  Client endpoint count ( `clientEndpointCount` )
-* ** System Executor ( `HazelcastInstance.ManagedExecutorService` ) **
+* **System Executor ( `HazelcastInstance.ManagedExecutorService` )**
  *  Name ( `name` )
  *  Work queue size ( `queueSize` )
  *  Thread count of the pool ( `poolSize` )
@@ -246,7 +246,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Is shutdown ( `isShutdowm` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
-* ** Operation Executor ( `HazelcastInstance.ManagedExecutorService` ) **
+* **Operation Executor ( `HazelcastInstance.ManagedExecutorService` )**
  *  Name ( `name` )
  *  Work queue size ( `queueSize` )
  *  Thread count of the pool ( `poolSize` )
@@ -255,7 +255,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Is shutdown ( `isShutdowm` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
-* ** Async Executor (`HazelcastInstance.ManagedExecutorService`) **
+* **Async Executor (`HazelcastInstance.ManagedExecutorService`)**
  *  Name ( `name` )
  *  Work queue size ( `queueSize` )
  *  Thread count of the pool ( `poolSize` )
@@ -264,7 +264,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Is shutdown ( `isShutdowm` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
-* ** Scheduled Executor ( `HazelcastInstance.ManagedExecutorService` ) **
+* **Scheduled Executor ( `HazelcastInstance.ManagedExecutorService` )**
  *  Name ( `name` )
  *  Work queue size ( `queueSize` )
  *  Thread count of the pool ( `poolSize` )
@@ -273,7 +273,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Is shutdown ( `isShutdowm` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
-* ** Client Executor ( `HazelcastInstance.ManagedExecutorService` ) **
+* **Client Executor ( `HazelcastInstance.ManagedExecutorService` )**
  *  Name ( `name` )
  *  Work queue size ( `queueSize` )
  *  Thread count of the pool ( `poolSize` )
@@ -282,7 +282,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Is shutdown ( `isShutdowm` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
-* ** Query Executor ( `HazelcastInstance.ManagedExecutorService` ) **
+* **Query Executor ( `HazelcastInstance.ManagedExecutorService` )**
  *  Name ( `name` )
  *  Work queue size ( `queueSize` )
  *  Thread count of the pool ( `poolSize` )
@@ -291,7 +291,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Is shutdown ( `isShutdowm` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
-* ** IO Executor ( `HazelcastInstance.ManagedExecutorService` ) **
+* **IO Executor ( `HazelcastInstance.ManagedExecutorService` )**
  *  Name ( `name` )
  *  Work queue size ( `queueSize` )
  *  Thread count of the pool ( `poolSize` )
