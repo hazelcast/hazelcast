@@ -1,0 +1,88 @@
+/*
+* Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+package com.hazelcast.map.operation;
+
+import com.hazelcast.map.PartitionContainer;
+import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.eviction.EvictionHelper;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.PartitionAwareOperation;
+
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * Clear expired records.
+ */
+public class ClearExpiredOperation extends AbstractMapOperation implements PartitionAwareOperation {
+
+    private List evictedKeyValueSequence;
+
+    public ClearExpiredOperation(String name) {
+        super(name);
+    }
+
+    @Override
+    public void run() throws Exception {
+        final PartitionContainer partitionContainer = mapService.getPartitionContainer(getPartitionId());
+        // this should be existing record store since we don't want to trigger record store creation.
+        final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+        if (recordStore == null) {
+            return;
+        }
+        evictedKeyValueSequence = recordStore.clearUnLockedExpiredRecords();
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (evictedKeyValueSequence == null || evictedKeyValueSequence.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < evictedKeyValueSequence.size(); i += 2) {
+            Data key = (Data) evictedKeyValueSequence.get(i);
+            Object value = evictedKeyValueSequence.get(i + 1);
+            mapService.interceptAfterRemove(name, value);
+            if (mapService.isNearCacheAndInvalidationEnabled(name)) {
+                mapService.invalidateAllNearCaches(name, key);
+            }
+            EvictionHelper.fireEvent(key, value, name, mapService);
+        }
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String toString() {
+        return "ClearExpiredOperation{}";
+    }
+}

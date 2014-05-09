@@ -1117,6 +1117,11 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPutWithTtl2() throws InterruptedException {
+    }
+
+
+    @Test
     public void testPutWithTtl() throws InterruptedException {
         IMap<String, String> map = getInstance().getMap("testPutWithTtl");
         final CountDownLatch latch = new CountDownLatch(1);

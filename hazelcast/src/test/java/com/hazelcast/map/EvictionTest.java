@@ -31,7 +31,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,10 +46,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class EvictionTest extends HazelcastTestSupport {
@@ -332,9 +331,10 @@ public class EvictionTest extends HazelcastTestSupport {
         final int size = 10;
         final String mapName = "testEvictionPerPartition";
         Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
         final MapConfig mc = cfg.getMapConfig(mapName);
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
-        mc.setEvictionPercentage(25);
+        mc.setEvictionPercentage(50);
         final MaxSizeConfig msc = new MaxSizeConfig();
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
         msc.setSize(size);
@@ -345,13 +345,16 @@ public class EvictionTest extends HazelcastTestSupport {
         int insertCount = size * pnum * 2;
         final Map map = instances[0].getMap(mapName);
         for (int i = 0; i < insertCount; i++) {
+            if (i == insertCount - 1) {
+                sleepMillis(1100);
+            }
             map.put(i, i);
         }
-        Thread.sleep(2000);
+        System.out.println(map.size());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(map.size() < size * pnum * (100 - mc.getEvictionPercentage()) / 100);
+                assertTrue(map.size() < size);
             }
         });
     }
@@ -426,7 +429,7 @@ public class EvictionTest extends HazelcastTestSupport {
         sleepSeconds(3);
 
         int recentlyUsedEvicted = 0;
-        for (int i = 0; i < size/2; i++) {
+        for (int i = 0; i < size / 2; i++) {
             if (map.get(i) == null) {
                 recentlyUsedEvicted++;
             }
@@ -435,7 +438,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictionLFU_statisticsDisabled(){
+    public void testEvictionLFU_statisticsDisabled() {
         final String mapName = randomMapName("_testEvictionLFU_statisticsDisabled_");
         final int instanceCount = 1;
         final int size = 10000;
@@ -480,8 +483,6 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
 
-
-
     @Test
     public void testEvictionLFU() {
         final String mapName = "testEvictionLFU_" + randomString();
@@ -524,10 +525,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
     }
 
-    // this is a wrong test.
-    // because eviction starts when map reach %95 of its size.
     @Test
-    @Category(ProblematicTest.class)
     public void testEvictionLFU2() {
         try {
             final int k = 2;
@@ -566,7 +564,6 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testMapRecordEviction() throws InterruptedException {
         int size = 1000;
         Config cfg = new Config();
