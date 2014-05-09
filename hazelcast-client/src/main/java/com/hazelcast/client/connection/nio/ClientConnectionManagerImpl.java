@@ -603,10 +603,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return lock;
     }
 
-    public int getMaxFailedHeartbeatCount() {
-        return maxFailedHeartbeatCount;
-    }
-
     class HeartBeat implements Runnable {
 
         long begin;
@@ -660,7 +656,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         }
     }
 
-    public void closeConnectionsIfDummyClient() {
+    public void connectionMarkedAsNotResponsive(ClientConnection connection) {
         if (smartRouting) {
             return;
         }
@@ -668,11 +664,9 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             ownerConnection.close();
         } catch (Exception ignored) {
         }
-        for (ClientConnection connection : connections.values()) {
-            try {
-                connection.close();
-            } catch (Exception ignored) {
-            }
+        try {
+            connection.close();
+        } catch (Exception ignored) {
         }
     }
 }

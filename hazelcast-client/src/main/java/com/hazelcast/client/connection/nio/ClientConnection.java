@@ -16,11 +16,9 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
@@ -370,7 +368,7 @@ public class ClientConnection implements Connection, Closeable {
     void heartBeatingFailed() {
         failedHeartBeat++;
         if (failedHeartBeat == connectionManager.maxFailedHeartbeatCount) {
-            connectionManager.closeConnectionsIfDummyClient();
+            connectionManager.connectionMarkedAsNotResponsive(this);
             final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
             final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
 
