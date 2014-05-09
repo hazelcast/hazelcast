@@ -68,9 +68,11 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             } else {
                 vectorClock = current.getVectorClock();
                 oldValue = (V) current.getValue();
-                current.setValue(null, 0, -1);
-                vectorClock.incrementClock(localMember);
 
+                // Force removal of the underlying stored entry
+                storage.remove(marshalledKey, current);
+
+                vectorClock.incrementClock(localMember);
                 ReplicationMessage message = buildReplicationMessage(key, null, vectorClock, -1);
                 replicationPublisher.publishReplicatedMessage(message);
             }

@@ -361,6 +361,11 @@ public class ReplicationPublisher<K, V>
         long oldTtlMillis = localEntry.getTtlMillis();
         Object oldValue = localEntry.setValue(marshalledValue, update.getUpdateHash(), ttlMillis);
 
+        if (update.isRemove()) {
+            // Force removal of the underlying stored entry
+            storage.remove(marshalledKey, localEntry);
+        }
+
         localVectorClock.applyVector(remoteVectorClock);
         if (ttlMillis > 0) {
             replicatedRecordStore.scheduleTtlEntry(ttlMillis, marshalledKey, null);

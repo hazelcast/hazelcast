@@ -59,6 +59,10 @@ class InternalReplicatedMapStorage<K, V> {
         return storage.put(key, replicatedRecord);
     }
 
+    public boolean remove(K key, ReplicatedRecord<K, V> replicatedRecord) {
+        return storage.remove(key, replicatedRecord);
+    }
+
     public boolean containsKey(Object key) {
         return storage.containsKey(key);
     }
