@@ -295,6 +295,11 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                         throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                 }
             }
+
+            @Override
+            public void onListenerRegister() {
+
+            }
         };
     }
 
