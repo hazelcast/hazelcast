@@ -118,7 +118,7 @@ public final class ClassLoaderUtil {
             throws ClassNotFoundException {
 
         if (className.startsWith("[")) {
-            return Class.forName(className, true, classLoader);
+            return Class.forName(className, false, classLoader);
         } else {
             return classLoader.loadClass(className);
         }
