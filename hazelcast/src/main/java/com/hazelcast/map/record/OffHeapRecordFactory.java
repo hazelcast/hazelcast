@@ -47,7 +47,7 @@ public class OffHeapRecordFactory implements RecordFactory<Data> {
     @Override
     public Record<Data> newRecord(Data key, Object value) {
         Data v = serializationService.toData(value, partitionStrategy);
-        return new OffHeapRecord(storage, key, v, statisticsEnabled);
+        return statisticsEnabled ? new OffHeapRecordWithStats(storage, key, v) : new OffHeapRecord(storage, key, v);
     }
 
     @Override

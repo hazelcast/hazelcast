@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -212,7 +213,7 @@ public class ReplicatedMapTest
         testAddTtl(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
-    @Test
+    @Category(ProblematicTest.class)
     public void testAddTtlObjectDelayDefault()
             throws Exception {
 
@@ -226,7 +227,7 @@ public class ReplicatedMapTest
         testAddTtl(buildConfig(InMemoryFormat.BINARY, 0));
     }
 
-    @Test
+    @Category(ProblematicTest.class)
     public void testAddTtlBinaryDelayDefault()
             throws Exception {
 
