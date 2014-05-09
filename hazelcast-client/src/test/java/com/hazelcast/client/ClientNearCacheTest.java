@@ -43,7 +43,6 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Repeat(10)
 public class ClientNearCacheTest {
 
     private static final int MAX_CACHE_SIZE = 100;
