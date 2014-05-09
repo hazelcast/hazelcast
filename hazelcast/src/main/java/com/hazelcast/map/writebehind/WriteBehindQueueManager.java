@@ -274,9 +274,11 @@ class WriteBehindQueueManager implements WriteBehindManager {
                 final WriteBehindQueue<DelayedEntry> queue = recordStore.getWriteBehindQueue();
                 final List<DelayedEntry> delayedEntries = filterLessThanOrEqualToTime(queue,
                         now, TimeUnit.NANOSECONDS);
-                if (!owner.equals(thisAddress) && now > lastRunTimeInNanos + backupWorkIntervalTimeInNanos) {
-                    doInBackup(queue, delayedEntries, partitionId);
-                    lastRunTimeInNanos = now;
+                if (!owner.equals(thisAddress)) {
+                    if (now < lastRunTimeInNanos + backupWorkIntervalTimeInNanos) {
+                        doInBackup(queue, delayedEntries, partitionId);
+                        lastRunTimeInNanos = now;
+                    }
                     continue;
                 }
                 if (delayedEntries.size() == 0) {
