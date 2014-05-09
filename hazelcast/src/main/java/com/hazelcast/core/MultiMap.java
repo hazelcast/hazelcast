@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 
 import java.util.Collection;
@@ -455,4 +457,17 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      */
     LocalMultiMapStats getLocalMultiMapStats();
 
+    /**
+     * Executes a predefined aggregation on the multimaps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
+     * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
+     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
+     *
+     * @param supplier         the supplier to select and / or extract a (sub-)value from the multimap
+     * @param aggregation      the aggregation that is being executed against the multimap
+     * @param <SuppliedValue>  the final type emitted from the supplier
+     * @param <Result>         the resulting aggregation value type
+     * @return Returns the aggregated value
+     */
+    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, SuppliedValue, Result> aggregation);
 }
