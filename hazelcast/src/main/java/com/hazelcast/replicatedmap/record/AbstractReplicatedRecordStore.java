@@ -95,7 +95,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
         // Force return null on ttl expiration (but before cleanup thread run)
         long ttlMillis = replicatedRecord == null ? 0 : replicatedRecord.getTtlMillis();
-        if (ttlMillis > 0 && System.currentTimeMillis() - replicatedRecord.getUpdateTime() > ttlMillis) {
+        if (ttlMillis > 0 && System.currentTimeMillis() - replicatedRecord.getUpdateTime() >= ttlMillis) {
             replicatedRecord = null;
         }
 

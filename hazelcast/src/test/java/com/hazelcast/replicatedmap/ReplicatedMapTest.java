@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.record.ReplicatedRecord;
+import com.hazelcast.replicatedmap.record.ReplicationPublisher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -49,7 +50,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -256,6 +256,13 @@ public class ReplicatedMapTest
             }
         }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
 
+        // Prevent further updates
+        getReplicationPublisher(map2).emptyReplicationQueue();
+        getReplicationPublisher(map1).emptyReplicationQueue();
+
+        // Give a bit of time to process last batch of updates
+        TimeUnit.SECONDS.sleep(2);
+
         Set<Entry<String, String>> map2entries = map2.entrySet();
         for (Map.Entry<String, String> entry : map2entries) {
             assertStartsWith("foo-", entry.getKey());
@@ -280,15 +287,22 @@ public class ReplicatedMapTest
             record.setValue(record.getValue(), record.getLatestUpdateHash(), 1);
         }
 
-        Thread.sleep(2000);
-
+        int map2Updated = 0;
         for (Map.Entry<String, String> entry : map2entries) {
-            assertNull(map2.get(entry.getKey()));
+            if (map2.get(entry.getKey()) == null) {
+                map2Updated++;
+            }
         }
 
+        int map1Updated = 0;
         for (Map.Entry<String, String> entry : map1entries) {
-            assertNull(map1.get(entry.getKey()));
+            if (map1.get(entry.getKey()) == null) {
+                map1Updated++;
+            }
         }
+
+        assertMatchSuccessfulOperationQuota(0.75, map2entries.size(), map2Updated);
+        assertMatchSuccessfulOperationQuota(0.75, map1entries.size(), map1Updated);
     }
 
     @Test
@@ -1051,6 +1065,13 @@ public class ReplicatedMapTest
         ReplicatedMapProxy proxy = (ReplicatedMapProxy) map;
         AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) REPLICATED_RECORD_STORE.get(proxy);
         return store.getReplicatedRecord(key);
+    }
+
+    private <K, V> ReplicationPublisher<K, V> getReplicationPublisher(ReplicatedMap<K, V> map)
+            throws Exception {
+        ReplicatedMapProxy proxy = (ReplicatedMapProxy) map;
+        AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) REPLICATED_RECORD_STORE.get(proxy);
+        return store.getReplicationPublisher();
     }
 
     private AbstractMap.SimpleEntry<Integer, Integer>[] buildTestValues() {
