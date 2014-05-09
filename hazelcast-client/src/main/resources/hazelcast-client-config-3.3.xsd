@@ -25,6 +25,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="group" type="cluster-group" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="executor-pool-size" type="executor-pool-size" minOccurs="0" maxOccurs="1"
                             default="100"/>
@@ -39,7 +40,7 @@
         </xs:complexType>
     </xs:element>
     <!--NETWORK-->
-   <xs:complexType name="network">
+    <xs:complexType name="network">
         <xs:sequence>
             <xs:element ref="cluster-members" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="smart-routing" minOccurs="0" maxOccurs="1"/>
