@@ -34,7 +34,6 @@ public final class ClassLoaderUtil {
     public static final String HAZELCAST_ARRAY = "[L" + HAZELCAST_BASE_PACKAGE;
 
     private static final Map<String, Class> PRIMITIVE_CLASSES;
-    // boolean.class.getName().length();
     private static final int MAX_PRIM_CLASSNAME_LENGTH = 7;
 
     private static final ConstructorCache CONSTRUCTOR_CACHE = new ConstructorCache();
@@ -120,7 +119,7 @@ public final class ClassLoaderUtil {
             throws ClassNotFoundException {
 
         if (className.startsWith("[")) {
-            return Class.forName(className, true, classLoader);
+            return Class.forName(className, false, classLoader);
         } else {
             return classLoader.loadClass(className);
         }
