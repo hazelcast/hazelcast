@@ -450,7 +450,6 @@ public class DefaultRecordStore implements RecordStore {
 
     public Object evict(Data dataKey) {
         checkIfLoaded();
-        earlyWriteCleanup();
 
         Record record = records.get(dataKey);
         Object oldValue = null;

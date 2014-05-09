@@ -400,29 +400,29 @@ public class MapStoreTest extends HazelcastTestSupport {
         final AtomicInteger loadCount = new AtomicInteger(0);
         final AtomicInteger storeCount = new AtomicInteger(0);
         final AtomicInteger deleteCount = new AtomicInteger(0);
-        class SimpleMapStore2<K, V> extends SimpleMapStore<K, V> {
+        class SimpleMapStore2 extends SimpleMapStore<String, Long> {
 
-            SimpleMapStore2(ConcurrentMap<K, V> store) {
+            SimpleMapStore2(ConcurrentMap<String, Long> store) {
                 super(store);
             }
 
-            public V load(K key) {
+            public Long load(String key) {
                 loadCount.incrementAndGet();
                 return super.load(key);
             }
 
-            public void store(K key, V value) {
+            public void store(String key, Long value) {
                 storeCount.incrementAndGet();
                 super.store(key, value);
             }
 
-            public void delete(K key) {
+            public void delete(String key) {
                 deleteCount.incrementAndGet();
                 super.delete(key);
             }
         }
         final ConcurrentMap<String, Long> store = new ConcurrentHashMap<String, Long>();
-        final MapStore<String, Long> myMapStore = new SimpleMapStore2<String, Long>(store);
+        final MapStore<String, Long> myMapStore = new SimpleMapStore2(store);
         Config config = new Config();
         config
                 .getMapConfig("myMap")
