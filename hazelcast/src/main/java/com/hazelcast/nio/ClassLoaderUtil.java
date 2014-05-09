@@ -56,7 +56,8 @@ public final class ClassLoaderUtil {
     private ClassLoaderUtil() {
     }
 
-    public static <T> T newInstance(ClassLoader classLoader, final String className) throws Exception {
+    public static <T> T newInstance(ClassLoader classLoader, final String className)
+            throws Exception {
         classLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
         Constructor<T> constructor = CONSTRUCTOR_CACHE.get(classLoader, className);
         if (constructor != null) {
@@ -66,7 +67,8 @@ public final class ClassLoaderUtil {
         return (T) newInstance(klass, classLoader, className);
     }
 
-    public static <T> T newInstance(Class<T> klass, ClassLoader classLoader, String className) throws Exception {
+    public static <T> T newInstance(Class<T> klass, ClassLoader classLoader, String className)
+            throws Exception {
         final Constructor<T> constructor = klass.getDeclaredConstructor();
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
@@ -93,7 +95,7 @@ public final class ClassLoaderUtil {
         // First try to load it through the given classloader
         if (theClassLoader != null) {
             try {
-                return theClassLoader.loadClass(className);
+                return tryLoadClass(className, theClassLoader);
             } catch (ClassNotFoundException ignore) {
 
                 // Reset selected classloader and try with others
@@ -109,18 +111,25 @@ public final class ClassLoaderUtil {
             theClassLoader = Thread.currentThread().getContextClassLoader();
         }
         if (theClassLoader != null) {
-            if (className.startsWith("[")) {
-                return Class.forName(className, true, theClassLoader);
-            } else {
-                return theClassLoader.loadClass(className);
-            }
+            return tryLoadClass(className, theClassLoader);
         }
         return Class.forName(className);
     }
 
+    private static Class<?> tryLoadClass(String className, ClassLoader classLoader)
+            throws ClassNotFoundException {
+
+        if (className.startsWith("[")) {
+            return Class.forName(className, true, classLoader);
+        } else {
+            return classLoader.loadClass(className);
+        }
+    }
+
     public static boolean isInternalType(Class type) {
-        return type.getClassLoader() == ClassLoaderUtil.class.getClassLoader()
-                && type.getName().startsWith(HAZELCAST_BASE_PACKAGE);
+        String name = type.getName();
+        ClassLoader classLoader = ClassLoaderUtil.class.getClassLoader();
+        return type.getClassLoader() == classLoader && name.startsWith(HAZELCAST_BASE_PACKAGE);
     }
 
     private static final class ConstructorCache {
@@ -159,5 +168,4 @@ public final class ClassLoaderUtil {
             return (Constructor<T>) constructor;
         }
     }
-
 }
