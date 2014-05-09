@@ -26,9 +26,10 @@ import java.util.List;
  *
  * @param <T> Type of entry to be queued.
  */
+// TODO: add a max capacity and reject when capacity is full to apply back-pressure to the operation-thread/caller.
 class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
 
-    private static final int INITIAL_CAPACITY = 1024;
+    private static final int INITIAL_CAPACITY = 16;
 
     private List<T> list;
 
