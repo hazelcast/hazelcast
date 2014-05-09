@@ -436,6 +436,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public void reset() {
         checkIfLoaded();
+
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
@@ -449,6 +450,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public Object evict(Data dataKey) {
         checkIfLoaded();
+        earlyWriteCleanup();
 
         Record record = records.get(dataKey);
         Object oldValue = null;
@@ -783,6 +785,7 @@ public class DefaultRecordStore implements RecordStore {
     public Object replace(Data dataKey, Object value) {
         checkIfLoaded();
         earlyWriteCleanup();
+
         Record record = records.get(dataKey);
         Object oldValue;
         if (record != null && record.getValue() != null) {
@@ -803,6 +806,7 @@ public class DefaultRecordStore implements RecordStore {
     public boolean replace(Data dataKey, Object testValue, Object newValue) {
         checkIfLoaded();
         earlyWriteCleanup();
+
         Record record = records.get(dataKey);
         if (record == null)
             return false;

@@ -38,7 +38,7 @@ import java.util.Map;
 public final class EvictionHelper {
 
     private static final int ONE_HUNDRED_PERCENT = 100;
-    private static final int EVICTION_START_THRESHOLD_PERCENT = 95;
+    private static final int EVICTION_START_THRESHOLD_PERCENTAGE = 95;
     private static final int ONE_KILOBYTE = 1024;
 
     private EvictionHelper() {
@@ -229,7 +229,7 @@ public final class EvictionHelper {
     private static int getApproximateMaxSize(int maxSizeFromConfig) {
         // because not to exceed the max size much we start eviction early.
         // so decrease the max size with ratio .95 below
-        return maxSizeFromConfig * EVICTION_START_THRESHOLD_PERCENT / ONE_HUNDRED_PERCENT;
+        return maxSizeFromConfig * EVICTION_START_THRESHOLD_PERCENTAGE / ONE_HUNDRED_PERCENT;
     }
 
     private static boolean isEvictablePerPartition(final MapContainer mapContainer) {

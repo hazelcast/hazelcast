@@ -31,7 +31,6 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
     protected long creationTime;
     protected long lastAccessTime;
     protected long lastUpdatedTime;
-    protected volatile byte flags;
 
     public AbstractBaseRecord() {
         version = 0L;
@@ -93,16 +92,6 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
     @Override
     public void setLastUpdatedTime(long lastUpdatedTime) {
         this.lastUpdatedTime = lastUpdatedTime;
-    }
-
-    @Override
-    public byte getFlags() {
-        return flags;
-    }
-
-    @Override
-    public void setFlags(byte flags) {
-        this.flags = flags;
     }
 
     @Override

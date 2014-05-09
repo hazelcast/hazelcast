@@ -84,9 +84,5 @@ public final class WriteBehindManagers {
             return Collections.emptyList();
         }
 
-        // Preserves singleton property
-        private Object readResolve() {
-            return EmptyWriteBehindQueueManagerHolder.EMPTY_WRITE_BEHIND_QUEUE_MANAGER;
-        }
     }
 }

@@ -47,7 +47,6 @@ public class MapReplicationOperation extends AbstractOperation {
 
     private Map<String, Set<RecordReplicationInfo>> data;
     private Map<String, Boolean> mapInitialLoadInfo;
-    // TODO refactor or remove SerializableWriteBehindQueue.
     private Map<String, List<DelayedEntry>> delayedEntries;
 
     public MapReplicationOperation() {
@@ -86,7 +85,6 @@ public class MapReplicationOperation extends AbstractOperation {
         delayedEntries = new HashMap<String, List<DelayedEntry>>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
             RecordStore recordStore = entry.getValue();
-//            final List<DelayedEntry> delayedEntries = recordStore.getWriteBehindQueue().fetchAndRemoveAll();
             final List<DelayedEntry> delayedEntries = recordStore.getWriteBehindQueue().getSnapShot().asList();
             if (delayedEntries != null && delayedEntries.size() == 0) {
                 continue;

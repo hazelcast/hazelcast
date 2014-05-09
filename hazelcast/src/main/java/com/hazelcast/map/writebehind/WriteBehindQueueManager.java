@@ -277,6 +277,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
                 if (!owner.equals(thisAddress) && now > lastRunTimeInNanos + backupWorkIntervalTimeInNanos) {
                     doInBackup(queue, delayedEntries, partitionId);
                     lastRunTimeInNanos = now;
+                    continue;
                 }
                 if (delayedEntries.size() == 0) {
                     continue;
@@ -307,7 +308,6 @@ class WriteBehindQueueManager implements WriteBehindManager {
          * @param partitionId
          */
         private void doInBackup(final WriteBehindQueue queue, final List<DelayedEntry> delayedEntries, final int partitionId) {
-
             final NodeEngine nodeEngine = mapService.getNodeEngine();
             final ClusterService clusterService = nodeEngine.getClusterService();
             final InternalPartitionService partitionService = nodeEngine.getPartitionService();
@@ -319,7 +319,6 @@ class WriteBehindQueueManager implements WriteBehindManager {
                 removeProcessed(queue, delayedEntries.size());
                 storeHandlerChain.callAfterStoreListeners(delayedEntries);
             }
-
         }
 
         private static long nanoNow() {

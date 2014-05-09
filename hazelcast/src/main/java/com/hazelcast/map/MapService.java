@@ -170,7 +170,6 @@ public class MapService implements ManagedService, MigrationAwareService,
                 }
             });
         }
-//        mapEvictionManager.init();
     }
 
     public void reset() {
@@ -450,22 +449,6 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
         return createRecord(name, dataKey, value, ttl, true);
-    }
-
-    public Record createCopyOfRecord(String mapName, Record record) {
-        assert record != null;
-
-        MapContainer mapContainer = getMapContainer(mapName);
-        Record newRecord = mapContainer.getRecordFactory().newRecord(record.getKey(), record.getValue());
-        newRecord.setVersion(record.getVersion());
-        newRecord.setLastAccessTime(record.getLastAccessTime());
-        newRecord.setLastUpdatedTime(record.getLastUpdatedTime());
-        newRecord.setFlags(record.getFlags());
-        newRecord.setCachedValue(record.getCachedValue());
-        newRecord.setCreationTime(record.getCreationTime());
-        newRecord.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
-        newRecord.setStatistics(record.getStatistics());
-        return newRecord;
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl, boolean shouldSchedule) {
