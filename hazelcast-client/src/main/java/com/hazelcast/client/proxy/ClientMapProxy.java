@@ -879,6 +879,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                         throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                 }
             }
+
+            @Override
+            public void onListenerRegister() {
+
+            }
         };
     }
 
