@@ -93,9 +93,11 @@ public final class SerializationConstants {
     // ------------------------------------------------------------
     // HIBERNATE SERIALIZERS
 
-    public static final int HIBERNATE_TYPE_HIBERNATE_CACHE_KEY = -200;
+    public static final int HIBERNATE3_TYPE_HIBERNATE_CACHE_KEY = -200;
+    public static final int HIBERNATE3_TYPE_HIBERNATE_CACHE_ENTRY = -201;
 
-    public static final int HIBERNATE_TYPE_HIBERNATE_CACHE_ENTRY = -201;
+    public static final int HIBERNATE4_TYPE_HIBERNATE_CACHE_KEY = -202;
+    public static final int HIBERNATE4_TYPE_HIBERNATE_CACHE_ENTRY = -203;
 
     private SerializationConstants() {}
 }

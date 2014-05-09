@@ -21,7 +21,6 @@ import com.hazelcast.client.standalone.model.MyElement;
 import com.hazelcast.client.standalone.model.MyKey;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
@@ -33,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
@@ -46,7 +46,8 @@ public class ClientMapStandaloneTest {
     static HazelcastInstance client;
 
     static {
-        FILTERING_CLASS_LOADER = new FilteringClassLoader(Arrays.asList(new String[]{"com.hazelcast.client.standalone.model"}));
+        List<String> excludes = Arrays.asList(new String[]{"com.hazelcast.client.standalone.model"});
+        FILTERING_CLASS_LOADER = new FilteringClassLoader(excludes, "com.hazelcast");
     }
 
     @BeforeClass

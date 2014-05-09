@@ -52,7 +52,9 @@ final class SerializerHookLoader {
             while (hooks.hasNext()) {
                 final SerializerHook hook = hooks.next();
                 final Class serializationType = hook.getSerializationType();
-                serializers.put(serializationType, hook);
+                if (serializationType != null) {
+                    serializers.put(serializationType, hook);
+                }
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
