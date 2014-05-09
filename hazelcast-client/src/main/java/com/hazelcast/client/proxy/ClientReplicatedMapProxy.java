@@ -119,10 +119,12 @@ public class ClientReplicatedMapProxy<K, V>
         }
 
         ReplicatedMapGetResponse response = invoke(new ClientReplicatedMapGetRequest(getName(), key));
+
+        V value = (V) response.getValue();
         if (nearCache != null) {
-            nearCache.put(key, response.getValue());
+            nearCache.put(key, value);
         }
-        return (V) response.getValue();
+        return value;
     }
 
     @Override

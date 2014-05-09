@@ -48,15 +48,25 @@ public class ClientReplicatedMapGetRequest
     @Override
     public Object call()
             throws Exception {
+
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
         ReplicatedRecord record = recordStore.getReplicatedRecord(key);
-        return new ReplicatedMapGetResponse(recordStore.unmarshallValue(record.getValue()), record.getTtlMillis(),
-                record.getUpdateTime());
+
+        Object value = null;
+        long ttl = 0;
+        long updateTime = 0;
+        if (record != null) {
+            value = recordStore.unmarshallValue(record.getValue());
+            ttl = record.getTtlMillis();
+            updateTime = record.getUpdateTime();
+        }
+        return new ReplicatedMapGetResponse(value, ttl, updateTime);
     }
 
     @Override
     public void write(PortableWriter writer)
             throws IOException {
+
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(key);
@@ -65,6 +75,7 @@ public class ClientReplicatedMapGetRequest
     @Override
     public void read(PortableReader reader)
             throws IOException {
+
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
         key = in.readObject();
