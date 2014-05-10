@@ -84,7 +84,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
         this.logger = mapService.getNodeEngine().getLogger(WriteBehindQueueManager.class);
         this.executorName = EXECUTOR_NAME_PREFIX + mapName;
         this.listeners = new ArrayList<StoreListener>(2);
-        this.mapStoreManager = MapStoreManagers.newMapStoremanager(mapService, storeWrapper, listeners);
+        this.mapStoreManager = MapStoreManagers.newMapStoreManager(mapService, storeWrapper, listeners);
         this.processor = new StoreProcessor(mapName, mapService, mapStoreManager, this);
     }
 

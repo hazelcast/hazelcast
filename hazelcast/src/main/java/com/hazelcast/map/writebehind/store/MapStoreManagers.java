@@ -29,7 +29,7 @@ public final class MapStoreManagers {
     private MapStoreManagers() {
     }
 
-    public static MapStoreManager newMapStoremanager(MapService mapService,
+    public static MapStoreManager newMapStoreManager(MapService mapService,
                                                      MapStoreWrapper storeWrapper, List<StoreListener> storeListeners) {
         return new DefaultMapStoreManager(mapService, storeWrapper, storeListeners);
     }
