@@ -97,13 +97,13 @@ public class WanReplicationTest extends HazelcastTestSupport{
     }
 
 
-    private List getClusterEndPoints(Config config, int count){
-        List ends = new ArrayList<String>();
+    private List<String> getClusterEndPoints(Config config, int count){
+        List<String> ends = new ArrayList<String>();
 
         int port = config.getNetworkConfig().getPort();
 
         for(int i=0; i<count; i++){
-            ends.add(new String("127.0.0.1:"+port++ ) );
+            ends.add( "127.0.0.1:"+port++ );
         }
         return ends;
     }
@@ -135,32 +135,47 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     private void createDataIn(HazelcastInstance[] cluster, String mapName, int start, int end){
         HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for(; start<end; start++)
+        IMap<Integer, String> m = node.getMap(mapName);
+        for(; start<end; start++){
             m.put(start, node.getConfig().getGroupConfig().getName()+start);
+        }
     }
 
     private void increaseHitCount(HazelcastInstance[] cluster, String mapName, int start, int end, int repeat) {
         HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for(; start<end; start++)
-            for(int i=0; i<repeat; i++)
-            m.get(start);
+        IMap<Integer, String> m = node.getMap(mapName);
+        for(; start<end; start++){
+            for(int i=0; i<repeat; i++){
+                m.get(start);
+            }
+        }
     }
 
     private void removeDataIn(HazelcastInstance[] cluster, String mapName, int start, int end){
         HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for(; start<end; start++)
+        IMap<Integer, String> m = node.getMap(mapName);
+        for(; start<end; start++){
             m.remove(start);
+        }
+    }
+
+    private void removeAndCreateDataIn(HazelcastInstance[] cluster, String mapName, int start, int end){
+        HazelcastInstance node = getNode(cluster);
+        IMap<Integer, String> m = node.getMap(mapName);
+        for(; start<end; start++){
+            m.remove(start);
+            m.put(start, node.getConfig().getGroupConfig().getName()+start);
+        }
     }
 
     private boolean checkKeysIn(HazelcastInstance[] cluster, String mapName, int start, int end){
         HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for(; start<end; start++)
-            if(!m.containsKey(start))
+        IMap<Integer, String> m = node.getMap(mapName);
+        for(; start<end; start++){
+            if(!m.containsKey(start)){
                 return false;
+            }
+        }
         return true;
     }
 
@@ -169,11 +184,12 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
         String sourceGroupName = getNode(sourceCluster).getConfig().getGroupConfig().getName();
 
-        IMap m = node.getMap(mapName);
+        IMap<Integer, String> m = node.getMap(mapName);
         for(; start<end; start++){
             Object v = m.get(start);
-            if(v==null || !v.equals(sourceGroupName+start))
+            if(v==null || !v.equals(sourceGroupName+start)){
                 return false;
+            }
         }
         return true;
     }
@@ -181,16 +197,18 @@ public class WanReplicationTest extends HazelcastTestSupport{
 
     private boolean checkKeysNotIn(HazelcastInstance[] cluster, String mapName, int start, int end){
         HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for(; start<end; start++)
-            if(m.containsKey(start))
+        IMap<Integer, String> m = node.getMap(mapName);
+        for(; start<end; start++){
+            if(m.containsKey(start)){
                 return false;
+            }
+        }
         return true;
     }
 
     private void assertDataSize(final HazelcastInstance[] cluster, String mapName, int size){
         HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
+        IMap<Integer, String> m = node.getMap(mapName);
         assertEquals(size, m.size());
     }
 
@@ -542,6 +560,22 @@ public class WanReplicationTest extends HazelcastTestSupport{
         assertDataSize(clusterC, "map", 1000);
     }
 
+    @Test
+    public void wan_events_should_be_processed_in_order(){
+
+        setupReplicateFrom(configA, configB, clusterB.length,"atob", PassThroughMergePolicy.class.getName());
+        initClusterA();
+        initClusterB();
+
+        createDataIn(clusterA, "map", 0, 10000);
+        removeAndCreateDataIn(clusterA, "map", 0, 10000);
+
+        System.out.println( "data in cluster A OK" );
+
+        assertKeysIn(clusterB, "map", 0, 10000);
+        assertDataSize(clusterB, "map", 10000);
+    }
+
 
     private void printReplicaConfig(Config c){
 
@@ -575,7 +609,7 @@ public class WanReplicationTest extends HazelcastTestSupport{
             try {
                 gate.await();
                 go();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException  e) {
                 e.printStackTrace();
             } catch (BrokenBarrierException e) {
                 e.printStackTrace();
