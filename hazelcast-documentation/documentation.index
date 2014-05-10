@@ -70,7 +70,7 @@ src/Serialization.md
 	src/PortableSerialization.md
 	src/CustomSerialization.md
 src/Management.md
-#	src/JMXAPIPerNode.md
+	src/JMXAPIPerNode.md
 	src/MonitoringWithJMX.md
 	src/ClusterUtilities.md
 	src/ManagementCenter.md
