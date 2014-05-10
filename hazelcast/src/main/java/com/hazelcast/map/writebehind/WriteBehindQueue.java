@@ -26,6 +26,7 @@ import java.util.List;
  * @param <E> Type of entry to be stored.
  */
 public interface WriteBehindQueue<E> {
+
     /**
      * adds to the end.
      */

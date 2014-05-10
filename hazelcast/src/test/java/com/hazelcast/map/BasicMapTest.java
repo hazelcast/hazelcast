@@ -639,6 +639,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
         });
         thread.start();
+        thread.join();
 
         Thread.sleep(1000);
         map.unlock("key0");

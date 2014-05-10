@@ -237,11 +237,11 @@ class WriteBehindQueueManager implements WriteBehindManager {
             this.mapService = mapService;
             this.storeHandlerChain = storeHandlerChain;
             this.writeBehindManager = manager;
-            this.backupWorkIntervalTimeInNanos = getReplicaWaitTimeInNanaos();
+            this.backupWorkIntervalTimeInNanos = getReplicaWaitTimeInNanos();
 
         }
 
-        private long getReplicaWaitTimeInNanaos() {
+        private long getReplicaWaitTimeInNanos() {
             return TimeUnit.SECONDS.toNanos(mapService.getNodeEngine().getGroupProperties()
                     .MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger());
         }

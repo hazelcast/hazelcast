@@ -150,6 +150,12 @@ public class MapContainer {
 
                 @Override
                 public void afterStore(StoreEvent<DelayedEntry> storeEvent) {
+                    final DelayedEntry delayedEntry = storeEvent.getSource();
+                    final Object value = delayedEntry.getValue();
+                    // only process store delete operations.
+                    if (value != null) {
+                        return;
+                    }
                     final Data key = (Data) storeEvent.getSource().getKey();
                     final int partitionId = mapService.getNodeEngine().getPartitionService().getPartitionId(key);
                     final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);

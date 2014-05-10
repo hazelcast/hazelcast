@@ -22,11 +22,11 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * TODO: add a max capacity and reject when capacity is full to apply back-pressure to the operation-thread/caller.
  * Write behind queue impl. backed by an array list.
  *
  * @param <T> Type of entry to be queued.
  */
-// TODO: add a max capacity and reject when capacity is full to apply back-pressure to the operation-thread/caller.
 class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
 
     private static final int INITIAL_CAPACITY = 16;
