@@ -18,6 +18,7 @@ package com.hazelcast.map.writebehind.store;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.writebehind.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
 
@@ -31,19 +32,17 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Dispatches operations to store handlers.
+ * Manages store operations.
  */
-public final class StoreHandlerChain {
+class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
 
     private static final int RETRY_TIMES_OF_A_FAILED_STORE_OPERATION = 3;
 
     private static final int RETRY_STORE_AFTER_WAIT_SECONDS = 1;
 
-    private StoreHandler<DelayedEntry> firstHandler;
-
-    private StoreHandler<DelayedEntry> successorHandler;
-
     private final MapService mapService;
+
+    private final MapStoreWrapper storeWrapper;
 
     private final List<StoreListener> storeListeners;
 
@@ -55,55 +54,45 @@ public final class StoreHandlerChain {
      */
     private boolean reduceStoreOperationsIfPossible = true;
 
-    public StoreHandlerChain(MapService mapService) {
-        this(mapService, Collections.EMPTY_LIST);
-    }
-
-    public StoreHandlerChain(MapService mapService, List<StoreListener> listeners) {
+    DefaultMapStoreManager(MapService mapService, MapStoreWrapper storeWrapper, List<StoreListener> listeners) {
         if (listeners == null) {
             throw new IllegalArgumentException("First, set store listeners.");
         }
         this.mapService = mapService;
+        this.storeWrapper = storeWrapper;
         this.storeListeners = listeners;
-        this.logger = mapService.getNodeEngine().getLogger(StoreHandlerChain.class);
+        this.logger = mapService.getNodeEngine().getLogger(DefaultMapStoreManager.class);
     }
 
+    @Override
     public void setReduceStoreOperationsIfPossible(boolean reduceStoreOperationsIfPossible) {
         this.reduceStoreOperationsIfPossible = reduceStoreOperationsIfPossible;
     }
 
-    public void register(StoreHandler<DelayedEntry> handler) {
-        if (firstHandler == null) {
-            firstHandler = handler;
-        } else {
-            successorHandler.setSuccessorHandler(handler);
-        }
-        successorHandler = handler;
-    }
-
+    @Override
     public void process(Collection<DelayedEntry> delayedEntries, Map<Integer, Collection<DelayedEntry>> failedsPerPartition) {
         if (delayedEntries == null || delayedEntries.isEmpty()) {
             return;
         }
         final List<DelayedEntry> entriesToProcess = new ArrayList<DelayedEntry>();
-        ProcessMode mode = null;
-        ProcessMode previousMode;
+        StoreOperationType operationType = null;
+        StoreOperationType previousOperationType;
         // process entries by preserving order.
         for (final DelayedEntry<Data, Object> entry : delayedEntries) {
-            previousMode = mode;
+            previousOperationType = operationType;
             if (entry.getValue() == null) {
-                mode = ProcessMode.DELETE;
+                operationType = StoreOperationType.DELETE;
             } else {
-                mode = ProcessMode.WRITE;
+                operationType = StoreOperationType.WRITE;
             }
-            if (previousMode != null && !previousMode.equals(mode)) {
-                final Collection<DelayedEntry> faileds = callHandler(entriesToProcess);
+            if (previousOperationType != null && !previousOperationType.equals(operationType)) {
+                final Collection<DelayedEntry> faileds = callHandler(entriesToProcess, previousOperationType);
                 addToFaileds(faileds, failedsPerPartition);
                 entriesToProcess.clear();
             }
             entriesToProcess.add(entry);
         }
-        final Collection<DelayedEntry> faileds = callHandler(entriesToProcess);
+        final Collection<DelayedEntry> faileds = callHandler(entriesToProcess, operationType);
         addToFaileds(faileds, failedsPerPartition);
         entriesToProcess.clear();
     }
@@ -131,7 +120,7 @@ public final class StoreHandlerChain {
      * @param delayedEntries sorted entries to be processed.
      * @return failed entry list if any.
      */
-    private Collection<DelayedEntry> callHandler(Collection<DelayedEntry> delayedEntries) {
+    private Collection<DelayedEntry> callHandler(Collection<DelayedEntry> delayedEntries, StoreOperationType operationType) {
         final int size = delayedEntries.size();
         if (size == 0) {
             return Collections.emptyList();
@@ -139,7 +128,7 @@ public final class StoreHandlerChain {
         if (size == 1) {
             final Iterator<DelayedEntry> iterator = delayedEntries.iterator();
             final DelayedEntry delayedEntry = iterator.next();
-            return callSingleStoreWithListeners(delayedEntry);
+            return callSingleStoreWithListeners(delayedEntry, operationType);
         }
         final DelayedEntry[] delayeds = delayedEntries.toArray(new DelayedEntry[delayedEntries.size()]);
         final Map<Object, DelayedEntry> batchMap = prepareBatchMap(delayeds);
@@ -147,12 +136,12 @@ public final class StoreHandlerChain {
         // if all batch is on same key, call single store.
         if (batchMap.size() == 1) {
             final DelayedEntry delayedEntry = delayeds[delayeds.length - 1];
-            return callSingleStoreWithListeners(delayedEntry);
+            return callSingleStoreWithListeners(delayedEntry, operationType);
         }
-        final Collection<DelayedEntry> collection = callBatchStoreWithListeners(batchMap);
-        final Collection<DelayedEntry> failedTries = new ArrayList<DelayedEntry>(collection.size());
-        for (DelayedEntry entry : collection) {
-            final Collection<DelayedEntry> tmpFaileds = callSingleStoreWithListeners(entry);
+        final Collection<DelayedEntry> failedEntryList = callBatchStoreWithListeners(batchMap, operationType);
+        final Collection<DelayedEntry> failedTries = new ArrayList<DelayedEntry>();
+        for (DelayedEntry entry : failedEntryList) {
+            final Collection<DelayedEntry> tmpFaileds = callSingleStoreWithListeners(entry, operationType);
             failedTries.addAll(tmpFaileds);
         }
         return failedTries;
@@ -182,7 +171,8 @@ public final class StoreHandlerChain {
      * @param entry
      * @return failed entry list if any.
      */
-    private Collection<DelayedEntry> callSingleStoreWithListeners(final DelayedEntry entry) {
+    private Collection<DelayedEntry> callSingleStoreWithListeners(final DelayedEntry entry,
+                                                                  final StoreOperationType operationType) {
         return retryCall(new RetryTask<DelayedEntry>() {
             private List<DelayedEntry> failedDelayedEntries = Collections.emptyList();
 
@@ -191,7 +181,7 @@ public final class StoreHandlerChain {
                 callBeforeStoreListeners(entry);
                 final Object key = toObject(entry.getKey());
                 final Object value = toObject(entry.getValue());
-                boolean result = firstHandler.single(key, value);
+                boolean result = operationType.storeSingle(key, value, storeWrapper);
                 callAfterStoreListeners(entry);
                 return result;
             }
@@ -221,7 +211,8 @@ public final class StoreHandlerChain {
      * @param batchMap
      * @return failed entry list if any.
      */
-    private Collection<DelayedEntry> callBatchStoreWithListeners(final Map<Object, DelayedEntry> batchMap) {
+    private Collection<DelayedEntry> callBatchStoreWithListeners(final Map<Object, DelayedEntry> batchMap,
+                                                                 final StoreOperationType operationType) {
         return retryCall(new RetryTask<DelayedEntry>() {
             private List<DelayedEntry> failedDelayedEntries = Collections.emptyList();
 
@@ -229,7 +220,7 @@ public final class StoreHandlerChain {
             public boolean run() throws Exception {
                 callBeforeStoreListeners(batchMap.values());
                 final Map map = convertToObject(batchMap);
-                final boolean result = firstHandler.batch(map);
+                final boolean result = operationType.storeBatch(map, storeWrapper);
                 callAfterStoreListeners(batchMap.values());
                 return result;
             }
@@ -263,12 +254,14 @@ public final class StoreHandlerChain {
         }
     }
 
+    @Override
     public void callBeforeStoreListeners(Collection<DelayedEntry> entries) {
         for (DelayedEntry entry : entries) {
             callBeforeStoreListeners(entry);
         }
     }
 
+    @Override
     public void callAfterStoreListeners(Collection<DelayedEntry> entries) {
         for (DelayedEntry entry : entries) {
             callAfterStoreListeners(entry);
@@ -309,6 +302,7 @@ public final class StoreHandlerChain {
      * @param <T>
      */
     private interface RetryTask<T> {
+
         boolean run() throws Exception;
 
         Collection<T> failedList();
@@ -316,7 +310,7 @@ public final class StoreHandlerChain {
 
     private static void sleepSeconds(long secs) {
         try {
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.SECONDS.sleep(secs);
         } catch (InterruptedException e) {
         }
     }
@@ -324,8 +318,39 @@ public final class StoreHandlerChain {
     /**
      * Used to group store operations.
      */
-    private enum ProcessMode {
-        DELETE,
-        WRITE;
+    private enum StoreOperationType {
+
+        DELETE {
+            @Override
+            boolean storeSingle(Object key, Object value, MapStoreWrapper storeWrapper) {
+                storeWrapper.delete(key);
+                return true;
+            }
+
+            @Override
+            boolean storeBatch(Map map, MapStoreWrapper storeWrapper) {
+                storeWrapper.deleteAll(map.keySet());
+                return true;
+            }
+        },
+
+        WRITE {
+            @Override
+            boolean storeSingle(Object key, Object value, MapStoreWrapper storeWrapper) {
+                storeWrapper.store(key, value);
+                return true;
+            }
+
+            @Override
+            boolean storeBatch(Map map, MapStoreWrapper storeWrapper) {
+                storeWrapper.storeAll(map);
+                return true;
+            }
+        };
+
+        abstract boolean storeSingle(Object key, Object value, MapStoreWrapper storeWrapper);
+
+        abstract boolean storeBatch(Map map, MapStoreWrapper storeWrapper);
     }
+
 }

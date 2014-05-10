@@ -1448,7 +1448,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     public void testMapStoreWriteRemoveOrder() {
         final String mapName = randomMapName("testMapStoreWriteDeleteOrder");
         final int numIterations = 10;
-        final int writeDelaySeconds = 10;
+        final int writeDelaySeconds = 3;
         // create map store implementation
         final RecordingMapStore store = new RecordingMapStore(numIterations, numIterations);
         // create hazelcast config
@@ -1463,7 +1463,7 @@ public class MapStoreTest extends HazelcastTestSupport {
             // add entry
             map.put(key, value);
             // sleep 300ms
-            sleepMillis(300);
+            sleepMillis(1);
             // remove entry
             map.remove(key);
         }

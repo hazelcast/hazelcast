@@ -23,8 +23,8 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.writebehind.store.StoreHandlerChain;
-import com.hazelcast.map.writebehind.store.StoreHandlers;
+import com.hazelcast.map.writebehind.store.MapStoreManager;
+import com.hazelcast.map.writebehind.store.MapStoreManagers;
 import com.hazelcast.map.writebehind.store.StoreListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -68,27 +68,24 @@ class WriteBehindQueueManager implements WriteBehindManager {
 
     private final StoreProcessor processor;
 
-    private final String mapName;
-
     private final MapService mapService;
 
     private final String executorName;
 
-    private final StoreHandlerChain storeHandlerChain;
+    private final MapStoreManager<DelayedEntry> mapStoreManager;
 
     private final List<StoreListener> listeners;
 
     private final ILogger logger;
 
     WriteBehindQueueManager(String mapName, MapService mapService, MapStoreWrapper storeWrapper) {
-        this.mapName = mapName;
         this.scheduledExecutor = getScheduledExecutorService(mapName, mapService);
         this.mapService = mapService;
         this.logger = mapService.getNodeEngine().getLogger(WriteBehindQueueManager.class);
         this.executorName = EXECUTOR_NAME_PREFIX + mapName;
         this.listeners = new ArrayList<StoreListener>(2);
-        this.storeHandlerChain = StoreHandlers.createHandlers(mapService, storeWrapper, listeners);
-        this.processor = new StoreProcessor(mapName, mapService, storeHandlerChain, this);
+        this.mapStoreManager = MapStoreManagers.newMapStoremanager(mapService, storeWrapper, listeners);
+        this.processor = new StoreProcessor(mapName, mapService, mapStoreManager, this);
     }
 
     @Override
@@ -119,7 +116,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
         Collections.sort(sortedDelayedEntries, DELAYED_ENTRY_COMPARATOR);
         final Map<Integer, Collection<DelayedEntry>> failedStoreOpPerPartition
                 = new HashMap<Integer, Collection<DelayedEntry>>();
-        storeHandlerChain.process(sortedDelayedEntries, failedStoreOpPerPartition);
+        mapStoreManager.process(sortedDelayedEntries, failedStoreOpPerPartition);
         if (failedStoreOpPerPartition.size() > 0) {
             printErrorLog(failedStoreOpPerPartition);
         }
@@ -225,17 +222,17 @@ class WriteBehindQueueManager implements WriteBehindManager {
 
         private final MapService mapService;
 
-        private final StoreHandlerChain storeHandlerChain;
+        private final MapStoreManager mapStoreManager;
 
         private final WriteBehindManager writeBehindManager;
 
         private final long backupWorkIntervalTimeInNanos;
 
         private StoreProcessor(String mapName, MapService mapService,
-                               StoreHandlerChain storeHandlerChain, WriteBehindManager manager) {
+                               MapStoreManager mapStoreManager, WriteBehindManager manager) {
             this.mapName = mapName;
             this.mapService = mapService;
-            this.storeHandlerChain = storeHandlerChain;
+            this.mapStoreManager = mapStoreManager;
             this.writeBehindManager = manager;
             this.backupWorkIntervalTimeInNanos = getReplicaWaitTimeInNanos();
 
@@ -299,7 +296,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
             }
             Collections.sort(sortedDelayedEntries, DELAYED_ENTRY_COMPARATOR);
             final Map<Integer, Collection<DelayedEntry>> failedsPerPartition = new HashMap<Integer, Collection<DelayedEntry>>();
-            storeHandlerChain.process(sortedDelayedEntries, failedsPerPartition);
+            mapStoreManager.process(sortedDelayedEntries, failedsPerPartition);
             removeProcessedEntries(mapService, mapName, partitionToEntryCountHolder, failedsPerPartition);
             writeBehindManager.reset();
         }
@@ -317,9 +314,9 @@ class WriteBehindQueueManager implements WriteBehindManager {
             final InternalPartition partition = partitionService.getPartition(partitionId);
             final Address owner = partition.getOwnerOrNull();
             if (!owner.equals(thisAddress)) {
-                storeHandlerChain.callBeforeStoreListeners(delayedEntries);
+                mapStoreManager.callBeforeStoreListeners(delayedEntries);
                 removeProcessed(queue, delayedEntries.size());
-                storeHandlerChain.callAfterStoreListeners(delayedEntries);
+                mapStoreManager.callAfterStoreListeners(delayedEntries);
             }
         }
 

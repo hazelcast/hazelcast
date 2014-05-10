@@ -22,19 +22,15 @@ import com.hazelcast.map.MapStoreWrapper;
 import java.util.List;
 
 /**
- * Static factory creating store handler chain.
+ * Static factory which creates a map store manager.
  */
-public final class StoreHandlers {
+public final class MapStoreManagers {
 
-    private StoreHandlers() {
+    private MapStoreManagers() {
     }
 
-    public static StoreHandlerChain createHandlers(MapService mapService,
-                                                   MapStoreWrapper storeWrapper, List<StoreListener> storeListeners) {
-        final StoreHandlerChain chain = new StoreHandlerChain(mapService, storeListeners);
-        chain.register(new WriteStoreHandler(storeWrapper));
-        chain.register(new DeleteStoreHandler(storeWrapper));
-
-        return chain;
+    public static MapStoreManager newMapStoremanager(MapService mapService,
+                                                     MapStoreWrapper storeWrapper, List<StoreListener> storeListeners) {
+        return new DefaultMapStoreManager(mapService, storeWrapper, storeListeners);
     }
 }
