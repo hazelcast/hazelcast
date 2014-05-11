@@ -90,6 +90,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
 
     @Override
     public void addFront(Collection<E> collection) {
+        if (collection == null || collection.isEmpty()) {
+            return;
+        }
         synchronized (mutex) {
             queue.addFront(collection);
         }
@@ -97,6 +100,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
 
     @Override
     public void addEnd(Collection<E> collection) {
+        if (collection == null || collection.isEmpty()) {
+            return;
+        }
         synchronized (mutex) {
             queue.addEnd(collection);
         }

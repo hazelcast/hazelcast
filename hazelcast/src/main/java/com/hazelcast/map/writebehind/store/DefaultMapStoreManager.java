@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.writebehind.store;
 
+import com.hazelcast.core.MapStore;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
@@ -322,35 +323,35 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
 
         DELETE {
             @Override
-            boolean storeSingle(Object key, Object value, MapStoreWrapper storeWrapper) {
-                storeWrapper.delete(key);
+            boolean storeSingle(Object key, Object value, MapStore mapStore) {
+                mapStore.delete(key);
                 return true;
             }
 
             @Override
-            boolean storeBatch(Map map, MapStoreWrapper storeWrapper) {
-                storeWrapper.deleteAll(map.keySet());
+            boolean storeBatch(Map map, MapStore mapStore) {
+                mapStore.deleteAll(map.keySet());
                 return true;
             }
         },
 
         WRITE {
             @Override
-            boolean storeSingle(Object key, Object value, MapStoreWrapper storeWrapper) {
-                storeWrapper.store(key, value);
+            boolean storeSingle(Object key, Object value, MapStore mapStore) {
+                mapStore.store(key, value);
                 return true;
             }
 
             @Override
-            boolean storeBatch(Map map, MapStoreWrapper storeWrapper) {
-                storeWrapper.storeAll(map);
+            boolean storeBatch(Map map, MapStore mapStore) {
+                mapStore.storeAll(map);
                 return true;
             }
         };
 
-        abstract boolean storeSingle(Object key, Object value, MapStoreWrapper storeWrapper);
+        abstract boolean storeSingle(Object key, Object value, MapStore mapStore);
 
-        abstract boolean storeBatch(Map map, MapStoreWrapper storeWrapper);
+        abstract boolean storeBatch(Map map, MapStore mapStore);
     }
 
 }

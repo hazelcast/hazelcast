@@ -81,7 +81,7 @@ public class DefaultRecordStore implements RecordStore {
     private final ILogger logger;
     private final SizeEstimator sizeEstimator;
     private final AtomicBoolean loaded = new AtomicBoolean(false);
-    private final WriteBehindQueue writeBehindQueue;
+    private final WriteBehindQueue<DelayedEntry> writeBehindQueue;
     private long lastEvictionTime;
     /**
      * If there is no clean-up caused by puts after some time,
@@ -104,13 +104,13 @@ public class DefaultRecordStore implements RecordStore {
         this.mapContainer = mapService.getMapContainer(name);
         this.logger = mapService.getNodeEngine().getLogger(this.getName());
         this.recordFactory = mapContainer.getRecordFactory();
-        this.writeBehindQueue = WriteBehindQueues.writeBehindQueue(mapContainer.isWriteBehindMapStoreEnabled());
+        this.writeBehindQueue = WriteBehindQueues.createDefaultWriteBehindQueue(mapContainer.isWriteBehindMapStoreEnabled());
         this.writeBehindWaitingDeletions = mapContainer.isWriteBehindMapStoreEnabled()
                 ? Collections.newSetFromMap(new ConcurrentHashMap()) : (Set<Data>) Collections.EMPTY_SET;
         NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        this.lockStore = lockService == null ? null :
-                lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+        this.lockStore = lockService == null ? null
+                : lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
         loadFromMapStore(nodeEngine);
     }
@@ -239,7 +239,7 @@ public class DefaultRecordStore implements RecordStore {
      * Size may not give precise size at a specific moment
      * due to the expiration logic. But eventually, it should be correct.
      *
-     * @return
+     * @return record store size.
      */
     public int size() {
         // do not add checkIfLoaded(), size() is also used internally
@@ -285,8 +285,9 @@ public class DefaultRecordStore implements RecordStore {
             if (nullIfExpired(record) == null) {
                 continue;
             }
-            if (mapService.compare(name, value, record.getValue()))
+            if (mapService.compare(name, value, record.getValue())) {
                 return true;
+            }
         }
         postReadCleanUp();
         return false;
@@ -739,10 +740,6 @@ public class DefaultRecordStore implements RecordStore {
         return newRecord;
     }
 
-    private static long nanoNow() {
-        return System.nanoTime();
-    }
-
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
         earlyWriteCleanup();
@@ -760,7 +757,8 @@ public class DefaultRecordStore implements RecordStore {
             EntryView existingEntry = mapService.createSimpleEntryView(mapService.toObject(record.getKey()),
                     mapService.toObject(record.getValue()), record);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
-            if (newValue == null) { // existing entry will be removed
+            // existing entry will be removed
+            if (newValue == null) {
                 removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
                 // reduce size.
@@ -808,8 +806,9 @@ public class DefaultRecordStore implements RecordStore {
         earlyWriteCleanup();
 
         Record record = records.get(dataKey);
-        if (record == null)
+        if (record == null) {
             return false;
+        }
         if (mapService.compare(name, record.getValue(), testValue)) {
             newValue = mapService.interceptPut(name, record.getValue(), newValue);
             newValue = mapStoreWrite(dataKey, newValue, record);
@@ -1051,8 +1050,8 @@ public class DefaultRecordStore implements RecordStore {
      * Check if record is reachable according to ttl or idle times.
      * If not reachable return null.
      *
-     * @param record
-     * @return
+     * @param record {@link com.hazelcast.map.record.Record}
+     * @return null if evictable.
      */
     private Record evictIfNotReachable(Record record) {
         if (record == null) {
@@ -1215,7 +1214,7 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    private class MapLoadAllTask implements Runnable {
+    private final class MapLoadAllTask implements Runnable {
         private Map<Data, Object> keys;
         private AtomicInteger checkIfMapLoaded;
 

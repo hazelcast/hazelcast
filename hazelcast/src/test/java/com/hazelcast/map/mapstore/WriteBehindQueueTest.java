@@ -18,14 +18,14 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     @Test
     public void smoke() {
-        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.writeBehindQueue(true);
+        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.createDefaultWriteBehindQueue(true);
 
         assertEquals(0, queue.size());
     }
 
     @Test
     public void testOffer() {
-        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.writeBehindQueue(true);
+        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.createDefaultWriteBehindQueue(true);
 
         fillQueue(queue);
 
@@ -34,7 +34,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveEmpty() {
-        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.writeBehindQueue(true);
+        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.createDefaultWriteBehindQueue(true);
 
         queue.removeFirst();
 
@@ -43,7 +43,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testClear() {
-        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.writeBehindQueue(true);
+        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.createDefaultWriteBehindQueue(true);
 
         queue.clear();
 
@@ -52,7 +52,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testContains() {
-        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.writeBehindQueue(true);
+        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.createDefaultWriteBehindQueue(true);
 
         fillQueue(queue);
 
@@ -61,7 +61,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testClearFull() {
-        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.writeBehindQueue(true);
+        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.createDefaultWriteBehindQueue(true);
 
         fillQueue(queue);
 
@@ -73,7 +73,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAll() {
-        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.writeBehindQueue(true);
+        final WriteBehindQueue<DelayedEntry> queue = WriteBehindQueues.createDefaultWriteBehindQueue(true);
 
         final DelayedEntry<Object, Object> e1 = DelayedEntry.createEmpty();
         final DelayedEntry<Object, Object> e2 = DelayedEntry.createEmpty();

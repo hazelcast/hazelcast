@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * TODO: add a max capacity and reject when capacity is full to apply back-pressure to the operation-thread/caller.
  * Write behind queue impl. backed by an array list.
  *
  * @param <T> Type of entry to be queued.
@@ -31,7 +30,7 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
 
     private static final int INITIAL_CAPACITY = 16;
 
-    private List<T> list;
+    protected List<T> list;
 
     ArrayWriteBehindQueue() {
         list = new ArrayList<T>(INITIAL_CAPACITY);
@@ -91,8 +90,8 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
 
     @Override
     public WriteBehindQueue<T> getSnapShot() {
-        if (list.isEmpty()) {
-            return WriteBehindQueues.emptyWriteBehindQueue();
+        if (list == null || list.isEmpty()) {
+            return WriteBehindQueues.createEmptyWriteBehindQueue();
         }
         return new ArrayWriteBehindQueue<T>(new ArrayList<T>(list));
     }
