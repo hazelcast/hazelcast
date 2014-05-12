@@ -151,7 +151,7 @@ public class RecordInfo implements DataSerializable {
         builder.append(creationTime);
         builder.append(", lastAccessTime=");
         builder.append(lastAccessTime);
-        builder.append(", lastUpdatedTime=");
+        builder.append(", lastUpdateTime=");
         builder.append(lastUpdatedTime);
         builder.append('}');
         return builder.toString();

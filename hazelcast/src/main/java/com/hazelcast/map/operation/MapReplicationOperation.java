@@ -102,7 +102,7 @@ public class MapReplicationOperation extends AbstractOperation {
                 RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
-                    Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1, false);
+                    Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1);
                     mapService.applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putForReplication(key, newRecord);
                 }

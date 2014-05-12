@@ -51,7 +51,7 @@ abstract class AbstractRecord<V> extends  AbstractBaseRecord<V> {
     }
 
     public void onUpdate() {
-        lastUpdatedTime = System.nanoTime();
+        lastUpdateTime = System.nanoTime();
         version++;
     }
 

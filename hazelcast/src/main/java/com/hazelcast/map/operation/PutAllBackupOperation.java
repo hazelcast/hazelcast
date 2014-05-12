@@ -54,7 +54,7 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
         for (int i = 0; i < entries.size(); i++) {
             final RecordInfo recordInfo = recordInfos.get(i);
             final Map.Entry<Data, Data> entry = entries.get(i);
-            final Record record = recordStore.putBackup(entry.getKey(), entry.getValue(), -1, false);
+            final Record record = recordStore.putBackup(entry.getKey(), entry.getValue());
             mapService.applyRecordInfo(record, recordInfo);
         }
     }

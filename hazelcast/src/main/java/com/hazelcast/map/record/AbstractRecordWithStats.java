@@ -52,7 +52,6 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
     public final void onUpdate() {
         super.onUpdate();
-        this.recordStatistics.update();
     }
 
     @Override

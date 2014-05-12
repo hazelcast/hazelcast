@@ -22,12 +22,12 @@ class DataRecord extends AbstractRecord<Data> {
 
     protected Data value;
 
-    public DataRecord(Data keyData, Data value) {
+    DataRecord(Data keyData, Data value) {
         super(keyData);
         this.value = value;
     }
 
-    public DataRecord() {
+    DataRecord() {
     }
 
     /*

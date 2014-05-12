@@ -84,7 +84,6 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.SortingUtil;
-import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.ArrayList;
@@ -448,16 +447,11 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
-        return createRecord(name, dataKey, value, ttl, true);
-    }
-
-    public Record createRecord(String name, Data dataKey, Object value, long ttl, boolean shouldSchedule) {
         final long nowInNanos = System.nanoTime();
         MapContainer mapContainer = getMapContainer(name);
         Record record = mapContainer.getRecordFactory().newRecord(dataKey, value);
-        record.setCreationTime(nowInNanos);
         record.setLastAccessTime(nowInNanos);
-        record.setLastUpdatedTime(nowInNanos);
+        record.setLastUpdateTime(nowInNanos);
         final int timeToLiveSeconds = mapContainer.getMapConfig().getTimeToLiveSeconds();
         if (ttl < 0L && timeToLiveSeconds > 0) {
             record.setTtl(TimeUnit.SECONDS.toNanos(timeToLiveSeconds));
@@ -787,9 +781,8 @@ public class MapService implements ManagedService, MigrationAwareService,
         record.setVersion(replicationInfo.getVersion());
         record.setEvictionCriteriaNumber(replicationInfo.getEvictionCriteriaNumber());
         record.setTtl(replicationInfo.getTtl());
-        record.setCreationTime(replicationInfo.getCreationTime());
         record.setLastAccessTime(replicationInfo.getLastAccessTime());
-        record.setLastUpdatedTime(replicationInfo.getLastUpdatedTime());
+        record.setLastUpdateTime(replicationInfo.getLastUpdatedTime());
     }
 
     public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record) {
@@ -810,8 +803,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         info.setVersion(record.getVersion());
         info.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
         info.setLastAccessTime(record.getLastAccessTime());
-        info.setCreationTime(record.getCreationTime());
-        info.setLastUpdatedTime(record.getLastUpdatedTime());
+        info.setLastUpdatedTime(record.getLastUpdateTime());
         info.setTtl(record.getTtl());
         return info;
     }
@@ -827,13 +819,13 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public <K, V> SimpleEntryView<K, V> createSimpleEntryView(K key, V value, Record record) {
+        final TimeUnit unit = TimeUnit.NANOSECONDS;
         final SimpleEntryView simpleEntryView = new SimpleEntryView(key, value);
         simpleEntryView.setCost(record.getCost());
         simpleEntryView.setVersion(record.getVersion());
         simpleEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
-        simpleEntryView.setLastAccessTime(record.getLastAccessTime());
-        simpleEntryView.setCreationTime(record.getCreationTime());
-        simpleEntryView.setLastUpdateTime(record.getLastUpdatedTime());
+        simpleEntryView.setLastAccessTime(unit.toMillis(record.getLastAccessTime()));
+        simpleEntryView.setLastUpdateTime(unit.toMillis(record.getLastUpdateTime()));
         simpleEntryView.setTtl(record.getTtl());
 
         final RecordStatistics statistics = record.getStatistics();
@@ -841,17 +833,9 @@ public class MapService implements ManagedService, MigrationAwareService,
             simpleEntryView.setHits(statistics.getHits());
             simpleEntryView.setCreationTime(statistics.getCreationTime());
             simpleEntryView.setExpirationTime(statistics.getExpirationTime());
-            simpleEntryView.setLastAccessTime(statistics.getLastAccessTime());
             simpleEntryView.setLastStoredTime(statistics.getLastStoredTime());
-            simpleEntryView.setLastUpdateTime(statistics.getLastUpdateTime());
         }
         return simpleEntryView;
-    }
-
-    public long findDelayMillis(ScheduledEntry entry) {
-        final long timeElapsedUntilNow = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - entry.getScheduleStartTimeInNanos());
-        final long remainingTime = entry.getScheduledDelayMillis() - timeElapsedUntilNow;
-        return Math.max(0, remainingTime);
     }
 
     public Object toObject(Object data) {
@@ -988,6 +972,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        final TimeUnit unit = TimeUnit.NANOSECONDS;
 
         Address thisAddress = clusterService.getThisAddress();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
@@ -1000,7 +985,6 @@ public class MapService implements ManagedService, MigrationAwareService,
             if (owner.equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
-
                 //we don't want to force loading the record store because we are loading statistics. So that is why
                 //we ask for 'getExistingRecordStore' instead of 'getRecordStore' which does the load.
                 if (recordStore != null) {
@@ -1011,8 +995,8 @@ public class MapService implements ManagedService, MigrationAwareService,
                         // there is map store and the record is dirty (waits to be stored)
                         ownedEntryCount++;
                         ownedEntryMemoryCost += record.getCost();
-                        localMapStats.setLastAccessTime(stats.getLastAccessTime());
-                        localMapStats.setLastUpdateTime(stats.getLastUpdateTime());
+                        localMapStats.setLastAccessTime(unit.toMillis(record.getLastAccessTime()));
+                        localMapStats.setLastUpdateTime(unit.toMillis(record.getLastUpdateTime()));
                         hits += stats.getHits();
                         if (recordStore.isLocked(record.getKey())) {
                             lockedEntryCount++;

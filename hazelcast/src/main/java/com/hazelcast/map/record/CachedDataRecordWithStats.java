@@ -18,7 +18,10 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-final class CachedDataRecordWithStats extends DataRecordWithStats {
+/**
+ *  CachedDataRecordWithStats.
+ */
+class CachedDataRecordWithStats extends DataRecordWithStats {
 
     private transient volatile Object cachedValue;
 
