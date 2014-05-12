@@ -47,11 +47,12 @@ abstract class ClientTxnProxy implements TransactionalObject {
             ((BaseTransactionRequest) request).setTxnId(proxy.getTxnId());
             ((BaseTransactionRequest) request).setClientThreadId(Thread.currentThread().getId());
         }
-        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)proxy.getClient().getInvocationService();
+        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)
+                proxy.getClient().getInvocationService();
         final SerializationService ss = proxy.getClient().getSerializationService();
         try {
             final Future f = invocationService.send(request, proxy.getConnection());
-            return ss.toObject(f.get()) ;
+            return ss.toObject(f.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -59,7 +60,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
 
     abstract void onDestroy();
 
-    public final void destroy(){
+    public final void destroy() {
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
         invoke(request);
@@ -73,11 +74,11 @@ abstract class ClientTxnProxy implements TransactionalObject {
         return StringPartitioningStrategy.getPartitionKey(getName());
     }
 
-    Data toData(Object obj){
+    Data toData(Object obj) {
         return proxy.getClient().getSerializationService().toData(obj);
     }
 
-    Object toObject(Data data){
+    Object toObject(Data data) {
         return proxy.getClient().getSerializationService().toObject(data);
     }
 }

@@ -44,7 +44,8 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
     private final ConcurrentMap<String, Integer> registrationMap = new ConcurrentHashMap<String, Integer>();
     private final ConcurrentMap<String, String> registrationAliasMap = new ConcurrentHashMap<String, String>();
 
-    private final Set<ClientCallFuture> failedListeners = Collections.newSetFromMap(new ConcurrentHashMap<ClientCallFuture, Boolean>());
+    private final Set<ClientCallFuture> failedListeners =
+            Collections.newSetFromMap(new ConcurrentHashMap<ClientCallFuture, Boolean>());
 
     public ClientInvocationServiceImpl(HazelcastClient client) {
         this.client = client;
@@ -72,11 +73,13 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         return sendAndHandle(request, handler);
     }
 
-    public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception {
+    public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler)
+            throws Exception {
         return sendAndHandle(request, target, handler);
     }
 
-    public <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception {
+    public <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler)
+            throws Exception {
         ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
         if (owner != null) {
@@ -94,11 +97,11 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     public Future reSend(ClientCallFuture future) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(null);
-        _send(future, connection);
+        sendInternal(future, connection);
         return future;
     }
 
-    public void registerFailedListener(ClientCallFuture future){
+    public void registerFailedListener(ClientCallFuture future) {
         failedListeners.add(future);
     }
 
@@ -162,11 +165,11 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     private ICompletableFuture doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
         final ClientCallFuture future = new ClientCallFuture(client, request, handler);
-        _send(future, connection);
+        sendInternal(future, connection);
         return future;
     }
 
-    private void _send(ClientCallFuture future, ClientConnection connection) {
+    private void sendInternal(ClientCallFuture future, ClientConnection connection) {
         connection.registerCallId(future);
         future.setConnection(connection);
         final SerializationService ss = client.getSerializationService();

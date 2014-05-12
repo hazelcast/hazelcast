@@ -42,8 +42,10 @@ public class ClientTransactionManager {
 
     final HazelcastClient client;
 
-    final ConcurrentMap<SerializableXID, TransactionProxy> managedTransactions = new ConcurrentHashMap<SerializableXID, TransactionProxy>();
-    final ConcurrentMap<SerializableXID, ClientConnection> recoveredTransactions = new ConcurrentHashMap<SerializableXID, ClientConnection>();
+    final ConcurrentMap<SerializableXID, TransactionProxy> managedTransactions =
+            new ConcurrentHashMap<SerializableXID, TransactionProxy>();
+    final ConcurrentMap<SerializableXID, ClientConnection> recoveredTransactions =
+            new ConcurrentHashMap<SerializableXID, ClientConnection>();
 
     public ClientTransactionManager(HazelcastClient client) {
         this.client = client;

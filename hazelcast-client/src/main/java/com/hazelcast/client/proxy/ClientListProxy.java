@@ -16,7 +16,13 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.collection.client.*;
+import com.hazelcast.collection.client.ListAddAllRequest;
+import com.hazelcast.collection.client.ListGetRequest;
+import com.hazelcast.collection.client.ListAddRequest;
+import com.hazelcast.collection.client.ListSetRequest;
+import com.hazelcast.collection.client.ListRemoveRequest;
+import com.hazelcast.collection.client.ListIndexOfRequest;
+import com.hazelcast.collection.client.ListSubRequest;
 import com.hazelcast.core.IList;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -27,8 +33,8 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
-* @author ali 5/20/13
-*/
+ * @author ali 5/20/13
+ */
 public class ClientListProxy<E> extends AbstractClientCollectionProxy<E> implements IList<E> {
 
     public ClientListProxy(String instanceName, String serviceName, String name) {
@@ -79,7 +85,7 @@ public class ClientListProxy<E> extends AbstractClientCollectionProxy<E> impleme
         return indexOfInternal(o, true);
     }
 
-    private int indexOfInternal(Object o, boolean last){
+    private int indexOfInternal(Object o, boolean last) {
         throwExceptionIfNull(o);
         final Data value = toData(o);
         final ListIndexOfRequest request = new ListIndexOfRequest(getName(), value, last);
@@ -101,7 +107,7 @@ public class ClientListProxy<E> extends AbstractClientCollectionProxy<E> impleme
         final Collection<Data> collection = result.getCollection();
         final List<E> list = new ArrayList<E>(collection.size());
         for (Data value : collection) {
-            list.add((E)toObject(value));
+            list.add((E) toObject(value));
         }
         return list;
     }

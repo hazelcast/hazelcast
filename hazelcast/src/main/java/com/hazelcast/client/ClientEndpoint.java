@@ -137,7 +137,7 @@ public final class ClientEndpoint implements Client {
 
     public TransactionContext getTransactionContext(String txnId) {
         final TransactionContext transactionContext = transactionContextMap.get(txnId);
-        if(transactionContext == null){
+        if (transactionContext == null) {
             throw new TransactionException("No transaction context found for txnId:" + txnId);
         }
         return transactionContext;
