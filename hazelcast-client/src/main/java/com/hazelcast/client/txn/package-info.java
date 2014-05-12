@@ -13,21 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.hazelcast.client.connection;
-
-import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.nio.Address;
-
-public interface ClientConnectionManager {
-
-    void shutdown();
-
-    void start();
-
-    ClientConnection tryToConnect(Address address) throws Exception;
-
-    ClientConnection ownerConnection(Address address) throws Exception;
-
-    boolean removeEventHandler(Integer callId);
-}
+/**
+ * Contains classes related to Txn
+ * such as TransactionProxy
+ */
+package com.hazelcast.client.txn;

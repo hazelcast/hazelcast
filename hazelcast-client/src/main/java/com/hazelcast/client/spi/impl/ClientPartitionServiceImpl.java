@@ -42,7 +42,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class ClientPartitionServiceImpl implements ClientPartitionService {
 
-    private static final ILogger logger = Logger.getLogger(ClientPartitionService.class);
+    private static final ILogger LOGGER = Logger.getLogger(ClientPartitionService.class);
+    private static final long PERIOD = 10;
+    private static final long INITIAL_DELAY = 10;
 
     private final HazelcastClient client;
 
@@ -58,7 +60,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     public void start() {
         getInitialPartitions();
-        client.getClientExecutionService().scheduleWithFixedDelay(new RefreshTask(), 10, 10, TimeUnit.SECONDS);
+        client.getClientExecutionService().scheduleWithFixedDelay(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
 
     public void refreshPartitions() {
@@ -102,10 +104,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private PartitionsResponse getPartitionsFrom(Address address) {
         try {
-            final Future<PartitionsResponse> future = client.getInvocationService().invokeOnTarget(new GetPartitionsRequest(), address);
+            final Future<PartitionsResponse> future =
+                    client.getInvocationService().invokeOnTarget(new GetPartitionsRequest(), address);
             return client.getSerializationService().toObject(future.get());
         } catch (Exception e) {
-            logger.severe("Error while fetching cluster partition table!", e);
+            LOGGER.severe("Error while fetching cluster partition table!", e);
         }
         return null;
     }
@@ -159,7 +162,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return new PartitionImpl(partitionId);
     }
 
-    private class PartitionImpl implements Partition {
+    private final class PartitionImpl implements Partition {
 
         private final int partitionId;
 

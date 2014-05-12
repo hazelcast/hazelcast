@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class ClientAbstractIOSelector extends Thread implements IOSelector {
 
+    private static final int TIMEOUT = 3;
+
     protected final ILogger logger;
 
     protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
@@ -85,7 +87,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
 
     public void awaitShutdown() {
         try {
-            shutdownLatch.await(3, TimeUnit.SECONDS);
+            shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
     }
