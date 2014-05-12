@@ -3,11 +3,15 @@
 
 ## Entry Processor
 
-Hazelcast supports entry processing. Entry processor is a function that can modify or replace the value of a map entry. It gives you the ability to execute your code on an entry in an atomic way. 
+### Overview
 
-Entry processor enables fast in-memory operations on a Map without having to worry about locks or concurrency issues. It can be applied to a single map entry or on all map entries and supports choosing target entries using predicates.
+Hazelcast supports entry processing. Entry processor is a function that executes your code on a map entry in an atomic way. 
 
-You do not need any explicit lock on entry. Practically, Hazelcast locks the entry, runs the EntryProcessor, and then unlocks the entry. If entry processing is the major operation for a map and the map consists of complex objects, then using object type as `in-memory-format` is recommended to minimize serialization cost.
+Entry processor enables fast in-memory operations on a map without having to worry about locks or concurrency issues. It can be applied to a single map entry or on all map entries and supports choosing target entries using predicates. You do not need any explicit lock on entry. Practically, Hazelcast locks the entry, runs the EntryProcessor, and then unlocks the entry.
+
+Hazelcast sends the entry processor to each cluster member and these members apply it to map entries. So, if you add more members, your processing is completed faster.
+
+If entry processing is the major operation for a map and the map consists of complex objects, then using `OBJECT` as `in-memory-format` is recommended to minimize serialization cost. By default, the entry value is stored as a byte array (BINARY format), but when it is stored as an object (OBJECT format), then entry processor is applied directly on the object. In that case, no serialization or deserialization is performed.
 
 There are below methods in IMap interface for entry processing:
 
@@ -49,9 +53,7 @@ There are below methods in IMap interface for entry processing:
     Map<K,Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 	```
 
-Using `executeOnEntries	` method, if the number of entries is high and you do need the results, then returning null in `process(..)` method is a good practice.
-
-Here is the EntryProcessor interface:
+And, here is the EntryProcessor interface:
 
 ```java
 public interface EntryProcessor<K, V> extends Serializable {
@@ -62,6 +64,11 @@ public interface EntryProcessor<K, V> extends Serializable {
 }
 ```
 
+<font color="red">***Note***</font>: *If you want to execute a task on a single key, you can also use `executeOnKeyOwner` provided by Executor Service. But, in this case, you need to perform a lock and serialization.*
+
+When using `executeOnEntries` method, if the number of entries is high and you do need the results, then returning null in `process()` method is a good practice. By this way, results of processings are not stored in the map and hence out of memory errors are eliminated.
+
+
 If your code is modifying the data, then you should also provide a processor for backup entries:
 
 ```java
@@ -71,7 +78,11 @@ public interface EntryBackupProcessor<K, V> extends Serializable {
 }
 ```
 
-**Example Usage:**
+This is required to prevent the primary map entries from having different values than backups. Because entry processor is applied both on primary and backup entries.
+
+
+
+### Sample Entry Processor Code
 
 ```java
 public class EntryProcessorTest {
@@ -132,5 +143,34 @@ public class EntryProcessorTest {
     }
 }
 ```
+
+
+
+
+### Threading
+
+Hazelcast allows a single thread for entry processing (partition thread). Meaning, no other operations can be performed on a map entry while entry processor is running on it. And, no operations can be performed on a partition different than the current one occupied by the partition thread. Yet, entry processor can call operations on the current partition (for example it can retrieve information from another map needed for processing).
+
+
+Entry processor runs on a batch of map entries at a time. During this time the partition thread is kept by it. After the batch is processed, it releases the thread and reschedules itself for the next batch. Other map operations run between each batch processing.
+
+Entry processor provides a property to configure batch size:
+
+-	`hazelcast.entryprocessor.batch.max.size`: Specifies the  maximum number of map entries to be executed in a single batch. Its default value is 10.000.
+
+Hazelcast will end the processing and start to schedule for the next batch once this maximum size is reached.
+
+<br> </br>
+
+<font color="red">
+***Related Information***
+</font>
+
+*Please refer to [Configuration](#configuration) for information on how to set configuration properties.*
+
+<br> </br>
+
+
+
 
 <br> </br>

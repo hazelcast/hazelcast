@@ -93,7 +93,6 @@ src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 src/Config.md
 	src/NetworkConfig.md
-		src/ConfigTcpIp.md
 		src/ConfigSpecifyInterfaces.md
 		src/EC2AutoDiscovery.md
 		src/IPv6.md
