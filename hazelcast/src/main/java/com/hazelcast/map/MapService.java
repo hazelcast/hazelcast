@@ -782,7 +782,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         record.setEvictionCriteriaNumber(replicationInfo.getEvictionCriteriaNumber());
         record.setTtl(replicationInfo.getTtl());
         record.setLastAccessTime(replicationInfo.getLastAccessTime());
-        record.setLastUpdateTime(replicationInfo.getLastUpdatedTime());
+        record.setLastUpdateTime(replicationInfo.getLastUpdateTime());
     }
 
     public RecordReplicationInfo createRecordReplicationInfo(Record record) {
@@ -796,7 +796,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         info.setVersion(record.getVersion());
         info.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
         info.setLastAccessTime(record.getLastAccessTime());
-        info.setLastUpdatedTime(record.getLastUpdateTime());
+        info.setLastUpdateTime(record.getLastUpdateTime());
         info.setTtl(record.getTtl());
         return info;
     }
