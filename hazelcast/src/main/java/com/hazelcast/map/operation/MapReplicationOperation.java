@@ -73,7 +73,7 @@ public class MapReplicationOperation extends AbstractOperation {
             for (Entry<Data, Record> recordEntry : recordStore.getReadonlyRecordMap().entrySet()) {
                 Record record = recordEntry.getValue();
                 RecordReplicationInfo recordReplicationInfo;
-                recordReplicationInfo = mapService.createRecordReplicationInfo(mapContainer, record);
+                recordReplicationInfo = mapService.createRecordReplicationInfo(record);
                 recordSet.add(recordReplicationInfo);
             }
             data.put(name, recordSet);

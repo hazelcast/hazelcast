@@ -19,11 +19,14 @@ package com.hazelcast.map.record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
-// TODO empty statistics.
+/**
+ * TODO empty statistics.
+ * Some statistics of a {@link com.hazelcast.map.record.Record}
+ */
 public class RecordStatistics implements DataSerializable {
 
     // TODO is volatile needed? if yes then hits should be atomicnumber
@@ -33,8 +36,8 @@ public class RecordStatistics implements DataSerializable {
     protected long expirationTime;
 
     public RecordStatistics() {
-        long now = Clock.currentTimeMillis();
-        creationTime = now;
+        final long nowInNanos = System.nanoTime();
+        creationTime = TimeUnit.NANOSECONDS.toMillis(nowInNanos);
     }
 
     public int getHits() {
@@ -66,7 +69,7 @@ public class RecordStatistics implements DataSerializable {
     }
 
     public void store() {
-        lastStoredTime = Clock.currentTimeMillis();
+        lastStoredTime = System.nanoTime();
     }
 
     public long getLastStoredTime() {

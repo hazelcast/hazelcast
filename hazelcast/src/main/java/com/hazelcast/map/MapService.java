@@ -785,19 +785,12 @@ public class MapService implements ManagedService, MigrationAwareService,
         record.setLastUpdateTime(replicationInfo.getLastUpdatedTime());
     }
 
-    public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record) {
-        final RecordInfo info = constructRecordInfo(record);
+    public RecordReplicationInfo createRecordReplicationInfo(Record record) {
+        final RecordInfo info = createRecordInfo(record);
         return new RecordReplicationInfo(record.getKey(), toData(record.getValue()), info);
     }
 
-    public RecordInfo createRecordInfo(MapContainer mapContainer, Record record) {
-        // this info is created to be used in backups.
-        // we added following latency (10 seconds) to be sure the ongoing promotion is
-        // completed if the owner of the record could not complete task before promotion
-        return constructRecordInfo(record);
-    }
-
-    private RecordInfo constructRecordInfo(Record record) {
+    public RecordInfo createRecordInfo(Record record) {
         final RecordInfo info = new RecordInfo();
         info.setStatistics(record.getStatistics());
         info.setVersion(record.getVersion());
@@ -826,14 +819,14 @@ public class MapService implements ManagedService, MigrationAwareService,
         simpleEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
         simpleEntryView.setLastAccessTime(unit.toMillis(record.getLastAccessTime()));
         simpleEntryView.setLastUpdateTime(unit.toMillis(record.getLastUpdateTime()));
-        simpleEntryView.setTtl(record.getTtl());
+        simpleEntryView.setTtl(unit.toMillis(record.getTtl()));
 
         final RecordStatistics statistics = record.getStatistics();
         if (statistics != null) {
             simpleEntryView.setHits(statistics.getHits());
-            simpleEntryView.setCreationTime(statistics.getCreationTime());
-            simpleEntryView.setExpirationTime(statistics.getExpirationTime());
-            simpleEntryView.setLastStoredTime(statistics.getLastStoredTime());
+            simpleEntryView.setCreationTime(unit.toMillis(statistics.getCreationTime()));
+            simpleEntryView.setExpirationTime(unit.toMillis(statistics.getExpirationTime()));
+            simpleEntryView.setLastStoredTime(unit.toMillis(statistics.getLastStoredTime()));
         }
         return simpleEntryView;
     }

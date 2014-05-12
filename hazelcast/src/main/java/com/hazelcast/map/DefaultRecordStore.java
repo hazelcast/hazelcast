@@ -1177,7 +1177,13 @@ public class DefaultRecordStore implements RecordStore {
         if (ttlInMillis < 0L) {
             return;
         }
-        record.setTtl(TimeUnit.MILLISECONDS.toNanos(ttlInMillis));
+        final long ttlInNanos = TimeUnit.MILLISECONDS.toNanos(ttlInMillis);
+        record.setTtl(ttlInNanos);
+
+        if (record.getStatistics() != null) {
+            record.getStatistics().setExpirationTime(System.nanoTime() + ttlInNanos);
+        }
+
     }
 
     private void updateSizeEstimator(long recordSize) {
