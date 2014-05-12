@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 
 
 @SuppressWarnings("VolatileLongOrDoubleField")
-abstract class AbstractRecord<V> extends  AbstractBaseRecord<V> {
+abstract class AbstractRecord<V> extends AbstractBaseRecord<V> {
 
     protected Data key;
 
@@ -61,7 +61,7 @@ abstract class AbstractRecord<V> extends  AbstractBaseRecord<V> {
 
     @Override
     public void setCachedValue(Object cachedValue) {
-        throw new UnsupportedOperationException();
+
     }
 
     @Override
