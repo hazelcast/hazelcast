@@ -40,7 +40,6 @@ abstract class AbstractRecord<V> extends  AbstractBaseRecord<V> {
     }
 
     public void setStatistics(RecordStatistics stats) {
-        throw new UnsupportedOperationException();
     }
 
     public void onAccess() {
