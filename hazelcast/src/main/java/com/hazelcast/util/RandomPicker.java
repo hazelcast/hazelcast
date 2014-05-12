@@ -25,18 +25,21 @@ import java.util.Random;
  */
 public final class RandomPicker {
 
+    private static Random randomNumberGenerator;
+
     private RandomPicker() {
     }
 
-    private static Random randomNumberGenerator;
-
     private static synchronized void initRNG() {
-        if (randomNumberGenerator == null)
+        if (randomNumberGenerator == null) {
             randomNumberGenerator = new Random();
+        }
     }
 
     public static int getInt(int n) {
-        if (randomNumberGenerator == null) initRNG();
+        if (randomNumberGenerator == null) {
+            initRNG();
+        }
         return randomNumberGenerator.nextInt(n);
     }
 

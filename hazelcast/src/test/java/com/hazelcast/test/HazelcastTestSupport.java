@@ -24,6 +24,7 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import org.junit.After;
+import org.junit.ComparisonFailure;
 
 import java.util.Collection;
 import java.util.Map;
@@ -57,6 +58,16 @@ public abstract class HazelcastTestSupport {
             sb.append(c);
         }
         return sb.toString();
+    }
+
+    public static void assertStartsWith(String expected, String actual) {
+        if (actual != null && actual.startsWith(expected)) {
+            return;
+        } else if (expected instanceof String && actual instanceof String) {
+            throw new ComparisonFailure("", (String) expected, (String) actual);
+        } else {
+            fail(format0("", expected, actual));
+        }
     }
 
     public static void assertJoinable(Thread... threads) {
@@ -137,11 +148,11 @@ public abstract class HazelcastTestSupport {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
             if (message == null) {
-                assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d",
-                        timeoutSeconds, latch.getCount()), completed);
+                assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d", timeoutSeconds,
+                        latch.getCount()), completed);
             } else {
-                assertTrue(format("%s, failed to complete within %d seconds , count left: %d",
-                        message, timeoutSeconds, latch.getCount()), completed);
+                assertTrue(format("%s, failed to complete within %d seconds , count left: %d", message, timeoutSeconds,
+                        latch.getCount()), completed);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -166,7 +177,6 @@ public abstract class HazelcastTestSupport {
     public static String randomMapName() {
         return randomString();
     }
-
 
     public static void sleepMillis(int millis) {
         try {
@@ -238,7 +248,6 @@ public abstract class HazelcastTestSupport {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
     }
 
-
     public HazelcastInstance createHazelcastInstance() {
         return createHazelcastInstance(new Config());
     }
@@ -267,7 +276,7 @@ public abstract class HazelcastTestSupport {
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        for (;;) {
+        for (; ; ) {
             String id = UUID.randomUUID().toString();
             Partition partition = partitionService.getPartition(id);
             if (localMember.equals(partition.getOwner())) {
@@ -279,7 +288,7 @@ public abstract class HazelcastTestSupport {
     public static String generateKeyNotOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        for (;;) {
+        for (; ; ) {
             String id = UUID.randomUUID().toString();
             Partition partition = partitionService.getPartition(id);
             if (!localMember.equals(partition.getOwner())) {
@@ -288,7 +297,8 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public final class DummyUncheckedHazelcastTestException extends RuntimeException {
+    public final class DummyUncheckedHazelcastTestException
+            extends RuntimeException {
 
     }
 
@@ -302,5 +312,25 @@ public abstract class HazelcastTestSupport {
                 System.err.println("\tat " + aTrace);
             }
         }
+    }
+
+    private static String format0(String message, Object expected, Object actual) {
+        String formatted = "";
+        if (message != null && !message.equals("")) {
+            formatted = message + " ";
+        }
+        String expectedString = String.valueOf(expected);
+        String actualString = String.valueOf(actual);
+        if (expectedString.equals(actualString)) {
+            return formatted + "expected: " + formatClassAndValue(expected, expectedString) + " but was: " + formatClassAndValue(
+                    actual, actualString);
+        } else {
+            return formatted + "expected:<" + expectedString + "> but was:<" + actualString + ">";
+        }
+    }
+
+    private static String formatClassAndValue(Object value, String valueString) {
+        String className = value == null ? "null" : value.getClass().getName();
+        return className + "<" + valueString + ">";
     }
 }

@@ -18,12 +18,12 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record<Data> {
+class DataRecord extends AbstractRecord<Data> {
 
     protected Data value;
 
-    public DataRecord(Data keyData, Data value, boolean statisticsEnabled) {
-        super(keyData, statisticsEnabled);
+    public DataRecord(Data keyData, Data value) {
+        super(keyData);
         this.value = value;
     }
 
@@ -54,4 +54,5 @@ public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record
     public void invalidate() {
         value = null;
     }
+
 }

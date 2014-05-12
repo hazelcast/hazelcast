@@ -24,8 +24,8 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class ErrorCommand extends AbstractTextCommand {
-    private final String message;
     ByteBuffer response;
+    private final String message;
 
     public ErrorCommand(TextCommandType type) {
         this(type, null);
@@ -66,9 +66,10 @@ public class ErrorCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "ErrorCommand{" +
-                "type=" + type +
-                ", msg=" + message +
-                '}' + super.toString();
+        return "ErrorCommand{"
+                + "type=" + type
+                + ", msg=" + message
+                + '}'
+                + super.toString();
     }
 }

@@ -44,6 +44,10 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
@@ -51,9 +55,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -233,11 +234,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                             final TransactionalMap<Object, Object> txMap = context.getMap("default");
                             for (int i = 0; i < size; i++) {
                                 txMap.put(i, i);
-                                try {
-                                    Thread.sleep(100);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
+                                sleepSeconds(1);
                             }
                             return true;
                         }
@@ -251,8 +248,10 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         Thread thread = new Thread(runnable);
         thread.start();
-        Thread.sleep(200);
+        sleepSeconds(1);
+
         h1.shutdown();
+        // wait till thread finishes.
         thread.join(30 * 1000);
 
         assertFalse(result.get());

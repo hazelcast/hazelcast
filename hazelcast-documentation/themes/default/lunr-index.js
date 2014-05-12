@@ -14,7 +14,7 @@ documentTitles["<%= @baseUrl + file.slug %>.html#<%= section.slug %>"] = "<%= se
 index.add({
     url: "<%= @baseUrl + file.slug %>.html#<%= section.slug %>",
     title: "<%= section.title.replace(/"/g, '\\"') %>",
-    body: "<%= section.markdown.replace(/\n/g, " ").replace(/"/g, '\\"') %>"
+    body: "<%= section.markdown.replace(/\n|\r/g, " ").replace(/"/g, '\\"') %>"
 });
 <% end %>
 <% end %>

@@ -19,7 +19,7 @@ package com.hazelcast.ascii.rest;
 import java.nio.ByteBuffer;
 
 public class HttpGetCommand extends HttpCommand {
-    boolean nextLine = false;
+    boolean nextLine;
 
     public HttpGetCommand(String uri) {
         super(TextCommandType.HTTP_GET, uri);

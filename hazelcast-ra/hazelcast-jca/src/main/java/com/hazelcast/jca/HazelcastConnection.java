@@ -20,10 +20,24 @@ import java.util.concurrent.ExecutorService;
 
 import javax.resource.cci.Connection;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.core.TransactionalList;
+import com.hazelcast.core.ISemaphore;
 import com.hazelcast.transaction.TransactionalTaskContext;
 
-/** 
+/**
  * Hazelcast specific connection which allows
  * access to this hazelcast instance to acquire
  * the maps, lists etc.
@@ -59,7 +73,7 @@ public interface HazelcastConnection extends Connection {
      * @see HazelcastInstance#getMultiMap(String)
      */
     <K, V> MultiMap<K, V> getMultiMap(String name);
-    
+
 
     /**
      * @see HazelcastInstance#getExecutorService(String)

@@ -26,6 +26,32 @@ This section provides the improvements performed for Hazelcast 3.2 release.
 Please see the list of all enhancement issues [here](https://github.com/hazelcast/hazelcast/issues?labels=enhancement&milestone=29&page=3&state=closed).
 
 ### Fixes
+
+**3.2.1 Fixes**
+
+This section lists issues solved for Hazelcast 3.2.1 release.
+
+-	JCA problems have been fixed [#2025](https://github.com/hazelcast/hazelcast/issues/2025).
+-	Redo problem about Java dummy client is fixed [#2321](https://github.com/hazelcast/hazelcast/pull/2321).
+-	Round robin load balancer of Java client is improved [#1983](https://github.com/hazelcast/hazelcast/pull/1983).
+-	Initial timeout is for the initial connections in Java clients [#2295](https://github.com/hazelcast/hazelcast/pull/2295).
+-	Wildcard configuration improvement in near cache configuration [#2193](https://github.com/hazelcast/hazelcast/pull/2193).
+-	Unneeded serializations in EntryProcessor should be removed when the object format is *In-Memory* [#2139](https://github.com/hazelcast/hazelcast/issues/2139).
+-	Race condition in near cache has been solved, immediate invalidation of local near cache was needed [#2163](https://github.com/hazelcast/hazelcast/issues/2163).
+-	Predicate issue seen in transactions is solved [#2310](https://github.com/hazelcast/hazelcast/issues/2310).
+-	Comparator issue in map eviction is solved [#2127](https://github.com/hazelcast/hazelcast/issues/2127).
+-	Map eviction part has been refactored due to a race condition on map listener [#2324](https://github.com/hazelcast/hazelcast/issues/2324).
+-	Stale data problem in client near cache has been solved [#2065](https://github.com/hazelcast/hazelcast/issues/2065).
+-	C++ client compilation problems are fixed.
+-	Many checkstyle and findbugs issues are solved.
+
+Please see [here](https://github.com/hazelcast/hazelcast/issues?labels=defect&milestone=43&page=1&state=open) for the full list of solved issues.
+
+
+
+
+**3.2 Fixes**
+
 This section lists issues solved for Hazelcast 3.2 release.
 
 -	`LocalMapStats.getNearCacheStats()` can return null when it is called before a map get that calls `initNearCache()`. [[#2009]](https://github.com/hazelcast/hazelcast/issues/2009)
@@ -117,7 +143,7 @@ This section lists issues solved for Hazelcast 3.2 release.
 
 ### Known Issues & Workarounds
 
-Please see [here](https://github.com/hazelcast/hazelcast/issues?labels=defect&milestone=29&state=open) for the known issues.
+Please see [here](https://github.com/hazelcast/hazelcast/issues?labels=&milestone=43&page=1&state=open) for the known issues.
 
 
 

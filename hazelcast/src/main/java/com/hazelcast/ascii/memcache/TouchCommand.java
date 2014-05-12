@@ -30,7 +30,7 @@ public class TouchCommand extends AbstractTextCommand {
     String key;
     int expiration;
     boolean noreply;
-    ByteBuffer response = null;
+    ByteBuffer response;
 
     public TouchCommand(TextCommandType type, String key, int expiration, boolean noReply) {
         super(type);

@@ -74,7 +74,7 @@ public class CompletableFutureTask<V> extends FutureTask<V> implements ICompleta
             runAsynchronous(callback, executor);
             return;
         }
-        for (; ; ) {
+        for ( ;;) {
             ExecutionCallbackNode<V> oldCallbackHead = callbackHead;
             ExecutionCallbackNode<V> newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
             if (callbackUpdater.compareAndSet(this, oldCallbackHead, newCallbackHead)) {
@@ -93,7 +93,7 @@ public class CompletableFutureTask<V> extends FutureTask<V> implements ICompleta
 
     private void fireCallbacks() {
         ExecutionCallbackNode<V> callbackChain;
-        for (; ; ) {
+        for (;;) {
             callbackChain = callbackHead;
             if (callbackUpdater.compareAndSet(this, callbackChain, null)) {
                 break;
@@ -124,7 +124,7 @@ public class CompletableFutureTask<V> extends FutureTask<V> implements ICompleta
         });
     }
 
-    private static class ExecutionCallbackNode<E> {
+    private static final class ExecutionCallbackNode<E> {
         private final ExecutionCallback<E> callback;
         private final Executor executor;
         private final ExecutionCallbackNode<E> next;

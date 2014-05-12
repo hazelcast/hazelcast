@@ -48,6 +48,24 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class TransactionQueueTest extends HazelcastTestSupport {
 
+    @Test(expected = IllegalStateException.class)
+    public void nestedTransactionTest() {
+        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        TransactionContext outerTnx = instance.newTransactionContext();
+        outerTnx.beginTransaction();
+        final String name = randomString();
+        final String item = randomString();
+        outerTnx.getQueue(name).offer(item);
+        try {
+            TransactionContext innerTnx = instance.newTransactionContext();
+            innerTnx.beginTransaction();
+            innerTnx.getQueue(name).offer(item);
+            innerTnx.commitTransaction();
+        } finally {
+            outerTnx.rollbackTransaction();
+        }
+    }
+
     @Test
     public void testTransactionalOfferPoll1() throws Exception {
         Config config = new Config();

@@ -1,7 +1,0 @@
-
-
-
-## Statistics API per Node
-
-???
-

@@ -21,7 +21,7 @@ import com.hazelcast.ascii.AbstractTextCommand;
 import java.nio.ByteBuffer;
 
 public class SimpleCommand extends AbstractTextCommand {
-    ByteBuffer response = null;
+    ByteBuffer response;
 
     public SimpleCommand(TextCommandType type) {
         super(type);
@@ -44,7 +44,8 @@ public class SimpleCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "SimpleCommand [" + type + "]{" +
-                '}' + super.toString();
+        return "SimpleCommand [" + type + "]{"
+                + '}'
+                + super.toString();
     }
 }

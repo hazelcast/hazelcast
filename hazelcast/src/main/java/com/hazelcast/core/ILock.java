@@ -67,6 +67,9 @@ public interface ILock extends Lock, DistributedObject {
      *
      * @param leaseTime time to wait before releasing the lock.
      * @param timeUnit unit of time to specify lease time.
+     *
+     * @throws IllegalMonitorStateException if the current thread does not
+     * hold this lock
      */
     void lock(long leaseTime, TimeUnit timeUnit);
 
