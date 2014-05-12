@@ -19,7 +19,10 @@ package com.hazelcast.wan;
 import com.hazelcast.cluster.AuthorizationOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.AddressUtil;
@@ -33,6 +36,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
+
+    private static final long SLEEP_DURATION = 1000;
+    private static final int SLEEP_TIMES = 10;
 
     private Node node;
     private ILogger logger;
@@ -57,7 +63,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         WanReplicationEvent replicationEvent = new WanReplicationEvent(serviceName, eventObject);
 
         //if the replication event is published, we are done.
-        if(eventQueue.offer(replicationEvent)){
+        if (eventQueue.offer(replicationEvent)) {
             return;
         }
 
@@ -66,8 +72,8 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         //todo: isn't it dangerous to drop a ReplicationEvent?
         eventQueue.poll();
 
-        if(!eventQueue.offer(replicationEvent)){
-            logger.warning("Could not publish replication event: "+replicationEvent);
+        if (!eventQueue.offer(replicationEvent)) {
+            logger.warning("Could not publish replication event: " + replicationEvent);
         }
     }
 
@@ -123,16 +129,16 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 final Address target = new Address(addressHolder.getAddress(), addressHolder.getPort());
                 final ConnectionManager connectionManager = node.getConnectionManager();
                 Connection conn = connectionManager.getOrConnect(target);
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < SLEEP_TIMES; i++) {
                     if (conn == null) {
-                        Thread.sleep(1000);
+                        Thread.sleep(SLEEP_DURATION);
                     } else {
                         return conn;
                     }
                     conn = connectionManager.getConnection(target);
                 }
             } catch (Throwable e) {
-                Thread.sleep(1000);
+                Thread.sleep(SLEEP_DURATION);
             } finally {
                 addressQueue.offer(targetStr);
             }

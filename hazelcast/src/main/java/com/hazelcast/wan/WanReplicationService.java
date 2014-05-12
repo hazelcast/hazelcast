@@ -30,7 +30,6 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 
 public class WanReplicationService implements CoreService {
 
@@ -49,12 +48,18 @@ public class WanReplicationService implements CoreService {
     @SuppressWarnings("SynchronizeOnThis")
     public WanReplicationPublisher getWanReplicationListener(String name) {
         WanReplicationDelegate wr = wanReplications.get(name);
-        if (wr != null) return wr;
+        if (wr != null) {
+            return wr;
+        }
         synchronized (this) {
             wr = wanReplications.get(name);
-            if (wr != null) return wr;
+            if (wr != null) {
+                return wr;
+            }
             WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
-            if (wanReplicationConfig == null) return null;
+            if (wanReplicationConfig == null) {
+                return null;
+            }
             List<WanTargetClusterConfig> targets = wanReplicationConfig.getTargetClusterConfigs();
             WanReplicationEndpoint[] targetEndpoints = new WanReplicationEndpoint[targets.size()];
             int count = 0;
@@ -62,7 +67,8 @@ public class WanReplicationService implements CoreService {
                 WanReplicationEndpoint target;
                 if (targetClusterConfig.getReplicationImpl() != null) {
                     try {
-                        target = ClassLoaderUtil.newInstance(node.getConfigClassLoader(), targetClusterConfig.getReplicationImpl());
+                        target = ClassLoaderUtil.newInstance(node.getConfigClassLoader()
+                                , targetClusterConfig.getReplicationImpl());
                     } catch (Exception e) {
                         throw ExceptionUtil.rethrow(e);
                     }
