@@ -110,6 +110,11 @@ public class ClientNearCache<K> {
                     public void handle(PortableEntryEvent event) {
                         cache.remove(event.getKey());
                     }
+
+                    @Override
+                    public void onListenerRegister() {
+                        cache.clear();
+                    }
                 };
             } else {
                 throw new IllegalStateException("Near cache is not available for this type of data structure");

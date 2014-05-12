@@ -227,6 +227,11 @@ public final class ProxyManager {
                     listener.distributedObjectDestroyed(event);
                 }
             }
+
+            @Override
+            public void onListenerRegister() {
+
+            }
         };
         final ClientContext clientContext = new ClientContext(client, this);
         return ListenerUtil.listen(clientContext, request, null, eventHandler);

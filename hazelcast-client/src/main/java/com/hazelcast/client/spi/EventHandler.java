@@ -18,4 +18,12 @@ package com.hazelcast.client.spi;
 
 public interface EventHandler<E> {
     void handle(E event);
+
+    /**
+     *  This method is called when registration request response is successfully returned from node.
+     *
+     *  Note that this method will also be called while first registered node is dead
+     *  and re-registering to a second node.
+     */
+    void onListenerRegister();
 }
