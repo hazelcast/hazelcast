@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * TODO empty statistics.
@@ -36,8 +35,7 @@ public class RecordStatistics implements DataSerializable {
     protected long expirationTime;
 
     public RecordStatistics() {
-        final long nowInNanos = System.nanoTime();
-        creationTime = TimeUnit.NANOSECONDS.toMillis(nowInNanos);
+        creationTime = System.nanoTime();
     }
 
     public int getHits() {
