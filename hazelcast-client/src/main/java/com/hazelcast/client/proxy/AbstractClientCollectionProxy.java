@@ -145,6 +145,11 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
                     listener.itemRemoved(itemEvent);
                 }
             }
+
+            @Override
+            public void onListenerRegister() {
+
+            }
         };
         return listen(request, getPartitionKey(), eventHandler);
     }
