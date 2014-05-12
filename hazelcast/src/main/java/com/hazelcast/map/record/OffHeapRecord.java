@@ -25,10 +25,10 @@ class OffHeapRecord extends AbstractRecord<Data> {
     private Storage<DataRef> storage;
     private DataRef valueRef;
 
-    public OffHeapRecord() {
+    OffHeapRecord() {
     }
 
-    public OffHeapRecord(Storage<DataRef> storage, Data key, Data value) {
+    OffHeapRecord(Storage<DataRef> storage, Data key, Data value) {
         super(key);
         this.storage = storage;
         setValue(value);

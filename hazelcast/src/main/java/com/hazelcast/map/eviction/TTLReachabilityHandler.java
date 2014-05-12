@@ -37,13 +37,13 @@ class TTLReachabilityHandler extends AbstractReachabilityHandler {
         if (ttl < 1L) {
             return record;
         }
-        // expect lastUpdatedTime set when creating.
-        final long lastUpdatedTime = record.getLastUpdatedTime();
+        // expect lastUpdateTime set when creating.
+        final long lastUpdatedTime = record.getLastUpdateTime();
 
         assert ttl > 0L : log("wrong ttl %d", ttl);
         assert lastUpdatedTime > 0L;
         assert timeInNanos > 0L;
-        assert timeInNanos >= lastUpdatedTime : log("time >= lastUpdatedTime (%d >= %d)",
+        assert timeInNanos >= lastUpdatedTime : log("time >= lastUpdateTime (%d >= %d)",
                 timeInNanos, lastUpdatedTime);;
 
         result = timeInNanos - lastUpdatedTime >= ttl;

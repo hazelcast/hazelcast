@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- *
+ *  Record info.
  */
 public class RecordInfo implements DataSerializable {
     protected RecordStatistics statistics;
@@ -32,7 +32,7 @@ public class RecordInfo implements DataSerializable {
     protected long ttl;
     protected long creationTime;
     protected long lastAccessTime;
-    protected long lastUpdatedTime;
+    protected long lastUpdateTime;
 
     public RecordInfo() {
     }
@@ -44,7 +44,7 @@ public class RecordInfo implements DataSerializable {
         this.ttl = recordInfo.ttl;
         this.creationTime = recordInfo.creationTime;
         this.lastAccessTime = recordInfo.lastAccessTime;
-        this.lastUpdatedTime = recordInfo.lastUpdatedTime;
+        this.lastUpdateTime = recordInfo.lastUpdateTime;
     }
 
     public RecordStatistics getStatistics() {
@@ -95,12 +95,12 @@ public class RecordInfo implements DataSerializable {
         this.lastAccessTime = lastAccessTime;
     }
 
-    public long getLastUpdatedTime() {
-        return lastUpdatedTime;
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
     }
 
-    public void setLastUpdatedTime(long lastUpdatedTime) {
-        this.lastUpdatedTime = lastUpdatedTime;
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
     }
 
     @Override
@@ -116,7 +116,7 @@ public class RecordInfo implements DataSerializable {
         out.writeLong(ttl);
         out.writeLong(creationTime);
         out.writeLong(lastAccessTime);
-        out.writeLong(lastUpdatedTime);
+        out.writeLong(lastUpdateTime);
 
     }
 
@@ -132,7 +132,7 @@ public class RecordInfo implements DataSerializable {
         ttl = in.readLong();
         creationTime = in.readLong();
         lastAccessTime = in.readLong();
-        lastUpdatedTime = in.readLong();
+        lastUpdateTime = in.readLong();
     }
 
     @Override
@@ -151,8 +151,8 @@ public class RecordInfo implements DataSerializable {
         builder.append(creationTime);
         builder.append(", lastAccessTime=");
         builder.append(lastAccessTime);
-        builder.append(", lastUpdatedTime=");
-        builder.append(lastUpdatedTime);
+        builder.append(", lastUpdateTime=");
+        builder.append(lastUpdateTime);
         builder.append('}');
         return builder.toString();
     }

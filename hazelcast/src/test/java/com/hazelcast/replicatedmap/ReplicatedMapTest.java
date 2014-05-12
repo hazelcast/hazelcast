@@ -207,12 +207,14 @@ public class ReplicatedMapTest
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testAddTtlObjectDelay0()
             throws Exception {
 
         testAddTtl(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
+    @Test
     @Category(ProblematicTest.class)
     public void testAddTtlObjectDelayDefault()
             throws Exception {

@@ -86,8 +86,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                     mapService.publishWanReplicationUpdate(name, entryView);
                 }
                 backupEntrySet.add(entry);
-                RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer,
-                        recordStore.getRecord(dataKey));
+                RecordInfo replicationInfo = mapService.createRecordInfo(recordStore.getRecord(dataKey));
                 backupRecordInfos.add(replicationInfo);
             }
         }

@@ -41,7 +41,9 @@ public class MergeRemoveOperation extends BaseRemoveOperation {
         Record record = recordStore.getRecord(dataKey);
         // todo what if statistics is disabled. currently it accepts the remove
         // check if there is newer update or insert. If so then cancel the remove
-        if (record.getStatistics() != null && (record.getStatistics().getCreationTime() > removeTime || record.getStatistics().getLastUpdateTime() > removeTime ) ) {
+        if (record.getStatistics() != null
+                && (record.getStatistics().getCreationTime() > removeTime
+                || record.getLastUpdateTime() > removeTime)) {
             return;
         }
         recordStore.deleteRecord(dataKey);
@@ -54,7 +56,7 @@ public class MergeRemoveOperation extends BaseRemoveOperation {
     }
 
     public void afterRun() {
-        if(merged) {
+        if (merged) {
             invalidateNearCaches();
         }
     }

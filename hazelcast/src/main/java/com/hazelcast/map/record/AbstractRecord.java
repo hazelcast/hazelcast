@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 
 
 @SuppressWarnings("VolatileLongOrDoubleField")
-abstract class AbstractRecord<V> extends  AbstractBaseRecord<V> {
+abstract class AbstractRecord<V> extends AbstractBaseRecord<V> {
 
     protected Data key;
 
@@ -40,7 +40,6 @@ abstract class AbstractRecord<V> extends  AbstractBaseRecord<V> {
     }
 
     public void setStatistics(RecordStatistics stats) {
-        throw new UnsupportedOperationException();
     }
 
     public void onAccess() {
@@ -51,7 +50,7 @@ abstract class AbstractRecord<V> extends  AbstractBaseRecord<V> {
     }
 
     public void onUpdate() {
-        lastUpdatedTime = System.nanoTime();
+        lastUpdateTime = System.nanoTime();
         version++;
     }
 
@@ -62,7 +61,7 @@ abstract class AbstractRecord<V> extends  AbstractBaseRecord<V> {
 
     @Override
     public void setCachedValue(Object cachedValue) {
-        throw new UnsupportedOperationException();
+
     }
 
     @Override

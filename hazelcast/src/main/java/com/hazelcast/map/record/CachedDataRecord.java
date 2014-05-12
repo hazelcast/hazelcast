@@ -18,14 +18,17 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-final class CachedDataRecord extends DataRecord {
+/**
+ *  CachedDataRecord.
+ */
+class CachedDataRecord extends DataRecord {
 
     private transient volatile Object cachedValue;
 
-    public CachedDataRecord() {
+    CachedDataRecord() {
     }
 
-    public CachedDataRecord(Data keyData, Data value) {
+    CachedDataRecord(Data keyData, Data value) {
         super(keyData, value);
     }
 
