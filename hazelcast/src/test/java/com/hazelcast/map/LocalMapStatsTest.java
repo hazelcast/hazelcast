@@ -21,7 +21,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testLastAccessTime() throws InterruptedException {
-        final TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+        final TimeUnit timeUnit = TimeUnit.NANOSECONDS;
         final long startTime = timeUnit.toMillis(System.nanoTime());
 
         HazelcastInstance h1 = createHazelcastInstance();
