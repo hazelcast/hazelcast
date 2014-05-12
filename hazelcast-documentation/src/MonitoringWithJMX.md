@@ -17,6 +17,6 @@ You can monitor your Hazelcast members via the JMX protocol.
 
     -   using Hazelcast configuration (API, XML, Spring)
 
-    -   or set system property `-Dhazelcast.jmx=true`
+    -   or by setting system property `-Dhazelcast.jmx=true`
 
 -   Use jconsole, jvisualvm (with mbean plugin) or another JMX compliant monitoring tool.
