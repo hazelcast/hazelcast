@@ -1,5 +1,5 @@
 
-## Replicated Map (BETA)
+## Replicated Map - BETA
 
 A replicated map is a weakly consistent, distributed key-value data structure provided by Hazelcast.
 
