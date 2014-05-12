@@ -52,7 +52,7 @@
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.antrun.plugin.version>1.7</maven.antrun.plugin.version>
-        <maven.surefire.plugin.version>2.14.1</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>2.17</maven.surefire.plugin.version>
         <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
@@ -61,6 +61,7 @@
         <findbugs.maven.plugin.version>2.5.3</findbugs.maven.plugin.version>
         <checkstyle.maven.plugin.version>2.12</checkstyle.maven.plugin.version>
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
+        <maven.shade.plugin.version>2.2</maven.shade.plugin.version>
         <junit.version>4.11</junit.version>
         <h2.version>1.3.160</h2.version>
         <mockito.all.version>1.9.5</mockito.all.version>
@@ -168,6 +169,8 @@
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration combine.self="override">
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+
+
                     <!-- 1C means 1 process per cpu core -->
                     <!-- forkCount>1C</forkCount>
                     <reuseForks>true</reuseForks>

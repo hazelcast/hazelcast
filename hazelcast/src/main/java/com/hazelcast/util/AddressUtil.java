@@ -32,12 +32,16 @@ import java.util.LinkedList;
 
 public final class AddressUtil {
 
+    public static final int LASTPART_NO = 3;
+    public static final int NUMBER_OF_ADRESSES = 255;
+
     private AddressUtil() {
     }
 
     public static boolean matchAnyInterface(final String address, final Collection<String> interfaces) {
-        if (interfaces == null || interfaces.size() == 0) return false;
-
+        if (interfaces == null || interfaces.size() == 0) {
+            return false;
+        }
         for (final String interfaceMask : interfaces) {
             if (matchInterface(address, interfaceMask)) {
                 return true;
@@ -103,8 +107,8 @@ public final class AddressUtil {
 
     public static InetAddress fixScopeIdAndGetInetAddress(final InetAddress inetAddress) throws SocketException {
         Inet6Address resultInetAddress = null;
-        if (inetAddress instanceof Inet6Address &&
-                (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
+        if (inetAddress instanceof Inet6Address
+                && (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
             final Inet6Address inet6Address = (Inet6Address) inetAddress;
             if (inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
                 Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -113,11 +117,12 @@ public final class AddressUtil {
                     Enumeration<InetAddress> addresses = ni.getInetAddresses();
                     while (addresses.hasMoreElements()) {
                         InetAddress address = addresses.nextElement();
-                        if (address instanceof Inet6Address &&
-                                Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
+                        if (address instanceof Inet6Address
+                                && Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
                             if (resultInetAddress != null) {
-                                throw new IllegalArgumentException("This address " + inet6Address +
-                                        " is bound to more than one network interface!");
+                                throw new IllegalArgumentException("This address "
+                                        + inet6Address
+                                        + " is bound to more than one network interface!");
                             }
                             resultInetAddress = (Inet6Address) address;
                         }
@@ -173,8 +178,9 @@ public final class AddressUtil {
             } catch (IOException ignored) {
             }
             if (possibleAddresses.isEmpty()) {
-                throw new IllegalArgumentException("Could not find a proper network interface" +
-                        " to connect to " + inet6Address);
+                throw new IllegalArgumentException("Could not find a proper network interface"
+                        + " to connect to "
+                        + inet6Address);
             }
             return possibleAddresses;
         }
@@ -183,16 +189,18 @@ public final class AddressUtil {
 
     public static Collection<String> getMatchingIpv4Addresses(final AddressMatcher addressMatcher) {
         if (addressMatcher.isIPv6()) {
-            throw new IllegalArgumentException("Cannot wildcard matching for IPv6: " + addressMatcher);
+            throw new IllegalArgumentException("Cannot wildcard matching for IPv6: "
+                    + addressMatcher);
         }
         final Collection<String> addresses = new HashSet<String>();
-        final String first3 = addressMatcher.address[0] + "." +
-                addressMatcher.address[1] + "." +
-                addressMatcher.address[2];
-        final String lastPart = addressMatcher.address[3];
+        final String first3 = addressMatcher.address[0] + "."
+                + addressMatcher.address[1]
+                + "."
+                + addressMatcher.address[2];
+        final String lastPart = addressMatcher.address[LASTPART_NO];
         final int dashPos;
         if ("*".equals(lastPart)) {
-            for (int j = 0; j <= 255; j++) {
+            for (int j = 0; j <= NUMBER_OF_ADRESSES; j++) {
                 addresses.add(first3 + "." + j);
             }
         } else if ((dashPos = lastPart.indexOf('-')) > 0) {
@@ -263,8 +271,8 @@ public final class AddressUtil {
             return true;
         }
         final int rangeIndex = part.indexOf('-');
-        if (rangeIndex > -1 &&
-                (rangeIndex != part.lastIndexOf('-') || rangeIndex == part.length() - 1)) {
+        if (rangeIndex > -1
+                && (rangeIndex != part.lastIndexOf('-') || rangeIndex == part.length() - 1)) {
             return false;
         }
         final String[] subParts;
@@ -341,9 +349,9 @@ public final class AddressUtil {
 
     public static class AddressHolder {
 
-        public final String address;
-        public final String scopeId;
-        public final int port;
+        private final String address;
+        private final String scopeId;
+        private final int port;
 
         public AddressHolder(final String address, final int port,
                              final String scopeId) {
@@ -359,13 +367,25 @@ public final class AddressUtil {
             sb.append('[').append(address).append("]:").append(port);
             return sb.toString();
         }
+
+        public String getAddress() {
+            return address;
+        }
+
+        public String getScopeId() {
+            return scopeId;
+        }
+
+        public int getPort() {
+            return port;
+        }
     }
 
     /**
      * http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/index.html
      */
 
-    public static abstract class AddressMatcher {
+    public abstract static class AddressMatcher {
 
         protected final String[] address;
 
@@ -377,7 +397,7 @@ public final class AddressUtil {
 
         public abstract boolean isIPv6();
 
-        public abstract void setAddress(String ip[]);
+        public abstract void setAddress(String[] ip);
 
         protected final boolean match(final String[] mask, String[] input, int radix) {
             if (input != null && mask != null) {
@@ -437,7 +457,8 @@ public final class AddressUtil {
     static class Ip4AddressMatcher extends AddressMatcher {
 
         public Ip4AddressMatcher() {
-            super(new String[4]);  // d.d.d.d
+            // d.d.d.d
+            super(new String[4]);
         }
 
         @Override
@@ -451,13 +472,15 @@ public final class AddressUtil {
         }
 
         @Override
-        public void setAddress(String ip[]) {
+        public void setAddress(String[] ip) {
             System.arraycopy(ip, 0, this.address, 0, ip.length);
         }
 
         @Override
         public boolean match(final AddressMatcher matcher) {
-            if (matcher.isIPv6()) return false;
+            if (matcher.isIPv6()) {
+                return false;
+            }
             final String[] mask = this.address;
             final String[] input = ((Ip4AddressMatcher) matcher).address;
             return match(mask, input, 10);
@@ -479,7 +502,8 @@ public final class AddressUtil {
     static class Ip6AddressMatcher extends AddressMatcher {
 
         public Ip6AddressMatcher() {
-            super(new String[8]);  // x:x:x:x:x:x:x:x%s
+            // x:x:x:x:x:x:x:x%s
+            super(new String[8]);
         }
 
         @Override
@@ -493,13 +517,15 @@ public final class AddressUtil {
         }
 
         @Override
-        public void setAddress(String ip[]) {
+        public void setAddress(String[] ip) {
             System.arraycopy(ip, 0, this.address, 0, ip.length);
         }
 
         @Override
         public boolean match(final AddressMatcher matcher) {
-            if (matcher.isIPv4()) return false;
+            if (matcher.isIPv4()) {
+                return false;
+            }
             final Ip6AddressMatcher a = (Ip6AddressMatcher) matcher;
             final String[] mask = this.address;
             final String[] input = a.address;

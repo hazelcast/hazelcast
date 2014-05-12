@@ -18,7 +18,6 @@ package com.hazelcast.util.executor;
 
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import edu.umd.cs.findbugs.annotations.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -37,6 +36,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class CachedExecutorServiceDelegate implements ExecutorService, ManagedExecutorService {
+    public static final long TIME = 250;
 
     private final AtomicLong executedCount = new AtomicLong();
     private final String name;
@@ -84,7 +84,8 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
 
     @Override
     public int getQueueSize() {
-        return taskQ.size();  // LBQ size handled by an atomic int
+        // LBQ size handled by an atomic int
+        return taskQ.size();
     }
 
     @Override
@@ -123,7 +124,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     private void addNewWorkerIfRequired() {
         if (size < maxPoolSize) {
             try {
-                if (lock.tryLock(250, TimeUnit.MILLISECONDS)) {
+                if (lock.tryLock(TIME, TimeUnit.MILLISECONDS)) {
                     try {
                         if (size < maxPoolSize && getQueueSize() > 0) {
                             size++;

@@ -120,7 +120,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
             String targetStr = addressQueue.take();
             try {
                 final AddressHolder addressHolder = AddressUtil.getAddressHolder(targetStr, defaultPort);
-                final Address target = new Address(addressHolder.address, addressHolder.port);
+                final Address target = new Address(addressHolder.getAddress(), addressHolder.getPort());
                 final ConnectionManager connectionManager = node.getConnectionManager();
                 Connection conn = connectionManager.getOrConnect(target);
                 for (int i = 0; i < 10; i++) {

@@ -1,9 +1,9 @@
 
 ## HTTP Session Clustering with Hazelcast WM
 
-Assume that you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down, your users on that server will be directed to one of the live servers (B or C), but their sessions will be lost! 
+Assume that you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down, your users on that server will be directed to one of the live servers (B or C), but their sessions will be lost.
 
-So we have to have all these sessions backed up somewhere if we do not want to lose the sessions upon server crashes. Hazelcast WM allows you to cluster user HTTP sessions automatically. The following are required for enabling Hazelcast Session Clustering:
+So we have to have all these sessions backed up somewhere if we do not want to lose the sessions upon server crashes. Hazelcast Web Manager (WM) allows you to cluster user HTTP sessions automatically. The following are required for enabling Hazelcast Session Clustering:
 
 -   Target application or web server should support Java 1.5 or higher
 
@@ -30,8 +30,18 @@ Here are the steps to setup Hazelcast Session Clustering:
         <param-value>my-sessions</param-value>
     </init-param>
     <!--
+        TTL value of the distributed map storing
+        your web session objects.
+        Any integer between 0 and Integer.MAX_VALUE.
+        Default is 0 which is infinite.
+    -->
+    <init-param>
+        <param-name>session-ttl-seconds</param-name>
+        <param-value>0</param-value>
+    </init-param>
+    <!--
         How is your load-balancer configured?
-        stick-session means all requests of a session
+        sticky-session means all requests of a session
         is routed to the node where the session is first created.
         This is excellent for performance.
         If sticky-session is set to false, when a session is updated
@@ -126,6 +136,14 @@ Here are the steps to setup Hazelcast Session Clustering:
         <param-name>shutdown-on-destroy</param-name>
         <param-value>true</param-value>
     </init-param>
+    <!--
+        Do you want to cache sessions locally in each instance?
+        Default is false.
+    -->
+    <init-param>
+        <param-name>deferred-write</param-name>
+        <param-value>false</param-value>
+    </init-param>
 </filter>
 <filter-mapping>
     <filter-name>hazelcast-filter</filter-name>
@@ -140,16 +158,24 @@ Here are the steps to setup Hazelcast Session Clustering:
 </listener>
 ```
 
--	Package and deploy your war file as you would normally do.
+-	Package and deploy your `war` file as you would normally do.
 
-It is that easy! All HTTP requests will go through Hazelcast `WebFilter` and it will put the session objects into Hazelcast distributed map if needed.
+It is that easy. All HTTP requests will go through Hazelcast `WebFilter` and it will put the session objects into Hazelcast distributed map if needed.
 
-**Information about sticky-sessions:**
+### Client Mode vs. P2P Mode
+
+Hazelcast Session Replication works as P2P by default. You need to set `use-client` parameter to **true** to switch to Client/Server architecture. P2P mode is more flexible and requires no configuration in advance while in Client/Server architecture, clients need to connect to an existing Hazelcast Cluster. In case of connection problems, clients will try to reconnect to the cluster. Default retry count is 3.
+
+### Caching Locally with `deferred-write`
+
+If the value for `deferred-write` is set as **true**, Hazelcast will cache the session locally and will update the local session on set or deletion of an attribute. Only at the end of request, it will update the distributed map with all the updates. So, it will not be updating the distributed map on each attribute update. It will only call it once at the end of request. It will be also caching it, i.e. whenever there is a read for the attribute, it will read it from the cache. If `deferred-write` is **false**, you will not have the attributes cached on any server.
+
+### `sticky-session`
 
 Hazelcast holds whole session attributes in a distributed map and in local HTTP session. Local session is required for fast access to data and distributed map is needed for fail-safety.
 
--   *If sticky-session is not used, whenever a session attribute is updated in a node (in both node local session and clustered cache), that attribute should be invalidated in all other nodes' local sessions, because now they have dirty value. So, when a request arrives to one of those other nodes, that attribute value is fetched from clustered cache.*
+-   If `sticky-session` is not used, whenever a session attribute is updated in a node (in both node local session and clustered cache), that attribute should be invalidated in all other nodes' local sessions, because now they have dirty value. So, when a request arrives to one of those other nodes, that attribute value is fetched from clustered cache.
 
--   *To overcome performance penalty of sending invalidation messages during updates, sticky-sessions can be used. If Hazelcast knows sessions are sticky, invalidation will not be send, because Hazelcast assumes there is no other local session at the moment. When a server is down, requests belonging to a session hold in that server will routed to other one and that server will fetch session data from clustered cache. That means, using sticky-sessions, one will not suffer performance penalty of accessing clustered data and can benefit recover from a server failure.*
+-   To overcome performance penalty of sending invalidation messages during updates, sticky sessions can be used. If Hazelcast knows sessions are sticky, invalidation will not be sent, because Hazelcast assumes there is no other local session at the moment. When a server is down, requests belonging to a session hold in that server will routed to other one and that server will fetch session data from clustered cache. That means, using sticky sessions, one will not suffer performance penalty of accessing clustered data and can benefit recover from a server failure.
 
 

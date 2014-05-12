@@ -20,8 +20,23 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -180,6 +195,37 @@ public class ClientIssueTest extends HazelcastTestSupport {
         int expected = 1000;
         for (int i = 0; i < expected; i++) {
             map.put(i, "item" + i);
+        }
+        thread.join();
+        assertEquals(expected, map.size());
+    }
+
+    @Test
+    public void testOperationRedo_smartRoutingDisabled() throws Exception {
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setRedoOperation(true);
+        clientConfig.setSmartRouting(false);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                hz1.getLifecycleService().terminate();
+            }
+        };
+
+        final IMap map = client.getMap("m");
+        thread.start();
+        int expected = 1000;
+        for (int i = 0; i < expected; i++) {
+            map.put(i, i);
         }
         thread.join();
         assertEquals(expected, map.size());
@@ -381,7 +427,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
     public void testClientPortableWithoutRegisteringToNode() {
         Hazelcast.newHazelcastInstance();
         final SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.addPortableFactory(5,new PortableFactory() {
+        serializationConfig.addPortableFactory(5, new PortableFactory() {
             public Portable create(int classId) {
                 return new SamplePortable();
             }
@@ -392,9 +438,9 @@ public class ClientIssueTest extends HazelcastTestSupport {
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final IMap<Integer, SamplePortable> sampleMap = client.getMap(randomString());
-        sampleMap.put(1,new SamplePortable(666));
+        sampleMap.put(1, new SamplePortable(666));
         final SamplePortable samplePortable = sampleMap.get(1);
-        assertEquals(666,samplePortable.a);
+        assertEquals(666, samplePortable.a);
     }
 
     @Test
@@ -476,14 +522,14 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
     }
 
-    static class SamplePortable implements Portable{
+    static class SamplePortable implements Portable {
         public int a;
 
-        public SamplePortable(int a){
-                              this.a = a;
+        public SamplePortable(int a) {
+            this.a = a;
         }
 
-        public SamplePortable(){
+        public SamplePortable() {
 
         }
 
@@ -496,12 +542,41 @@ public class ClientIssueTest extends HazelcastTestSupport {
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
-              writer.writeInt("a",a);
+            writer.writeInt("a", a);
         }
 
         public void readPortable(PortableReader reader) throws IOException {
-                                   a = reader.readInt("a");
+            a = reader.readInt("a");
         }
+    }
+
+    @Test
+    public void testNearCache_WhenRegisteredNodeIsDead() {
+
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        final String mapName = randomMapName();
+
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+
+        nearCacheConfig.setName(mapName);
+        nearCacheConfig.setInvalidateOnChange(true);
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Object, Object> map = client.getMap(mapName);
+
+        map.put("a", "b");
+        map.get("a"); //put to nearCache
+
+        instance.shutdown();
+        Hazelcast.newHazelcastInstance();
+
+        assertEquals(null, map.get("a"));
+
+
     }
 
 }

@@ -30,7 +30,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
-public class VersionCheck {
+public final class VersionCheck {
+
+    public static final int TIMEOUT = 1000;
 
     private VersionCheck() {
     }
@@ -100,8 +102,8 @@ public class VersionCheck {
         try {
             URL url = new URL(urlStr);
             URLConnection conn = url.openConnection();
-            conn.setConnectTimeout(1000 * 2);
-            conn.setReadTimeout(1000 * 2);
+            conn.setConnectTimeout(TIMEOUT * 2);
+            conn.setReadTimeout(TIMEOUT * 2);
             in = new BufferedInputStream(conn.getInputStream());
             final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             return builder.parse(in);

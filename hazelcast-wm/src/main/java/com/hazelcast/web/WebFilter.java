@@ -53,48 +53,33 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
-import static com.hazelcast.web.HazelcastInstanceLoader.*;
 
 @SuppressWarnings("deprecation")
 public class WebFilter implements Filter {
 
-    private static final ILogger logger = Logger.getLogger(WebFilter.class);
+    protected static final String HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR = "::hz::";
 
+    private static final ILogger LOGGER = Logger.getLogger(WebFilter.class);
     private static final LocalCacheEntry NULL_ENTRY = new LocalCacheEntry();
-
     private static final String HAZELCAST_REQUEST = "*hazelcast-request";
-
     private static final String HAZELCAST_SESSION_COOKIE_NAME = "hazelcast.sessionId";
-
-    static final String HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR = "::hz::";
-
-    private static final ConcurrentMap<String, String> mapOriginalSessions = new ConcurrentHashMap<String, String>(1000);
-
-    private static final ConcurrentMap<String, HazelcastHttpSession> mapSessions = new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
-
-    private HazelcastInstance hazelcastInstance;
-
-    private String clusterMapName = "none";
-
-    private String sessionCookieName = HAZELCAST_SESSION_COOKIE_NAME;
-
-    private String sessionCookieDomain = null;
-
-    private boolean sessionCookieSecure = false;
-
-    private boolean sessionCookieHttpOnly = false;
-
-    private boolean stickySession = true;
-
-    private boolean shutdownOnDestroy = true;
-
-    private boolean deferredWrite = false;
-
-    private Properties properties;
+    private static final ConcurrentMap<String, String> MAP_ORIGINAL_SESSIONS = new ConcurrentHashMap<String, String>(1000);
+    private static final ConcurrentMap<String, HazelcastHttpSession> MAP_SESSIONS =
+            new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
 
     protected ServletContext servletContext;
-
     protected FilterConfig filterConfig;
+
+    private String sessionCookieName = HAZELCAST_SESSION_COOKIE_NAME;
+    private HazelcastInstance hazelcastInstance;
+    private String clusterMapName = "none";
+    private String sessionCookieDomain;
+    private boolean sessionCookieSecure;
+    private boolean sessionCookieHttpOnly;
+    private boolean stickySession = true;
+    private boolean shutdownOnDestroy = true;
+    private boolean deferredWrite;
+    private Properties properties;
 
     public WebFilter() {
     }
@@ -104,7 +89,34 @@ public class WebFilter implements Filter {
         this.properties = properties;
     }
 
-    public final void init(final FilterConfig config) throws ServletException {
+    static void destroyOriginalSession(HttpSession originalSession) {
+        String hazelcastSessionId = MAP_ORIGINAL_SESSIONS.remove(originalSession.getId());
+        if (hazelcastSessionId != null) {
+            HazelcastHttpSession hazelSession = MAP_SESSIONS.remove(hazelcastSessionId);
+            if (hazelSession != null) {
+                hazelSession.webFilter.destroySession(hazelSession, false);
+            }
+        }
+    }
+
+    private static synchronized String generateSessionId() {
+        final String id = UuidUtil.buildRandomUuidString();
+        final StringBuilder sb = new StringBuilder("HZ");
+        final char[] chars = id.toCharArray();
+        for (final char c : chars) {
+            if (c != '-') {
+                if (Character.isLetter(c)) {
+                    sb.append(Character.toUpperCase(c));
+                } else {
+                    sb.append(c);
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    public final void init(final FilterConfig config)
+            throws ServletException {
         filterConfig = config;
         servletContext = config.getServletContext();
         initInstance();
@@ -123,8 +135,52 @@ public class WebFilter implements Filter {
                 hzConfig.addMapConfig(mapConfig);
             }
         } catch (UnsupportedOperationException ignored) {
-            // client cannot access Config.
+            LOGGER.info("client cannot access Config.");
         }
+        initCookieParams();
+        initParams();
+        if (!stickySession) {
+            getClusterMap().addEntryListener(new EntryListener<String, Object>() {
+                public void entryAdded(EntryEvent<String, Object> entryEvent) {
+                }
+
+                public void entryRemoved(EntryEvent<String, Object> entryEvent) {
+                    if (entryEvent.getMember() == null || !entryEvent.getMember().localMember()) {
+                        removeSessionLocally(entryEvent.getKey());
+                    }
+                }
+
+                public void entryUpdated(EntryEvent<String, Object> entryEvent) {
+                }
+
+                public void entryEvicted(EntryEvent<String, Object> entryEvent) {
+                    entryRemoved(entryEvent);
+                }
+            }, false);
+        }
+
+        if (LOGGER.isLoggable(Level.FINEST)) {
+            LOGGER.finest("sticky:" + stickySession + ", shutdown-on-destroy: " + shutdownOnDestroy
+                    + ", map-name: " + clusterMapName);
+        }
+    }
+
+    private void initParams() {
+        String stickySessionParam = getParam("sticky-session");
+        if (stickySessionParam != null) {
+            stickySession = Boolean.valueOf(stickySessionParam);
+        }
+        String shutdownOnDestroyParam = getParam("shutdown-on-destroy");
+        if (shutdownOnDestroyParam != null) {
+            shutdownOnDestroy = Boolean.valueOf(shutdownOnDestroyParam);
+        }
+        String deferredWriteParam = getParam("deferred-write");
+        if (deferredWriteParam != null) {
+            deferredWrite = Boolean.parseBoolean(deferredWriteParam);
+        }
+    }
+
+    private void initCookieParams() {
         String cookieName = getParam("cookie-name");
         if (cookieName != null) {
             sessionCookieName = cookieName;
@@ -141,53 +197,16 @@ public class WebFilter implements Filter {
         if (cookieHttpOnly != null) {
             sessionCookieHttpOnly = Boolean.valueOf(cookieHttpOnly);
         }
-        String stickySessionParam = getParam("sticky-session");
-        if (stickySessionParam != null) {
-            stickySession = Boolean.valueOf(stickySessionParam);
-        }
-        String shutdownOnDestroyParam = getParam("shutdown-on-destroy");
-        if (shutdownOnDestroyParam != null) {
-            shutdownOnDestroy = Boolean.valueOf(shutdownOnDestroyParam);
-        }
-        String deferredWriteParam = getParam("deferred-write");
-        if (deferredWriteParam != null) {
-            deferredWrite = Boolean.parseBoolean(deferredWriteParam);
-        }
-        if (!stickySession) {
-            getClusterMap().addEntryListener(new EntryListener<String, Object>() {
-                public void entryAdded(EntryEvent<String, Object> entryEvent) {
-                }
-
-                public void entryRemoved(EntryEvent<String, Object> entryEvent) {
-                    if (entryEvent.getMember() == null || // client events has no owner member
-                            !entryEvent.getMember().localMember()) {
-                        removeSessionLocally(entryEvent.getKey());
-                    }
-                }
-
-                public void entryUpdated(EntryEvent<String, Object> entryEvent) {
-                }
-
-                public void entryEvicted(EntryEvent<String, Object> entryEvent) {
-                    entryRemoved(entryEvent);
-                }
-            }, false);
-        }
-
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.finest("sticky:" + stickySession + ", shutdown-on-destroy: " + shutdownOnDestroy
-                    + ", map-name: " + clusterMapName);
-        }
     }
 
     private void initInstance() throws ServletException {
         if (properties == null) {
             properties = new Properties();
         }
-        setProperty(CONFIG_LOCATION);
-        setProperty(INSTANCE_NAME);
-        setProperty(USE_CLIENT);
-        setProperty(CLIENT_CONFIG_LOCATION);
+        setProperty(HazelcastInstanceLoader.CONFIG_LOCATION);
+        setProperty(HazelcastInstanceLoader.INSTANCE_NAME);
+        setProperty(HazelcastInstanceLoader.USE_CLIENT);
+        setProperty(HazelcastInstanceLoader.CLIENT_CONFIG_LOCATION);
         hazelcastInstance = getInstance(properties);
     }
 
@@ -199,23 +218,13 @@ public class WebFilter implements Filter {
     }
 
     private void removeSessionLocally(String sessionId) {
-        HazelcastHttpSession hazelSession = mapSessions.remove(sessionId);
+        HazelcastHttpSession hazelSession = MAP_SESSIONS.remove(sessionId);
         if (hazelSession != null) {
-            mapOriginalSessions.remove(hazelSession.originalSession.getId());
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.finest("Destroying session locally " + hazelSession);
+            MAP_ORIGINAL_SESSIONS.remove(hazelSession.originalSession.getId());
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("Destroying session locally " + hazelSession);
             }
             hazelSession.destroy();
-        }
-    }
-
-    static void destroyOriginalSession(HttpSession originalSession) {
-        String hazelcastSessionId = mapOriginalSessions.remove(originalSession.getId());
-        if (hazelcastSessionId != null) {
-            HazelcastHttpSession hazelSession = mapSessions.remove(hazelcastSessionId);
-            if (hazelSession != null) {
-                hazelSession.webFilter.destroySession(hazelSession, false);
-            }
         }
     }
 
@@ -226,20 +235,20 @@ public class WebFilter implements Filter {
     private HazelcastHttpSession createNewSession(RequestWrapper requestWrapper, String existingSessionId) {
         String id = existingSessionId != null ? existingSessionId : generateSessionId();
         if (requestWrapper.getOriginalSession(false) != null) {
-            logger.finest("Original session exists!!!");
+            LOGGER.finest("Original session exists!!!");
         }
         HttpSession originalSession = requestWrapper.getOriginalSession(true);
         HazelcastHttpSession hazelcastSession = new HazelcastHttpSession(WebFilter.this, id, originalSession, deferredWrite);
-        mapSessions.put(hazelcastSession.getId(), hazelcastSession);
-        String oldHazelcastSessionId = mapOriginalSessions.put(originalSession.getId(), hazelcastSession.getId());
+        MAP_SESSIONS.put(hazelcastSession.getId(), hazelcastSession);
+        String oldHazelcastSessionId = MAP_ORIGINAL_SESSIONS.put(originalSession.getId(), hazelcastSession.getId());
         if (oldHazelcastSessionId != null) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("!!! Overriding an existing hazelcastSessionId " + oldHazelcastSessionId);
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.finest("!!! Overriding an existing hazelcastSessionId " + oldHazelcastSessionId);
             }
         }
-        if (logger.isFinestEnabled()) {
-            logger.finest("Created new session with id: " + id);
-            logger.finest(mapSessions.size() + " is sessions.size and originalSessions.size: " + mapOriginalSessions.size());
+        if (LOGGER.isFinestEnabled()) {
+            LOGGER.finest("Created new session with id: " + id);
+            LOGGER.finest(MAP_SESSIONS.size() + " is sessions.size and originalSessions.size: " + MAP_ORIGINAL_SESSIONS.size());
         }
         addSessionCookie(requestWrapper, id);
         if (deferredWrite) {
@@ -258,8 +267,8 @@ public class WebFilter implements Filter {
                 cacheEntry = new LocalCacheEntry();
                 cache.put(attributeKey, cacheEntry);
             }
-            if (logger.isFinestEnabled()) {
-                logger.finest("Storing " + attributeKey + " on session " + hazelcastSession.getId());
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.finest("Storing " + attributeKey + " on session " + hazelcastSession.getId());
             }
             cacheEntry.value = entry.getValue();
             cacheEntry.dirty = false;
@@ -282,15 +291,15 @@ public class WebFilter implements Filter {
      * @param removeGlobalSession boolean value - true if the session should be destroyed irrespective of active time
      */
     private void destroySession(HazelcastHttpSession session, boolean removeGlobalSession) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Destroying local session: " + session.getId());
+        if (LOGGER.isFinestEnabled()) {
+            LOGGER.finest("Destroying local session: " + session.getId());
         }
-        mapSessions.remove(session.getId());
-        mapOriginalSessions.remove(session.originalSession.getId());
+        MAP_SESSIONS.remove(session.getId());
+        MAP_ORIGINAL_SESSIONS.remove(session.originalSession.getId());
         session.destroy();
         if (removeGlobalSession) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Destroying cluster session: " + session.getId() + " => Ignore-timeout: true");
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.finest("Destroying cluster session: " + session.getId() + " => Ignore-timeout: true");
             }
             IMap<String, Object> clusterMap = getClusterMap();
             clusterMap.delete(session.getId());
@@ -303,7 +312,7 @@ public class WebFilter implements Filter {
     }
 
     private HazelcastHttpSession getSessionWithId(final String sessionId) {
-        HazelcastHttpSession session = mapSessions.get(sessionId);
+        HazelcastHttpSession session = MAP_SESSIONS.get(sessionId);
         if (session != null && !session.isValid()) {
             destroySession(session, true);
             session = null;
@@ -311,11 +320,112 @@ public class WebFilter implements Filter {
         return session;
     }
 
+    private void addSessionCookie(final RequestWrapper req, final String sessionId) {
+        final Cookie sessionCookie = new Cookie(sessionCookieName, sessionId);
+        String path = req.getContextPath();
+        if ("".equals(path)) {
+            path = "/";
+        }
+        sessionCookie.setPath(path);
+        sessionCookie.setMaxAge(-1);
+        if (sessionCookieDomain != null) {
+            sessionCookie.setDomain(sessionCookieDomain);
+        }
+        try {
+            sessionCookie.setHttpOnly(sessionCookieHttpOnly);
+        } catch (NoSuchMethodError e) {
+            LOGGER.info("must be servlet spec before 3.0, don't worry about it!");
+        }
+        sessionCookie.setSecure(sessionCookieSecure);
+        req.res.addCookie(sessionCookie);
+    }
+
+    private String getSessionCookie(final RequestWrapper req) {
+        final Cookie[] cookies = req.getCookies();
+        if (cookies != null) {
+            for (final Cookie cookie : cookies) {
+                final String name = cookie.getName();
+                final String value = cookie.getValue();
+                if (name.equalsIgnoreCase(sessionCookieName)) {
+                    return value;
+                }
+            }
+        }
+        return null;
+    }
+
+    public final void doFilter(ServletRequest req, ServletResponse res, final FilterChain chain)
+            throws IOException, ServletException {
+        if (!(req instanceof HttpServletRequest)) {
+            chain.doFilter(req, res);
+        } else {
+            if (req instanceof RequestWrapper) {
+                LOGGER.finest("Request is instance of RequestWrapper! Continue...");
+                chain.doFilter(req, res);
+                return;
+            }
+            HttpServletRequest httpReq = (HttpServletRequest) req;
+            RequestWrapper existingReq = (RequestWrapper) req.getAttribute(HAZELCAST_REQUEST);
+            final ResponseWrapper resWrapper = new ResponseWrapper((HttpServletResponse) res);
+            final RequestWrapper reqWrapper = new RequestWrapper(httpReq, resWrapper);
+            if (existingReq != null) {
+                reqWrapper.setHazelcastSession(existingReq.hazelcastSession, existingReq.requestedSessionId);
+            }
+            chain.doFilter(reqWrapper, resWrapper);
+            if (existingReq != null) {
+                return;
+            }
+            HazelcastHttpSession session = reqWrapper.getSession(false);
+            if (session != null && session.isValid() && (session.sessionChanged() || !deferredWrite)) {
+                    if (LOGGER.isFinestEnabled()) {
+                        LOGGER.finest("PUTTING SESSION " + session.getId());
+                    }
+                    session.sessionDeferredWrite();
+            }
+        }
+    }
+
+    public final void destroy() {
+        MAP_SESSIONS.clear();
+        MAP_ORIGINAL_SESSIONS.clear();
+        shutdownInstance();
+    }
+
+    protected HazelcastInstance getInstance(Properties properties) throws ServletException {
+        return HazelcastInstanceLoader.createInstance(filterConfig, properties);
+    }
+
+    protected void shutdownInstance() {
+        if (shutdownOnDestroy && hazelcastInstance != null) {
+            hazelcastInstance.getLifecycleService().shutdown();
+        }
+    }
+
+    private String getParam(String name) {
+        if (properties != null && properties.containsKey(name)) {
+            return properties.getProperty(name);
+        } else {
+            return filterConfig.getInitParameter(name);
+        }
+    }
+
+    private static class ResponseWrapper extends HttpServletResponseWrapper {
+
+        public ResponseWrapper(final HttpServletResponse original) {
+            super(original);
+        }
+    }
+
+    private static class LocalCacheEntry {
+        volatile boolean dirty;
+        volatile boolean reload;
+        boolean removed;
+        private Object value;
+    }
+
     private class RequestWrapper extends HttpServletRequestWrapper {
-        HazelcastHttpSession hazelcastSession = null;
-
         final ResponseWrapper res;
-
+        HazelcastHttpSession hazelcastSession;
         String requestedSessionId;
 
         public RequestWrapper(final HttpServletRequest req,
@@ -338,57 +448,26 @@ public class WebFilter implements Filter {
         public RequestDispatcher getRequestDispatcher(final String path) {
             final ServletRequest original = getRequest();
             return new RequestDispatcher() {
-                public void forward(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
+                public void forward(ServletRequest servletRequest, ServletResponse servletResponse)
+                        throws ServletException, IOException {
                     original.getRequestDispatcher(path).forward(servletRequest, servletResponse);
                 }
 
-                public void include(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
+                public void include(ServletRequest servletRequest, ServletResponse servletResponse)
+                        throws ServletException, IOException {
                     original.getRequestDispatcher(path).include(servletRequest, servletResponse);
                 }
             };
         }
 
-        public String fetchHazelcastSessionId() {
-            if (requestedSessionId != null) {
-                return requestedSessionId;
+        public HazelcastHttpSession fetchHazelcastSession() {
+            if (requestedSessionId == null) {
+                requestedSessionId = getSessionCookie(this);
             }
-            requestedSessionId = getSessionCookie(this);
-            if (requestedSessionId != null) {
-                return requestedSessionId;
+            if (requestedSessionId == null) {
+                requestedSessionId = getParameter(HAZELCAST_SESSION_COOKIE_NAME);
             }
-            requestedSessionId = getParameter(HAZELCAST_SESSION_COOKIE_NAME);
-            return requestedSessionId;
-        }
 
-        @Override
-        public HttpSession getSession() {
-            return getSession(true);
-        }
-
-        @Override
-        public HazelcastHttpSession getSession(final boolean create) {
-            if (hazelcastSession != null && !hazelcastSession.isValid()) {
-                logger.finest("Session is invalid!");
-                destroySession(hazelcastSession, true);
-                hazelcastSession = null;
-            }
-            if (hazelcastSession == null) {
-                HttpSession originalSession = getOriginalSession(false);
-                if (originalSession != null) {
-                    String hazelcastSessionId = mapOriginalSessions.get(originalSession.getId());
-                    if (hazelcastSessionId != null) {
-                        hazelcastSession = mapSessions.get(hazelcastSessionId);
-                    }
-                    if (hazelcastSession == null) {
-                        mapOriginalSessions.remove(originalSession.getId());
-                        originalSession.invalidate();
-                    }
-                }
-            }
-            if (hazelcastSession != null) {
-                return hazelcastSession;
-            }
-            final String requestedSessionId = fetchHazelcastSessionId();
             if (requestedSessionId != null) {
                 hazelcastSession = getSessionWithId(requestedSessionId);
                 if (hazelcastSession == null) {
@@ -399,6 +478,38 @@ public class WebFilter implements Filter {
                     }
                 }
             }
+
+            return hazelcastSession;
+        }
+
+        @Override
+        public HttpSession getSession() {
+            return getSession(true);
+        }
+
+        @Override
+        public HazelcastHttpSession getSession(final boolean create) {
+            if (hazelcastSession != null && !hazelcastSession.isValid()) {
+                LOGGER.finest("Session is invalid!");
+                destroySession(hazelcastSession, true);
+                hazelcastSession = null;
+            } else if (hazelcastSession != null) {
+                return hazelcastSession;
+            }
+
+                HttpSession originalSession = getOriginalSession(false);
+                if (originalSession != null) {
+                    String hazelcastSessionId = MAP_ORIGINAL_SESSIONS.get(originalSession.getId());
+                    if (hazelcastSessionId != null) {
+                        hazelcastSession = MAP_SESSIONS.get(hazelcastSessionId);
+                        return hazelcastSession;
+                    }
+                        MAP_ORIGINAL_SESSIONS.remove(originalSession.getId());
+                        originalSession.invalidate();
+                }
+
+            hazelcastSession = fetchHazelcastSession();
+
             if (hazelcastSession == null && create) {
                 hazelcastSession = createNewSession(RequestWrapper.this, null);
             }
@@ -409,34 +520,16 @@ public class WebFilter implements Filter {
         }
     } // END of RequestWrapper
 
-    private static class ResponseWrapper extends HttpServletResponseWrapper {
-
-        public ResponseWrapper(final HttpServletResponse original) {
-            super(original);
-        }
-    }
-
-    private static class LocalCacheEntry {
-        private Object value;
-        volatile boolean dirty = false;
-        volatile boolean reload = false;
-        boolean removed = false; // does not need to be volatile - it's piggybacked on dirty!
-    }
-
     private class HazelcastHttpSession implements HttpSession {
+        volatile boolean valid = true;
+        final String id;
+        final HttpSession originalSession;
+        final WebFilter webFilter;
         private final Map<String, LocalCacheEntry> localCache;
-
         private final boolean deferredWrite;
 
-        volatile boolean valid = true;
-
-        final String id;
-
-        final HttpSession originalSession;
-
-        final WebFilter webFilter;
-
-        public HazelcastHttpSession(WebFilter webFilter, final String sessionId, HttpSession originalSession, boolean deferredWrite) {
+        public HazelcastHttpSession(WebFilter webFilter, final String sessionId,
+                                    HttpSession originalSession, boolean deferredWrite) {
             this.webFilter = webFilter;
             this.id = sessionId;
             this.originalSession = originalSession;
@@ -468,7 +561,7 @@ public class WebFilter implements Filter {
             final Set<String> keys = selectKeys();
             return new Enumeration<String>() {
                 private final String[] elements = keys.toArray(new String[keys.size()]);
-                private int index = 0;
+                private int index;
 
                 @Override
                 public boolean hasMoreElements() {
@@ -632,112 +725,5 @@ public class WebFilter implements Filter {
             }
             return keys;
         }
-    }// END of HazelSession
-
-    private static synchronized String generateSessionId() {
-        final String id = UuidUtil.buildRandomUuidString();
-        final StringBuilder sb = new StringBuilder("HZ");
-        final char[] chars = id.toCharArray();
-        for (final char c : chars) {
-            if (c != '-') {
-                if (Character.isLetter(c)) {
-                    sb.append(Character.toUpperCase(c));
-                } else {
-                    sb.append(c);
-                }
-            }
-        }
-        return sb.toString();
-    }
-
-    private void addSessionCookie(final RequestWrapper req, final String sessionId) {
-        final Cookie sessionCookie = new Cookie(sessionCookieName, sessionId);
-        String path = req.getContextPath();
-        if ("".equals(path)) {
-            path = "/";
-        }
-        sessionCookie.setPath(path);
-        sessionCookie.setMaxAge(-1);
-        if (sessionCookieDomain != null) {
-            sessionCookie.setDomain(sessionCookieDomain);
-        }
-        try {
-            sessionCookie.setHttpOnly(sessionCookieHttpOnly);
-        } catch (NoSuchMethodError e) {
-            // must be servlet spec before 3.0, don't worry about it!
-        }
-        sessionCookie.setSecure(sessionCookieSecure);
-        req.res.addCookie(sessionCookie);
-    }
-
-    private String getSessionCookie(final RequestWrapper req) {
-        final Cookie[] cookies = req.getCookies();
-        if (cookies != null) {
-            for (final Cookie cookie : cookies) {
-                final String name = cookie.getName();
-                final String value = cookie.getValue();
-                if (name.equalsIgnoreCase(sessionCookieName)) {
-                    return value;
-                }
-            }
-        }
-        return null;
-    }
-
-    public final void doFilter(ServletRequest req, ServletResponse res, final FilterChain chain)
-            throws IOException, ServletException {
-        if (!(req instanceof HttpServletRequest)) {
-            chain.doFilter(req, res);
-        } else {
-            if (req instanceof RequestWrapper) {
-                logger.finest("Request is instance of RequestWrapper! Continue...");
-                chain.doFilter(req, res);
-                return;
-            }
-            HttpServletRequest httpReq = (HttpServletRequest) req;
-            RequestWrapper existingReq = (RequestWrapper) req.getAttribute(HAZELCAST_REQUEST);
-            final ResponseWrapper resWrapper = new ResponseWrapper((HttpServletResponse) res);
-            final RequestWrapper reqWrapper = new RequestWrapper(httpReq, resWrapper);
-            if (existingReq != null) {
-                reqWrapper.setHazelcastSession(existingReq.hazelcastSession, existingReq.requestedSessionId);
-            }
-            chain.doFilter(reqWrapper, resWrapper);
-            if (existingReq != null) {
-                return;
-            }
-            HazelcastHttpSession session = reqWrapper.getSession(false);
-            if (session != null && session.isValid()) {
-                if (session.sessionChanged() || !deferredWrite) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("PUTTING SESSION " + session.getId());
-                    }
-                    session.sessionDeferredWrite();
-                }
-            }
-        }
-    }
-
-    public final void destroy() {
-        mapSessions.clear();
-        mapOriginalSessions.clear();
-        shutdownInstance();
-    }
-
-    protected HazelcastInstance getInstance(Properties properties) throws ServletException {
-        return HazelcastInstanceLoader.createInstance(filterConfig, properties);
-    }
-
-    protected void shutdownInstance() {
-        if (shutdownOnDestroy && hazelcastInstance != null) {
-            hazelcastInstance.getLifecycleService().shutdown();
-        }
-    }
-
-    private String getParam(String name) {
-        if (properties != null && properties.containsKey(name)) {
-            return properties.getProperty(name);
-        } else {
-            return filterConfig.getInitParameter(name);
-        }
-    }
-}// END of WebFilter
+    } // END of HazelSession
+} // END of WebFilter

@@ -80,7 +80,8 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState;
  */
 public final class ClientClusterServiceImpl implements ClientClusterService {
 
-    private static final ILogger logger = Logger.getLogger(ClientClusterService.class);
+    private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
+    private static final int SLEEP_TIME = 1000;
 
     private final HazelcastClient client;
     private final ClientConnectionManagerImpl connectionManager;
@@ -90,7 +91,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
-        this.connectionManager = (ClientConnectionManagerImpl)client.getConnectionManager();
+        this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
         final ClientConfig clientConfig = getClientConfig();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
@@ -101,7 +102,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     try {
                         listener = ClassLoaderUtil.newInstance(clientConfig.getClassLoader(), listenerConfig.getClassName());
                     } catch (Exception e) {
-                        logger.severe(e);
+                        LOGGER.severe(e);
                     }
                 }
                 if (listener instanceof MembershipListener) {
@@ -201,15 +202,15 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         clusterThread.shutdown();
     }
 
-    private class ClusterListenerThread extends Thread  {
-
-        private ClusterListenerThread(ThreadGroup group, String name) {
-            super(group, name);
-        }
+    private final class ClusterListenerThread extends Thread {
 
         private volatile ClientConnection conn;
         private final List<MemberImpl> members = new LinkedList<MemberImpl>();
         private final CountDownLatch latch = new CountDownLatch(1);
+
+        private ClusterListenerThread(ThreadGroup group, String name) {
+            super(group, name);
+        }
 
         public void await() throws InterruptedException {
             latch.await();
@@ -222,7 +223,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         try {
                             conn = pickConnection();
                         } catch (Exception e) {
-                            logger.severe("Error while connecting to cluster!", e);
+                            LOGGER.severe("Error while connecting to cluster!", e);
                             client.getLifecycleService().shutdown();
                             latch.countDown();
                             return;
@@ -233,18 +234,20 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     listenMembershipEvents();
                 } catch (Exception e) {
                     if (client.getLifecycleService().isRunning()) {
-                        if (logger.isFinestEnabled()) {
-                            logger.warning("Error while listening cluster events! -> " + conn, e);
+                        if (LOGGER.isFinestEnabled()) {
+                            LOGGER.warning("Error while listening cluster events! -> " + conn, e);
                         } else {
-                            logger.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
+                            LOGGER.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
                         }
                     }
+
+                    connectionManager.markOwnerAddressAsClosed();
                     IOUtil.closeResource(conn);
                     conn = null;
                     fireConnectionEvent(true);
                 }
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
                     latch.countDown();
                     break;
@@ -252,8 +255,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
         }
 
-        private ClientInvocationServiceImpl getInvocationService(){
-            return (ClientInvocationServiceImpl)client.getInvocationService();
+        private ClientInvocationServiceImpl getInvocationService() {
+            return (ClientInvocationServiceImpl) client.getInvocationService();
         }
 
         private ClientConnection pickConnection() throws Exception {
@@ -285,7 +288,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 members.add((MemberImpl) serializationService.toObject(data));
             }
             updateMembersRef();
-            logger.info(membersString());
+            LOGGER.info(membersString());
             final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
             final Set<Member> eventMembers = Collections.unmodifiableSet(new LinkedHashSet<Member>(members));
             for (MemberImpl member : members) {
@@ -341,7 +344,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 if (membersUpdated) {
                     ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
                     updateMembersRef();
-                    logger.info(membersString());
+                    LOGGER.info(membersString());
                     fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
                             Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
                 }
@@ -406,19 +409,19 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     return connection;
                 } catch (IOException e) {
                     lastError = e;
-                    logger.finest("IO error during initial connection...", e);
+                    LOGGER.finest("IO error during initial connection...", e);
                 } catch (AuthenticationException e) {
                     lastError = e;
-                    logger.warning("Authentication error on " + address, e);
+                    LOGGER.warning("Authentication error on " + address, e);
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {
                 break;
             }
             final long remainingTime = nextTry - Clock.currentTimeMillis();
-            logger.warning(
-                    String.format("Unable to get alive cluster connection," +
-                            " try in %d ms later, attempt %d of %d.",
+            LOGGER.warning(
+                    String.format("Unable to get alive cluster connection,"
+                            + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {

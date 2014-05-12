@@ -66,6 +66,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -81,6 +82,7 @@ import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionContext;
@@ -109,8 +111,8 @@ public final class HazelcastClient implements HazelcastInstance {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
     }
 
-    private final static AtomicInteger CLIENT_ID = new AtomicInteger();
-    private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+    private static final AtomicInteger CLIENT_ID = new AtomicInteger();
+    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
     private final ClientConfig config;
@@ -260,6 +262,11 @@ public final class HazelcastClient implements HazelcastInstance {
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
     }
 
     @Override

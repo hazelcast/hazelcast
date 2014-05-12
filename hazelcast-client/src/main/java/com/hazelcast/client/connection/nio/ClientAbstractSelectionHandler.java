@@ -36,7 +36,7 @@ public abstract class ClientAbstractSelectionHandler implements SelectionHandler
 
     protected final IOSelector ioSelector;
 
-    private SelectionKey sk = null;
+    private SelectionKey sk;
 
     public ClientAbstractSelectionHandler(final ClientConnection connection, IOSelector ioSelector) {
         this.connection = connection;
@@ -64,8 +64,9 @@ public abstract class ClientAbstractSelectionHandler implements SelectionHandler
 
     final void registerOp(final int operation) {
         try {
-            if (!connection.live())
+            if (!connection.live()) {
                 return;
+            }
             if (sk == null) {
                 sk = socketChannel.keyFor(ioSelector.getSelector());
             }

@@ -47,14 +47,15 @@ public class ClientNetworkConfig {
      * If false, the operation will throw {@link RuntimeException} that is wrapping {@link java.io.IOException}.
      * TODO clear what is the exception here
      */
-    private boolean redoOperation = false;
+    private boolean redoOperation;
 
     /**
      * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
      * passing between client and member within the {@link ClientNetworkConfig#connectionTimeout} milliseconds the connection
      * will be closed.
      */
-    private int connectionTimeout = 60000; //TODO heartbeat
+    private int connectionTimeout = 60000;
+    //TODO heartbeat
 
     /**
      * While client is trying to connect initially to one of the members in the {@link ClientNetworkConfig#addressList},
@@ -72,7 +73,7 @@ public class ClientNetworkConfig {
     /**
      * Will be called with the Socket, each time client creates a connection to any Member.
      */
-    private SocketInterceptorConfig socketInterceptorConfig = null;
+    private SocketInterceptorConfig socketInterceptorConfig;
 
     /**
      * Options for creating socket
@@ -83,7 +84,7 @@ public class ClientNetworkConfig {
     /**
      * Enabling ssl for client
      */
-    private SSLConfig sslConfig = null;
+    private SSLConfig sslConfig;
 
 
 

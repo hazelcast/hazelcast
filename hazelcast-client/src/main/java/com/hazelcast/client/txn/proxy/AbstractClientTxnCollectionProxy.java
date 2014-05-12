@@ -31,7 +31,7 @@ public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy
     }
 
     public String getName() {
-        return (String)getId();
+        return (String) getId();
     }
 
     protected void throwExceptionIfNull(Object o) {

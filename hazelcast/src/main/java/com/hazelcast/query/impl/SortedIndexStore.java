@@ -25,9 +25,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class SortedIndexStore implements IndexStore {
+    private static final float LOAD_FACTOR = 0.75f;
     private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords
             = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
     private final NavigableSet<Comparable> sortedSet = new ConcurrentSkipListSet<Comparable>();
+
 
     @Override
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
@@ -86,7 +88,7 @@ public class SortedIndexStore implements IndexStore {
     public void newIndex(Comparable newValue, QueryableEntry record) {
         ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
         if (records == null) {
-            records = new ConcurrentHashMap<Data, QueryableEntry>(1, 0.75f, 1);
+            records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
             mapRecords.put(newValue, records);
             if (!(newValue instanceof IndexImpl.NullObject)) {
                 sortedSet.add(newValue);

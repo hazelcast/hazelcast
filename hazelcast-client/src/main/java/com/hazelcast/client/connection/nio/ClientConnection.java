@@ -54,6 +54,8 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class ClientConnection implements Connection, Closeable {
 
+    private static final int SLEEP_TIME = 10;
+
     private volatile boolean live = true;
 
     private final ILogger logger = Logger.getLogger(ClientConnection.class);
@@ -81,8 +83,8 @@ public class ClientConnection implements Connection, Closeable {
     private final AtomicInteger packetCount = new AtomicInteger(0);
 
     public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
-                int connectionId, SocketChannelWrapper socketChannelWrapper,
-                ClientExecutionService executionService) throws IOException {
+                            int connectionId, SocketChannelWrapper socketChannelWrapper,
+                            ClientExecutionService executionService) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
         this.serializationService = connectionManager.getSerializationService();
@@ -297,7 +299,7 @@ public class ClientConnection implements Connection, Closeable {
             int count = packetCount.get();
             while (count != 0) {
                 try {
-                    Thread.sleep(10);
+                    Thread.sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
                     logger.warning(e);
                     break;
@@ -312,8 +314,8 @@ public class ClientConnection implements Connection, Closeable {
         }
     }
 
-    private void cleanResources(HazelcastException response){
-        final Iterator<Map.Entry<Integer,ClientCallFuture>> iter = callIdMap.entrySet().iterator();
+    private void cleanResources(HazelcastException response) {
+        final Iterator<Map.Entry<Integer, ClientCallFuture>> iter = callIdMap.entrySet().iterator();
         while (iter.hasNext()) {
             final Map.Entry<Integer, ClientCallFuture> entry = iter.next();
             iter.remove();
@@ -352,12 +354,18 @@ public class ClientConnection implements Connection, Closeable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ClientConnection)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ClientConnection)) {
+            return false;
+        }
 
         ClientConnection that = (ClientConnection) o;
 
-        if (connectionId != that.connectionId) return false;
+        if (connectionId != that.connectionId) {
+            return false;
+        }
 
         return true;
     }

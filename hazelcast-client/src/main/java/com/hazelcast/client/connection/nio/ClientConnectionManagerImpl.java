@@ -74,14 +74,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
-    private static final ILogger logger = Logger.getLogger(ClientConnectionManagerImpl.class);
-
-    private int RETRY_COUNT = 20;
-    private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
+    public static final int BUFFER_SIZE = 16 << 10;
+    // 32k
 
     static final int KILO_BYTE = 1024;
-    public static final int BUFFER_SIZE = 16 << 10; // 32k
 
+    private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
+
+    private int retryCount = 20;
+    private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
     private final HazelcastClient client;
@@ -91,7 +92,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final IOSelector inSelector;
     private final IOSelector outSelector;
     private final boolean smartRouting;
-    private volatile Address ownerConnectionAddress = null;
+    private volatile Address ownerConnectionAddress;
+    private final Object ownerConnectionLock = new Object();
 
     private final Credentials credentials;
     private volatile ClientPrincipal principal;
@@ -102,7 +104,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
 
-    private volatile boolean live = false;
+    private volatile boolean live;
 
     public ClientConnectionManagerImpl(HazelcastClient client, LoadBalancer loadBalancer) {
         this.client = client;
@@ -141,23 +143,25 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 try {
                     implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
                 } catch (Throwable e) {
-                    logger.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
+                    LOGGER.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
                 }
             }
         }
 
         socketInterceptor = implementation;
         if (socketInterceptor != null) {
-            logger.info("SocketInterceptor is enabled");
+            LOGGER.info("SocketInterceptor is enabled");
             socketInterceptor.init(sic.getProperties());
         }
 
         socketOptions = networkConfig.getSocketOptions();
 
-        SSLConfig sslConfig = networkConfig.getSSLConfig(); //ioService.getSSLConfig(); TODO
+        //ioService.getSSLConfig(); TODO
+        SSLConfig sslConfig = networkConfig.getSSLConfig();
+
         if (sslConfig != null && sslConfig.isEnabled()) {
             socketChannelWrapperFactory = new SSLSocketChannelWrapperFactory(sslConfig);
-            logger.info("SSL is enabled");
+            LOGGER.info("SSL is enabled");
         } else {
             socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
         }
@@ -200,6 +204,36 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connectionLockMap.clear();
     }
 
+
+    public void markOwnerAddressAsClosed() {
+        synchronized (ownerConnectionLock) {
+            ownerConnectionAddress = null;
+        }
+    }
+
+    private Address waitForOwnerConnection() throws RetryableIOException {
+        if (ownerConnectionAddress != null) {
+            return ownerConnectionAddress;
+        }
+
+        synchronized (ownerConnectionLock) {
+            ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
+            int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+            int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+            int waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+
+            while (ownerConnectionAddress == null) {
+                try {
+                    ownerConnectionLock.wait(waitTime);
+                } catch (InterruptedException e) {
+                    LOGGER.warning("Wait for owner connection is timed out");
+                    throw new RetryableIOException(e);
+                }
+            }
+            return ownerConnectionAddress;
+        }
+    }
+
     @Override
     public ClientConnection ownerConnection(Address address) throws Exception {
         final ManagerAuthenticator authenticator = new ManagerAuthenticator();
@@ -207,7 +241,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
         try {
             final ClientConnection clientConnection = future.get(5, TimeUnit.SECONDS);
-            ownerConnectionAddress = clientConnection.getRemoteEndpoint();
+            synchronized (ownerConnectionLock) {
+                ownerConnectionAddress = clientConnection.getRemoteEndpoint();
+                ownerConnectionLock.notifyAll();
+            }
             return clientConnection;
         } catch (Exception e) {
             future.cancel(true);
@@ -220,7 +257,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         Authenticator authenticator = new ClusterAuthenticator();
         int count = 0;
         IOException lastError = null;
-        while (count < RETRY_COUNT) {
+        while (count < retryCount) {
             try {
                 if (target == null || !isMember(target)) {
                     Address address = getAddressFromLoadBalancer();
@@ -245,8 +282,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (members.isEmpty()) {
                 msg = "No address was return by the LoadBalancer since there are no members in the cluster";
             } else {
-                msg = "No address was return by the LoadBalancer. " +
-                        "But the cluster contains the following members:" + members;
+                msg = "No address was return by the LoadBalancer. "
+                        + "But the cluster contains the following members:" + members;
             }
             throw new IllegalStateException(msg);
         }
@@ -268,7 +305,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             throw new NullPointerException("Address is required!");
         }
         if (!smartRouting) {
-            address = ownerConnectionAddress;
+            address = waitForOwnerConnection();
         }
         ClientConnection clientConnection = connections.get(address);
         if (clientConnection == null) {
@@ -295,7 +332,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return clientConnection;
     }
 
-    private class ConnectionProcessor implements Callable<ClientConnection> {
+    private final class ConnectionProcessor implements Callable<ClientConnection> {
 
         final Address address;
         final Authenticator authenticator;
@@ -406,7 +443,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         private void handlePacket(Object response, boolean isError, int callId, ClientConnection conn) {
             final ClientCallFuture future = conn.deRegisterCallId(callId);
             if (future == null) {
-                logger.warning("No call for callId: " + callId + ", response: " + response);
+                LOGGER.warning("No call for callId: " + callId + ", response: " + response);
                 return;
             }
             if (isError) {
@@ -419,7 +456,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             final EventHandler eventHandler = conn.getEventHandler(callId);
             final Object eventObject = getSerializationService().toObject(event);
             if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
+                LOGGER.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
                 return;
             }
             eventHandler.handle(eventObject);
@@ -450,7 +487,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connection.init();
         auth.setReAuth(reAuth);
         auth.setFirstConnection(firstConnection);
-        SerializableCollection collectionWrapper; //contains remoteAddress and principal
+        //contains remoteAddress and principal
+        SerializableCollection collectionWrapper;
         try {
             collectionWrapper = (SerializableCollection) sendAndReceive(auth, connection);
         } catch (Exception e) {

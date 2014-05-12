@@ -71,49 +71,58 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     }
 
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT_WITH_TTL, toData(key), toData(value), ttl, timeunit);
+        TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.PUT_WITH_TTL, toData(key), toData(value), ttl, timeunit);
         return invoke(request);
     }
 
     public void set(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.SET, toData(key), toData(value));
+        TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.SET, toData(key), toData(value));
         invoke(request);
     }
 
     public V putIfAbsent(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT_IF_ABSENT, toData(key), toData(value));
+        TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.PUT_IF_ABSENT, toData(key), toData(value));
         return invoke(request);
     }
 
     public V replace(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REPLACE, toData(key), toData(value));
+        TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.REPLACE, toData(key), toData(value));
         return invoke(request);
     }
 
     public boolean replace(K key, V oldValue, V newValue) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REPLACE_IF_SAME, toData(key), toData(oldValue), toData(newValue));
+        TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.REPLACE_IF_SAME, toData(key), toData(oldValue), toData(newValue));
         Boolean result = invoke(request);
         return result;
     }
 
     public V remove(Object key) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REMOVE, toData(key));
+        TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.REMOVE, toData(key));
         return invoke(request);
     }
 
     public void delete(Object key) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.DELETE, toData(key));
+        TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.DELETE, toData(key));
         invoke(request);
     }
 
     public boolean remove(Object key, Object value) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REMOVE_IF_SAME, toData(key), toData(value));
+        TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.REMOVE_IF_SAME, toData(key), toData(value));
         Boolean result = invoke(request);
         return result;
     }
 
     public Set<K> keySet() {
-        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.KEYSET);
+        final TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.KEYSET);
         final MapKeySet result = invoke(request);
         final Set<Data> dataKeySet = result.getKeySet();
         final HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
@@ -127,7 +136,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
-        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.KEYSET_BY_PREDICATE, predicate);
+        final TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.KEYSET_BY_PREDICATE, predicate);
         final MapKeySet result = invoke(request);
         final Set<Data> dataKeySet = result.getKeySet();
         final HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
@@ -138,7 +148,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     }
 
     public Collection<V> values() {
-        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES);
+        final TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.VALUES);
         final MapValueCollection result = invoke(request);
         final Collection<Data> dataValues = result.getValues();
         final HashSet<V> values = new HashSet<V>(dataValues.size());
@@ -152,7 +163,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
-        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES_BY_PREDICATE, predicate);
+        final TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.VALUES_BY_PREDICATE, predicate);
         final MapValueCollection result = invoke(request);
         final Collection<Data> dataValues = result.getValues();
         final HashSet<V> values = new HashSet<V>(dataValues.size());

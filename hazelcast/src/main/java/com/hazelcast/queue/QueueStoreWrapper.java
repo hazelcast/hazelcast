@@ -41,6 +41,8 @@ public class QueueStoreWrapper implements QueueStore<Data> {
 
     private static final int DEFAULT_BULK_LOAD = 250;
 
+    private static final int OUTPUT_SIZE = 1024;
+
     private QueueStore store;
 
     private QueueStoreConfig storeConfig;
@@ -146,7 +148,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             // WARNING: we can't pass original Data to the user
             // TODO: @mm - is there really an advantage of using binary storeAll?
             // since we need to do array copy for each item.
-            BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
+            BufferObjectDataOutput out = serializationService.createObjectDataOutput(OUTPUT_SIZE);
             try {
                 for (Map.Entry<Long, Data> entry : map.entrySet()) {
                     entry.getValue().writeData(out);
