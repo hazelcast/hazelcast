@@ -17,6 +17,7 @@
     <suppress checks="" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="" files="com.hazelcast.spi.impl[\\/]"/>
     <suppress checks="" files="com.hazelcast.wan[\\/]"/>
+    <suppress checks="" files="com.hazelcast.wm[\\/]"/>
 
     <suppress checks="" files="com.hazelcast.client[\\/]"/>
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
@@ -390,6 +391,7 @@
     <suppress checks="ParameterAssignment" files="com.hazelcast.util.SortedHashMap"/>
     <suppress checks="MagicNumber" files="com.hazelcast.util.UuidUtil"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.util.VersionCheck"/>
+    <suppress checks="VisibilityModifier" files="com.hazelcast.util.AddressUtil"/>
 
     <!-- ReplicatedMap -->
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.client.proxy.ClientReplicatedMapProxy"/>
