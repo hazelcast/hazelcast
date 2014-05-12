@@ -96,11 +96,11 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
     private static final int TIMEOUT_PLUS = 2000;
     private static final int RETRY_COUNT = 20;
+    private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
     final int connectionTimeout;
     final int heartBeatInterval;
     final int maxFailedHeartbeatCount;
-    private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 

@@ -77,6 +77,10 @@ public class ClientConfig {
 
     private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
 
+    private ManagedContext managedContext;
+
+    private ClassLoader classLoader;
+
     public String getProperty(String name) {
         String value = properties.getProperty(name);
         return value != null ? value : System.getProperty(name);
@@ -90,10 +94,6 @@ public class ClientConfig {
     public Properties getProperties() {
         return properties;
     }
-
-    private ManagedContext managedContext;
-
-    private ClassLoader classLoader;
 
     private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
 
