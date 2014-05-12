@@ -62,10 +62,11 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
             handleCommonBeanAttributes(element, builder, parserContext);
             final NamedNodeMap attrs = element.getAttributes();
             if (attrs != null) {
-                Node instanceRefNode = attrs.getNamedItem("instance-ref") ;
+                Node instanceRefNode = attrs.getNamedItem("instance-ref");
                 if (instanceRefNode == null) {
-                    throw new IllegalStateException("'instance-ref' attribute is required for creating" +
-                                                    " Hazelcast " + type);
+                    throw new IllegalStateException("'instance-ref' attribute is required for creating"
+                            + " Hazelcast "
+                            + type);
                 }
                 final String instanceRef = getTextContent(instanceRefNode);
                 builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);

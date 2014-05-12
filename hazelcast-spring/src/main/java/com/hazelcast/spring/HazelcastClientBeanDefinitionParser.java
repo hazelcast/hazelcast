@@ -40,6 +40,8 @@ import java.util.List;
 
 public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
+    private static final int INITIAL_CAPACITY = 10;
+
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
         springXmlBuilder.handleClient(element);
@@ -53,7 +55,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private BeanDefinitionBuilder builder;
 
 
-        private ManagedMap nearCacheConfigMap;//= new HashMap<String, NearCacheConfig>();
+        //= new HashMap<String, NearCacheConfig>();
+        private ManagedMap nearCacheConfigMap;
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -112,7 +115,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleNetwork(Node node) {
-            List<String> members = new ArrayList<String>(10);
+            List<String> members = new ArrayList<String>(INITIAL_CAPACITY);
             fillAttributeValues(node, configBuilder);
             for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(child);
