@@ -89,19 +89,20 @@ import static com.hazelcast.client.config.ClientProperties.PROP_MAX_FAILED_HEART
 
 public class ClientConnectionManagerImpl extends MembershipAdapter implements ClientConnectionManager, MembershipListener {
 
-    private static final ILogger logger = Logger.getLogger(ClientConnectionManagerImpl.class);
-
-    private int RETRY_COUNT = 20;
-    private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
+    public static final int BUFFER_SIZE = 16 << 10;
+    // 32k
 
     static final int KILO_BYTE = 1024;
-    public static final int BUFFER_SIZE = 16 << 10; // 32k
 
     private static final int TIMEOUT_PLUS = 2000;
+    private static final int RETRY_COUNT = 20;
 
     final int connectionTimeout;
     final int heartBeatInterval;
     final int maxFailedHeartbeatCount;
+    private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
+
+    private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
     private final HazelcastClient client;
@@ -124,7 +125,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
 
-    private volatile boolean live = false;
+    private volatile boolean live;
 
     public ClientConnectionManagerImpl(HazelcastClient client, LoadBalancer loadBalancer) {
         this.client = client;
@@ -172,23 +173,25 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 try {
                     implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
                 } catch (Throwable e) {
-                    logger.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
+                    LOGGER.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
                 }
             }
         }
 
         socketInterceptor = implementation;
         if (socketInterceptor != null) {
-            logger.info("SocketInterceptor is enabled");
+            LOGGER.info("SocketInterceptor is enabled");
             socketInterceptor.init(sic.getProperties());
         }
 
         socketOptions = networkConfig.getSocketOptions();
 
-        SSLConfig sslConfig = networkConfig.getSSLConfig(); //ioService.getSSLConfig(); TODO
+        //ioService.getSSLConfig(); TODO
+        SSLConfig sslConfig = networkConfig.getSSLConfig();
+
         if (sslConfig != null && sslConfig.isEnabled()) {
             socketChannelWrapperFactory = new SSLSocketChannelWrapperFactory(sslConfig);
-            logger.info("SSL is enabled");
+            LOGGER.info("SSL is enabled");
         } else {
             socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
         }
@@ -258,7 +261,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 try {
                     ownerConnectionLock.wait(waitTime);
                 } catch (InterruptedException e) {
-                    logger.warning("Wait for owner connection is timed out");
+                    LOGGER.warning("Wait for owner connection is timed out");
                     throw new RetryableIOException(e);
                 }
             }
@@ -313,8 +316,8 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             if (members.isEmpty()) {
                 msg = "No address was return by the LoadBalancer since there are no members in the cluster";
             } else {
-                msg = "No address was return by the LoadBalancer. " +
-                        "But the cluster contains the following members:" + members;
+                msg = "No address was return by the LoadBalancer. "
+                        + "But the cluster contains the following members:" + members;
             }
             throw new IllegalStateException(msg);
         }
@@ -363,7 +366,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return clientConnection;
     }
 
-    private class ConnectionProcessor implements Callable<ClientConnection> {
+    private final class ConnectionProcessor implements Callable<ClientConnection> {
 
         final Address address;
         final Authenticator authenticator;
@@ -474,7 +477,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         private void handlePacket(Object response, boolean isError, int callId, ClientConnection conn) {
             final ClientCallFuture future = conn.deRegisterCallId(callId);
             if (future == null) {
-                logger.warning("No call for callId: " + callId + ", response: " + response);
+                LOGGER.warning("No call for callId: " + callId + ", response: " + response);
                 return;
             }
             if (isError) {
@@ -487,7 +490,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             final EventHandler eventHandler = conn.getEventHandler(callId);
             final Object eventObject = getSerializationService().toObject(event);
             if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
+                LOGGER.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
                 return;
             }
             eventHandler.handle(eventObject);
@@ -518,7 +521,8 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         connection.init();
         auth.setReAuth(reAuth);
         auth.setFirstConnection(firstConnection);
-        SerializableCollection collectionWrapper; //contains remoteAddress and principal
+        //contains remoteAddress and principal
+        SerializableCollection collectionWrapper;
         try {
             collectionWrapper = (SerializableCollection) sendAndReceive(auth, connection);
         } catch (Exception e) {
@@ -647,7 +651,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         final MemberImpl member = (MemberImpl) event.getMember();
         final Address address = member.getAddress();
         if (address == null) {
-            logger.warning("Member's address is null " + member);
+            LOGGER.warning("Member's address is null " + member);
             return;
         }
         final ClientConnection clientConnection = connections.get(address);

@@ -20,10 +20,11 @@ import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 
 public abstract class AbstractTextCommand implements TextCommand {
-    private SocketTextReader socketTextReader = null;
-    private SocketTextWriter socketTextWriter = null;
-    private long requestId = -1;
     protected final TextCommandType type;
+    private SocketTextReader socketTextReader;
+    private SocketTextWriter socketTextWriter;
+    private long requestId = -1;
+
 
     protected AbstractTextCommand(TextCommandType type) {
         this.type = type;
@@ -68,8 +69,9 @@ public abstract class AbstractTextCommand implements TextCommand {
 
     @Override
     public String toString() {
-        return "AbstractTextCommand[" + type + "]{" +
-                "requestId=" + requestId +
-                '}';
+        return "AbstractTextCommand[" + type + "]{"
+                + "requestId="
+                + requestId
+                + '}';
     }
 }

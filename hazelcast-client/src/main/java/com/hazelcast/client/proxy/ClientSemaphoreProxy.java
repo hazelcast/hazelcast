@@ -18,7 +18,12 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.semaphore.client.*;
+import com.hazelcast.concurrent.semaphore.client.InitRequest;
+import com.hazelcast.concurrent.semaphore.client.AcquireRequest;
+import com.hazelcast.concurrent.semaphore.client.AvailableRequest;
+import com.hazelcast.concurrent.semaphore.client.DrainRequest;
+import com.hazelcast.concurrent.semaphore.client.ReleaseRequest;
+import com.hazelcast.concurrent.semaphore.client.ReduceRequest;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.nio.serialization.Data;
 
@@ -109,12 +114,12 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     protected void onDestroy() {
     }
 
-    protected  <T> T invoke(ClientRequest req){
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
 
     public Data getKey() {
-        if (key == null){
+        if (key == null) {
             key = getContext().getSerializationService().toData(name);
         }
         return key;

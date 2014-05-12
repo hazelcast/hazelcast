@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class StatsCommand extends AbstractTextCommand {
-    ByteBuffer response;
+
     static final byte[] STAT = stringToBytes("STAT ");
     static final byte[] UPTIME = stringToBytes("uptime ");
     static final byte[] BYTES = stringToBytes("bytes ");
@@ -43,6 +43,7 @@ public class StatsCommand extends AbstractTextCommand {
     static final byte[] DECR_MISSES = stringToBytes("decr_misses ");
     static final byte[] CURR_CONNECTIONS = stringToBytes("curr_connections ");
     static final byte[] TOTAL_CONNECTIONS = stringToBytes("total_connections ");
+    ByteBuffer response;
 
     public StatsCommand() {
         super(TextCommandType.STATS);
@@ -99,7 +100,7 @@ public class StatsCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "StatsCommand{" +
-                '}' + super.toString();
+        return "StatsCommand{"
+                + '}' + super.toString();
     }
 }

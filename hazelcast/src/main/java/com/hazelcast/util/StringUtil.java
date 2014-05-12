@@ -28,7 +28,7 @@ public final class StringUtil {
     private StringUtil() {
     }
 
-    public static String bytesToString(byte bytes[], int offset, int length) {
+    public static String bytesToString(byte[] bytes, int offset, int length) {
         return new String(bytes, offset, length);
     }
 

@@ -24,7 +24,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -117,7 +116,7 @@ public abstract class ClientProxy implements DistributedObject {
         }
     }
 
-    protected <T> T invokeInterruptibly(ClientRequest req, Object key)throws InterruptedException {
+    protected <T> T invokeInterruptibly(ClientRequest req, Object key) throws InterruptedException {
         try {
             final Future future = getInvocationService().invokeOnKeyOwner(req, key);
             Object result = future.get();
@@ -167,14 +166,24 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ClientProxy that = (ClientProxy) o;
 
-        if (!instanceName.equals(that.instanceName)) return false;
-        if (!objectName.equals(that.objectName)) return false;
-        if (!serviceName.equals(that.serviceName)) return false;
+        if (!instanceName.equals(that.instanceName)) {
+            return false;
+        }
+        if (!objectName.equals(that.objectName)) {
+            return false;
+        }
+        if (!serviceName.equals(that.serviceName)) {
+            return false;
+        }
 
         return true;
     }

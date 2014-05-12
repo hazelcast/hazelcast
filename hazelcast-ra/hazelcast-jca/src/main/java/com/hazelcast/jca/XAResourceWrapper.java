@@ -44,7 +44,7 @@ public class XAResourceWrapper implements XAResource {
     public void start(Xid xid, int flags) throws XAException {
         managedConnection.log(Level.FINEST, "XA start: " + xid);
 
-        switch (flags){
+        switch (flags) {
             case TMNOFLAGS:
                 setInner();
                 break;
@@ -55,7 +55,7 @@ public class XAResourceWrapper implements XAResource {
                 throw new XAException(XAException.XAER_INVAL);
         }
 
-        if(inner != null){
+        if (inner != null) {
             inner.start(xid, flags);
         }
 
@@ -96,7 +96,7 @@ public class XAResourceWrapper implements XAResource {
 
     @Override
     public boolean isSameRM(XAResource xaResource) throws XAException {
-        if (xaResource instanceof XAResourceWrapper ){
+        if (xaResource instanceof XAResourceWrapper) {
             final ManagedConnectionImpl otherManagedConnection = ((XAResourceWrapper) xaResource).managedConnection;
             final HazelcastInstance hazelcastInstance = managedConnection.getHazelcastInstance();
             final HazelcastInstance otherHazelcastInstance = otherManagedConnection.getHazelcastInstance();
@@ -120,18 +120,19 @@ public class XAResourceWrapper implements XAResource {
 
     @Override
     public boolean setTransactionTimeout(int seconds) throws XAException {
-        this.transactionTimeoutSeconds=seconds;
+        this.transactionTimeoutSeconds = seconds;
         return false;
     }
 
-    private final void validateInner() throws XAException {
+    private void validateInner() throws XAException {
         if (inner == null) {
             throw new XAException(XAException.XAER_NOTA);
         }
     }
 
     private void setInner() throws XAException {
-        final TransactionContext transactionContext = HazelcastTransactionImpl.createTransaction(this.getTransactionTimeout(), managedConnection.getHazelcastInstance());
+        final TransactionContext transactionContext = HazelcastTransactionImpl
+                .createTransaction(this.getTransactionTimeout(), managedConnection.getHazelcastInstance());
         this.managedConnection.getTx().setTxContext(transactionContext);
         inner = transactionContext.getXaResource();
     }

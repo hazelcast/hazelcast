@@ -18,7 +18,15 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.*;
+import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -38,7 +46,7 @@ import java.net.URL;
 
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
-    private final static ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class);
+    private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
 
     private ClientConfig clientConfig;
     private InputStream in;
@@ -75,11 +83,11 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             File configurationFile = null;
             if (configFile != null) {
                 configurationFile = new File(configFile);
-                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
+                LOGGER.info("Using configuration file at " + configurationFile.getAbsolutePath());
                 if (!configurationFile.exists()) {
                     String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
                     msg += "\nHazelcast will try to use the hazelcast-client.xml config file in the working directory.";
-                    logger.warning(msg);
+                    LOGGER.warning(msg);
                     configurationFile = null;
                 }
             }
@@ -92,38 +100,39 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             }
             URL configurationUrl;
             if (configurationFile != null) {
-                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
+                LOGGER.info("Using configuration file at " + configurationFile.getAbsolutePath());
                 try {
                     in = new FileInputStream(configurationFile);
                 } catch (final Exception e) {
                     String msg = "Having problem reading config file at '" + configFile + "'.";
                     msg += "\nException message: " + e.getMessage();
                     msg += "\nHazelcast will try to use the hazelcast-client.xml config file in classpath.";
-                    logger.warning(msg);
+                    LOGGER.warning(msg);
                     in = null;
                 }
             }
             if (in == null) {
-                logger.info("Looking for hazelcast-client.xml config file in classpath.");
+                LOGGER.info("Looking for hazelcast-client.xml config file in classpath.");
                 configurationUrl = Config.class.getClassLoader().getResource("hazelcast-client.xml");
                 if (configurationUrl == null) {
                     configurationUrl = Config.class.getClassLoader().getResource("hazelcast-client-default.xml");
-                    logger.warning(
-                            "Could not find hazelcast-client.xml in classpath.\nHazelcast will use hazelcast-client-default.xml config file in jar.");
+                    LOGGER.warning(
+                            "Could not find hazelcast-client.xml in classpath."
+                                    + "\nHazelcast will use hazelcast-client-default.xml config file in jar.");
                     if (configurationUrl == null) {
-                        logger.warning("Could not find hazelcast-client-default.xml in the classpath!"
+                        LOGGER.warning("Could not find hazelcast-client-default.xml in the classpath!"
                                 + "\nThis may be due to a wrong-packaged or corrupted jar file.");
                         return;
                     }
                 }
-                logger.info("Using configuration file " + configurationUrl.getFile() + " in the classpath.");
+                LOGGER.info("Using configuration file " + configurationUrl.getFile() + " in the classpath.");
                 in = configurationUrl.openStream();
                 if (in == null) {
                     throw new IllegalStateException("Cannot read configuration file, giving up.");
                 }
             }
         } catch (final Throwable e) {
-            logger.severe("Error while creating configuration:" + e.getMessage(), e);
+            LOGGER.severe("Error while creating configuration:" + e.getMessage(), e);
         }
     }
 

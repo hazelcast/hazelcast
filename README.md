@@ -7,7 +7,7 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 ### Features:
 
 * Distributed implementations of `java.util.{Queue, Set, List, Map}`
-* Distributed implementation of `java.util.concurrency.locks.Lock`
+* Distributed implementation of `java.util.concurrent.locks.Lock`
 * Distributed implementation of `java.util.concurrent.ExecutorService`
 * Distributed `MultiMap` for one-to-many relationships
 * Distributed `Topic` for publish/subscribe messaging

@@ -23,6 +23,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
+// TODO empty statistics.
 public class RecordStatistics implements DataSerializable {
 
     // TODO is volatile needed? if yes then hits should be atomicnumber

@@ -22,26 +22,29 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
+/**
+ *
+ */
 public class RecordInfo implements DataSerializable {
     protected RecordStatistics statistics;
-    protected long idleDelayMillis = -1;
-    protected long ttlDelayMillis = -1;
-    protected long mapStoreWriteDelayMillis = -1;
-    protected long mapStoreDeleteDelayMillis = -1;
     protected long version;
     protected long evictionCriteriaNumber;
+    protected long ttl;
+    protected long creationTime;
+    protected long lastAccessTime;
+    protected long lastUpdatedTime;
 
     public RecordInfo() {
     }
 
     public RecordInfo(RecordInfo recordInfo) {
         this.statistics = recordInfo.statistics;
-        this.idleDelayMillis = recordInfo.idleDelayMillis;
-        this.ttlDelayMillis = recordInfo.ttlDelayMillis;
-        this.mapStoreWriteDelayMillis = recordInfo.mapStoreWriteDelayMillis;
-        this.mapStoreDeleteDelayMillis = recordInfo.mapStoreDeleteDelayMillis;
         this.version = recordInfo.version;
         this.evictionCriteriaNumber = recordInfo.evictionCriteriaNumber;
+        this.ttl = recordInfo.ttl;
+        this.creationTime = recordInfo.creationTime;
+        this.lastAccessTime = recordInfo.lastAccessTime;
+        this.lastUpdatedTime = recordInfo.lastUpdatedTime;
     }
 
     public RecordStatistics getStatistics() {
@@ -50,38 +53,6 @@ public class RecordInfo implements DataSerializable {
 
     public void setStatistics(RecordStatistics statistics) {
         this.statistics = statistics;
-    }
-
-    public long getIdleDelayMillis() {
-        return idleDelayMillis;
-    }
-
-    public void setIdleDelayMillis(long idleDelayMillis) {
-        this.idleDelayMillis = idleDelayMillis;
-    }
-
-    public long getTtlDelayMillis() {
-        return ttlDelayMillis;
-    }
-
-    public void setTtlDelayMillis(long ttlDelayMillis) {
-        this.ttlDelayMillis = ttlDelayMillis;
-    }
-
-    public long getMapStoreWriteDelayMillis() {
-        return mapStoreWriteDelayMillis;
-    }
-
-    public void setMapStoreWriteDelayMillis(long mapStoreWriteDelayMillis) {
-        this.mapStoreWriteDelayMillis = mapStoreWriteDelayMillis;
-    }
-
-    public long getMapStoreDeleteDelayMillis() {
-        return mapStoreDeleteDelayMillis;
-    }
-
-    public void setMapStoreDeleteDelayMillis(long mapStoreDeleteDelayMillis) {
-        this.mapStoreDeleteDelayMillis = mapStoreDeleteDelayMillis;
     }
 
     public long getVersion() {
@@ -100,6 +71,38 @@ public class RecordInfo implements DataSerializable {
         this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
+    public long getTtl() {
+        return ttl;
+    }
+
+    public void setTtl(long ttl) {
+        this.ttl = ttl;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
+    public long getLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+    }
+
+    public long getLastUpdatedTime() {
+        return lastUpdatedTime;
+    }
+
+    public void setLastUpdatedTime(long lastUpdatedTime) {
+        this.lastUpdatedTime = lastUpdatedTime;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         if (statistics != null) {
@@ -108,12 +111,12 @@ public class RecordInfo implements DataSerializable {
         } else {
             out.writeBoolean(false);
         }
-        out.writeLong(idleDelayMillis);
-        out.writeLong(ttlDelayMillis);
-        out.writeLong(mapStoreWriteDelayMillis);
-        out.writeLong(mapStoreDeleteDelayMillis);
         out.writeLong(version);
         out.writeLong(evictionCriteriaNumber);
+        out.writeLong(ttl);
+        out.writeLong(creationTime);
+        out.writeLong(lastAccessTime);
+        out.writeLong(lastUpdatedTime);
 
     }
 
@@ -124,12 +127,12 @@ public class RecordInfo implements DataSerializable {
             statistics = new RecordStatistics();
             statistics.readData(in);
         }
-        idleDelayMillis = in.readLong();
-        ttlDelayMillis = in.readLong();
-        mapStoreWriteDelayMillis = in.readLong();
-        mapStoreDeleteDelayMillis = in.readLong();
         version = in.readLong();
         evictionCriteriaNumber = in.readLong();
+        ttl = in.readLong();
+        creationTime = in.readLong();
+        lastAccessTime = in.readLong();
+        lastUpdatedTime = in.readLong();
     }
 
     @Override
@@ -138,18 +141,18 @@ public class RecordInfo implements DataSerializable {
         builder.append("RecordInfo{");
         builder.append("statistics=");
         builder.append(statistics);
-        builder.append(", idleDelayMillis=");
-        builder.append(idleDelayMillis);
-        builder.append(", ttlDelayMillis=");
-        builder.append(ttlDelayMillis);
-        builder.append(", mapStoreWriteDelayMillis=");
-        builder.append(mapStoreWriteDelayMillis);
-        builder.append(", mapStoreDeleteDelayMillis=");
-        builder.append(mapStoreDeleteDelayMillis);
         builder.append(", version=");
         builder.append(version);
         builder.append(", evictionCriteriaNumber=");
         builder.append(evictionCriteriaNumber);
+        builder.append(", ttl=");
+        builder.append(ttl);
+        builder.append(", creationTime=");
+        builder.append(creationTime);
+        builder.append(", lastAccessTime=");
+        builder.append(lastAccessTime);
+        builder.append(", lastUpdatedTime=");
+        builder.append(lastUpdatedTime);
         builder.append('}');
         return builder.toString();
     }

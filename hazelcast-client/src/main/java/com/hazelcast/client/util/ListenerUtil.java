@@ -27,6 +27,9 @@ import java.util.concurrent.Future;
 
 public final class ListenerUtil {
 
+    private ListenerUtil() {
+    }
+
     public static String listen(ClientContext context, ClientRequest request, Object key, EventHandler handler) {
         //TODO callback
         final Future future;

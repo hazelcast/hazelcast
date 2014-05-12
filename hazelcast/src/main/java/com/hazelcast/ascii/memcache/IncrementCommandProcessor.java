@@ -48,10 +48,10 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
         } catch (UnsupportedEncodingException e) {
             throw new HazelcastException(e);
         }
-        String mapName = DefaultMapName;
+        String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MapNamePreceder + key.substring(0, index);
+            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
             key = key.substring(index + 1);
         }
         try {
@@ -95,10 +95,11 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
             MemcacheEntry newValue = new MemcacheEntry(key, longToByteArray(result), entry.getFlag());
             textCommandService.put(mapName, key, newValue);
         } else {
-            if (incrementCommand.getType() == TextCommandType.INCREMENT)
+            if (incrementCommand.getType() == TextCommandType.INCREMENT) {
                 textCommandService.incrementIncMissCount();
-            else
+            } else {
                 textCommandService.incrementDecrMissCount();
+            }
             incrementCommand.setResponse(NOT_FOUND);
         }
         textCommandService.unlock(mapName, key);

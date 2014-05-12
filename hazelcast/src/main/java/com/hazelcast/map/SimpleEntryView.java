@@ -36,6 +36,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
     private long lastUpdateTime;
     private long version;
     private long evictionCriteriaNumber;
+    private long ttl;
 
     public SimpleEntryView(K key, V value) {
         this.key = key;
@@ -133,6 +134,14 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
+    public long getTtl() {
+        return ttl;
+    }
+
+    public void setTtl(long ttl) {
+        this.ttl = ttl;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(key);
@@ -146,6 +155,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
         out.writeLong(evictionCriteriaNumber);
+        out.writeLong(ttl);
     }
 
     @Override
@@ -161,6 +171,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         lastUpdateTime = in.readLong();
         version = in.readLong();
         evictionCriteriaNumber = in.readLong();
+        ttl = in.readLong();
     }
 
     public int getFactoryId() {

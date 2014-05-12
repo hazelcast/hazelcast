@@ -44,11 +44,12 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
     @Override
     public Record<Data> newRecord(Data key, Object value) {
-        Data v = serializationService.toData(value, partitionStrategy);
+        final Data data = serializationService.toData(value, partitionStrategy);
         if (optimizeQuery) {
-            return new CachedDataRecord(key, v, statisticsEnabled);
+            return statisticsEnabled ? new CachedDataRecordWithStats(key, data)
+                    : new CachedDataRecord(key, data);
         }
-        return new DataRecord(key, v, statisticsEnabled);
+        return statisticsEnabled ? new DataRecordWithStats(key, data) : new DataRecord(key, data);
     }
 
     @Override

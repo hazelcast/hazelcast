@@ -58,6 +58,8 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class ClientConnection implements Connection, Closeable {
 
+    private static final int SLEEP_TIME = 10;
+
     private volatile boolean live = true;
 
     private final ILogger logger = Logger.getLogger(ClientConnection.class);
@@ -310,7 +312,7 @@ public class ClientConnection implements Connection, Closeable {
             int count = packetCount.get();
             while (count != 0) {
                 try {
-                    Thread.sleep(10);
+                    Thread.sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
                     logger.warning(e);
                     break;
@@ -402,12 +404,18 @@ public class ClientConnection implements Connection, Closeable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ClientConnection)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ClientConnection)) {
+            return false;
+        }
 
         ClientConnection that = (ClientConnection) o;
 
-        if (connectionId != that.connectionId) return false;
+        if (connectionId != that.connectionId) {
+            return false;
+        }
 
         return true;
     }

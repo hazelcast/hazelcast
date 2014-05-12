@@ -45,9 +45,7 @@ import java.net.URL;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * User: sancar
@@ -102,7 +100,7 @@ public class RestTest {
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
         final String name = "testRestSimple";
         for (int i = 0; i < 100; i++) {
-            communicator.put(name, String.valueOf(i), String.valueOf(i * 10));
+            assertEquals(HttpURLConnection.HTTP_OK, communicator.put(name, String.valueOf(i), String.valueOf(i * 10)));
         }
 
         for (int i = 0; i < 100; i++) {
@@ -118,7 +116,7 @@ public class RestTest {
         }
 
         for (int i = 0; i < 100; i++) {
-            communicator.put(name, String.valueOf(i), String.valueOf(i * 10));
+            assertEquals(HttpURLConnection.HTTP_OK, communicator.put(name, String.valueOf(i), String.valueOf(i * 10)));
         }
 
         for (int i = 0; i < 100; i++) {
@@ -126,7 +124,7 @@ public class RestTest {
         }
 
         for (int i = 0; i < 100; i++) {
-            communicator.delete(name, String.valueOf(i));
+            assertEquals(HttpURLConnection.HTTP_OK, communicator.delete(name, String.valueOf(i)));
         }
 
         for (int i = 0; i < 100; i++) {
@@ -134,7 +132,7 @@ public class RestTest {
         }
 
         for (int i = 0; i < 100; i++) {
-            communicator.offer(name, String.valueOf(i));
+            assertEquals(HttpURLConnection.HTTP_OK, communicator.offer(name, String.valueOf(i)));
         }
 
         for (int i = 0; i < 100; i++) {
@@ -190,7 +188,7 @@ public class RestTest {
             return result;
         }
 
-        public boolean offer(String queueName, String data) throws IOException {
+        public int offer(String queueName, String data) throws IOException {
             String url = address + "queues/" + queueName;
             /** set up the http connection parameters */
             HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
@@ -209,16 +207,8 @@ public class RestTest {
             writer.close();
             out.close();
 
-            /** read the response back from the posted data */
-            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-            StringBuilder builder = new StringBuilder(100);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line);
-            }
-            reader.close();
 
-            return Boolean.valueOf(builder.toString());
+            return urlConnection.getResponseCode();
         }
 
         public String get(String mapName, String key) {
@@ -227,7 +217,7 @@ public class RestTest {
             return result;
         }
 
-        public String put(String mapName, String key, String value) throws IOException {
+        public int put(String mapName, String key, String value) throws IOException {
 
             String url = address + "maps/" + mapName + "/" + key;
             /** set up the http connection parameters */
@@ -246,19 +236,10 @@ public class RestTest {
             writer.close();
             out.close();
 
-            /** read the response back from the posted data */
-            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-            StringBuilder builder = new StringBuilder(100);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line);
-            }
-            reader.close();
-
-            return builder.toString();
+            return urlConnection.getResponseCode();
         }
 
-        public String deleteAll(String mapName) throws IOException {
+        public int deleteAll(String mapName) throws IOException {
 
             String url = address + "maps/" + mapName;
             /** set up the http connection parameters */
@@ -270,19 +251,10 @@ public class RestTest {
             urlConnection.setAllowUserInteraction(false);
             urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
 
-            /** read the response back from the posted data */
-            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-            StringBuilder builder = new StringBuilder(100);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line);
-            }
-            reader.close();
-
-            return builder.toString();
+            return urlConnection.getResponseCode();
         }
 
-        public String delete(String mapName, String key) throws IOException {
+        public int delete(String mapName, String key) throws IOException {
 
             String url = address + "maps/" + mapName + "/" + key;
             /** set up the http connection parameters */
@@ -294,16 +266,7 @@ public class RestTest {
             urlConnection.setAllowUserInteraction(false);
             urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
 
-            /** read the response back from the posted data */
-            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-            StringBuilder builder = new StringBuilder(100);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line);
-            }
-            reader.close();
-
-            return builder.toString();
+            return urlConnection.getResponseCode();
         }
 
         private String doGet(final String url) {

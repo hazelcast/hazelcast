@@ -14,4 +14,4 @@ reports/
 atlassian-ide-plugin.xml
 hazelcast-ra/*.log
 hazelcast-ra/*.epoch
-
+hazelcast-all/dependency-reduced-pom.xml

@@ -26,7 +26,8 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
 
     private final String threadNamePrefix;
     private final AtomicInteger idGen = new AtomicInteger(0);
-    private final Queue<Integer> idQ = new LinkedBlockingQueue<Integer>(1000); // to reuse previous thread IDs
+    // to reuse previous thread IDs
+    private final Queue<Integer> idQ = new LinkedBlockingQueue<Integer>(1000);
 
     public PoolExecutorThreadFactory(ThreadGroup threadGroup, String threadNamePrefix, ClassLoader classLoader) {
         super(threadGroup, classLoader);

@@ -24,7 +24,6 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.security.Credentials;
-import sun.applet.Main;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -75,17 +74,8 @@ public class ClientConfig {
     private int executorPoolSize = -1;
 
     private SerializationConfig serializationConfig = new SerializationConfig();
-    
+
     private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
-
-
-    private ManagedContext managedContext = null;
-    
-    private ClassLoader classLoader = null;
-    
-    private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
-
-
 
     public String getProperty(String name) {
         String value = properties.getProperty(name);
@@ -100,6 +90,12 @@ public class ClientConfig {
     public Properties getProperties() {
         return properties;
     }
+
+    private ManagedContext managedContext;
+
+    private ClassLoader classLoader;
+
+    private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
 
     public ClientConfig setProperties(final Properties properties) {
         this.properties = properties;
@@ -124,17 +120,18 @@ public class ClientConfig {
 
     /**
      * please use {@link ClientConfig#addNearCacheConfig(NearCacheConfig)}
+     *
      * @param mapName
      * @param nearCacheConfig
      * @return
      */
     @Deprecated
-    public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig){
+    public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig) {
         nearCacheConfig.setName(mapName);
         return addNearCacheConfig(nearCacheConfig);
     }
 
-    public ClientConfig addNearCacheConfig(NearCacheConfig nearCacheConfig){
+    public ClientConfig addNearCacheConfig(NearCacheConfig nearCacheConfig) {
         nearCacheConfigMap.put(nearCacheConfig.getName(), nearCacheConfig);
         return this;
     }
@@ -298,7 +295,7 @@ public class ClientConfig {
 
     public ClientConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
-        return this ;
+        return this;
     }
 
     public LoadBalancer getLoadBalancer() {
@@ -380,8 +377,7 @@ public class ClientConfig {
         return this;
     }
 
-    public SerializationConfig getSerializationConfig()
-    {
+    public SerializationConfig getSerializationConfig() {
         return serializationConfig;
     }
 
@@ -395,7 +391,7 @@ public class ClientConfig {
         T t = map.get(name);
         if (t == null) {
             int lastMatchingPoint = -1;
-            for (Map.Entry<String,T> entry : map.entrySet()) {
+            for (Map.Entry<String, T> entry : map.entrySet()) {
                 String pattern = entry.getKey();
                 T value = entry.getValue();
                 final int matchingPoint = getMatchingPoint(name, pattern);
@@ -410,6 +406,7 @@ public class ClientConfig {
 
     /**
      * higher values means more specific matching
+     *
      * @param name
      * @param pattern
      * @return -1 if name does not match at all, zero or positive otherwise
@@ -429,6 +426,6 @@ public class ClientConfig {
         if (indexSecondPart == -1) {
             return -1;
         }
-        return firstPart.length()+secondPart.length();
+        return firstPart.length() + secondPart.length();
     }
 }
