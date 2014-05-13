@@ -182,7 +182,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
                 callBeforeStoreListeners(entry);
                 final Object key = toObject(entry.getKey());
                 final Object value = toObject(entry.getValue());
-                boolean result = operationType.storeSingle(key, value, storeWrapper);
+                boolean result = operationType.processSingle(key, value, storeWrapper);
                 callAfterStoreListeners(entry);
                 return result;
             }
@@ -221,7 +221,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
             public boolean run() throws Exception {
                 callBeforeStoreListeners(batchMap.values());
                 final Map map = convertToObject(batchMap);
-                final boolean result = operationType.storeBatch(map, storeWrapper);
+                final boolean result = operationType.processBatch(map, storeWrapper);
                 callAfterStoreListeners(batchMap.values());
                 return result;
             }
@@ -309,10 +309,11 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
         Collection<T> failedList();
     }
 
-    private static void sleepSeconds(long secs) {
+    private void sleepSeconds(long secs) {
         try {
             TimeUnit.SECONDS.sleep(secs);
         } catch (InterruptedException e) {
+            logger.warning(e);
         }
     }
 
@@ -323,13 +324,13 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
 
         DELETE {
             @Override
-            boolean storeSingle(Object key, Object value, MapStore mapStore) {
+            boolean processSingle(Object key, Object value, MapStore mapStore) {
                 mapStore.delete(key);
                 return true;
             }
 
             @Override
-            boolean storeBatch(Map map, MapStore mapStore) {
+            boolean processBatch(Map map, MapStore mapStore) {
                 mapStore.deleteAll(map.keySet());
                 return true;
             }
@@ -337,21 +338,21 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
 
         WRITE {
             @Override
-            boolean storeSingle(Object key, Object value, MapStore mapStore) {
+            boolean processSingle(Object key, Object value, MapStore mapStore) {
                 mapStore.store(key, value);
                 return true;
             }
 
             @Override
-            boolean storeBatch(Map map, MapStore mapStore) {
+            boolean processBatch(Map map, MapStore mapStore) {
                 mapStore.storeAll(map);
                 return true;
             }
         };
 
-        abstract boolean storeSingle(Object key, Object value, MapStore mapStore);
+        abstract boolean processSingle(Object key, Object value, MapStore mapStore);
 
-        abstract boolean storeBatch(Map map, MapStore mapStore);
+        abstract boolean processBatch(Map map, MapStore mapStore);
     }
 
 }
