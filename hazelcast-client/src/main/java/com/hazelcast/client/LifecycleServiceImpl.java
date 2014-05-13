@@ -92,6 +92,8 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void shutdown() {
+        getLogger().info("Shutdown of HazelcastClient[" + client.getName() + "]");
+
         active.set(false);
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
