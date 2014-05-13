@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce.aggregation.impl;
 
+import com.hazelcast.mapreduce.aggregation.PropertyExtractor;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,9 +29,19 @@ public class AcceptAllSupplier<KeyIn, ValueIn, ValueOut>
         extends Supplier<KeyIn, ValueIn, ValueOut>
         implements IdentifiedDataSerializable {
 
+    private PropertyExtractor<ValueIn, ValueOut> propertyExtractor;
+
+    AcceptAllSupplier() {
+    }
+
+    public AcceptAllSupplier(PropertyExtractor<ValueIn, ValueOut> propertyExtractor) {
+        this.propertyExtractor = propertyExtractor;
+    }
+
     @Override
     public ValueOut apply(Map.Entry<KeyIn, ValueIn> entry) {
-        return (ValueOut) entry.getValue();
+        ValueIn value = entry.getValue();
+        return propertyExtractor != null ? propertyExtractor.extract(value) : (ValueOut) value;
     }
 
     @Override
@@ -46,10 +57,14 @@ public class AcceptAllSupplier<KeyIn, ValueIn, ValueOut>
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
+
+        out.writeObject(propertyExtractor);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
+
+        propertyExtractor = in.readObject();
     }
 }

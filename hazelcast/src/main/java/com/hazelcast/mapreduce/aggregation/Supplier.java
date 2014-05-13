@@ -27,7 +27,13 @@ public abstract class Supplier<KeyIn, ValueIn, ValueOut> {
     public abstract ValueOut apply(Map.Entry<KeyIn, ValueIn> entry);
 
     public static <KeyIn, ValueIn, ValueOut> Supplier<KeyIn, ValueIn, ValueOut> all() {
-        return new AcceptAllSupplier();
+        return new AcceptAllSupplier(null);
+    }
+
+    public static <KeyIn, ValueIn, ValueOut> Supplier<KeyIn, ValueIn, ValueOut> all(
+            PropertyExtractor<ValueIn, ValueOut> propertyExtractor) {
+
+        return new AcceptAllSupplier(propertyExtractor);
     }
 
     public static <KeyIn, ValueIn, ValueOut> Supplier<KeyIn, ValueIn, ValueOut> fromPredicate(

@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -66,4 +68,45 @@ public class AggregationTest
         assertEquals(expectation, sum);
     }
 
+    @Test
+    public void testIntegerSumWithExtractor()
+            throws Exception {
+
+        String mapName = randomMapName();
+        IMap<String, IntegerValue> map = hz1.getMap(mapName);
+
+        int expectation = 0;
+        for (int i = 0; i < 100000; i++) {
+            map.put("key-" + i, new IntegerValue(i));
+            expectation += i;
+        }
+
+        Supplier<String, IntegerValue, Integer> supplier = Supplier.all(new IntegerValuePropertyExtractor());
+        Aggregation<String, IntegerValue, String, Integer, Integer> aggregation = Aggregations.integerSum();
+        int sum = map.aggregate(supplier, aggregation);
+
+        assertEquals(expectation, sum);
+    }
+
+    public static class IntegerValuePropertyExtractor
+            implements PropertyExtractor<IntegerValue, Integer>, Serializable {
+
+        @Override
+        public Integer extract(IntegerValue value) {
+            return value.value;
+        }
+    }
+
+    public static class IntegerValue
+            implements Serializable {
+
+        private int value;
+
+        public IntegerValue() {
+        }
+
+        public IntegerValue(int value) {
+            this.value = value;
+        }
+    }
 }
