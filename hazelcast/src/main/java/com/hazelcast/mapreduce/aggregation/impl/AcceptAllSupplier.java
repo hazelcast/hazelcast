@@ -16,35 +16,40 @@
 
 package com.hazelcast.mapreduce.aggregation.impl;
 
-import com.hazelcast.mapreduce.Collator;
-import com.hazelcast.mapreduce.CombinerFactory;
-import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.io.IOException;
 import java.util.Map;
 
-public class IntegerAvgAggregation<Key, Value>
-        implements Aggregation<Key, Value, Key, Integer, Integer> {
+public class AcceptAllSupplier<KeyIn, ValueIn, ValueOut>
+        extends Supplier<KeyIn, ValueIn, ValueOut>
+        implements IdentifiedDataSerializable {
 
     @Override
-    public Collator<Map.Entry<Key, Integer>, Integer> getCollator() {
-        return null;
+    public ValueOut apply(Map.Entry<KeyIn, ValueIn> entry) {
+        return (ValueOut) entry.getValue();
     }
 
     @Override
-    public Mapper<Key, Value, Key, Integer> getMapper(Supplier<Key, Value, Integer> supplier) {
-        return null;
+    public int getFactoryId() {
+        return AggregationsDataSerializerHook.F_ID;
     }
 
     @Override
-    public CombinerFactory<Key, Integer, Integer> getCombinerFactory() {
-        return null;
+    public int getId() {
+        return AggregationsDataSerializerHook.ACCEPT_ALL_SUPPLIER;
     }
 
     @Override
-    public ReducerFactory<Key, Integer, Integer> getReducerFactory() {
-        return null;
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in)
+            throws IOException {
     }
 }

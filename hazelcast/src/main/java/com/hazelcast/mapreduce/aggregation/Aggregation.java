@@ -18,11 +18,18 @@ package com.hazelcast.mapreduce.aggregation;
 
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
 
-public interface Aggregation<KeyIn, ValueIn, Result>
-        extends CombinerFactory<KeyIn, ValueIn, Object>, ReducerFactory<KeyIn, Object, Object> {
+import java.util.Map;
 
-    Collator<Object, Result> getCollator();
+public interface Aggregation<KeyIn, ValueIn, KeyOut, SuppliedValue, Result> {
 
+    Collator<Map.Entry<KeyOut, SuppliedValue>, Result> getCollator();
+
+    Mapper<KeyIn, ValueIn, KeyOut, SuppliedValue> getMapper(Supplier<KeyIn, ValueIn, SuppliedValue> supplier);
+
+    CombinerFactory<KeyOut, SuppliedValue, SuppliedValue> getCombinerFactory();
+
+    ReducerFactory<KeyOut, SuppliedValue, SuppliedValue> getReducerFactory();
 }

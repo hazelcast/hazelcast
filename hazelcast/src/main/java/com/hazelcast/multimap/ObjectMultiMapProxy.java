@@ -20,6 +20,8 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.multimap.operations.EntrySetResponse;
 import com.hazelcast.multimap.operations.MultiMapResponse;
@@ -234,6 +236,14 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements M
 
     public LocalMultiMapStats getLocalMultiMapStats() {
         return (LocalMultiMapStats) getService().createStats(name);
+    }
+
+    @Override
+    public <KeyOut, SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, V, KeyOut, SuppliedValue, Result> aggregation) {
+
+        // TODO
+        return null;
     }
 
     private Set<K> toObjectSet(Set<Data> dataSet) {

@@ -466,8 +466,9 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * @param aggregation      the aggregation that is being executed against the multimap
      * @param <SuppliedValue>  the final type emitted from the supplier
      * @param <Result>         the resulting aggregation value type
+     * @param <KeyOut>         the resulting mapping phase key type
      * @return Returns the aggregated value
      */
-    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                             Aggregation<K, SuppliedValue, Result> aggregation);
+    <KeyOut, SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, V, KeyOut, SuppliedValue, Result> aggregation);
 }

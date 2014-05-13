@@ -67,7 +67,8 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
+public interface IMap<K, V>
+        extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * {@inheritDoc}
@@ -163,7 +164,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key or value is null
      */
     boolean remove(Object key, Object value);
-
 
     /**
      * Removes the mapping for a key from this map if it is present
@@ -638,7 +638,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the waiting time elapsed before the lock was acquired.
      * @throws NullPointerException if the specified key is null
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException;
+    boolean tryLock(K key, long time, TimeUnit timeunit)
+            throws InterruptedException;
 
     /**
      * Releases the lock for the specified key. It never blocks and
@@ -1017,7 +1018,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 
-
     /**
      * Applies the user defined EntryProcessor to the entry mapped by the key with
      * specified ExecutionCallback to listen event status and returns immediately.
@@ -1041,7 +1041,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Future submitToKey(K key, EntryProcessor entryProcessor);
 
-
     /**
      * Applies the user defined EntryProcessor to the all entries in the map.
      * Returns the results mapped by each key in the map.
@@ -1061,12 +1060,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
      * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
      *
-     * @param supplier         the supplier to select and / or extract a (sub-)value from the map
-     * @param aggregation      the aggregation that is being executed against the map
-     * @param <SuppliedValue>  the final type emitted from the supplier
-     * @param <Result>         the resulting aggregation value type
+     * @param supplier        the supplier to select and / or extract a (sub-)value from the map
+     * @param aggregation     the aggregation that is being executed against the map
+     * @param <SuppliedValue> the final type emitted from the supplier
+     * @param <Result>        the resulting aggregation value type
+     * @param <KeyOut>         the resulting mapping phase key type
      * @return Returns the aggregated value
      */
-    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                             Aggregation<K, SuppliedValue, Result> aggregation);
+    <KeyOut, SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                     Aggregation<K, V, KeyOut, SuppliedValue, Result> aggregation);
 }

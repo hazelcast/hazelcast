@@ -31,11 +31,12 @@ import com.hazelcast.util.ConstructorFunction;
 public class AggregationsDataSerializerHook
         implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.AGGREGATIONS_DS_FACTORY, -23);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.AGGREGATIONS_DS_FACTORY, -24);
 
     public static final int SUPPLIER_CONSUMING_MAPPER = 0;
+    public static final int ACCEPT_ALL_SUPPLIER = 1;
 
-    private static final int LEN = SUPPLIER_CONSUMING_MAPPER + 1;
+    private static final int LEN = ACCEPT_ALL_SUPPLIER + 1;
 
     @Override
     public int getFactoryId() {
@@ -49,6 +50,12 @@ public class AggregationsDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SupplierConsumingMapper();
+            }
+        };
+        constructors[ACCEPT_ALL_SUPPLIER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AcceptAllSupplier();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

@@ -17,6 +17,7 @@
 package com.hazelcast.mapreduce.aggregation;
 
 import com.hazelcast.mapreduce.KeyPredicate;
+import com.hazelcast.mapreduce.aggregation.impl.AcceptAllSupplier;
 import com.hazelcast.query.Predicate;
 
 import java.util.Map;
@@ -24,6 +25,10 @@ import java.util.Map;
 public abstract class Supplier<KeyIn, ValueIn, ValueOut> {
 
     public abstract ValueOut apply(Map.Entry<KeyIn, ValueIn> entry);
+
+    public static <KeyIn, ValueIn, ValueOut> Supplier<KeyIn, ValueIn, ValueOut> all() {
+        return new AcceptAllSupplier();
+    }
 
     public static <KeyIn, ValueIn, ValueOut> Supplier<KeyIn, ValueIn, ValueOut> fromPredicate(
             Predicate<KeyIn, ValueIn> predicate) {

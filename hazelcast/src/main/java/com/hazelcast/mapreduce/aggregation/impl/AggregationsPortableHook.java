@@ -32,7 +32,7 @@ import java.util.Collection;
 public class AggregationsPortableHook
         implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.AGGREGATIONS_PORTABLE_FACTORY, -23);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.AGGREGATIONS_PORTABLE_FACTORY, -24);
 
     private static final int EXECUTE_SUM_AGGREGATION = 1;
     private static final int LENGTH = EXECUTE_SUM_AGGREGATION + 1;

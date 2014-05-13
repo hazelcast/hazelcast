@@ -21,11 +21,11 @@ import com.hazelcast.mapreduce.aggregation.impl.IntegerSumAggregation;
 
 public class Aggregations {
 
-    public static <Key> Aggregation<Key, Integer, Integer> integerAvg() {
-        return new IntegerAvgAggregation<Key>();
+    public static <Key, Value> Aggregation<Key, Value, Key, Integer, Integer> integerAvg() {
+        return new IntegerAvgAggregation<Key, Value>();
     }
 
-    public static <Key> Aggregation<Key, Integer, Integer> integerSum() {
-        return new IntegerSumAggregation<Key>();
+    public static <Key, Value> Aggregation<Key, Value, Key, Integer, Integer> integerSum() {
+        return new IntegerSumAggregation<Key, Value>();
     }
 }

@@ -21,6 +21,16 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.SimpleEntryView;
+import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.Combiner;
+import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.InitializingObject;
@@ -590,6 +600,27 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Data keyData = service.toData(key, partitionStrategy);
         ICompletableFuture f = executeOnKeyInternal(keyData,entryProcessor,null);
         return new DelegatingFuture(f,service.getSerializationService());
+    }
+
+    @Override
+    public <KeyOut, SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, V, KeyOut, SuppliedValue, Result> aggregation) {
+
+        try {
+            HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
+            JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
+            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
+            Job<K, V> job = jobTracker.newJob(keyValueSource);
+            Mapper<K, V, KeyOut, SuppliedValue> mapper = aggregation.getMapper(supplier);
+            CombinerFactory<KeyOut, SuppliedValue, SuppliedValue> combinerFactory = aggregation.getCombinerFactory();
+            ReducerFactory<KeyOut, SuppliedValue, SuppliedValue> reducerFactory = aggregation.getReducerFactory();
+            Collator<Map.Entry<KeyOut, SuppliedValue>, Result> collator = aggregation.getCollator();
+            ICompletableFuture<Result> future = job.mapper(mapper).combiner(combinerFactory).reducer(reducerFactory)
+                                                   .submit(collator);
+            return future.get();
+        } catch (Exception e) {
+            throw new HazelcastException(e);
+        }
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
