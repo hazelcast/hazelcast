@@ -24,22 +24,28 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class SupplierConsumingMapper<Key, ValueIn, ValueOut>
         implements Mapper<Key, ValueIn, Key, ValueOut>, IdentifiedDataSerializable {
+
+    private transient SimpleEntry<Key, ValueIn> entry = new SimpleEntry<Key, ValueIn>();
 
     private Supplier<Key, ValueIn, ValueOut> supplier;
 
     SupplierConsumingMapper() {
     }
 
-    public SupplierConsumingMapper(Supplier<Key,ValueIn, ValueOut> supplier) {
+    public SupplierConsumingMapper(Supplier<Key, ValueIn, ValueOut> supplier) {
         this.supplier = supplier;
     }
 
     @Override
-    public void map(Object key, Object value, Context context) {
-
+    public void map(Key key, ValueIn value, Context<Key, ValueOut> context) {
+        entry.key = key;
+        entry.value = value;
+        ValueOut valueOut = supplier.apply(entry);
+        context.emit(key, valueOut);
     }
 
     @Override
@@ -64,5 +70,27 @@ public class SupplierConsumingMapper<Key, ValueIn, ValueOut>
             throws IOException {
 
         supplier = in.readObject();
+    }
+
+    private static final class SimpleEntry<K, V>
+            implements Map.Entry<K, V> {
+
+        private K key;
+        private V value;
+
+        @Override
+        public K getKey() {
+            return key;
+        }
+
+        @Override
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public V setValue(V value) {
+            throw new UnsupportedOperationException();
+        }
     }
 }
