@@ -21,9 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
-/**
- * @author mdogan 10/3/13
- */
 public class ObjectRecordFactory implements RecordFactory<Object> {
 
     private final SerializationService serializationService;
@@ -43,24 +40,24 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     public Record<Object> newRecord(Data key, Object value) {
         Object v = value;
         if (value instanceof Data) {
-            v = serializationService.toObject((Data) value);
+            v = serializationService.toObject(value);
         }
-        return new ObjectRecord(key, v, statisticsEnabled);
+        return statisticsEnabled ? new ObjectRecordWithStats(key, value) : new ObjectRecord(key, v);
     }
 
     @Override
     public void setValue(Record<Object> record, Object value) {
         Object v = value;
         if (value instanceof Data) {
-            v = serializationService.toObject((Data) value);
+            v = serializationService.toObject(value);
         }
         record.setValue(v);
     }
 
     @Override
     public boolean isEquals(Object value1, Object value2) {
-        Object v1 = value1 instanceof Data ? serializationService.toObject((Data) value1) : value1;
-        Object v2 = value2 instanceof Data ? serializationService.toObject((Data) value2) : value2;
+        Object v1 = value1 instanceof Data ? serializationService.toObject(value1) : value1;
+        Object v2 = value2 instanceof Data ? serializationService.toObject(value2) : value2;
         if (v1 == null && v2 == null) {
             return true;
         }

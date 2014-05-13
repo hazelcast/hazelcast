@@ -17,9 +17,9 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -72,12 +72,10 @@ public class MergeOperation extends BasePutOperation {
     }
 
     public Operation getBackupOperation() {
-        if(dataValue == null) {
+        if (dataValue == null) {
             return new RemoveBackupOperation(name, dataKey);
-        }
-        else {
-            RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer,
-                    recordStore.getRecord(dataKey));
+        } else {
+            RecordInfo replicationInfo = mapService.createRecordInfo(recordStore.getRecord(dataKey));
             return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
         }
     }

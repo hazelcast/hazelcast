@@ -18,7 +18,15 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
+/**
+ * @param <V>
+ */
 public interface Record<V> {
+
+    /**
+     *  If not a {@link CachedDataRecord)}.
+     */
+    Object NOT_CACHED = new Object();
 
     Data getKey();
 
@@ -47,4 +55,21 @@ public interface Record<V> {
     void setEvictionCriteriaNumber(long evictionCriteriaNumber);
 
     long getEvictionCriteriaNumber();
+
+    Object getCachedValue();
+
+    void setCachedValue(Object cachedValue);
+
+    long getTtl();
+
+    void setTtl(long ttl);
+
+    long getLastAccessTime();
+
+    void setLastAccessTime(long lastAccessTime);
+
+    long getLastUpdateTime();
+
+    void setLastUpdateTime(long lastUpdatedTime);
+
 }
