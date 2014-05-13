@@ -139,35 +139,44 @@ public class MapContainer {
         if (storeWrapper != null) {
             initMapStore(storeWrapper.getImpl(), mapConfig.getMapStoreConfig(), nodeEngine);
         }
-        if (isWriteBehindMapStoreEnabled()) {
-            this.writeBehindQueueManager
-                    = WriteBehindManagers.createWriteBehindManager(name, mapService, storeWrapper);
-            this.writeBehindQueueManager.addStoreListener(new StoreListener<DelayedEntry>() {
-                @Override
-                public void beforeStore(StoreEvent<DelayedEntry> storeEvent) {
-
-                }
-
-                @Override
-                public void afterStore(StoreEvent<DelayedEntry> storeEvent) {
-                    final DelayedEntry delayedEntry = storeEvent.getSource();
-                    final Object value = delayedEntry.getValue();
-                    // only process store delete operations.
-                    if (value != null) {
-                        return;
-                    }
-                    final Data key = (Data) storeEvent.getSource().getKey();
-                    final int partitionId = mapService.getNodeEngine().getPartitionService().getPartitionId(key);
-                    final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
-                    final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
-                    if (recordStore != null) {
-                        recordStore.removeFromWriteBehindWaitingDeletions(key);
-                    }
-                }
-            });
-            this.writeBehindQueueManager.start();
-
+        if (!isWriteBehindMapStoreEnabled()) {
+            this.writeBehindQueueManager = WriteBehindManagers.emptyWriteBehindManager();
+            return;
         }
+        initWriteBehindMapStore();
+    }
+
+    private void initWriteBehindMapStore() {
+        if (!isWriteBehindMapStoreEnabled()) {
+            return;
+        }
+        this.writeBehindQueueManager
+                = WriteBehindManagers.createWriteBehindManager(name, mapService, storeWrapper);
+        // listener for delete operations.
+        this.writeBehindQueueManager.addStoreListener(new StoreListener<DelayedEntry>() {
+            @Override
+            public void beforeStore(StoreEvent<DelayedEntry> storeEvent) {
+
+            }
+
+            @Override
+            public void afterStore(StoreEvent<DelayedEntry> storeEvent) {
+                final DelayedEntry delayedEntry = storeEvent.getSource();
+                final Object value = delayedEntry.getValue();
+                // only process store delete operations.
+                if (value != null) {
+                    return;
+                }
+                final Data key = (Data) storeEvent.getSource().getKey();
+                final int partitionId = mapService.getNodeEngine().getPartitionService().getPartitionId(key);
+                final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
+                final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+                if (recordStore != null) {
+                    recordStore.removeFromWriteBehindWaitingDeletions(key);
+                }
+            }
+        });
+        this.writeBehindQueueManager.start();
     }
 
     private RecordFactory createRecordFactory(NodeEngine nodeEngine) {

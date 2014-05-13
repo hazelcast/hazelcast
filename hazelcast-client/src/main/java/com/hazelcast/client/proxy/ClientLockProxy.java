@@ -18,7 +18,11 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.lock.client.*;
+import com.hazelcast.concurrent.lock.client.IsLockedRequest;
+import com.hazelcast.concurrent.lock.client.GetLockCountRequest;
+import com.hazelcast.concurrent.lock.client.GetRemainingLeaseRequest;
+import com.hazelcast.concurrent.lock.client.LockRequest;
+import com.hazelcast.concurrent.lock.client.UnlockRequest;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
@@ -99,7 +103,8 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), Long.MAX_VALUE, getTimeInMillis(time, unit));
+        LockRequest request = new LockRequest(getKeyData(),
+                ThreadUtil.getThreadId(), Long.MAX_VALUE, getTimeInMillis(time, unit));
         Boolean result = invoke(request);
         return result;
     }
@@ -127,7 +132,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    protected  <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKeyData());
     }
 

@@ -13,30 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.hazelcast.map;
-
-
-import java.util.AbstractMap;
-import java.util.Map;
-
-public class SimpleMapEntry implements Map.Entry {
-
-    Map.Entry entry;
-
-    public SimpleMapEntry(Object key, Object value) {
-        entry = new AbstractMap.SimpleEntry(key, value);
-    }
-
-    public Object getKey() {
-        return entry.getKey();
-    }
-
-    public Object getValue() {
-        return entry.getValue();
-    }
-
-    public Object setValue(Object value) {
-        throw new UnsupportedOperationException();
-    }
-}
+/**
+ * Contains classes related to New IO for com.hazelcast.client.connection
+ */
+package com.hazelcast.client.connection.nio;

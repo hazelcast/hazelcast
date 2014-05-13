@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class DefaultRecordStore implements RecordStore {
 
-    private static final long DEFAULT_TTL = -1;
+    private static final long DEFAULT_TTL = -1L;
     /**
      * Number of reads before clean up.
      */
@@ -160,15 +160,15 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public Record putBackup(Data key, Object value) {
-        return putBackup(key, value, DEFAULT_TTL, true);
+        return putBackup(key, value, DEFAULT_TTL);
     }
 
-    public Record putBackup(Data key, Object value, long ttl, boolean shouldSchedule) {
+    public Record putBackup(Data key, Object value, long ttl) {
         earlyWriteCleanup();
 
         Record record = records.get(key);
         if (record == null) {
-            record = mapService.createRecord(name, key, value, ttl, shouldSchedule);
+            record = mapService.createRecord(name, key, value, ttl);
             records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
@@ -1177,7 +1177,13 @@ public class DefaultRecordStore implements RecordStore {
         if (ttlInMillis < 0L) {
             return;
         }
-        record.setTtl(TimeUnit.MILLISECONDS.toNanos(ttlInMillis));
+        final long ttlInNanos = TimeUnit.MILLISECONDS.toNanos(ttlInMillis);
+        record.setTtl(ttlInNanos);
+
+        if (record.getStatistics() != null) {
+            record.getStatistics().setExpirationTime(System.nanoTime() + ttlInNanos);
+        }
+
     }
 
     private void updateSizeEstimator(long recordSize) {

@@ -28,9 +28,8 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
      */
     protected long evictionCriteriaNumber;
     protected long ttl;
-    protected long creationTime;
     protected long lastAccessTime;
-    protected long lastUpdatedTime;
+    protected long lastUpdateTime;
 
     public AbstractBaseRecord() {
         version = 0L;
@@ -65,16 +64,6 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
     }
 
     @Override
-    public long getCreationTime() {
-        return creationTime;
-    }
-
-    @Override
-    public void setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
-    }
-
-    @Override
     public long getLastAccessTime() {
         return lastAccessTime;
     }
@@ -85,13 +74,13 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
     }
 
     @Override
-    public long getLastUpdatedTime() {
-        return lastUpdatedTime;
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
     }
 
     @Override
-    public void setLastUpdatedTime(long lastUpdatedTime) {
-        this.lastUpdatedTime = lastUpdatedTime;
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
     }
 
     @Override

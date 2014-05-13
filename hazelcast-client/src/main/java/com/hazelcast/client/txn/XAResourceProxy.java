@@ -38,7 +38,8 @@ public class XAResourceProxy implements XAResource {
     private final TransactionContextProxy transactionContext;
     private final ClientTransactionManager transactionManager;
     private final ILogger logger;
-    private final String uuid = UUID.randomUUID().toString(); //To overcome race condition in Atomikos
+    private final String uuid = UUID.randomUUID().toString();
+    //To overcome race condition in Atomikos
 
     private int transactionTimeoutSeconds;
 
@@ -127,7 +128,7 @@ public class XAResourceProxy implements XAResource {
 
         final TransactionProxy transaction = getTransaction(xid);
         if (transaction == null) {
-            if(transactionManager.recover(xid, true)){
+            if (transactionManager.recover(xid, true)) {
                 return;
             }
             final XAException xaException = new XAException(XAException.XAER_NOTA);
@@ -150,14 +151,15 @@ public class XAResourceProxy implements XAResource {
         nullCheck(xid);
         final TransactionProxy transaction = getTransaction(xid);
         if (transaction == null) {
-            if(transactionManager.recover(xid, false)){
+            if (transactionManager.recover(xid, false)) {
                 return;
             }
             final XAException xaException = new XAException(XAException.XAER_NOTA);
             logger.severe("Transaction is not available!!!", xaException);
             throw xaException;
         }
-        validateTx(transaction, Transaction.State.NO_TXN); //NO_TXN means do not validate state
+        validateTx(transaction, Transaction.State.NO_TXN);
+        //NO_TXN means do not validate state
         try {
             transaction.rollback();
             transactionManager.removeManagedTransaction(xid);

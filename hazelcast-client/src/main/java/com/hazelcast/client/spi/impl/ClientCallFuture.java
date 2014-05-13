@@ -130,6 +130,11 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             if (this.response != null && handler == null) {
                 throw new IllegalArgumentException("The Future.set method can only be called once");
             }
+
+            if (handler != null && !(response instanceof Throwable)) {
+                handler.onListenerRegister();
+            }
+
             if (this.response != null && !(response instanceof Throwable)) {
                 String uuid = serializationService.toObject(this.response);
                 String alias = serializationService.toObject(response);

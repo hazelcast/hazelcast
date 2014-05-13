@@ -34,11 +34,11 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
 
     private final ByteBuffer buffer;
 
-    private boolean ready = false;
+    private boolean ready;
 
     private SocketWritable lastWritable;
 
-    private volatile long lastHandle = 0;
+    private volatile long lastHandle;
 
 //    private boolean initialized = false;
 
@@ -130,7 +130,8 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
     @Override
     public void shutdown() {
         writeQueue.clear();
-        while (poll() != null) ;
+        while (poll() != null) {
+        }
     }
 
     long getLastHandle() {

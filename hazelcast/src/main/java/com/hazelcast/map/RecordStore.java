@@ -40,7 +40,7 @@ public interface RecordStore {
 
     Record putBackup(Data key, Object value);
 
-    Record putBackup(Data key, Object value, long ttl, boolean shouldSchedule);
+    Record putBackup(Data key, Object value, long ttl);
 
     boolean tryPut(Data dataKey, Object value, long ttl);
 

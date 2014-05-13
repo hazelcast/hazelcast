@@ -31,7 +31,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
 
     private volatile long lastHandle;
 
-    private ClientPacket packet = null;
+    private ClientPacket packet;
 
     public ClientReadHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
         super(connection, ioSelector);
@@ -39,6 +39,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
     }
 
     @Override
+
     public void run() {
         registerOp(SelectionKey.OP_READ);
     }
@@ -49,7 +50,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
         if (!connection.live()) {
             if (logger.isFinestEnabled()) {
                 String message = "We are being asked to read, but connection is not live so we won't";
-                logger.finest( message);
+                logger.finest(message);
             }
             return;
         }
@@ -63,7 +64,9 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
             return;
         }
         try {
-            if (buffer.position() == 0) return;
+            if (buffer.position() == 0) {
+                return;
+            }
             buffer.flip();
 
             while (buffer.hasRemaining()) {

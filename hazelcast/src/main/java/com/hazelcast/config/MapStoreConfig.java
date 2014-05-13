@@ -21,7 +21,7 @@ import com.hazelcast.util.ValidationUtil;
 import java.util.Properties;
 
 /**
- * MapStore configuration
+ * MapStore configuration.
  */
 public class MapStoreConfig {
     public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;

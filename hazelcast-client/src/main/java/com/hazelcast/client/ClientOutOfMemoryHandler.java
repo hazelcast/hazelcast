@@ -30,7 +30,7 @@ public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
         System.err.println(oom);
         for (HazelcastInstance instance : hazelcastInstances) {
             if (instance instanceof HazelcastClient) {
-                ClientHelper.cleanResources((HazelcastClient)instance);
+                ClientHelper.cleanResources((HazelcastClient) instance);
             }
         }
     }

@@ -22,12 +22,12 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
 
     protected Data value;
 
-    public DataRecordWithStats(Data keyData, Data value) {
+    DataRecordWithStats(Data keyData, Data value) {
         super(keyData);
         this.value = value;
     }
 
-    public DataRecordWithStats() {
+    DataRecordWithStats() {
     }
 
     /**

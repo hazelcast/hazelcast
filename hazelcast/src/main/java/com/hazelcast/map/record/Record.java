@@ -64,16 +64,12 @@ public interface Record<V> {
 
     void setTtl(long ttl);
 
-    long getCreationTime();
-
-    void setCreationTime(long creationTime);
-
     long getLastAccessTime();
 
     void setLastAccessTime(long lastAccessTime);
 
-    long getLastUpdatedTime();
+    long getLastUpdateTime();
 
-    void setLastUpdatedTime(long lastUpdatedTime);
+    void setLastUpdateTime(long lastUpdatedTime);
 
 }

@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
@@ -547,6 +548,35 @@ public class ClientIssueTest extends HazelcastTestSupport {
         public void readPortable(PortableReader reader) throws IOException {
             a = reader.readInt("a");
         }
+    }
+
+    @Test
+    public void testNearCache_WhenRegisteredNodeIsDead() {
+
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        final String mapName = randomMapName();
+
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+
+        nearCacheConfig.setName(mapName);
+        nearCacheConfig.setInvalidateOnChange(true);
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Object, Object> map = client.getMap(mapName);
+
+        map.put("a", "b");
+        map.get("a"); //put to nearCache
+
+        instance.shutdown();
+        Hazelcast.newHazelcastInstance();
+
+        assertEquals(null, map.get("a"));
+
+
     }
 
 }
