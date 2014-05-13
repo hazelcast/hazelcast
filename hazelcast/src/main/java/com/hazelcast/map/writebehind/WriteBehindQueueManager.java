@@ -313,7 +313,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
             final Address thisAddress = clusterService.getThisAddress();
             final InternalPartition partition = partitionService.getPartition(partitionId);
             final Address owner = partition.getOwnerOrNull();
-            if (!owner.equals(thisAddress)) {
+            if (owner!= null && !owner.equals(thisAddress)) {
                 mapStoreManager.callBeforeStoreListeners(delayedEntries);
                 removeProcessed(queue, delayedEntries.size());
                 mapStoreManager.callAfterStoreListeners(delayedEntries);

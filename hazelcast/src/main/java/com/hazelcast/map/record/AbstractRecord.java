@@ -66,12 +66,8 @@ abstract class AbstractRecord<V> extends AbstractBaseRecord<V> {
 
     @Override
     public long getCost() {
-        int size = 0;
+        long size = super.getCost();
         final int objectReferenceInBytes = 4;
-        // add size of version.
-        size += (Long.SIZE / Byte.SIZE);
-        // add size of evictionCriteriaNumber.
-        size += (Long.SIZE / Byte.SIZE);
         // add key size.
         size += objectReferenceInBytes + key.getHeapCost();
         return size;
