@@ -80,7 +80,7 @@ public class RecordStatistics implements DataSerializable {
 
     public long size() {
         //size of the instance.
-        final int numberOfLongVariables = 5;
+        final int numberOfLongVariables = 3;
         return numberOfLongVariables * (Long.SIZE / Byte.SIZE) + (Integer.SIZE / Byte.SIZE);
     }
 
