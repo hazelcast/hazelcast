@@ -32,6 +32,10 @@ public class GroupProperties {
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
+    /**
+     * The number of partition threads per Member. If this is less than the number of partitions on a Member, then
+     * partition operations will queue behind other operations of different partitions. The default is 4.
+     */
     public static final String PROP_PARTITION_OPERATION_THREAD_COUNT = "hazelcast.operation.thread.count";
     public static final String PROP_GENERIC_OPERATION_THREAD_COUNT = "hazelcast.operation.generic.thread.count";
     public static final String PROP_EVENT_THREAD_COUNT = "hazelcast.event.thread.count";
@@ -229,6 +233,10 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
+    /**
+     *
+     * @param config
+     */
     public GroupProperties(Config config) {
         HOSTED_MANAGEMENT_ENABLED = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_ENABLED, "false");
 
@@ -242,6 +250,7 @@ public class GroupProperties {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
+        //-1 means that the value is worked out dynamically.
         PARTITION_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_PARTITION_OPERATION_THREAD_COUNT, "-1");
         GENERIC_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_GENERIC_OPERATION_THREAD_COUNT, "-1");
         EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");

@@ -23,6 +23,22 @@ import java.util.concurrent.locks.Lock;
 /**
  * Distributed implementation of {@link Lock}.
  *
+ * <h1>Example</h1>
+ * <pre><code>
+ *     Lock mylock = Hazelcast.getLock(mylockobject); mylock.lock();
+ * try {
+ *      // do something
+ * } finally {
+ *      mylock.unlock();
+ * }
+ * //Lock on Map
+ *      IMap<String, Customer> map = Hazelcast.getMap("customers"); map.lock("1");
+ * try {
+ *      // do something
+ * } finally {
+ * map.unlock("1"); }
+ * </code></pre>
+ *
  * @see Lock
  */
 public interface ILock extends Lock, DistributedObject {

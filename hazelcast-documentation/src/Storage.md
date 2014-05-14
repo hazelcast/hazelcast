@@ -1,10 +1,12 @@
 
 # Storage
 
+//todo Need
+
+## On-Heap
 
 
-
-## Elastic Memory
+## Off-Heap
 
 ![](images/enterprise-onlycopy.jpg)
 

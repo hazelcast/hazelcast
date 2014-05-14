@@ -367,8 +367,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param value    value of the entry
      * @param timeout  maximum time to wait
      * @param timeunit time unit for the timeout
-     * @return <tt>true</tt> if the put is successful, <tt>false</tt>
-     * otherwise.
+     * @return <tt>true</tt> if the put is successful, <tt>false</tt> otherwise.
      * @throws NullPointerException if the specified key or value is null
      */
     boolean tryPut(K key, V value, long timeout, TimeUnit timeunit);
@@ -421,18 +420,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     /**
      * {@inheritDoc}
      * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * <p><b>Note:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
-     * <p/>
-     * <p><b>Warning-2:</b></p>
      * <p>
-     * This method returns a clone of previous value, not the original (identically equal) value
-     * previously put into map.
+     * Also, this method returns a clone of the previous value, not the original (identically equal) value
+     * previously put into the map.
      * </p>
      *
      * @throws NullPointerException if the specified key or value is null
+     * @return a clone of the previous value
      */
     V putIfAbsent(K key, V value);
 
@@ -548,6 +546,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Locks are re-entrant so if the key is locked N times then
      * it should be unlocked N times before another thread can acquire it.
      * <p/>
+     * There is no lock timeout on this method. Locks will be held infinitely.
      * <p><b>Warning:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
@@ -647,7 +646,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * count is decremented.  If the hold count is now zero then the lock
      * is released.  If the current thread is not the holder of this
      * lock then {@link IllegalMonitorStateException} is thrown.
-     * <p/>
      * <p/>
      * <p><b>Warning:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of

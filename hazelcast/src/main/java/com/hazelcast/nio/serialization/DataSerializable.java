@@ -22,10 +22,23 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
+/**
+ *
+ */
 public interface DataSerializable {
 
+    /**
+     *
+     * @param out
+     * @throws IOException
+     */
     void writeData(ObjectDataOutput out) throws IOException;
 
+    /**
+     * Write the class name and use reflection to instantiate the object.
+     * @param in
+     * @throws IOException
+     */
     void readData(ObjectDataInput in) throws IOException;
 
 }
