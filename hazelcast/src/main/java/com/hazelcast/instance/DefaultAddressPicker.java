@@ -206,7 +206,7 @@ class DefaultAddressPicker implements AddressPicker {
             addressDomainMap = new LinkedHashMap<String, String>();  // LinkedHashMap is to guarantee order
             final Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
             for (String possibleAddress : possibleAddresses) {
-                final String s = AddressUtil.getAddressHolder(possibleAddress).address;
+                final String s = AddressUtil.getAddressHolder(possibleAddress).getAddress();
                 if (AddressUtil.isIpAddress(s)) {
                     if (!addressDomainMap.containsKey(s)) { // there may be a domain registered for this address
                         addressDomainMap.put(s, null);
@@ -300,7 +300,7 @@ class DefaultAddressPicker implements AddressPicker {
             } else {
                 // Allow port to be defined in same string in the form of <host>:<port>. i.e. 10.0.0.0:1234
                 AddressUtil.AddressHolder holder = AddressUtil.getAddressHolder(address, defaultPort);
-                return new AddressDefinition(holder.address, holder.port, InetAddress.getByName(holder.address));
+                return new AddressDefinition(holder.getAddress(), holder.getPort(), InetAddress.getByName(holder.getAddress()));
             }
         }
         return null;

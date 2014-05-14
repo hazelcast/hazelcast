@@ -17,7 +17,9 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -43,7 +45,7 @@ public class MigrationTest extends HazelcastTestSupport {
 
         Map map = instance1.getMap("testMapMigration");
         for (int i = 0; i < size; i++) {
-            map.put(i,i);
+            map.put(i, i);
         }
 
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
@@ -61,6 +63,26 @@ public class MigrationTest extends HazelcastTestSupport {
     }
 
 
+    @Test
+    public void testMigration_failure_when_statistics_disabled() {
+        final int noOfRecords = 100;
+        final int nodeCount = 3;
+        final Config config = new Config().addMapConfig(new MapConfig("myMap").setStatisticsEnabled(false));
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> myMap = instance1.getMap("myMap");
+        for (int i = 0; i < noOfRecords; i++) {
+            myMap.put(i, i);
+        }
+        instance2.shutdown();
+        instance3.shutdown();
+
+        assertEquals("Some records have been lost.", noOfRecords, myMap.values().size());
+    }
 
 
 }

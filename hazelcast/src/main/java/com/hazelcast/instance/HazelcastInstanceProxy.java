@@ -39,6 +39,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -143,6 +144,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
     @Override
     public IAtomicLong getAtomicLong(String name) {
         return getOriginal().getAtomicLong(name);
+    }
+
+    @Override
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        return getOriginal().getReplicatedMap(name);
     }
 
     @Override

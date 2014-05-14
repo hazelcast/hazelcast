@@ -123,12 +123,6 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         }
     }
 
-    protected void invalidateLocalNearCache(Data dataKey){
-        if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-            mapService.invalidateNearCache(name,dataKey);
-        }
-    }
-
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         dataKey.writeData(out);

@@ -19,16 +19,18 @@ package com.hazelcast.nio;
 import com.hazelcast.client.ClientTypes;
 
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
+
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 
 class SocketClientDataReader implements SocketReader {
 
+    private static final int TYPE_BYTE = 3;
+
     final TcpIpConnection connection;
     final IOService ioService;
     ClientPacket packet;
-    boolean connectionTypeSet = false;
+    boolean connectionTypeSet;
 
     public SocketClientDataReader(TcpIpConnection connection) {
         this.connection = connection;
@@ -58,8 +60,8 @@ class SocketClientDataReader implements SocketReader {
     }
 
     private boolean setConnectionType(ByteBuffer inBuffer) {
-        if (inBuffer.remaining() >= 3) {
-            byte[] typeBytes = new byte[3];
+        if (inBuffer.remaining() >= TYPE_BYTE) {
+            byte[] typeBytes = new byte[TYPE_BYTE];
             inBuffer.get(typeBytes);
             String type = bytesToString(typeBytes);
             if (ClientTypes.JAVA.equals(type)) {

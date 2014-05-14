@@ -22,14 +22,26 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
-import com.hazelcast.client.proxy.*;
+import com.hazelcast.client.proxy.ClientAtomicLongProxy;
+import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
+import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
+import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
+import com.hazelcast.client.proxy.ClientIdGeneratorProxy;
+import com.hazelcast.client.proxy.ClientListProxy;
+import com.hazelcast.client.proxy.ClientLockProxy;
+import com.hazelcast.client.proxy.ClientMapProxy;
+import com.hazelcast.client.proxy.ClientMapReduceProxy;
+import com.hazelcast.client.proxy.ClientMultiMapProxy;
+import com.hazelcast.client.proxy.ClientQueueProxy;
+import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
+import com.hazelcast.client.proxy.ClientSemaphoreProxy;
+import com.hazelcast.client.proxy.ClientSetProxy;
+import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
@@ -38,38 +50,48 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapService;
+import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @author mdogan 5/16/13
+ * The ProxyManager handles client proxy instantiation and retrieval at start- and runtime by registering
+ * corresponding service manager names and their {@link com.hazelcast.client.spi.ClientProxyFactory}s.
  */
 public final class ProxyManager {
 
-    private final static ILogger logger = Logger.getLogger(ProxyManager.class);
+    private static final ILogger LOGGER = Logger.getLogger(ProxyManager.class);
+    private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class, String.class};
 
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
-    private final ConcurrentMap<ObjectNamespace, ClientProxy> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxy>();
+    private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
-        if(listenerConfigs != null && !listenerConfigs.isEmpty()){
+        if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
                 if (listenerConfig.getImplementation() instanceof DistributedObjectListener) {
                     addDistributedObjectListener((DistributedObjectListener) listenerConfig.getImplementation());
@@ -79,88 +101,38 @@ public final class ProxyManager {
     }
 
     public void init(ClientConfig config) {
-        final String instanceName = client.getName();
         // register defaults
-        register(MapService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientMapProxy(instanceName, MapService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(QueueService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientQueueProxy(instanceName, QueueService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(MultiMapService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientMultiMapProxy(instanceName, MultiMapService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(ListService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientListProxy(instanceName, ListService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(SetService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientSetProxy(instanceName, SetService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(SemaphoreService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientSemaphoreProxy(instanceName, SemaphoreService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(TopicService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientTopicProxy(instanceName, TopicService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(AtomicLongService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientAtomicLongProxy(instanceName, AtomicLongService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(AtomicReferenceService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientAtomicReferenceProxy(instanceName, AtomicReferenceService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(DistributedExecutorService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientExecutorServiceProxy(instanceName, DistributedExecutorService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(LockServiceImpl.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientLockProxy(instanceName, LockServiceImpl.SERVICE_NAME, id);
-            }
-        });
+        register(MapService.SERVICE_NAME, ClientMapProxy.class);
+        register(QueueService.SERVICE_NAME, ClientQueueProxy.class);
+        register(MultiMapService.SERVICE_NAME, ClientMultiMapProxy.class);
+        register(ListService.SERVICE_NAME, ClientListProxy.class);
+        register(SetService.SERVICE_NAME, ClientSetProxy.class);
+        register(SemaphoreService.SERVICE_NAME, ClientSemaphoreProxy.class);
+        register(TopicService.SERVICE_NAME, ClientTopicProxy.class);
+        register(AtomicLongService.SERVICE_NAME, ClientAtomicLongProxy.class);
+        register(AtomicReferenceService.SERVICE_NAME, ClientAtomicReferenceProxy.class);
+        register(DistributedExecutorService.SERVICE_NAME, ClientExecutorServiceProxy.class);
+        register(LockServiceImpl.SERVICE_NAME, ClientLockProxy.class);
+        register(CountDownLatchService.SERVICE_NAME, ClientCountDownLatchProxy.class);
+        register(MapReduceService.SERVICE_NAME, ClientMapReduceProxy.class);
+        register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
+
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                String name = String.valueOf(id);
-                IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + name);
-                return new ClientIdGeneratorProxy(instanceName, IdGeneratorService.SERVICE_NAME, name, atomicLong);
-            }
-        });
-        register(CountDownLatchService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(String id) {
-                return new ClientCountDownLatchProxy(instanceName, CountDownLatchService.SERVICE_NAME, String.valueOf(id));
-            }
-        });
-        register(MapReduceService.SERVICE_NAME, new ClientProxyFactory() {
-            @Override
-            public ClientProxy create(String id) {
-                return new ClientMapReduceProxy(instanceName, MapReduceService.SERVICE_NAME, id);
+                String instanceName = client.getName();
+                IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + id);
+                return new ClientIdGeneratorProxy(instanceName, IdGeneratorService.SERVICE_NAME, id, atomicLong);
             }
         });
 
-        for (ProxyFactoryConfig proxyFactoryConfig:config.getProxyFactoryConfigs()){
+        for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {
             try {
-                ClientProxyFactory clientProxyFactory = ClassLoaderUtil.newInstance(config.getClassLoader(), proxyFactoryConfig.getClassName());
-                register(proxyFactoryConfig.getService(),clientProxyFactory);
+                ClassLoader classLoader = config.getClassLoader();
+                String className = proxyFactoryConfig.getClassName();
+                ClientProxyFactory clientProxyFactory = ClassLoaderUtil.newInstance(classLoader, className);
+                register(proxyFactoryConfig.getService(), clientProxyFactory);
             } catch (Exception e) {
-                logger.severe(e);
+                LOGGER.severe(e);
             }
         }
     }
@@ -171,29 +143,45 @@ public final class ProxyManager {
         }
     }
 
+    public void register(final String serviceName, final Class<? extends ClientProxy> proxyType) {
+        try {
+            register(serviceName, new ClientProxyFactory() {
+                @Override
+                public ClientProxy create(String id) {
+                    String instanceName = client.getName();
+                    return instantiateClientProxy(proxyType, instanceName, serviceName, id);
+                }
+            });
+
+        } catch (Exception e) {
+            throw new HazelcastException("Could not initialize Proxy", e);
+        }
+    }
+
     public ClientProxy getProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
-        final ClientProxy proxy = proxies.get(ns);
-        if (proxy != null) {
-            return proxy;
+        ClientProxyFuture proxyFuture = proxies.get(ns);
+        if (proxyFuture != null) {
+            return proxyFuture.get();
         }
         final ClientProxyFactory factory = proxyFactories.get(service);
         if (factory == null) {
             throw new IllegalArgumentException("No factory registered for service: " + service);
         }
         final ClientProxy clientProxy = factory.create(id);
-        clientProxy.setContext(new ClientContext(client, this));
-        final ClientProxy current = proxies.putIfAbsent(ns, clientProxy);
+        final ClientProxyFuture future = new ClientProxyFuture();
+        final ClientProxyFuture current = proxies.putIfAbsent(ns, future);
         if (current != null){
-            return current;
+            return current.get();
         }
         initialize(clientProxy);
+        future.set(clientProxy);
         return clientProxy;
     }
 
     public ClientProxy removeProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
-        return proxies.remove(ns);
+        return proxies.remove(ns).get();
     }
 
     private void initialize(ClientProxy clientProxy) {
@@ -203,34 +191,46 @@ public final class ProxyManager {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        clientProxy.setContext(new ClientContext(client, this));
     }
 
     public Collection<? extends DistributedObject> getDistributedObjects(){
-        return Collections.unmodifiableCollection(proxies.values());
+        Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
+        for (ClientProxyFuture future : proxies.values()) {
+            objects.add(future.get());
+        }
+        return objects;
     }
 
     public void destroy() {
-        for (ClientProxy proxy : proxies.values()) {
-            proxy.onShutdown();
+        for (ClientProxyFuture future : proxies.values()) {
+            future.get().onShutdown();
         }
         proxies.clear();
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
         final DistributedObjectListenerRequest request = new DistributedObjectListenerRequest();
-        final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>(){
+        final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>() {
             public void handle(PortableDistributedObjectEvent e) {
                 final ObjectNamespace ns = new DefaultObjectNamespace(e.getServiceName(), e.getName());
-                ClientProxy proxy = proxies.get(ns);
+                ClientProxyFuture future = proxies.get(ns);
+                ClientProxy proxy = future == null ? null : future.get();
                 if (proxy == null){
                     proxy = getProxy(e.getServiceName(), e.getName());
                 }
+
                 DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
-                if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())){
+                if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())) {
                     listener.distributedObjectCreated(event);
-                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.getEventType())){
+                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.getEventType())) {
                     listener.distributedObjectDestroyed(event);
                 }
+            }
+
+            @Override
+            public void onListenerRegister() {
+
             }
         };
         final ClientContext clientContext = new ClientContext(client, this);
@@ -241,5 +241,49 @@ public final class ProxyManager {
         final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
         final ClientContext clientContext = new ClientContext(client, this);
         return ListenerUtil.stopListening(clientContext, request, id);
+    }
+
+    private static class ClientProxyFuture {
+
+        volatile ClientProxy proxy;
+
+        ClientProxy get() {
+            if (proxy == null) {
+                boolean interrupted = false;
+                synchronized (this) {
+                    while (proxy == null) {
+                        try {
+                            wait();
+                        } catch (InterruptedException e) {
+                            interrupted = true;
+                        }
+                    }
+                }
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return proxy;
+        }
+
+        void set(ClientProxy o) {
+            if (o == null) {
+                throw new IllegalArgumentException();
+            }
+            synchronized (this) {
+                proxy = o;
+                notifyAll();
+            }
+        }
+    }
+
+    private <T> T instantiateClientProxy(Class<T> proxyType, String instanceName, String serviceName, String id) {
+        try {
+            final Constructor<T> constructor = proxyType.getConstructor(CONSTRUCTOR_ARGUMENT_TYPES);
+            return constructor.newInstance(instanceName, serviceName, id);
+
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 }

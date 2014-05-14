@@ -18,9 +18,6 @@ package com.hazelcast.nio;
 
 import java.nio.channels.Selector;
 
-/**
- * @author mdogan 5/9/13
- */
 public interface IOSelector {
 
     Selector getSelector();

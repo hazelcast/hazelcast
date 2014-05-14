@@ -17,10 +17,13 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
+import com.hazelcast.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -48,11 +51,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class ClientConnection implements Connection, Closeable {
+
+    private static final int SLEEP_TIME = 10;
 
     private volatile boolean live = true;
 
@@ -77,16 +83,19 @@ public class ClientConnection implements Connection, Closeable {
     private final ByteBuffer readBuffer;
     private final SerializationService serializationService;
     private final ClientExecutionService executionService;
+    private final ClientInvocationServiceImpl invocationService;
     private boolean readFromSocket = true;
     private final AtomicInteger packetCount = new AtomicInteger(0);
+    private volatile int failedHeartBeat;
 
     public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
-                int connectionId, SocketChannelWrapper socketChannelWrapper,
-                ClientExecutionService executionService) throws IOException {
+                int connectionId, SocketChannelWrapper socketChannelWrapper, ClientExecutionService executionService,
+                ClientInvocationServiceImpl invocationService) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
         this.serializationService = connectionManager.getSerializationService();
         this.executionService = executionService;
+        this.invocationService = invocationService;
         this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
@@ -132,6 +141,12 @@ public class ClientConnection implements Connection, Closeable {
         if (!live) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
+            }
+            return false;
+        }
+        if (!isHeartBeating()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Connection is not heart-beating, won't write packet -> " + packet);
             }
             return false;
         }
@@ -297,7 +312,7 @@ public class ClientConnection implements Connection, Closeable {
             int count = packetCount.get();
             while (count != 0) {
                 try {
-                    Thread.sleep(10);
+                    Thread.sleep(SLEEP_TIME);
                 } catch (InterruptedException e) {
                     logger.warning(e);
                     break;
@@ -312,8 +327,8 @@ public class ClientConnection implements Connection, Closeable {
         }
     }
 
-    private void cleanResources(HazelcastException response){
-        final Iterator<Map.Entry<Integer,ClientCallFuture>> iter = callIdMap.entrySet().iterator();
+    private void cleanResources(HazelcastException response) {
+        final Iterator<Map.Entry<Integer, ClientCallFuture>> iter = callIdMap.entrySet().iterator();
         while (iter.hasNext()) {
             final Map.Entry<Integer, ClientCallFuture> entry = iter.next();
             iter.remove();
@@ -350,14 +365,57 @@ public class ClientConnection implements Connection, Closeable {
         }
     }
 
+    //failedHeartBeat is incremented in single thread.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
+    void heartBeatingFailed() {
+        failedHeartBeat++;
+        if (failedHeartBeat == connectionManager.maxFailedHeartbeatCount) {
+            connectionManager.connectionMarkedAsNotResponsive(this);
+            final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
+            final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
+
+            while (iterator.hasNext()) {
+                final ClientCallFuture future = iterator.next();
+                iterator.remove();
+                future.notify(response);
+            }
+        }
+    }
+
+    void heartBeatingSucceed() {
+        if (failedHeartBeat != 0) {
+            if (failedHeartBeat >= connectionManager.maxFailedHeartbeatCount) {
+                try {
+                    final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest();
+                    request.setName(RemoveDistributedObjectListenerRequest.CLEAR_LISTENERS_COMMAND);
+                    final ICompletableFuture future = invocationService.send(request, ClientConnection.this);
+                    future.get(1500, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    logger.warning("Clearing listeners upon recovering from heart-attack failed", e);
+                }
+            }
+            failedHeartBeat = 0;
+        }
+    }
+
+    public boolean isHeartBeating() {
+        return failedHeartBeat < connectionManager.maxFailedHeartbeatCount;
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ClientConnection)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ClientConnection)) {
+            return false;
+        }
 
         ClientConnection that = (ClientConnection) o;
 
-        if (connectionId != that.connectionId) return false;
+        if (connectionId != that.connectionId) {
+            return false;
+        }
 
         return true;
     }

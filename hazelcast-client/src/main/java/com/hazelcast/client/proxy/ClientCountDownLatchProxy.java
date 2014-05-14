@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author ali 5/28/13
  */
-public class ClientCountDownLatchProxy extends ClientProxy implements ICountDownLatch{
+public class ClientCountDownLatchProxy extends ClientProxy implements ICountDownLatch {
 
     private volatile Data key;
 
@@ -64,8 +64,8 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
     protected void onDestroy() {
     }
 
-    private Data getKey(){
-        if (key == null){
+    private Data getKey() {
+        if (key == null) {
             key = toData(getName());
         }
         return key;
@@ -75,7 +75,7 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    protected  <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
 

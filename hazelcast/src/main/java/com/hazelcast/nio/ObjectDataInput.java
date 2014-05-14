@@ -20,9 +20,6 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 12/28/12
- */
 public interface ObjectDataInput extends DataInput {
 
     char[] readCharArray() throws IOException;

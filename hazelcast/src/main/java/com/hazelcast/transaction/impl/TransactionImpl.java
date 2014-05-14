@@ -160,16 +160,16 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     }
 
     public void begin() throws IllegalStateException {
-        //init caller thread
-        if (threadId != null) {
-            threadId = Thread.currentThread().getId();
-            setThreadFlag(Boolean.TRUE);
-        }
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
         if (THREAD_FLAG.get() != null) {
             throw new IllegalStateException("Nested transactions are not allowed!");
+        }
+        //init caller thread
+        if(threadId == null){
+            threadId = Thread.currentThread().getId();
+            setThreadFlag(Boolean.TRUE);
         }
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);

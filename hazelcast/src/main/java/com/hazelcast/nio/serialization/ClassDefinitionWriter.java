@@ -20,9 +20,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-/**
-* @author mdogan 7/29/13
-*/
 final class ClassDefinitionWriter implements PortableWriter {
 
     private final SerializationContext context;
@@ -108,8 +105,8 @@ final class ClassDefinitionWriter implements PortableWriter {
 
     public void writePortable(String fieldName, Portable portable) throws IOException {
         if (portable == null) {
-            throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
-                    "registering class definition!");
+            throw new HazelcastSerializationException("Cannot write null portable without explicitly "
+                    + "registering class definition!");
         }
         writePortable(fieldName, portable.getFactoryId(), portable.getClassId(), portable);
     }
@@ -121,8 +118,8 @@ final class ClassDefinitionWriter implements PortableWriter {
         } else {
             nestedClassDef = context.lookup(factoryId, classId);
             if (nestedClassDef == null) {
-                throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
-                        "registering class definition!");
+                throw new HazelcastSerializationException("Cannot write null portable without explicitly "
+                        + "registering class definition!");
             }
         }
         builder.addPortableField(fieldName, nestedClassDef);
@@ -134,8 +131,8 @@ final class ClassDefinitionWriter implements PortableWriter {
 
     public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
         if (portables == null || portables.length == 0) {
-            throw new HazelcastSerializationException("Cannot write null portable array without explicitly " +
-                    "registering class definition!");
+            throw new HazelcastSerializationException("Cannot write null portable array without explicitly "
+                    + "registering class definition!");
         }
         final Portable p = portables[0];
         final int classId = p.getClassId();

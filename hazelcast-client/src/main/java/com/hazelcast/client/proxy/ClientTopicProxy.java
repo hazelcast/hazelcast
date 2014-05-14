@@ -68,6 +68,11 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
                 Message<E> message = new Message<E>(name, messageObject, event.getPublishTime(), member);
                 listener.onMessage(message);
             }
+
+            @Override
+            public void onListenerRegister() {
+
+            }
         };
         return listen(request, getKey(), handler);
     }

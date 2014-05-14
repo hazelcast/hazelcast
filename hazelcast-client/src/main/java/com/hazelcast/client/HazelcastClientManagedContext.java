@@ -33,7 +33,7 @@ final class HazelcastClientManagedContext implements ManagedContext {
     }
 
     @Override
-    public final Object initialize(Object obj) {
+    public Object initialize(Object obj) {
         if (obj instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) obj).setHazelcastInstance(instance);
         }

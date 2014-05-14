@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.2.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.3.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -218,7 +218,14 @@
         -->
         <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
 
-        <map-store enabled="true">
+        <!--
+            Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
+
+            On startup, may be loaded in two ways, controlled by the initial-mode attribute:
+                - LAZY. Asynchronously loads the entries. This is the default.
+                - EAGER. Synchronously loads the entries. Calls to getMap() are blocked while this happens.
+        -->
+        <map-store enabled="true" initial-mode="LAZY">
             <class-name>com.hazelcast.examples.DummyStore</class-name>
             <!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
             <write-delay-seconds>0</write-delay-seconds>

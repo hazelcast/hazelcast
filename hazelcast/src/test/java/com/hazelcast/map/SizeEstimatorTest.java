@@ -25,7 +25,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,25 +37,20 @@ import static org.junit.Assert.assertTrue;
 public class SizeEstimatorTest extends HazelcastTestSupport {
 
     @Test
-    public void testIdleState() throws InterruptedException {
+    public void smoke() throws InterruptedException {
         final String MAP_NAME = "default";
-
         final HazelcastInstance h = createHazelcastInstance();
-
         final IMap<String, String> map = h.getMap(MAP_NAME);
-
         assertEquals(0, map.getLocalMapStats().getHeapCost());
     }
 
     @Test
     public void testPuts() throws InterruptedException {
-        final String MAP_NAME = "default";
-
+        final String mapName = "default";
         final HazelcastInstance h = createHazelcastInstance();
-
-        final IMap<Integer, Long> map = h.getMap(MAP_NAME);
+        final IMap<Integer, Long> map = h.getMap(mapName);
         map.put(0, 10L);
-        assertEquals(156, map.getLocalMapStats().getHeapCost());
+        assertEquals(164, map.getLocalMapStats().getHeapCost());
     }
 
     @Test

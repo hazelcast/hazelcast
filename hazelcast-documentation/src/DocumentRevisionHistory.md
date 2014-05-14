@@ -9,7 +9,9 @@
 |[Chapter 2 - What's New in Hazelcast 3.2](#release-notes)||Section *Upgrading from 2.x versions* updated by adding a note at the end, related to eviction policy *max-size*.|
 |[Chapter 3 - Distributed Data Structures](#distributed-data-structures)|[Persistence](#persistence)|-	Information related to `MapStoreFactory` and `MapLoaderLifecycleSupport` interfaces added. Also, newly introduced `InitialLoadMode` parameter explanation added. Also a ***Warning*** about the relation between LAZY mode and `clear()` method added.|
 ||[Topic](#topic), [Set](#set), [List](#list)|Sections enhanced.|
-||[Lock](#lock)|Section enhanced and also ICondition subection added.|
+||[Lock](#lock)|Section enhanced and also ICondition subsection added.|
+||[Replicated Map (Beta)](#replicated-map-beta)|Added as a new section.|
+|[Chapter 5 - Distributed Computing](#distributed-computing)|[Entry Processor](#entry-processor)|Section enhanced by adding threading and Abstract Entry Processor information.|
 |[Chapter 6 - Distributed Query](#distributed-query)|[Paging Predicate](#criteria-API)|Added as a new section explaining the order/limit support.|
 ||[MapReduce](#mapreduce)|Added as a new section.|
 |[Chapter 10 - Clients](#clients)|[Native Clients](#native-clients)|Thread count explanation updated. |
@@ -20,6 +22,7 @@
 ||[Memcache Client](#memcache-client)|Unsupported Operations subsection added.|
 |[Chapter 12 - Management](#management)|[Management Center](#management-center)|Whole chapter updated by adding new screenshots and corresponding descriptions.|
 ||[Statistics API per Node](#statistics-api-per-node)|Added as a new section.|
+||[JMX API per Node](#jmx-api-per-node)|Added as a new section.|
 |[Chapter 13 - Security](#security)||*Socket Interceptor*, *Encryption* and *SSL* sections previously located under **Configuration** chapter moved to this one.
 |[Chapter 17 - FAQ](#frequently-asked-questions)||Added as a new chapter.|
 

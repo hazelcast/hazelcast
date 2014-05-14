@@ -4,7 +4,6 @@ src/Introduction.md
 	src/GettingStarted.md
 		src/StartingClusterClient.md
 		src/ConfiguringHazelcast.md
-	src/DeploymentTypes.md
 	src/UseCases.md
 	src/Resources.md
 src/Whats_new_3.2.md
@@ -20,14 +19,20 @@ src/Distributed_Data_Structures.md
 		src/Map-EntryStatistics.md
 		src/Map-InMemoryFormat.md
 	src/Queue.md
+		src/Queue-Persistence.md
 	src/MultiMap.md
 	src/Set.md
 	src/List.md
 	src/Topic.md
 	src/Lock.md
+    src/replicatedmap/ReplicatedMap.md
+        src/replicatedmap/Considerations.md
+        src/replicatedmap/BreakageMapContract.md
+        src/replicatedmap/TechnicalDesign.md
+        src/replicatedmap/InMemoryFormat.md
+        src/replicatedmap/EntryListener.md
 src/DistributedEvents.md
 src/DistributedComputing.md
-	src/ExecutorService.md
 		src/Execution.md
 		src/ExecutionCancellation.md
 		src/ExecutionCallback.md
@@ -42,22 +47,18 @@ src/DistributedQuery.md
 #	src/Aggregators.md
 	src/ContinuousQuery.md
 src/Transactions.md
-	src/TransactionInterface.md
 	src/J2EEIntegration.md
 		src/ResourceAdapterConfiguration.md
 		src/SampleGlassfishConfiguration.md
 		src/SampleJBossConfiguration.md
 #	src/XATransactions.md
 src/IntegratedClustering.md
-	src/Hibernate2LevelCache.md
 	src/HTTPSessionClustering.md
 	src/SpringIntegration.md
 #	src/TomcatClusteredWebSession.md
 src/Storage.md
-	src/ElasticMemory.md
 src/Clients.md
 #	src/ClientTypes.md
-	src/NativeClients.md
 		src/JavaClient.md
 		src/CPlusClient.md
 		src/CSharpClient.md
@@ -68,8 +69,7 @@ src/Serialization.md
 	src/PortableSerialization.md
 	src/CustomSerialization.md
 src/Management.md
-	src/StatisticsAPIPerNode.md
-#	src/JMXAPIPerNode.md
+	src/JMXAPIPerNode.md
 	src/MonitoringWithJMX.md
 	src/ClusterUtilities.md
 	src/ManagementCenter.md
@@ -88,13 +88,10 @@ src/Security.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
 src/Performance.md
-	src/DataAffinity.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
-	src/WANReplication.md
 src/Config.md
 	src/NetworkConfig.md
-		src/ConfigTcpIp.md
 		src/ConfigSpecifyInterfaces.md
 		src/EC2AutoDiscovery.md
 		src/IPv6.md
