@@ -1,0 +1,938 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.hazelcast.com/schema/config"
+           targetNamespace="http://www.hazelcast.com/schema/config"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:element name="hazelcast">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="group" type="cluster-group" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="executor-service" type="executor-service" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="list" type="list" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="jobtracker" type="jobtracker" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:complexType name="map">
+        <xs:sequence>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of sync backups. If 1 is set as the backup-count for example,
+                        then all entries of the map will be copied to another JVM for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of async backups. If 1 is set as the backup-count for example,
+                        then all entries of the map will be copied to another JVM for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum number of seconds for each entry to stay in the map. Entries that are
+                        older than &lt;time-to-live-seconds&gt; and not updated for &lt;time-to-live-seconds&gt;
+                        will get automatically evicted from the map.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum number of seconds for each entry to stay idle in the map. Entries that are
+                        idle(not touched) for more than &lt;max-idle-seconds&gt; will get
+                        automatically evicted from the map. Entry is touched if get, put or containsKey is called.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Valid values are:
+                        NONE (no eviction),
+                        LRU (Least Recently Used),
+                        LFU (Least Frequently Used).
+                        NONE is the default.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-size" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum size.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:integer">
+                            <xs:attribute name="policy" use="optional" default="PER_NODE"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="eviction-percentage" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        When max. size is reached, specified percentage of the map will be evicted. Any integer between
+                        0 and 100.
+                        If 25 is set for example, 25% of the entries will get evicted.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:byte">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="merge-policy" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        While recovering from split-brain (network partitioning), map entries in the small cluster will
+                        merge into the bigger cluster
+                        based on the policy set here. When an entry merge into the cluster, there might an existing
+                        entry with the same key already.
+                        Values of these entries might be different for that same key. Which value should be set for the
+                        key?
+                        Conflict is resolved by the policy set here.
+                        <p>
+                            <br/>There are built-in merge policies such as:
+                            <br/>com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if there is no
+                            existing entry for the key.
+                            <br/>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging
+                            entry doesn't exist in the cluster.
+                            <br/>com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
+                            <br/>com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
+                            <br/>Default policy is 'com.hazelcast.map.merge.PutIfAbsentMapMergePolicy'
+                        </p>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="read-backup-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-replication-ref" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="merge-policy" type="xs:string" minOccurs="1" maxOccurs="1"/>
+                    </xs:sequence>
+                    <xs:attribute name="name" type="xs:string" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="indexes" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="index" type="index" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />
+        </xs:sequence>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="queue">
+        <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="true"/>
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum size.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="empty-queue-ttl" type="empty-queue-ttl" minOccurs="0" maxOccurs="1" default="-1"/>
+            <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element ref="queue-store" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="list">
+        <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum size.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="set">
+        <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum size.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="multimap">
+        <xs:sequence>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="value-collection-type" minOccurs="0" maxOccurs="1">
+                <xs:simpleType>
+                    <xs:restriction base="non-space-string">
+                        <xs:enumeration value="SET"/>
+                        <xs:enumeration value="LIST"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
+            <!--<xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />-->
+        </xs:sequence>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="topic">
+        <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="true"/>
+            <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="false"/>
+            <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="message-listener" type="listener-base" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="jobtracker">
+        <xs:annotation>
+            <xs:documentation>
+                The JobTracker configuration is used to setup behavior of the Hazelcast MapReduce framework.
+                Every JobTracker is capable of running multiple map reduce jobs at once and so once configuration
+                is meant as a shared resource for all jobs created by the same JobTracker.
+                The configuration gives full control over the expected load behavior and thread counts to be used.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="max-thread-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The max-thread-size setting configures the maximum thread pool size of the JobTracker.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="queue-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The queue-size defines the maximum number of tasks are able to wait to be processed. A
+                        value of 0 means unbounded queue.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="retry-count" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        retry-count is currently not used but reserved for later use where the framework will
+                        automatically try to restart / retry operations from a available savepoint.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="chunk-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="1000">
+                <xs:annotation>
+                    <xs:documentation>
+                        The chunk-size defined the number of emitted values before a chunk is send to the reducers.
+                        If your emitted values are big or you want to better balance your work you might want to
+                        change this to a lower or higher value.
+                        A value of 0 means immediate transmission but remember that low values mean higher traffic
+                        costs.
+                        A very high value might cause an OutOfMemoryError to occur if emitted values not fit into
+                        heap memory before being send to reducers. To prevent this you might want to use a combiner
+                        to pre-reduce values on mapping nodes.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="communicate-stats" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        The communicate-stats setting defines if statistics (for example about processed entries)
+                        are transmitted to the job emitter. This might be used to show any kind of progress to
+                        an user inside of an UI system but produces additional traffic. If not needed you might
+                        want to deactivate this.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="topology-changed-strategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1" default="CANCEL_RUNNING_OPERATION">
+                <xs:annotation>
+                    <xs:documentation>
+                        The topology-changed-strategy defines how the map reduce framework will react on topology
+                        changes while executing a job.
+                        Currently only CANCEL_RUNNING_OPERATION is fully supported which throws an exception to
+                        the job emitter (throws com.hazelcast.mapreduce.TopologyChangedException).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="semaphore">
+        <xs:sequence>
+            <xs:element name="initial-permits" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="network">
+        <xs:sequence>
+            <xs:element name="public-address" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="port" type="port" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        encryption algorithm such as
+                        DES/ECB/PKCS5Padding,
+                        PBEWithMD5AndDES,
+                        AES/CBC/PKCS5Padding,
+                        Blowfish,
+                        DESede
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="tcp-ip">
+        <xs:sequence>
+            <xs:element name="required-member" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:choice>
+                <xs:element name="members" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:sequence>
+                    <xs:element name="member" type="xs:string" minOccurs="0" maxOccurs="unbounded" default="127.0.0.1"/>
+                </xs:sequence>
+                <xs:sequence>
+                    <xs:element name="interface" type="xs:string" minOccurs="0" maxOccurs="unbounded"
+                                default="127.0.0.1"/>
+                </xs:sequence>
+            </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
+    </xs:complexType>
+    <xs:complexType name="port">
+        <xs:simpleContent>
+            <xs:extension base="xs:unsignedShort">
+                <xs:attribute name="auto-increment" type="xs:boolean" use="optional" default="true"/>
+                <xs:attribute name="port-count" type="xs:unsignedInt" use="optional" default="100"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="outbound-ports">
+        <xs:sequence>
+            <xs:element name="ports" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="multicast">
+        <xs:sequence>
+            <xs:element name="multicast-group" type="xs:string" minOccurs="0" maxOccurs="1" default="224.2.2.3"/>
+            <xs:element name="multicast-port" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="54327"/>
+            <xs:element name="multicast-timeout-seconds" type="xs:int" minOccurs="0" maxOccurs="1" default="2"/>
+            <xs:element name="multicast-time-to-live" type="xs:int" minOccurs="0" maxOccurs="1" default="32"/>
+            <xs:element name="trusted-interfaces" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="interface" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+    </xs:complexType>
+    <xs:complexType name="aws">
+        <xs:sequence>
+            <xs:element name="access-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="secret-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="host-header" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="security-group-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="tag-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="tag-value" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
+    </xs:complexType>
+    <xs:complexType name="join">
+        <xs:sequence>
+            <xs:element name="multicast" type="multicast" minOccurs="0"/>
+            <xs:element name="tcp-ip" type="tcp-ip" minOccurs="0"/>
+            <xs:element name="aws" type="aws" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="interfaces">
+        <xs:sequence>
+            <xs:element name="interface" type="xs:string" default="127.0.0.1"  minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+    </xs:complexType>
+    <xs:complexType name="executor-service">
+        <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="true"/>
+            <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8"/>
+            <xs:element name="queue-capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Executor's task queue capacity. 0 means Integer.MAX_VALUE.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
+    </xs:complexType>
+
+    <xs:simpleType name="backup-count">
+        <xs:restriction base="xs:byte">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="6"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="empty-queue-ttl">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="-1"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="concurrency-level">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="symmetric-encryption">
+        <xs:sequence>
+            <xs:element name="algorithm" type="xs:string"/>
+            <xs:element name="salt" type="xs:string" default="thesalt"/>
+            <xs:element name="password" type="xs:string"/>
+            <xs:element name="iteration-count" type="xs:unsignedByte" default="19"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+    </xs:complexType>
+    <xs:complexType name="map-store">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="1">
+                <xs:element name="class-name" type="xs:string"/>
+                <xs:element name="factory-class-name" type="xs:string"/>
+            </xs:choice>
+            <xs:element name="write-delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+        <xs:attribute name="initial-mode">
+            <xs:simpleType>
+                <xs:restriction base="non-space-string">
+                    <xs:enumeration value="LAZY"/>
+                    <xs:enumeration value="EAGER"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:element name="queue-store">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:choice minOccurs="0" maxOccurs="1">
+                    <xs:element name="class-name" type="xs:string"/>
+                    <xs:element name="factory-class-name" type="xs:string"/>
+                </xs:choice>
+                <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:complexType name="wan-replication">
+        <xs:sequence>
+            <xs:element name="target-cluster" type="target-cluster" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="target-cluster">
+        <xs:sequence>
+            <xs:element name="replication-impl" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="end-points" type="end-points" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="group-name" type="xs:string" use="required"/>
+        <xs:attribute name="group-password" type="xs:string" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="end-points">
+        <xs:sequence>
+            <xs:element name="address" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ssl">
+        <xs:sequence>
+            <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" default="false" type="xs:boolean"/>
+    </xs:complexType>
+    <xs:complexType name="item-listener">
+        <xs:simpleContent>
+            <xs:extension base="listener-base">
+                <xs:attribute name="include-value" type="xs:boolean" use="optional" default="true"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="entry-listeners">
+        <xs:sequence>
+            <xs:element name="entry-listener" type="entry-listener" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="entry-listener">
+        <xs:simpleContent>
+            <xs:extension base="item-listener">
+                <xs:attribute name="local" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="index">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="partition-group">
+        <xs:sequence>
+            <xs:element name="member-group" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="interface" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" default="false"/>
+        <xs:attribute name="group-type">
+            <xs:simpleType>
+                <xs:restriction base="non-space-string">
+                    <xs:enumeration value="HOST_AWARE"/>
+                    <xs:enumeration value="CUSTOM"/>
+                    <xs:enumeration value="PER_MEMBER"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="management-center">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
+                <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional"/>
+                <xs:attribute name="cluster-id" type="xs:string"  use="optional"/>
+                <xs:attribute name="security-token" type="xs:string"  use="optional"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="services">
+        <xs:sequence>
+            <xs:element name="service" type="service" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="enable-defaults" type="xs:boolean" default="true"/>
+    </xs:complexType>
+    <xs:complexType name="service">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="configuration" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:any minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                    <xs:attribute name="parser" type="xs:string" use="required"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
+    </xs:complexType>
+    <xs:complexType name="security">
+        <xs:sequence>
+            <xs:element name="member-credentials-factory" type="security-object" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="member-login-modules" type="login-modules" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="client-login-modules" type="login-modules" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="client-permission-policy" type="security-object" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="client-permissions" type="permissions" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" default="false"/>
+    </xs:complexType>
+    <xs:complexType name="login-modules">
+        <xs:sequence>
+            <xs:element name="login-module" type="login-module" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="login-module">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="class-name" type="non-space-string" use="required"/>
+        <xs:attribute name="usage" use="optional" default="REQUIRED">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="REQUIRED"/>
+                    <xs:enumeration value="OPTIONAL"/>
+                    <xs:enumeration value="REQUISITE"/>
+                    <xs:enumeration value="SUFFICIENT"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="security-object">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="class-name" type="non-space-string" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="permissions">
+        <xs:sequence>
+            <xs:element name="all-permissions" type="base-permission" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="map-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="queue-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="multimap-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="topic-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="list-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="set-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="lock-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="atomic-long-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="countdown-latch-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
+            <xs:element name="semaphore-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="id-generator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
+            <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="base-permission">
+        <xs:sequence>
+            <xs:element name="endpoints" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="endpoint" minOccurs="1" maxOccurs="unbounded" default="127.0.0.1">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Endpoint address of principal. Wildcards(*) can be used.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string"/>
+                            </xs:simpleType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="principal" type="xs:string" use="optional" default="*">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the principal. Wildcards(*) can be used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="instance-permission">
+        <xs:complexContent>
+            <xs:extension base="base-permission">
+                <xs:sequence>
+                    <xs:element name="actions" type="actions" minOccurs="1" maxOccurs="1"/>
+                </xs:sequence>
+                <xs:attribute name="name" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Name of the permission. Wildcards(*) can be used.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="actions">
+        <xs:sequence>
+            <xs:element name="action" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Permission actions that are permitted on Hazelcast instance objects.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="all"/>
+                        <xs:enumeration value="create"/>
+                        <xs:enumeration value="destroy"/>
+                        <xs:enumeration value="modify"/>
+                        <xs:enumeration value="read"/>
+                        <xs:enumeration value="remove"/>
+                        <xs:enumeration value="lock"/>
+                        <xs:enumeration value="listen"/>
+                        <xs:enumeration value="release"/>
+                        <xs:enumeration value="acquire"/>
+                        <xs:enumeration value="put"/>
+                        <xs:enumeration value="add"/>
+                        <xs:enumeration value="index"/>
+                        <xs:enumeration value="intercept"/>
+                        <xs:enumeration value="publish"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="cluster-group">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" default="dev"/>
+            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1" default="dev-pass"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="listeners">
+        <xs:sequence>
+            <xs:element name="listener" type="listener-base" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="listener-base">
+        <xs:annotation>
+            <xs:documentation>One of membership-listener, instance-listener or migration-listener
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="non-space-string"/>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="near-cache">
+        <xs:sequence>
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU"/>
+            <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="eviction-policy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="NONE"/>
+            <xs:enumeration value="LRU"/>
+            <xs:enumeration value="LFU"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="in-memory-format">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="BINARY"/>
+            <xs:enumeration value="OBJECT"/>
+            <xs:enumeration value="OFFHEAP"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="non-space-string">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\S.*"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="serialization">
+        <xs:sequence>
+            <xs:element name="portable-version" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="use-native-byte-order" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="byte-order" minOccurs="0" maxOccurs="1" default="BIG_ENDIAN">
+                <xs:simpleType>
+                    <xs:restriction base="non-space-string">
+                        <xs:enumeration value="BIG_ENDIAN"/>
+                        <xs:enumeration value="LITTLE_ENDIAN"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="enable-compression" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="enable-shared-object" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="allow-unsafe" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="data-serializable-factories" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="portable-factories" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="portable-factory" type="serialization-factory" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="serializers" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="global-serializer" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="serializer" type="serializer" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="check-class-def-errors" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="serialization-factory">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="factory-id" use="required" type="xs:unsignedInt"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="serializer">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="type-class" type="xs:string"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="socket-interceptor">
+        <xs:sequence>
+            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" default="false" type="xs:boolean"/>
+    </xs:complexType>
+
+    <xs:complexType name="property">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="name" use="required" type="non-space-string"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="properties">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="property" type="property"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="topology-changed-strategy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CANCEL_RUNNING_OPERATION" />
+            <xs:enumeration value="DISCARD_AND_RESTART"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

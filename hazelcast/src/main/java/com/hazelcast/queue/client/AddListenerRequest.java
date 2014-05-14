@@ -24,7 +24,6 @@ import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.QueuePortableHook;
@@ -36,7 +35,10 @@ import com.hazelcast.spi.impl.PortableItemEvent;
 import java.io.IOException;
 import java.security.Permission;
 
-public class AddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
+/**
+ * this class is used to attach a listener to targeted node which sends back the events to client for a queue
+ */
+public class AddListenerRequest extends CallableClientRequest implements SecureRequest, RetryableRequest {
 
     private String name;
     private boolean includeValue;

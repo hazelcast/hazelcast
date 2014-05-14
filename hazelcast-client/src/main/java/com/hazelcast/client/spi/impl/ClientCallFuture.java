@@ -39,9 +39,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_RETRY_COUNT_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_RETRY_WAIT_TIME_DEFAULT;
+
 public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
-    private static final int MAX_RESEND_COUNT = 20;
 
     private Object response;
 
@@ -55,6 +58,10 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private final EventHandler handler;
 
+    public final int heartBeatInterval;
+    public final int retryCount;
+    public final int retryWaitTime;
+
     private AtomicInteger reSendCount = new AtomicInteger();
 
     private volatile ClientConnection connection;
@@ -62,6 +69,16 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
 
     public ClientCallFuture(HazelcastClient client, ClientRequest request, EventHandler handler) {
+        int interval = client.clientProperties.HEARTBEAT_INTERVAL.getInteger();
+        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+
+        int retry = client.clientProperties.RETRY_COUNT.getInteger();
+        this.retryCount = retry > 0 ? retry : Integer.parseInt(PROP_RETRY_COUNT_DEFAULT);
+
+        int waitTime = client.clientProperties.RETRY_WAIT_TIME.getInteger();
+        this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_RETRY_WAIT_TIME_DEFAULT);
+
+
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.serializationService = client.getSerializationService();
@@ -84,8 +101,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     public V get() throws InterruptedException, ExecutionException {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            e.printStackTrace();
+        } catch (TimeoutException ignored) {
             return null;
         }
     }
@@ -97,13 +113,24 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                 synchronized (this) {
                     while (waitMillis > 0 && response == null) {
                         long start = Clock.currentTimeMillis();
-                        this.wait(waitMillis);
-                        waitMillis -= (Clock.currentTimeMillis() - start);
+                        this.wait(Math.min(heartBeatInterval, waitMillis));
+                        long elapsed = Clock.currentTimeMillis() - start;
+                        waitMillis -= elapsed;
+                        if (!isConnectionHealthy(elapsed)) {
+                            break;
+                        }
                     }
                 }
             }
         }
         return resolveResponse();
+    }
+
+    private boolean isConnectionHealthy(long elapsed) {
+        if (elapsed >= heartBeatInterval) {
+            return connection.isHeartBeating();
+        }
+        return true;
     }
 
     public void notify(Object response) {
@@ -203,7 +230,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         if (request.isSingleConnection()) {
             return false;
         }
-        if (handler == null && reSendCount.incrementAndGet() > MAX_RESEND_COUNT) {
+        if (handler == null && reSendCount.incrementAndGet() > retryCount) {
             return false;
         }
         executionService.execute(new ReSendTask());
@@ -229,6 +256,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     class ReSendTask implements Runnable {
         public void run() {
             try {
+                sleep();
                 invocationService.reSend(ClientCallFuture.this);
             } catch (Exception e) {
                 if (handler != null) {
@@ -236,6 +264,13 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                 } else {
                     setResponse(e);
                 }
+            }
+        }
+
+        private void sleep(){
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException ignored) {
             }
         }
     }
