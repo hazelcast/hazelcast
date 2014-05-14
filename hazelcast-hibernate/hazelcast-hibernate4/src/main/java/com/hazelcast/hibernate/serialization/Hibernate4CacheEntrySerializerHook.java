@@ -34,7 +34,7 @@ public class Hibernate4CacheEntrySerializerHook
 
     public Hibernate4CacheEntrySerializerHook() {
         Class<?> cacheEntryClass = null;
-        if (!UnsafeHelper.UNSAFE_AVAILABLE) {
+        if (UnsafeHelper.UNSAFE_AVAILABLE) {
             try {
                 cacheEntryClass = Class.forName("org.hibernate.cache.spi.entry.CacheEntry");
             } catch (Exception e) {

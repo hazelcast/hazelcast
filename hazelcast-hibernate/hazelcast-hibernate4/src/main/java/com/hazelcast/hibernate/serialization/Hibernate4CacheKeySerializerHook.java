@@ -34,7 +34,7 @@ public class Hibernate4CacheKeySerializerHook
 
     public Hibernate4CacheKeySerializerHook() {
         Class<?> cacheKeyClass = null;
-        if (!UnsafeHelper.UNSAFE_AVAILABLE) {
+        if (UnsafeHelper.UNSAFE_AVAILABLE) {
             try {
                 cacheKeyClass = Class.forName("org.hibernate.cache.spi.CacheKey");
             } catch (Exception e) {
