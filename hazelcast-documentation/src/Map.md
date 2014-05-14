@@ -2,6 +2,9 @@
 
 ## Map
 
+### Map Overview
+
+Hazelcast Map (IMap) extends the interface `java.util.concurrent.ConcurrentMap` and hence `java.util.map`. In simple terms, it is the distributed implementation of Java map. And operations like reading and writing from/to a Hazelcast map can be performed with the well known methods like get and put. 
 
 Hazelcast will partition your map entries and almost evenly distribute onto all Hazelcast members. Distributed maps have 1 backup by default so that if a member goes down, you do not lose data. Backup operations are synchronous, so when a `map.put(key, value)` returns, it is guaranteed that the entry is replicated to one other node. For the reads, it is also guaranteed that `map.get(key)` returns the latest value of the entry. Consistency is strictly enforced.
 
@@ -62,5 +65,4 @@ Also see:
 -   [Data Affinity](#data-affinity).
 
 -   [Map Configuration with wildcards](#wildcard-configuration).
-
 

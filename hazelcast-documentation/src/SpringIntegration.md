@@ -3,7 +3,7 @@
 ## Spring Integration
 
 
-### Configuration
+### Spring Configuration
 
 ***Note***: *Hazelcast-Spring integration requires either *`hazelcast-spring-`*version*`.jar`* or *`hazelcast-all-`*version*`.jar`* in the classpath.*
 
