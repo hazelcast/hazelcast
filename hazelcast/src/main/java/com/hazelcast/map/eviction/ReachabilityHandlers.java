@@ -37,7 +37,7 @@ public final class ReachabilityHandlers {
         final MapConfig config = container.getMapConfig();
         final ReachabilityHandlerChain reachabilityHandlerChain = new ReachabilityHandlerChain();
         // zero max idle means eternal.
-        if (config.getMaxIdleSeconds() != 0L) {
+        if (config.getMaxIdleSeconds() > 0L) {
             reachabilityHandlerChain.addHandler(new IdleReachabilityHandler(TimeUnit.SECONDS.toNanos(config.getMaxIdleSeconds())));
         }
         // one can give ttl whn putting key&value pairs.
