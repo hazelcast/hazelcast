@@ -65,9 +65,8 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     public boolean isRunning() {
-        synchronized (lifecycleLock) {
-            return instance.node.isActive();
-        }
+        //no synchronization needed since isActive is threadsafe.
+        return instance.node.isActive();
     }
 
     public void shutdown() {
