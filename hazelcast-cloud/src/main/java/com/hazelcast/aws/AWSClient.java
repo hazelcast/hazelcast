@@ -25,19 +25,23 @@ public class AWSClient {
 
     private String endpoint;
     private final AwsConfig awsConfig;
-    private final AWSCredentialsProvider credentialsProvider;
 
     public AWSClient(AwsConfig awsConfig) {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
         }
+        if (awsConfig.getAccessKey() == null) {
+            throw new IllegalArgumentException("AWS access key is required!");
+        }
+        if (awsConfig.getSecretKey() == null) {
+            throw new IllegalArgumentException("AWS secret key is required!");
+        }
         this.awsConfig = awsConfig;
-        this.credentialsProvider = new BasicAWSCredentialsProvider(awsConfig.getAccessKey(), awsConfig.getSecretKey());
         endpoint = awsConfig.getHostHeader();
     }
 
     public List<String> getPrivateIpAddresses() throws Exception {
-        return new DescribeInstances(awsConfig, credentialsProvider).execute(endpoint);
+        return new DescribeInstances(awsConfig).execute(endpoint);
     }
 
     public void setEndpoint(String s) {
