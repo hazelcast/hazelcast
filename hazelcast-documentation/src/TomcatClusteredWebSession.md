@@ -5,7 +5,7 @@ Session Replication with Hazelcast Enterprise is container specif module where n
 
 Features
 
-1. Seamless Tomcat 6,7,8 integration
+1. Seamless Tomcat 6,7 integration
 2. Sticky + Non-Sticky sessions supported
 3. Tomcat failover
 4. Deferred write for performance boost
@@ -77,7 +77,6 @@ However, with non-sticky caches load balancing might be super easy as some load 
 
 - Tomcat 6.0.39
 - Tomcat 7.0.54
-- Tomcat 8.0.5
 
 
 
