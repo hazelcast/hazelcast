@@ -93,6 +93,11 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     public void shutdown() {
         active.set(false);
+
+        //todo: very dangerous because it is very easy to run into a deadlock. Never call a method
+        //you don't own (in this case every method inside the synchronized block) because you can very
+        //easily run into a deadlock.
+        //Look for Item 67 in Effective Java.
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
             client.doShutdown();

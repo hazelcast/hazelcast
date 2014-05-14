@@ -22,6 +22,8 @@ import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -29,9 +31,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
-/**
- * @author mdogan 5/16/13
- */
 public abstract class ClientProxy implements DistributedObject {
 
     protected final String instanceName;
@@ -65,7 +64,7 @@ public abstract class ClientProxy implements DistributedObject {
         if (ctx == null) {
             throw new HazelcastInstanceNotActiveException();
         }
-        return context;
+        return ctx;
     }
 
     protected final void setContext(ClientContext context) {
@@ -77,25 +76,32 @@ public abstract class ClientProxy implements DistributedObject {
         return objectName;
     }
 
+    @Override
     public final String getName() {
         return objectName;
     }
 
+    @Override
     public String getPartitionKey() {
         return StringPartitioningStrategy.getPartitionKey(getName());
     }
 
+    @Override
     public final String getServiceName() {
         return serviceName;
     }
 
+    @Override
     public final void destroy() {
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
         try {
             context.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            //we just log the exception; there is no need to throw it because the caller has no way of handling
+            //it anyway. Also we don't want to skip the rest of the destroy logic.
+            ILogger logger = Logger.getLogger(ClientProxy.class);
+            logger.finest("Failed to send client destroy request to any cluster member", e);
         }
         context.removeProxy(this);
         context = null;
