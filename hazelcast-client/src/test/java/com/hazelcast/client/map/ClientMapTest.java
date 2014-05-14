@@ -111,6 +111,7 @@ public class ClientMapTest {
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
             }
+
             public void entryEvicted(EntryEvent event) {
                 final Object value = event.getValue();
                 final Object oldValue = event.getOldValue();
@@ -322,10 +323,9 @@ public class ClientMapTest {
         final IMap map = createMap();
         assertNull(map.putIfAbsent("key1", "value1", 1, TimeUnit.SECONDS));
         assertEquals("value1", map.putIfAbsent("key1", "value3", 1, TimeUnit.SECONDS));
-        Thread.sleep(2000);
+        Thread.sleep(6000);
         assertNull(map.putIfAbsent("key1", "value3", 1, TimeUnit.SECONDS));
         assertEquals("value3", map.putIfAbsent("key1", "value4", 1, TimeUnit.SECONDS));
-        Thread.sleep(2000);
     }
 
     @Test

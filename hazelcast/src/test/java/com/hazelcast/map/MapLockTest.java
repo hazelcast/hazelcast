@@ -23,6 +23,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import org.junit.Assert;
@@ -134,7 +135,7 @@ public class MapLockTest extends HazelcastTestSupport {
         final IMap map = instance1.getMap(name);
         Random rand = new Random();
         for (int i = 0; i < 5; i++) {
-            map.lock(i, rand.nextInt(5)+1, TimeUnit.SECONDS);
+            map.lock(i, rand.nextInt(5) + 1, TimeUnit.SECONDS);
         }
         final CountDownLatch latch = new CountDownLatch(5);
         Thread t = new Thread(new Runnable() {
@@ -250,6 +251,7 @@ public class MapLockTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testLockTTLKey() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();

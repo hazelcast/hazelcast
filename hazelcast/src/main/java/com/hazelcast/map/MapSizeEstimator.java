@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.map.record.Record;
 
 /**
@@ -43,13 +42,13 @@ class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
         if (record == null) {
             return 0L;
         }
-        if (record instanceof ObjectRecord) {
-            return 0L;
+        final long cost = record.getCost();
+        if (cost == 0L) {
+            return cost;
         }
         final int numberOfIntegers = 4;
         // entry size in CHM
         long refSize = numberOfIntegers * ((Integer.SIZE / Byte.SIZE));
-        final long valueSize = record.getCost();
-        return refSize + valueSize;
+        return refSize + cost;
     }
 }

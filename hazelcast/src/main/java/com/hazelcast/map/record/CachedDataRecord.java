@@ -18,15 +18,18 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-public final class CachedDataRecord extends DataRecord {
+/**
+ *  CachedDataRecord.
+ */
+class CachedDataRecord extends DataRecord {
 
     private transient volatile Object cachedValue;
 
-    public CachedDataRecord() {
+    CachedDataRecord() {
     }
 
-    public CachedDataRecord(Data keyData, Data value, boolean statisticsEnabled) {
-        super(keyData, value, statisticsEnabled);
+    CachedDataRecord(Data keyData, Data value) {
+        super(keyData, value);
     }
 
     public void setValue(Data o) {
@@ -34,10 +37,12 @@ public final class CachedDataRecord extends DataRecord {
         super.setValue(o);
     }
 
+    @Override
     public Object getCachedValue() {
         return cachedValue;
     }
 
+    @Override
     public void setCachedValue(Object cachedValue) {
         this.cachedValue = cachedValue;
     }

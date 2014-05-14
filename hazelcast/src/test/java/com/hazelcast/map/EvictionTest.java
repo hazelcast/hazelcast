@@ -31,8 +31,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,13 +45,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class EvictionTest extends HazelcastTestSupport {
-
-
     /**
      * Test for the issue 477.
      * Updates should also update the TTL
@@ -332,9 +331,10 @@ public class EvictionTest extends HazelcastTestSupport {
         final int size = 10;
         final String mapName = "testEvictionPerPartition";
         Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
         final MapConfig mc = cfg.getMapConfig(mapName);
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
-        mc.setEvictionPercentage(25);
+        mc.setEvictionPercentage(50);
         final MaxSizeConfig msc = new MaxSizeConfig();
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
         msc.setSize(size);
@@ -345,13 +345,16 @@ public class EvictionTest extends HazelcastTestSupport {
         int insertCount = size * pnum * 2;
         final Map map = instances[0].getMap(mapName);
         for (int i = 0; i < insertCount; i++) {
+            if (i == insertCount - 1) {
+                sleepMillis(1100);
+            }
             map.put(i, i);
         }
-        Thread.sleep(2000);
+        System.out.println(map.size());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(map.size() < size * pnum * (100 - mc.getEvictionPercentage()) / 100);
+                assertTrue(map.size() < size);
             }
         });
     }
@@ -426,7 +429,7 @@ public class EvictionTest extends HazelcastTestSupport {
         sleepSeconds(3);
 
         int recentlyUsedEvicted = 0;
-        for (int i = 0; i < size/2; i++) {
+        for (int i = 0; i < size / 2; i++) {
             if (map.get(i) == null) {
                 recentlyUsedEvicted++;
             }
@@ -435,7 +438,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictionLFU_statisticsDisabled(){
+    public void testEvictionLFU_statisticsDisabled() {
         final String mapName = randomMapName("_testEvictionLFU_statisticsDisabled_");
         final int instanceCount = 1;
         final int size = 10000;
@@ -480,8 +483,6 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
 
-
-
     @Test
     public void testEvictionLFU() {
         final String mapName = "testEvictionLFU_" + randomString();
@@ -524,10 +525,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
     }
 
-    // this is a wrong test
-    // since eviction starts %95 of the map max size reached.
     @Test
-    @Category(ProblematicTest.class)
     public void testEvictionLFU2() {
         try {
             final int k = 2;
@@ -566,7 +564,6 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testMapRecordEviction() throws InterruptedException {
         int size = 1000;
         Config cfg = new Config();
@@ -715,42 +712,28 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testMapPutTTLWithListener() throws InterruptedException {
-        Config cfg = new Config();
-        final HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(cfg);
-        warmUpPartitions(instances);
+        final HazelcastInstance instance = createHazelcastInstance();
 
-        final int k = 10;
-        final int putCount = 1000;
-        final CountDownLatch latch = new CountDownLatch(k * putCount);
-        final IMap map = instances[0].getMap("testMapPutTTLWithListener");
+        final int putCount = 100;
+        final CountDownLatch latch = new CountDownLatch(putCount);
+        final IMap map = instance.getMap("testMapPutTTLWithListener");
 
         final AtomicBoolean error = new AtomicBoolean(false);
         final Set<Long> times = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
 
         map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(final EntryEvent event) {
-                final Long expectedEvictionTime = (Long) (event.getOldValue());
-                long timeDifference = System.currentTimeMillis() - expectedEvictionTime;
-                if (timeDifference > 5000) {
-                    error.set(true);
-                    times.add(timeDifference);
-                }
                 latch.countDown();
             }
         }, true);
 
-        for (int i = 0; i < k; i++) {
-            final int threadId = i;
-            int ttl = (int) (Math.random() * 5000 + 3000);
-            for (int j = 0; j < putCount; j++) {
-                final long expectedEvictionTime = ttl + System.currentTimeMillis();
-                map.put(j + putCount * threadId, expectedEvictionTime, ttl, TimeUnit.MILLISECONDS);
-            }
+        int ttl = (int) (Math.random() * 3000);
+        for (int j = 0; j < putCount; j++) {
+            map.put(j, j, ttl, TimeUnit.MILLISECONDS);
         }
 
         // wait until eviction is completed.
         assertOpenEventually(latch);
-        assertFalse("Some evictions took more than 5 seconds! -> late eviction count:" + times.size(), error.get());
     }
 
     /**

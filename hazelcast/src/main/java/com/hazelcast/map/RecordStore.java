@@ -19,9 +19,12 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.writebehind.DelayedEntry;
+import com.hazelcast.map.writebehind.WriteBehindQueue;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,9 +32,29 @@ public interface RecordStore {
 
     String getName();
 
+    Object put(Data dataKey, Object dataValue, long ttl);
+
+    void put(Map.Entry<Data, Object> entry);
+
+    Object putIfAbsent(Data dataKey, Object value, long ttl);
+
+    Record putBackup(Data key, Object value);
+
+    Record putBackup(Data key, Object value, long ttl);
+
+    boolean tryPut(Data dataKey, Object value, long ttl);
+
+    boolean set(Data dataKey, Object value, long ttl);
+
     Object remove(Data dataKey);
 
     boolean remove(Data dataKey, Object testValue);
+
+    /**
+     * Similar to {@link RecordStore#remove(com.hazelcast.nio.serialization.Data)}
+     * except removeBackup doesn't touch mapstore since it does not return previous value.
+     */
+    void removeBackup(Data dataKey);
 
     Object get(Data dataKey);
 
@@ -39,33 +62,19 @@ public interface RecordStore {
 
     boolean containsKey(Data dataKey);
 
-    Object put(Data dataKey, Object dataValue, long ttl);
-
-    void put(Map.Entry<Data, Object> entry);
-
-    Record putBackup(Data key, Object value);
-
-    Record putBackup(Data key, Object value, long ttl, boolean shouldSchedule);
-
     Object replace(Data dataKey, Object value);
 
     boolean replace(Data dataKey, Object oldValue, Object newValue);
-
-    boolean set(Data dataKey, Object value, long ttl);
 
     void putTransient(Data dataKey, Object value, long ttl);
 
     void putFromLoad(Data dataKey, Object value, long ttl);
 
-    boolean tryPut(Data dataKey, Object value, long ttl);
-
-    Object putIfAbsent(Data dataKey, Object value, long ttl);
-
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
     Record getRecord(Data key);
 
-    void putRecord(Data key, Record record);
+    void putForReplication(Data key, Record record);
 
     void deleteRecord(Data key);
 
@@ -85,8 +94,6 @@ public interface RecordStore {
 
     boolean isLocked(Data key);
 
-    boolean isLockedBy(Data key, String caller, long threadId);
-
     boolean canAcquireLock(Data key, String caller, long threadId);
 
     String getLockOwnerInfo(Data key);
@@ -95,13 +102,9 @@ public interface RecordStore {
 
     Object evict(Data key);
 
-    Collection<Object> valuesObject();
-
     Collection<Data> valuesData();
 
     MapContainer getMapContainer();
-
-    Set<Map.Entry<Data, Object>> entrySetObject();
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
@@ -130,4 +133,10 @@ public interface RecordStore {
     void clear();
 
     boolean isEmpty();
+
+    WriteBehindQueue<DelayedEntry> getWriteBehindQueue();
+
+    List clearUnLockedExpiredRecords();
+
+    void removeFromWriteBehindWaitingDeletions(Data key);
 }

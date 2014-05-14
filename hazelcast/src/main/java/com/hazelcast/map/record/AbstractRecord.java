@@ -20,22 +20,12 @@ import com.hazelcast.nio.serialization.Data;
 
 
 @SuppressWarnings("VolatileLongOrDoubleField")
-public abstract class AbstractRecord<V> implements Record<V> {
+abstract class AbstractRecord<V> extends AbstractBaseRecord<V> {
 
-    protected RecordStatistics statistics;
     protected Data key;
-    protected long version;
-    /**
-    *  this may be used for LRU or LFU eviction depending on configuration.
-    * */
-    protected long evictionCriteriaNumber;
 
-    public AbstractRecord(Data key, boolean statisticsEnabled) {
+    public AbstractRecord(Data key) {
         this.key = key;
-        if (statisticsEnabled) {
-            statistics = new RecordStatistics();
-        }
-        version = 0;
     }
 
     public AbstractRecord() {
@@ -45,73 +35,54 @@ public abstract class AbstractRecord<V> implements Record<V> {
         return key;
     }
 
-    public final RecordStatistics getStatistics() {
-        return statistics;
+    public RecordStatistics getStatistics() {
+        return null;
     }
 
-    public final void setStatistics(RecordStatistics stats) {
-        this.statistics = stats;
+    public void setStatistics(RecordStatistics stats) {
     }
 
-    public final long getVersion() {
-        return version;
+    public void onAccess() {
+        lastAccessTime = System.nanoTime();
     }
 
-    public final void setVersion(long version) {
-        this.version = version;
+    public void onStore() {
     }
 
-    public final void onAccess() {
-        if (statistics != null)
-            statistics.access();
-    }
-
-    public final void onStore() {
-        if (statistics != null)
-            statistics.store();
-    }
-
-    public final void onUpdate() {
-        if (statistics != null) {
-            statistics.update();
-        }
+    public void onUpdate() {
+        lastUpdateTime = System.nanoTime();
         version++;
     }
 
     @Override
-    public long getEvictionCriteriaNumber() {
-        return evictionCriteriaNumber;
+    public Object getCachedValue() {
+        return Record.NOT_CACHED;
     }
 
     @Override
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-       this.evictionCriteriaNumber = evictionCriteriaNumber;
+    public void setCachedValue(Object cachedValue) {
+
     }
 
     @Override
     public long getCost() {
-        int size = 0 ;
-        // statistics
-        size += 4 + (statistics == null ? 0 : statistics.size());
-        // add size of version.
-        size += (Long.SIZE / Byte.SIZE);
-        // add size of evictionCriteriaNumber.
-        size += (Long.SIZE / Byte.SIZE);
+        long size = super.getCost();
+        final int objectReferenceInBytes = 4;
         // add key size.
-        size += 4 + key.getHeapCost();
+        size += objectReferenceInBytes + key.getHeapCost();
         return size;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AbstractRecord that = (AbstractRecord) o;
-
-        if (!key.equals(that.key)) return false;
-
-        return true;
+        return key.equals(that.key);
     }
 
     @Override

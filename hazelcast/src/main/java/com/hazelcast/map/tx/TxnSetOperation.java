@@ -45,10 +45,11 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         super(name, dataKey, value);
         this.version = version;
     }
+
     public TxnSetOperation(String name, Data dataKey, Data value, long version, long ttl) {
         super(name, dataKey, value);
         this.version = version;
-        this.ttl  = ttl;
+        this.ttl = ttl;
     }
 
     @Override
@@ -60,7 +61,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     public void run() {
         recordStore.unlock(dataKey, ownerUuid, getThreadId());
         Record record = recordStore.getRecord(dataKey);
-        if (record == null || version == record.getVersion()){
+        if (record == null || version == record.getVersion()) {
             recordStore.set(dataKey, dataValue, ttl);
             shouldBackup = true;
         }
@@ -89,7 +90,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     public Operation getBackupOperation() {
-        RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer, recordStore.getRecord(dataKey));
+        RecordInfo replicationInfo = mapService.createRecordInfo(recordStore.getRecord(dataKey));
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true);
     }
 
