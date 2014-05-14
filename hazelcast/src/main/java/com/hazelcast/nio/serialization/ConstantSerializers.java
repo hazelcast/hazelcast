@@ -21,11 +21,24 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.serialization.SerializationConstants.*;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_CHAR;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_SHORT;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_FLOAT;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DOUBLE;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_INTEGER;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_BOOLEAN;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_BYTE;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_LONG;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_STRING;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_LONG_ARRAY;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_INTEGER_ARRAY;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DOUBLE_ARRAY;
 
-/**
- * @author mdogan 6/18/12
- */
+
 public final class ConstantSerializers {
 
     public static final class ByteSerializer extends SingletonSerializer<Byte> {
@@ -190,7 +203,7 @@ public final class ConstantSerializers {
         }
 
         public char[] read(final ObjectDataInput in) throws IOException {
-           return in.readCharArray();
+            return in.readCharArray();
         }
 
         public void write(final ObjectDataOutput out, final char[] obj) throws IOException {
@@ -220,7 +233,7 @@ public final class ConstantSerializers {
         }
 
         public int[] read(final ObjectDataInput in) throws IOException {
-           return in.readIntArray();
+            return in.readIntArray();
         }
 
         public void write(final ObjectDataOutput out, final int[] obj) throws IOException {
@@ -268,7 +281,7 @@ public final class ConstantSerializers {
             return in.readDoubleArray();
         }
 
-        public void write(final ObjectDataOutput out, final double [] obj) throws IOException {
+        public void write(final ObjectDataOutput out, final double[] obj) throws IOException {
             out.writeDoubleArray(obj);
         }
     }
@@ -279,6 +292,7 @@ public final class ConstantSerializers {
         }
     }
 
-    private ConstantSerializers() {}
+    private ConstantSerializers() {
+    }
 
 }

@@ -16,9 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 1/3/13
- */
 abstract class BinaryClassDefinition implements ClassDefinition {
 
     protected int factoryId;

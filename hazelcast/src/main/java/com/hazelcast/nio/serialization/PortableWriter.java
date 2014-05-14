@@ -20,9 +20,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 12/26/12
- */
 public interface PortableWriter {
 
     int getVersion();

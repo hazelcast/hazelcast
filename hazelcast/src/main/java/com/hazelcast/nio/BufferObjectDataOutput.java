@@ -19,9 +19,7 @@ package com.hazelcast.nio;
 import java.io.Closeable;
 import java.io.IOException;
 
-/**
- * @author mdogan 12/28/12
- */
+
 public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
     void write(int position, int b);

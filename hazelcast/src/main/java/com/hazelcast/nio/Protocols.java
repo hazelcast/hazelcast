@@ -16,14 +16,12 @@
 
 package com.hazelcast.nio;
 
-/**
- * @author mdogan 3/11/13
- */
 public final class Protocols {
 
     public static final String CLUSTER = "HZC";
     public static final String CLIENT_BINARY = "CB1";
     public static final String TEXT = "TXT";
 
-    private Protocols() {}
+    private Protocols() {
+    }
 }

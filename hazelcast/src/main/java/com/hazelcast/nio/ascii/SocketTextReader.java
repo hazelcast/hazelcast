@@ -20,7 +20,13 @@ import com.hazelcast.ascii.CommandParser;
 import com.hazelcast.ascii.TextCommand;
 import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.ascii.memcache.*;
+import com.hazelcast.ascii.memcache.GetCommandParser;
+import com.hazelcast.ascii.memcache.SetCommandParser;
+import com.hazelcast.ascii.memcache.DeleteCommandParser;
+import com.hazelcast.ascii.memcache.IncrementCommandParser;
+import com.hazelcast.ascii.memcache.SimpleCommandParser;
+import com.hazelcast.ascii.memcache.TouchCommandParser;
+import com.hazelcast.ascii.memcache.ErrorCommand;
 import com.hazelcast.ascii.rest.HttpCommand;
 import com.hazelcast.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.ascii.rest.HttpGetCommandParser;
@@ -35,44 +41,57 @@ import com.hazelcast.util.StringUtil;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ADD;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.REPLACE;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.SET;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.DECREMENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.PREPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.TOUCH;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.QUIT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.STATS;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.VERSION;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
 public class SocketTextReader implements TextCommandConstants, SocketReader {
 
-    private final static Map<String, CommandParser> mapCommandParsers = new HashMap<String, CommandParser>();
+    private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
+
+    private static final int CAPACITY = 500;
 
     static {
-        mapCommandParsers.put("get", new GetCommandParser());
-        mapCommandParsers.put("gets", new GetCommandParser());
-        mapCommandParsers.put("set", new SetCommandParser(SET));
-        mapCommandParsers.put("add", new SetCommandParser(ADD));
-        mapCommandParsers.put("replace", new SetCommandParser(REPLACE));
-        mapCommandParsers.put("append", new SetCommandParser(APPEND));
-        mapCommandParsers.put("prepend", new SetCommandParser(PREPEND));
-        mapCommandParsers.put("touch", new TouchCommandParser(TOUCH));
-        mapCommandParsers.put("incr", new IncrementCommandParser(INCREMENT));
-        mapCommandParsers.put("decr", new IncrementCommandParser(DECREMENT));
-        mapCommandParsers.put("delete", new DeleteCommandParser());
-        mapCommandParsers.put("quit", new SimpleCommandParser(QUIT));
-        mapCommandParsers.put("stats", new SimpleCommandParser(STATS));
-        mapCommandParsers.put("version", new SimpleCommandParser(VERSION));
-        mapCommandParsers.put("GET", new HttpGetCommandParser());
-        mapCommandParsers.put("POST", new HttpPostCommandParser());
-        mapCommandParsers.put("PUT", new HttpPostCommandParser());
-        mapCommandParsers.put("DELETE", new HttpDeleteCommandParser());
+        MAP_COMMAND_PARSERS.put("get", new GetCommandParser());
+        MAP_COMMAND_PARSERS.put("gets", new GetCommandParser());
+        MAP_COMMAND_PARSERS.put("set", new SetCommandParser(SET));
+        MAP_COMMAND_PARSERS.put("add", new SetCommandParser(ADD));
+        MAP_COMMAND_PARSERS.put("replace", new SetCommandParser(REPLACE));
+        MAP_COMMAND_PARSERS.put("append", new SetCommandParser(APPEND));
+        MAP_COMMAND_PARSERS.put("prepend", new SetCommandParser(PREPEND));
+        MAP_COMMAND_PARSERS.put("touch", new TouchCommandParser(TOUCH));
+        MAP_COMMAND_PARSERS.put("incr", new IncrementCommandParser(INCREMENT));
+        MAP_COMMAND_PARSERS.put("decr", new IncrementCommandParser(DECREMENT));
+        MAP_COMMAND_PARSERS.put("delete", new DeleteCommandParser());
+        MAP_COMMAND_PARSERS.put("quit", new SimpleCommandParser(QUIT));
+        MAP_COMMAND_PARSERS.put("stats", new SimpleCommandParser(STATS));
+        MAP_COMMAND_PARSERS.put("version", new SimpleCommandParser(VERSION));
+        MAP_COMMAND_PARSERS.put("GET", new HttpGetCommandParser());
+        MAP_COMMAND_PARSERS.put("POST", new HttpPostCommandParser());
+        MAP_COMMAND_PARSERS.put("PUT", new HttpPostCommandParser());
+        MAP_COMMAND_PARSERS.put("DELETE", new HttpDeleteCommandParser());
     }
 
-    private ByteBuffer commandLine = ByteBuffer.allocate(500);
-    private boolean commandLineRead = false;
-    private TextCommand command = null;
+    private ByteBuffer commandLine = ByteBuffer.allocate(CAPACITY);
+    private boolean commandLineRead;
+    private TextCommand command;
     private final TextCommandService textCommandService;
     private final SocketTextWriter socketTextWriter;
     private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
-    private boolean connectionTypeSet = false;
+    private boolean connectionTypeSet;
     private long requestIdGen;
     private final ILogger logger;
 
@@ -129,7 +148,9 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
     }
 
     public static String toStringAndClear(ByteBuffer bb) {
-        if (bb == null) return "";
+        if (bb == null) {
+            return "";
+        }
         String result;
         if (bb.position() == 0) {
             result = "";
@@ -164,7 +185,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
         try {
             int space = cmd.indexOf(' ');
             String operation = (space == -1) ? cmd : cmd.substring(0, space);
-            CommandParser commandParser = mapCommandParsers.get(operation);
+            CommandParser commandParser = MAP_COMMAND_PARSERS.get(operation);
             if (commandParser != null) {
                 command = commandParser.parser(this, cmd, space);
             } else {

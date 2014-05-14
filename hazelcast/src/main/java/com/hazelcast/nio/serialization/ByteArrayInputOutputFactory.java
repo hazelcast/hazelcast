@@ -19,9 +19,6 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 
-/**
- * @author mdogan 6/15/13
- */
 final class ByteArrayInputOutputFactory implements InputOutputFactory {
 
     @Override

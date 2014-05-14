@@ -14,30 +14,8 @@
  * limitations under the License.
  */
 
+/**
+ * <p>This package contains classes related to New IO<br/>
+ */
+
 package com.hazelcast.nio;
-
-import java.io.DataInput;
-import java.io.IOException;
-import java.nio.ByteOrder;
-
-public interface ObjectDataInput extends DataInput {
-
-    char[] readCharArray() throws IOException;
-
-    int[] readIntArray() throws IOException;
-
-    long[] readLongArray() throws IOException;
-
-    double[] readDoubleArray() throws IOException;
-
-    float[] readFloatArray() throws IOException;
-
-    short[] readShortArray() throws IOException;
-
-    <T> T readObject() throws IOException;
-
-    ClassLoader getClassLoader();
-
-    ByteOrder getByteOrder();
-
-}
