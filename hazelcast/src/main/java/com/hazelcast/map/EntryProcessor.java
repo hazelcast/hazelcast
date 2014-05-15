@@ -32,9 +32,8 @@ import java.util.Map;
  * <p/>
  * While executing partition migrations are not allowed. Any migrations are queued on the partition thread.
  * <p/>
- * An EntryProcessor may not be re-entrant i.e. it may not access the same {@link Map}.
- * <p/>
- * If you wish to operate on
+ * An EntryProcessor may not be re-entrant i.e. it may not access the same {@link Map}. Limitation: you can only access
+ * data on the same partition.
  *
  * @param <K>
  * @param <V>

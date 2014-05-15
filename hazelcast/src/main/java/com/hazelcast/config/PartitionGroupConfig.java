@@ -25,16 +25,16 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * With the PartitionGroupConfig you can control how primary and backups are going to be split up. In a
- * multi member cluster, Hazelcast will place the backup partition on the same member as the primary partition
+ * multi member cluster, Hazelcast will place the backup partition on a different member to the primary partition
  * to prevent data loss.
  * <p/>
- * But in some cases this is not good enough; imagine that you have a 4 member cluster. And imagine that member1
- * and member2 run in datacenter-1 and member3/member5 in datacenter-2. If you want high availability, you want to
- * all backups of the primary partitions in datacenter-1 or stored in datacenter-2. And you want the same high
+ * But in some cases this is not good enough; imagine that you have a 4 member cluster. And imagine that member 1
+ * and member 2 run in data center 1 and member 3 and member 5 in data center 2. If you want high availability, you want
+ * to all backups of the primary partitions in data center 1 or stored in data center 2. And you want the same high
  * availability for the primary partitions in data center2.
  * <p/>
- * With the PartitionGroupConfig this behavior can be controlled. Imagine that members in datacenter-1 have ip
- * address 10.10.1.* and ip addresses of datacenter-2 is 10.10.2.* then you can make the following configuration:
+ * With the PartitionGroupConfig this behavior can be controlled. Imagine that members in data center 1 have ip
+ * address 10.10.1.* and ip addresses of data center 2 is 10.10.2.* then you can make the following configuration:
  * <p/>
  * <code>
  * <partition-group enabled="true" group-type="CUSTOM">
@@ -121,8 +121,8 @@ public class PartitionGroupConfig {
 
     /**
      * Sets the MemberGroupType. A @{link MemberGroupType#CUSTOM} indicates that custom groups are created.
-     * With the {@link MemberGroupType#HOST_AWARE} group type, Hazelcast makes a group for every host, that prevent
-     * a single host is going to contain primary and backup. See the {@see MemberGroupConfig} for more information.
+     * With the {@link MemberGroupType#HOST_AWARE} group type, Hazelcast makes a group for every host, that prevents
+     * a single host containing primary and backup. See the {@see MemberGroupConfig} for more information.
      *
      * @param memberGroupType the MemberGroupType to set.
      * @return the updated PartitionGroupConfig
