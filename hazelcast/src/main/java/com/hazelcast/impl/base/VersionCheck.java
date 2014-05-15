@@ -59,7 +59,7 @@ public final class VersionCheck {
             public void run() {
                 doCheck(hazelcastNode, version, isEnterprise);
             }
-        }, 0, 1, TimeUnit.DAYS);
+        }, 0, 24 * 60 * 60, TimeUnit.SECONDS);
     }
 
     public void shutdown() {
