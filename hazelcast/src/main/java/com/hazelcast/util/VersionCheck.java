@@ -105,7 +105,7 @@ public final class VersionCheck {
 
         }
 
-        String urlStr = "http://54.205.216.146:8080/version.jsp?version=" + version
+        String urlStr = "http://www.hazelcast.com/version.jsp?version=" + version
                 + "&m=" + hazelcastNode.getLocalMember().getUuid()
                 + "&e=" + isEnterprise
                 + "&l=" + hazelcastNode.getConfig().getLicenseKey()
