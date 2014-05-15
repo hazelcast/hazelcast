@@ -17,18 +17,31 @@
 package com.hazelcast.util;
 
 import java.io.IOException;
-import java.net.*;
-import java.util.*;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedList;
 
 public final class AddressUtil {
+
+    private static final int NUMBER_OF_ADDRESSES = 255;
 
     private AddressUtil() {
     }
 
-    public static boolean matchAnyInterface(final String address, final Collection<String> interfaces) {
-        if (interfaces == null || interfaces.size() == 0) return false;
-
-        for (final String interfaceMask : interfaces) {
+    public static boolean matchAnyInterface(String address, Collection<String> interfaces) {
+        if (interfaces == null || interfaces.size() == 0) {
+            return false;
+        }
+        for (String interfaceMask : interfaces) {
             if (matchInterface(address, interfaceMask)) {
                 return true;
             }
@@ -36,7 +49,7 @@ public final class AddressUtil {
         return false;
     }
 
-    public static boolean matchInterface(final String address, final String interfaceMask) {
+    public static boolean matchInterface(String address, String interfaceMask) {
         final AddressMatcher mask;
         try {
             mask = getAddressMatcher(interfaceMask);
@@ -44,6 +57,41 @@ public final class AddressUtil {
             return false;
         }
         return mask.match(address);
+    }
+
+    public static boolean matchAnyDomain(String name, Collection<String> patterns) {
+        if (patterns == null || patterns.size() == 0) {
+            return false;
+        }
+        for (String pattern : patterns) {
+            if (matchDomain(name, pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean matchDomain(String name, String pattern) {
+        final int index = pattern.indexOf('*');
+        if (index == -1) {
+            return name.equals(pattern);
+        } else {
+            String[] names = name.split("\\.");
+            String[] patterns = pattern.split("\\.");
+            if (patterns.length > names.length) {
+                return false;
+            }
+            int nameIndexDiff = names.length - patterns.length;
+            for (int i = patterns.length - 1; i > -1; i--) {
+                if ("*".equals(patterns[i])) {
+                    continue;
+                }
+                if (!patterns[i].equals(names[i + nameIndexDiff])) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     public static AddressHolder getAddressHolder(String address) {
@@ -182,7 +230,7 @@ public final class AddressUtil {
         final String lastPart = addressMatcher.address[3];
         final int dashPos ;
         if ("*".equals(lastPart)) {
-            for (int j = 0; j <= 255; j++) {
+            for (int j = 0; j <= NUMBER_OF_ADDRESSES; j++) {
                 addresses.add(first3 + "." + j);
             }
         } else if ((dashPos = lastPart.indexOf('-')) > 0) {
