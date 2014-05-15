@@ -202,7 +202,7 @@ public class Node {
         clusterService = new ClusterServiceImpl(this);
         textCommandService = new TextCommandServiceImpl(this);
         initializer.printNodeInfo(this);
-        versionCheck.check(this, getBuildInfo().getVersion(), initializer.isEnterprise());
+        versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
         JoinConfig join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
         try {

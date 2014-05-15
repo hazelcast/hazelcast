@@ -64,8 +64,4 @@ public class DefaultNodeInitializer implements NodeInitializer {
         logger.info("Destroying node initializer.");
     }
 
-    @Override
-    public boolean isEnterprise() {
-        return false;
-    }
 }
