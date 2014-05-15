@@ -87,21 +87,21 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
             }
             if (previousOperationType != null && !previousOperationType.equals(operationType)) {
                 final Collection<DelayedEntry> faileds = callHandler(entriesToProcess, previousOperationType);
-                addToFaileds(faileds, failsPerPartition);
+                addToFails(faileds, failsPerPartition);
                 entriesToProcess.clear();
             }
             entriesToProcess.add(entry);
         }
         final Collection<DelayedEntry> faileds = callHandler(entriesToProcess, operationType);
-        addToFaileds(faileds, failsPerPartition);
+        addToFails(faileds, failsPerPartition);
         entriesToProcess.clear();
     }
 
-    private void addToFaileds(Collection<DelayedEntry> faileds, Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
-        if (faileds == null || faileds.isEmpty()) {
+    private void addToFails(Collection<DelayedEntry> fails, Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
+        if (fails == null || fails.isEmpty()) {
             return;
         }
-        for (DelayedEntry entry : faileds) {
+        for (DelayedEntry entry : fails) {
             final int partitionId = entry.getPartitionId();
             Collection<DelayedEntry> delayedEntriesPerPartition = failsPerPartition.get(partitionId);
             if (delayedEntriesPerPartition == null) {
