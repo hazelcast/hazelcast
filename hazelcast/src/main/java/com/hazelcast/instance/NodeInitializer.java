@@ -32,5 +32,7 @@ public interface NodeInitializer {
 
     Storage<DataRef> getOffHeapStorage();
 
+    boolean isEnterprise();
+
     void destroy();
 }
