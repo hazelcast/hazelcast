@@ -18,9 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import java.util.Set;
 
-/**
- * @author mdogan 1/1/13
- */
 public interface ClassDefinition extends DataSerializable {
 
     int getFactoryId();

@@ -20,9 +20,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 12/28/12
- */
 public interface ObjectDataOutput extends DataOutput {
 
     void writeCharArray(char[] chars) throws IOException;

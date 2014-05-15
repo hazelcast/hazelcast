@@ -28,7 +28,7 @@
         http://www.springframework.org/schema/tx
         http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.2.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
 
     <tx:annotation-driven transaction-manager="dummyTransactionManager" />
 

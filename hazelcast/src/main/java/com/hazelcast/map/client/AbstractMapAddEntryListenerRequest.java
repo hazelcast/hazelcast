@@ -19,6 +19,7 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -27,7 +28,6 @@ import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.QueryEventFilter;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -37,11 +37,10 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 import java.security.Permission;
 
 /**
- * User: sancar
- * Date: 11/11/13
- * Time: 11:08
+ * Base class for adding entry listener to map
  */
-public abstract class AbstractMapAddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public abstract class AbstractMapAddEntryListenerRequest extends CallableClientRequest
+        implements RetryableRequest {
     protected String name;
     protected Data key;
     protected boolean includeValue;

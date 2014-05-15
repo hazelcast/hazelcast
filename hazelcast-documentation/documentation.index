@@ -4,7 +4,6 @@ src/Introduction.md
 	src/GettingStarted.md
 		src/StartingClusterClient.md
 		src/ConfiguringHazelcast.md
-	src/DeploymentTypes.md
 	src/UseCases.md
 	src/Resources.md
 src/Whats_new_3.2.md

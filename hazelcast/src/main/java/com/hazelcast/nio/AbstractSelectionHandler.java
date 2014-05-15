@@ -36,7 +36,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected final SystemLogService systemLogService;
 
-    private SelectionKey sk = null;
+    private SelectionKey sk;
 
     public AbstractSelectionHandler(final TcpIpConnection connection) {
         super();
@@ -77,8 +77,9 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     final void registerOp(final Selector selector, final int operation) {
         try {
-            if (!connection.live())
+            if (!connection.live()) {
                 return;
+            }
             if (sk == null) {
                 sk = socketChannel.keyFor(selector);
             }

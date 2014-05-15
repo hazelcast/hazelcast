@@ -41,7 +41,6 @@ public final class LifecycleServiceImpl implements LifecycleService {
     private final HazelcastClient client;
     private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
             = new ConcurrentHashMap<String, LifecycleListener>();
-    private final Object lifecycleLock = new Object();
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final BuildInfo buildInfo;
 
@@ -92,12 +91,13 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void shutdown() {
-        active.set(false);
-        synchronized (lifecycleLock) {
-            fireLifecycleEvent(SHUTTING_DOWN);
-            client.doShutdown();
-            fireLifecycleEvent(SHUTDOWN);
+        if (!active.compareAndSet(true, false)) {
+            return;
         }
+
+        fireLifecycleEvent(SHUTTING_DOWN);
+        client.doShutdown();
+        fireLifecycleEvent(SHUTDOWN);
     }
 
     public void terminate() {

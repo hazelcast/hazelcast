@@ -241,7 +241,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         }
                     }
 
-                    connectionManager.markOwnerAddressAsClosed();
+                    connectionManager.markOwnerConnectionAsClosed();
                     IOUtil.closeResource(conn);
                     conn = null;
                     fireConnectionEvent(true);

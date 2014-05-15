@@ -485,6 +485,7 @@ public class ReplicatedMapTest
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testRemoveObjectDelayDefault()
             throws Exception {
 
