@@ -21,7 +21,6 @@ import com.hazelcast.client.ClientDestroyRequest;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
