@@ -238,20 +238,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
                     .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
-                mapService.putNearCache(name, key, result);
-                // return cached value
-                // this ensures the same behavior of a get() call which had to fetch the value and any following get() calls
-                // this also avoids a second deserialization if the near cache in-memory format is OBJECT
-                if (result != null) {
-                    Object cached = mapService.getFromNearCache(name, key);
-                    if (cached != null) {
-                        if (NearCache.NULL_OBJECT.equals(cached)) {
-                            cached = null;
-                        }
-                        mapService.interceptAfterGet(name, cached);
-                        return cached;
-                    }
-                }
+                return mapService.putNearCache(name, key, result);
             }
         }
         return result;
