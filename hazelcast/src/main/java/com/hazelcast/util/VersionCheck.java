@@ -25,8 +25,8 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.net.URLConnection;
+import java.util.Enumeration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -95,14 +95,20 @@ public class VersionCheck {
     }
 
     private void doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
-        URLClassLoader cl = (URLClassLoader) getClass().getClassLoader();
+        final ClassLoader cl = getClass().getClassLoader();
         String p = "NULL";
         try {
 
-            URL url = cl.findResource("META-INF/MANIFEST.MF");
-            Manifest manifest = new Manifest(url.openStream());
-            final Attributes mainAttributes = manifest.getMainAttributes();
-            p = mainAttributes.getValue("clientId");
+            final Enumeration<URL> resources = cl.getResources("META-INF/MANIFEST.MF");
+            while (resources.hasMoreElements()) {
+                final URL url = resources.nextElement();
+                Manifest manifest = new Manifest(url.openStream());
+                final Attributes mainAttributes = manifest.getMainAttributes();
+                p = mainAttributes.getValue("hazelcast.downloadId");
+                if (p != null) {
+                    break;
+                }
+            }
         } catch (IOException ignored) {
 
         }
