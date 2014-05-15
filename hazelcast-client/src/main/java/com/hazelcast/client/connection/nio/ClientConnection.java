@@ -51,6 +51,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -293,7 +294,11 @@ public class ClientConnection implements Connection, Closeable {
             return;
         }
         if (connectionManager.isLive()) {
-            executionService.executeInternal(new CleanResourcesTask());
+            try {
+                executionService.executeInternal(new CleanResourcesTask());
+            } catch (RejectedExecutionException e) {
+                logger.warning("Execution rejected ", e);
+            }
         } else {
             cleanResources(new HazelcastException("Client is shutting down!!!"));
         }
