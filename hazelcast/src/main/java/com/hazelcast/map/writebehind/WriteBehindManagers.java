@@ -66,11 +66,6 @@ public final class WriteBehindManagers {
         }
 
         @Override
-        public void reset() {
-
-        }
-
-        @Override
         public void addStoreListener(StoreListener storeListener) {
         }
 

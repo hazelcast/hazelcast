@@ -18,9 +18,9 @@ package com.hazelcast.map.writebehind;
 
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.writebehind.store.MapStoreManager;
@@ -45,9 +45,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * TODO add parallel sort.
- * <p/>
- * Write behind queue manager.
+ * Write behind queue(WBQ) manager which is used by
+ * {@link com.hazelcast.map.MapContainer} to control
+ * write behind queues. Provides co-operation between
+ * WBQ and {@link com.hazelcast.map.writebehind.store.MapStoreManager}
  */
 class WriteBehindQueueManager implements WriteBehindManager {
 
@@ -70,22 +71,19 @@ class WriteBehindQueueManager implements WriteBehindManager {
 
     private final MapService mapService;
 
-    private final String executorName;
-
     private final MapStoreManager<DelayedEntry> mapStoreManager;
 
     private final List<StoreListener> listeners;
 
     private final ILogger logger;
 
-    WriteBehindQueueManager(String mapName, MapService mapService, MapStoreWrapper storeWrapper) {
+    WriteBehindQueueManager(String mapName, MapService mapService, MapStore mapStore) {
         this.scheduledExecutor = getScheduledExecutorService(mapName, mapService);
         this.mapService = mapService;
         this.logger = mapService.getNodeEngine().getLogger(WriteBehindQueueManager.class);
-        this.executorName = EXECUTOR_NAME_PREFIX + mapName;
         this.listeners = new ArrayList<StoreListener>(2);
-        this.mapStoreManager = MapStoreManagers.newMapStoreManager(mapService, storeWrapper, listeners);
-        this.processor = new StoreProcessor(mapName, mapService, mapStoreManager, this);
+        this.mapStoreManager = MapStoreManagers.newMapStoreManager(mapService, mapStore, listeners);
+        this.processor = new StoreProcessor(mapName, mapService, mapStoreManager);
     }
 
     @Override
@@ -95,11 +93,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
 
     @Override
     public void stop() {
-        mapService.getNodeEngine().getExecutionService().shutdownExecutor(executorName);
-    }
-
-    @Override
-    public void reset() {
+        scheduledExecutor.shutdown();
     }
 
     @Override
@@ -129,9 +123,9 @@ class WriteBehindQueueManager implements WriteBehindManager {
         return scheduledExecutor;
     }
 
-    private void printErrorLog(Map<Integer, Collection<DelayedEntry>> failedsPerPartition) {
+    private void printErrorLog(Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
         int size = 0;
-        final Collection<Collection<DelayedEntry>> values = failedsPerPartition.values();
+        final Collection<Collection<DelayedEntry>> values = failsPerPartition.values();
         for (Collection<DelayedEntry> value : values) {
             size += value.size();
         }
@@ -191,8 +185,8 @@ class WriteBehindQueueManager implements WriteBehindManager {
     }
 
     private static void removeProcessedEntries(MapService mapService, String mapName,
-                                               Map<Integer, Integer> partitionToEntryCountHolder, Map<Integer,
-            Collection<DelayedEntry>> failedsPerPartition) {
+                                               Map<Integer, Integer> partitionToEntryCountHolder,
+                                               Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
         for (Map.Entry<Integer, Integer> entry : partitionToEntryCountHolder.entrySet()) {
             final Integer partitionId = entry.getKey();
             final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
@@ -202,11 +196,11 @@ class WriteBehindQueueManager implements WriteBehindManager {
             }
             final WriteBehindQueue<DelayedEntry> queue = recordStore.getWriteBehindQueue();
             removeProcessed(queue, partitionToEntryCountHolder.get(partitionId));
-            final Collection<DelayedEntry> faileds = failedsPerPartition.get(partitionId);
-            if (faileds == null || faileds.isEmpty()) {
+            final Collection<DelayedEntry> fails = failsPerPartition.get(partitionId);
+            if (fails == null || fails.isEmpty()) {
                 continue;
             }
-            queue.addFront(faileds);
+            queue.addFront(fails);
 
         }
     }
@@ -216,26 +210,24 @@ class WriteBehindQueueManager implements WriteBehindManager {
      */
     private static final class StoreProcessor implements Runnable {
 
-        private long lastRunTimeInNanos = nanoNow();
-
         private final String mapName;
 
         private final MapService mapService;
 
         private final MapStoreManager mapStoreManager;
 
-        private final WriteBehindManager writeBehindManager;
+        /** Run on backup nodes after this interval.*/
+        private final long backupRunIntervalTimeInNanos;
 
-        private final long backupWorkIntervalTimeInNanos;
+        /** Last run time of this processor.*/
+        private long lastRunTimeInNanos = nowInNanos();
 
         private StoreProcessor(String mapName, MapService mapService,
-                               MapStoreManager mapStoreManager, WriteBehindManager manager) {
+                               MapStoreManager mapStoreManager) {
             this.mapName = mapName;
             this.mapService = mapService;
             this.mapStoreManager = mapStoreManager;
-            this.writeBehindManager = manager;
-            this.backupWorkIntervalTimeInNanos = getReplicaWaitTimeInNanos();
-
+            this.backupRunIntervalTimeInNanos = getReplicaWaitTimeInNanos();
         }
 
         private long getReplicaWaitTimeInNanos() {
@@ -245,7 +237,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
 
         @Override
         public void run() {
-            final long now = nanoNow();
+            final long now = nowInNanos();
             final MapService mapService = this.mapService;
             final NodeEngine nodeEngine = mapService.getNodeEngine();
             final ClusterService clusterService = nodeEngine.getClusterService();
@@ -272,7 +264,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
                 final List<DelayedEntry> delayedEntries = filterLessThanOrEqualToTime(queue,
                         now, TimeUnit.NANOSECONDS);
                 if (!owner.equals(thisAddress)) {
-                    if (now < lastRunTimeInNanos + backupWorkIntervalTimeInNanos) {
+                    if (now < lastRunTimeInNanos + backupRunIntervalTimeInNanos) {
                         doInBackup(queue, delayedEntries, partitionId);
                     }
                     continue;
@@ -293,12 +285,12 @@ class WriteBehindQueueManager implements WriteBehindManager {
             if (sortedDelayedEntries.isEmpty()) {
                 return;
             }
-            lastRunTimeInNanos = nanoNow();
+            lastRunTimeInNanos = nowInNanos();
+            // TODO candidate for parallel sort?
             Collections.sort(sortedDelayedEntries, DELAYED_ENTRY_COMPARATOR);
-            final Map<Integer, Collection<DelayedEntry>> failedsPerPartition = new HashMap<Integer, Collection<DelayedEntry>>();
-            mapStoreManager.process(sortedDelayedEntries, failedsPerPartition);
-            removeProcessedEntries(mapService, mapName, partitionToEntryCountHolder, failedsPerPartition);
-            writeBehindManager.reset();
+            final Map<Integer, Collection<DelayedEntry>> failsPerPartition = new HashMap<Integer, Collection<DelayedEntry>>();
+            mapStoreManager.process(sortedDelayedEntries, failsPerPartition);
+            removeProcessedEntries(mapService, mapName, partitionToEntryCountHolder, failsPerPartition);
         }
 
         /**
@@ -320,12 +312,11 @@ class WriteBehindQueueManager implements WriteBehindManager {
             }
         }
 
-        private static long nanoNow() {
+        private static long nowInNanos() {
             return System.nanoTime();
         }
     }
 
 }
-
 
 
