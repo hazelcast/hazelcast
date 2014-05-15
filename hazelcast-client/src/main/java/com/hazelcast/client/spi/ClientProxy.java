@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
@@ -63,7 +64,7 @@ public abstract class ClientProxy implements DistributedObject {
     protected final ClientContext getContext() {
         final ClientContext ctx = context;
         if (ctx == null) {
-            throw new HazelcastInstanceNotActiveException();
+            throw new DistributedObjectDestroyedException(serviceName, objectName);
         }
         return ctx;
     }
