@@ -218,7 +218,8 @@ public class JobSupervisor {
     public Map<Object, Object> getJobResults() {
         Map<Object, Object> result;
         if (configuration.getReducerFactory() != null) {
-            result = new HashMap<Object, Object>(mapSize(reducers.size()));
+            int mapsize = MapReduceUtil.mapSize(reducers.size());
+            result = new HashMap<Object, Object>(mapsize);
             for (Map.Entry<Object, Reducer> entry : reducers.entrySet()) {
                 result.put(entry.getKey(), entry.getValue().finalizeReduce());
             }
@@ -227,12 +228,6 @@ public class JobSupervisor {
             result = currentContext.finish();
         }
         return result;
-    }
-
-    private static int mapSize(final int sourceSize) {
-        return sourceSize == 0
-                ? 0
-                : (int)(sourceSize / 0.75f) + 1;
     }
 
     public <KeyIn, ValueIn, ValueOut> Reducer<KeyIn, ValueIn, ValueOut> getReducerByKey(Object key) {

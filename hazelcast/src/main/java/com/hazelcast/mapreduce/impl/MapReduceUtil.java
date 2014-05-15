@@ -298,4 +298,7 @@ public final class MapReduceUtil {
         return EXECUTOR_NAME_PREFIX + name;
     }
 
+    public static int mapSize(final int sourceSize) {
+        return sourceSize == 0 ? 0 : (int) (sourceSize / 0.75f) + 1;
+    }
 }
