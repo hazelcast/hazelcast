@@ -803,9 +803,9 @@ public class MapService implements ManagedService, MigrationAwareService,
 
 
     public DelayedEntry<Data, Object> constructDelayedEntry(Data key, Object value, int partitionId,
-                                                            MapContainer mapContainer) {
+                                                            long writeDelayMillis) {
         final long now = System.nanoTime();
-        final long nanoWriteDelay = TimeUnit.MILLISECONDS.toNanos(mapContainer.getWriteDelayMillis());
+        final long nanoWriteDelay = TimeUnit.MILLISECONDS.toNanos(writeDelayMillis);
         final DelayedEntry<Data, Object> delayedEntry =
                 DelayedEntry.create(key, value, now + nanoWriteDelay, partitionId);
         return delayedEntry;
