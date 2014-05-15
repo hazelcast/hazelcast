@@ -30,9 +30,6 @@ import java.util.Map;
 
 import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA;
 
-/**
- * @author mdogan 6/19/12
- */
 final class DataSerializer implements StreamSerializer<DataSerializable> {
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
@@ -79,7 +76,7 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
         return CONSTANT_TYPE_DATA;
     }
 
-    public final DataSerializable read(ObjectDataInput in) throws IOException {
+    public DataSerializable read(ObjectDataInput in) throws IOException {
         final DataSerializable ds;
         final boolean identified = in.readBoolean();
         int id = 0;
@@ -95,7 +92,8 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
                 id = in.readInt();
                 ds = dsf.create(id);
                 if (ds == null) {
-                    throw new HazelcastSerializationException(dsf + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
+                    throw new HazelcastSerializationException(dsf
+                            + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
                 }
                 // TODO: @mm - we can check if DS class is final.
             } else {
@@ -111,12 +109,15 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
             if (e instanceof HazelcastSerializationException) {
                 throw (HazelcastSerializationException) e;
             }
-            throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: " + factoryId +
-                    ", id: " + id + ", class: " + className + ", exception: " + e.getMessage(), e);
+            throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
+                    + factoryId
+                    + ", id: " + id
+                    + ", class: " + className
+                    + ", exception: " + e.getMessage(), e);
         }
     }
 
-    public final void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
+    public void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
         final boolean identified = obj instanceof IdentifiedDataSerializable;
         out.writeBoolean(identified);
         if (identified) {

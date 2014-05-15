@@ -18,9 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 12/26/12
- */
 public interface Portable {
 
     int getFactoryId();

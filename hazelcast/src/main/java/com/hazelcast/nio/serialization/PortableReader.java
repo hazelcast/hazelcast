@@ -21,9 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import java.io.IOException;
 import java.util.Set;
 
-/**
- * @author mdogan 12/28/12
- */
+
 public interface PortableReader {
 
     int getVersion();
@@ -53,7 +51,7 @@ public interface PortableReader {
     float readFloat(String fieldName) throws IOException;
 
     short readShort(String fieldName) throws IOException;
-    
+
     <P extends Portable> P readPortable(String fieldName) throws IOException;
 
     byte[] readByteArray(String fieldName) throws IOException;

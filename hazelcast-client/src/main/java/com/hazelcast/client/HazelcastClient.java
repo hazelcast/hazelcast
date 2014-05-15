@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
@@ -128,6 +129,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
+    public final ClientProperties clientProperties;
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
@@ -135,6 +137,7 @@ public final class HazelcastClient implements HazelcastInstance {
         instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
+        clientProperties = new ClientProperties(config);
         SerializationService ss;
         try {
             String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);

@@ -16,11 +16,11 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-/**
- * @author mdogan 2/6/13
- */
 public final class ClassDefinitionBuilder {
 
     private final int factoryId;
@@ -28,8 +28,8 @@ public final class ClassDefinitionBuilder {
     private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
     private final Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
 
-    private int index = 0;
-    private boolean done = false;
+    private int index;
+    private boolean done;
 
     public ClassDefinitionBuilder(int factoryId, int classId) {
         this.factoryId = factoryId;
@@ -137,7 +137,8 @@ public final class ClassDefinitionBuilder {
         if (def.getClassId() == Data.NO_CLASS_ID) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE, def.getFactoryId(), def.getClassId()));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
+                FieldType.PORTABLE, def.getFactoryId(), def.getClassId()));
         nestedClassDefinitions.add(def);
         return this;
     }
@@ -147,7 +148,8 @@ public final class ClassDefinitionBuilder {
         if (def.getClassId() == Data.NO_CLASS_ID) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId()));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
+                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId()));
         nestedClassDefinitions.add(def);
         return this;
     }

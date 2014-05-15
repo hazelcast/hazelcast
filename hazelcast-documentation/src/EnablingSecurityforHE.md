@@ -14,7 +14,7 @@ Security can be enabled as stated in the below programmatic or declarative confi
 
 ```xml
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config
-    http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd"
+    http://www.hazelcast.com/schema/config/hazelcast-config-3.3.xsd"
     xmlns="http://www.hazelcast.com/schema/config"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     

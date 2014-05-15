@@ -42,7 +42,7 @@ public final class TcpIpConnection implements Connection {
 
     private volatile ConnectionType type = ConnectionType.NONE;
 
-    private Address endPoint = null;
+    private Address endPoint;
 
     private final ILogger logger;
 
@@ -80,7 +80,7 @@ public final class TcpIpConnection implements Connection {
     public boolean write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
-                logger.finest( "Connection is closed, won't write packet -> " + packet);
+                logger.finest("Connection is closed, won't write packet -> " + packet);
             }
             return false;
         }
@@ -161,8 +161,12 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof TcpIpConnection)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TcpIpConnection)) {
+            return false;
+        }
         TcpIpConnection that = (TcpIpConnection) o;
         return connectionId == that.getConnectionId();
     }
@@ -196,7 +200,7 @@ public final class TcpIpConnection implements Connection {
         try {
             close0();
         } catch (Exception e) {
-            logger.warning( e);
+            logger.warning(e);
         }
         Object connAddress = (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
         String message = "Connection [" + connAddress + "] lost. Reason: ";
@@ -223,6 +227,7 @@ public final class TcpIpConnection implements Connection {
     public String toString() {
         final Socket socket = this.socketChannel.socket();
         final SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return "Connection [" + remoteSocketAddress + " -> " + endPoint + "] live=" + live + ", client=" + isClient() + ", type=" + type;
+        return "Connection [" + remoteSocketAddress + " -> " + endPoint
+                + "] live=" + live + ", client=" + isClient() + ", type=" + type;
     }
 }

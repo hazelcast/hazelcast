@@ -30,7 +30,6 @@ public interface Cluster {
      * the {@link InitialMembershipEvent}.
      *
      * @param listener membership listener
-     *
      * @return returns registration id.
      */
     String addMembershipListener(MembershipListener listener);

@@ -4,7 +4,6 @@ src/Introduction.md
 	src/GettingStarted.md
 		src/StartingClusterClient.md
 		src/ConfiguringHazelcast.md
-	src/DeploymentTypes.md
 	src/UseCases.md
 	src/Resources.md
 src/Whats_new_3.2.md
@@ -56,7 +55,7 @@ src/Transactions.md
 src/IntegratedClustering.md
 	src/HTTPSessionClustering.md
 	src/SpringIntegration.md
-#	src/TomcatClusteredWebSession.md
+	src/SessionReplication.md
 src/Storage.md
 src/Clients.md
 #	src/ClientTypes.md

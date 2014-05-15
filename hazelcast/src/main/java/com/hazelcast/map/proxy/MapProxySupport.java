@@ -243,8 +243,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 // this ensures the same behavior of a get() call which had to fetch the value and any following get() calls
                 // this also avoids a second deserialization if the near cache in-memory format is OBJECT
                 if (result != null) {
-                    // todo is intercept after get needed here?
-                    return mapService.getFromNearCache(name, key);
+                    Object cached = mapService.getFromNearCache(name, key);
+                    if (cached != null) {
+                        if (NearCache.NULL_OBJECT.equals(cached)) {
+                            cached = null;
+                        }
+                        mapService.interceptAfterGet(name, cached);
+                        return cached;
+                    }
                 }
             }
         }

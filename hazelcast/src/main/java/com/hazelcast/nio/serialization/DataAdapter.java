@@ -22,31 +22,29 @@ import com.hazelcast.nio.SocketWritable;
 
 import java.nio.ByteBuffer;
 
-/**
- * @author mdogan 1/23/13
- */
 public class DataAdapter implements SocketWritable, SocketReadable {
 
-    private static final int stType = 1;
-    private static final int stClassId = 2;
-    private static final int stFactoryId = 3;
-    private static final int stVersion = 4;
-    private static final int stClassDefSize = 5;
-    private static final int stClassDef = 6;
-    private static final int stSize = 7;
-    private static final int stValue = 8;
-    private static final int stHash = 9;
-    private static final int stAll = 10;
+    private static final int ST_TYPE = 1;
+    private static final int ST_CLASS_ID = 2;
+    private static final int ST_FACTORY_ID = 3;
+    private static final int ST_VERSION = 4;
+    private static final int ST_CLASS_DEF_SIZE = 5;
+    private static final int ST_CLASS_DEF = 6;
+    private static final int ST_SIZE = 7;
+    private static final int ST_VALUE = 8;
+    private static final int ST_HASH = 9;
+    private static final int ST_ALL = 10;
 
-    private ByteBuffer buffer;
-    private int factoryId = 0;
-    private int classId = 0;
-    private int version = 0;
-    private int classDefSize = 0;
-    private boolean skipClassDef = false;
     protected Data data;
 
-    private transient short status = 0;
+    private ByteBuffer buffer;
+    private int factoryId;
+    private int classId;
+    private int version;
+    private int classDefSize;
+    private boolean skipClassDef;
+
+    private transient short status;
     private transient SerializationContext context;
 
     public DataAdapter(Data data) {
@@ -69,48 +67,48 @@ public class DataAdapter implements SocketWritable, SocketReadable {
 
     /**
      * WARNING:
-     *
+     * <p/>
      * Should be in sync with {@link Data#writeData(com.hazelcast.nio.ObjectDataOutput)}
      */
     @Override
     public boolean writeTo(ByteBuffer destination) {
-        if (!isStatusSet(stType)) {
+        if (!isStatusSet(ST_TYPE)) {
             if (destination.remaining() < 4) {
                 return false;
             }
             destination.putInt(data.type);
-            setStatus(stType);
+            setStatus(ST_TYPE);
         }
-        if (!isStatusSet(stClassId)) {
+        if (!isStatusSet(ST_CLASS_ID)) {
             if (destination.remaining() < 4) {
                 return false;
             }
             classId = data.classDefinition == null ? Data.NO_CLASS_ID : data.classDefinition.getClassId();
             destination.putInt(classId);
             if (classId == Data.NO_CLASS_ID) {
-                setStatus(stFactoryId);
-                setStatus(stVersion);
-                setStatus(stClassDefSize);
-                setStatus(stClassDef);
+                setStatus(ST_FACTORY_ID);
+                setStatus(ST_VERSION);
+                setStatus(ST_CLASS_DEF_SIZE);
+                setStatus(ST_CLASS_DEF);
             }
-            setStatus(stClassId);
+            setStatus(ST_CLASS_ID);
         }
-        if (!isStatusSet(stFactoryId)) {
+        if (!isStatusSet(ST_FACTORY_ID)) {
             if (destination.remaining() < 4) {
                 return false;
             }
             destination.putInt(data.classDefinition.getFactoryId());
-            setStatus(stFactoryId);
+            setStatus(ST_FACTORY_ID);
         }
-        if (!isStatusSet(stVersion)) {
+        if (!isStatusSet(ST_VERSION)) {
             if (destination.remaining() < 4) {
                 return false;
             }
             final int version = data.classDefinition.getVersion();
             destination.putInt(version);
-            setStatus(stVersion);
+            setStatus(ST_VERSION);
         }
-        if (!isStatusSet(stClassDefSize)) {
+        if (!isStatusSet(ST_CLASS_DEF_SIZE)) {
             if (destination.remaining() < 4) {
                 return false;
             }
@@ -118,54 +116,54 @@ public class DataAdapter implements SocketWritable, SocketReadable {
             final byte[] binary = cd.getBinary();
             classDefSize = binary == null ? 0 : binary.length;
             destination.putInt(classDefSize);
-            setStatus(stClassDefSize);
+            setStatus(ST_CLASS_DEF_SIZE);
             if (classDefSize == 0) {
-                setStatus(stClassDef);
+                setStatus(ST_CLASS_DEF);
             } else {
                 buffer = ByteBuffer.wrap(binary);
             }
         }
-        if (!isStatusSet(stClassDef)) {
+        if (!isStatusSet(ST_CLASS_DEF)) {
             IOUtil.copyToHeapBuffer(buffer, destination);
             if (buffer.hasRemaining()) {
                 return false;
             }
-            setStatus(stClassDef);
+            setStatus(ST_CLASS_DEF);
         }
-        if (!isStatusSet(stSize)) {
+        if (!isStatusSet(ST_SIZE)) {
             if (destination.remaining() < 4) {
                 return false;
             }
             final int size = data.bufferSize();
             destination.putInt(size);
-            setStatus(stSize);
+            setStatus(ST_SIZE);
             if (size <= 0) {
-                setStatus(stValue);
+                setStatus(ST_VALUE);
             } else {
                 buffer = ByteBuffer.wrap(data.buffer);
             }
         }
-        if (!isStatusSet(stValue)) {
+        if (!isStatusSet(ST_VALUE)) {
             IOUtil.copyToHeapBuffer(buffer, destination);
             if (buffer.hasRemaining()) {
                 return false;
             }
-            setStatus(stValue);
+            setStatus(ST_VALUE);
         }
-        if (!isStatusSet(stHash)) {
+        if (!isStatusSet(ST_HASH)) {
             if (destination.remaining() < 4) {
                 return false;
             }
             destination.putInt(data.getPartitionHash());
-            setStatus(stHash);
+            setStatus(ST_HASH);
         }
-        setStatus(stAll);
+        setStatus(ST_ALL);
         return true;
     }
 
     /**
      * WARNING:
-     *
+     * <p/>
      * Should be in sync with {@link Data#readData(com.hazelcast.nio.ObjectDataInput)}
      */
     @Override
@@ -173,54 +171,54 @@ public class DataAdapter implements SocketWritable, SocketReadable {
         if (data == null) {
             data = new Data();
         }
-        if (!isStatusSet(stType)) {
+        if (!isStatusSet(ST_TYPE)) {
             if (source.remaining() < 4) {
                 return false;
             }
             data.type = source.getInt();
-            setStatus(stType);
+            setStatus(ST_TYPE);
         }
-        if (!isStatusSet(stClassId)) {
+        if (!isStatusSet(ST_CLASS_ID)) {
             if (source.remaining() < 4) {
                 return false;
             }
             classId = source.getInt();
-            setStatus(stClassId);
+            setStatus(ST_CLASS_ID);
             if (classId == Data.NO_CLASS_ID) {
-                setStatus(stFactoryId);
-                setStatus(stVersion);
-                setStatus(stClassDefSize);
-                setStatus(stClassDef);
+                setStatus(ST_FACTORY_ID);
+                setStatus(ST_VERSION);
+                setStatus(ST_CLASS_DEF_SIZE);
+                setStatus(ST_CLASS_DEF);
             }
         }
-        if (!isStatusSet(stFactoryId)) {
+        if (!isStatusSet(ST_FACTORY_ID)) {
             if (source.remaining() < 4) {
                 return false;
             }
             factoryId = source.getInt();
-            setStatus(stFactoryId);
+            setStatus(ST_FACTORY_ID);
         }
-        if (!isStatusSet(stVersion)) {
+        if (!isStatusSet(ST_VERSION)) {
             if (source.remaining() < 4) {
                 return false;
             }
             version = source.getInt();
-            setStatus(stVersion);
+            setStatus(ST_VERSION);
         }
-        if (!isStatusSet(stClassDef)) {
+        if (!isStatusSet(ST_CLASS_DEF)) {
             ClassDefinition cd;
             if (!skipClassDef && (cd = context.lookup(factoryId, classId, version)) != null) {
                 data.classDefinition = cd;
                 skipClassDef = true;
             }
-            if (!isStatusSet(stClassDefSize)) {
+            if (!isStatusSet(ST_CLASS_DEF_SIZE)) {
                 if (source.remaining() < 4) {
                     return false;
                 }
                 classDefSize = source.getInt();
-                setStatus(stClassDefSize);
+                setStatus(ST_CLASS_DEF_SIZE);
             }
-            if (!isStatusSet(stClassDef)) {
+            if (!isStatusSet(ST_CLASS_DEF)) {
                 if (source.remaining() < classDefSize) {
                     return false;
                 }
@@ -231,34 +229,34 @@ public class DataAdapter implements SocketWritable, SocketReadable {
                     source.get(binary);
                     data.classDefinition = new BinaryClassDefinitionProxy(factoryId, classId, version, binary);
                 }
-                setStatus(stClassDef);
+                setStatus(ST_CLASS_DEF);
             }
         }
-        if (!isStatusSet(stSize)) {
+        if (!isStatusSet(ST_SIZE)) {
             if (source.remaining() < 4) {
                 return false;
             }
             final int size = source.getInt();
             buffer = ByteBuffer.allocate(size);
-            setStatus(stSize);
+            setStatus(ST_SIZE);
         }
-        if (!isStatusSet(stValue)) {
+        if (!isStatusSet(ST_VALUE)) {
             IOUtil.copyToHeapBuffer(source, buffer);
             if (buffer.hasRemaining()) {
                 return false;
             }
             buffer.flip();
             data.buffer = buffer.array();
-            setStatus(stValue);
+            setStatus(ST_VALUE);
         }
-        if (!isStatusSet(stHash)) {
+        if (!isStatusSet(ST_HASH)) {
             if (source.remaining() < 4) {
                 return false;
             }
             data.partitionHash = source.getInt();
-            setStatus(stHash);
+            setStatus(ST_HASH);
         }
-        setStatus(stAll);
+        setStatus(ST_ALL);
         return true;
     }
 
@@ -280,7 +278,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
     }
 
     public boolean done() {
-        return isStatusSet(stAll);
+        return isStatusSet(ST_ALL);
     }
 
     public void reset() {

@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.2.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -60,6 +60,9 @@
 
     <hz:client id="client">
         <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+        <hz:properties>
+            <hz:property name="hazelcast.client.retry.count">13</hz:property>
+        </hz:properties>
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
                     connection-timeout="1000"

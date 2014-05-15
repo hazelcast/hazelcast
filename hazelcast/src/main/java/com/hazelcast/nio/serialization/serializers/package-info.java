@@ -14,29 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+/**
+ * Contains interfaces/classes related to SerializerHook for ArrayList and LinkedList
+ */
 
-
-import java.util.AbstractMap;
-import java.util.Map;
-
-public class SimpleMapEntry implements Map.Entry {
-
-    Map.Entry entry;
-
-    public SimpleMapEntry(Object key, Object value) {
-        entry = new AbstractMap.SimpleEntry(key, value);
-    }
-
-    public Object getKey() {
-        return entry.getKey();
-    }
-
-    public Object getValue() {
-        return entry.getValue();
-    }
-
-    public Object setValue(Object value) {
-        throw new UnsupportedOperationException();
-    }
-}
+package com.hazelcast.nio.serialization.serializers;

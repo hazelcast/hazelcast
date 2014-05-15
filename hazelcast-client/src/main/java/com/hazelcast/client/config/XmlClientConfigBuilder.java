@@ -177,6 +177,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 handleSecurity(node);
             } else if ("proxy-factories".equals(nodeName)) {
                 handleProxyFactories(node);
+            } else if ("properties".equals(nodeName)) {
+                fillProperties(node, clientConfig.getProperties());
             } else if ("serialization".equals(nodeName)) {
                 handleSerialization(node);
             } else if ("group".equals(nodeName)) {

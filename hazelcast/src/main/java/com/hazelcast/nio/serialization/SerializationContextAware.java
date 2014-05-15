@@ -16,9 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 1/1/13
- */
 interface SerializationContextAware {
 
     SerializationContext getSerializationContext();

@@ -27,9 +27,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 abstract class AbstractIOSelector extends Thread implements IOSelector {
+
+    private static final int TIMEOUT = 3;
+    private static final int WAIT_TIME = 5000;
 
     protected final ILogger logger;
 
@@ -43,11 +45,14 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     protected boolean live = true;
 
+    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
+
     protected AbstractIOSelector(IOService ioService, String tname) {
         super(ioService.getThreadGroup(), tname);
         this.ioService = ioService;
         this.logger = ioService.getLogger(getClass().getName());
-        this.waitTime = 5000;  // WARNING: This value has significant effect on idle CPU usage!
+        // WARNING: This value has significant effect on idle CPU usage!
+        this.waitTime = WAIT_TIME;
         Selector selectorTemp = null;
         try {
             selectorTemp = Selector.open();
@@ -57,7 +62,6 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         this.selector = selectorTemp;
     }
 
-    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     public final void shutdown() {
         selectorQueue.clear();
@@ -75,7 +79,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     public final void awaitShutdown() {
         try {
-            shutdownLatch.await(3, TimeUnit.SECONDS);
+            shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
     }
@@ -102,7 +106,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                 processSelectionQueue();
                 if (!live || isInterrupted()) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest( getName() + " is interrupted!");
+                        logger.finest(getName() + " is interrupted!");
                     }
                     live = false;
                     return;
@@ -136,7 +140,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         } finally {
             try {
                 if (logger.isFinestEnabled()) {
-                    logger.finest( "Closing selector " + getName());
+                    logger.finest("Closing selector " + getName());
                 }
                 selector.close();
             } catch (final Exception ignored) {

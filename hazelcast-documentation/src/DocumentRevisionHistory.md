@@ -5,7 +5,7 @@
 |Chapter|Section|Description|
 |-------|-------|-----------|
 |All||Chapters re-outlined.|
-|[Chapter 1 - Introduction](#introduction)|All|Sections enhanced. *Hazelcast Overview*, *Why Hazelcast?*, *Use Cases*, *Deployment Types* and *Resources* sections added.|
+|[Chapter 1 - Introduction](#introduction)|All|Sections enhanced. *Hazelcast Overview*, *Why Hazelcast?*, *Use Cases* and *Resources* sections added.|
 |[Chapter 2 - What's New in Hazelcast 3.2](#release-notes)||Section *Upgrading from 2.x versions* updated by adding a note at the end, related to eviction policy *max-size*.|
 |[Chapter 3 - Distributed Data Structures](#distributed-data-structures)|[Persistence](#persistence)|-	Information related to `MapStoreFactory` and `MapLoaderLifecycleSupport` interfaces added. Also, newly introduced `InitialLoadMode` parameter explanation added. Also a ***Warning*** about the relation between LAZY mode and `clear()` method added.|
 ||[Topic](#topic), [Set](#set), [List](#list)|Sections enhanced.|

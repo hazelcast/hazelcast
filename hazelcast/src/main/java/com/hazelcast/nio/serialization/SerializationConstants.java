@@ -16,9 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 5/17/12
- */
 public final class SerializationConstants {
 
     // WARNING: DON'T CHANGE VALUES!
@@ -97,5 +94,6 @@ public final class SerializationConstants {
 
     public static final int HIBERNATE_TYPE_HIBERNATE_CACHE_ENTRY = -201;
 
-    private SerializationConstants() {}
+    private SerializationConstants() {
+    }
 }

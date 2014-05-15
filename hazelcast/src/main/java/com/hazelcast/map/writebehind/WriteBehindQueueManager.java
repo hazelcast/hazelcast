@@ -274,7 +274,6 @@ class WriteBehindQueueManager implements WriteBehindManager {
                 if (!owner.equals(thisAddress)) {
                     if (now < lastRunTimeInNanos + backupWorkIntervalTimeInNanos) {
                         doInBackup(queue, delayedEntries, partitionId);
-                        lastRunTimeInNanos = now;
                     }
                     continue;
                 }
@@ -294,6 +293,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
             if (sortedDelayedEntries.isEmpty()) {
                 return;
             }
+            lastRunTimeInNanos = nanoNow();
             Collections.sort(sortedDelayedEntries, DELAYED_ENTRY_COMPARATOR);
             final Map<Integer, Collection<DelayedEntry>> failedsPerPartition = new HashMap<Integer, Collection<DelayedEntry>>();
             mapStoreManager.process(sortedDelayedEntries, failedsPerPartition);
@@ -313,7 +313,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
             final Address thisAddress = clusterService.getThisAddress();
             final InternalPartition partition = partitionService.getPartition(partitionId);
             final Address owner = partition.getOwnerOrNull();
-            if (!owner.equals(thisAddress)) {
+            if (owner != null && !owner.equals(thisAddress)) {
                 mapStoreManager.callBeforeStoreListeners(delayedEntries);
                 removeProcessed(queue, delayedEntries.size());
                 mapStoreManager.callAfterStoreListeners(delayedEntries);

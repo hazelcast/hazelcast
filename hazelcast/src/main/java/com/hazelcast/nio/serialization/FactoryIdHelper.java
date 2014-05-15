@@ -16,14 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 4/30/13
- */
+
 public final class FactoryIdHelper {
-
-    // factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
-
-    private FactoryIdHelper(){}
 
     public static final String SPI_DS_FACTORY = "hazelcast.serialization.ds.spi";
     public static final String PARTITION_DS_FACTORY = "hazelcast.serialization.ds.partition";
@@ -61,6 +55,12 @@ public final class FactoryIdHelper {
     public static final String REPLICATED_PORTABLE_FACTORY = "hazelcast.serialization.portable.replicated_map";
     public static final String MAP_REDUCE_PORTABLE_FACTORY = "hazelcast.serialization.portable.map_reduce";
     public static final String WEB_PORTABLE_FACTORY = "hazelcast.serialization.portable.web";
+
+    // factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
+
+    private FactoryIdHelper() {
+    }
+
 
     public static int getFactoryId(String prop, int defaultId) {
         final String value = System.getProperty(prop);

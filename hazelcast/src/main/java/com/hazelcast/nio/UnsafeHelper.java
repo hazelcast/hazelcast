@@ -95,6 +95,9 @@ public final class UnsafeHelper {
         }
     }
 
+    private UnsafeHelper() {
+    }
+
     private static Unsafe findUnsafe() {
         try {
             return Unsafe.getUnsafe();
@@ -124,8 +127,5 @@ public final class UnsafeHelper {
                 }
             });
         }
-    }
-
-    private UnsafeHelper() {
     }
 }

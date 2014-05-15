@@ -23,7 +23,7 @@ package com.hazelcast.nio.serialization;
  * ({@link com.hazelcast.nio.serialization.StreamSerializer} and
  * {@link com.hazelcast.nio.serialization.ByteArraySerializer}).
  * It needs to be registered using a file called "com.hazelcast.SerializerHook"
- * in META-INF/services.</br>
+ * in META-INF/services.
  * Those services files are not registered using the standard Java6+ java.util.ServiceLoader
  * but with a Hazelcast version that is capable of working with multiple classloaders
  * to support JEE and OSGi environments.

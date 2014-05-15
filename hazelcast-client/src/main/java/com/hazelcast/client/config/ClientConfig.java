@@ -29,8 +29,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class ClientConfig {
+
+
+    /**
+     * To pass properties
+     */
+    private Properties properties = new Properties();
 
     /**
      * The Group Configuration properties like:
@@ -70,13 +77,30 @@ public class ClientConfig {
 
     private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
 
-
     private ManagedContext managedContext;
 
     private ClassLoader classLoader;
 
+    public String getProperty(String name) {
+        String value = properties.getProperty(name);
+        return value != null ? value : System.getProperty(name);
+    }
+
+    public ClientConfig setProperty(String name, String value) {
+        properties.put(name, value);
+        return this;
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
     private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
 
+    public ClientConfig setProperties(final Properties properties) {
+        this.properties = properties;
+        return this;
+    }
 
     public ClientSecurityConfig getSecurityConfig() {
         return securityConfig;

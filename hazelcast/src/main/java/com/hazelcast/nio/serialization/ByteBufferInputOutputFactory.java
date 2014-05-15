@@ -21,9 +21,6 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 6/15/13
- */
 final class ByteBufferInputOutputFactory implements InputOutputFactory {
 
     private final ByteOrder byteOrder;

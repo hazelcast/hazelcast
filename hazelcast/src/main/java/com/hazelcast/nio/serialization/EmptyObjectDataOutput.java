@@ -21,9 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 2/22/13
- */
 final class EmptyObjectDataOutput implements ObjectDataOutput {
 
     public void writeObject(Object object) throws IOException {

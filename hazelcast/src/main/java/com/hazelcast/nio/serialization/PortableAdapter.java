@@ -16,9 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 1/4/13
- */
 public interface PortableAdapter<T> extends Portable {
 
     Object toObject();

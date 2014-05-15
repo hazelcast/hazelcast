@@ -50,7 +50,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final HazelcastInstance h = createHazelcastInstance();
         final IMap<Integer, Long> map = h.getMap(mapName);
         map.put(0, 10L);
-        assertEquals(156, map.getLocalMapStats().getHeapCost());
+        assertEquals(164, map.getLocalMapStats().getHeapCost());
     }
 
     @Test

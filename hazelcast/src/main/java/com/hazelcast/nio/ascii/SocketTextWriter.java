@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SocketTextWriter implements SocketWriter<TextCommand> {
     private final TcpIpConnection connection;
     private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);
-    private long currentRequestId = 0;
+    private long currentRequestId;
 
     public SocketTextWriter(TcpIpConnection connection) {
         this.connection = connection;

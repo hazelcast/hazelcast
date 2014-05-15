@@ -214,13 +214,29 @@ public final class EvictionHelper {
                 if (container == null) {
                     return false;
                 }
-                nodeTotalSize += container.getRecordStore(mapName).size();
+                nodeTotalSize += getRecordStoreSize(mapName, container);
                 if (nodeTotalSize >= maxSize) {
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    private static int getRecordStoreSize(String mapName, PartitionContainer partitionContainer) {
+        final RecordStore existingRecordStore = partitionContainer.getExistingRecordStore(mapName);
+        if (existingRecordStore == null) {
+            return 0;
+        }
+        return existingRecordStore.size();
+    }
+
+    private static long getRecordStoreHeapCost(String mapName, PartitionContainer partitionContainer) {
+        final RecordStore existingRecordStore = partitionContainer.getExistingRecordStore(mapName);
+        if (existingRecordStore == null) {
+            return 0L;
+        }
+        return existingRecordStore.getHeapCost();
     }
 
     /**
@@ -246,7 +262,7 @@ public final class EvictionHelper {
                 if (container == null) {
                     return false;
                 }
-                final int size = container.getRecordStore(mapName).size();
+                final int size = getRecordStoreSize(mapName, container);
                 if (size >= maxSize) {
                     return true;
                 }
@@ -288,7 +304,7 @@ public final class EvictionHelper {
                 if (container == null) {
                     return -1L;
                 }
-                heapCost += container.getRecordStore(mapName).getHeapCost();
+                heapCost += getRecordStoreHeapCost(mapName, container);
             }
         }
         heapCost += mapContainer.getNearCacheSizeEstimator().getSize();

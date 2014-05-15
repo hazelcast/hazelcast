@@ -2,9 +2,7 @@
 # Storage
 
 
-
-
-## Elastic Memory
+## Off-Heap
 
 ![](images/enterprise-onlycopy.jpg)
 

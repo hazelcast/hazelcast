@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * This class is the auto registered serializer hook for a {@link java.util.ArrayList}.
