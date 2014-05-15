@@ -1159,9 +1159,10 @@ public class DefaultRecordStore implements RecordStore {
         if (!mapContainer.isWriteBehindMapStoreEnabled()) {
             return;
         }
+        final long writeDelayMillis = mapContainer.getWriteDelayMillis();
         final DelayedEntry<Data, Object> delayedEntry
                 = mapService.constructDelayedEntry(dataKey, recordValue,
-                partitionId, mapContainer);
+                partitionId, writeDelayMillis);
         // if value is null this is a delete operation.
         if (recordValue == null) {
             addToWriteBehindWaitingDeletions(dataKey);
