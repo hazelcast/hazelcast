@@ -2,6 +2,7 @@ package com.hazelcast.management;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.core.Client;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
@@ -22,7 +23,6 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.Address;
-
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -75,6 +75,11 @@ public class TimedMemberStateFactory {
     private void createMemberState(MemberStateImpl memberState) {
         final Node node = instance.node;
         memberState.setAddress(node.getThisAddress());
+        final HashSet<SerializableClientEndPoint> serializableClientEndPoints = new HashSet<SerializableClientEndPoint>();
+        for (Client client : instance.node.clientEngine.getClients()){
+            serializableClientEndPoints.add(new SerializableClientEndPoint(client));
+        }
+        memberState.setClients(serializableClientEndPoints);
         PartitionService partitionService = instance.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
         memberState.clearPartitions();
