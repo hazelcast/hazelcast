@@ -20,11 +20,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.List;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.HashMap;
 
-/**
- * @author mdogan 12/26/12
- */
 public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
 
     private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
@@ -123,13 +125,21 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ClassDefinitionImpl that = (ClassDefinitionImpl) o;
 
-        if (classId != that.classId) return false;
-        if (version != that.version) return false;
+        if (classId != that.classId) {
+            return false;
+        }
+        if (version != that.version) {
+            return false;
+        }
 
         return true;
     }

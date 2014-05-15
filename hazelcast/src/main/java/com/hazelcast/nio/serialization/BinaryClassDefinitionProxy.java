@@ -22,9 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.Set;
 
-/**
- * @author mdogan 1/3/13
- */
 public final class BinaryClassDefinitionProxy extends BinaryClassDefinition implements ClassDefinition {
 
     public BinaryClassDefinitionProxy(int factoryId, int classId, int version, byte[] binary) {

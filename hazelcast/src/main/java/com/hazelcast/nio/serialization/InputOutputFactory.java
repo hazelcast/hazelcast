@@ -19,9 +19,6 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 
-/**
- * @author mdogan 6/15/13
- */
 public interface InputOutputFactory {
 
     BufferObjectDataInput createInput(Data data, SerializationService service);

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -111,7 +110,7 @@ public class DefaultContext<KeyIn, ValueIn>
         public Combiner<KeyIn, ValueIn, List<ValueIn>> newCombiner(KeyIn key) {
             return new Combiner<KeyIn, ValueIn, List<ValueIn>>() {
 
-                private final List<ValueIn> values = new CopyOnWriteArrayList<ValueIn>();
+                private final List<ValueIn> values = new ArrayList<ValueIn>();
 
                 @Override
                 public void combine(KeyIn key, ValueIn value) {

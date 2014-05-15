@@ -17,7 +17,11 @@
 package com.hazelcast.nio.serialization;
 
 
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
 
@@ -85,12 +89,18 @@ final class StreamSerializerAdapter implements SerializerAdapter {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         StreamSerializerAdapter that = (StreamSerializerAdapter) o;
 
-        if (serializer != null ? !serializer.equals(that.serializer) : that.serializer != null) return false;
+        if (serializer != null ? !serializer.equals(that.serializer) : that.serializer != null) {
+            return false;
+        }
 
         return true;
     }

@@ -32,6 +32,8 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
+    private static final long TIMEOUT = 3;
+
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
 
     private final Queue<SocketWritable> urgencyWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
@@ -42,13 +44,13 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private final IOSelector ioSelector;
 
-    private boolean ready = false;
+    private boolean ready;
 
     private SocketWritable lastWritable;
 
     private SocketWriter socketWriter;
 
-    private volatile long lastHandle = 0;
+    private volatile long lastHandle;
 
     WriteHandler(TcpIpConnection connection, IOSelector ioSelector) {
         super(connection);
@@ -67,7 +69,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         });
         ioSelector.wakeup();
         try {
-            latch.await(3, TimeUnit.SECONDS);
+            latch.await(TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
         }
     }
@@ -91,9 +93,9 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void enqueueSocketWritable(SocketWritable socketWritable) {
-        if(socketWritable.isUrgent()){
+        if (socketWritable.isUrgent()) {
             urgencyWriteQueue.offer(socketWritable);
-        }else{
+        } else {
             writeQueue.offer(socketWritable);
         }
         if (informSelector.compareAndSet(true, false)) {
@@ -108,7 +110,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private SocketWritable poll() {
         SocketWritable writable = urgencyWriteQueue.poll();
-        if(writable == null){
+        if (writable == null) {
             writable = writeQueue.poll();
         }
 
@@ -155,8 +157,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             }
         } catch (Throwable t) {
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
-            connection.getSystemLogService().logConnection("Fatal Error at WriteHandler for endPoint " +
-                    "[" + connection.getEndPoint() + "]: " + t.getMessage());
+            connection.getSystemLogService().logConnection("Fatal Error at WriteHandler for endPoint "
+                    + "[" + connection.getEndPoint() + "]: " + t.getMessage());
         } finally {
             ready = false;
             registerWrite();
@@ -179,7 +181,9 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     @Override
     public void shutdown() {
-        while (poll() != null) ;
+        while (poll() != null) {
+        }
+        ;
     }
 
     long getLastHandle() {

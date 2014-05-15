@@ -20,9 +20,6 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 12/31/12
- */
 public final class DynamicByteBuffer {
 
     private ByteBuffer buffer;
@@ -317,7 +314,7 @@ public final class DynamicByteBuffer {
         } else {
             final ByteBuffer duplicate = buffer.duplicate();
             duplicate.flip();
-            final byte newBuffer[] = new byte[duplicate.limit()];
+            final byte[] newBuffer = new byte[duplicate.limit()];
             duplicate.get(newBuffer);
             return newBuffer;
         }
