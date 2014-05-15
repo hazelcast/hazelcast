@@ -27,9 +27,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 1/3/13
- */
 public interface SerializationService {
 
     Data toData(Object obj);

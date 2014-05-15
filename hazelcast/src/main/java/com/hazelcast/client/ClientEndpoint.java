@@ -49,7 +49,7 @@ public final class ClientEndpoint implements Client {
     private final Connection conn;
     private final ConcurrentMap<String, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<String, TransactionContext>();
-    private final List<Runnable> destroyActions = Collections.synchronizedList(new LinkedList<Runnable>());
+    private final List<Runnable> removeListenerActions = Collections.synchronizedList(new LinkedList<Runnable>());
     private final SocketAddress socketAddress;
 
     private String uuid;
@@ -152,7 +152,7 @@ public final class ClientEndpoint implements Client {
     }
 
     public void setListenerRegistration(final String service, final String topic, final String id) {
-        destroyActions.add(new Runnable() {
+        removeListenerActions.add(new Runnable() {
             @Override
             public void run() {
                 EventService eventService = clientEngine.getEventService();
@@ -162,7 +162,7 @@ public final class ClientEndpoint implements Client {
     }
 
     public void setDistributedObjectListener(final String id) {
-        destroyActions.add(new Runnable() {
+        removeListenerActions.add(new Runnable() {
             @Override
             public void run() {
                 clientEngine.getProxyService().removeProxyListener(id);
@@ -170,10 +170,21 @@ public final class ClientEndpoint implements Client {
         });
     }
 
-    void destroy() throws LoginException {
-        for (Runnable destroyAction : destroyActions) {
+    public void clearAllListeners() {
+        for (Runnable removeAction : removeListenerActions) {
             try {
-                destroyAction.run();
+                removeAction.run();
+            } catch (Exception e) {
+                getLogger().warning("Exception during destroy action", e);
+            }
+        }
+        removeListenerActions.clear();
+    }
+
+    void destroy() throws LoginException {
+        for (Runnable removeAction : removeListenerActions) {
+            try {
+                removeAction.run();
             } catch (Exception e) {
                 getLogger().warning("Exception during destroy action", e);
             }

@@ -14,7 +14,7 @@ It  is often desired to access Spring managed beans, to apply bean properties or
                 http://www.springframework.org/schema/context
                 http://www.springframework.org/schema/context/spring-context-3.0.xsd
                 http://www.hazelcast.com/schema/spring
-                http://www.hazelcast.com/schema/spring/hazelcast-spring-3.2.xsd">
+                http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
 
     <context:annotation-config />
 

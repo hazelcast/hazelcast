@@ -85,12 +85,8 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
 
     @Override
     public long getCost() {
-        int size = 0;
-        // add size of version.
-        size += (Long.SIZE / Byte.SIZE);
-        // add size of evictionCriteriaNumber.
-        size += (Long.SIZE / Byte.SIZE);
-        return size;
+        final int numberOfLongs = 5;
+        return numberOfLongs * (Long.SIZE / Byte.SIZE);
     }
 
 }

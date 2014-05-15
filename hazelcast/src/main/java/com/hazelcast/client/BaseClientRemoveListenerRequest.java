@@ -46,6 +46,10 @@ public abstract class BaseClientRemoveListenerRequest extends CallableClientRequ
         return name;
     }
 
+    public void setName(final String name) {
+        this.name = name;
+    }
+
     @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);

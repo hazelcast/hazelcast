@@ -20,7 +20,6 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -31,7 +30,6 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
@@ -40,8 +38,7 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 import java.io.IOException;
 import java.security.Permission;
 
-public class AddEntryListenerRequest extends CallableClientRequest
-        implements Portable, SecureRequest, RetryableRequest {
+public class AddEntryListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     String name;
     Data key;

@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ssl.TestKeyStoreUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -51,6 +52,7 @@ public class ClientSSLSocketTest {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void test() throws IOException {
         Properties props = TestKeyStoreUtil.createSslProperties();
         Config cfg = new Config();

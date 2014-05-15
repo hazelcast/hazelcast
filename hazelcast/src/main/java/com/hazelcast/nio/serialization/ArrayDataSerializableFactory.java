@@ -18,9 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.util.ConstructorFunction;
 
-/**
- * @author mdogan 4/23/13
- */
 public final class ArrayDataSerializableFactory implements DataSerializableFactory {
 
     private final ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors;

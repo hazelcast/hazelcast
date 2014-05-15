@@ -18,9 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 04/30/13
- */
 
 public interface PortableHook {
 

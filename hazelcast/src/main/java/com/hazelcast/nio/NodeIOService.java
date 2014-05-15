@@ -73,7 +73,7 @@ public class NodeIOService implements IOService {
             public void run() {
                 node.shutdown(false);
             }
-        }.start();
+        } .start();
     }
 
     public SocketInterceptorConfig getSocketInterceptorConfig() {
@@ -229,10 +229,12 @@ public class NodeIOService implements IOService {
         final Set<Integer> ports = networkConfig.getOutboundPorts() == null
                 ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
         if (portDefinitions.isEmpty() && ports.isEmpty()) {
-            return Collections.emptySet(); // means any port
+            // means any port
+            return Collections.emptySet();
         }
         if (portDefinitions.contains("*") || portDefinitions.contains("0")) {
-            return Collections.emptySet(); // means any port
+            // means any port
+            return Collections.emptySet();
         }
         // not checking port ranges...
         for (String portDef : portDefinitions) {
@@ -252,7 +254,8 @@ public class NodeIOService implements IOService {
             }
         }
         if (ports.contains(0)) {
-            return Collections.emptySet(); // means any port
+            // means any port
+            return Collections.emptySet();
         }
         return ports;
     }
