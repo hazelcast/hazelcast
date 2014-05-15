@@ -1,10 +1,6 @@
 
 # Storage
 
-//todo Need
-
-## On-Heap
-
 
 ## Off-Heap
 
