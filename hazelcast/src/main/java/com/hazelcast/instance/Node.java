@@ -60,9 +60,7 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.HazelcastUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.VersionCheck;
 
@@ -140,6 +138,8 @@ public class Node {
 
     private final BuildInfo buildInfo;
 
+    private final VersionCheck versionCheck = new VersionCheck();
+
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
         this.threadGroup = hazelcastInstance.threadGroup;
@@ -202,7 +202,7 @@ public class Node {
         clusterService = new ClusterServiceImpl(this);
         textCommandService = new TextCommandServiceImpl(this);
         initializer.printNodeInfo(this);
-        VersionCheck.check(this, getBuildInfo().getBuild(), getBuildInfo().getVersion());
+        versionCheck.check(this, getBuildInfo().getVersion(), initializer.isEnterprise());
         JoinConfig join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
         try {
@@ -412,6 +412,7 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {
             }
+            versionCheck.shutdown();
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
