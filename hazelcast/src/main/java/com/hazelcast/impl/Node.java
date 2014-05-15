@@ -128,6 +128,8 @@ public class Node {
 
     public final SecurityContext securityContext;
 
+    private final VersionCheck versionCheck = new VersionCheck();
+
     public Node(FactoryImpl factory, Config config) {
         ThreadContext.get().setCurrentFactory(factory);
         this.threadGroup = new ThreadGroup(factory.getName());
@@ -178,7 +180,7 @@ public class Node {
         clusterManager.addMember(false, localMember);
         initializer.printNodeInfo(this);
         buildNumber = initializer.getBuildNumber();
-        VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
+        versionCheck.check(this, initializer.getVersion(), initializer.getVersion().endsWith("-ee"));
         Join join = config.getNetworkConfig().getJoin();
         MulticastService mcService = null;
         try {
@@ -373,6 +375,7 @@ public class Node {
             joined.set(false);
             setActive(false);
             setMasterAddress(null);
+            versionCheck.shutdown();
             wanReplicationService.shutdown();
             try {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
