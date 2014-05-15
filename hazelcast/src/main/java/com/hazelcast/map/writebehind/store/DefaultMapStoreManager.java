@@ -19,7 +19,6 @@ package com.hazelcast.map.writebehind.store;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.writebehind.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
 
@@ -43,7 +42,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
 
     private final MapService mapService;
 
-    private final MapStoreWrapper storeWrapper;
+    private final MapStore mapStore;
 
     private final List<StoreListener> storeListeners;
 
@@ -55,12 +54,12 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
      */
     private boolean reduceStoreOperationsIfPossible = true;
 
-    DefaultMapStoreManager(MapService mapService, MapStoreWrapper storeWrapper, List<StoreListener> listeners) {
+    DefaultMapStoreManager(MapService mapService, MapStore mapStore, List<StoreListener> listeners) {
         if (listeners == null) {
             throw new IllegalArgumentException("First, set store listeners.");
         }
         this.mapService = mapService;
-        this.storeWrapper = storeWrapper;
+        this.mapStore = mapStore;
         this.storeListeners = listeners;
         this.logger = mapService.getNodeEngine().getLogger(DefaultMapStoreManager.class);
     }
@@ -71,7 +70,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
     }
 
     @Override
-    public void process(Collection<DelayedEntry> delayedEntries, Map<Integer, Collection<DelayedEntry>> failedsPerPartition) {
+    public void process(Collection<DelayedEntry> delayedEntries, Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
         if (delayedEntries == null || delayedEntries.isEmpty()) {
             return;
         }
@@ -88,26 +87,26 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
             }
             if (previousOperationType != null && !previousOperationType.equals(operationType)) {
                 final Collection<DelayedEntry> faileds = callHandler(entriesToProcess, previousOperationType);
-                addToFaileds(faileds, failedsPerPartition);
+                addToFails(faileds, failsPerPartition);
                 entriesToProcess.clear();
             }
             entriesToProcess.add(entry);
         }
         final Collection<DelayedEntry> faileds = callHandler(entriesToProcess, operationType);
-        addToFaileds(faileds, failedsPerPartition);
+        addToFails(faileds, failsPerPartition);
         entriesToProcess.clear();
     }
 
-    private void addToFaileds(Collection<DelayedEntry> faileds, Map<Integer, Collection<DelayedEntry>> failedsPerPartition) {
-        if (faileds == null || faileds.isEmpty()) {
+    private void addToFails(Collection<DelayedEntry> fails, Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
+        if (fails == null || fails.isEmpty()) {
             return;
         }
-        for (DelayedEntry entry : faileds) {
+        for (DelayedEntry entry : fails) {
             final int partitionId = entry.getPartitionId();
-            Collection<DelayedEntry> delayedEntriesPerPartition = failedsPerPartition.get(partitionId);
+            Collection<DelayedEntry> delayedEntriesPerPartition = failsPerPartition.get(partitionId);
             if (delayedEntriesPerPartition == null) {
                 delayedEntriesPerPartition = new ArrayList<DelayedEntry>();
-                failedsPerPartition.put(partitionId, delayedEntriesPerPartition);
+                failsPerPartition.put(partitionId, delayedEntriesPerPartition);
             }
             delayedEntriesPerPartition.add(entry);
         }
@@ -142,8 +141,8 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
         final Collection<DelayedEntry> failedEntryList = callBatchStoreWithListeners(batchMap, operationType);
         final Collection<DelayedEntry> failedTries = new ArrayList<DelayedEntry>();
         for (DelayedEntry entry : failedEntryList) {
-            final Collection<DelayedEntry> tmpFaileds = callSingleStoreWithListeners(entry, operationType);
-            failedTries.addAll(tmpFaileds);
+            final Collection<DelayedEntry> tmpFails = callSingleStoreWithListeners(entry, operationType);
+            failedTries.addAll(tmpFails);
         }
         return failedTries;
     }
@@ -182,7 +181,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
                 callBeforeStoreListeners(entry);
                 final Object key = toObject(entry.getKey());
                 final Object value = toObject(entry.getValue());
-                boolean result = operationType.processSingle(key, value, storeWrapper);
+                boolean result = operationType.processSingle(key, value, mapStore);
                 callAfterStoreListeners(entry);
                 return result;
             }
@@ -221,7 +220,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
             public boolean run() throws Exception {
                 callBeforeStoreListeners(batchMap.values());
                 final Map map = convertToObject(batchMap);
-                final boolean result = operationType.processBatch(map, storeWrapper);
+                final boolean result = operationType.processBatch(map, mapStore);
                 callAfterStoreListeners(batchMap.values());
                 return result;
             }

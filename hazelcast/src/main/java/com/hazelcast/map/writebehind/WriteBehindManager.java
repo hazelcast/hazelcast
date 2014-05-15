@@ -31,8 +31,6 @@ public interface WriteBehindManager {
 
     void stop();
 
-    void reset();
-
     void addStoreListener(StoreListener storeListener);
 
     Collection<Data> flush(WriteBehindQueue<DelayedEntry> queue);

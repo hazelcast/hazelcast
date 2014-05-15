@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.writebehind.store;
 
+import com.hazelcast.core.MapStore;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapStoreWrapper;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ public final class MapStoreManagers {
     }
 
     public static MapStoreManager newMapStoreManager(MapService mapService,
-                                                     MapStoreWrapper storeWrapper, List<StoreListener> storeListeners) {
-        return new DefaultMapStoreManager(mapService, storeWrapper, storeListeners);
+                                                     MapStore mapStore, List<StoreListener> storeListeners) {
+        return new DefaultMapStoreManager(mapService, mapStore, storeListeners);
     }
 }

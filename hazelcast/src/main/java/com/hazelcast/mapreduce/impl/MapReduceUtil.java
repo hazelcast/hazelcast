@@ -57,6 +57,7 @@ public final class MapReduceUtil {
 
     private static final String EXECUTOR_NAME_PREFIX = "mapreduce::hz::";
     private static final String SERVICE_NAME = MapReduceService.SERVICE_NAME;
+    private static final float DEFAULT_MAP_GROWTH_FACTOR = 0.75f;
 
     private MapReduceUtil() {
     }
@@ -298,4 +299,7 @@ public final class MapReduceUtil {
         return EXECUTOR_NAME_PREFIX + name;
     }
 
+    public static int mapSize(final int sourceSize) {
+        return sourceSize == 0 ? 0 : (int) (sourceSize / DEFAULT_MAP_GROWTH_FACTOR) + 1;
+    }
 }
