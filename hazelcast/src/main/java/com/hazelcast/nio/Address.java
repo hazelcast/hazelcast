@@ -48,7 +48,6 @@ public final class Address implements IdentifiedDataSerializable {
 
     public Address(String host, int port) throws UnknownHostException {
         this(host, InetAddress.getByName(host), port);
-        hostSet = !AddressUtil.isIpAddress(host);
     }
 
     public Address(InetAddress inetAddress, int port) {
@@ -60,15 +59,15 @@ public final class Address implements IdentifiedDataSerializable {
         this(inetSocketAddress.getAddress(), inetSocketAddress.getPort());
     }
 
-    private Address(final String hostname, final InetAddress inetAddress, final int port) {
-        this.type = (inetAddress instanceof Inet4Address) ? IPv4 : IPv6;
-        final String[] addressArgs = inetAddress.getHostAddress().split("\\%");
-        this.host = hostname != null ? hostname : addressArgs[0];
+    public Address(String hostname, InetAddress inetAddress, int port) {
+        type = (inetAddress instanceof Inet4Address) ? IPv4 : IPv6;
+        String[] addressArgs = inetAddress.getHostAddress().split("\\%");
+        host = hostname != null ? hostname : addressArgs[0];
         if (addressArgs.length == 2) {
             scopeId = addressArgs[1];
-
         }
         this.port = port;
+        hostSet = !AddressUtil.isIpAddress(host);
     }
 
     public Address(Address address) {
