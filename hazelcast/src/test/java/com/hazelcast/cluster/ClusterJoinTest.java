@@ -20,19 +20,25 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.DuplicateInstanceNameException;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.Node;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ProblematicTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +54,36 @@ public class ClusterJoinTest {
     @After
     public void killAllHazelcastInstances() throws IOException {
         Hazelcast.shutdownAll();
+    }
+
+    @Test(timeout = 120000)
+    @Category(ProblematicTest.class)
+    public void testCustomJoiner() throws Exception {
+        Config c = new Config();
+        c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        c.getNetworkConfig().getInterfaces().setEnabled(false);
+        c.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
+        c.getNetworkConfig().setPortCount(2);
+        c.getNetworkConfig().setPort(6000);
+        c.getNetworkConfig().setPortAutoIncrement(true);
+        c.getNetworkConfig().getJoin().getCustomConfig().setEnabled(true);
+        c.getNetworkConfig().getJoin().getCustomConfig().setJoinerFactoryClass(CustomJoinerFactory.class.getName());
+        c.getNetworkConfig().getJoin().getCustomConfig().setProperty("member_1", "127.0.0.1:6000");
+        c.getNetworkConfig().getJoin().getCustomConfig().setProperty("member_2", "127.0.0.1:6001");
+
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
+        assertEquals(1, h1.getCluster().getMembers().size());
+
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
+
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+
+        h1.shutdown();
+        h1 = Hazelcast.newHazelcastInstance(c);
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
     }
 
     @Test(timeout = 120000)
@@ -384,5 +420,29 @@ public class ClusterJoinTest {
         Hazelcast.newHazelcastInstance(config2);
 
         assertFalse("Latch should not be countdown!", latch.await(3, TimeUnit.SECONDS));
+    }
+
+    /**
+     * Returns an extention of TcpIpJoiner which
+     */
+    public static class CustomJoinerFactory implements JoinerFactory{
+
+        @Override
+        public Joiner createJoiner(final Node node) {
+            return new TcpIpJoiner(node){
+
+                @Override
+                protected Collection<String> getMembers() {
+                    Map<String,String> props = node.getConfig().getNetworkConfig().getJoin().getCustomConfig().getProperties();
+                    return Arrays.asList(new String[]{props.get("member_1"), props.get("member_2")});
+                }
+
+                @Override
+                public String getType() {
+                    return "custom";
+                }
+
+            };
+        }
     }
 }

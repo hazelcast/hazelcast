@@ -539,6 +539,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleTcpIp(child);
             } else if ("aws".equals(name)) {
                 handleAWS(child);
+            } else if ("custom".equals(name)){
+                handleCustom(child);
             }
         }
     }
@@ -608,6 +610,32 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     }
                 }
             }
+        }
+    }
+
+    private void handleCustom(final org.w3c.dom.Node node){
+        final NamedNodeMap atts = node.getAttributes();
+        final JoinConfig join = config.getNetworkConfig().getJoin();
+        final CustomConfig customConfig = join.getCustomConfig();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final org.w3c.dom.Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if (att.getNodeName().equals("enabled")) {
+                customConfig.setEnabled(checkTrue(value));
+            } else if (att.getNodeName().equals("joiner-factory-class")) {
+                customConfig.setJoinerFactoryClass(value);
+            }
+        }
+        final NodeList nodelist = node.getChildNodes();
+        for (int i = 0; i < nodelist.getLength(); i++) {
+            final org.w3c.dom.Node propertyNode = nodelist.item(i);
+            if(!propertyNode.getNodeName().equals("property")){
+                continue;
+            }
+            final NamedNodeMap propertyNodeAttributes = propertyNode.getAttributes();
+            Node keyAttribute = propertyNodeAttributes.getNamedItem("key");
+            Node valueAttribute = propertyNodeAttributes.getNamedItem("value");
+            customConfig.setProperty(getTextContent(keyAttribute), getTextContent(valueAttribute));
         }
     }
 

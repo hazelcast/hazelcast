@@ -23,6 +23,7 @@ import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.ConfigCheck;
 import com.hazelcast.cluster.JoinRequest;
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.cluster.JoinerFactory;
 import com.hazelcast.cluster.MulticastJoiner;
 import com.hazelcast.cluster.MulticastService;
 import com.hazelcast.cluster.NodeMulticastListener;
@@ -60,12 +61,9 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.HazelcastUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.VersionCheck;
-
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -615,6 +613,17 @@ public class Node {
                 return (Joiner) constructor.newInstance(this);
             } catch (Exception e) {
                 logger.severe("Error while creating AWSJoiner!", e);
+            }
+        } else if (join.getCustomConfig().isEnabled()){
+            logger.info("Creating custom Joiner using JoinerFactory " + join.getCustomConfig().getJoinerFactoryClass());
+            try{
+                Class clazz = Class.forName(join.getCustomConfig().getJoinerFactoryClass());
+                Constructor constructor = clazz.getConstructor(null);
+                JoinerFactory joinerFactory = (JoinerFactory) constructor.newInstance(null);
+                systemLogService.logJoin("Creating custom Joiner with " + join.getCustomConfig().getJoinerFactoryClass());
+                return joinerFactory.createJoiner(this);
+            } catch (Exception e){
+                logger.severe("Error while creating Joiner using JoinerFactory " + join.getCustomConfig().getJoinerFactoryClass(), e);
             }
         }
         return null;
