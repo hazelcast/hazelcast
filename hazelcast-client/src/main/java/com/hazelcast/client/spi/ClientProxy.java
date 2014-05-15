@@ -65,7 +65,7 @@ public abstract class ClientProxy implements DistributedObject {
         if (ctx == null) {
             throw new HazelcastInstanceNotActiveException();
         }
-        return context;
+        return ctx;
     }
 
     protected final void setContext(ClientContext context) {
