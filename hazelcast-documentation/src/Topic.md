@@ -2,6 +2,44 @@
 
 Hazelcast provides distribution mechanism for publishing messages that are delivered to multiple subscribers which is also known as *publish/subscribe (pub/sub)* messaging model. Publishing and subscribing operations are cluster wide. When a member subscribes for a topic, it is actually registering for messages published by any member in the cluster, including the new members joined after you added the listener.
 
+### Sample Topic Code
+
+```java
+import com.hazelcast.core.Topic;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.MessageListener;
+import com.hazelcast.config.Config;
+
+public class Sample implements MessageListener<MyEvent> {
+
+    public static void main(String[] args) {
+        Sample sample = new Sample();
+        Config cfg = new Config();
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+        ITopic topic = hz.getTopic ("default");
+        topic.addMessageListener(sample);
+        topic.publish (new MyEvent());
+    }
+
+   public void onMessage(Message<MyEvent> message) {
+        MyEvent myEvent = message.getMessageObject();
+        System.out.println("Message received = " + myEvent.toString());
+        if (myEvent.isHeavyweight()) {
+            messageExecutor.execute(new Runnable() {
+                public void run() {
+                    doHeavyweightStuff(myEvent);
+                }
+            });
+        }
+    }
+
+    // ...
+
+    private static final Executor messageExecutor = Executors.newSingleThreadExecutor();
+}
+```
+
+
 ### Statistics
 
 Topic has two statistic variables that can be queried. These values are incremental and local to the member.
@@ -125,39 +163,3 @@ Topic related but not topic specific configuration parameters
 For these parameters see [Distributed Event Config]#not-availaible-yet
 
 
-### Sample Topic Code
-
-```java
-import com.hazelcast.core.Topic;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.config.Config;
-
-public class Sample implements MessageListener<MyEvent> {
-
-    public static void main(String[] args) {
-        Sample sample = new Sample();
-        Config cfg = new Config();
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-        ITopic topic = hz.getTopic ("default");
-        topic.addMessageListener(sample);
-        topic.publish (new MyEvent());
-    }
-
-   public void onMessage(Message<MyEvent> message) {
-        MyEvent myEvent = message.getMessageObject();
-        System.out.println("Message received = " + myEvent.toString());
-        if (myEvent.isHeavyweight()) {
-            messageExecutor.execute(new Runnable() {
-                public void run() {
-                    doHeavyweightStuff(myEvent);
-                }
-            });
-        }
-    }
-
-    // ...
-
-    private static final Executor messageExecutor = Executors.newSingleThreadExecutor();
-}
-```

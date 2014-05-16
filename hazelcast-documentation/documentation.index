@@ -25,7 +25,7 @@ src/Distributed_Data_Structures.md
 	src/List.md
 	src/Topic.md
 	src/Lock.md
-#	src/IAtomicLong.md
+	src/IAtomicLong.md
 #	src/ISemaphore.md
 #	src/IAtomicReference.md
 #	src/ICountDownLatch.md
