@@ -217,7 +217,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 PartitionStateGenerator psg = partitionStateGenerator;
                 logger.info("Initializing cluster partition table first arrangement...");
                 final Set<Member> members = node.getClusterService().getMembers();
-                Address[][] newState = psg.initialize(memberGroupFactory.createMemberGroups(members), partitionCount);
+                Collection<MemberGroup> memberGroups = memberGroupFactory.createMemberGroups(members);
+                Address[][] newState = psg.initialize(memberGroups, partitionCount);
 
                 if (newState != null) {
                     for (int partitionId = 0; partitionId < partitionCount; partitionId++) {

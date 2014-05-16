@@ -21,7 +21,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.AddressUtil.Ip4AddressMatcher;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -154,4 +153,17 @@ public class AddressUtilTest {
         assertFalse(AddressUtil.isIpAddress("fe80::62c5:*:fe05-ffxd:480a"));
     }
 
+    @Test
+    public void testMatchDomain() {
+        assertTrue(AddressUtil.matchDomain("hazelcast.com", "hazelcast.com"));
+        assertTrue(AddressUtil.matchDomain("hazelcast.com", "*.com"));
+        assertFalse(AddressUtil.matchDomain("hazelcast.com", "abc.com"));
+        assertFalse(AddressUtil.matchDomain("hazelcast.com", "*.hazelcast.com"));
+        assertFalse(AddressUtil.matchDomain("hazelcast.com", "hazelcast.com.tr"));
+        assertFalse(AddressUtil.matchDomain("hazelcast.com", "*.com.tr"));
+        assertFalse(AddressUtil.matchDomain("www.hazelcast.com", "www.hazelcast.com.tr"));
+        assertTrue(AddressUtil.matchDomain("jobs.hazelcast.com", "*.hazelcast.com"));
+        assertTrue(AddressUtil.matchDomain("download.hazelcast.org", "*.hazelcast.*"));
+        assertTrue(AddressUtil.matchDomain("download.hazelcast.org", "*.hazelcast.org"));
+    }
 }
