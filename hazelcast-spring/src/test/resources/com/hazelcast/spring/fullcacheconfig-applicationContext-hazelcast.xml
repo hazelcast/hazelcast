@@ -78,7 +78,7 @@
                     <hz:aws enabled="false" access-key="sample-access-key" secret-key="sample-secret-key"
                             region="sample-region" security-group-name="sample-group"
                             tag-key="sample-tag-key" tag-value="sample-tag-value"/>
-                    <hz:custom enabled="false" joiner-factory-class-name="com.myorg.MyCustomJoinerFactory">
+                    <hz:custom enabled="false" joiner-factory-class-name="org.myorg.myapp.MyCustomJoinerFactory">
                         <hz:properties>
                             <hz:property name="my-key-1">my-val-1</hz:property>
                             <hz:property name="my-key-2">my-val-2</hz:property>
