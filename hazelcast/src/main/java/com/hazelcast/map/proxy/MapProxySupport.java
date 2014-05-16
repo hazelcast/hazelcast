@@ -155,7 +155,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (nearCacheEnabled) {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId).equals(nodeEngine.getClusterService().getThisAddress())) {
-                mapService.putNearCache(name, key, result);
+                return mapService.putNearCache(name, key, result);
             }
         }
         return result;

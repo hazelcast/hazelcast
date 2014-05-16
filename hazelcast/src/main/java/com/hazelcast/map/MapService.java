@@ -424,9 +424,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
     }
 
-    public void putNearCache(String mapName, Data key, Data value) {
+    // this operation returns the given value in near-cache memory format (data or object)
+    public Object putNearCache(String mapName, Data key, Data value) {
         NearCache nearCache = getNearCache(mapName);
-        nearCache.put(key, value);
+        return nearCache.put(key, value);
     }
 
     public void invalidateNearCache(String mapName, Data key) {

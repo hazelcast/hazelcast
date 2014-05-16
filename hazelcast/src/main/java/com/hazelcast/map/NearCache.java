@@ -73,10 +73,16 @@ public class NearCache {
         NONE, LRU, LFU
     }
 
-    public void put(Data key, Data data) {
+    // this operation returns the given value in near-cache memory format (data or object)
+    public Object put(Data key, Data data) {
         fireTtlCleanup();
         if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
-            return;
+            // no more space in near-cache -> return given value in near-cache format
+            if (data == null) {
+                return null;
+            } else {
+                return inMemoryFormat.equals(InMemoryFormat.OBJECT) ? mapService.toObject(data) : data;
+            }
         }
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
@@ -90,6 +96,11 @@ public class NearCache {
         final CacheRecord record = new CacheRecord(key, value);
         cache.put(key, record);
         updateSizeEstimator(calculateCost(record));
+        if (NULL_OBJECT.equals(value)) {
+            return null;
+        } else {
+            return value;
+        }
     }
 
     private void fireEvictCache() {
