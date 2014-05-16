@@ -341,16 +341,18 @@ public class XMLConfigBuilderTest {
     @Test
     public void testCustomJoinerFactoryConfigWithProperties(){
         String xml = "<hazelcast>\n" +
-                "   <network>\n" +
-                "      <port auto-increment=\"true\" port-count=\"100\">5701</port>\n" +
-                "      <join>\n" +
-                "         <custom enabled=\"true\" joiner-factory-class=\"org.myorg.myapp.MyCustomJoinerFactory\">\n" +
-                "            <property key=\"my-key-1\" value=\"my-value-1\" />\n" +
-                "            <property key=\"my-key-2\" value=\"my-value-2\" />\n" +
-                "         </custom>\n" +
-                "      </join>\n" +
-                "   </network>\n" +
-                "</hazelcast>";
+                      "   <network>\n" +
+                      "       <port auto-increment=\"true\" port-count=\"100\">5701</port>\n" +
+                      "       <join>\n" +
+                      "           <custom enabled=\"true\" joiner-factory-class-name=\"org.myorg.myapp.MyCustomJoinerFactory\">\n" +
+                      "               <properties>\n" +
+                      "                   <property name=\"my-key-1\">my-value-1</property>\n" +
+                      "                   <property name=\"my-key-2\">my-value-2</property>\n" +
+                      "               </properties>\n" +
+                      "           </custom>\n" +
+                      "       </join>\n" +
+                      "   </network>\n" +
+                      "</hazelcast>";
         final Config config = buildConfig(xml);
         System.out.println("config = " + config);
         assertTrue(config.getNetworkConfig().getJoin().getCustomConfig().isEnabled());
@@ -366,7 +368,7 @@ public class XMLConfigBuilderTest {
                 "   <network>\n" +
                 "      <port auto-increment=\"true\" port-count=\"100\">5701</port>\n" +
                 "      <join>\n" +
-                "         <custom enabled=\"true\" joiner-factory-class=\"org.myorg.myapp.MyCustomJoinerFactory\" />\n" +
+                "         <custom enabled=\"true\" joiner-factory-class-name=\"org.myorg.myapp.MyCustomJoinerFactory\" />\n" +
                 "      </join>\n" +
                 "   </network>\n" +
                 "</hazelcast>";
