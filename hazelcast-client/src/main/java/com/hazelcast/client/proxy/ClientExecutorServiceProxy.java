@@ -21,7 +21,6 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.util.ClientCancellableDelegatingFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
@@ -35,6 +34,7 @@ import com.hazelcast.executor.client.TargetCallableRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
@@ -320,7 +320,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             final IsShutdownRequest request = new IsShutdownRequest(name);
             Boolean result = invoke(request);
             return result;
-        } catch (HazelcastInstanceNotActiveException e) {
+        } catch (DistributedObjectDestroyedException e) {
             return true;
         }
     }
