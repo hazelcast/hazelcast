@@ -16,14 +16,21 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
+import java.io.IOException;
+import java.util.BitSet;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -330,6 +337,96 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
         assertEquals("foobar", ref.getAndAlter(new NullFunction()));
         assertEquals(null, ref.get());
     }
+    
+    @Test
+    @ClientCompatibleTest
+    public void getAndAlter_fails_when_same_reference() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        
+        // This is what happened in my code
+        MyObject myObject = new MyObject();
+        myObject.setBitSet(new BitSet());
+        assertTrue(myObject.getBitSet().isEmpty());
+        
+        IAtomicReference<MyObject> ref = hazelcastInstance.getAtomicReference("getAndAlter_fails_when_same_reference");
+        ref.set(myObject);
+        assertEquals(myObject, ref.get());
+        
+        MyObject updatedObject = new MyObject(new BitSet());
+        updatedObject.getBitSet().set(100);
+        assertEquals(updatedObject, ref.alterAndGet(new FailingFunctionAlter()));
+        
+        assertEquals(updatedObject, ref.get());
+        
+        // But this would also fail
+        BitSet bitSet = new BitSet();
+        IAtomicReference<BitSet> ref2 = hazelcastInstance.getAtomicReference("getAndAlter_fails_again_when_same_reference");
+        ref2.set(bitSet);
+        assertEquals(bitSet, ref2.get());
+        
+        bitSet.set(100);
+        assertEquals(bitSet, ref2.alterAndGet(new FailingFunctionAlter2()));
+        
+        assertEquals(bitSet, ref2.get());
+    }
+    
+    private static class MyObject implements DataSerializable{
+    	private BitSet bitSet;
+    	
+    	public MyObject(){
+    	}
+    	
+    	public MyObject(BitSet bitSet) {
+			this.bitSet = bitSet;
+		}
+
+		BitSet getBitSet(){
+    		return this.bitSet;
+    	}
+
+		public void setBitSet(BitSet bitSet) {
+			this.bitSet = bitSet;
+		}
+
+		@Override
+		public void writeData(ObjectDataOutput odo) throws IOException {
+			odo.writeObject(this.bitSet);
+		}
+
+		@Override
+		public void readData(ObjectDataInput odi) throws IOException {
+			 this.bitSet = (BitSet) odi.readObject();	
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null || obj.getClass() != this.getClass())
+				return false;
+
+			MyObject that = (MyObject) obj;
+
+			return this.bitSet.equals(that.getBitSet());
+		}
+    }
+    
+    private static class FailingFunctionAlter implements IFunction<MyObject, MyObject> {
+        @Override
+        public MyObject apply(MyObject input) {
+           input.getBitSet().set(100);
+           return input;
+        }
+    }
+    
+    private static class FailingFunctionAlter2 implements IFunction<BitSet, BitSet> {
+        @Override
+        public BitSet apply(BitSet input) {
+           input.set(100);
+           return input;
+        }
+    }
+
 
     private static class AppendFunction implements IFunction<String, String> {
         private String add;
