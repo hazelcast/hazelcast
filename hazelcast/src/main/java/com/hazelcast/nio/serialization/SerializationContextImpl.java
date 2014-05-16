@@ -121,9 +121,7 @@ final class SerializationContextImpl implements SerializationContext {
             final ClassDefinitionImpl cd = new ClassDefinitionImpl();
             cd.readData(serializationService.createObjectDataInput(binary));
             cd.setBinary(compressedBinary);
-            registerNestedDefinitions(cd);
-            final ClassDefinitionImpl currentCd = versionedDefinitions.putIfAbsent(combineToLong(cd.classId, getVersion()), cd);
-            return currentCd == null ? cd : currentCd;
+            return registerClassDefinition(cd);
         }
 
         ClassDefinition registerClassDefinition(ClassDefinition cd) {
