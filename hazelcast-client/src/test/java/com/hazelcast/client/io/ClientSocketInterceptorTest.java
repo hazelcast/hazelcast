@@ -23,6 +23,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -45,6 +46,7 @@ public class ClientSocketInterceptorTest {
     }
 
     @Test(timeout = 120000)
+    @Category(ProblematicTest.class)
     public void testSuccessfulSocketInterceptor() {
         Config config = new Config();
         SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
