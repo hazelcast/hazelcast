@@ -92,13 +92,14 @@ public abstract class ClientProxy implements DistributedObject {
     public final void destroy() {
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
+        ClientContext ctx = context;
+        ctx.removeProxy(this);
+        context = null;
         try {
-            context.getInvocationService().invokeOnRandomTarget(request).get();
+              ctx.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        context.removeProxy(this);
-        context = null;
     }
 
     protected abstract void onDestroy();
