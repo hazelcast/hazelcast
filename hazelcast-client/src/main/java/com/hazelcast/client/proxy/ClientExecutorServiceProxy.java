@@ -35,6 +35,7 @@ import com.hazelcast.executor.client.TargetCallableRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
@@ -320,7 +321,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             final IsShutdownRequest request = new IsShutdownRequest(name);
             Boolean result = invoke(request);
             return result;
-        } catch (HazelcastInstanceNotActiveException e) {
+        } catch (DistributedObjectDestroyedException e) {
             return true;
         }
     }
