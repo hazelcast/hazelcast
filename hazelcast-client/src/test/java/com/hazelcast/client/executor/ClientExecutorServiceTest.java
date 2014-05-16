@@ -17,11 +17,16 @@
 package com.hazelcast.client.executor;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.executor.tasks.*;
-import com.hazelcast.core.*;
+import com.hazelcast.client.executor.tasks.CancellationAwareTask;
+import com.hazelcast.client.executor.tasks.FailingCallable;
+import com.hazelcast.client.executor.tasks.MapPutRunnable;
+import com.hazelcast.client.executor.tasks.SelectNoMembers;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -29,16 +34,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.test.HazelcastTestSupport.*;
-import static org.junit.Assert.*;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -74,7 +79,7 @@ public class ClientExecutorServiceTest {
     @Test
     public void testIsTerminated() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
-        assertFalse( service.isTerminated() );
+        assertFalse(service.isTerminated());
     }
 
     @Test
@@ -114,7 +119,8 @@ public class ClientExecutorServiceTest {
 
         try {
             future.get(1, TimeUnit.SECONDS);
-        }catch (TimeoutException e) {}
+        } catch (TimeoutException e) {
+        }
 
         assertFalse(future.isDone());
         assertFalse(future.isCancelled());
@@ -129,7 +135,8 @@ public class ClientExecutorServiceTest {
 
         try {
             future.get(1, TimeUnit.SECONDS);
-        }catch (TimeoutException e) {}
+        } catch (TimeoutException e) {
+        }
 
         assertTrue(future.cancel(true));
         assertTrue(future.isCancelled());
@@ -144,7 +151,8 @@ public class ClientExecutorServiceTest {
         Future future = service.submit(task);
         try {
             future.get(1, TimeUnit.SECONDS);
-        }catch (TimeoutException e) {}
+        } catch (TimeoutException e) {
+        }
         future.cancel(true);
 
         future.get();
@@ -163,9 +171,9 @@ public class ClientExecutorServiceTest {
         IExecutorService service = client.getExecutorService(randomString());
         final Future<String> f = service.submit(new FailingCallable());
 
-        try{
+        try {
             f.get();
-        }catch(ExecutionException e){
+        } catch (ExecutionException e) {
             throw e.getCause();
         }
     }
@@ -176,6 +184,6 @@ public class ClientExecutorServiceTest {
         final String mapName = randomString();
         final MemberSelector selector = new SelectNoMembers();
 
-        service.execute( new MapPutRunnable(mapName), selector);
+        service.execute(new MapPutRunnable(mapName), selector);
     }
 }
