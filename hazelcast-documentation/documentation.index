@@ -94,6 +94,7 @@ src/Config.md
 	src/NetworkConfig.md
 		src/ConfigSpecifyInterfaces.md
 		src/EC2AutoDiscovery.md
+		src/CustomDiscovery.md
 		src/IPv6.md
 		src/OutboundPorts.md
 	src/PartitionGroupConfig.md

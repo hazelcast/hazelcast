@@ -354,7 +354,7 @@ public class XMLConfigBuilderTest {
         final Config config = buildConfig(xml);
         System.out.println("config = " + config);
         assertTrue(config.getNetworkConfig().getJoin().getCustomConfig().isEnabled());
-        assertEquals("com.myorg.MyCustomJoinerFactory", config.getNetworkConfig().getJoin().getCustomConfig().getJoinerFactoryClass());
+        assertEquals("com.myorg.MyCustomJoinerFactory", config.getNetworkConfig().getJoin().getCustomConfig().getJoinerFactoryClassName());
         assertEquals(2, config.getNetworkConfig().getJoin().getCustomConfig().getProperties().size());
         assertEquals("my-value-1", config.getNetworkConfig().getJoin().getCustomConfig().getProperties().get("my-key-1"));
         assertEquals("my-value-2", config.getNetworkConfig().getJoin().getCustomConfig().getProperties().get("my-key-2"));
@@ -373,7 +373,7 @@ public class XMLConfigBuilderTest {
         final Config config = buildConfig(xml);
         System.out.println("config = " + config);
         assertTrue(config.getNetworkConfig().getJoin().getCustomConfig().isEnabled());
-        assertEquals("com.myorg.MyCustomJoinerFactory", config.getNetworkConfig().getJoin().getCustomConfig().getJoinerFactoryClass());
+        assertEquals("com.myorg.MyCustomJoinerFactory", config.getNetworkConfig().getJoin().getCustomConfig().getJoinerFactoryClassName());
         assertEquals(0, config.getNetworkConfig().getJoin().getCustomConfig().getProperties().size());
     }
 

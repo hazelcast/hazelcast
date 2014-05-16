@@ -309,6 +309,11 @@ public class TestFullApplicationContext {
         assertEquals("sample-group", aws.getSecurityGroupName());
         assertEquals("sample-tag-key", aws.getTagKey());
         assertEquals("sample-tag-value", aws.getTagValue());
+        assertFalse(networkConfig.getJoin().getCustomConfig().isEnabled());
+        assertEquals("com.myorg.MyCustomJoinerFactory",networkConfig.getJoin().getCustomConfig().getJoinerFactoryClassName());
+        assertEquals("my-val-1", networkConfig.getJoin().getCustomConfig().getProperties().getProperty("my-key-1"));
+        assertEquals("my-val-2", networkConfig.getJoin().getCustomConfig().getProperties().getProperty("my-key-2"));
+        assertEquals(2, networkConfig.getJoin().getCustomConfig().getProperties().size());
     }
 
 //    @Test

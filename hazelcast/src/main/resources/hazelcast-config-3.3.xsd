@@ -478,15 +478,10 @@
     </xs:complexType>
     <xs:complexType name="custom">
         <xs:sequence>
-            <xs:element name="property" minOccurs="0" maxOccurs="unbounded">
-                <xs:complexType>
-                    <xs:attribute name="key" />
-                    <xs:attribute name="value" />
-                </xs:complexType>
-            </xs:element>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" default="false"/>
-        <xs:attribute name="joiner-factory-class" type="xs:normalizedString"/>
+        <xs:attribute name="joiner-factory-class-name" type="xs:normalizedString"/>
     </xs:complexType>
     <xs:complexType name="join">
         <xs:sequence>

@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.CustomConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
@@ -65,7 +66,6 @@ import org.springframework.util.Assert;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -258,6 +258,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleTcpIp(child, joinConfigBuilder);
                 } else if ("aws".equals(name)) {
                     handleAws(child, joinConfigBuilder);
+                } else if ("custom".equals(name)){
+                    handleCustom(child, joinConfigBuilder);
                 }
             }
             networkConfigBuilder.addPropertyValue("join", beanDefinition);
@@ -325,6 +327,16 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         public void handleAws(Node node, BeanDefinitionBuilder joinConfigBuilder) {
             createAndFillBeanBuilder(node, AwsConfig.class, "awsConfig", joinConfigBuilder);
+        }
+
+        public void handleCustom(Node node, BeanDefinitionBuilder joinConfigBuilder) {
+            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, CustomConfig.class, "customConfig", joinConfigBuilder, "properties");
+            for (Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String name = cleanNodeName(child);
+                if ("properties".equals(name)) {
+                    handleProperties(child, builder);
+                }
+            }
         }
 
         public void handleQueue(Node node) {

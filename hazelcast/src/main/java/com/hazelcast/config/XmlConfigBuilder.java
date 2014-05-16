@@ -622,20 +622,16 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(att).trim();
             if (att.getNodeName().equals("enabled")) {
                 customConfig.setEnabled(checkTrue(value));
-            } else if (att.getNodeName().equals("joiner-factory-class")) {
-                customConfig.setJoinerFactoryClass(value);
+            } else if (att.getNodeName().equals("joiner-factory-class-name")) {
+                customConfig.setJoinerFactoryClassName(value);
             }
         }
         final NodeList nodelist = node.getChildNodes();
         for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node propertyNode = nodelist.item(i);
-            if(!propertyNode.getNodeName().equals("property")){
-                continue;
+            final org.w3c.dom.Node childNode = nodelist.item(i);
+            if(childNode.getNodeName().equals("properties")){
+                fillProperties(childNode, customConfig.getProperties());
             }
-            final NamedNodeMap propertyNodeAttributes = propertyNode.getAttributes();
-            Node keyAttribute = propertyNodeAttributes.getNamedItem("key");
-            Node valueAttribute = propertyNodeAttributes.getNamedItem("value");
-            customConfig.setProperty(getTextContent(keyAttribute), getTextContent(valueAttribute));
         }
     }
 

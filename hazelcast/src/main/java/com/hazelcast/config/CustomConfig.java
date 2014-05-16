@@ -1,8 +1,6 @@
 package com.hazelcast.config;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Properties;
 
 import static com.hazelcast.util.ValidationUtil.hasText;
 
@@ -18,12 +16,12 @@ public class CustomConfig {
     /**
      * fully qualified class name of a JoinerFactory implementation
      */
-    private String joinerFactoryClass;
+    private String joinerFactoryClassName;
 
     /**
      * thread-safe collection of configuration properties
      */
-    private ConcurrentHashMap<String, String> properties = new ConcurrentHashMap<String, String>();
+    private Properties properties = new Properties();
 
     /**
      * Setter for enabled
@@ -44,39 +42,32 @@ public class CustomConfig {
     }
 
     /**
-     * Setter for joinerFactoryClass
-     * @param joinerFactoryClass
+     * Setter for joinerFactoryClassName
+     * @param joinerFactoryClassName
      * @return
      */
-    public CustomConfig setJoinerFactoryClass(String joinerFactoryClass){
-        this.joinerFactoryClass = hasText(joinerFactoryClass, "joinerFactoryClass");
+    public CustomConfig setJoinerFactoryClassName(String joinerFactoryClassName){
+        this.joinerFactoryClassName = hasText(joinerFactoryClassName, "joinerFactoryClassName");
         return this;
     }
 
     /**
-     * Getter for joinerFactoryClass
+     * Getter for joinerFactoryClassName
      * @return
      */
-    public String getJoinerFactoryClass(){
-        return this.joinerFactoryClass;
+    public String getJoinerFactoryClassName(){
+        return this.joinerFactoryClassName;
     }
 
-    /**
-     * Adds or replaces a property within the Config
-     * @param key
-     * @param value
-     * @return
-     */
-    public CustomConfig setProperty(String key, String value){
-        properties.put(hasText(key, "property key"),hasText(value, "property value"));
-        return this;
+    public void setProperties(Properties properties) {
+        this.properties = properties;
     }
 
     /**
      * Returns a copy of the Config's properties.
      * @return
      */
-    public Map<String, String> getProperties() {
-        return new HashMap<String, String>(properties);
+    public Properties getProperties() {
+        return properties;
     }
 }

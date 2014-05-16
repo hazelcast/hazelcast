@@ -615,15 +615,15 @@ public class Node {
                 logger.severe("Error while creating AWSJoiner!", e);
             }
         } else if (join.getCustomConfig().isEnabled()){
-            logger.info("Creating custom Joiner using JoinerFactory " + join.getCustomConfig().getJoinerFactoryClass());
+            logger.info("Creating custom Joiner using JoinerFactory " + join.getCustomConfig().getJoinerFactoryClassName());
             try{
-                Class clazz = Class.forName(join.getCustomConfig().getJoinerFactoryClass());
+                Class clazz = Class.forName(join.getCustomConfig().getJoinerFactoryClassName());
                 Constructor constructor = clazz.getConstructor(null);
                 JoinerFactory joinerFactory = (JoinerFactory) constructor.newInstance(null);
-                systemLogService.logJoin("Creating custom Joiner with " + join.getCustomConfig().getJoinerFactoryClass());
+                systemLogService.logJoin("Creating custom Joiner with " + join.getCustomConfig().getJoinerFactoryClassName());
                 return joinerFactory.createJoiner(this);
             } catch (Exception e){
-                logger.severe("Error while creating Joiner using JoinerFactory " + join.getCustomConfig().getJoinerFactoryClass(), e);
+                logger.severe("Error while creating Joiner using JoinerFactory " + join.getCustomConfig().getJoinerFactoryClassName(), e);
             }
         }
         return null;

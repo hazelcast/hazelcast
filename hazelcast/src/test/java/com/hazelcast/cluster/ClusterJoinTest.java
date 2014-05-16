@@ -38,7 +38,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -68,9 +67,10 @@ public class ClusterJoinTest {
         c.getNetworkConfig().setPort(6000);
         c.getNetworkConfig().setPortAutoIncrement(true);
         c.getNetworkConfig().getJoin().getCustomConfig().setEnabled(true);
-        c.getNetworkConfig().getJoin().getCustomConfig().setJoinerFactoryClass(CustomJoinerFactory.class.getName());
-        c.getNetworkConfig().getJoin().getCustomConfig().setProperty("member_1", "127.0.0.1:6000");
-        c.getNetworkConfig().getJoin().getCustomConfig().setProperty("member_2", "127.0.0.1:6001");
+        c.getNetworkConfig().getJoin().getCustomConfig().setJoinerFactoryClassName(CustomJoinerFactory.class.getName());
+
+        c.getNetworkConfig().getJoin().getCustomConfig().getProperties().put("member_1", "127.0.0.1:6000");
+        c.getNetworkConfig().getJoin().getCustomConfig().getProperties().put("member_2", "127.0.0.1:6001");
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
         assertEquals(1, h1.getCluster().getMembers().size());
@@ -433,8 +433,8 @@ public class ClusterJoinTest {
 
                 @Override
                 protected Collection<String> getMembers() {
-                    Map<String,String> props = node.getConfig().getNetworkConfig().getJoin().getCustomConfig().getProperties();
-                    return Arrays.asList(new String[]{props.get("member_1"), props.get("member_2")});
+                    Properties props = node.getConfig().getNetworkConfig().getJoin().getCustomConfig().getProperties();
+                    return Arrays.asList(new String[]{(String) props.get("member_1"), (String) props.get("member_2")});
                 }
 
                 @Override
