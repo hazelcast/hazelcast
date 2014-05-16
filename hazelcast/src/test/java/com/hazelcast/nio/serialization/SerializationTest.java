@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -170,6 +171,7 @@ public class SerializationTest {
         LinkedList deserialized =  ss.toObject(data);
         assertTrue("Objects are not identical!", linkedList.equals(deserialized));
     }
+
     @Test
     public void testArrayListSerialization() {
         SerializationService ss = new SerializationServiceBuilder().build();
@@ -179,6 +181,16 @@ public class SerializationTest {
         Data data = ss.toData(arrayList);
         ArrayList deserialized =  ss.toObject(data);
         assertTrue("Objects are not identical!", arrayList.equals(deserialized));
+    }
+
+    @Test
+    public void testArraySerialization() {
+        SerializationService ss = new SerializationServiceBuilder().build();
+        byte[] array = new byte[1024];
+        new Random().nextBytes(array);
+        Data data = ss.toData(array);
+        byte[] deserialized =  ss.toObject(data);
+        assertEquals(array, deserialized);
     }
 
     /**
