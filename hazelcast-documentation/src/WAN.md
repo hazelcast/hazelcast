@@ -19,14 +19,14 @@ In the active-active replication setup, there might be cases where each node is 
 <hazelcast>
     <wan-replication name="my-wan-cluster">
         <target-cluster group-name="tokyo" group-password="tokyo-pass">
-            <replication-impl>com.hazelcast.wan.WanNoDelayReplication</replication-impl>
+            <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>
             <end-points>
                 <address>10.2.1.1:5701</address>
                 <address>10.2.1.2:5701</address>
             </end-points>
         </target-cluster>
         <target-cluster group-name="london" group-password="london-pass">
-            <replication-impl>com.hazelcast.wan.wan.WanNoDelayReplication</replication-impl>
+            <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>
             <end-points>
                 <address>10.3.5.1:5701</address>
                 <address>10.3.5.2:5701</address>

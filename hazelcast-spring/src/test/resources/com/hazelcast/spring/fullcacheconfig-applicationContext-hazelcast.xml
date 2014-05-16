@@ -47,7 +47,7 @@
             </hz:properties>
             <hz:wan-replication name="testWan">
                 <hz:target-cluster group-name="tokyo" group-password="tokyo-pass">
-                    <hz:replication-impl>com.hazelcast.wan.WanNoDelayReplication</hz:replication-impl>
+                    <hz:replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</hz:replication-impl>
                     <hz:end-points>
                         <hz:address>10.2.1.1:5701</hz:address>
                         <hz:address>10.2.1.2:5701</hz:address>

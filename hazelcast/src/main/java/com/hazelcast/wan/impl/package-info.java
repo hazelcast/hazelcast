@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
-
 /**
- * Marker interface for WAN replication messages
+ * This package contains the opensource implementation of WAN replication
  */
-public interface ReplicationEventObject {
-}
+package com.hazelcast.wan.impl;

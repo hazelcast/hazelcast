@@ -18,7 +18,7 @@
     <suppress checks="" files="com.hazelcast.management[\\/]"/>
     <suppress checks="" files="com.hazelcast.map[\\/]"/>
     <suppress checks="" files="com.hazelcast.spi.impl[\\/]"/>
-    <suppress checks="" files="com.hazelcast.wan[\\/]"/>
+    <suppress checks="" files="com.hazelcast.util[\\/]"/>
     <suppress checks="" files="com.hazelcast.client[\\/]"/>
 
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>

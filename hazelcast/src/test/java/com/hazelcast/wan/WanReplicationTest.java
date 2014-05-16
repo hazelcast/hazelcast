@@ -15,6 +15,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.wan.impl.WanNoDelayReplication;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

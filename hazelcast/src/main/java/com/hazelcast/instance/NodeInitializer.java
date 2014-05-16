@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
+import com.hazelcast.wan.WanReplicationService;
 
 public interface NodeInitializer {
 
@@ -31,6 +32,8 @@ public interface NodeInitializer {
     SecurityContext getSecurityContext();
 
     Storage<DataRef> getOffHeapStorage();
+
+    WanReplicationService geWanReplicationService();
 
     void destroy();
 }

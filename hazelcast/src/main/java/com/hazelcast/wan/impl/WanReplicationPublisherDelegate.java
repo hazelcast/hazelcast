@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.wan.impl;
 
-final class WanReplicationDelegate implements WanReplicationPublisher {
+import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationPublisher;
+
+/**
+ * Delegating replication publisher implementation
+ */
+final class WanReplicationPublisherDelegate
+        implements WanReplicationPublisher {
 
     final String name;
     final WanReplicationEndpoint[] endpoints;
 
-    public WanReplicationDelegate(String name, WanReplicationEndpoint[] endpoints) {
+    public WanReplicationPublisherDelegate(String name, WanReplicationEndpoint[] endpoints) {
         this.name = name;
         this.endpoints = endpoints;
     }

@@ -46,6 +46,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.util.List;
 import java.util.Map;
@@ -244,8 +245,9 @@ public class MapContainer {
         if (wanReplicationRef == null) {
             return;
         }
-        wanReplicationPublisher = nodeEngine.getWanReplicationService().getWanReplicationListener(
-                wanReplicationRef.getName());
+        String wanReplicationRefName = wanReplicationRef.getName();
+        WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
+        wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
         wanMergePolicy = mapService.getMergePolicy(wanReplicationRef.getMergePolicy());
     }
 
