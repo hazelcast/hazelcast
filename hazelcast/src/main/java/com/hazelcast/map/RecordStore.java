@@ -136,7 +136,7 @@ public interface RecordStore {
 
     WriteBehindQueue<DelayedEntry> getWriteBehindQueue();
 
-    List clearUnLockedExpiredRecords();
+    List findUnlockedExpiredRecords();
 
     void removeFromWriteBehindWaitingDeletions(Data key);
 }

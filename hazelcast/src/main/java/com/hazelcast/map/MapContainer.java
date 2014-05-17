@@ -102,20 +102,31 @@ public class MapContainer {
     private class ClearExpiredRecordsTask implements Runnable {
 
         public void run() {
-            final MapService service = mapService;
-            final NodeEngine nodeEngine = service.getNodeEngine();
+            final MapService mapService = MapContainer.this.mapService;
+            final NodeEngine nodeEngine = mapService.getNodeEngine();
             for (int partitionId = 0; partitionId < nodeEngine.getPartitionService().getPartitionCount(); partitionId++) {
                 InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
                 if (partition.isOwnerOrBackup(nodeEngine.getThisAddress())) {
+                    // check if record store has already been initialized or not.
+                    final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
+                    if (isUninitializedRecordStore(partitionContainer)) {
+                        continue;
+                    }
                     final Operation expirationOperation = createExpirationOperation(partitionId);
                     OperationService operationService = mapService.getNodeEngine().getOperationService();
                     operationService.executeOperation(expirationOperation);
                 }
             }
         }
+
+        private boolean isUninitializedRecordStore(PartitionContainer partitionContainer) {
+            final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+            return recordStore == null;
+        }
     }
 
     private Operation createExpirationOperation(int partitionId) {
+        final MapService mapService = this.mapService;
         final ClearExpiredOperation clearExpiredOperation = new ClearExpiredOperation(name);
         clearExpiredOperation
                 .setNodeEngine(mapService.getNodeEngine())

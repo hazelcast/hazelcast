@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.eviction.EvictionHelper;
@@ -34,7 +35,7 @@ import java.util.List;
  */
 public class ClearExpiredOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-    private List evictedKeyValueSequence;
+    private List expiredKeyValueSequence;
 
     public ClearExpiredOperation(String name) {
         super(name);
@@ -48,27 +49,30 @@ public class ClearExpiredOperation extends AbstractMapOperation implements Parti
         if (recordStore == null) {
             return;
         }
-        evictedKeyValueSequence = recordStore.clearUnLockedExpiredRecords();
+        expiredKeyValueSequence = recordStore.findUnlockedExpiredRecords();
     }
 
     @Override
     public void afterRun() throws Exception {
-        if (evictedKeyValueSequence == null || evictedKeyValueSequence.isEmpty()) {
+        final List expiredKeyValueSequence = this.expiredKeyValueSequence;
+        if (expiredKeyValueSequence == null || expiredKeyValueSequence.isEmpty()) {
             return;
         }
-        NodeEngine nodeEngine = getNodeEngine();
-        Address owner = nodeEngine.getPartitionService().getPartitionOwner(getPartitionId());
-        boolean isOwner = nodeEngine.getThisAddress().equals(owner);
-
-        for (int i = 0; i < evictedKeyValueSequence.size(); i += 2) {
-            Data key = (Data) evictedKeyValueSequence.get(i);
-            Object value = evictedKeyValueSequence.get(i + 1);
-            mapService.interceptAfterRemove(name, value);
-            if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-                mapService.invalidateAllNearCaches(name, key);
+        final MapService mapService = this.mapService;
+        final String mapName = this.name;
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Address owner = nodeEngine.getPartitionService().getPartitionOwner(getPartitionId());
+        final boolean isOwner = nodeEngine.getThisAddress().equals(owner);
+        final int size = expiredKeyValueSequence.size();
+        for (int i = 0; i < size; i += 2) {
+            Data key = (Data) expiredKeyValueSequence.get(i);
+            Object value = expiredKeyValueSequence.get(i + 1);
+            mapService.interceptAfterRemove(mapName, value);
+            if (mapService.isNearCacheAndInvalidationEnabled(mapName)) {
+                mapService.invalidateAllNearCaches(mapName, key);
             }
             if (isOwner) {
-                EvictionHelper.fireEvent(key, value, name, mapService);
+                EvictionHelper.fireEvent(key, value, mapName, mapService);
             }
         }
     }
