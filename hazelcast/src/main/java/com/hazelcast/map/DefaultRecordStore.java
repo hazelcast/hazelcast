@@ -257,25 +257,31 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     @Override
-    public List clearUnLockedExpiredRecords() {
+    public List findUnlockedExpiredRecords() {
         checkIfLoaded();
 
-        final List<Object> evictedKeyValueSequence = new ArrayList<Object>();
+        final long nowInNanos = nowInNanos();
+        List<Object> expiredKeyValueSequence = Collections.emptyList();
+        boolean createLazy = true;
         for (Map.Entry<Data, Record> entry : records.entrySet()) {
             final Data key = entry.getKey();
             if (isLocked(key)) {
                 continue;
             }
             final Record record = entry.getValue();
-            if (isReachable(record) == null) {
-                final Object value = record.getValue();
-                evict(key);
-
-                evictedKeyValueSequence.add(key);
-                evictedKeyValueSequence.add(value);
+            if (isReachable(record, nowInNanos)) {
+                continue;
             }
+            final Object value = record.getValue();
+            evict(key);
+            if (createLazy) {
+                expiredKeyValueSequence = new ArrayList<Object>();
+                createLazy = false;
+            }
+            expiredKeyValueSequence.add(key);
+            expiredKeyValueSequence.add(value);
         }
-        return evictedKeyValueSequence;
+        return expiredKeyValueSequence;
     }
 
     @Override
@@ -1057,9 +1063,8 @@ public class DefaultRecordStore implements RecordStore {
         if (record == null) {
             return null;
         }
-        Record tmpRecord = isReachable(record);
-        if (tmpRecord != null) {
-            return tmpRecord;
+        if (isReachable(record)) {
+            return record;
         }
         final Data key = record.getKey();
         final Object value = record.getValue();
@@ -1068,10 +1073,14 @@ public class DefaultRecordStore implements RecordStore {
         return null;
     }
 
-    private Record isReachable(Record record) {
+    private boolean isReachable(Record record) {
+        return isReachable(record, nowInNanos());
+    }
+
+    private boolean isReachable(Record record, long timeInNanos) {
         final Record result = mapContainer.getReachabilityHandlerChain().isReachable(record,
-                -1L, System.nanoTime());
-        return result != null ? result : null;
+                -1L, timeInNanos);
+        return result != null;
     }
 
     private void doPostEvictionOperations(Data key, Object value) {
@@ -1184,7 +1193,10 @@ public class DefaultRecordStore implements RecordStore {
         if (record.getStatistics() != null) {
             record.getStatistics().setExpirationTime(System.nanoTime() + ttlInNanos);
         }
+    }
 
+    private static long nowInNanos() {
+        return System.nanoTime();
     }
 
     private void updateSizeEstimator(long recordSize) {
