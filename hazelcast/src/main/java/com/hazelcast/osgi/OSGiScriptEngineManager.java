@@ -285,7 +285,7 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
             if (bundle == null) {
                 continue;
             }
-            if (bundle.getSymbolicName() != null && bundle.getSymbolicName().equals("system.bundle")) {
+            if ("system.bundle".equals(bundle.getSymbolicName())) {
                 continue;
             }
             Enumeration urls = bundle.findEntries("META-INF/services", "javax.script.ScriptEngineFactory", false);
