@@ -245,13 +245,19 @@ public final class MapReduceUtil {
                     operation.run();
 
                     if (returnsResponse) {
-                        results.add((V) operation.getResponse());
+                        V response = (V) operation.getResponse();
+                        if (response != null) {
+                            results.add(response);
+                        }
                     }
                 } else {
                     if (returnsResponse) {
                         InvocationBuilder ib = os.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress());
 
-                        results.add((V) ib.invoke().get());
+                        V response = (V) ib.invoke().get();
+                        if (response != null) {
+                            results.add(response);
+                        }
                     } else {
                         os.send(operation, member.getAddress());
                     }
