@@ -43,8 +43,8 @@ import java.util.Map;
  * <p/>
  * Internally, what this class does is creating ScriptEngineManagers for each bundle
  * that contains a ScriptEngineFactory and includes a META-INF/services/javax.script.ScriptEngineFactory file.
- * It assumes that the file contains a list of @link ScriptEngineFactory classes. For each bundle, it creates a
- * ScriptEngineManager, then merges them. @link ScriptEngineFactory objects are wrapped
+ * It assumes that the file contains a list of {@link ScriptEngineFactory} classes. For each bundle, it creates a
+ * ScriptEngineManager, then merges them. {@link ScriptEngineFactory} objects are wrapped
  * into @link OSGiScriptEngineFactory objects to deal with problems of context class loader:
  * Those scripting engines that rely on the ContextClassloader for finding resources need to use this wrapper
  * and the @link OSGiScriptFactory. Mainly, jruby does.
@@ -273,7 +273,7 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
     }
 
     /**
-     * Iterates through all bundles to get the available @link ScriptEngineFactory classes
+     * Iterates through all bundles to get the available {@link ScriptEngineFactory} classes
      *
      * @return the names of the available ScriptEngineFactory classes
      * @throws IOException
@@ -282,7 +282,10 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         Bundle[] bundles = context.getBundles();
         List<String> factoryCandidates = new ArrayList<String>();
         for (Bundle bundle : bundles) {
-            if (bundle.getSymbolicName().equals("system.bundle")) {
+            if (bundle == null) {
+                continue;
+            }
+            if ("system.bundle".equals(bundle.getSymbolicName())) {
                 continue;
             }
             Enumeration urls = bundle.findEntries("META-INF/services", "javax.script.ScriptEngineFactory", false);
