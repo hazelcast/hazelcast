@@ -45,17 +45,20 @@ public class GetResultOperation
     @Override
     public void run()
             throws Exception {
+
         MapReduceService mapReduceService = getService();
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(getName(), getJobId());
-        result = supervisor.getJobResults();
+        if (supervisor != null) {
+            result = supervisor.getJobResults();
 
-        // This is the final call so cleanup on all nodes that are not job owners
-        if (!supervisor.isOwnerNode()) {
-            mapReduceService.destroyJobSupervisor(supervisor);
-            AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.getJobTracker(getName());
-            jobTracker.unregisterTrackableJob(getJobId());
-            jobTracker.unregisterMapCombineTask(getJobId());
-            jobTracker.unregisterReducerTask(getJobId());
+            // This is the final call so cleanup on all nodes that are not job owners
+            if (!supervisor.isOwnerNode()) {
+                mapReduceService.destroyJobSupervisor(supervisor);
+                AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.getJobTracker(getName());
+                jobTracker.unregisterTrackableJob(getJobId());
+                jobTracker.unregisterMapCombineTask(getJobId());
+                jobTracker.unregisterReducerTask(getJobId());
+            }
         }
     }
 
