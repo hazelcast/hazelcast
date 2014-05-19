@@ -20,13 +20,20 @@
         <format>zip</format>
     </formats>
     <fileSets>
-        <!--<fileSet>-->
-            <!--<directory>hazelcast-ra/target</directory>-->
-            <!--<outputDirectory>/lib/</outputDirectory>-->
-            <!--<includes>-->
-                <!--<include>hazelcast-ra-${project.version}.rar</include>-->
-            <!--</includes>-->
-        <!--</fileSet>-->
+        <fileSet>
+            <directory>hazelcast-ra/hazelcast-jca/target</directory>
+            <outputDirectory>/lib/</outputDirectory>
+            <includes>
+                <include>hazelcast-jca-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast-ra/hazelcast-jca-rar/target</directory>
+            <outputDirectory>/lib/</outputDirectory>
+            <includes>
+                <include>hazelcast-jca-rar-${project.version}.rar</include>
+            </includes>
+        </fileSet>
         <fileSet>
             <directory>hazelcast-wm/target/</directory>
             <outputDirectory>/lib/</outputDirectory>
