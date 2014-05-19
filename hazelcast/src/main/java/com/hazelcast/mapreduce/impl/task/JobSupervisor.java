@@ -286,8 +286,8 @@ public class JobSupervisor {
             String name = configuration.getName();
             String jobId = configuration.getJobId();
             NodeEngine nodeEngine = configuration.getNodeEngine();
-            List<Map> results = MapReduceUtil
-                    .executeOperation(new GetResultOperationFactory(name, jobId), mapReduceService, nodeEngine, true);
+            GetResultOperationFactory operationFactory = new GetResultOperationFactory(name, jobId);
+            List<Map> results = MapReduceUtil.executeOperation(operationFactory, mapReduceService, nodeEngine, true);
 
             boolean reducedResult = configuration.getReducerFactory() != null;
 
