@@ -30,6 +30,13 @@ According to the above example, Hazelcast will try to find free ports between 57
 
 Naturally, the parameter `port-count` is ignored when the above configuration is made.
 
+You can let OS to select a free port from the ephemeral range by setting the port to 0. This can be useful if Hazelcast is running in an environment where you cannot predict which ports are available. This is only usable when you are using multicast for members discovery as with TCP discovery mechanism you have to know the ports upfront.   
+  
+```xml
+<network>
+   <port>0</port>
+</network>
+```
 
 #### Outbound Ports
 

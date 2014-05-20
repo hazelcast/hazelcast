@@ -87,7 +87,7 @@ class DefaultAddressPicker implements AddressPicker {
             log(Level.FINEST, "inet reuseAddress:" + reuseAddress);
             InetSocketAddress inetSocketAddress;
             ServerSocket serverSocket = null;
-            int port = networkConfig.getPort();
+            int candidatePort = networkConfig.getPort();
 
             Throwable error = null;
             for (int i = 0; i < portCount; i++) {
@@ -104,9 +104,9 @@ class DefaultAddressPicker implements AddressPicker {
                 serverSocket.setSoTimeout(1000);
                 try {
                     if (bindAny) {
-                        inetSocketAddress = new InetSocketAddress(port);
+                        inetSocketAddress = new InetSocketAddress(candidatePort);
                     } else {
-                        inetSocketAddress = new InetSocketAddress(bindAddressDef.inetAddress, port);
+                        inetSocketAddress = new InetSocketAddress(bindAddressDef.inetAddress, candidatePort);
                     }
                     log(Level.FINEST, "Trying to bind inet socket address:" + inetSocketAddress);
                     serverSocket.bind(inetSocketAddress, 100);
@@ -117,10 +117,10 @@ class DefaultAddressPicker implements AddressPicker {
                     serverSocketChannel.close();
 
                     if (networkConfig.isPortAutoIncrement()) {
-                        port++;
+                        candidatePort++;
                         error = e;
                     } else {
-                        String msg = "Port [" + port + "] is already in use and auto-increment is "
+                        String msg = "Port [" + candidatePort + "] is already in use and auto-increment is "
                                 + "disabled. Hazelcast cannot start.";
                         logger.severe(msg, e);
                         throw new HazelcastException(msg, error);
@@ -129,8 +129,9 @@ class DefaultAddressPicker implements AddressPicker {
             }
             if (serverSocket == null || !serverSocket.isBound()) {
                 throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start! "
-                        + "config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
+                        + "config-port: " + networkConfig.getPort() + ", latest-port: " + candidatePort, error);
             }
+            int port = serverSocket.getLocalPort();
             serverSocketChannel.configureBlocking(false);
             bindAddress = createAddress(bindAddressDef, port);
             log(Level.INFO, "Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is "
