@@ -158,10 +158,10 @@ Default values are
 
 Topic related but not topic specific configuration parameters
 
-    - "hazelcast.event.queue.capacity" : default value is 1,000,000
-    - "hazelcast.event.queue.timeout.millis" : default value is 250
-    - "hazelcast.event.thread.count" : default value is 5
+   - `hazelcast.event.queue.capacity`: default value is 1,000,000
+   - `hazelcast.event.queue.timeout.millis`: default value is 250
+   - `hazelcast.event.thread.count`: default value is 5
 
-For these parameters see [Distributed Event Config](#global-event-configuration)
+For description of these parameters, please see [Global Event Configuration](#global-event-configuration).
 
 
