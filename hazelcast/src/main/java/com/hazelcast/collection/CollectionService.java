@@ -19,6 +19,8 @@ package com.hazelcast.collection;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -37,14 +39,18 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Level;
 
 public abstract class CollectionService implements ManagedService, RemoteService,
         EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {
 
-    protected NodeEngine nodeEngine;
+    protected final NodeEngine nodeEngine;
+
+    private final ILogger logger;
 
     protected CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
@@ -75,8 +81,15 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
     @Override
     public void dispatchEvent(CollectionEvent event, ItemListener listener) {
+        final MemberImpl member = nodeEngine.getClusterService().getMember(event.caller);
         ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, nodeEngine.toObject(event.data),
-                nodeEngine.getClusterService().getMember(event.caller));
+                member);
+        if (member == null) {
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("Dropping event " + itemEvent + " from unknown address:" + event.caller);
+            }
+            return;
+        }
         if (event.eventType.equals(ItemEventType.ADDED)) {
             listener.itemAdded(itemEvent);
         } else {
