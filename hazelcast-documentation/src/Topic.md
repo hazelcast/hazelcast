@@ -12,7 +12,9 @@ Topic has two statistic variables that can be queried. These values are incremen
     final ITopic<Object> myTopic = instance.getTopic("myTopicName");
 
     myTopic.getLocalTopicStats().getPublishOperationCount();
-    myTopic.getLocalTopicStats().getReceiveOperationCount();```
+    myTopic.getLocalTopicStats().getReceiveOperationCount();
+
+```
 
 
 `getPublishOperationCount` and `getReceiveOperationCount` returns total number of publishes and received messages since the start of this node, respectively. Please note that, these values are not backed up and if the node goes down, they will be lost.
@@ -122,7 +124,7 @@ Topic related but not topic specific configuration parameters
     - "hazelcast.event.queue.timeout.millis" : default value is 250
     - "hazelcast.event.thread.count" : default value is 5
 
-For these parameters see [Distributed Event Config]#not-availaible-yet
+For these parameters see [Distributed Event Config](#global-event-configuration)
 
 
 ### Sample Topic Code
