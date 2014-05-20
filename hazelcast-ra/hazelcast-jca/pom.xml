@@ -51,7 +51,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>1.7</version>
+                <version>${animal.sniffer.plugin.version}</version>
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
@@ -121,7 +121,6 @@
             <scope>test</scope>
         </dependency>
 
-
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-j2ee-connector_1.5_spec</artifactId>
@@ -161,13 +160,24 @@
             <artifactId>jboss-javaee-6.0</artifactId>
             <version>1.0.0.Final</version>
             <type>pom</type>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.as</groupId>
             <artifactId>jboss-as-arquillian-container-managed</artifactId>
             <version>7.1.1.Final</version>
             <scope>test</scope>
+            <!-- jboss jmx dependencies include jdk tools.jar which is breaking animal sniffer plugin check goal -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jboss.as</groupId>
+                    <artifactId>jboss-as-arquillian-protocol-jmx</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jboss.as</groupId>
+                    <artifactId>jboss-as-jmx</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.protocol</groupId>
