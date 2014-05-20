@@ -39,10 +39,10 @@ public final class WriteBehindQueues {
     public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue(boolean isWriteBehindEnabled) {
         return isWriteBehindEnabled
                 ? (WriteBehindQueue<T>) createSafeWriteBehindQueue(createBoundedArrayWriteBehindQueue())
-                : (WriteBehindQueue<T>) createEmptyWriteBehindQueue();
+                : (WriteBehindQueue<T>) emptyWriteBehindQueue();
     }
 
-    public static <T> WriteBehindQueue<T> createEmptyWriteBehindQueue() {
+    public static <T> WriteBehindQueue<T> emptyWriteBehindQueue() {
         return (WriteBehindQueue<T>) EmptyWriteBehindQueueHolder.EMPTY_WRITE_BEHIND_QUEUE;
     }
 
@@ -96,7 +96,7 @@ public final class WriteBehindQueues {
 
         @Override
         public WriteBehindQueue getSnapShot() {
-            return WriteBehindQueues.createEmptyWriteBehindQueue();
+            return WriteBehindQueues.emptyWriteBehindQueue();
         }
 
         @Override
