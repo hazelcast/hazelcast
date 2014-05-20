@@ -102,6 +102,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 
 /**
  * The SPI Service for the Map.
@@ -883,6 +884,12 @@ public class MapService implements ManagedService, MigrationAwareService,
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getMapName(),
                 eventData.getDataKey(), eventData.getDataNewValue(), eventData.getDataOldValue(), getSerializationService());
+        if (member == null) {
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("Dropping event " + event + " from unknown address:" + eventData.getCaller());
+            }
+            return;
+        }
         switch (event.getEventType()) {
             case ADDED:
                 listener.entryAdded(event);

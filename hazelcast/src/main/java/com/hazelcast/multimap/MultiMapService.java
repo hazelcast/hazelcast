@@ -24,6 +24,8 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.txn.TransactionalMultiMapProxy;
@@ -57,6 +59,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
 
 /**
  * @author ali 1/1/13
@@ -73,11 +76,13 @@ public class MultiMapService implements ManagedService, RemoteService,
             return new LocalMultiMapStatsImpl();
         }
     };
+    private final ILogger logger;
 
     public MultiMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         partitionContainers = new MultiMapPartitionContainer[partitionCount];
+        this.logger = nodeEngine.getLogger(MultiMapService.class);
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -187,8 +192,16 @@ public class MultiMapService implements ManagedService, RemoteService,
 
     public void dispatchEvent(MultiMapEvent event, EventListener listener) {
         EntryListener entryListener = (EntryListener) listener;
-        EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getClusterService().getMember(event.getCaller()),
+        final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
+        EntryEvent entryEvent = new EntryEvent(event.getName(), member,
                 event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
+        if (member == null) {
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("Dropping event " + entryEvent + " from unknown address:" + event.getCaller());
+            }
+            return;
+        }
+
         if (event.getEventType().equals(EntryEventType.ADDED)) {
             entryListener.entryAdded(entryEvent);
         } else if (event.getEventType().equals(EntryEventType.REMOVED)) {
