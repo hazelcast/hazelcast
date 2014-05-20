@@ -6,7 +6,7 @@ src/Introduction.md
 		src/ConfiguringHazelcast.md
 	src/UseCases.md
 	src/Resources.md
-src/Whats_new_3.2.md
+src/Whats_new_3.3.md
 	src/UpgradingFrom2x.md
 	src/DocumentRevisionHistory.md
 src/Distributed_Data_Structures.md

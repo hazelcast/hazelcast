@@ -19,7 +19,7 @@ Alternatively, Hazelcast can be found in the standard Maven repositories. So, if
 	<dependency>
 		<groupId>com.hazelcast</groupId>
 		<artifactId>hazelcast</artifactId>
-		<version>3.2</version>
+		<version>3.3</version>
 	</dependency>
 </dependencies>
 ```
