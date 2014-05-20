@@ -11,6 +11,7 @@
 ||[Topic](#topic), [Set](#set), [List](#list)|Sections enhanced.|
 ||[Lock](#lock)|Section enhanced and also ICondition subsection added.|
 ||[Replicated Map (Beta)](#replicated-map-beta)|Added as a new section.|
+||[IAtomicLong](#iatomiclong), [ISemaphore](#isemaphore)|Added as a new sections.|
 |[Chapter 5 - Distributed Computing](#distributed-computing)|[Entry Processor](#entry-processor)|Section enhanced by adding threading and Abstract Entry Processor information.|
 |[Chapter 6 - Distributed Query](#distributed-query)|[Paging Predicate](#criteria-API)|Added as a new section explaining the order/limit support.|
 ||[MapReduce](#mapreduce)|Added as a new section.|
