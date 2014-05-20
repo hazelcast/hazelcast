@@ -17,6 +17,7 @@
 package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
@@ -307,5 +308,17 @@ public final class MapReduceUtil {
 
     public static int mapSize(final int sourceSize) {
         return sourceSize == 0 ? 0 : (int) (sourceSize / DEFAULT_MAP_GROWTH_FACTOR) + 1;
+    }
+
+    public static void injectManagedContext(NodeEngine nodeEngine, Object injectee, Object... injectees) {
+        ManagedContext managedContext = nodeEngine.getSerializationService().getManagedContext();
+        if (injectee != null) {
+            managedContext.initialize(injectee);
+        }
+        for (Object otherInjectee : injectees) {
+            if (otherInjectee != null) {
+                managedContext.initialize(otherInjectee);
+            }
+        }
     }
 }
