@@ -1,3 +1,4 @@
+#!/bin/sh
 function delete {
 	echo "Deleting created files"
 	$(rm -rf "./$MANIFEST_FILE_NAME")
@@ -229,40 +230,43 @@ function cleanIfExists {
 	mkdir $OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR
 	echo "Creating $OUTPUT_DIR/$PDF_OUTPUT_DIR"
 	mkdir $OUTPUT_DIR/$PDF_OUTPUT_DIR	
-		
-		
 }
+
+function moveImages {
+    # Move images manually, BeautifulDocs is not working reliable when copying images. Bug reported about that.
+    if [ ! -d "./src/images" ]; then
+        mkdir ./src/images
+    fi
+    cp -aR ./images/ ./src/images/
+    mkdir ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
+    mkdir ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
+    mkdir ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
+    mkdir ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
+
+    cp -aR ./images/ ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
+    cp -aR ./images/ ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
+    cp -aR ./images/ ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
+    cp -aR ./images/ ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
+}
+
+function moveCreatedPDF {
+    mv $PDF_FILE_NAME ./$OUTPUT_DIR/$PDF_OUTPUT_DIR/$PDF_FILE_NAME
+}
+function moveMergedMarkDown {
+    echo "Move merged file from $MERGED_FILE_NAME to /src/$MERGED_FILE_NAME"
+    mv $MERGED_FILE_NAME ./src/$MERGED_FILE_NAME
+}
+
 init $1
 cleanIfExists
+moveImages
 createMultiHTML
-
 createPDF
-mv $PDF_FILE_NAME ./$OUTPUT_DIR/$PDF_OUTPUT_DIR/$PDF_FILE_NAME
-echo "Move merged file from $MERGED_FILE_NAME to /src/$MERGED_FILE_NAME"
-mv $MERGED_FILE_NAME ./src/$MERGED_FILE_NAME
-#########
-mkdir ./src/images
-cp -a ./images/*.jpg ./src/images/
-cp -a ./images/*.png ./src/images/
-mkdir ./src/hostedmancenter/images
-cp -a ./images/*.jpg ./src/hostedmancenter/images/
-cp -a ./images/*.png ./src/hostedmancenter/images/
-mkdir ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
-mkdir ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
-mkdir ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
+moveCreatedPDF
+moveMergedMarkDown
 createSingleHTML
 createMancenterDocumentation "hostedmancenter" $HOSTED_MANCENTER_OUTPUT_DIR
 createMancenterDocumentation "mancenter" $MANCENTER_OUTPUT_DIR
-
-# Move images manually, BeautifulDocs is not working reliable when copying images. Bug reported about that.
-cp -a ./images/*.jpg ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
-cp -a ./images/*.jpg ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
-cp -a ./images/*.jpg ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
-cp -a ./images/*.jpg ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
-cp -a ./images/*.png ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
-cp -a ./images/*.png ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
-cp -a ./images/*.png ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
-cp -a ./images/*.png ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
 delete
 echo "Done"
 
