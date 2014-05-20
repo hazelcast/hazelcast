@@ -16,10 +16,9 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
@@ -28,7 +27,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import java.util.BitSet;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -368,5 +373,26 @@ public class AtomicReferenceTest extends HazelcastTestSupport {
         IAtomicReference<String> ref = hazelcastInstance.getAtomicReference("toString");
 
         assertEquals("IAtomicReference{name='toString'}", ref.toString());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void getAndAlter_when_same_reference() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+
+        BitSet bitSet = new BitSet();
+        IAtomicReference<BitSet> ref2 = hazelcastInstance.getAtomicReference(randomString());
+        ref2.set(bitSet);
+        bitSet.set(100);
+        assertEquals(bitSet, ref2.alterAndGet(new FailingFunctionAlter()));
+        assertEquals(bitSet, ref2.get());
+    }
+
+    private static class FailingFunctionAlter implements IFunction<BitSet, BitSet> {
+        @Override
+        public BitSet apply(BitSet input) {
+            input.set(100);
+            return input;
+        }
     }
 }
