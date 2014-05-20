@@ -40,12 +40,9 @@ public class AlterAndGetOperation extends AbstractAlterOperation {
         Object input = nodeEngine.toObject(reference.get());
         //noinspection unchecked
         Object output = f.apply(input);
-        shouldBackup = !isEquals(input, output);
-        if (shouldBackup) {
-            backup = nodeEngine.toData(output);
-            reference.set(backup);
-        }
-
+        shouldBackup = true;
+        backup = nodeEngine.toData(output);
+        reference.set(backup);
         response = output;
     }
 
