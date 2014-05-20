@@ -280,9 +280,6 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
         invoke(request);
     }
 
-    protected void onDestroy() {
-    }
-
     protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getPartitionKey());
     }

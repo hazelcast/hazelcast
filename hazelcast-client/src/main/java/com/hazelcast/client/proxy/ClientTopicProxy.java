@@ -88,10 +88,6 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
-    @Override
-    protected void onDestroy() {
-    }
-
     private Data getKey() {
         if (key == null) {
             key = getContext().getSerializationService().toData(name);

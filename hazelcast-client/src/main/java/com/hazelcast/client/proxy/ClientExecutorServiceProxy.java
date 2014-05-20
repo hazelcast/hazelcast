@@ -373,10 +373,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         throw new UnsupportedOperationException();
     }
 
-    protected void onDestroy() {
-    }
-
-    private Object getTaskPartitionKey(Object task) {
+     private Object getTaskPartitionKey(Object task) {
         if (task instanceof PartitionAware) {
             return ((PartitionAware) task).getPartitionKey();
         }

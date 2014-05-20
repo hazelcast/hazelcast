@@ -28,11 +28,12 @@ import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-/**
- * @author mdogan 5/16/13
- */
 public abstract class ClientProxy implements DistributedObject {
+
+    private final static AtomicReferenceFieldUpdater<ClientProxy, ClientContext> CONTEXT_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(ClientProxy.class, ClientContext.class, "context");
 
     protected final String instanceName;
 
@@ -77,31 +78,46 @@ public abstract class ClientProxy implements DistributedObject {
         return objectName;
     }
 
+    @Override
     public final String getName() {
         return objectName;
     }
 
+    @Override
     public String getPartitionKey() {
         return StringPartitioningStrategy.getPartitionKey(getName());
     }
 
+    @Override
     public final String getServiceName() {
         return serviceName;
     }
 
+    @Override
     public final void destroy() {
+        ClientContext clientContext = this.context;
+        if (clientContext == null) {
+            return;
+        }
+
+        // we are going to do a cas to prevent multiple/concurrent destroy calls from succeeding. Only one needs to
+        // succeed, in this case the one that is able to set the context to null.
+        if (!CONTEXT_UPDATER.compareAndSet(this, clientContext, null)) {
+            return;
+        }
+
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
+        clientContext.removeProxy(this);
         try {
-            context.getInvocationService().invokeOnRandomTarget(request).get();
+            clientContext.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        context.removeProxy(this);
-        context = null;
     }
 
-    protected abstract void onDestroy();
+    protected void onDestroy() {
+    }
 
     protected void onShutdown() {
     }

@@ -181,9 +181,6 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
         return stopListening(request, registrationId);
     }
 
-    protected void onDestroy() {
-    }
-
     protected <T> T invoke(ClientRequest req) {
         if (req instanceof CollectionRequest) {
             CollectionRequest request = (CollectionRequest) req;
