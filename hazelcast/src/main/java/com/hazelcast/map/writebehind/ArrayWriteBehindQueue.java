@@ -91,7 +91,7 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     @Override
     public WriteBehindQueue<T> getSnapShot() {
         if (list == null || list.isEmpty()) {
-            return WriteBehindQueues.createEmptyWriteBehindQueue();
+            return WriteBehindQueues.emptyWriteBehindQueue();
         }
         return new ArrayWriteBehindQueue<T>(new ArrayList<T>(list));
     }

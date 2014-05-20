@@ -48,7 +48,7 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     @Override
     public WriteBehindQueue<T> getSnapShot() {
         if (list == null || list.isEmpty()) {
-            return WriteBehindQueues.createEmptyWriteBehindQueue();
+            return WriteBehindQueues.emptyWriteBehindQueue();
         }
         return new BoundedArrayWriteBehindQueue<T>(new ArrayList<T>(list), maxSize);
     }
