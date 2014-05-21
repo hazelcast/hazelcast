@@ -176,49 +176,6 @@ public class PortableTest {
         assertTrue(object2 instanceof NamedPortable);
     }
 
-    @Test
-    public void testDifferentVersionsUsingDataWriteAndRead() throws IOException {
-        final SerializationService serializationService = new SerializationServiceBuilder().setVersion(1)
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
-                    public Portable create(int classId) {
-                        return new NamedPortable();
-                    }
-
-                }).build();
-
-        final SerializationService serializationService2 = new SerializationServiceBuilder().setVersion(2)
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
-                    public Portable create(int classId) {
-                        return new NamedPortableV2();
-                    }
-                }).build();
-
-        NamedPortable p1 = new NamedPortable("portable-v1", 111);
-        Data data = serializationService.toData(p1);
-
-        // emulate socket write by writing data to stream
-        BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
-        data.writeData(out);
-        byte[] bytes = out.toByteArray();
-
-        // emulate socket read by reading data from stream
-        BufferObjectDataInput in = serializationService2.createObjectDataInput(bytes);
-        data = new Data();
-        data.readData(in);
-
-        // register class def and read data
-        Object object1 = serializationService2.toObject(data);
-
-        // serialize new portable version
-        NamedPortableV2 p2 = new NamedPortableV2("portable-v2", 123);
-        Data data2 = serializationService2.toData(p2);
-
-        // de-serialize back using old version
-        Object object2 = serializationService.toObject(data2);
-
-        assertTrue(object1 instanceof NamedPortableV2);
-        assertTrue(object2 instanceof NamedPortable);
-    }
 
     @Test
     public void testPreDefinedDifferentVersions() {
