@@ -176,7 +176,6 @@ public class PortableTest {
         assertTrue(object2 instanceof NamedPortable);
     }
 
-
     @Test
     public void testPreDefinedDifferentVersions() {
         ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, InnerPortable.CLASS_ID);

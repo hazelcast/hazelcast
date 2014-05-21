@@ -448,16 +448,18 @@ public class MapService implements ManagedService, MigrationAwareService,
         return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
     }
 
-    public void putNearCache(String mapName, Data key, Data value) {
-        if(!isNearCacheEnabled(mapName)){
-            return;
+    // this operation returns the given value in near-cache memory format (data or object)
+    // if near-cache is not enabled, it returns null
+    public Object putNearCache(String mapName, Data key, Data value) {
+        if (!isNearCacheEnabled(mapName)) {
+            return null;
         }
         NearCache nearCache = getNearCache(mapName);
-        nearCache.put(key, value);
+        return nearCache.put(key, value);
     }
 
     public void invalidateNearCache(String mapName, Data key) {
-        if(!isNearCacheEnabled(mapName)){
+        if (!isNearCacheEnabled(mapName)) {
             return;
         }
         NearCache nearCache = getNearCache(mapName);
@@ -465,7 +467,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void invalidateNearCache(String mapName, Set<Data> keys) {
-        if(!isNearCacheEnabled(mapName)){
+        if (!isNearCacheEnabled(mapName)) {
             return;
         }
         NearCache nearCache = getNearCache(mapName);
@@ -473,7 +475,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void clearNearCache(String mapName) {
-        if(!isNearCacheEnabled(mapName)){
+        if (!isNearCacheEnabled(mapName)) {
             return;
         }
         final NearCache nearCache = nearCacheMap.get(mapName);
@@ -483,7 +485,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void invalidateAllNearCaches(String mapName, Data key) {
-        if(!isNearCacheEnabled(mapName)){
+        if (!isNearCacheEnabled(mapName)) {
             return;
         }
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
@@ -539,6 +541,9 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Object getFromNearCache(String mapName, Data key) {
+        if (!isNearCacheEnabled(mapName)) {
+            return null;
+        }
         NearCache nearCache = getNearCache(mapName);
         return nearCache.get(key);
     }
@@ -831,7 +836,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             simpleEntryView.setLastStoredTime(statistics.getLastStoredTime());
             simpleEntryView.setLastUpdateTime(statistics.getLastUpdateTime());
         }
-        return simpleEntryView;
+       return simpleEntryView;
     }
 
     public long findDelayMillis(ScheduledEntry entry) {

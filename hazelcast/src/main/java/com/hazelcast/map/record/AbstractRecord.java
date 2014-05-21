@@ -93,6 +93,10 @@ public abstract class AbstractRecord<V> implements Record<V> {
         int size = 0 ;
         // statistics
         size += 4 + (statistics == null ? 0 : statistics.size());
+        // add size of version.
+        size += (Long.SIZE / Byte.SIZE);
+        // add size of evictionCriteriaNumber.
+        size += (Long.SIZE / Byte.SIZE);
         // add key size.
         size += 4 + key.getHeapCost();
         return size;

@@ -99,7 +99,6 @@ public class RecordStatistics implements DataSerializable {
 
     public long size() {
         //size of the instance.
-        final int numberOfLongVariables = 3;
         return 5 * (Long.SIZE / Byte.SIZE) + (Integer.SIZE / Byte.SIZE);
     }
 
