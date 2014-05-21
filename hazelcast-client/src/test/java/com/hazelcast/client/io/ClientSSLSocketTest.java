@@ -52,19 +52,22 @@ public class ClientSSLSocketTest {
 
     @Test
     public void test() throws IOException {
-        Properties props = TestKeyStoreUtil.createSslProperties();
+        Properties serverSslProps = TestKeyStoreUtil.createSslProperties();
         Config cfg = new Config();
         cfg.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         cfg.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
-        cfg.getNetworkConfig().setSSLConfig(new SSLConfig().setEnabled(true).setProperties(props));
+        cfg.getNetworkConfig().setSSLConfig(new SSLConfig().setEnabled(true).setProperties(serverSslProps));
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(cfg);
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(cfg);
 
+        Properties clientSslProps = TestKeyStoreUtil.createSslProperties();
+        // no need for keystore on client side
+        clientSslProps.remove(TestKeyStoreUtil.JAVAX_NET_SSL_KEY_STORE);
+        clientSslProps.remove(TestKeyStoreUtil.JAVAX_NET_SSL_KEY_STORE_PASSWORD);
         ClientConfig config = new ClientConfig();
         config.getNetworkConfig().addAddress("127.0.0.1");
         config.getNetworkConfig().setRedoOperation(true);
-        config.getNetworkConfig().setSSLConfig(new SSLConfig().setEnabled(true).setProperties(props));
-
+        config.getNetworkConfig().setSSLConfig(new SSLConfig().setEnabled(true).setProperties(clientSslProps));
 
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
         IMap<Object, Object> clientMap = client.getMap("test");

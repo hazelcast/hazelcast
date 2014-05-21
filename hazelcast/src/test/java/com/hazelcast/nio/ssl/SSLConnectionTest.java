@@ -52,6 +52,8 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class SSLConnectionTest {
 
+    private static final int PORT = 13131;
+
     @BeforeClass
     @AfterClass
     public static void killAllHazelcastInstances() throws IOException {
@@ -60,53 +62,18 @@ public class SSLConnectionTest {
 
     @Test(timeout = 1000 * 60)
     public void testSockets() throws Exception {
-        Properties props = TestKeyStoreUtil.createSslProperties();
         ServerSocketChannel serverSocketChannel = null;
         Socket socket = null;
         final ExecutorService ex = Executors.newCachedThreadPool();
         try {
             final int count = 250;
-            BasicSSLContextFactory factory = new BasicSSLContextFactory();
-            factory.init(props);
-            final SSLContext context = factory.getSSLContext();
             serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.configureBlocking(true);
-            int port = 13131;
-            serverSocketChannel.socket().bind(new InetSocketAddress(port));
+            ex.execute(new ServerSocketChannelProcessor(serverSocketChannel, count, ex));
 
-            final ServerSocketChannel ssc = serverSocketChannel;
-            ex.execute(new Runnable() {
-                public void run() {
-                    SocketChannelWrapper socketChannel = null;
-                    try {
-                        socketChannel = new SSLSocketChannelWrapper(context, ssc.accept(), false);
-                        final CountDownLatch latch = new CountDownLatch(2);
-                        final BlockingQueue<Integer> queue = new ArrayBlockingQueue<Integer>(count);
-
-                        ex.execute(new ChannelReader(socketChannel, count, latch) {
-                            void processData(int i, int data) throws Exception {
-                                queue.add(data);
-                            }
-                        });
-                        ex.execute(new ChannelWriter(socketChannel, count, latch) {
-                            int prepareData(int i) throws Exception {
-                                int data = queue.poll(30, TimeUnit.SECONDS);
-                                return data * 2 + 1;
-                            }
-                        });
-
-                        latch.await(2, TimeUnit.MINUTES);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        IOUtil.closeResource(socketChannel);
-                    }
-                }
-            });
-
-            javax.net.ssl.SSLSocketFactory socketFactory = context.getSocketFactory();
+            SSLContext clientContext = createClientSslContext();
+            javax.net.ssl.SSLSocketFactory socketFactory = clientContext.getSocketFactory();
             socket = socketFactory.createSocket();
-            socket.connect(new InetSocketAddress(port));
+            socket.connect(new InetSocketAddress(PORT));
 
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             DataInputStream in = new DataInputStream(socket.getInputStream());
@@ -125,6 +92,52 @@ public class SSLConnectionTest {
                 } catch (IOException e) {
                 }
             }
+            IOUtil.closeResource(serverSocketChannel);
+        }
+    }
+
+    @Test(timeout = 1000 * 60)
+    public void testSocketChannels() throws Exception {
+        ServerSocketChannel serverSocketChannel = null;
+        SocketChannelWrapper socketChannel = null;
+        final ExecutorService ex = Executors.newCachedThreadPool();
+        try {
+            final int count = 1000;
+            serverSocketChannel = ServerSocketChannel.open();
+            ex.execute(new ServerSocketChannelProcessor(serverSocketChannel, count, ex));
+
+            final AtomicReference<Error> error = new AtomicReference<Error>();
+            SSLContext clientContext = createClientSslContext();
+            socketChannel = new SSLSocketChannelWrapper(clientContext, SocketChannel.open(), true);
+            socketChannel.connect(new InetSocketAddress(PORT));
+            final CountDownLatch latch = new CountDownLatch(2);
+
+            ex.execute(new ChannelWriter(socketChannel, count, latch) {
+                int prepareData(int i) throws Exception {
+                    return i;
+                }
+            });
+
+            ex.execute(new ChannelReader(socketChannel, count, latch) {
+                void processData(int i, int data) throws Exception {
+                    try {
+                        assertEquals(i * 2 + 1, data);
+                    } catch (AssertionError e) {
+                        error.compareAndSet(null, e);
+                        throw e;
+                    }
+                }
+            });
+
+            latch.await(2, TimeUnit.MINUTES);
+
+            Error e = error.get();
+            if (e != null) {
+                throw e;
+            }
+        } finally {
+            ex.shutdownNow();
+            IOUtil.closeResource(socketChannel);
             IOUtil.closeResource(serverSocketChannel);
         }
     }
@@ -195,85 +208,64 @@ public class SSLConnectionTest {
         abstract int prepareData(int i) throws Exception;
     }
 
-    @Test(timeout = 1000 * 60)
-    public void testSocketChannels() throws Exception {
-        Properties props = TestKeyStoreUtil.createSslProperties();
-        ServerSocketChannel serverSocketChannel = null;
-        SocketChannelWrapper socketChannel = null;
-        final ExecutorService ex = Executors.newCachedThreadPool();
-        try {
-            final int count = 1000;
-            final int port = 13131;
-            BasicSSLContextFactory factory = new BasicSSLContextFactory();
-            factory.init(props);
-            final SSLContext context = factory.getSSLContext();
-            serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.configureBlocking(true);
-            serverSocketChannel.socket().bind(new InetSocketAddress(port));
+    private class ServerSocketChannelProcessor implements Runnable {
+        private final ServerSocketChannel ssc;
+        private final int count;
+        private final ExecutorService ex;
 
-            final ServerSocketChannel ssc = serverSocketChannel;
-            ex.execute(new Runnable() {
-                public void run() {
-                    SocketChannelWrapper socketChannel = null;
-                    try {
-                        socketChannel = new SSLSocketChannelWrapper(context, ssc.accept(), false);
-                        final CountDownLatch latch = new CountDownLatch(2);
-                        final BlockingQueue<Integer> queue = new ArrayBlockingQueue<Integer>(count);
-
-                        ex.execute(new ChannelReader(socketChannel, count, latch) {
-                            void processData(int i, int data) throws Exception {
-                                queue.add(data);
-                            }
-                        });
-                        ex.execute(new ChannelWriter(socketChannel, count, latch) {
-                            int prepareData(int i) throws Exception {
-                                int data = queue.poll(30, TimeUnit.SECONDS);
-                                return data * 2 + 1;
-                            }
-                        });
-
-                        latch.await(2, TimeUnit.MINUTES);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        IOUtil.closeResource(socketChannel);
-                    }
-                }
-            });
-
-            final AtomicReference<Error> error = new AtomicReference<Error>();
-            socketChannel = new SSLSocketChannelWrapper(context, SocketChannel.open(), true);
-            socketChannel.connect(new InetSocketAddress(port));
-            final CountDownLatch latch = new CountDownLatch(2);
-
-            ex.execute(new ChannelWriter(socketChannel, count, latch) {
-                int prepareData(int i) throws Exception {
-                    return i;
-                }
-            });
-
-            ex.execute(new ChannelReader(socketChannel, count, latch) {
-                void processData(int i, int data) throws Exception {
-                    try {
-                        assertEquals(i * 2 + 1, data);
-                    } catch (AssertionError e) {
-                        error.compareAndSet(null, e);
-                        throw e;
-                    }
-                }
-            });
-
-            latch.await(2, TimeUnit.MINUTES);
-
-            Error e = error.get();
-            if (e != null) {
-                throw e;
-            }
-        } finally {
-            ex.shutdownNow();
-            IOUtil.closeResource(socketChannel);
-            IOUtil.closeResource(serverSocketChannel);
+        public ServerSocketChannelProcessor(ServerSocketChannel ssc, int count,
+                ExecutorService ex) {
+            this.ssc = ssc;
+            this.count = count;
+            this.ex = ex;
         }
+
+        public void run() {
+            SocketChannelWrapper socketChannel = null;
+            try {
+                ssc.configureBlocking(true);
+                ssc.socket().bind(new InetSocketAddress(PORT));
+                SSLContext context = createServerSslContext();
+                socketChannel = new SSLSocketChannelWrapper(context, ssc.accept(), false);
+                final CountDownLatch latch = new CountDownLatch(2);
+                final BlockingQueue<Integer> queue = new ArrayBlockingQueue<Integer>(count);
+
+                ex.execute(new ChannelReader(socketChannel, count, latch) {
+                    void processData(int i, int data) throws Exception {
+                        queue.add(data);
+                    }
+                });
+                ex.execute(new ChannelWriter(socketChannel, count, latch) {
+                    int prepareData(int i) throws Exception {
+                        int data = queue.poll(30, TimeUnit.SECONDS);
+                        return data * 2 + 1;
+                    }
+                });
+
+                latch.await(2, TimeUnit.MINUTES);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                IOUtil.closeResource(socketChannel);
+            }
+        }
+    }
+
+    private static SSLContext createServerSslContext() throws Exception {
+        SSLContextFactory factory = new BasicSSLContextFactory();
+        Properties props = TestKeyStoreUtil.createSslProperties();
+        factory.init(props);
+        return factory.getSSLContext();
+    }
+
+    private static SSLContext createClientSslContext() throws Exception {
+        SSLContextFactory factory = new BasicSSLContextFactory();
+        Properties props = TestKeyStoreUtil.createSslProperties();
+        // no need for keystore on client side
+        props.remove(TestKeyStoreUtil.JAVAX_NET_SSL_KEY_STORE);
+        props.remove(TestKeyStoreUtil.JAVAX_NET_SSL_KEY_STORE_PASSWORD);
+        factory.init(props);
+        return factory.getSSLContext();
     }
 
     @Test(timeout = 1000 * 180)

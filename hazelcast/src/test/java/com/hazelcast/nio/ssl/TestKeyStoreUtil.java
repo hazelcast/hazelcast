@@ -25,6 +25,11 @@ import java.util.Properties;
 
 public class TestKeyStoreUtil {
 
+    public static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
+    public static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
+    public static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
+    public static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
+
     private static String keyStore;
     private static String trustStore;
 
@@ -63,10 +68,10 @@ public class TestKeyStoreUtil {
 
     public static Properties createSslProperties() throws IOException {
         Properties props = new Properties();
-        props.setProperty("javax.net.ssl.keyStore", getKeyStoreFilePath());
-        props.setProperty("javax.net.ssl.trustStore", getTrustStoreFilePath());
-        props.setProperty("javax.net.ssl.keyStorePassword", "123456");
-        props.setProperty("javax.net.ssl.trustStorePassword", "123456");
+        props.setProperty(JAVAX_NET_SSL_KEY_STORE, getKeyStoreFilePath());
+        props.setProperty(JAVAX_NET_SSL_TRUST_STORE, getTrustStoreFilePath());
+        props.setProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD, "123456");
+        props.setProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, "123456");
         return props;
     }
 
