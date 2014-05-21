@@ -16,6 +16,7 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.management.SerializableClientEndPoint;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -25,10 +26,11 @@ import com.hazelcast.monitor.MemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +46,7 @@ public class MemberStateImpl implements MemberState {
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
     List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
+    Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -82,6 +85,10 @@ public class MemberStateImpl implements MemberState {
         out.writeInt(partitions.size());
         for (Integer lsPartition : partitions) {
             out.writeInt(lsPartition);
+        }
+        out.writeInt(clients.size());
+        for (SerializableClientEndPoint client : clients) {
+            client.writeData(out);
         }
     }
 
@@ -124,6 +131,11 @@ public class MemberStateImpl implements MemberState {
         }
         for (int i = in.readInt(); i > 0; i--) {
             partitions.add(in.readInt());
+        }
+        for (int i = in.readInt(); i > 0; i--) {
+            SerializableClientEndPoint ci = new SerializableClientEndPoint();
+            ci.readData(in);
+            clients.add(ci);
         }
     }
 
@@ -202,6 +214,14 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalExecutorStats(String name, LocalExecutorStatsImpl localExecutorStats) {
         executorStats.put(name, localExecutorStats);
+    }
+
+    public Collection<SerializableClientEndPoint> getClients() {
+        return clients;
+    }
+
+    public void setClients(Collection<SerializableClientEndPoint> clients) {
+        this.clients = clients;
     }
 
     @Override
