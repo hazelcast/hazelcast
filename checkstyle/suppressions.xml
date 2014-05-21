@@ -22,10 +22,11 @@
     <suppress checks="" files="com.hazelcast.client[\\/]"/>
 
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
-    <suppress checks="" files="com.hazelcast.spring[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
     <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="" files="com.hazelcast.wm[\\/]"/>
+
+    <suppress checks="" files="com.hazelcast.web.WebFilter"/>
 
 
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
@@ -394,6 +395,28 @@
     <suppress checks="ParameterAssignment" files="com.hazelcast.util.SortedHashMap"/>
     <suppress checks="MagicNumber" files="com.hazelcast.util.UuidUtil"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.util.VersionCheck"/>
+
+    <!-- Spring -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.spring.AbstractHazelcastBeanDefinitionParser"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spring.AbstractHazelcastBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastClientBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastClientBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="MethodCount" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="ExecutableStatement" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="ArrayTrailingComma" files="com.hazelcast.spring.HazelcastNamespaceHandler"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastTypeBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastInstanceDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spring.context.SpringManagedContext"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spring.context.SpringManagedContext"/>
 
     <!-- ReplicatedMap -->
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.client.proxy.ClientReplicatedMapProxy"/>
