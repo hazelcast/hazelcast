@@ -117,13 +117,18 @@ It is possible to use placeholders instead of concrete values. For instance, use
 Similar for client:
 
 ```xml
-<hz:client id="client"
-    group-name="${cluster.group.name}" group-password="${cluster.group.password}">
-    <hz:member>10.10.1.2:5701</hz:member>
-    <hz:member>10.10.1.3:5701</hz:member>
+<hz:client id="client">
+     <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+     <hz:network connection-attempt-limit="3"
+                            connection-attempt-period="3000"
+                            connection-timeout="1000"
+                            redo-operation="true"
+                            smart-routing="true">
+                    <hz:member>10.10.1.2:5701</hz:member>
+                    <hz:member>10.10.1.3:5701</hz:member>
+     </hz:network>
 </hz:client>
 ```
-
 Hazelcast also supports `lazy-init`, `scope` and `depends-on` bean attributes.
 
 ```xml

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+		http://www.hazelcast.com/schema/spring
+		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.2.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+        <property name="locations">
+            <list>
+                <value>classpath:/hazelcast-default.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <hz:hazelcast id="instance">
+        <hz:config>
+            <hz:group
+                    name="${cluster.group.name}"
+                    password="${cluster.group.password}"/>
+            <hz:properties>
+                <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
+                <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
+            </hz:properties>
+            <hz:network port="${cluster.port}" port-auto-increment="false">
+                <hz:join>
+                    <hz:multicast enabled="false"
+                                  multicast-group="224.2.2.3"
+                                  multicast-port="54327"/>
+                    <hz:tcp-ip enabled="true">
+                        <hz:members>${cluster.members}</hz:members>
+                    </hz:tcp-ip>
+                </hz:join>
+                <hz:interfaces enabled="false">
+                    <hz:interface>10.10.1.*</hz:interface>
+                </hz:interfaces>
+                <hz:ssl enabled="true" factory-class-name="com.hazelcast.nio.ssl.BasicSSLContextFactory">
+                    <hz:properties>
+                        <hz:property name="javax.net.ssl.keyStore">#{systemProperties['test.keyStore']}</hz:property>
+                        <hz:property name="javax.net.ssl.keyStorePassword">123456</hz:property>
+                        <hz:property name="javax.net.ssl.trustStore">#{systemProperties['test.trustStore']}</hz:property>
+                        <hz:property name="javax.net.ssl.trustStorePassword">123456</hz:property>
+                        <hz:property name="javax.net.ssl.protocol">TLS</hz:property>
+                    </hz:properties>
+                </hz:ssl>
+            </hz:network>
+        </hz:config>
+    </hz:hazelcast>
+
+
+    <hz:client id="client"
+               credentials-ref="credentials" >
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+            <hz:socket-interceptor enabled="true"/>
+            <hz:ssl enabled="true" factory-class-name="com.hazelcast.nio.ssl.BasicSSLContextFactory">
+                <hz:properties>
+                    <hz:property name="javax.net.ssl.keyStore">#{systemProperties['test.keyStore']}</hz:property>
+                    <hz:property name="javax.net.ssl.keyStorePassword">123456</hz:property>
+                    <hz:property name="javax.net.ssl.trustStore">#{systemProperties['test.trustStore']}</hz:property>
+                    <hz:property name="javax.net.ssl.trustStorePassword">123456</hz:property>
+                    <hz:property name="javax.net.ssl.protocol">TLS</hz:property>
+                </hz:properties>
+            </hz:ssl>
+        </hz:network>
+
+        <hz:listeners>
+            <hz:listener class-name="com.hazelcast.spring.DummyMembershipListener"/>
+            <hz:listener implementation="dummyMembershipListener"/>
+        </hz:listeners>
+
+        <hz:serialization allow-unsafe="false"
+                          byte-order="BIG_ENDIAN"
+                          check-class-def-errors="false"
+                          enable-compression="false"
+                          enable-shared-object="false"
+                          portable-version="10"
+                          use-native-byte-order="false" >
+
+            <hz:data-serializable-factories>
+                <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
+            </hz:data-serializable-factories>
+            <hz:portable-factories>
+                <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.serialization.DummyPortableFactory" />
+            </hz:portable-factories>
+            <hz:serializers>
+                <hz:serializer type-class="com.hazelcast.nio.serialization.CustomSerializationTest$Foo"
+                               class-name="com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer"/>
+            </hz:serializers>
+        </hz:serialization>
+
+
+
+        <hz:proxy-factories>
+            <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService" />
+        </hz:proxy-factories>
+
+        <hz:load-balancer type="round-robin" />
+
+        <hz:near-cache name="default"
+                       time-to-live-seconds="1"
+                       max-idle-seconds="70"
+                       eviction-policy="LRU"
+                       max-size="4000"
+                       invalidate-on-change="true"/>
+
+
+
+    </hz:client>
+
+    <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
+        <property name="username" value="spring-group" />
+        <property name="password" value="spring-group-pass" />
+    </bean>
+
+    <hz:map id="map" instance-ref="client" name="map"/>
+
+    <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
+
+</beans>
