@@ -18,14 +18,12 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -115,20 +113,23 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleNetwork(Node node) {
             List<String> members = new ArrayList<String>(10);
-            fillAttributeValues(node, configBuilder);
+            final BeanDefinitionBuilder networkConfigBuilder = createBeanBuilder(ClientNetworkConfig.class);
+
+            fillAttributeValues(node, networkConfigBuilder);
             for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(child);
                 if ("member".equals(nodeName)) {
                     members.add(getTextContent(child));
                 } else if ("socket-options".equals(nodeName)) {
-                    createAndFillBeanBuilder(child, SocketOptions.class, "socketOptions", configBuilder);
+                    createAndFillBeanBuilder(child, SocketOptions.class, "socketOptions", networkConfigBuilder);
                 } else if ("socket-interceptor".equals(nodeName)) {
-                    handleSocketInterceptorConfig(node, configBuilder);
+                    handleSocketInterceptorConfig(child, networkConfigBuilder);
                 } else if ("ssl".equals(nodeName)) {
-                    handleSSLConfig(node, configBuilder);
+                    handleSSLConfig(child, networkConfigBuilder);
                 }
             }
-            configBuilder.addPropertyValue("addresses", members);
+            networkConfigBuilder.addPropertyValue("addresses", members);
+            configBuilder.addPropertyValue("networkConfig", networkConfigBuilder.getBeanDefinition());
         }
 
         private void handleSSLConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
