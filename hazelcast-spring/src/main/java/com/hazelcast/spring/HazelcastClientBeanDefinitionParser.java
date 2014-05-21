@@ -18,6 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
@@ -114,21 +115,24 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleNetwork(Node node) {
+            final BeanDefinitionBuilder clientNetworkConfig = createBeanBuilder(ClientNetworkConfig.class);
             List<String> members = new ArrayList<String>(10);
-            fillAttributeValues(node, configBuilder);
+            fillAttributeValues(node, clientNetworkConfig);
             for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(child);
                 if ("member".equals(nodeName)) {
                     members.add(getTextContent(child));
                 } else if ("socket-options".equals(nodeName)) {
-                    createAndFillBeanBuilder(child, SocketOptions.class, "socketOptions", configBuilder);
+                    createAndFillBeanBuilder(child, SocketOptions.class, "socketOptions", clientNetworkConfig);
                 } else if ("socket-interceptor".equals(nodeName)) {
-                    handleSocketInterceptorConfig(node, configBuilder);
+                    handleSocketInterceptorConfig(child, clientNetworkConfig);
                 } else if ("ssl".equals(nodeName)) {
-                    handleSSLConfig(node, configBuilder);
+                    handleSSLConfig(child, clientNetworkConfig);
                 }
             }
-            configBuilder.addPropertyValue("addresses", members);
+            clientNetworkConfig.addPropertyValue("addresses", members);
+
+            configBuilder.addPropertyValue("networkConfig", clientNetworkConfig.getBeanDefinition());
         }
 
         private void handleSSLConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
