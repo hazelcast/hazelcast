@@ -175,7 +175,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         long timeoutMs = unit.toMillis(time);
         if (timeoutMs < 0) timeoutMs = 0;
 
-        final long maxCallTimeout = basicInvocation.callTimeout * 2 > 0 ? basicInvocation.callTimeout * 2 : Long.MAX_VALUE;
+        final long maxCallTimeout = basicInvocation.callTimeout  > 0 ? basicInvocation.callTimeout * 2 : Long.MAX_VALUE;
         final boolean longPolling = timeoutMs > maxCallTimeout;
         int pollCount = 0;
 
