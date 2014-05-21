@@ -24,6 +24,7 @@ import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
@@ -87,6 +88,11 @@ public class KeyValueJobOperation<K, V>
         if (jobOwner == null) {
             jobOwner = getNodeEngine().getThisAddress();
         }
+
+        // Inject managed context
+        MapReduceUtil.injectManagedContext(getNodeEngine(), mapper, combinerFactory, reducerFactory, keyValueSource);
+
+        // Build immutable configuration
         JobTaskConfiguration config = new JobTaskConfiguration(jobOwner, getNodeEngine(), chunkSize, name, jobId, mapper,
                 combinerFactory, reducerFactory, keyValueSource, communicateStats, topologyChangedStrategy);
 
