@@ -472,13 +472,12 @@ public class NearCacheTest extends HazelcastTestSupport {
             Future async = map.getAsync(i);
             async.get();
         }
-        //generate near cache hits with async call
+        //generate near cache hits
         for (int i = 0; i < size; i++) {
             map.get(i);
         }
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertTrue("size below 400", 400 < stats.getOwnedEntryCount());
-        assertTrue("hits below 400", 400 < stats.getHits());
     }
 
 

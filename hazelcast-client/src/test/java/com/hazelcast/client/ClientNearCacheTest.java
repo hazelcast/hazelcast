@@ -201,13 +201,12 @@ public class ClientNearCacheTest {
             Future async = map.getAsync(i);
             async.get();
         }
-        //generate near cache hits with async call
+        //generate near cache hits
         for (int i = 0; i < size; i++) {
             map.get(i);
         }
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(size, stats.getOwnedEntryCount());
-        assertEquals(size, stats.getHits());
     }
 
     @Test
