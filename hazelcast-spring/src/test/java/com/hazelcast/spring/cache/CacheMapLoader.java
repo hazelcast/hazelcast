@@ -55,21 +55,17 @@ public class CacheMapLoader implements MapStore, MapLoaderLifecycleSupport {
 
     @Override
     public void store(Object key, Object value) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public void storeAll(Map map) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public void delete(Object key) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public void deleteAll(Collection keys) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

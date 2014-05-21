@@ -56,7 +56,7 @@ public class HazelcastCache implements Cache {
     
     public <T> T get(Object key, Class<T> type) {
         Object value = fromStoreValue(this.map.get(key));
-        if (type != null && !type.isInstance(value)) {
+        if (type != null && value != null && !type.isInstance(value)) {
             throw new IllegalStateException("Cached value is not of required type [" + type.getName() + "]: " + value);
         }
         return (T) value;
