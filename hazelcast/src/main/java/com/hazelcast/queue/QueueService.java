@@ -19,6 +19,8 @@ package com.hazelcast.queue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
@@ -57,6 +59,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.logging.Level;
 
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
         RemoteService, EventPublishingService<QueueEvent, ItemListener> {
@@ -76,6 +79,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
     };
 
+    private final ILogger logger;
+
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         ScheduledExecutorService defaultScheduledExecutor
@@ -83,6 +88,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         QueueEvictionProcessor entryProcessor = new QueueEvictionProcessor(nodeEngine, this);
         this.queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(
                 defaultScheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
+        this.logger = nodeEngine.getLogger(QueueService.class);
     }
 
     public void scheduleEviction(String name, long delay) {
@@ -194,8 +200,16 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
         Object item = nodeEngine.toObject(event.data);
+        final MemberImpl member = nodeEngine.getClusterService().getMember(event.caller);
         ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, item,
-                nodeEngine.getClusterService().getMember(event.caller));
+                member);
+        if (member == null) {
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("Dropping event " + itemEvent + " from unknown address:" + event.caller);
+            }
+            return;
+        }
+
         if (event.eventType.equals(ItemEventType.ADDED)) {
             listener.itemAdded(itemEvent);
         } else {
