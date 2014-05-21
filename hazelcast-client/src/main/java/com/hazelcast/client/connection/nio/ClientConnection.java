@@ -82,8 +82,8 @@ public class ClientConnection implements Connection, Closeable {
     private final AtomicInteger packetCount = new AtomicInteger(0);
 
     public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
-                int connectionId, SocketChannelWrapper socketChannelWrapper,
-                ClientExecutionService executionService) throws IOException {
+                            int connectionId, SocketChannelWrapper socketChannelWrapper,
+                            ClientExecutionService executionService) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
         this.serializationService = connectionManager.getSerializationService();

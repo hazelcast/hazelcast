@@ -19,23 +19,25 @@ package com.hazelcast.map.record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-/**
- * TODO empty statistics.
- * Some statistics of a {@link Record}
- */
 public class RecordStatistics implements DataSerializable {
 
-    // TODO is volatile needed? if yes then hits should be atomicnumber
-    protected int hits;
-    protected long lastStoredTime;
-    protected long creationTime;
-    protected long expirationTime;
+    // todo is volatile needed? if yes then hits should be atomicnumber
+    protected int hits = 0;
+    protected long lastStoredTime = 0;
+    protected long lastUpdateTime = 0;
+    protected long lastAccessTime = 0;
+    protected long creationTime = 0;
+    protected long expirationTime = 0;
 
     public RecordStatistics() {
-        creationTime = System.nanoTime();
+        long now = Clock.currentTimeMillis();
+        lastAccessTime = now;
+        lastUpdateTime = now;
+        creationTime = now;
     }
 
     public int getHits() {
@@ -63,11 +65,20 @@ public class RecordStatistics implements DataSerializable {
     }
 
     public void access() {
+        lastAccessTime = Clock.currentTimeMillis();
         hits++;
     }
 
+    public void update() {
+        lastUpdateTime = Clock.currentTimeMillis();
+    }
+
     public void store() {
-        lastStoredTime = System.nanoTime();
+        lastStoredTime = Clock.currentTimeMillis();
+    }
+
+    public long getLastAccessTime() {
+        return lastAccessTime;
     }
 
     public long getLastStoredTime() {
@@ -78,15 +89,25 @@ public class RecordStatistics implements DataSerializable {
         this.lastStoredTime = lastStoredTime;
     }
 
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+    }
+
     public long size() {
         //size of the instance.
         final int numberOfLongVariables = 3;
-        return numberOfLongVariables * (Long.SIZE / Byte.SIZE) + (Integer.SIZE / Byte.SIZE);
+        return 5 * (Long.SIZE / Byte.SIZE) + (Integer.SIZE / Byte.SIZE);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(hits);
         out.writeLong(lastStoredTime);
+        out.writeLong(lastUpdateTime);
+        out.writeLong(lastAccessTime);
         out.writeLong(creationTime);
         out.writeLong(expirationTime);
     }
@@ -94,6 +115,8 @@ public class RecordStatistics implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         hits = in.readInt();
         lastStoredTime = in.readLong();
+        lastUpdateTime = in.readLong();
+        lastAccessTime = in.readLong();
         creationTime = in.readLong();
         expirationTime = in.readLong();
     }

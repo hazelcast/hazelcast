@@ -20,16 +20,19 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
 
-class OffHeapRecord extends AbstractRecord<Data> {
+/**
+ * @author mdogan 9/18/13
+ */
+public class OffHeapRecord extends AbstractRecord<Data> {
 
     private Storage<DataRef> storage;
     private DataRef valueRef;
 
-    OffHeapRecord() {
+    public OffHeapRecord() {
     }
 
-    OffHeapRecord(Storage<DataRef> storage, Data key, Data value) {
-        super(key);
+    public OffHeapRecord(Storage<DataRef> storage, Data key, Data value, boolean statisticsEnabled) {
+        super(key, statisticsEnabled);
         this.storage = storage;
         setValue(value);
     }
@@ -37,11 +40,12 @@ class OffHeapRecord extends AbstractRecord<Data> {
     @Override
     public long getCost() {
         long size = super.getCost();
-        final int objectReferenceInBytes = 4;
+
         // storage ref
-        size += objectReferenceInBytes;
+        size += 4;
+
         // value size
-        size += objectReferenceInBytes + (valueRef == null ? 0 : valueRef.heapCost());
+        size += 4 + (valueRef == null ? 0 : valueRef.heapCost());
         return size;
     }
 
