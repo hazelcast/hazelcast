@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
-public class SerializationServiceAccessor {
+public final class SerializationServiceAccessor {
 
     private SerializationServiceAccessor() {
     }
@@ -38,7 +38,7 @@ public class SerializationServiceAccessor {
         throw new HazelcastSerializationException("Could not access serialization service");
     }
 
-    public static interface SerializationServiceAccess {
+    public interface SerializationServiceAccess {
         SerializationService getSerializationService();
     }
 }

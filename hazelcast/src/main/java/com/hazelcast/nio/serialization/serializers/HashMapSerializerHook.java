@@ -35,9 +35,13 @@ public class HashMapSerializerHook
         return new AbstractMapSerializer<HashMap>() {
 
             @Override
+            //CHECKSTYLE:OFF
+            //Deactivated since implementation classes of interfaces are actually not
+            //allowed as return types by checkstyle but I want it anyways :)
             protected HashMap newMap(int size) {
                 return new HashMap(size);
             }
+            //CHECKSTYLE:ON
 
             @Override
             public int getTypeId() {
