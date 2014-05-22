@@ -78,21 +78,28 @@ public final class UnsafeHelper {
             LONG_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(long[].class);
             DOUBLE_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(double[].class);
 
-            // test if unsafe has required methods...
-            byte[] buffer = new byte[8];
-            unsafe.putChar(buffer, BYTE_ARRAY_BASE_OFFSET, '0');
-            unsafe.putShort(buffer, BYTE_ARRAY_BASE_OFFSET, (short) 1);
-            unsafe.putInt(buffer, BYTE_ARRAY_BASE_OFFSET, 2);
-            unsafe.putFloat(buffer, BYTE_ARRAY_BASE_OFFSET, 3f);
-            unsafe.putLong(buffer, BYTE_ARRAY_BASE_OFFSET, 4L);
-            unsafe.putDouble(buffer, BYTE_ARRAY_BASE_OFFSET, 5d);
-            unsafe.copyMemory(new byte[8], BYTE_ARRAY_BASE_OFFSET, buffer, BYTE_ARRAY_BASE_OFFSET, buffer.length);
-
             UNSAFE = unsafe;
-            UNSAFE_AVAILABLE = UNSAFE != null;
         } catch (Throwable e) {
             throw new HazelcastException(e);
         }
+
+        boolean unsafeAvailable;
+        try {
+            // test if unsafe has required methods...
+            byte[] buffer = new byte[8];
+            UNSAFE.putChar(buffer, BYTE_ARRAY_BASE_OFFSET, '0');
+            UNSAFE.putShort(buffer, BYTE_ARRAY_BASE_OFFSET, (short) 1);
+            UNSAFE.putInt(buffer, BYTE_ARRAY_BASE_OFFSET, 2);
+            UNSAFE.putFloat(buffer, BYTE_ARRAY_BASE_OFFSET, 3f);
+            UNSAFE.putLong(buffer, BYTE_ARRAY_BASE_OFFSET, 4L);
+            UNSAFE.putDouble(buffer, BYTE_ARRAY_BASE_OFFSET, 5d);
+            UNSAFE.copyMemory(new byte[8], BYTE_ARRAY_BASE_OFFSET, buffer, BYTE_ARRAY_BASE_OFFSET, buffer.length);
+
+            unsafeAvailable = true;
+        } catch (Throwable ignore) {
+            unsafeAvailable = false;
+        }
+        UNSAFE_AVAILABLE = unsafeAvailable;
     }
 
     private UnsafeHelper() {
