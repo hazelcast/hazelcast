@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import java.util.Set;
 
 /**
- * InternalPartitionService allows to query {@link Partition}s
+ * PartitionService allows to query {@link Partition}s
  * and attach/detach {@link MigrationListener}s to listen partition migration events.
  *
  * @see Partition
