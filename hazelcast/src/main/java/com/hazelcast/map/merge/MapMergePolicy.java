@@ -23,8 +23,8 @@ public interface MapMergePolicy extends DataSerializable {
 
     /**
      * Returns the value of the entry after the merge
-     * of entries with the same key. Returning value can be
-     * You should consider the case where existingEntry is null.
+     * of entries with the same key.
+     * You should consider the case where existingEntry's value is null.
      *
      * @param mapName       name of the map
      * @param mergingEntry  entry merging into the destination cluster
