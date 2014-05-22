@@ -28,17 +28,18 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
 
     private static final int UTF_BUFFER_SIZE = 1024;
 
-    private final SerializationService serializationService;
-
     protected final int size;
+
+    private final SerializationService serializationService;
 
     protected byte[] buffer;
 
     protected int pos;
 
+    protected int mark;
+
     private byte[] utfBuffer;
 
-    protected int mark;
 
     ByteArrayObjectDataInput(Data data, SerializationService service) {
         this(data.buffer, service);

@@ -27,15 +27,15 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     private static final int UTF_BUFFER_SIZE = 1024;
 
-    private final SerializationService serializationService;
-
     protected final int initialSize;
+
+    private final SerializationService serializationService;
 
     protected byte[] buffer;
 
-    private byte[] utfBuffer;
-
     protected int pos;
+
+    private byte[] utfBuffer;
 
     ByteArrayObjectDataOutput(int size, SerializationService serializationService) {
         this.initialSize = size;
