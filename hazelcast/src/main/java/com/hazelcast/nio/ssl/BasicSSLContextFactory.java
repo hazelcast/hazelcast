@@ -18,8 +18,10 @@ package com.hazelcast.nio.ssl;
 
 import com.hazelcast.nio.IOUtil;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -41,29 +43,35 @@ public class BasicSSLContextFactory implements SSLContextFactory {
     public void init(Properties properties) throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
+
         String keyStorePassword = getProperty(properties, "keyStorePassword");
         String keyStore = getProperty(properties, "keyStore");
-        if (keyStore == null || keyStorePassword == null) {
-            throw new RuntimeException("SSL is enabled but keyStore[Password] properties aren't set!");
-        }
         String trustStore = getProperty(properties, "trustStore", keyStore);
         String trustStorePassword = getProperty(properties, "trustStorePassword", keyStorePassword);
-
         String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", KeyManagerFactory.getDefaultAlgorithm());
         String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
         String protocol = properties.getProperty("protocol", "TLS");
 
-        final char[] keyStorePassPhrase = keyStorePassword.toCharArray();
-        loadKeyStore(ks, keyStorePassPhrase, keyStore);
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerAlgorithm);
-        kmf.init(ks, keyStorePassPhrase);
+        KeyManager[] keyManagers = null;
+        if (keyStore != null) {
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerAlgorithm);
+            char[] passPhrase = keyStorePassword != null ? keyStorePassword.toCharArray() : null;
+            loadKeyStore(ks, passPhrase, keyStore);
+            kmf.init(ks, passPhrase);
+            keyManagers = kmf.getKeyManagers();
+        }
 
-        loadKeyStore(ts, trustStorePassword.toCharArray(), trustStore);
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
-        tmf.init(ts);
+        TrustManager[] trustManagers = null;
+        if (trustStore != null) {
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
+            char[] passPhrase = trustStorePassword != null ? trustStorePassword.toCharArray() : null;
+            loadKeyStore(ts, passPhrase, trustStore);
+            tmf.init(ts);
+            trustManagers = tmf.getTrustManagers();
+        }
 
         sslContext = SSLContext.getInstance(protocol);
-        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        sslContext.init(keyManagers, trustManagers, null);
     }
 
     private void loadKeyStore(KeyStore ks, char[] passPhrase, String keyStoreFile) throws IOException, NoSuchAlgorithmException, CertificateException {
