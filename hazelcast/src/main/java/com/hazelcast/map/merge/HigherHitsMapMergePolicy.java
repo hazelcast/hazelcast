@@ -43,7 +43,7 @@ public class HigherHitsMapMergePolicy implements MapMergePolicy, DataSerializabl
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
         if(mergingEntry.getHits() > existingEntry.getHits())
             return mergingEntry.getValue();
-        return existingEntry.getValue();
+        return existingEntry.getValue() == null ? mergingEntry.getValue() : existingEntry.getValue();
     }
 
     @Override

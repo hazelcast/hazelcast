@@ -746,17 +746,22 @@ public class DefaultRecordStore implements RecordStore {
         return newRecord;
     }
 
-    public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
+    public boolean merge(Data key, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
         earlyWriteCleanup();
 
-        Record record = records.get(dataKey);
+        Record record = records.get(key);
         Object newValue;
         if (record == null) {
-            newValue = mergingEntry.getValue();
-            newValue = mapStoreWrite(dataKey, newValue, null);
-            record = mapService.createRecord(name, dataKey, newValue, DEFAULT_TTL);
-            records.put(dataKey, record);
+            final Object notExistingKey = mapService.toObject(key);
+            final EntryView<Object, Object> nullEntryView = EntryViews.createNullEntryView(notExistingKey);
+            newValue = mergePolicy.merge(name, mergingEntry, nullEntryView);
+            if(newValue == null) {
+                return false;
+            }
+            newValue = mapStoreWrite(key, newValue, null);
+            record = mapService.createRecord(name, key, newValue, DEFAULT_TTL);
+            records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             Object oldValue = record.getValue();
@@ -765,19 +770,19 @@ public class DefaultRecordStore implements RecordStore {
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {
-                removeIndex(dataKey);
-                mapStoreDelete(record, dataKey);
+                removeIndex(key);
+                mapStoreDelete(record, key);
                 // reduce size.
                 updateSizeEstimator(-calculateRecordSize(record));
                 //remove from map & invalidate.
-                deleteRecord(dataKey);
+                deleteRecord(key);
                 return true;
             }
             // same with the existing entry so no need to mapstore etc operations.
             if (mapService.compare(name, newValue, oldValue)) {
                 return true;
             }
-            newValue = mapStoreWrite(dataKey, newValue, record);
+            newValue = mapStoreWrite(key, newValue, record);
             updateSizeEstimator(-calculateRecordSize(record));
             recordFactory.setValue(record, newValue);
             updateSizeEstimator(calculateRecordSize(record));
