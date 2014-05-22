@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import java.io.IOException;
 import java.util.Set;
 
-
 public interface PortableReader {
 
     int getVersion();

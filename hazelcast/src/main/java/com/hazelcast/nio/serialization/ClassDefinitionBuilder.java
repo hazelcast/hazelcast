@@ -21,6 +21,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * ClassDefinitionBuilder is used to build and register ClassDefinitions manually.
+ *
+ * @see com.hazelcast.nio.serialization.ClassDefinition
+ * @see com.hazelcast.nio.serialization.Portable
+ * @see com.hazelcast.config.SerializationConfig#addClassDefinition(ClassDefinition)
+ */
 public final class ClassDefinitionBuilder {
 
     private final int factoryId;
