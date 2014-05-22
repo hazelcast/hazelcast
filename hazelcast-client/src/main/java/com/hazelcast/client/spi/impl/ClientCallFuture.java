@@ -41,7 +41,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.config.ClientProperties.*;
+import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_RETRY_COUNT_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_RETRY_WAIT_TIME_DEFAULT;
 
 public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
