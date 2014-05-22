@@ -57,7 +57,7 @@ public final class ClassLoaderUtil {
 
     public static <T> T newInstance(ClassLoader classLoader, final String className)
             throws Exception {
-        Class<?> klass = loadClass(classLoader, className);
+        Class klass = loadClass(classLoader, className);
         return (T)newInstance(klass, classLoader, className);
     }
 
@@ -70,7 +70,7 @@ public final class ClassLoaderUtil {
         return constructor.newInstance();
     }
 
-    public static Class<?> loadClass(final ClassLoader classLoader, final String className)
+    public static Class loadClass(final ClassLoader classLoader, final String className)
             throws ClassNotFoundException {
 
         ValidationUtil.isNotNull(className, "className");
@@ -85,16 +85,15 @@ public final class ClassLoaderUtil {
             theClassLoader = Thread.currentThread().getContextClassLoader();
         }
 
-        Class< ? > cachedClass = CLASS_CACHE.get(theClassLoader, className);
-        if (cachedClass != null)
-        {
+        Class cachedClass = CLASS_CACHE.get(theClassLoader, className);
+        if (cachedClass != null) {
             return cachedClass;
         }
 
         // First try to load it through the given classloader
         if (theClassLoader != null) {
             try {
-                final Class< ? > loadedClass = tryLoadClass(className, theClassLoader);
+                final Class loadedClass = tryLoadClass(className, theClassLoader);
                 CLASS_CACHE.put(theClassLoader, className, loadedClass);
                 return loadedClass;
             } catch (ClassNotFoundException ignore) {
@@ -112,20 +111,19 @@ public final class ClassLoaderUtil {
             theClassLoader = Thread.currentThread().getContextClassLoader();
         }
         if (theClassLoader != null) {
-            Class< ? > cachedClass2 = CLASS_CACHE.get(theClassLoader, className);
-            if (cachedClass2 != null)
-            {
+            Class cachedClass2 = CLASS_CACHE.get(theClassLoader, className);
+            if (cachedClass2 != null) {
                 return cachedClass2;
             }
 
-            final Class< ? > loadedClass = tryLoadClass(className, theClassLoader);
+            final Class loadedClass = tryLoadClass(className, theClassLoader);
             CLASS_CACHE.put(theClassLoader, className, loadedClass);
             return loadedClass;
         }
         return Class.forName(className);
     }
 
-    private static Class<?> tryLoadClass(String className, ClassLoader classLoader)
+    private static Class tryLoadClass(String className, ClassLoader classLoader)
             throws ClassNotFoundException {
 
         if (className.startsWith("[")) {
@@ -142,21 +140,21 @@ public final class ClassLoaderUtil {
     }
 
     private static final class ClassCache {
-        private final ConcurrentMap<ClassLoader, ConcurrentMap<String, Class<?>>> cache;
+        private final ConcurrentMap<ClassLoader, ConcurrentMap<String, Class>> cache;
 
         protected ClassCache() {
             // Guess 16 classloaders to not waste to much memory (16 is default concurrency level)
-            cache = new ConcurrentReferenceHashMap<ClassLoader, ConcurrentMap<String, Class<?>>>(16,
+            cache = new ConcurrentReferenceHashMap<ClassLoader, ConcurrentMap<String, Class>>(16,
                             ReferenceType.SOFT, ReferenceType.SOFT);
         }
 
-        protected <T> Class<?> put(ClassLoader classLoader, String className, Class<T> clazz) {
+        protected <T> Class put(ClassLoader classLoader, String className, Class<T> clazz) {
             ClassLoader cl = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
-            ConcurrentMap<String, Class<?>> innerCache = cache.get(cl);
+            ConcurrentMap<String, Class> innerCache = cache.get(cl);
             if (innerCache == null) {
                 // Let's guess a start of 100 classes per classloader
-                innerCache = new ConcurrentHashMap<String, Class<?>>(100);
-                ConcurrentMap<String, Class<?>> old = cache.putIfAbsent(cl, innerCache);
+                innerCache = new ConcurrentHashMap<String, Class>(100);
+                ConcurrentMap<String, Class> old = cache.putIfAbsent(cl, innerCache);
                 if (old != null) {
                     innerCache = old;
                 }
@@ -165,8 +163,8 @@ public final class ClassLoaderUtil {
             return clazz;
         }
 
-        protected <T> Class<?> get(ClassLoader classLoader, String className) {
-            ConcurrentMap<String, Class<?>> innerCache = cache.get(classLoader);
+        protected <T> Class get(ClassLoader classLoader, String className) {
+            ConcurrentMap<String, Class> innerCache = cache.get(classLoader);
             if (innerCache == null) {
                 return null;
             }
