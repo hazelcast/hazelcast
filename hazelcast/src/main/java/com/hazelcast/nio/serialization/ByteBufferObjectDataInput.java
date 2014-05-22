@@ -33,7 +33,7 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
 
     private final SerializationService service;
 
-    private final byte[] utfBuffer = new byte[UTF_BUFFER_SIZE];
+    private byte[] utfBuffer;
 
     ByteBufferObjectDataInput(Data data, SerializationService service, ByteOrder order) {
         this(data.buffer, service, order);
@@ -390,6 +390,9 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     public String readUTF() throws IOException {
+        if (utfBuffer == null) {
+            utfBuffer = new byte[UTF_BUFFER_SIZE];
+        }
         return UTFEncoderDecoder.readUTF(this, utfBuffer);
     }
 

@@ -25,6 +25,8 @@ import java.nio.ByteOrder;
 
 class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, PortableContextAware {
 
+    private static final int UTF_BUFFER_SIZE = 1024;
+
     final int initialSize;
 
     byte[] buffer;
@@ -33,7 +35,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     final SerializationService service;
 
-    private final byte[] utfBuffer = new byte[1024];
+    private byte[] utfBuffer;
 
     ByteArrayObjectDataOutput(int size, SerializationService service) {
         this.initialSize = size;
@@ -179,6 +181,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeUTF(final String str) throws IOException {
+        if (utfBuffer == null) {
+            utfBuffer = new byte[UTF_BUFFER_SIZE];
+        }
         UTFEncoderDecoder.writeUTF(this, str, utfBuffer);
     }
 
