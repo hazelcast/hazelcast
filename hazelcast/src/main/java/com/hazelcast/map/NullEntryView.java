@@ -1,11 +1,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
 
 /**
  * Contains only key no value.
@@ -13,22 +8,12 @@ import java.io.IOException;
  * @param <K>
  * @param <V>
  */
-class NullEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSerializable {
+class NullEntryView<K, V> implements EntryView<K, V> {
 
-    private final K key;
+    private K key;
 
     NullEntryView(K key) {
         this.key = key;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-
     }
 
     @Override
@@ -81,13 +66,4 @@ class NullEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSerializable {
         return 0;
     }
 
-    @Override
-    public int getFactoryId() {
-        return 0;
-    }
-
-    @Override
-    public int getId() {
-        return 0;
-    }
 }
