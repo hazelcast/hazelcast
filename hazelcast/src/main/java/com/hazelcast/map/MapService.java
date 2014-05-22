@@ -20,26 +20,11 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.EntryView;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
-import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
-import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
-import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
-import com.hazelcast.map.operation.InvalidateNearCacheOperation;
-import com.hazelcast.map.operation.MapReplicationOperation;
-import com.hazelcast.map.operation.MergeOperation;
-import com.hazelcast.map.operation.NearCacheKeySetInvalidationOperation;
-import com.hazelcast.map.operation.PostJoinMapOperation;
-import com.hazelcast.map.operation.WanOriginatedDeleteOperation;
+import com.hazelcast.map.merge.*;
+import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
@@ -48,7 +33,6 @@ import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
 import com.hazelcast.map.wan.MapReplicationUpdate;
-import com.hazelcast.map.writebehind.DelayedEntry;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.Address;
@@ -63,57 +47,32 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.transaction.impl.TransactionSupport;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.SortingUtil;
+import com.hazelcast.util.*;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.wan.WanReplicationEvent;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 /**
  * The SPI Service for the Map.
+ *
+ * @author enesakar 1/17/13
  */
 public class MapService implements ManagedService, MigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
-    /**
-     * Service name.
-     */
-    public static final String SERVICE_NAME = "hz:impl:mapService";
+
+    public final static String SERVICE_NAME = "hz:impl:mapService";
+
     private final ILogger logger;
     private final NodeEngine nodeEngine;
     private final PartitionContainer[] partitionContainers;
@@ -121,11 +80,16 @@ public class MapService implements ManagedService, MigrationAwareService,
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final AtomicReference<List<Integer>> ownedPartitions;
     private final Map<String, MapMergePolicy> mergePolicyMap;
-    // we added following latency to be sure the ongoing migration is completed if the owner of
-    // the record could not complete task before migration
+    // we added following latency to be sure the ongoing migration is completed
+    // if the owner of the record could not complete task before migration
+    private final long replicaWaitMillisForScheduledTasks;
+    private final MapEvictionManager mapEvictionManager;
 
     public MapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.mapEvictionManager = new MapEvictionManager(this);
+        this.replicaWaitMillisForScheduledTasks = TimeUnit.SECONDS.toMillis(getNodeEngine().getGroupProperties()
+                .MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger());
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         ownedPartitions = new AtomicReference<List<Integer>>();
@@ -134,7 +98,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         mergePolicyMap.put(HigherHitsMapMergePolicy.class.getName(), new HigherHitsMapMergePolicy());
         mergePolicyMap.put(PassThroughMergePolicy.class.getName(), new PassThroughMergePolicy());
         mergePolicyMap.put(LatestUpdateMapMergePolicy.class.getName(), new LatestUpdateMapMergePolicy());
-
     }
 
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
@@ -170,6 +133,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 }
             });
         }
+        mapEvictionManager.init();
     }
 
     public void reset() {
@@ -236,7 +200,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         return o;
     }
 
-    @Override
     public Runnable prepareMergeRunnable() {
         Map<MapContainer, Collection<Record>> recordMap = new HashMap<MapContainer, Collection<Record>>(mapContainers.size());
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
@@ -331,14 +294,14 @@ public class MapService implements ManagedService, MigrationAwareService,
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
                         public void run() {
-                            final SimpleEntryView entryView = createSimpleEntryView(record.getKey(), toData(record.getValue()), record);
+                            final SimpleEntryView entryView = createSimpleEntryView(record.getKey(), toData(record.getValue()),record);
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
                             try {
                                 int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
                                 Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
                                 f.get();
                             } catch (Throwable t) {
-                                throw ExceptionUtil.rethrow(t);
+                                ExceptionUtil.rethrow(t);
                             }
                         }
                     });
@@ -383,19 +346,15 @@ public class MapService implements ManagedService, MigrationAwareService,
         return Collections.unmodifiableList(partitions);
     }
 
-    @Override
     public void beforeMigration(PartitionMigrationEvent event) {
     }
 
-    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
         final MapReplicationOperation operation = new MapReplicationOperation(this, container, event.getPartitionId(), event.getReplicaIndex());
-        operation.setService(MapService.this);
         return operation.isEmpty() ? null : operation;
     }
 
-    @Override
     public void commitMigration(PartitionMigrationEvent event) {
         migrateIndex(event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
@@ -424,7 +383,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
-    @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartitionData(event.getPartitionId());
@@ -442,22 +400,30 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
-    @Override
     public void clearPartitionReplica(int partitionId) {
         clearPartitionData(partitionId);
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
-        final long nowInNanos = System.nanoTime();
+        return createRecord(name, dataKey, value, ttl, true);
+    }
+
+    public Record createRecord(String name, Data dataKey, Object value, long ttl, boolean shouldSchedule) {
         MapContainer mapContainer = getMapContainer(name);
         Record record = mapContainer.getRecordFactory().newRecord(dataKey, value);
-        record.setLastAccessTime(nowInNanos);
-        record.setLastUpdateTime(nowInNanos);
-        final int timeToLiveSeconds = mapContainer.getMapConfig().getTimeToLiveSeconds();
-        if (ttl < 0L && timeToLiveSeconds > 0) {
-            record.setTtl(TimeUnit.SECONDS.toNanos(timeToLiveSeconds));
-        } else if (ttl > 0L) {
-            record.setTtl(TimeUnit.MILLISECONDS.toNanos(ttl));
+
+        if (shouldSchedule) {
+            // if ttl is 0 then no eviction. if ttl is -1 then default configured eviction is applied
+            if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
+                final long delay = TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getTimeToLiveSeconds());
+                scheduleTtlEviction(name, record, delay);
+            } else if (ttl > 0) {
+                scheduleTtlEviction(name, record, ttl);
+            }
+            if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
+                final long delay = TimeUnit.SECONDS.toMillis(mapContainer.getMapConfig().getMaxIdleSeconds());
+                scheduleIdleEviction(name, dataKey, delay);
+            }
         }
         return record;
     }
@@ -779,59 +745,104 @@ public class MapService implements ManagedService, MigrationAwareService,
         return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
-    public void applyRecordInfo(Record record, RecordInfo replicationInfo) {
+    public void applyRecordInfo(Record record, String mapName, RecordInfo replicationInfo) {
         record.setStatistics(replicationInfo.getStatistics());
         record.setVersion(replicationInfo.getVersion());
         record.setEvictionCriteriaNumber(replicationInfo.getEvictionCriteriaNumber());
-        record.setTtl(replicationInfo.getTtl());
-        record.setLastAccessTime(replicationInfo.getLastAccessTime());
-        record.setLastUpdateTime(replicationInfo.getLastUpdateTime());
+
+        if (replicationInfo.getIdleDelayMillis() >= 0) {
+            scheduleIdleEviction(mapName, record.getKey(), replicationInfo.getIdleDelayMillis());
+        }
+        if (replicationInfo.getTtlDelayMillis() >= 0) {
+            scheduleTtlEviction(mapName, record, replicationInfo.getTtlDelayMillis());
+        }
+        if (replicationInfo.getMapStoreWriteDelayMillis() >= 0) {
+            scheduleMapStoreWrite(mapName, record.getKey(), record.getValue(), replicationInfo.getMapStoreWriteDelayMillis());
+        }
+        if (replicationInfo.getMapStoreDeleteDelayMillis() >= 0) {
+            scheduleMapStoreDelete(mapName, record.getKey(), replicationInfo.getMapStoreDeleteDelayMillis());
+        }
     }
 
-    public RecordReplicationInfo createRecordReplicationInfo(Record record) {
-        final RecordInfo info = createRecordInfo(record);
-        return new RecordReplicationInfo(record.getKey(), toData(record.getValue()), info);
+    public RecordReplicationInfo createRecordReplicationInfo(MapContainer mapContainer, Record record) {
+        final RecordInfo info = constructRecordInfo(mapContainer, record, replicaWaitMillisForScheduledTasks);
+        final RecordReplicationInfo replicationInfo
+                = new RecordReplicationInfo(record.getKey(), toData(record.getValue()), info);
+        return replicationInfo;
     }
 
-    public RecordInfo createRecordInfo(Record record) {
+    public RecordInfo createRecordInfo(MapContainer mapContainer, Record record) {
+        // this info is created to be used in backups.
+        // we added following latency (10 seconds) to be sure the ongoing promotion is
+        // completed if the owner of the record could not complete task before promotion
+        return constructRecordInfo(mapContainer, record, replicaWaitMillisForScheduledTasks);
+    }
+
+    private RecordInfo constructRecordInfo(MapContainer mapContainer, Record record, long extraDelay) {
         final RecordInfo info = new RecordInfo();
         info.setStatistics(record.getStatistics());
         info.setVersion(record.getVersion());
         info.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
-        info.setLastAccessTime(record.getLastAccessTime());
-        info.setLastUpdateTime(record.getLastUpdateTime());
-        info.setTtl(record.getTtl());
+        setDelays(mapContainer, info, record.getKey(), extraDelay);
         return info;
     }
 
-
-    public DelayedEntry<Data, Object> constructDelayedEntry(Data key, Object value, int partitionId,
-                                                            long writeDelayMillis) {
-        final long now = System.nanoTime();
-        final long nanoWriteDelay = TimeUnit.MILLISECONDS.toNanos(writeDelayMillis);
-        final DelayedEntry<Data, Object> delayedEntry =
-                DelayedEntry.create(key, value, now + nanoWriteDelay, partitionId);
-        return delayedEntry;
+    private void setDelays(MapContainer mapContainer, RecordInfo info, Data key, long extraDelay) {
+        long deleteDelay = -1;
+        long writeDelay = -1;
+        long idleDelay;
+        long ttlDelay;
+        if (mapContainer.getMapStoreScheduler() != null) {
+            final ScheduledEntry scheduledEntry = mapContainer.getMapStoreScheduler().get(key);
+            if (scheduledEntry != null) {
+                if (scheduledEntry.getValue() == null) {
+                    deleteDelay = extraDelay + findDelayMillis(scheduledEntry);
+                } else {
+                    writeDelay = extraDelay + findDelayMillis(scheduledEntry);
+                }
+            }
+        }
+        idleDelay = getDelay(mapContainer.getIdleEvictionScheduler(), key, extraDelay);
+        ttlDelay = getDelay(mapContainer.getTtlEvictionScheduler(), key, extraDelay);
+        // set delays.
+        info.setMapStoreDeleteDelayMillis(deleteDelay);
+        info.setMapStoreWriteDelayMillis(writeDelay);
+        info.setIdleDelayMillis(idleDelay);
+        info.setTtlDelayMillis(ttlDelay);
     }
 
-    public <K, V> SimpleEntryView<K, V> createSimpleEntryView(K key, V value, Record record) {
-        final TimeUnit unit = TimeUnit.NANOSECONDS;
+    private long getDelay(EntryTaskScheduler entryTaskScheduler, Data key, long extraDelay) {
+        if (entryTaskScheduler != null) {
+            final ScheduledEntry entry = entryTaskScheduler.get(key);
+            if (entry != null) {
+                return extraDelay + findDelayMillis(entry);
+            }
+        }
+        return -1;
+    }
+
+    public <K,V> SimpleEntryView<K,V> createSimpleEntryView(K key, V value, Record record) {
         final SimpleEntryView simpleEntryView = new SimpleEntryView(key, value);
         simpleEntryView.setCost(record.getCost());
         simpleEntryView.setVersion(record.getVersion());
         simpleEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
-        simpleEntryView.setLastAccessTime(unit.toMillis(record.getLastAccessTime()));
-        simpleEntryView.setLastUpdateTime(unit.toMillis(record.getLastUpdateTime()));
-        simpleEntryView.setTtl(unit.toMillis(record.getTtl()));
 
         final RecordStatistics statistics = record.getStatistics();
         if (statistics != null) {
             simpleEntryView.setHits(statistics.getHits());
-            simpleEntryView.setCreationTime(unit.toMillis(statistics.getCreationTime()));
-            simpleEntryView.setExpirationTime(unit.toMillis(statistics.getExpirationTime()));
-            simpleEntryView.setLastStoredTime(unit.toMillis(statistics.getLastStoredTime()));
+            simpleEntryView.setCreationTime(statistics.getCreationTime());
+            simpleEntryView.setExpirationTime(statistics.getExpirationTime());
+            simpleEntryView.setLastAccessTime(statistics.getLastAccessTime());
+            simpleEntryView.setLastStoredTime(statistics.getLastStoredTime());
+            simpleEntryView.setLastUpdateTime(statistics.getLastUpdateTime());
         }
-        return simpleEntryView;
+       return simpleEntryView;
+    }
+
+    public long findDelayMillis(ScheduledEntry entry) {
+        final long timeElapsedUntilNow = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - entry.getScheduleStartTimeInNanos());
+        final long remainingTime = entry.getScheduledDelayMillis() - timeElapsedUntilNow;
+        return Math.max(0, remainingTime);
     }
 
     public Object toObject(Object data) {
@@ -884,12 +895,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getMapName(),
                 eventData.getDataKey(), eventData.getDataNewValue(), eventData.getDataOldValue(), getSerializationService());
-        if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping event " + event + " from unknown address:" + eventData.getCaller());
-            }
-            return;
-        }
         switch (event.getEventType()) {
             case ADDED:
                 listener.entryAdded(event);
@@ -910,6 +915,25 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             getLocalMapStatsImpl(eventData.getMapName()).incrementReceivedEvents();
         }
+    }
+
+    public void scheduleIdleEviction(String mapName, Data key, long delay) {
+        getMapContainer(mapName).getIdleEvictionScheduler().schedule(delay, key, null);
+    }
+
+    public void scheduleTtlEviction(String mapName, Record record, long delay) {
+        if (record.getStatistics() != null) {
+            record.getStatistics().setExpirationTime(Clock.currentTimeMillis() + delay);
+        }
+        getMapContainer(mapName).getTtlEvictionScheduler().schedule(delay, toData(record.getKey()), null);
+    }
+
+    public void scheduleMapStoreWrite(String mapName, Data key, Object value, long delay) {
+        getMapContainer(mapName).getMapStoreScheduler().schedule(delay, key, value);
+    }
+
+    public void scheduleMapStoreDelete(String mapName, Data key, long delay) {
+        getMapContainer(mapName).getMapStoreScheduler().schedule(delay, key, null);
     }
 
     public SerializationService getSerializationService() {
@@ -974,7 +998,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        final TimeUnit unit = TimeUnit.NANOSECONDS;
 
         Address thisAddress = clusterService.getThisAddress();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
@@ -982,11 +1005,10 @@ public class MapService implements ManagedService, MigrationAwareService,
             Address owner = partition.getOwner();
             if (owner == null) {
                 //no-op because no owner is set yet. Therefor we don't know anything about the map
-                continue;
-            }
-            if (owner.equals(thisAddress)) {
+            } else if (owner.equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+
                 //we don't want to force loading the record store because we are loading statistics. So that is why
                 //we ask for 'getExistingRecordStore' instead of 'getRecordStore' which does the load.
                 if (recordStore != null) {
@@ -997,14 +1019,13 @@ public class MapService implements ManagedService, MigrationAwareService,
                         // there is map store and the record is dirty (waits to be stored)
                         ownedEntryCount++;
                         ownedEntryMemoryCost += record.getCost();
-                        localMapStats.setLastAccessTime(unit.toMillis(record.getLastAccessTime()));
-                        localMapStats.setLastUpdateTime(unit.toMillis(record.getLastUpdateTime()));
+                        localMapStats.setLastAccessTime(stats.getLastAccessTime());
+                        localMapStats.setLastUpdateTime(stats.getLastUpdateTime());
                         hits += stats.getHits();
                         if (recordStore.isLocked(record.getKey())) {
                             lockedEntryCount++;
                         }
                     }
-                    dirtyCount += recordStore.getWriteBehindQueue().size();
                 }
             } else {
                 for (int replica = 1; replica <= backupCount; replica++) {
@@ -1037,6 +1058,9 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
         }
 
+        if (mapContainer.getMapStoreScheduler() != null) {
+            dirtyCount = mapContainer.getMapStoreScheduler().size();
+        }
         localMapStats.setBackupCount(backupCount);
         localMapStats.setDirtyEntryCount(zeroOrPositive(dirtyCount));
         localMapStats.setLockedEntryCount(zeroOrPositive(lockedEntryCount));

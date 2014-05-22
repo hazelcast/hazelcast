@@ -21,6 +21,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.record.CachedDataRecord;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,14 +39,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -61,7 +55,7 @@ public class QueryOperation extends AbstractMapOperation {
         super(mapName);
         this.predicate = predicate;
         if (predicate instanceof PagingPredicate) {
-            pagingPredicate = (PagingPredicate) predicate;
+            pagingPredicate = (PagingPredicate)predicate;
         }
     }
 
@@ -187,16 +181,20 @@ public class QueryOperation extends AbstractMapOperation {
             final RecordStore recordStore = container.getRecordStore(name);
             LinkedList<QueryableEntry> partitionResult = new LinkedList<QueryableEntry>();
             for (Record record : recordStore.getReadonlyRecordMap().values()) {
-                final Data key = record.getKey();
-                Object value = record.getCachedValue();
-                if (value == Record.NOT_CACHED) {
-                    value = record.getValue();
-                    if (value != null && value instanceof Data) {
-                        value = ss.toObject(value);
+                Data key = record.getKey();
+                Object value;
+                if (record instanceof CachedDataRecord) {
+                    CachedDataRecord cachedDataRecord = (CachedDataRecord) record;
+                    value = cachedDataRecord.getCachedValue();
+                    if (value == null) {
+                        value = ss.toObject(cachedDataRecord.getValue());
+                        cachedDataRecord.setCachedValue(value);
                     }
                 } else {
-                    value = ss.toObject(record.getValue());
-                    record.setCachedValue(value);
+                    value = record.getValue();
+                    if (value instanceof Data) {
+                        value = ss.toObject((Data) value);
+                    }
                 }
                 if (value == null) {
                     continue;
@@ -207,7 +205,7 @@ public class QueryOperation extends AbstractMapOperation {
                         Map.Entry anchor = pagingPredicate.getAnchor();
                         final Comparator comparator = pagingPredicate.getComparator();
                         if (anchor != null &&
-                                SortingUtil.compare(comparator, pagingPredicate.getIterationType(), anchor, queryEntry) >= 0) {
+                                SortingUtil.compare(comparator, pagingPredicate.getIterationType(), anchor, queryEntry)  >= 0) {
                             continue;
                         }
                     }

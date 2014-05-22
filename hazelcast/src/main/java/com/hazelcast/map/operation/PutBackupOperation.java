@@ -48,9 +48,9 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     public void run() {
-        final Record record = recordStore.putBackup(dataKey, dataValue, ttl);
-        if (recordInfo != null) {
-            mapService.applyRecordInfo(record, recordInfo);
+        final Record record = recordStore.putBackup(dataKey, dataValue, ttl, false);
+        if(recordInfo != null) {
+            mapService.applyRecordInfo(record, name, recordInfo);
         }
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -88,5 +88,12 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         return MapDataSerializerHook.PUT_BACKUP;
     }
 
+    private void updateSizeEstimator( long recordSize ) {
+        recordStore.getSizeEstimator().add( recordSize );
+    }
+
+    private long calculateRecordSize( Record record ) {
+        return recordStore.getSizeEstimator().getCost(record);
+    }
 
 }

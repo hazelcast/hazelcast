@@ -18,22 +18,22 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
+public final class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
 
     private Object value;
 
-    ObjectRecord() {
+    public ObjectRecord(Data keyData, Object value, boolean statisticsEnabled) {
+        super(keyData, statisticsEnabled);
+        this.value = value;
     }
 
-    ObjectRecord(Data key, Object value) {
-        super(key);
-        this.value = value;
+    public ObjectRecord() {
     }
 
     // as there is no easy way to calculate the size of Object cost is not implemented for ObjectRecord
     @Override
     public long getCost() {
-        return 0L;
+        return 0;
     }
 
     public Object getValue() {

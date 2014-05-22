@@ -31,17 +31,17 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 
 public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupAwareOperation {
 
     private MapEntrySet entrySet;
     private boolean initialLoad = false;
-    private List<Map.Entry<Data, Data>> backupEntrySet;
+    private List<Map.Entry<Data,Data>> backupEntrySet;
     private List<RecordInfo> backupRecordInfos;
 
     public PutAllOperation(String name, MapEntrySet entrySet) {
@@ -60,7 +60,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
     public void run() {
         backupRecordInfos = new ArrayList<RecordInfo>();
-        backupEntrySet = new ArrayList<Map.Entry<Data, Data>>();
+        backupEntrySet = new ArrayList<Map.Entry<Data,Data>>();
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
@@ -82,11 +82,12 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 keysToInvalidate.add(dataKey);
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     Record record = recordStore.getRecord(dataKey);
-                    final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
+                    final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey,mapService.toData(dataValue),record);
                     mapService.publishWanReplicationUpdate(name, entryView);
                 }
                 backupEntrySet.add(entry);
-                RecordInfo replicationInfo = mapService.createRecordInfo(recordStore.getRecord(dataKey));
+                RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer,
+                        recordStore.getRecord(dataKey));
                 backupRecordInfos.add(replicationInfo);
             }
         }

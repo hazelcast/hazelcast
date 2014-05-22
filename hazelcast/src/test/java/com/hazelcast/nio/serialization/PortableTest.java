@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -305,11 +304,11 @@ public class PortableTest {
         serializationConfig.setPortableVersion(1);
         serializationConfig
                 .addClassDefinition(
-                    new ClassDefinitionBuilder(FACTORY_ID, RawDataPortable.CLASS_ID)
-                        .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition()).build())
+                        new ClassDefinitionBuilder(FACTORY_ID, RawDataPortable.CLASS_ID)
+                                .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition()).build())
                 .addClassDefinition(
-                    new ClassDefinitionBuilder(FACTORY_ID, NamedPortable.CLASS_ID)
-                        .addUTFField("name").addIntField("myint").build()
+                        new ClassDefinitionBuilder(FACTORY_ID, NamedPortable.CLASS_ID)
+                                .addUTFField("name").addIntField("myint").build()
                 );
 
         SerializationService serializationService = new SerializationServiceBuilder().setConfig(serializationConfig).build();

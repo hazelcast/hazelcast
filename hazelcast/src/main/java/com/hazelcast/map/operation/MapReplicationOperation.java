@@ -23,19 +23,14 @@ import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordReplicationInfo;
-import com.hazelcast.map.writebehind.DelayedEntry;
-import com.hazelcast.map.writebehind.WriteBehindQueue;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -47,7 +42,6 @@ public class MapReplicationOperation extends AbstractOperation {
 
     private Map<String, Set<RecordReplicationInfo>> data;
     private Map<String, Boolean> mapInitialLoadInfo;
-    private Map<String, List<DelayedEntry>> delayedEntries;
 
     public MapReplicationOperation() {
     }
@@ -63,6 +57,7 @@ public class MapReplicationOperation extends AbstractOperation {
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
+
             String name = entry.getKey();
             // adding if initial data is loaded for the only maps that has mapstore behind
             if (mapContainer.getStore() != null) {
@@ -71,26 +66,15 @@ public class MapReplicationOperation extends AbstractOperation {
             // now prepare data to migrate records
             Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>();
             for (Entry<Data, Record> recordEntry : recordStore.getReadonlyRecordMap().entrySet()) {
+                Data key = recordEntry.getKey();
                 Record record = recordEntry.getValue();
                 RecordReplicationInfo recordReplicationInfo;
-                recordReplicationInfo = mapService.createRecordReplicationInfo(record);
+                recordReplicationInfo = mapService.createRecordReplicationInfo(mapContainer, record);
                 recordSet.add(recordReplicationInfo);
             }
             data.put(name, recordSet);
         }
-        readDelayedEntries(container);
-    }
 
-    private void readDelayedEntries(PartitionContainer container) {
-        delayedEntries = new HashMap<String, List<DelayedEntry>>(container.getMaps().size());
-        for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
-            RecordStore recordStore = entry.getValue();
-            final List<DelayedEntry> delayedEntries = recordStore.getWriteBehindQueue().getSnapShot().asList();
-            if (delayedEntries != null && delayedEntries.size() == 0) {
-                continue;
-            }
-            this.delayedEntries.put(entry.getKey(), delayedEntries);
-        }
     }
 
     public void run() {
@@ -102,24 +86,18 @@ public class MapReplicationOperation extends AbstractOperation {
                 RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
-                    Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1);
-                    mapService.applyRecordInfo(newRecord, recordReplicationInfo);
-                    recordStore.putForReplication(key, newRecord);
+                    Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1, false);
+                    mapService.applyRecordInfo(newRecord, mapName, recordReplicationInfo);
+                    recordStore.putRecord(key, newRecord);
+                    updateSizeEstimator(newRecord,recordStore);
                 }
             }
         }
         if (mapInitialLoadInfo != null) {
-            for (Entry<String, Boolean> entry : mapInitialLoadInfo.entrySet()) {
-                final String mapName = entry.getKey();
+            for (String mapName : mapInitialLoadInfo.keySet()) {
                 RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
-                recordStore.setLoaded(entry.getValue());
+                recordStore.setLoaded(mapInitialLoadInfo.get(mapName));
             }
-        }
-        for (Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
-            final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), entry.getKey());
-            final List<DelayedEntry> replicatedEntries = entry.getValue();
-            final WriteBehindQueue<DelayedEntry> writeBehindQueue = recordStore.getWriteBehindQueue();
-            writeBehindQueue.addEnd(replicatedEntries);
         }
     }
 
@@ -147,23 +125,6 @@ public class MapReplicationOperation extends AbstractOperation {
             boolean loaded = in.readBoolean();
             mapInitialLoadInfo.put(name, loaded);
         }
-        size = in.readInt();
-        delayedEntries = new HashMap<String, List<DelayedEntry>>(size);
-        for (int i = 0; i < size; i++) {
-            final String mapName = in.readUTF();
-            final int listSize = in.readInt();
-            final List<DelayedEntry> delayedEntriesList = new ArrayList<DelayedEntry>(listSize);
-            for (int j = 0; j < listSize; j++) {
-                final Data key = IOUtil.readNullableData(in);
-                final Data value = IOUtil.readNullableData(in);
-                final long storeTime = in.readLong();
-                final int partitionId = in.readInt();
-                final DelayedEntry<Data, Data> entry
-                        = DelayedEntry.create(key, value, storeTime, partitionId);
-                delayedEntriesList.add(entry);
-            }
-            delayedEntries.put(mapName, delayedEntriesList);
-        }
     }
 
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
@@ -181,25 +142,15 @@ public class MapReplicationOperation extends AbstractOperation {
             out.writeUTF(entry.getKey());
             out.writeBoolean(entry.getValue());
         }
-        final MapService mapService = getService();
-        out.writeInt(delayedEntries.size());
-        for (Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
-            out.writeUTF(entry.getKey());
-            final List<DelayedEntry> delayedEntryList = entry.getValue();
-            out.writeInt(delayedEntryList.size());
-            for (DelayedEntry e : delayedEntryList) {
-                final Data key = mapService.toData(e.getKey());
-                final Data value = mapService.toData(e.getValue());
-                IOUtil.writeNullableData(out, key);
-                IOUtil.writeNullableData(out, value);
-                out.writeLong(e.getStoreTime());
-                out.writeInt(e.getPartitionId());
-            }
-        }
     }
 
     public boolean isEmpty() {
         return data == null || data.isEmpty();
+    }
+
+    private void updateSizeEstimator(Record record, RecordStore recordStore) {
+        final long cost = recordStore.getSizeEstimator().getCost(record);
+        recordStore.getSizeEstimator().add(cost);
     }
 
 }

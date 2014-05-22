@@ -24,6 +24,9 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
 
+/**
+ * @author mdogan 10/3/13
+ */
 public class OffHeapRecordFactory implements RecordFactory<Data> {
 
     private final Storage<DataRef> storage;
@@ -31,8 +34,7 @@ public class OffHeapRecordFactory implements RecordFactory<Data> {
     private final PartitioningStrategy partitionStrategy;
     private final boolean statisticsEnabled;
 
-    public OffHeapRecordFactory(MapConfig config, Storage<DataRef> storage, SerializationService serializationService,
-                                PartitioningStrategy partitionStrategy) {
+    public OffHeapRecordFactory(MapConfig config, Storage<DataRef> storage, SerializationService serializationService, PartitioningStrategy partitionStrategy) {
         this.storage = storage;
         this.serializationService = serializationService;
         this.partitionStrategy = partitionStrategy;
@@ -47,7 +49,7 @@ public class OffHeapRecordFactory implements RecordFactory<Data> {
     @Override
     public Record<Data> newRecord(Data key, Object value) {
         Data v = serializationService.toData(value, partitionStrategy);
-        return statisticsEnabled ? new OffHeapRecordWithStats(storage, key, v) : new OffHeapRecord(storage, key, v);
+        return new OffHeapRecord(storage, key, v, statisticsEnabled);
     }
 
     @Override

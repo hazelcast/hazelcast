@@ -49,10 +49,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             Record record = recordStore.getRecord(dataKey);
-            if (record == null) {
-                return;
-            }
-            final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
+            final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey,mapService.toData(dataValue),record);
             mapService.publishWanReplicationUpdate(name, entryView);
         }
     }
@@ -63,7 +60,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
-        RecordInfo replicationInfo = mapService.createRecordInfo(record);
+        RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer, record);
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
     }
 
