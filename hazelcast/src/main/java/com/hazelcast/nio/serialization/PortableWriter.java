@@ -22,8 +22,6 @@ import java.io.IOException;
 
 public interface PortableWriter {
 
-    int getVersion();
-
     void writeInt(String fieldName, int value) throws IOException;
 
     void writeLong(String fieldName, long value) throws IOException;

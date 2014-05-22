@@ -28,20 +28,22 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
     FieldType type;
     int classId;
     int factoryId;
+    int version = -1;
 
     FieldDefinitionImpl() {
     }
 
     FieldDefinitionImpl(int index, String fieldName, FieldType type) {
-        this(index, fieldName, type, 0, Data.NO_CLASS_ID);
+        this(index, fieldName, type, 0, Data.NO_CLASS_ID, -1);
     }
 
-    FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId) {
+    FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId, int version) {
         this.classId = classId;
         this.type = type;
         this.fieldName = fieldName;
         this.index = index;
         this.factoryId = factoryId;
+        this.version = version;
     }
 
     public FieldType getType() {
@@ -64,12 +66,17 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         return classId;
     }
 
+    public int getVersion() {
+        return version;
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(index);
         out.writeUTF(fieldName);
         out.writeByte(type.getId());
         out.writeInt(factoryId);
         out.writeInt(classId);
+        out.writeInt(version);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -78,6 +85,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         type = FieldType.get(in.readByte());
         factoryId = in.readInt();
         classId = in.readInt();
+        version = in.readInt();
     }
 
     @Override
@@ -97,6 +105,11 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         if (factoryId != that.factoryId) {
             return false;
         }
+
+        if (version != that.version) {
+            return false;
+        }
+
         if (fieldName != null ? !fieldName.equals(that.fieldName) : that.fieldName != null) {
             return false;
         }
@@ -113,6 +126,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + classId;
         result = 31 * result + factoryId;
+        result = 31 * result + version;
         return result;
     }
 
@@ -124,6 +138,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         sb.append(", type=").append(type);
         sb.append(", classId=").append(classId);
         sb.append(", factoryId=").append(factoryId);
+        sb.append(", version=").append(version);
         sb.append('}');
         return sb.toString();
     }

@@ -31,7 +31,7 @@ public final class BinaryClassDefinitionProxy extends BinaryClassDefinition impl
         setBinary(binary);
     }
 
-    public ClassDefinition toReal(SerializationContext context) throws IOException {
+    public ClassDefinition toReal(PortableContext context) throws IOException {
         final ClassDefinition cd = context.lookup(factoryId, classId, version);
         return cd != null ? cd : context.createClassDefinition(factoryId, getBinary());
     }
@@ -57,6 +57,10 @@ public final class BinaryClassDefinitionProxy extends BinaryClassDefinition impl
     }
 
     public int getFieldClassId(String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    public int getFieldVersion(String fieldName) {
         throw new UnsupportedOperationException();
     }
 

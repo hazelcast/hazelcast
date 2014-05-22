@@ -65,6 +65,10 @@ public class DefaultPortableReader implements PortableReader {
         return cd.getFieldClassId(fieldName);
     }
 
+    public int getFieldVersion(String fieldName) {
+        return cd.getFieldVersion(fieldName);
+    }
+
     public int readInt(String fieldName) throws IOException {
         int pos = getPosition(fieldName);
         return in.readInt(pos);
@@ -202,17 +206,9 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = getPosition(fd);
             in.position(pos);
-            final boolean NULL = in.readBoolean();
-            if (!NULL) {
-                final PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
-                try {
-                    ctxIn.setFactoryId(fd.getFactoryId());
-                    ctxIn.setClassId(fd.getClassId());
-                    return serializer.readAndInitialize(in);
-                } finally {
-                    ctxIn.setFactoryId(cd.getFactoryId());
-                    ctxIn.setClassId(cd.getClassId());
-                }
+            final boolean isNull = in.readBoolean();
+            if (!isNull) {
+                return serializer.readAndInitialize(in, fd.getFactoryId(), fd.getClassId(), fd.getVersion());
             }
             return null;
         } finally {
@@ -238,18 +234,11 @@ public class DefaultPortableReader implements PortableReader {
             final Portable[] portables = new Portable[len];
             if (len > 0) {
                 final int offset = in.position();
-                final PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
-                try {
-                    ctxIn.setFactoryId(fd.getFactoryId());
-                    ctxIn.setClassId(fd.getClassId());
-                    for (int i = 0; i < len; i++) {
-                        final int start = in.readInt(offset + i * 4);
-                        in.position(start);
-                        portables[i] = serializer.readAndInitialize(in);
-                    }
-                } finally {
-                    ctxIn.setFactoryId(cd.getFactoryId());
-                    ctxIn.setClassId(cd.getClassId());
+                for (int i = 0; i < len; i++) {
+                    final int start = in.readInt(offset + i * 4);
+                    in.position(start);
+                    portables[i] = serializer.readAndInitialize(in, fd.getFactoryId(),
+                            fd.getClassId(), fd.getVersion());
                 }
             }
             return portables;

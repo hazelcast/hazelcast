@@ -22,21 +22,17 @@ import java.io.IOException;
 
 final class ClassDefinitionWriter implements PortableWriter {
 
-    private final SerializationContext context;
+    private final PortableContext context;
     private final ClassDefinitionBuilder builder;
 
-    ClassDefinitionWriter(SerializationContext context, int factoryId, int classId) {
+    ClassDefinitionWriter(PortableContext context, int factoryId, int classId, int version) {
         this.context = context;
-        builder = new ClassDefinitionBuilder(factoryId, classId);
+        builder = new ClassDefinitionBuilder(factoryId, classId, version);
     }
 
-    ClassDefinitionWriter(SerializationContext context, ClassDefinitionBuilder builder) {
+    ClassDefinitionWriter(PortableContext context, ClassDefinitionBuilder builder) {
         this.context = context;
         this.builder = builder;
-    }
-
-    public int getVersion() {
-        return context.getVersion();
     }
 
     public void writeInt(String fieldName, int value) {
@@ -108,25 +104,19 @@ final class ClassDefinitionWriter implements PortableWriter {
             throw new HazelcastSerializationException("Cannot write null portable without explicitly "
                     + "registering class definition!");
         }
-        writePortable(fieldName, portable.getFactoryId(), portable.getClassId(), portable);
-    }
-
-    private void writePortable(String fieldName, int factoryId, int classId, Portable portable) throws IOException {
-        final ClassDefinition nestedClassDef;
-        if (portable != null) {
-            nestedClassDef = createNestedClassDef(portable, new ClassDefinitionBuilder(factoryId, classId));
-        } else {
-            nestedClassDef = context.lookup(factoryId, classId);
-            if (nestedClassDef == null) {
-                throw new HazelcastSerializationException("Cannot write null portable without explicitly "
-                        + "registering class definition!");
-            }
-        }
+        final int version = PortableVersionHelper.getVersion(portable, context.getVersion());
+        ClassDefinition nestedClassDef = createNestedClassDef(portable,
+                new ClassDefinitionBuilder(portable.getFactoryId(), portable.getClassId(), version));
         builder.addPortableField(fieldName, nestedClassDef);
     }
 
     public void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException {
-        writePortable(fieldName, factoryId, classId, null);
+        final ClassDefinition nestedClassDef = context.lookup(factoryId, classId, context.getVersion());
+        if (nestedClassDef == null) {
+            throw new HazelcastSerializationException("Cannot write null portable without explicitly "
+                    + "registering class definition!");
+        }
+        builder.addPortableField(fieldName, nestedClassDef);
     }
 
     public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
@@ -141,7 +131,9 @@ final class ClassDefinitionWriter implements PortableWriter {
                 throw new IllegalArgumentException("Detected different class-ids in portable array!");
             }
         }
-        final ClassDefinition nestedClassDef = createNestedClassDef(p, new ClassDefinitionBuilder(p.getFactoryId(), classId));
+        final int version = PortableVersionHelper.getVersion(p, context.getVersion());
+        ClassDefinition nestedClassDef = createNestedClassDef(p,
+                new ClassDefinitionBuilder(p.getFactoryId(), classId, version));
         builder.addPortableArrayField(fieldName, nestedClassDef);
     }
 
@@ -149,7 +141,8 @@ final class ClassDefinitionWriter implements PortableWriter {
         return new EmptyObjectDataOutput();
     }
 
-    private ClassDefinition createNestedClassDef(Portable portable, ClassDefinitionBuilder nestedBuilder) throws IOException {
+    private ClassDefinition createNestedClassDef(Portable portable, ClassDefinitionBuilder nestedBuilder)
+            throws IOException {
         ClassDefinitionWriter nestedWriter = new ClassDefinitionWriter(context, nestedBuilder);
         portable.writePortable(nestedWriter);
         return context.registerClassDefinition(nestedBuilder.build());

@@ -27,4 +27,6 @@ public interface FieldDefinition extends DataSerializable {
     int getClassId();
 
     int getFactoryId();
+
+    int getVersion();
 }

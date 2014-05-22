@@ -25,6 +25,7 @@ public final class ClassDefinitionBuilder {
 
     private final int factoryId;
     private final int classId;
+    private final int version;
     private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
     private final Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
 
@@ -34,6 +35,13 @@ public final class ClassDefinitionBuilder {
     public ClassDefinitionBuilder(int factoryId, int classId) {
         this.factoryId = factoryId;
         this.classId = classId;
+        this.version = -1;
+    }
+
+    public ClassDefinitionBuilder(int factoryId, int classId, int version) {
+        this.factoryId = factoryId;
+        this.classId = classId;
+        this.version = version;
     }
 
     public ClassDefinitionBuilder addIntField(String fieldName) {
@@ -138,7 +146,7 @@ public final class ClassDefinitionBuilder {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE, def.getFactoryId(), def.getClassId()));
+                FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion()));
         nestedClassDefinitions.add(def);
         return this;
     }
@@ -149,14 +157,14 @@ public final class ClassDefinitionBuilder {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId()));
+                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId(), def.getVersion()));
         nestedClassDefinitions.add(def);
         return this;
     }
 
     public ClassDefinition build() {
         done = true;
-        final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId);
+        final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId, version);
         for (FieldDefinition fd : fieldDefinitions) {
             cd.addFieldDef(fd);
         }

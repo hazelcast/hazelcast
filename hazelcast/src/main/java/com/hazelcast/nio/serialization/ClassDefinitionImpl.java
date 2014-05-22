@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.HashMap;
 
-public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
+class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
 
     private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
     private final Map<String, FieldDefinition> fieldDefinitionsMap = new HashMap<String,
@@ -37,9 +37,10 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
     public ClassDefinitionImpl() {
     }
 
-    public ClassDefinitionImpl(int factoryId, int classId) {
+    public ClassDefinitionImpl(int factoryId, int classId, int version) {
         this.factoryId = factoryId;
         this.classId = classId;
+        this.version = version;
     }
 
     public void addFieldDef(FieldDefinition fd) {
@@ -76,7 +77,7 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
         if (fd != null) {
             return fd.getType();
         }
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("Unknown field: " + fieldName);
     }
 
     public int getFieldClassId(String fieldName) {
@@ -84,7 +85,15 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
         if (fd != null) {
             return fd.getClassId();
         }
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("Unknown field: " + fieldName);
+    }
+
+    public int getFieldVersion(String fieldName) {
+        final FieldDefinition fd = get(fieldName);
+        if (fd != null) {
+            return fd.getVersion();
+        }
+        throw new IllegalArgumentException("Unknown field: " + fieldName);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

@@ -16,30 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.util.Set;
 
-public interface ClassDefinition extends DataSerializable {
+public interface VersionedPortable extends Portable {
 
-    int getFactoryId();
-
-    FieldDefinition get(String name);
-
-    FieldDefinition get(int fieldIndex);
-
-    boolean hasField(String fieldName);
-
-    Set<String> getFieldNames();
-
-    FieldType getFieldType(String fieldName);
-
-    int getFieldClassId(String fieldName);
-
-    int getFieldVersion(String fieldName);
-
-    int getFieldCount();
-
-    int getClassId();
-
-    int getVersion();
-
+    int getClassVersion();
 }

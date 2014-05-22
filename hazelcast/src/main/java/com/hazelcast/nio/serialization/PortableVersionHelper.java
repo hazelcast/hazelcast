@@ -16,30 +16,21 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.util.Set;
+final class PortableVersionHelper {
 
-public interface ClassDefinition extends DataSerializable {
+    private PortableVersionHelper() {
+    }
 
-    int getFactoryId();
-
-    FieldDefinition get(String name);
-
-    FieldDefinition get(int fieldIndex);
-
-    boolean hasField(String fieldName);
-
-    Set<String> getFieldNames();
-
-    FieldType getFieldType(String fieldName);
-
-    int getFieldClassId(String fieldName);
-
-    int getFieldVersion(String fieldName);
-
-    int getFieldCount();
-
-    int getClassId();
-
-    int getVersion();
+    public static int getVersion(Portable portable, int defaultVersion) {
+        int version = defaultVersion;
+        if (portable instanceof VersionedPortable) {
+            VersionedPortable versionedPortable = (VersionedPortable) portable;
+            version = versionedPortable.getClassVersion();
+            if (version < 0) {
+                throw new IllegalArgumentException("Version cannot be negative!");
+            }
+        }
+        return version;
+    }
 
 }
