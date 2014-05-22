@@ -23,7 +23,7 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Collection;
@@ -110,5 +110,5 @@ public interface IOService {
 
     SerializationService getSerializationService();
 
-    SerializationContext getSerializationContext();
+    PortableContext getSerializationContext();
 }

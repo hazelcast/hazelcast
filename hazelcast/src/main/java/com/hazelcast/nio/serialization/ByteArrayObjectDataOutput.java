@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
-class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
+class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, PortableContextAware {
 
     final int initialSize;
 
@@ -303,8 +303,8 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         buffer = null;
     }
 
-    public SerializationContext getSerializationContext() {
-        return service.getSerializationContext();
+    public PortableContext getPortableContext() {
+        return service.getPortableContext();
     }
 
     public ByteOrder getByteOrder() {

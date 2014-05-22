@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 class ByteArrayObjectDataInput extends PortableContextAwareInputStream
-        implements BufferObjectDataInput, SerializationContextAware {
+        implements BufferObjectDataInput, PortableContextAware {
 
     byte[] buffer;
 
@@ -507,8 +507,8 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
         buffer = null;
     }
 
-    public SerializationContext getSerializationContext() {
-        return service.getSerializationContext();
+    public PortableContext getPortableContext() {
+        return service.getPortableContext();
     }
 
     @Override

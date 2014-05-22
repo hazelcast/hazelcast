@@ -21,7 +21,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
@@ -106,7 +106,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
     // accessed only in synchronized block
 
-    private final SerializationContext serializationContext;
+    private final PortableContext portableContext;
 
     private volatile Thread socketAcceptorThread;
     // accessed only in synchronized block
@@ -160,7 +160,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             logger.info("SocketInterceptor is enabled");
             memberSocketInterceptor.init(sic.getProperties());
         }
-        serializationContext = ioService.getSerializationContext();
+        portableContext = ioService.getSerializationContext();
     }
 
     @Override
@@ -186,8 +186,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         allTextConnections.incrementAndGet();
     }
 
-    public SerializationContext getSerializationContext() {
-        return serializationContext;
+    public PortableContext getPortableContext() {
+        return portableContext;
     }
 
     interface SocketChannelWrapperFactory {
@@ -285,7 +285,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         //make sure bind packet is the first packet sent to the end point.
         final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
         final Data bindData = ioService.toData(bind);
-        final Packet packet = new Packet(bindData, serializationContext);
+        final Packet packet = new Packet(bindData, portableContext);
         packet.setHeader(Packet.HEADER_OP);
         connection.write(packet);
         //now you can send anything...

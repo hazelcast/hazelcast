@@ -18,13 +18,13 @@ package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 
 public final class ClientPacket extends DataAdapter implements SocketWritable, SocketReadable {
 
     private transient Connection conn;
 
-    public ClientPacket(SerializationContext context) {
+    public ClientPacket(PortableContext context) {
         super(context);
     }
 

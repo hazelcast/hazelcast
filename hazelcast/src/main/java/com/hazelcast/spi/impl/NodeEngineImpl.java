@@ -29,7 +29,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationInfo;
@@ -125,8 +125,8 @@ public class NodeEngineImpl
         return node.getSerializationService();
     }
 
-    public SerializationContext getSerializationContext() {
-        return node.getSerializationService().getSerializationContext();
+    public PortableContext getPortableContext() {
+        return node.getSerializationService().getPortableContext();
     }
 
     @Override

@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
-        implements BufferObjectDataInput, SerializationContextAware {
+        implements BufferObjectDataInput, PortableContextAware {
 
     private static final int UTF_BUFFER_SIZE = 1024;
 
@@ -459,8 +459,8 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
         buffer.close();
     }
 
-    public SerializationContext getSerializationContext() {
-        return service.getSerializationContext();
+    public PortableContext getPortableContext() {
+        return service.getPortableContext();
     }
 
     @Override

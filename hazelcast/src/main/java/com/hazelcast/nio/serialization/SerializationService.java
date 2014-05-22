@@ -57,7 +57,7 @@ public interface SerializationService {
 
     void registerGlobal(Serializer serializer);
 
-    SerializationContext getSerializationContext();
+    PortableContext getPortableContext();
 
     PortableReader createPortableReader(Data data);
 

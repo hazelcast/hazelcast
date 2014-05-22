@@ -57,7 +57,7 @@ import com.hazelcast.nio.IOSelector;
 import com.hazelcast.nio.SocketChannelWrapper;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
@@ -202,8 +202,8 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return live;
     }
 
-    public SerializationContext getSerializationContext() {
-        return client.getSerializationService().getSerializationContext();
+    public PortableContext getPortableContext() {
+        return client.getSerializationService().getPortableContext();
     }
 
     public SerializationService getSerializationService() {

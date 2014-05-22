@@ -45,17 +45,17 @@ public class DataAdapter implements SocketWritable, SocketReadable {
     private boolean skipClassDef;
 
     private transient short status;
-    private transient SerializationContext context;
+    private transient PortableContext context;
 
     public DataAdapter(Data data) {
         this.data = data;
     }
 
-    public DataAdapter(SerializationContext context) {
+    public DataAdapter(PortableContext context) {
         this.context = context;
     }
 
-    public DataAdapter(Data data, SerializationContext context) {
+    public DataAdapter(Data data, PortableContext context) {
         this.data = data;
         this.context = context;
     }

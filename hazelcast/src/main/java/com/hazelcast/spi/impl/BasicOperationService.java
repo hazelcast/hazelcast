@@ -624,7 +624,7 @@ final class BasicOperationService implements InternalOperationService {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
         }
         Data data = nodeEngine.toData(response);
-        Packet packet = new Packet(data, nodeEngine.getSerializationContext());
+        Packet packet = new Packet(data, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
         packet.setHeader(Packet.HEADER_RESPONSE);
         if (response.isUrgent()) {
@@ -639,7 +639,7 @@ final class BasicOperationService implements InternalOperationService {
         //enable this line to get some logging of sizes of operations.
         //System.out.println(op.getClass()+" "+data.bufferSize());
         final int partitionId = scheduler.getPartitionIdForExecution(op);
-        Packet packet = new Packet(data, partitionId, nodeEngine.getSerializationContext());
+        Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
         if (op instanceof UrgentSystemOperation) {
             packet.setHeader(Packet.HEADER_URGENT);
