@@ -96,9 +96,4 @@ final class EmptyObjectDataOutput implements ObjectDataOutput {
     public ByteOrder getByteOrder() {
         return ByteOrder.BIG_ENDIAN;
     }
-
-    @Override
-    public SerializationService getSerializationService() {
-        throw new UnsupportedOperationException();
-    }
 }

@@ -23,8 +23,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-class ByteArrayObjectDataInput extends PortableContextAwareInputStream
-        implements BufferObjectDataInput, PortableContextAware {
+class ByteArrayObjectDataInput
+        extends PortableContextAwareInputStream
+        implements BufferObjectDataInput, PortableContextAware, SerializationServiceAccessor.SerializationServiceAccess {
 
     private static final int UTF_BUFFER_SIZE = 1024;
 
@@ -39,7 +40,6 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
     protected int mark;
 
     private byte[] utfBuffer;
-
 
     ByteArrayObjectDataInput(Data data, SerializationService service) {
         this(data.buffer, service);

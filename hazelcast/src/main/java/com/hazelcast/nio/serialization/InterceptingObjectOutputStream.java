@@ -32,7 +32,8 @@ public class InterceptingObjectOutputStream
 
         super(out);
         enableReplaceObject(true);
-        this.serializationService = (SerializationServiceImpl) dataOutput.getSerializationService();
+        SerializationService serializationService = SerializationServiceAccessor.getSerializationService(dataOutput);
+        this.serializationService = (SerializationServiceImpl) serializationService;
     }
 
     @Override

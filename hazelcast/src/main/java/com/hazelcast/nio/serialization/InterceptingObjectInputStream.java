@@ -34,7 +34,7 @@ public class InterceptingObjectInputStream
 
         super(in);
         enableResolveObject(true);
-        this.serializationService = dataInput.getSerializationService();
+        this.serializationService = SerializationServiceAccessor.getSerializationService(dataInput);
     }
 
     @Override

@@ -25,7 +25,9 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-final class ByteBufferObjectDataOutput extends OutputStream implements BufferObjectDataOutput, PortableContextAware {
+final class ByteBufferObjectDataOutput
+        extends OutputStream
+        implements BufferObjectDataOutput, PortableContextAware, SerializationServiceAccessor.SerializationServiceAccess {
 
     private static final int UTF_BUFFER_SIZE = 1024;
 

@@ -78,6 +78,4 @@ public interface ObjectDataOutput extends DataOutput {
      * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
      */
     ByteOrder getByteOrder();
-
-    SerializationService getSerializationService();
 }

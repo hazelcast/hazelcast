@@ -25,7 +25,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
-public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable, PortableContextAware {
+public class ObjectDataOutputStream
+        extends OutputStream
+        implements ObjectDataOutput, Closeable, PortableContextAware, SerializationServiceAccessor.SerializationServiceAccess {
 
     private static final int UTF_BUFFER_SIZE = 1024;
     private final SerializationService serializationService;

@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.SerializationService;
-
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -81,7 +79,4 @@ public interface ObjectDataInput extends DataInput {
      * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
      */
     ByteOrder getByteOrder();
-
-    SerializationService getSerializationService();
-
 }
