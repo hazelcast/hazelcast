@@ -212,6 +212,11 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         return byteOrder;
     }
 
+    @Override
+    public SerializationService getSerializationService() {
+        return serializationService;
+    }
+
     private boolean bigEndian() {
         return byteOrder == ByteOrder.BIG_ENDIAN;
     }

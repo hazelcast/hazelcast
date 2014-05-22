@@ -34,6 +34,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static com.hazelcast.nio.IOUtil.newObjectInputStream;
+import static com.hazelcast.nio.IOUtil.newObjectOutputStream;
 
 import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_BIG_INTEGER;
 import static com.hazelcast.nio.serialization.SerializationConstants.DEFAULT_TYPE_BIG_DECIMAL;
@@ -140,9 +141,9 @@ public final class DefaultSerializers {
                 final ObjectInputStream objectInputStream;
                 final InputStream inputStream = (InputStream) in;
                 if (gzipEnabled) {
-                    objectInputStream = newObjectInputStream(in.getClassLoader(), new GZIPInputStream(inputStream));
+                    objectInputStream = newObjectInputStream(in.getClassLoader(), new GZIPInputStream(inputStream), in);
                 } else {
-                    objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
+                    objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream, in);
                 }
                 ds.readExternal(objectInputStream);
                 return ds;
@@ -157,9 +158,9 @@ public final class DefaultSerializers {
             final ObjectOutputStream objectOutputStream;
             final OutputStream outputStream = (OutputStream) out;
             if (gzipEnabled) {
-                objectOutputStream = new ObjectOutputStream(new GZIPOutputStream(outputStream));
+                objectOutputStream = newObjectOutputStream(new GZIPOutputStream(outputStream), out);
             } else {
-                objectOutputStream = new ObjectOutputStream(outputStream);
+                objectOutputStream = newObjectOutputStream(outputStream, out);
             }
             obj.writeExternal(objectOutputStream);
             // Force flush if not yet written due to internal behavior if pos < 1024
@@ -185,9 +186,9 @@ public final class DefaultSerializers {
             final ObjectInputStream objectInputStream;
             final InputStream inputStream = (InputStream) in;
             if (gzipEnabled) {
-                objectInputStream = newObjectInputStream(in.getClassLoader(), new GZIPInputStream(inputStream));
+                objectInputStream = newObjectInputStream(in.getClassLoader(), new GZIPInputStream(inputStream), in);
             } else {
-                objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
+                objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream, in);
             }
 
             final Object result;
@@ -208,9 +209,9 @@ public final class DefaultSerializers {
             final ObjectOutputStream objectOutputStream;
             final OutputStream outputStream = (OutputStream) out;
             if (gzipEnabled) {
-                objectOutputStream = new ObjectOutputStream(new GZIPOutputStream(outputStream));
+                objectOutputStream = newObjectOutputStream(new GZIPOutputStream(outputStream), out);
             } else {
-                objectOutputStream = new ObjectOutputStream(outputStream);
+                objectOutputStream = newObjectOutputStream(outputStream, out);
             }
             if (shared) {
                 objectOutputStream.writeObject(obj);

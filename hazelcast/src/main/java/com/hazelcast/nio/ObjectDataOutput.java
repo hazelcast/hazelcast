@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.serialization.SerializationService;
+
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -76,4 +78,6 @@ public interface ObjectDataOutput extends DataOutput {
      * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
      */
     ByteOrder getByteOrder();
+
+    SerializationService getSerializationService();
 }

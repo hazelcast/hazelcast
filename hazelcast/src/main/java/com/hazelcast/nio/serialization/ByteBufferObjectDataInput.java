@@ -480,6 +480,11 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
     }
 
     @Override
+    public SerializationService getSerializationService() {
+        return service;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ByteBufferObjectDataInput{");
         sb.append("buffer=").append(buffer);

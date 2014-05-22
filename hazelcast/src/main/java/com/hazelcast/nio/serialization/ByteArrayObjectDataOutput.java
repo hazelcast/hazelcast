@@ -27,20 +27,20 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     private static final int UTF_BUFFER_SIZE = 1024;
 
-    final int initialSize;
+    private final SerializationService serializationService;
 
-    byte[] buffer;
+    protected final int initialSize;
 
-    int pos;
-
-    final SerializationService service;
+    protected byte[] buffer;
 
     private byte[] utfBuffer;
 
-    ByteArrayObjectDataOutput(int size, SerializationService service) {
+    protected int pos;
+
+    ByteArrayObjectDataOutput(int size, SerializationService serializationService) {
         this.initialSize = size;
         this.buffer = new byte[size];
-        this.service = service;
+        this.serializationService = serializationService;
     }
 
     public void write(int b) {
@@ -261,7 +261,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeObject(Object object) throws IOException {
-        service.writeObject(this, object);
+        serializationService.writeObject(this, object);
     }
 
     /**
@@ -309,11 +309,16 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public PortableContext getPortableContext() {
-        return service.getPortableContext();
+        return serializationService.getPortableContext();
     }
 
     public ByteOrder getByteOrder() {
         return ByteOrder.BIG_ENDIAN;
+    }
+
+    @Override
+    public SerializationService getSerializationService() {
+        return serializationService;
     }
 
     @Override

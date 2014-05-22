@@ -2,3 +2,4 @@ com.hazelcast.nio.serialization.serializers.ArrayListSerializerHook
 com.hazelcast.nio.serialization.serializers.LinkedListSerializerHook
 com.hazelcast.mapreduce.impl.JobPartitionStateArraySerializerHook
 com.hazelcast.mapreduce.impl.JobPartitionStateSerializerHook
+com.hazelcast.nio.serialization.serializers.HashMapSerializerHook

@@ -87,6 +87,11 @@ public final class SerializationConstants {
     public static final int AUTO_TYPE_JOB_PARTITION_STATE_ARRAY = -102;
 
     public static final int AUTO_TYPE_LINKED_LIST = -103;
+
+    public static final int AUTO_TYPE_HASH_MAP = -104;
+
+    public static final int AUTO_TYPE_TREE_MAP = -105;
+
     // ------------------------------------------------------------
     // HIBERNATE SERIALIZERS
 

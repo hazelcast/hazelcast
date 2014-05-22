@@ -19,9 +19,12 @@ package com.hazelcast.nio;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.InterceptingObjectInputStream;
+import com.hazelcast.nio.serialization.InterceptingObjectOutputStream;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.io.InputStream;
@@ -116,12 +119,19 @@ public final class IOUtil {
         return data;
     }
 
-    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
-        return new ObjectInputStream(in) {
+    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, final InputStream in,
+                                                         final ObjectDataInput dataInput) throws IOException {
+        return new InterceptingObjectInputStream(in, dataInput) {
             protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
                 return ClassLoaderUtil.loadClass(classLoader, desc.getName());
             }
         };
+    }
+
+    public static ObjectOutputStream newObjectOutputStream(final OutputStream out, ObjectDataOutput dataOutput)
+            throws IOException {
+
+        return new InterceptingObjectOutputStream(out, dataOutput);
     }
 
     public static OutputStream newOutputStream(final ByteBuffer buf) {

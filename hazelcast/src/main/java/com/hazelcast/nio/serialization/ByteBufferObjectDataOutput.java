@@ -264,6 +264,11 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
     }
 
     @Override
+    public SerializationService getSerializationService() {
+        return service;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ByteBufferObjectDataOutput{");
         sb.append("buffer=").append(buffer);
