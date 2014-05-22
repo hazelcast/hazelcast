@@ -15,5 +15,5 @@ public interface JoinerFactory {
      * @param node
      * @return
      */
-    public Joiner createJoiner(Node node);
+    Joiner createJoiner(Node node);
 }
