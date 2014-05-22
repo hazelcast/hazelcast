@@ -24,6 +24,8 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -40,6 +42,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
+
+    private final ILogger logger = Logger.getLogger(ClientCallFuture.class);
 
     private static final int MAX_RESEND_COUNT = 20;
 
@@ -128,7 +132,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private void setResponse(Object response) {
         synchronized (this) {
             if (this.response != null && handler == null) {
-                throw new IllegalArgumentException("The Future.set method can only be called once");
+                logger.warning("The Future.set() method can only be called once. Request: " + request
+                        + ", current response: " + this.response + ", new response: " + response);
             }
 
             if (handler != null && !(response instanceof Throwable)) {
