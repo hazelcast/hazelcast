@@ -17,6 +17,12 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.management.SerializableClientEndPoint;
+import com.hazelcast.management.SerializableConnectionManagerBean;
+import com.hazelcast.management.SerializableEventServiceBean;
+import com.hazelcast.management.SerializableManagedExecutorBean;
+import com.hazelcast.management.SerializableOperationServiceBean;
+import com.hazelcast.management.SerializablePartitionServiceBean;
+import com.hazelcast.management.SerializableProxyServiceBean;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -47,6 +53,12 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
     private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
+    private SerializableEventServiceBean eventServiceBean = new SerializableEventServiceBean();
+    private SerializableOperationServiceBean operationServiceBean = new SerializableOperationServiceBean();
+    private SerializableConnectionManagerBean connectionManagerBean = new SerializableConnectionManagerBean();
+    private SerializablePartitionServiceBean partitionServiceBean = new SerializablePartitionServiceBean();
+    private SerializableProxyServiceBean proxyServiceBean = new SerializableProxyServiceBean();
+    private Map<String, SerializableManagedExecutorBean> managedExecutorBeans = new HashMap<String, SerializableManagedExecutorBean>();
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -90,6 +102,16 @@ public class MemberStateImpl implements MemberState {
         for (SerializableClientEndPoint client : clients) {
             client.writeData(out);
         }
+        out.writeInt(managedExecutorBeans.size());
+        for (Map.Entry<String, SerializableManagedExecutorBean> entry : managedExecutorBeans.entrySet()) {
+            out.writeUTF(entry.getKey());
+            entry.getValue().writeData(out);
+        }
+        eventServiceBean.writeData(out);
+        operationServiceBean.writeData(out);
+        connectionManagerBean.writeData(out);
+        partitionServiceBean.writeData(out);
+        proxyServiceBean.writeData(out);
     }
 
     @Override
@@ -137,6 +159,22 @@ public class MemberStateImpl implements MemberState {
             ci.readData(in);
             clients.add(ci);
         }
+        for (int i = in.readInt(); i > 0; i--) {
+            String name = in.readUTF();
+            SerializableManagedExecutorBean managedExecutorBean = new SerializableManagedExecutorBean();
+            managedExecutorBean.readData(in);
+            managedExecutorBeans.put(name, managedExecutorBean);
+        }
+        eventServiceBean = new SerializableEventServiceBean();
+        eventServiceBean.readData(in);
+        operationServiceBean = new SerializableOperationServiceBean();
+        operationServiceBean.readData(in);
+        connectionManagerBean = new SerializableConnectionManagerBean();
+        connectionManagerBean.readData(in);
+        partitionServiceBean = new SerializablePartitionServiceBean();
+        partitionServiceBean.readData(in);
+        proxyServiceBean = new SerializableProxyServiceBean();
+        proxyServiceBean.readData(in);
     }
 
     public void clearPartitions() {
@@ -145,6 +183,10 @@ public class MemberStateImpl implements MemberState {
 
     public void addPartition(int partitionId) {
         partitions.add(partitionId);
+    }
+
+    public void putManagedExecutor(String name, SerializableManagedExecutorBean bean) {
+        managedExecutorBeans.put(name, bean);
     }
 
     @Override
@@ -218,6 +260,52 @@ public class MemberStateImpl implements MemberState {
 
     public Collection<SerializableClientEndPoint> getClients() {
         return clients;
+    }
+
+    @Override
+    public SerializableEventServiceBean getEventServiceBean() {
+        return eventServiceBean;
+    }
+
+    public void setEventServiceBean(SerializableEventServiceBean eventServiceBean) {
+        this.eventServiceBean = eventServiceBean;
+    }
+
+    public SerializableOperationServiceBean getOperationServiceBean() {
+        return operationServiceBean;
+    }
+
+    public void setOperationServiceBean(SerializableOperationServiceBean operationServiceBean) {
+        this.operationServiceBean = operationServiceBean;
+    }
+
+    public SerializableConnectionManagerBean getConnectionManagerBean() {
+        return connectionManagerBean;
+    }
+
+    public void setConnectionManagerBean(SerializableConnectionManagerBean connectionManagerBean) {
+        this.connectionManagerBean = connectionManagerBean;
+    }
+
+    public SerializablePartitionServiceBean getPartitionServiceBean() {
+        return partitionServiceBean;
+    }
+
+    public void setPartitionServiceBean(SerializablePartitionServiceBean partitionServiceBean) {
+        this.partitionServiceBean = partitionServiceBean;
+    }
+
+    public SerializableProxyServiceBean getProxyServiceBean() {
+        return proxyServiceBean;
+    }
+
+    @Override
+    public SerializableManagedExecutorBean getManagedExecutorBean(String name) {
+        return managedExecutorBeans.get(name);
+    }
+
+    public void setProxyServiceBean(SerializableProxyServiceBean proxyServiceBean) {
+        this.proxyServiceBean = proxyServiceBean;
     }
 
     public void setClients(Collection<SerializableClientEndPoint> clients) {

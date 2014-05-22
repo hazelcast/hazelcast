@@ -6,6 +6,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
+/**
+ * A Serializable DTO for {@link com.hazelcast.client.ClientEndpoint}.
+ */
 public class SerializableClientEndPoint implements DataSerializable {
 
     String uuid;

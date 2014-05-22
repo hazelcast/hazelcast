@@ -23,6 +23,13 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.ProxyService;
+import com.hazelcast.util.executor.ManagedExecutorService;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -76,10 +83,57 @@ public class TimedMemberStateFactory {
         final Node node = instance.node;
         memberState.setAddress(node.getThisAddress());
         final HashSet<SerializableClientEndPoint> serializableClientEndPoints = new HashSet<SerializableClientEndPoint>();
-        for (Client client : instance.node.clientEngine.getClients()){
+        for (Client client : instance.node.clientEngine.getClients()) {
             serializableClientEndPoints.add(new SerializableClientEndPoint(client));
         }
         memberState.setClients(serializableClientEndPoints);
+
+        final EventService es = instance.node.nodeEngine.getEventService();
+        final OperationService os = instance.node.nodeEngine.getOperationService();
+        final ConnectionManager cm = instance.node.connectionManager;
+        final InternalPartitionService ps = instance.node.partitionService;
+        final ProxyService proxyService = instance.node.nodeEngine.getProxyService();
+        final ExecutionService executionService = instance.node.nodeEngine.getExecutionService();
+
+        final SerializableEventServiceBean esBean = new SerializableEventServiceBean(es);
+        memberState.setEventServiceBean(esBean);
+
+        final SerializableOperationServiceBean osBean = new SerializableOperationServiceBean(os);
+        memberState.setOperationServiceBean(osBean);
+
+        final SerializableConnectionManagerBean cmBean = new SerializableConnectionManagerBean(cm);
+        memberState.setConnectionManagerBean(cmBean);
+
+        final SerializablePartitionServiceBean psBean = new SerializablePartitionServiceBean(ps, instance);
+        memberState.setPartitionServiceBean(psBean);
+
+        final SerializableProxyServiceBean proxyServiceBean = new SerializableProxyServiceBean(proxyService);
+        memberState.setProxyServiceBean(proxyServiceBean);
+
+        final ManagedExecutorService systemExecutor = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR);
+        final ManagedExecutorService operationExecutor = executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR);
+        final ManagedExecutorService asyncExecutor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
+        final ManagedExecutorService scheduledExecutor = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR);
+        final ManagedExecutorService clientExecutor = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR);
+        final ManagedExecutorService queryExecutor = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR);
+        final ManagedExecutorService ioExecutor = executionService.getExecutor(ExecutionService.IO_EXECUTOR);
+
+        final SerializableManagedExecutorBean systemExecutorBean = new SerializableManagedExecutorBean(systemExecutor);
+        final SerializableManagedExecutorBean operationExecutorBean = new SerializableManagedExecutorBean(operationExecutor);
+        final SerializableManagedExecutorBean asyncExecutorBean = new SerializableManagedExecutorBean(asyncExecutor);
+        final SerializableManagedExecutorBean scheduledExecutorBean = new SerializableManagedExecutorBean(scheduledExecutor);
+        final SerializableManagedExecutorBean clientExecutorBean = new SerializableManagedExecutorBean(clientExecutor);
+        final SerializableManagedExecutorBean queryExecutorBean = new SerializableManagedExecutorBean(queryExecutor);
+        final SerializableManagedExecutorBean ioExecutorBean = new SerializableManagedExecutorBean(ioExecutor);
+
+        memberState.putManagedExecutor(ExecutionService.SYSTEM_EXECUTOR, systemExecutorBean);
+        memberState.putManagedExecutor(ExecutionService.OPERATION_EXECUTOR, operationExecutorBean);
+        memberState.putManagedExecutor(ExecutionService.ASYNC_EXECUTOR, asyncExecutorBean);
+        memberState.putManagedExecutor(ExecutionService.SCHEDULED_EXECUTOR, scheduledExecutorBean);
+        memberState.putManagedExecutor(ExecutionService.CLIENT_EXECUTOR, clientExecutorBean);
+        memberState.putManagedExecutor(ExecutionService.QUERY_EXECUTOR, queryExecutorBean);
+        memberState.putManagedExecutor(ExecutionService.IO_EXECUTOR, ioExecutorBean);
+
         PartitionService partitionService = instance.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
         memberState.clearPartitions();
