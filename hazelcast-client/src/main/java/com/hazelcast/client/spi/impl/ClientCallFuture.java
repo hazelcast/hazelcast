@@ -24,6 +24,8 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -39,12 +41,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_RETRY_COUNT_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_RETRY_WAIT_TIME_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.*;
 
 public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
+    static final ILogger logger = Logger.getLogger(ClientCallFuture.class);
 
     private Object response;
 
@@ -155,7 +156,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private void setResponse(Object response) {
         synchronized (this) {
             if (this.response != null && handler == null) {
-                throw new IllegalArgumentException("The Future.set method can only be called once");
+                logger.warning("The Future.set() method can only be called once. Request: " + request
+                        + ", current response: " + this.response + ", new response: " + response);
             }
 
             if (handler != null && !(response instanceof Throwable)) {
@@ -267,7 +269,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             }
         }
 
-        private void sleep(){
+        private void sleep() {
             try {
                 Thread.sleep(250);
             } catch (InterruptedException ignored) {
