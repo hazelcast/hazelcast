@@ -31,7 +31,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.TcpIpConnectionManager;
-import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -183,7 +182,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     void sendResponse(ClientEndpoint endpoint, ClientResponse response) {
         Data resultData = serializationService.toData(response);
         Connection conn = endpoint.getConnection();
-        conn.write(new DataAdapter(resultData, serializationService.getSerializationContext()));
+        conn.write(new DataAdapter(resultData, serializationService.getPortableContext()));
     }
 
     @Override
@@ -388,9 +387,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
-        builder.addUTFField("uuid").addUTFField("ownerUuid");
-        serializationService.getSerializationContext().registerClassDefinition(builder.build());
         node.getConnectionManager().addConnectionListener(connectionListener);
     }
 

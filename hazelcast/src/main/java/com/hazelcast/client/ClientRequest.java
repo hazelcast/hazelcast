@@ -16,13 +16,13 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.VersionedPortable;
 
 import java.io.IOException;
 
-public abstract class ClientRequest implements Portable, SecureRequest {
+public abstract class ClientRequest implements SecureRequest, VersionedPortable {
 
     protected int callId = -1;
     protected transient ClientEngineImpl clientEngine;
@@ -102,5 +102,18 @@ public abstract class ClientRequest implements Portable, SecureRequest {
     }
 
     public void read(PortableReader reader) throws IOException {
+    }
+
+    /***
+     * Version for internal requests.
+     * This version can be configured per class by overriding this method.
+     *
+     * <p>
+     * This should be updated/incremented when serialization of a request changes.
+     * </p>
+     */
+    @Override
+    public int getClassVersion() {
+        return 1;
     }
 }
