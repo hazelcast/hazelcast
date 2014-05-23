@@ -756,7 +756,7 @@ public class DefaultRecordStore implements RecordStore {
             final Object notExistingKey = mapService.toObject(key);
             final EntryView<Object, Object> nullEntryView = EntryViews.createNullEntryView(notExistingKey);
             newValue = mergePolicy.merge(name, mergingEntry, nullEntryView);
-            if(newValue == null) {
+            if (newValue == null) {
                 return false;
             }
             newValue = mapStoreWrite(key, newValue, null);
@@ -765,7 +765,7 @@ public class DefaultRecordStore implements RecordStore {
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             Object oldValue = record.getValue();
-            EntryView existingEntry = mapService.createSimpleEntryView(mapService.toObject(record.getKey()),
+            EntryView existingEntry = EntryViews.createSimpleEntryView(mapService.toObject(record.getKey()),
                     mapService.toObject(record.getValue()), record);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             // existing entry will be removed

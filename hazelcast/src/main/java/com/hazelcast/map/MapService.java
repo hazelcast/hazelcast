@@ -331,7 +331,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
                         public void run() {
-                            final SimpleEntryView entryView = createSimpleEntryView(record.getKey(), toData(record.getValue()), record);
+                            final EntryView entryView = EntryViews.createSimpleEntryView(record.getKey(), toData(record.getValue()), record);
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
                             try {
                                 int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
@@ -815,25 +815,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         return delayedEntry;
     }
 
-    public <K, V> SimpleEntryView<K, V> createSimpleEntryView(K key, V value, Record record) {
-        final TimeUnit unit = TimeUnit.NANOSECONDS;
-        final SimpleEntryView simpleEntryView = new SimpleEntryView(key, value);
-        simpleEntryView.setCost(record.getCost());
-        simpleEntryView.setVersion(record.getVersion());
-        simpleEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
-        simpleEntryView.setLastAccessTime(unit.toMillis(record.getLastAccessTime()));
-        simpleEntryView.setLastUpdateTime(unit.toMillis(record.getLastUpdateTime()));
-        simpleEntryView.setTtl(unit.toMillis(record.getTtl()));
-
-        final RecordStatistics statistics = record.getStatistics();
-        if (statistics != null) {
-            simpleEntryView.setHits(statistics.getHits());
-            simpleEntryView.setCreationTime(unit.toMillis(statistics.getCreationTime()));
-            simpleEntryView.setExpirationTime(unit.toMillis(statistics.getExpirationTime()));
-            simpleEntryView.setLastStoredTime(unit.toMillis(statistics.getLastStoredTime()));
-        }
-        return simpleEntryView;
-    }
 
     public Object toObject(Object data) {
         if (data == null)

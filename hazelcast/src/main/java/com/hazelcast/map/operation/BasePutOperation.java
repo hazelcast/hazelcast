@@ -17,7 +17,8 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.SimpleEntryView;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.EntryViews;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
 import com.hazelcast.nio.serialization.Data;
@@ -52,7 +53,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
             if (record == null) {
                 return;
             }
-            final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
+            final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
             mapService.publishWanReplicationUpdate(name, entryView);
         }
     }
