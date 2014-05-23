@@ -24,7 +24,7 @@ public interface PortableContext {
 
     int getVersion();
 
-    Integer getClassVersion(int factoryId, int classId);
+    int getClassVersion(int factoryId, int classId);
 
     void setClassVersion(int factoryId, int classId, int version);
 

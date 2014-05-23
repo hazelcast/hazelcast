@@ -30,12 +30,17 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import static com.hazelcast.util.ByteUtil.combineToLong;
+
 final class PortableContextImpl implements PortableContext {
 
-    final int version;
-    final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap = new ConcurrentHashMap<Integer, ClassDefinitionContext>();
-    final SerializationServiceImpl serializationService;
-    final ConstructorFunction<Integer, ClassDefinitionContext> constructorFunction =
+    private static final int COMPRESSION_BUFFER_LENGTH = 1024;
+
+    private final int version;
+    private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap =
+            new ConcurrentHashMap<Integer, ClassDefinitionContext>();
+    private final SerializationServiceImpl serializationService;
+    private final ConstructorFunction<Integer, ClassDefinitionContext> constructorFunction =
             new ConstructorFunction<Integer, ClassDefinitionContext>() {
                 public ClassDefinitionContext createNew(Integer arg) {
                     return new ClassDefinitionContext();
@@ -53,7 +58,7 @@ final class PortableContextImpl implements PortableContext {
     }
 
     @Override
-    public Integer getClassVersion(int factoryId, int classId) {
+    public int getClassVersion(int factoryId, int classId) {
         return getClassDefContext(factoryId).getClassVersion(classId);
     }
 
@@ -115,16 +120,15 @@ final class PortableContextImpl implements PortableContext {
         final ConcurrentMap<Long, ClassDefinition> versionedDefinitions = new ConcurrentHashMap<Long, ClassDefinition>();
         final ConcurrentMap<Integer, Integer> currentClassVersions = new ConcurrentHashMap<Integer, Integer>();
 
-        Integer getClassVersion(int classId) {
-            return currentClassVersions.get(classId);
+        int getClassVersion(int classId) {
+            Integer version = currentClassVersions.get(classId);
+            return version != null ? version : -1;
         }
 
         void setClassVersion(int classId, int version) {
-            Integer current;
-            if ((current = currentClassVersions.putIfAbsent(classId, version)) != null) {
-                if (current != version) {
-                    throw new IllegalArgumentException("Class-id: " + classId + " is already registered!");
-                }
+            Integer current = currentClassVersions.putIfAbsent(classId, version);
+            if (current != null && current != version) {
+                throw new IllegalArgumentException("Class-id: " + classId + " is already registered!");
             }
         }
 
@@ -145,6 +149,17 @@ final class PortableContextImpl implements PortableContext {
             if (compressedBinary == null || compressedBinary.length == 0) {
                 throw new IOException("Illegal class-definition binary! ");
             }
+            final byte[] binary = getClassDefBinary(compressedBinary);
+            final ClassDefinitionImpl cd = new ClassDefinitionImpl();
+            cd.readData(serializationService.createObjectDataInput(binary));
+            if (cd.getVersion() < 0) {
+                throw new IOException("ClassDefinition version cannot be negative! -> " + cd);
+            }
+            cd.setBinary(compressedBinary);
+            return register(cd);
+        }
+
+        private byte[] getClassDefBinary(byte[] compressedBinary) throws IOException {
             final BufferObjectDataOutput out = serializationService.pop();
             final byte[] binary;
             try {
@@ -153,13 +168,7 @@ final class PortableContextImpl implements PortableContext {
             } finally {
                 serializationService.push(out);
             }
-            final ClassDefinitionImpl cd = new ClassDefinitionImpl();
-            cd.readData(serializationService.createObjectDataInput(binary));
-            if (cd.getVersion() < 0) {
-                throw new IOException("ClassDefinition version cannot be negative! -> " + cd);
-            }
-            cd.setBinary(compressedBinary);
-            return register(cd);
+            return binary;
         }
 
         ClassDefinition register(ClassDefinition cd) {
@@ -171,20 +180,7 @@ final class PortableContextImpl implements PortableContext {
                 if (cdImpl.getVersion() < 0) {
                     cdImpl.version = getVersion();
                 }
-                if (cdImpl.getBinary() == null) {
-                    final BufferObjectDataOutput out = serializationService.pop();
-                    try {
-                        cdImpl.writeData(out);
-                        final byte[] binary = out.toByteArray();
-                        out.clear();
-                        compress(binary, out);
-                        cdImpl.setBinary(out.toByteArray());
-                    } catch (IOException e) {
-                        throw new HazelcastSerializationException(e);
-                    } finally {
-                        serializationService.push(out);
-                    }
-                }
+                setClassDefBinary(cdImpl);
                 registerNestedDefinitions(cdImpl);
             }
             final long versionedClassId = combineToLong(cd.getClassId(), cd.getVersion());
@@ -198,6 +194,23 @@ final class PortableContextImpl implements PortableContext {
             versionedDefinitions.put(versionedClassId, cd);
             return cd;
         }
+
+        private void setClassDefBinary(ClassDefinitionImpl cd) {
+            if (cd.getBinary() == null) {
+                final BufferObjectDataOutput out = serializationService.pop();
+                try {
+                    cd.writeData(out);
+                    final byte[] binary = out.toByteArray();
+                    out.clear();
+                    compress(binary, out);
+                    cd.setBinary(out.toByteArray());
+                } catch (IOException e) {
+                    throw new HazelcastSerializationException(e);
+                } finally {
+                    serializationService.push(out);
+                }
+            }
+        }
     }
 
     static void compress(byte[] input, DataOutput out) throws IOException {
@@ -206,7 +219,7 @@ final class PortableContextImpl implements PortableContext {
         deflater.setStrategy(Deflater.FILTERED);
         deflater.setInput(input);
         deflater.finish();
-        byte[] buf = new byte[1024];
+        byte[] buf = new byte[COMPRESSION_BUFFER_LENGTH];
         while (!deflater.finished()) {
             int count = deflater.deflate(buf);
             out.write(buf, 0, count);
@@ -217,7 +230,7 @@ final class PortableContextImpl implements PortableContext {
     static void decompress(byte[] compressedData, DataOutput out) throws IOException {
         Inflater inflater = new Inflater();
         inflater.setInput(compressedData);
-        byte[] buf = new byte[1024];
+        byte[] buf = new byte[COMPRESSION_BUFFER_LENGTH];
         while (!inflater.finished()) {
             try {
                 int count = inflater.inflate(buf);
@@ -227,13 +240,5 @@ final class PortableContextImpl implements PortableContext {
             }
         }
         inflater.end();
-    }
-
-    static long combineToLong(int x, int y) {
-        return ((long) x << 32) | ((long) y & 0xFFFFFFFL);
-    }
-
-    static int extractInt(long value, boolean lowerBits) {
-        return (lowerBits) ? (int) value : (int) (value >> 32);
     }
 }

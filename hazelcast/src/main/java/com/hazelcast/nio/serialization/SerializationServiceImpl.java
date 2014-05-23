@@ -233,7 +233,7 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     private ClassDefinition lookupClassDefinition(Portable portable) {
-        final int version = PortableVersionHelper.getVersion(portable, serializationContext.version);
+        final int version = PortableVersionHelper.getVersion(portable, serializationContext.getVersion());
         return serializationContext.lookup(portable.getFactoryId(), portable.getClassId(), version);
     }
 
