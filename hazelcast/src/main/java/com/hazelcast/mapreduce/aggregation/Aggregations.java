@@ -27,6 +27,7 @@ import com.hazelcast.mapreduce.aggregation.impl.BigIntegerMinAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.BigIntegerSumAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.ComparableMaxAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.ComparableMinAggregation;
+import com.hazelcast.mapreduce.aggregation.impl.CountAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.DoubleAvgAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.DoubleMaxAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.DoubleMinAggregation;
@@ -44,6 +45,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class Aggregations {
+
+    public static Aggregation<Object, Object, Object, Long, Long, Long, Long> count() {
+        return new CountAggregation<Object, Object>();
+    }
 
     //CHECKSTYLE:OFF
     public static <Key, Value> Aggregation<Key, Value, Key, Integer, //
