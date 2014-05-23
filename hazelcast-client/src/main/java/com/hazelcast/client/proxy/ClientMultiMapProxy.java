@@ -22,6 +22,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.multimap.operations.client.AddEntryListenerRequest;
 import com.hazelcast.multimap.operations.client.ClearRequest;
@@ -241,6 +243,17 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     public LocalMultiMapStats getLocalMultiMapStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+    }
+
+    @Override
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
+
+        // TODO
+        return null;
+    }
+
+    protected void onDestroy() {
     }
 
     private Collection toObjectCollection(PortableCollection result, boolean list) {

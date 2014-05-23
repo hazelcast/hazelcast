@@ -28,7 +28,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import java.util.Map;
 
 public class ComparableMaxAggregation<Key, Value>
-        implements Aggregation<Key, Value, Key, Comparable, Comparable, Comparable, Comparable> {
+        implements AggType<Key, Value, Key, Comparable, Comparable, Comparable, Comparable> {
 
     @Override
     public Collator<Map.Entry<Key, Comparable>, Comparable> getCollator() {

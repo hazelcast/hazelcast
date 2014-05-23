@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 public class BigIntegerAvgAggregation<Key, Value>
-        implements Aggregation<Key, Value, Key, BigInteger, AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>, BigInteger> {
+        implements AggType<Key, Value, Key, BigInteger, AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>, BigInteger> {
 
     @Override
     public Collator<Map.Entry<Key, AvgTuple<Long, BigInteger>>, BigInteger> getCollator() {

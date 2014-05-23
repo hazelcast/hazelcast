@@ -29,7 +29,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 public class BigIntegerMinAggregation<Key, Value>
-        implements Aggregation<Key, Value, Key, BigInteger, BigInteger, BigInteger, BigInteger> {
+        implements AggType<Key, Value, Key, BigInteger, BigInteger, BigInteger, BigInteger> {
 
     @Override
     public Collator<Map.Entry<Key, BigInteger>, BigInteger> getCollator() {

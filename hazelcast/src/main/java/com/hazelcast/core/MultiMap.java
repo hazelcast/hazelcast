@@ -50,7 +50,8 @@ import java.util.concurrent.TimeUnit;
  * @author oztalip
  * @see IMap
  */
-public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
+public interface MultiMap<K, V>
+        extends BaseMultiMap<K, V>, DistributedObject {
 
     /**
      * Returns the name of this multimap.
@@ -72,7 +73,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * @param key   the key to be stored
      * @param value the value to be stored
      * @return true if size of the multimap is increased, false if the multimap
-     *         already contains the key-value pair.
+     * already contains the key-value pair.
      */
     boolean put(K key, V value);
 
@@ -125,7 +126,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      *
      * @param key the key of the entries to remove
      * @return the collection of removed values associated with the given key. Returned collection
-     *         might be modifiable but it has no effect on the multimap
+     * might be modifiable but it has no effect on the multimap
      */
     Collection<V> remove(Object key);
 
@@ -155,7 +156,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
      * @return the set of keys in the multimap. Returned set might be modifiable
-     *         but it has no effect on the multimap
+     * but it has no effect on the multimap
      */
     Set<K> keySet();
 
@@ -167,7 +168,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      *
      * @return the collection of values in the multimap. Returned collection might be modifiable
-     *         but it has no effect on the multimap
+     * but it has no effect on the multimap
      */
     Collection<V> values();
 
@@ -179,7 +180,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
      * @return the set of key-value pairs in the multimap. Returned set might be modifiable
-     *         but it has no effect on the multimap
+     * but it has no effect on the multimap
      */
     Set<Map.Entry<K, V>> entrySet();
 
@@ -262,9 +263,8 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * other nodes for load balancing and/or membership change.
      *
      * @param listener entry listener
-     * @see #localKeySet()
-     *
      * @return returns registration id.
+     * @see #localKeySet()
      */
     String addLocalEntryListener(EntryListener<K, V> listener);
 
@@ -275,7 +275,6 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * @param listener     entry listener
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     *
      * @return returns registration id.
      */
     String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
@@ -285,7 +284,6 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * Returns silently if there is no such listener added before.
      *
      * @param registrationId Id of listener registration
-     *
      * @return true if registration is removed, false otherwise
      */
     boolean removeEntryListener(String registrationId);
@@ -306,7 +304,6 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * @param key          the key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     *
      * @return returns registration id.
      */
     String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
@@ -353,9 +350,9 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
      *
-     * @param key key to lock.
+     * @param key       key to lock.
      * @param leaseTime time to wait before releasing the lock.
-     * @param timeUnit unit of time to specify lease time.
+     * @param timeUnit  unit of time to specify lease time.
      */
     void lock(K key, long leaseTime, TimeUnit timeUnit);
 
@@ -410,9 +407,10 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * @param time     the maximum time to wait for the lock
      * @param timeunit the time unit of the <tt>time</tt> argument.
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
-     *         if the waiting time elapsed before the lock was acquired.
+     * if the waiting time elapsed before the lock was acquired.
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException;
+    boolean tryLock(K key, long time, TimeUnit timeunit)
+            throws InterruptedException;
 
     /**
      * Releases the lock for the specified key. It never blocks and
@@ -462,13 +460,12 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V>, DistributedObject {
      * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
      * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
      *
-     * @param supplier         the supplier to select and / or extract a (sub-)value from the multimap
-     * @param aggregation      the aggregation that is being executed against the multimap
-     * @param <SuppliedValue>  the final type emitted from the supplier
-     * @param <Result>         the resulting aggregation value type
-     * @param <KeyOut>         the resulting mapping phase key type
+     * @param supplier        the supplier to select and / or extract a (sub-)value from the multimap
+     * @param aggregation     the aggregation that is being executed against the multimap
+     * @param <SuppliedValue> the final type emitted from the supplier
+     * @param <Result>        the resulting aggregation value type
      * @return Returns the aggregated value
      */
-    <KeyOut, SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                             Aggregation<K, V, KeyOut, SuppliedValue, Result> aggregation);
+    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, SuppliedValue, Result> aggregation);
 }

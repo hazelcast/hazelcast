@@ -62,7 +62,7 @@ public class AggregationTest
         }
 
         Supplier<String, Integer, Integer> supplier = Supplier.all();
-        Aggregation<String, Integer, String, Integer, Integer> aggregation = Aggregations.integerSum();
+        Aggregation<String, Integer, Integer> aggregation = Aggregations.integerSum();
         int sum = map.aggregate(supplier, aggregation);
 
         assertEquals(expectation, sum);
@@ -82,7 +82,7 @@ public class AggregationTest
         }
 
         Supplier<String, IntegerValue, Integer> supplier = Supplier.all(new IntegerValuePropertyExtractor());
-        Aggregation<String, IntegerValue, String, Integer, Integer> aggregation = Aggregations.integerSum();
+        Aggregation<String, Integer, Integer> aggregation = Aggregations.integerSum();
         int sum = map.aggregate(supplier, aggregation);
 
         assertEquals(expectation, sum);

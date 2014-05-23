@@ -72,6 +72,8 @@ import com.hazelcast.map.client.MapTryPutRequest;
 import com.hazelcast.map.client.MapTryRemoveRequest;
 import com.hazelcast.map.client.MapUnlockRequest;
 import com.hazelcast.map.client.MapValuesRequest;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -789,6 +791,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             result.put(key, toObject(valueData));
         }
         return result;
+    }
+
+    @Override
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
+
+        // TODO
+        return null;
     }
 
     @Override

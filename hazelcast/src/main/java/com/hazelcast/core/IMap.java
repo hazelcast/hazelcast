@@ -431,8 +431,8 @@ public interface IMap<K, V>
      * previously put into the map.
      * </p>
      *
-     * @throws NullPointerException if the specified key or value is null
      * @return a clone of the previous value
+     * @throws NullPointerException if the specified key or value is null
      */
     V putIfAbsent(K key, V value);
 
@@ -1064,9 +1064,8 @@ public interface IMap<K, V>
      * @param aggregation     the aggregation that is being executed against the map
      * @param <SuppliedValue> the final type emitted from the supplier
      * @param <Result>        the resulting aggregation value type
-     * @param <KeyOut>         the resulting mapping phase key type
      * @return Returns the aggregated value
      */
-    <KeyOut, SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                     Aggregation<K, V, KeyOut, SuppliedValue, Result> aggregation);
+    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, SuppliedValue, Result> aggregation);
 }

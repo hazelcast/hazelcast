@@ -603,18 +603,18 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public <KeyOut, SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, V, KeyOut, SuppliedValue, Result> aggregation) {
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
 
         try {
             HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
             JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
             Job<K, V> job = jobTracker.newJob(keyValueSource);
-            Mapper<K, V, KeyOut, SuppliedValue> mapper = aggregation.getMapper(supplier);
-            CombinerFactory<KeyOut, SuppliedValue, SuppliedValue> combinerFactory = aggregation.getCombinerFactory();
-            ReducerFactory<KeyOut, SuppliedValue, SuppliedValue> reducerFactory = aggregation.getReducerFactory();
-            Collator<Map.Entry<KeyOut, SuppliedValue>, Result> collator = aggregation.getCollator();
+            Mapper mapper = aggregation.getMapper(supplier);
+            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
+            ReducerFactory reducerFactory = aggregation.getReducerFactory();
+            Collator collator = aggregation.getCollator();
             ICompletableFuture<Result> future = job.mapper(mapper).combiner(combinerFactory).reducer(reducerFactory)
                                                    .submit(collator);
             return future.get();

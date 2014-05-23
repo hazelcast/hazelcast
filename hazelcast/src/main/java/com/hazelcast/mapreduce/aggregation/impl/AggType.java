@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.mapreduce.aggregation;
+package com.hazelcast.mapreduce.aggregation.impl;
 
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
-public interface Aggregation<Key, Supplied, Result> {
+public interface AggType<KeyIn, ValueIn, KeyOut, SuppliedValue, CombinerValue, ReducerValue, Result> {
 
-    Collator<Map.Entry, Result> getCollator();
+    Collator<Map.Entry<KeyOut, ReducerValue>, Result> getCollator();
 
-    Mapper getMapper(Supplier<Key, ?, Supplied> supplier);
+    Mapper<KeyIn, ValueIn, KeyOut, SuppliedValue> getMapper(Supplier<KeyIn, ValueIn, SuppliedValue> supplier);
 
-    CombinerFactory getCombinerFactory();
+    CombinerFactory<KeyOut, SuppliedValue, CombinerValue> getCombinerFactory();
 
-    ReducerFactory getReducerFactory();
+    ReducerFactory<KeyOut, CombinerValue, ReducerValue> getReducerFactory();
 }

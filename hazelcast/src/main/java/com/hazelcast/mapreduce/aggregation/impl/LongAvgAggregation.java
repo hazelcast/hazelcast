@@ -28,7 +28,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import java.util.Map;
 
 public class LongAvgAggregation<Key, Value>
-        implements Aggregation<Key, Value, Key, Long, AvgTuple<Long, Long>, AvgTuple<Long, Long>, Long> {
+        implements AggType<Key, Value, Key, Long, AvgTuple<Long, Long>, AvgTuple<Long, Long>, Long> {
 
     @Override
     public Collator<Map.Entry<Key, AvgTuple<Long, Long>>, Long> getCollator() {

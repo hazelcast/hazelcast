@@ -16,7 +16,11 @@
 
 package com.hazelcast.mapreduce.aggregation;
 
-import com.hazelcast.mapreduce.aggregation.impl.AvgTuple;
+import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.aggregation.impl.AggType;
 import com.hazelcast.mapreduce.aggregation.impl.BigDecimalAvgAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.BigDecimalMaxAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.BigDecimalMinAggregation;
@@ -43,114 +47,129 @@ import com.hazelcast.mapreduce.aggregation.impl.LongSumAggregation;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Map;
 
 public class Aggregations {
 
-    public static Aggregation<Object, Object, Object, Long, Long, Long, Long> count() {
-        return new CountAggregation<Object, Object>();
+    public static Aggregation<Object, Object, Long> count() {
+        return new AggregationAdapter(new CountAggregation<Object, Object>());
     }
 
-    //CHECKSTYLE:OFF
-    public static <Key, Value> Aggregation<Key, Value, Key, Integer, //
-            AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>, Integer> integerAvg() {
-
-        return new IntegerAvgAggregation<Key, Value>();
-    }
-    //CHECKSTYLE:ON
-
-    public static <Key, Value> Aggregation<Key, Value, Key, Integer, Integer, Integer, Integer> integerSum() {
-        return new IntegerSumAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Value, Integer> integerAvg() {
+        return new AggregationAdapter(new IntegerAvgAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Integer, Integer, Integer, Integer> integerMin() {
-        return new IntegerMinAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Integer, Integer> integerSum() {
+        return new AggregationAdapter(new IntegerSumAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Integer, Integer, Integer, Integer> integerMax() {
-        return new IntegerMaxAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Integer, Integer> integerMin() {
+        return new AggregationAdapter(new IntegerMinAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Long, AvgTuple<Long, Long>, AvgTuple<Long, Long>, Long> longAvg() {
-        return new LongAvgAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Integer, Integer> integerMax() {
+        return new AggregationAdapter(new IntegerMaxAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Long, Long, Long, Long> longSum() {
-        return new LongSumAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Long, Long> longAvg() {
+        return new AggregationAdapter(new LongAvgAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Long, Long, Long, Long> longMin() {
-        return new LongMinAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Long, Long> longSum() {
+        return new AggregationAdapter(new LongSumAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Long, Long, Long, Long> longMax() {
-        return new LongMaxAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Long, Long> longMin() {
+        return new AggregationAdapter(new LongMinAggregation<Key, Value>());
     }
 
-    //CHECKSTYLE:OFF
-    public static <Key, Value> Aggregation<Key, Value, Key, Double, //
-            AvgTuple<Long, Double>, AvgTuple<Long, Double>, Double> doubleAvg() {
-
-        return new DoubleAvgAggregation<Key, Value>();
-    }
-    //CHECKSTYLE:ON
-
-    public static <Key, Value> Aggregation<Key, Value, Key, Double, Double, Double, Double> doubleSum() {
-        return new DoubleSumAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Long, Long> longMax() {
+        return new AggregationAdapter(new LongMaxAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Double, Double, Double, Double> doubleMin() {
-        return new DoubleMinAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Double, Double> doubleAvg() {
+        return new AggregationAdapter(new DoubleAvgAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Double, Double, Double, Double> doubleMax() {
-        return new DoubleMaxAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Double, Double> doubleSum() {
+        return new AggregationAdapter(new DoubleSumAggregation<Key, Value>());
     }
 
-    //CHECKSTYLE:OFF
-    public static <Key, Value> Aggregation<Key, Value, Key, BigDecimal, //
-            AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>, BigDecimal> bigDecimalAvg() {
-
-        return new BigDecimalAvgAggregation<Key, Value>();
-    }
-    //CHECKSTYLE:ON
-
-    public static <Key, Value> Aggregation<Key, Value, Key, BigDecimal, BigDecimal, BigDecimal, BigDecimal> bigDecimalSum() {
-        return new BigDecimalSumAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Double, Double> doubleMin() {
+        return new AggregationAdapter(new DoubleMinAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, BigDecimal, BigDecimal, BigDecimal, BigDecimal> bigDecimalMin() {
-        return new BigDecimalMinAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, Double, Double> doubleMax() {
+        return new AggregationAdapter(new DoubleMaxAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, BigDecimal, BigDecimal, BigDecimal, BigDecimal> bigDecimalMax() {
-        return new BigDecimalMaxAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, BigDecimal, BigDecimal> bigDecimalAvg() {
+        return new AggregationAdapter(new BigDecimalAvgAggregation<Key, Value>());
     }
 
-    //CHECKSTYLE:OFF
-    public static <Key, Value> Aggregation<Key, Value, Key, BigInteger, //
-            AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>, BigInteger> bigIntegerAvg() {
-
-        return new BigIntegerAvgAggregation<Key, Value>();
-    }
-    //CHECKSTYLE:ON
-
-    public static <Key, Value> Aggregation<Key, Value, Key, BigInteger, BigInteger, BigInteger, BigInteger> bigIntegerSum() {
-        return new BigIntegerSumAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, BigDecimal, BigDecimal> bigDecimalSum() {
+        return new AggregationAdapter(new BigDecimalSumAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, BigInteger, BigInteger, BigInteger, BigInteger> bigIntegerMin() {
-        return new BigIntegerMinAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, BigDecimal, BigDecimal> bigDecimalMin() {
+        return new AggregationAdapter(new BigDecimalMinAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, BigInteger, BigInteger, BigInteger, BigInteger> bigIntegerMax() {
-        return new BigIntegerMaxAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, BigDecimal, BigDecimal> bigDecimalMax() {
+        return new AggregationAdapter(new BigDecimalMaxAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Comparable, Comparable, Comparable, Comparable> comparableMin() {
-        return new ComparableMinAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, BigInteger, BigInteger> bigIntegerAvg() {
+        return new AggregationAdapter(new BigIntegerAvgAggregation<Key, Value>());
     }
 
-    public static <Key, Value> Aggregation<Key, Value, Key, Comparable, Comparable, Comparable, Comparable> comparableMax() {
-        return new ComparableMaxAggregation<Key, Value>();
+    public static <Key, Value> Aggregation<Key, BigInteger, BigInteger> bigIntegerSum() {
+        return new AggregationAdapter(new BigIntegerSumAggregation<Key, Value>());
+    }
+
+    public static <Key, Value> Aggregation<Key, BigInteger, BigInteger> bigIntegerMin() {
+        return new AggregationAdapter(new BigIntegerMinAggregation<Key, Value>());
+    }
+
+    public static <Key, Value> Aggregation<Key, BigInteger, BigInteger> bigIntegerMax() {
+        return new AggregationAdapter(new BigIntegerMaxAggregation<Key, Value>());
+    }
+
+    public static <Key, Value> Aggregation<Key, Comparable, Comparable> comparableMin() {
+        return new AggregationAdapter(new ComparableMinAggregation<Key, Value>());
+    }
+
+    public static <Key, Value> Aggregation<Key, Comparable, Comparable> comparableMax() {
+        return new AggregationAdapter(new ComparableMaxAggregation<Key, Value>());
+    }
+
+    private static final class AggregationAdapter<Key, Supplied, Result>
+            implements Aggregation<Key, Supplied, Result> {
+
+        private final AggType internalAggregationType;
+
+        private AggregationAdapter(AggType internalAggregationType) {
+            this.internalAggregationType = internalAggregationType;
+        }
+
+        @Override
+        public Collator<Map.Entry, Result> getCollator() {
+            return internalAggregationType.getCollator();
+        }
+
+        @Override
+        public Mapper getMapper(Supplier<Key, ?, Supplied> supplier) {
+            return internalAggregationType.getMapper(supplier);
+        }
+
+        @Override
+        public CombinerFactory getCombinerFactory() {
+            return internalAggregationType.getCombinerFactory();
+        }
+
+        @Override
+        public ReducerFactory getReducerFactory() {
+            return internalAggregationType.getReducerFactory();
+        }
     }
 }

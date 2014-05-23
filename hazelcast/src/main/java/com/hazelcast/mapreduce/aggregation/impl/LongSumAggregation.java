@@ -22,13 +22,12 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
 public class LongSumAggregation<Key, Value>
-        implements Aggregation<Key, Value, Key, Long, Long, Long, Long> {
+        implements AggType<Key, Value, Key, Long, Long, Long, Long> {
 
     @Override
     public Collator<Map.Entry<Key, Long>, Long> getCollator() {

@@ -22,14 +22,13 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.math.BigDecimal;
 import java.util.Map;
 
 public class BigDecimalAvgAggregation<Key, Value>
-        implements Aggregation<Key, Value, Key, BigDecimal, AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>, BigDecimal> {
+        implements AggType<Key, Value, Key, BigDecimal, AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>, BigDecimal> {
 
     @Override
     public Collator<Map.Entry<Key, AvgTuple<Long, BigDecimal>>, BigDecimal> getCollator() {

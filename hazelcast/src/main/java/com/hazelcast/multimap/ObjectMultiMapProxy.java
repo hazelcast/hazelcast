@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -40,7 +41,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
-public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements MultiMap<K, V>, InitializingObject {
+public class ObjectMultiMapProxy<K, V>
+        extends MultiMapProxySupport
+        implements MultiMap<K, V>, InitializingObject {
 
     public ObjectMultiMapProxy(MultiMapService service, NodeEngine nodeEngine, String name) {
         super(service, nodeEngine, name);
@@ -216,7 +219,8 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements M
         }
     }
 
-    public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
+    public boolean tryLock(K key, long time, TimeUnit timeunit)
+            throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit);
@@ -239,8 +243,8 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements M
     }
 
     @Override
-    public <KeyOut, SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
-                                                    Aggregation<K, V, KeyOut, SuppliedValue, Result> aggregation) {
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
 
         // TODO
         return null;

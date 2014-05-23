@@ -28,7 +28,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import java.util.Map;
 
 public class IntegerMinAggregation<Key, Value>
-        implements Aggregation<Key, Value, Key, Integer, Integer, Integer, Integer> {
+        implements AggType<Key, Value, Key, Integer, Integer, Integer, Integer> {
 
     @Override
     public Collator<Map.Entry<Key, Integer>, Integer> getCollator() {

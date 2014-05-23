@@ -29,7 +29,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 public class BigDecimalMaxAggregation<Key, Value>
-        implements Aggregation<Key, Value, Key, BigDecimal, BigDecimal, BigDecimal, BigDecimal> {
+        implements AggType<Key, Value, Key, BigDecimal, BigDecimal, BigDecimal, BigDecimal> {
 
     @Override
     public Collator<Map.Entry<Key, BigDecimal>, BigDecimal> getCollator() {
