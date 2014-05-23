@@ -41,7 +41,7 @@ import java.io.IOException;
 public class HigherHitsMapMergePolicy implements MapMergePolicy, DataSerializable {
 
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
-        if(mergingEntry.getHits() > existingEntry.getHits())
+        if(mergingEntry.getHits() >= existingEntry.getHits())
             return mergingEntry.getValue();
         return existingEntry.getValue();
     }

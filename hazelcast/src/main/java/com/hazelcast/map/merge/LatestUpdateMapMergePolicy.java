@@ -37,7 +37,7 @@ import java.io.IOException;
 public class LatestUpdateMapMergePolicy implements MapMergePolicy {
 
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
-        if (mergingEntry.getLastUpdateTime() > existingEntry.getLastUpdateTime())
+        if (mergingEntry.getLastUpdateTime() >= existingEntry.getLastUpdateTime())
             return mergingEntry.getValue();
         return existingEntry.getValue();
     }
