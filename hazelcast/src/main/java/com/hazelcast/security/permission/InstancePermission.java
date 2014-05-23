@@ -25,9 +25,9 @@ import java.security.Permission;
  */
 public abstract class InstancePermission extends ClusterPermission {
 
-    protected static final int NONE = 0x0;
-    protected static final int CREATE = 0x1;
-    protected static final int DESTROY = 0x2;
+    protected static final int NONE = 0;
+    protected static final int CREATE = 1;
+    protected static final int DESTROY = 2;
 
     protected final int mask;
     protected final String actions;
