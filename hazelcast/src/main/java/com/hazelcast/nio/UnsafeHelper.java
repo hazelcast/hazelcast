@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.core.HazelcastException;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -25,17 +24,13 @@ import java.security.PrivilegedAction;
 
 /**
  * Unsafe accessor.
- *
- * Warning: Although both array base-offsets and array index-scales are
- * constant over time currently,
- * a later JVM implementation can change this behaviour
- * to allow varying index-scales and base-offsets over time or per array instances.
- * (For example; compressed primitive arrays or backwards growing arrays...)
- *
+ * <p/>
+ * Warning: Although both array base-offsets and array index-scales are constant over time currently,
+ * a later JVM implementation can change this behaviour to allow varying index-scales and base-offsets
+ * over time or per array instances (e.g. compressed primitive arrays or backwards growing arrays...)
+ * <p/>
  * See Gil Tene's comment related to Unsafe usage;
  * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
- *
- * @author mdogan 6/14/13
  */
 public final class UnsafeHelper {
 
@@ -59,29 +54,30 @@ public final class UnsafeHelper {
     public static final int DOUBLE_ARRAY_INDEX_SCALE;
 
     static {
+        Unsafe unsafe;
+
         try {
-            Unsafe unsafe = findUnsafe();
-
-            BYTE_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(byte[].class);
-            SHORT_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(short[].class);
-            CHAR_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(char[].class);
-            INT_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(int[].class);
-            FLOAT_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(float[].class);
-            LONG_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(long[].class);
-            DOUBLE_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(double[].class);
-
-            BYTE_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(byte[].class);
-            SHORT_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(short[].class);
-            CHAR_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(char[].class);
-            INT_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(int[].class);
-            FLOAT_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(float[].class);
-            LONG_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(long[].class);
-            DOUBLE_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(double[].class);
-
-            UNSAFE = unsafe;
-        } catch (Throwable e) {
-            throw new HazelcastException(e);
+            unsafe = findUnsafe();
+        } catch (RuntimeException e) {
+            unsafe = null;
         }
+        UNSAFE = unsafe;
+
+        BYTE_ARRAY_BASE_OFFSET = arrayBaseOffset(byte[].class, unsafe);
+        SHORT_ARRAY_BASE_OFFSET = arrayBaseOffset(short[].class, unsafe);
+        CHAR_ARRAY_BASE_OFFSET = arrayBaseOffset(char[].class, unsafe);
+        INT_ARRAY_BASE_OFFSET = arrayBaseOffset(int[].class, unsafe);
+        FLOAT_ARRAY_BASE_OFFSET = arrayBaseOffset(float[].class, unsafe);
+        LONG_ARRAY_BASE_OFFSET = arrayBaseOffset(long[].class, unsafe);
+        DOUBLE_ARRAY_BASE_OFFSET = arrayBaseOffset(double[].class, unsafe);
+
+        BYTE_ARRAY_INDEX_SCALE = arrayIndexScale(byte[].class, unsafe);
+        SHORT_ARRAY_INDEX_SCALE = arrayIndexScale(short[].class, unsafe);
+        CHAR_ARRAY_INDEX_SCALE = arrayIndexScale(char[].class, unsafe);
+        INT_ARRAY_INDEX_SCALE = arrayIndexScale(int[].class, unsafe);
+        FLOAT_ARRAY_INDEX_SCALE = arrayIndexScale(float[].class, unsafe);
+        LONG_ARRAY_INDEX_SCALE = arrayIndexScale(long[].class, unsafe);
+        DOUBLE_ARRAY_INDEX_SCALE = arrayIndexScale(double[].class, unsafe);
 
         boolean unsafeAvailable;
         try {
@@ -96,13 +92,22 @@ public final class UnsafeHelper {
             UNSAFE.copyMemory(new byte[8], BYTE_ARRAY_BASE_OFFSET, buffer, BYTE_ARRAY_BASE_OFFSET, buffer.length);
 
             unsafeAvailable = true;
-        } catch (Throwable ignore) {
+        } catch (Throwable e) {
             unsafeAvailable = false;
         }
+
         UNSAFE_AVAILABLE = unsafeAvailable;
     }
 
     private UnsafeHelper() {
+    }
+
+    private static long arrayBaseOffset(Class<?> type, Unsafe unsafe) {
+        return unsafe == null ? -1 : unsafe.arrayBaseOffset(type);
+    }
+
+    private static int arrayIndexScale(Class<?> type, Unsafe unsafe) {
+        return unsafe == null ? -1 : unsafe.arrayIndexScale(type);
     }
 
     private static Unsafe findUnsafe() {
@@ -121,7 +126,7 @@ public final class UnsafeHelper {
 
                         } catch (Exception e) {
                             for (Field field : type.getDeclaredFields()) {
-                                if (type.isAssignableFrom(field.getType()))  {
+                                if (type.isAssignableFrom(field.getType())) {
                                     field.setAccessible(true);
                                     return type.cast(field.get(type));
                                 }
