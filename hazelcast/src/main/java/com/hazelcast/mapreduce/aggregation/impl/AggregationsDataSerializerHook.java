@@ -35,8 +35,9 @@ public class AggregationsDataSerializerHook
 
     public static final int SUPPLIER_CONSUMING_MAPPER = 0;
     public static final int ACCEPT_ALL_SUPPLIER = 1;
+    public static final int AVG_TUPLE = 2;
 
-    private static final int LEN = ACCEPT_ALL_SUPPLIER + 1;
+    private static final int LEN = AVG_TUPLE + 1;
 
     @Override
     public int getFactoryId() {
@@ -56,6 +57,12 @@ public class AggregationsDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AcceptAllSupplier();
+            }
+        };
+        constructors[AVG_TUPLE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AvgTuple();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

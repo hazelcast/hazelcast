@@ -23,13 +23,13 @@ import com.hazelcast.mapreduce.ReducerFactory;
 
 import java.util.Map;
 
-public interface Aggregation<KeyIn, ValueIn, KeyOut, SuppliedValue, Result> {
+public interface Aggregation<KeyIn, ValueIn, KeyOut, SuppliedValue, CombinerValue, ReducerValue, Result> {
 
-    Collator<Map.Entry<KeyOut, SuppliedValue>, Result> getCollator();
+    Collator<Map.Entry<KeyOut, ReducerValue>, Result> getCollator();
 
     Mapper<KeyIn, ValueIn, KeyOut, SuppliedValue> getMapper(Supplier<KeyIn, ValueIn, SuppliedValue> supplier);
 
-    CombinerFactory<KeyOut, SuppliedValue, SuppliedValue> getCombinerFactory();
+    CombinerFactory<KeyOut, SuppliedValue, CombinerValue> getCombinerFactory();
 
-    ReducerFactory<KeyOut, SuppliedValue, SuppliedValue> getReducerFactory();
+    ReducerFactory<KeyOut, CombinerValue, ReducerValue> getReducerFactory();
 }

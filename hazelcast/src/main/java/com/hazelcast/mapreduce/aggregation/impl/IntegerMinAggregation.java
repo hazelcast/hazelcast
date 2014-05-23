@@ -27,7 +27,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
-public class IntegerSumAggregation<Key, Value>
+public class IntegerMinAggregation<Key, Value>
         implements Aggregation<Key, Value, Key, Integer, Integer, Integer, Integer> {
 
     @Override
@@ -35,11 +35,14 @@ public class IntegerSumAggregation<Key, Value>
         return new Collator<Map.Entry<Key, Integer>, Integer>() {
             @Override
             public Integer collate(Iterable<Map.Entry<Key, Integer>> values) {
-                int sum = 0;
+                int min = Integer.MAX_VALUE;
                 for (Map.Entry<Key, Integer> entry : values) {
-                    sum += entry.getValue();
+                    int value = entry.getValue();
+                    if (value < min) {
+                        min = value;
+                    }
                 }
-                return sum;
+                return min;
             }
         };
     }
@@ -51,63 +54,67 @@ public class IntegerSumAggregation<Key, Value>
 
     @Override
     public CombinerFactory<Key, Integer, Integer> getCombinerFactory() {
-        return new IntegerSumCombinerFactory<Key>();
+        return new IntegerMinCombinerFactory<Key>();
     }
 
     @Override
     public ReducerFactory<Key, Integer, Integer> getReducerFactory() {
-        return new IntegerSumReducerFactory<Key>();
+        return new IntegerMinReducerFactory<Key>();
     }
 
-    static final class IntegerSumCombinerFactory<Key>
+    static final class IntegerMinCombinerFactory<Key>
             implements CombinerFactory<Key, Integer, Integer> {
 
         @Override
         public Combiner<Key, Integer, Integer> newCombiner(Key key) {
-            return new IntegerSumCombiner<Key>();
+            return new IntegerMinCombiner<Key>();
         }
     }
 
-    static final class IntegerSumReducerFactory<Key>
+    static final class IntegerMinReducerFactory<Key>
             implements ReducerFactory<Key, Integer, Integer> {
 
         @Override
         public Reducer<Key, Integer, Integer> newReducer(Key key) {
-            return new IntegerSumReducer<Key>();
+            return new IntegerMinReducer<Key>();
         }
     }
 
-    private static final class IntegerSumCombiner<Key>
+    private static final class IntegerMinCombiner<Key>
             extends Combiner<Key, Integer, Integer> {
 
-        private int chunkSum;
+        private int chunkMin = Integer.MAX_VALUE;
 
         @Override
         public void combine(Key key, Integer value) {
-            chunkSum += value;
+            if (value < chunkMin) {
+                chunkMin = value;
+            }
         }
 
         @Override
         public Integer finalizeChunk() {
-            int value = chunkSum;
-            chunkSum = 0;
+            int value = chunkMin;
+            chunkMin = Integer.MAX_VALUE;
             return value;
         }
     }
 
-    private static final class IntegerSumReducer<Key>
+    private static final class IntegerMinReducer<Key>
             extends Reducer<Key, Integer, Integer> {
 
-        private volatile int sum;
+        private volatile int min = Integer.MAX_VALUE;
 
         @Override
         public void reduce(Integer value) {
-            sum += value;
+            if (value < min) {
+                min = value;
+            }
         }
 
         @Override
         public Integer finalizeReduce() {
-            return sum;
+            return min;
         }
     }
 }
