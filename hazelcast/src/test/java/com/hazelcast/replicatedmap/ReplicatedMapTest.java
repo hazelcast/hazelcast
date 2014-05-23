@@ -493,6 +493,7 @@ public class ReplicatedMapTest
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testRemoveBinaryDelay0()
             throws Exception {
 
