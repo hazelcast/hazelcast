@@ -51,6 +51,6 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
      *
      * @param event the EntryEvent.
      */
-    public void onEntryEvent(EntryEvent<K,V> event){
+    public void onEntryEvent(EntryEvent<K, V> event) {
     }
 }

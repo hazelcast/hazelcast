@@ -71,10 +71,10 @@ public class ItemEvent<E> extends EventObject {
 
     @Override
     public String toString() {
-        return "ItemEvent{" +
-                "event=" + eventType +
-                ", item=" + getItem() +
-                ", member=" + getMember() +
-                "} ";
+        return "ItemEvent{"
+                + "event=" + eventType
+                + ", item=" + getItem()
+                + ", member=" + getMember()
+                + "} ";
     }
 }

@@ -27,7 +27,7 @@ import java.io.Serializable;
  * @param <R>
  * @since 3.2
  */
-public interface IFunction<T,R> extends Serializable {
+public interface IFunction<T, R> extends Serializable {
 
     R apply(T input);
 }

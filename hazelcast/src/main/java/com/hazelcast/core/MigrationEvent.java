@@ -98,9 +98,19 @@ public class MigrationEvent implements DataSerializable {
      * Migration status: Started, completed or failed
      */
     public static enum MigrationStatus {
-
+        /**
+         * Migration has been started
+         */
         STARTED(0),
+
+        /**
+         * Migration has been completed
+         */
         COMPLETED(1),
+
+        /**
+         * Migration has failed
+         */
         FAILED(-1);
 
         private final byte code;

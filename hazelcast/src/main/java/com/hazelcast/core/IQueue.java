@@ -79,7 +79,7 @@ public interface IQueue<E> extends BlockingQueue<E>, BaseQueue<E>, ICollection<E
     /**
      * {@inheritDoc}
      */
-    public boolean contains(Object o);
+    boolean contains(Object o);
 
     /**
      * {@inheritDoc}
