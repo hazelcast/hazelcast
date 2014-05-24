@@ -23,21 +23,35 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 public class LocalQueueStatsImpl implements LocalQueueStats {
 
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_REJECTED_OFFERS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfRejectedOffers");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_POLLS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfPolls");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EMPTY_POLLS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfEmptyPolls");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OTHER_OPERATIONS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfOtherOperations");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
+    
     private int ownedItemCount;
     private int backupItemCount;
     private long minAge;
     private long maxAge;
     private long aveAge;
     private long creationTime;
-    private AtomicLong numberOfOffers = new AtomicLong(0);
-    private AtomicLong numberOfRejectedOffers = new AtomicLong(0);
-    private AtomicLong numberOfPolls = new AtomicLong(0);
-    private AtomicLong numberOfEmptyPolls = new AtomicLong(0);
-    private AtomicLong numberOfOtherOperations = new AtomicLong(0);
-    private AtomicLong numberOfEvents = new AtomicLong(0);
+    private volatile long numberOfOffers = 0L;
+    private volatile long numberOfRejectedOffers = 0L;
+    private volatile long numberOfPolls = 0L;
+    private volatile long numberOfEmptyPolls = 0L;
+    private volatile long numberOfOtherOperations = 0L;
+    private volatile long numberOfEvents = 0L;
 
     public LocalQueueStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -51,12 +65,12 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         out.writeLong(maxAge);
         out.writeLong(aveAge);
         out.writeLong(creationTime);
-        out.writeLong(numberOfOffers.get());
-        out.writeLong(numberOfPolls.get());
-        out.writeLong(numberOfRejectedOffers.get());
-        out.writeLong(numberOfEmptyPolls.get());
-        out.writeLong(numberOfOtherOperations.get());
-        out.writeLong(numberOfEvents.get());
+        out.writeLong(numberOfOffers);
+        out.writeLong(numberOfPolls);
+        out.writeLong(numberOfRejectedOffers);
+        out.writeLong(numberOfEmptyPolls);
+        out.writeLong(numberOfOtherOperations);
+        out.writeLong(numberOfEvents);
     }
 
     @Override
@@ -67,12 +81,12 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         maxAge = in.readLong();
         aveAge = in.readLong();
         creationTime = in.readLong();
-        numberOfOffers.set(in.readLong());
-        numberOfPolls.set(in.readLong());
-        numberOfRejectedOffers.set(in.readLong());
-        numberOfEmptyPolls.set(in.readLong());
-        numberOfOtherOperations.set(in.readLong());
-        numberOfEvents.set(in.readLong());
+        NUMBER_OF_OFFERS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_POLLS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_REJECTED_OFFERS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_EVENTS_UPDATER.set(this, in.readLong());
     }
 
     @Override
@@ -126,60 +140,60 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
     }
 
     public long total() {
-        return numberOfOffers.get() + numberOfPolls.get() + numberOfOtherOperations.get();
+        return numberOfOffers + numberOfPolls + numberOfOtherOperations;
     }
 
     @Override
     public long getOfferOperationCount() {
-        return numberOfOffers.get();
+        return numberOfOffers;
     }
 
     @Override
     public long getRejectedOfferOperationCount() {
-        return numberOfRejectedOffers.get();
+        return numberOfRejectedOffers;
     }
 
     @Override
     public long getPollOperationCount() {
-        return numberOfPolls.get();
+        return numberOfPolls;
     }
 
     @Override
     public long getEmptyPollOperationCount() {
-        return numberOfEmptyPolls.get();
+        return numberOfEmptyPolls;
     }
 
     @Override
     public long getOtherOperationsCount() {
-        return numberOfOtherOperations.get();
+        return numberOfOtherOperations;
     }
 
     public void incrementOtherOperations() {
-        numberOfOtherOperations.incrementAndGet();
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementOffers() {
-        numberOfOffers.incrementAndGet();
+        NUMBER_OF_OFFERS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementRejectedOffers() {
-        numberOfRejectedOffers.incrementAndGet();
+        NUMBER_OF_REJECTED_OFFERS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementPolls() {
-        numberOfPolls.incrementAndGet();
+        NUMBER_OF_POLLS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementEmptyPolls() {
-        numberOfEmptyPolls.incrementAndGet();
+        NUMBER_OF_EMPTY_POLLS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementReceivedEvents() {
-        numberOfEvents.incrementAndGet();
+        NUMBER_OF_EVENTS_UPDATER.incrementAndGet(this);
     }
 
     @Override
     public long getEventOperationCount() {
-        return numberOfEvents.get();
+        return numberOfEvents;
     }
 }
