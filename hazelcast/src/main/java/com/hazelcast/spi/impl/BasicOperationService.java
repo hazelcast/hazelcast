@@ -25,6 +25,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
@@ -52,6 +53,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -605,17 +607,30 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
 
-        private Operation loadOperation(Packet packet) {
+        private Operation loadOperation(Packet packet) throws Exception {
             Connection conn = packet.getConn();
             Address caller = conn.getEndPoint();
             Data data = packet.getData();
-            Object object = nodeEngine.toObject(data);
-            Operation op = (Operation) object;
-            op.setNodeEngine(nodeEngine);
-            setCallerAddress(op, caller);
-            setConnection(op, conn);
-            setRemoteResponseHandler(nodeEngine, op);
-            return op;
+
+            try {
+                Object object = nodeEngine.toObject(data);
+                Operation op = (Operation) object;
+                op.setNodeEngine(nodeEngine);
+                setCallerAddress(op, caller);
+                setConnection(op, conn);
+                setRemoteResponseHandler(nodeEngine, op);
+                return op;
+            } catch (Throwable throwable) {
+                // If exception happens we need to extract the callId from the bytes directly!
+                long callId = IOUtil.extractOperationCallId(data, node.getSerializationService());
+                RemoteOperationExceptionHandler exceptionHandler = new RemoteOperationExceptionHandler(callId);
+                exceptionHandler.setNodeEngine(nodeEngine);
+                exceptionHandler.setCallerAddress(caller);
+                exceptionHandler.setConnection(conn);
+                ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, exceptionHandler);
+                operationHandler.handleOperationError(exceptionHandler, throwable);
+                throw ExceptionUtil.rethrow(throwable);
+            }
         }
 
         private boolean ensureValidMember(Operation op) {
@@ -807,13 +822,13 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
 
-        private void handleOperationError(Operation op, Throwable e) {
+        private void handleOperationError(RemotePropagatable remotePropagatable, Throwable e) {
             if (e instanceof OutOfMemoryError) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
             }
-            op.logError(e);
-            ResponseHandler responseHandler = op.getResponseHandler();
-            if (op.returnsResponse() && responseHandler != null) {
+            remotePropagatable.logError(e);
+            ResponseHandler responseHandler = remotePropagatable.getResponseHandler();
+            if (remotePropagatable.returnsResponse() && responseHandler != null) {
                 try {
                     if (node.isActive()) {
                         responseHandler.sendResponse(e);
@@ -821,7 +836,7 @@ final class BasicOperationService implements InternalOperationService {
                         responseHandler.sendResponse(new HazelcastInstanceNotActiveException());
                     }
                 } catch (Throwable t) {
-                    logger.warning("While sending op error... op: " + op + ", error: " + e, t);
+                    logger.warning("While sending op error... op: " + remotePropagatable + ", error: " + e, t);
                 }
             }
         }
