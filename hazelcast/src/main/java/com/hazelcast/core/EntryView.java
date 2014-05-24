@@ -22,7 +22,7 @@ package com.hazelcast.core;
  * @param <K> key
  * @param <V> value
  */
-public interface EntryView<K,V> {
+public interface EntryView<K, V> {
 
     /**
      * Returns the key of the entry.

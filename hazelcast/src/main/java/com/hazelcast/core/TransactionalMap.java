@@ -48,7 +48,8 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     V get(Object key);
 
     /**
-     * Locks the key and then gets and returns the value to which the specified key is mapped. Lock will be released at the end of the transaction (either commit or rollback).
+     * Locks the key and then gets and returns the value to which the specified key is mapped.
+     * Lock will be released at the end of the transaction (either commit or rollback).
      *
      * @see IMap#get(Object)
      */

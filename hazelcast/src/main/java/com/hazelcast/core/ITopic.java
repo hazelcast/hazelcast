@@ -64,7 +64,7 @@ public interface ITopic<E> extends DistributedObject {
      *
      * @return true if registration is removed, false otherwise
      */
-    boolean removeMessageListener(final String registrationId );
+    boolean removeMessageListener(final String registrationId);
 
     /**
      * Returns statistics of this topic,like total number of publishes/receives

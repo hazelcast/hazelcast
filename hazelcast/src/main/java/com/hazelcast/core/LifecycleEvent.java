@@ -58,14 +58,15 @@ public final class LifecycleEvent {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (!(o instanceof LifecycleEvent)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof LifecycleEvent)) {
+            return false;
+        }
 
-        final LifecycleEvent that = (LifecycleEvent) o;
-
-        if (state != that.state) return false;
-
-        return true;
+        LifecycleEvent that = (LifecycleEvent) o;
+        return state == that.state;
     }
 
     @Override
