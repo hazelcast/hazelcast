@@ -110,10 +110,6 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
         return (Boolean) invoke(new IsNullRequest(name));
     }
 
-    @Override
-    protected void onDestroy() {
-    }
-
     protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }

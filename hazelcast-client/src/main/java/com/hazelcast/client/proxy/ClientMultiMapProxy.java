@@ -243,9 +243,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
-    protected void onDestroy() {
-    }
-
     private Collection toObjectCollection(PortableCollection result, boolean list) {
         Collection<Data> coll = result.getCollection();
         Collection collection;

@@ -118,9 +118,6 @@ public class ClientLockProxy extends ClientProxy implements ILock {
         throw new UnsupportedOperationException();
     }
 
-    protected void onDestroy() {
-    }
-
     private Data getKeyData() {
         if (key == null) {
             key = toData(getName());

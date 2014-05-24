@@ -100,12 +100,6 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
         invoke(request);
     }
 
-    @Override
-    protected void onDestroy() {
-
-    }
-
-
     protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, key);
     }

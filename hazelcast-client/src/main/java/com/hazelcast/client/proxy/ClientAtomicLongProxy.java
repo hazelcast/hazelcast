@@ -125,10 +125,6 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
         invoke(request);
     }
 
-    @Override
-    protected void onDestroy() {
-    }
-
     protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }

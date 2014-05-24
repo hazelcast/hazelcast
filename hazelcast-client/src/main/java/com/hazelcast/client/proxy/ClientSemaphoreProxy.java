@@ -111,9 +111,6 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
         return result;
     }
 
-    protected void onDestroy() {
-    }
-
     protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }

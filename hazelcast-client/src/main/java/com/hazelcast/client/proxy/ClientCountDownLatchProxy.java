@@ -61,9 +61,6 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
         return result;
     }
 
-    protected void onDestroy() {
-    }
-
     private Data getKey() {
         if (key == null) {
             key = toData(getName());
