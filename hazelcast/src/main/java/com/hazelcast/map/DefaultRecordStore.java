@@ -191,8 +191,8 @@ public class DefaultRecordStore implements RecordStore {
         return records.get(key);
     }
 
-    public void putRecord(Data key, Record record) {
-        records.put(key, record);
+    public Record putRecord(Data key, Record record) {
+        return records.put(key, record);
     }
 
 

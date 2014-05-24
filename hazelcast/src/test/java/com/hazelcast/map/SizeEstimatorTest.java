@@ -58,6 +58,42 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         assertEquals(156, map.getLocalMapStats().getHeapCost());
     }
 
+
+    @Test
+    public void testHowUpdatesAffectHeapCostWithMultipleBackupNodes() throws InterruptedException {
+        // constants.
+        final String mapName = randomMapName("testHowUpdatesAffectHeapCostWithMultipleBackupNodes");
+        final int nodeCount = 3;
+        final int backupCount = nodeCount - 1;
+        final int expectedReplicaCount = nodeCount;
+        final long putCount = 1000L;
+        final long expectedPerEntryHeapCost = 160L;
+        // config.
+        final Config config = new Config();
+        config.getMapConfig(mapName).setBackupCount(backupCount);
+        // nodes.
+        final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance[] nodes = instanceFactory.newInstances(config);
+        // map.
+        final IMap<Long, Long> map = nodes[0].getMap(mapName);
+        // put.
+        for (long i = 0; i < putCount; i++) {
+            map.put(i, i);
+        }
+        // update.
+        for (long i = 0; i < putCount; i++) {
+            map.put(i, i);
+        }
+        // heap cost.
+        long heapCost = 0L;
+        for (int i = 0; i < nodeCount; i++) {
+            heapCost += nodes[i].getMap(mapName).getLocalMapStats().getHeapCost();
+        }
+        // assert heap cost.
+        assertEquals("Map heap cost calculation is wrong!",
+                expectedPerEntryHeapCost * putCount * expectedReplicaCount, heapCost);
+    }
+
     @Test
     public void testPutRemoveWithTwoNodeOwnerAndBackup() throws InterruptedException {
         final String mapName = "default";
