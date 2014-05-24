@@ -154,10 +154,8 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public void putForReplication(Data key, Record record) {
-        // this get is needed for updating size estimator.
-        final Record existingRecord = records.get(key);
+        final Record existingRecord = records.put(key, record);
         updateSizeEstimator(-calculateRecordSize(existingRecord));
-        records.put(key, record);
         updateSizeEstimator(calculateRecordSize(record));
         removeFromWriteBehindWaitingDeletions(key);
     }

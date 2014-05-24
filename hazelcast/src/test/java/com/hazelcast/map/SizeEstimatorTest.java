@@ -57,11 +57,11 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     @Test
     public void testHowUpdatesAffectHeapCostWithMultipleBackupNodes() throws InterruptedException {
         // constants.
-        final String mapName = randomMapName("testUpdatesWithMultipleNodes");
+        final String mapName = randomMapName("testHowUpdatesAffectHeapCostWithMultipleBackupNodes");
         final int nodeCount = 3;
         final int backupCount = nodeCount - 1;
         final int expectedReplicaCount = nodeCount;
-        final long putCount = 1L;
+        final long putCount = 1000L;
         final long expectedPerEntryHeapCost = 168L;
         // config.
         final Config config = new Config();
