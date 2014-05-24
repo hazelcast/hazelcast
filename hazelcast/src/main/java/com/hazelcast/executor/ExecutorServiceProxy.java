@@ -67,7 +67,10 @@ public class ExecutorServiceProxy
     private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
     private final ILogger logger;
-    private volatile long consecutiveSubmits = 0L;
+
+    // This field is never accessed directly but by the UPDATER above
+    private volatile int consecutiveSubmits = 0;
+
     private volatile long lastSubmitTime;
 
     public ExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedExecutorService service) {
