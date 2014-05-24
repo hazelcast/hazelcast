@@ -51,6 +51,7 @@ import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,8 +62,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
-public class MultiMapService implements ManagedService, RemoteService,
-        MigrationAwareService, EventPublishingService<MultiMapEvent, EventListener>, TransactionalService {
+public class MultiMapService
+        implements ManagedService, RemoteService, MigrationAwareService, EventPublishingService<MultiMapEvent, EventListener>,
+                   TransactionalService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
@@ -70,10 +72,9 @@ public class MultiMapService implements ManagedService, RemoteService,
     private static final int REPLICA_ADDRESS_SLEEP_WAIT_MILLIS = 1000;
     private final NodeEngine nodeEngine;
     private final MultiMapPartitionContainer[] partitionContainers;
-    private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap
-            = new ConcurrentHashMap<String, LocalMultiMapStatsImpl>(STATS_MAP_INITIAL_CAPACITY);
-    private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction
-            = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
+    private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMultiMapStatsImpl>(
+            STATS_MAP_INITIAL_CAPACITY);
+    private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
         public LocalMultiMapStatsImpl createNew(String key) {
             return new LocalMultiMapStatsImpl();
         }
@@ -196,8 +197,8 @@ public class MultiMapService implements ManagedService, RemoteService,
     public void dispatchEvent(MultiMapEvent event, EventListener listener) {
         EntryListener entryListener = (EntryListener) listener;
         final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
-        EntryEvent entryEvent = new EntryEvent(event.getName(), member,
-                event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
+        EntryEvent entryEvent = new EntryEvent(event.getName(), member, event.getEventType().getType(),
+                nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
         if (member == null) {
             if (logger.isLoggable(Level.INFO)) {
                 logger.info("Dropping event " + entryEvent + " from unknown address:" + event.getCaller());
@@ -226,10 +227,10 @@ public class MultiMapService implements ManagedService, RemoteService,
         for (Map.Entry<String, MultiMapContainer> entry : partitionContainer.containerMap.entrySet()) {
             String name = entry.getKey();
             MultiMapContainer container = entry.getValue();
-            if (container.config.getTotalBackupCount() < replicaIndex) {
+            if (container.getConfig().getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            map.put(name, container.multiMapWrappers);
+            map.put(name, container.getMultiMapWrappers());
         }
         if (map.isEmpty()) {
             return null;
@@ -242,7 +243,7 @@ public class MultiMapService implements ManagedService, RemoteService,
             String name = entry.getKey();
             MultiMapContainer container = getOrCreateCollectionContainer(partitionId, name);
             Map<Data, MultiMapWrapper> collections = entry.getValue();
-            container.multiMapWrappers.putAll(collections);
+            container.getMultiMapWrappers().putAll(collections);
         }
     }
 
@@ -287,12 +288,12 @@ public class MultiMapService implements ManagedService, RemoteService,
             if (owner != null) {
                 if (owner.equals(thisAddress)) {
                     lockedEntryCount += multiMapContainer.getLockedCount();
-                    for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
+                    for (MultiMapWrapper wrapper : multiMapContainer.getMultiMapWrappers().values()) {
                         hits += wrapper.getHits();
                         ownedEntryCount += wrapper.getCollection(false).size();
                     }
                 } else {
-                    int backupCount = multiMapContainer.config.getTotalBackupCount();
+                    int backupCount = multiMapContainer.getConfig().getTotalBackupCount();
                     for (int j = 1; j <= backupCount; j++) {
                         Address replicaAddress = partition.getReplicaAddress(j);
                         int memberSize = nodeEngine.getClusterService().getMembers().size();
@@ -309,7 +310,7 @@ public class MultiMapService implements ManagedService, RemoteService,
                         }
 
                         if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                            for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
+                            for (MultiMapWrapper wrapper : multiMapContainer.getMultiMapWrappers().values()) {
                                 backupEntryCount += wrapper.getCollection(false).size();
                             }
                         }
@@ -323,7 +324,6 @@ public class MultiMapService implements ManagedService, RemoteService,
         stats.setLockedEntryCount(lockedEntryCount);
         return stats;
     }
-
 
     public LocalMultiMapStatsImpl getLocalMultiMapStatsImpl(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);

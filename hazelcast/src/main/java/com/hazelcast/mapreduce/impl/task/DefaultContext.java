@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
  * This is the internal default implementation of a map reduce context mappers emit values to. It controls the emitted
@@ -39,11 +39,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DefaultContext<KeyIn, ValueIn>
         implements Context<KeyIn, ValueIn> {
 
+    private static final AtomicIntegerFieldUpdater<DefaultContext> COLLECTED_UPDATER = AtomicIntegerFieldUpdater
+            .newUpdater(DefaultContext.class, "collected");
+
     private final Map<KeyIn, Combiner<KeyIn, ValueIn, ?>> combiners = new HashMap<KeyIn, Combiner<KeyIn, ValueIn, ?>>();
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
 
-    private final AtomicInteger collected = new AtomicInteger(0);
+    private volatile int collected = 0;
 
     private volatile int partitionId;
 
@@ -60,7 +63,7 @@ public class DefaultContext<KeyIn, ValueIn>
     public void emit(KeyIn key, ValueIn value) {
         Combiner<KeyIn, ValueIn, ?> combiner = getOrCreateCombiner(key);
         combiner.combine(key, value);
-        collected.incrementAndGet();
+        COLLECTED_UPDATER.incrementAndGet(this);
         mapCombineTask.onEmit(this, partitionId);
     }
 
@@ -70,12 +73,12 @@ public class DefaultContext<KeyIn, ValueIn>
             Chunk chunk = (Chunk) entry.getValue().finalizeChunk();
             chunkMap.put(entry.getKey(), chunk);
         }
-        collected.set(0);
+        COLLECTED_UPDATER.set(this, 0);
         return chunkMap;
     }
 
     public int getCollected() {
-        return collected.get();
+        return collected;
     }
 
     public <Chunk> Map<KeyIn, Chunk> finish() {
