@@ -19,8 +19,10 @@ public class NearCacheStatsImpl
     private long ownedEntryCount;
     private long ownedEntryMemoryCost;
     private long creationTime;
-    private volatile long hits = 0L;
-    private volatile long misses = 0L;
+
+    // These fields are only accessed through the updaters
+    private volatile long hits;
+    private volatile long misses;
 
     public NearCacheStatsImpl() {
         this.creationTime = Clock.currentTimeMillis();

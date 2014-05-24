@@ -44,7 +44,9 @@ public class JobProcessInformationImpl
 
     private final JobSupervisor supervisor;
 
-    private volatile int processedRecords = 0;
+    // This field is only accessed through the updater
+    private volatile int processedRecords;
+
     private volatile JobPartitionState[] partitionStates;
 
     public JobProcessInformationImpl(int partitionCount, JobSupervisor supervisor) {

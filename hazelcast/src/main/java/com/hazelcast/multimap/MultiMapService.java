@@ -74,7 +74,9 @@ public class MultiMapService
     private final MultiMapPartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMultiMapStatsImpl>(
             STATS_MAP_INITIAL_CAPACITY);
-    private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
+    private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction =
+            new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
+
         public LocalMultiMapStatsImpl createNew(String key) {
             return new LocalMultiMapStatsImpl();
         }

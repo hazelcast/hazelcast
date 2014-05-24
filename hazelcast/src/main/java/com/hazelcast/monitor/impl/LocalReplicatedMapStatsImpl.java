@@ -66,23 +66,24 @@ public class LocalReplicatedMapStatsImpl
             .newUpdater(LocalReplicatedMapStatsImpl.class, "maxRemoveLatency");
     //CHECKSTYLE:ON
 
-    private volatile long lastAccessTime = 0L;
-    private volatile long lastUpdateTime = 0L;
-    private volatile long hits = 0L;
-    private volatile long numberOfOtherOperations = 0L;
-    private volatile long numberOfEvents = 0L;
-    private volatile long numberOfReplicationEvents = 0L;
-    private volatile long getCount = 0L;
-    private volatile long putCount = 0L;
-    private volatile long removeCount = 0L;
-    private volatile long totalGetLatencies = 0L;
-    private volatile long totalPutLatencies = 0L;
-    private volatile long totalRemoveLatencies = 0L;
-    private volatile long maxGetLatency = 0L;
-    private volatile long maxPutLatency = 0L;
-    private volatile long maxRemoveLatency = 0L;
-    private long ownedEntryCount;
+    // These fields are only accessed through the updaters
+    private volatile long lastAccessTime;
+    private volatile long lastUpdateTime;
+    private volatile long hits;
+    private volatile long numberOfOtherOperations;
+    private volatile long numberOfEvents;
+    private volatile long numberOfReplicationEvents;
+    private volatile long getCount;
+    private volatile long putCount;
+    private volatile long removeCount;
+    private volatile long totalGetLatencies;
+    private volatile long totalPutLatencies;
+    private volatile long totalRemoveLatencies;
+    private volatile long maxGetLatency;
+    private volatile long maxPutLatency;
+    private volatile long maxRemoveLatency;
 
+    private long ownedEntryCount;
     private long creationTime;
 
     public LocalReplicatedMapStatsImpl() {

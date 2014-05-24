@@ -33,8 +33,10 @@ public class LocalTopicStatsImpl
             .newUpdater(LocalTopicStatsImpl.class, "totalReceivedMessages");
 
     private long creationTime;
-    private volatile long totalPublishes = 0L;
-    private volatile long totalReceivedMessages = 0L;
+
+    // These fields are only accessed through the updaters
+    private volatile long totalPublishes;
+    private volatile long totalReceivedMessages;
 
     public LocalTopicStatsImpl() {
         creationTime = Clock.currentTimeMillis();

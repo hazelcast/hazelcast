@@ -38,8 +38,9 @@ public class ReplicatedRecord<K, V>
     private static final AtomicLongFieldUpdater<ReplicatedRecord> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
             .newUpdater(ReplicatedRecord.class, "hits");
 
-    private volatile long hits = 0L;
-    private volatile long lastAccessTime = 0L;
+    // These fields are only accessed through the updaters
+    private volatile long hits;
+    private volatile long lastAccessTime;
 
     private K key;
     private V value;

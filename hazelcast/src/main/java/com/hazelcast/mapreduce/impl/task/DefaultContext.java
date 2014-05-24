@@ -46,7 +46,8 @@ public class DefaultContext<KeyIn, ValueIn>
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
 
-    private volatile int collected = 0;
+    // This field is only accessed through the updater
+    private volatile int collected;
 
     private volatile int partitionId;
 

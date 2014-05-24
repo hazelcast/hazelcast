@@ -22,10 +22,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public class LocalQueueStatsImpl implements LocalQueueStats {
+public class LocalQueueStatsImpl
+        implements LocalQueueStats {
 
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");
@@ -39,26 +39,29 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
             .newUpdater(LocalQueueStatsImpl.class, "numberOfOtherOperations");
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
-    
+
     private int ownedItemCount;
     private int backupItemCount;
     private long minAge;
     private long maxAge;
     private long aveAge;
     private long creationTime;
-    private volatile long numberOfOffers = 0L;
-    private volatile long numberOfRejectedOffers = 0L;
-    private volatile long numberOfPolls = 0L;
-    private volatile long numberOfEmptyPolls = 0L;
-    private volatile long numberOfOtherOperations = 0L;
-    private volatile long numberOfEvents = 0L;
+
+    // These fields are only accessed through the updater
+    private volatile long numberOfOffers;
+    private volatile long numberOfRejectedOffers;
+    private volatile long numberOfPolls;
+    private volatile long numberOfEmptyPolls;
+    private volatile long numberOfOtherOperations;
+    private volatile long numberOfEvents;
 
     public LocalQueueStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeInt(ownedItemCount);
         out.writeInt(backupItemCount);
         out.writeLong(minAge);
@@ -74,7 +77,8 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         ownedItemCount = in.readInt();
         backupItemCount = in.readInt();
         minAge = in.readLong();

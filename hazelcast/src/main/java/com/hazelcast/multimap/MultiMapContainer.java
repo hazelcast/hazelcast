@@ -62,11 +62,10 @@ public class MultiMapContainer {
 
     private final long creationTime;
 
-    // This value is never accessed directly but through the UPDATER above
-    private volatile long idGen = 0L;
-
-    private volatile long lastAccessTime = 0L;
-    private volatile long lastUpdateTime = 0L;
+    // These fields are never accessed directly but through the UPDATER above
+    private volatile long idGen;
+    private volatile long lastAccessTime;
+    private volatile long lastUpdateTime;
 
     public MultiMapContainer(String name, MultiMapService service, int partitionId) {
         this.name = name;

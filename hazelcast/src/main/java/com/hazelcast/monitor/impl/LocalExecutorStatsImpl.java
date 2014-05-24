@@ -41,12 +41,14 @@ public class LocalExecutorStatsImpl
             .newUpdater(LocalExecutorStatsImpl.class, "totalExecutionTime");
 
     private long creationTime;
-    private volatile long pending = 0L;
-    private volatile long started = 0L;
-    private volatile long completed = 0L;
-    private volatile long cancelled = 0L;
-    private volatile long totalStartLatency = 0L;
-    private volatile long totalExecutionTime = 0L;
+
+    // These fields are only accessed through the updaters
+    private volatile long pending;
+    private volatile long started;
+    private volatile long completed;
+    private volatile long cancelled;
+    private volatile long totalStartLatency;
+    private volatile long totalExecutionTime;
 
     public LocalExecutorStatsImpl() {
         creationTime = Clock.currentTimeMillis();
