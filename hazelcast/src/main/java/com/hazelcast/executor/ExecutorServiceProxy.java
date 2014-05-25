@@ -51,19 +51,26 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.util.UuidUtil.buildRandomUuidString;
 
-public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedExecutorService>
+public class ExecutorServiceProxy
+        extends AbstractDistributedObject<DistributedExecutorService>
         implements IExecutorService {
+
+    private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS_UPDATER = AtomicIntegerFieldUpdater
+            .newUpdater(ExecutorServiceProxy.class, "consecutiveSubmits");
 
     public static final int SYNC_FREQUENCY = 100;
     private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
-    private final AtomicInteger consecutiveSubmits = new AtomicInteger();
     private final ILogger logger;
+
+    // This field is never accessed directly but by the UPDATER above
+    private volatile int consecutiveSubmits = 0;
+
     private volatile long lastSubmitTime;
 
     public ExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedExecutorService service) {
@@ -242,8 +249,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         long last = lastSubmitTime;
         long now = Clock.currentTimeMillis();
         if (last + 10 < now) {
-            consecutiveSubmits.set(0);
-        } else if (consecutiveSubmits.incrementAndGet() % SYNC_FREQUENCY == 0) {
+            CONSECUTIVE_SUBMITS_UPDATER.set(this, 0);
+        } else if (CONSECUTIVE_SUBMITS_UPDATER.incrementAndGet(this) % SYNC_FREQUENCY == 0) {
             sync = true;
         }
         lastSubmitTime = now;
@@ -281,8 +288,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
         boolean sync = checkSync();
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, task);
-        InternalCompletableFuture future = nodeEngine.getOperationService().invokeOnTarget(
-                DistributedExecutorService.SERVICE_NAME, op, target);
+        InternalCompletableFuture future = nodeEngine.getOperationService()
+                                                     .invokeOnTarget(DistributedExecutorService.SERVICE_NAME, op, target);
         if (sync) {
             Object response;
             try {
@@ -348,8 +355,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         CallableTaskOperation op = new CallableTaskOperation(name, null, task);
         OperationService operationService = nodeEngine.getOperationService();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
-                .setCallback(new ExecutionCallbackAdapter(callback))
-                .invoke();
+                        .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
     }
 
     @Override
@@ -373,20 +379,19 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         OperationService operationService = nodeEngine.getOperationService();
         Address address = ((MemberImpl) member).getAddress();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
-                .setCallback(new ExecutionCallbackAdapter(callback))
-                .invoke();
+                        .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
     }
 
     private String getRejectionMessage() {
-        return "ExecutorService[" + name + "] is shutdown! In order to create a new ExecutorService with name '"
-                + name + "', you need to destroy current ExecutorService first!";
+        return "ExecutorService[" + name + "] is shutdown! In order to create a new ExecutorService with name '" + name
+                + "', you need to destroy current ExecutorService first!";
     }
 
     @Override
     public <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback) {
         NodeEngine nodeEngine = getNodeEngine();
-        ExecutionCallbackAdapterFactory executionCallbackFactory = new ExecutionCallbackAdapterFactory(nodeEngine,
-                members, callback);
+        ExecutionCallbackAdapterFactory executionCallbackFactory = new ExecutionCallbackAdapterFactory(nodeEngine, members,
+                callback);
 
         for (Member member : members) {
             submitToMember(task, member, executionCallbackFactory.<T>callbackFor(member));
@@ -400,7 +405,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
+            throws InterruptedException {
         List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
         List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
         for (Callable<T> task : tasks) {
@@ -419,8 +425,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
-                                         long timeout, TimeUnit unit) throws InterruptedException {
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+            throws InterruptedException {
         if (unit == null) {
             throw new NullPointerException("unit must not be null");
         }
@@ -490,7 +496,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
+            throws InterruptedException, ExecutionException {
         throw new UnsupportedOperationException();
     }
 
@@ -520,7 +527,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean awaitTermination(long timeout, TimeUnit unit)
+            throws InterruptedException {
         return false;
     }
 

@@ -32,13 +32,18 @@ import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class CachedExecutorServiceDelegate implements ExecutorService, ManagedExecutorService {
+
     public static final long TIME = 250;
 
-    private final AtomicLong executedCount = new AtomicLong();
+    private static final AtomicLongFieldUpdater<CachedExecutorServiceDelegate> EXECUTED_COUNT_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(CachedExecutorServiceDelegate.class, "executedCount");
+
+    private volatile long executedCount = 0L;
     private final String name;
     private final int maxPoolSize;
     private final ExecutorService cachedExecutor;
@@ -69,7 +74,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
 
     @Override
     public long getCompletedTaskCount() {
-        return executedCount.get();
+        return executedCount;
     }
 
     @Override
@@ -201,7 +206,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                     r = taskQ.poll(1, TimeUnit.MILLISECONDS);
                     if (r != null) {
                         r.run();
-                        executedCount.incrementAndGet();
+                        EXECUTED_COUNT_UPDATER.incrementAndGet(CachedExecutorServiceDelegate.this);
                     }
                 }
                 while (r != null);

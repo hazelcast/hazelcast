@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,30 +33,39 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 public class MultiMapContainer {
 
-    final String name;
+    private static final AtomicLongFieldUpdater<MultiMapContainer> ID_GEN_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(MultiMapContainer.class, "idGen");
+    private static final AtomicLongFieldUpdater<MultiMapContainer> LAST_ACCCESS_TIME_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(MultiMapContainer.class, "lastAccessTime");
+    private static final AtomicLongFieldUpdater<MultiMapContainer> LAST_UPDATE_TIME_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(MultiMapContainer.class, "lastUpdateTime");
 
-    final MultiMapService service;
+    private final String name;
 
-    final NodeEngine nodeEngine;
+    private final MultiMapService service;
 
-    final MultiMapConfig config;
+    private final NodeEngine nodeEngine;
 
-    final ConcurrentMap<Data, MultiMapWrapper> multiMapWrappers = new ConcurrentHashMap<Data, MultiMapWrapper>(1000);
+    private final MultiMapConfig config;
 
-    final DefaultObjectNamespace lockNamespace;
+    private final ConcurrentMap<Data, MultiMapWrapper> multiMapWrappers = new ConcurrentHashMap<Data, MultiMapWrapper>(1000);
 
-    final LockStore lockStore;
+    private final DefaultObjectNamespace lockNamespace;
 
-    final int partitionId;
+    private final LockStore lockStore;
 
-    final AtomicLong idGen = new AtomicLong();
-    final AtomicLong lastAccessTime = new AtomicLong();
-    final AtomicLong lastUpdateTime = new AtomicLong();
-    final long creationTime;
+    private final int partitionId;
+
+    private final long creationTime;
+
+    // These fields are never accessed directly but through the UPDATER above
+    private volatile long idGen;
+    private volatile long lastAccessTime;
+    private volatile long lastUpdateTime;
 
     public MultiMapContainer(String name, MultiMapService service, int partitionId) {
         this.name = name;
@@ -67,7 +77,7 @@ public class MultiMapContainer {
         this.lockNamespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
-        creationTime = Clock.currentTimeMillis();
+        this.creationTime = Clock.currentTimeMillis();
     }
 
     public boolean canAcquireLock(Data dataKey, String caller, long threadId) {
@@ -99,7 +109,7 @@ public class MultiMapContainer {
     }
 
     public long nextId() {
-        return idGen.getAndIncrement();
+        return ID_GEN_UPDATER.getAndIncrement(this);
     }
 
     public MultiMapWrapper getOrCreateMultiMapWrapper(Data dataKey) {
@@ -217,19 +227,19 @@ public class MultiMapContainer {
     }
 
     public void access() {
-        lastAccessTime.set(Clock.currentTimeMillis());
+        LAST_ACCCESS_TIME_UPDATER.set(this, Clock.currentTimeMillis());
     }
 
     public void update() {
-        lastUpdateTime.set(Clock.currentTimeMillis());
+        LAST_UPDATE_TIME_UPDATER.set(this, Clock.currentTimeMillis());
     }
 
     public long getLastAccessTime() {
-        return lastAccessTime.get();
+        return lastAccessTime;
     }
 
     public long getLastUpdateTime() {
-        return lastUpdateTime.get();
+        return lastUpdateTime;
     }
 
     public long getCreationTime() {
@@ -238,5 +248,9 @@ public class MultiMapContainer {
 
     public long getLockedCount() {
         return lockStore.getLockedKeys().size();
+    }
+
+    public ConcurrentMap<Data, MultiMapWrapper> getMultiMapWrappers() {
+        return multiMapWrappers;
     }
 }

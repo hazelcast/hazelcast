@@ -19,13 +19,13 @@ package com.hazelcast.security.permission;
 public class ReplicatedMapPermission
         extends InstancePermission {
 
-    private static final int PUT = 0x4;
-    private static final int REMOVE = 0x8;
-    private static final int READ = 0x16;
-    private static final int LISTEN = 0x32;
-    private static final int LOCK = 0x64;
-    private static final int INDEX = 0x128;
-    private static final int INTERCEPT = 0x256;
+    private static final int PUT = 4;
+    private static final int REMOVE = 8;
+    private static final int READ = 16;
+    private static final int LISTEN = 32;
+    private static final int LOCK = 64;
+    private static final int INDEX = 128;
+    private static final int INTERCEPT = 256;
     private static final int ALL = CREATE | DESTROY | PUT | REMOVE | READ | LISTEN | LOCK | INDEX | INTERCEPT;
 
     public ReplicatedMapPermission(String name, String... actions) {

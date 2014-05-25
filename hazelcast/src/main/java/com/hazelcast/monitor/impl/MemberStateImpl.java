@@ -38,15 +38,15 @@ public class MemberStateImpl implements MemberState {
 
     public static final int DEFAULT_PARTITION_COUNT = 271;
 
-    Address address = new Address();
-    Map<String, Long> runtimeProps = new HashMap<String, Long>();
-    Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
-    Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
-    Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
-    Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
-    Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
-    List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
-    Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
+    private Address address = new Address();
+    private Map<String, Long> runtimeProps = new HashMap<String, Long>();
+    private Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
+    private Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
+    private Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
+    private Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
+    private Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
+    private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
+    private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
