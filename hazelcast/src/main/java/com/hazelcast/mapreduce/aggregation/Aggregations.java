@@ -51,7 +51,7 @@ import java.util.Map;
 
 public class Aggregations {
 
-    public static Aggregation<Object, Object, Long> count() {
+    public static <Key> Aggregation<Key, Object, Long> count() {
         return new AggregationAdapter(new CountAggregation<Object, Object>());
     }
 

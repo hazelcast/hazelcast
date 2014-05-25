@@ -22,13 +22,12 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
 public class CountAggregation<Key, Value>
-        implements AggType<Key, Value, Key, Long, Long, Long, Long> {
+        implements AggType<Key, Value, Key, Object, Long, Long, Long> {
 
     @Override
     public Collator<Map.Entry<Key, Long>, Long> getCollator() {
@@ -45,45 +44,45 @@ public class CountAggregation<Key, Value>
     }
 
     @Override
-    public Mapper<Key, Value, Key, Long> getMapper(Supplier<Key, Value, Long> supplier) {
-        return new SupplierConsumingMapper<Key, Value, Long>(supplier);
+    public Mapper<Key, Value, Key, Object> getMapper(Supplier<Key, Value, Object> supplier) {
+        return new SupplierConsumingMapper<Key, Value, Object>(supplier);
     }
 
     @Override
-    public CombinerFactory<Key, Long, Long> getCombinerFactory() {
-        return new LongSumCombinerFactory<Key>();
+    public CombinerFactory<Key, Object, Long> getCombinerFactory() {
+        return new CountCombinerFactory<Key>();
     }
 
     @Override
     public ReducerFactory<Key, Long, Long> getReducerFactory() {
-        return new LongSumReducerFactory<Key>();
+        return new CountReducerFactory<Key>();
     }
 
-    static final class LongSumCombinerFactory<Key>
-            implements CombinerFactory<Key, Long, Long> {
+    static final class CountCombinerFactory<Key>
+            implements CombinerFactory<Key, Object, Long> {
 
         @Override
-        public Combiner<Key, Long, Long> newCombiner(Key key) {
-            return new LongSumCombiner<Key>();
+        public Combiner<Key, Object, Long> newCombiner(Key key) {
+            return new CountCombiner<Key>();
         }
     }
 
-    static final class LongSumReducerFactory<Key>
+    static final class CountReducerFactory<Key>
             implements ReducerFactory<Key, Long, Long> {
 
         @Override
         public Reducer<Key, Long, Long> newReducer(Key key) {
-            return new LongSumReducer<Key>();
+            return new CountReducer<Key>();
         }
     }
 
-    private static final class LongSumCombiner<Key>
-            extends Combiner<Key, Long, Long> {
+    private static final class CountCombiner<Key>
+            extends Combiner<Key, Object, Long> {
 
         private long chunkCount;
 
         @Override
-        public void combine(Key key, Long value) {
+        public void combine(Key key, Object value) {
             chunkCount++;
         }
 
@@ -95,7 +94,7 @@ public class CountAggregation<Key, Value>
         }
     }
 
-    private static final class LongSumReducer<Key>
+    private static final class CountReducer<Key>
             extends Reducer<Key, Long, Long> {
 
         private volatile long count;
