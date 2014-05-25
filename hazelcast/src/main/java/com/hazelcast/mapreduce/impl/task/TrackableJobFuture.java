@@ -71,6 +71,11 @@ public class TrackableJobFuture<V>
 
     @Override
     public void setResult(Object result) {
+        if (result instanceof Throwable) {
+            super.setResult(result);
+            latch.countDown();
+            return;
+        }
         Object finalResult = result;
         // If collator is available we need to execute it now
         if (collator != null) {

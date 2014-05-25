@@ -287,25 +287,35 @@ public class JobSupervisor {
             String jobId = configuration.getJobId();
             NodeEngine nodeEngine = configuration.getNodeEngine();
             GetResultOperationFactory operationFactory = new GetResultOperationFactory(name, jobId);
-            List<Map> results = MapReduceUtil.executeOperation(operationFactory, mapReduceService, nodeEngine, true);
 
-            boolean reducedResult = configuration.getReducerFactory() != null;
+            try {
+                List<Map> results = MapReduceUtil.executeOperation(operationFactory, mapReduceService, nodeEngine, true);
+                boolean reducedResult = configuration.getReducerFactory() != null;
 
-            if (results != null) {
-                Map<Object, Object> mergedResults = new HashMap<Object, Object>();
-                for (Map<?, ?> map : results) {
-                    for (Map.Entry entry : map.entrySet()) {
-                        collectResults(reducedResult, mergedResults, entry);
+                if (results != null) {
+                    Map<Object, Object> mergedResults = new HashMap<Object, Object>();
+                    for (Map<?, ?> map : results) {
+                        for (Map.Entry entry : map.entrySet()) {
+                            collectResults(reducedResult, mergedResults, entry);
+                        }
                     }
-                }
 
+                    // Get the initial future object to eventually set the result and cleanup
+                    TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+                    jobTracker.unregisterMapCombineTask(jobId);
+                    jobTracker.unregisterReducerTask(jobId);
+                    mapReduceService.destroyJobSupervisor(this);
+
+                    future.setResult(mergedResults);
+                }
+            } catch (Exception e) {
                 // Get the initial future object to eventually set the result and cleanup
                 TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
                 jobTracker.unregisterMapCombineTask(jobId);
                 jobTracker.unregisterReducerTask(jobId);
                 mapReduceService.destroyJobSupervisor(this);
 
-                future.setResult(mergedResults);
+                future.setResult(e);
             }
         }
     }
