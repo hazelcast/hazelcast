@@ -71,7 +71,9 @@ public class DefaultContext<KeyIn, ValueIn>
         Map<KeyIn, Chunk> chunkMap = new HashMapAdapter<KeyIn, Chunk>(mapSize);
         for (Map.Entry<KeyIn, Combiner<KeyIn, ValueIn, ?>> entry : combiners.entrySet()) {
             Chunk chunk = (Chunk) entry.getValue().finalizeChunk();
-            chunkMap.put(entry.getKey(), chunk);
+            if (chunk != null) {
+                chunkMap.put(entry.getKey(), chunk);
+            }
         }
         collected.set(0);
         return chunkMap;
