@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapDataSerializerHook;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
  * A ReplicatedRecord is the actual data holding entity. It also collects statistic metadata.
@@ -33,8 +33,14 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ReplicatedRecord<K, V>
         implements IdentifiedDataSerializable {
 
-    private final AtomicLong hits = new AtomicLong();
-    private final AtomicLong lastAccessTime = new AtomicLong();
+    private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(ReplicatedRecord.class, "hits");
+    private static final AtomicLongFieldUpdater<ReplicatedRecord> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(ReplicatedRecord.class, "hits");
+
+    // These fields are only accessed through the updaters
+    private volatile long hits;
+    private volatile long lastAccessTime;
 
     private K key;
     private V value;
@@ -91,16 +97,16 @@ public class ReplicatedRecord<K, V>
     }
 
     public long getHits() {
-        return hits.get();
+        return hits;
     }
 
     public long getLastAccessTime() {
-        return lastAccessTime.get();
+        return lastAccessTime;
     }
 
     public void access() {
-        hits.incrementAndGet();
-        lastAccessTime.set(System.currentTimeMillis());
+        HITS_UPDATER.incrementAndGet(this);
+        LAST_ACCESS_TIME_UPDATER.set(this, System.currentTimeMillis());
     }
 
     @Override

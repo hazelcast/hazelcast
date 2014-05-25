@@ -37,6 +37,7 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ResponseHandler;
@@ -980,9 +981,10 @@ public class DefaultRecordStore implements RecordStore {
         }
         try {
             final AtomicInteger checkIfMapLoaded = new AtomicInteger(chunks.size());
+            ExecutionService executionService = nodeEngine.getExecutionService();
             Map<Data, Object> chunkedKeys;
             while ((chunkedKeys = chunks.poll()) != null) {
-                nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
+                executionService.submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

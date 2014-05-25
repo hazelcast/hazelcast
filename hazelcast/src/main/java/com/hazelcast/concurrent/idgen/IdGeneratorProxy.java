@@ -21,20 +21,26 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public class IdGeneratorProxy extends AbstractDistributedObject<IdGeneratorService> implements IdGenerator {
+public class IdGeneratorProxy
+        extends AbstractDistributedObject<IdGeneratorService>
+        implements IdGenerator {
 
     public static final int BLOCK_SIZE = 10000;
 
+    private static final AtomicIntegerFieldUpdater<IdGeneratorProxy> RESIDUE_UPDATER = AtomicIntegerFieldUpdater
+            .newUpdater(IdGeneratorProxy.class, "residue");
+    private static final AtomicLongFieldUpdater<IdGeneratorProxy> LOCAL_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(IdGeneratorProxy.class, "local");
+
     private final String name;
     private final IAtomicLong blockGenerator;
-    private final AtomicInteger residue = new AtomicInteger(BLOCK_SIZE);
-    private final AtomicLong local = new AtomicLong(-1);
+    private volatile int residue = BLOCK_SIZE;
+    private volatile long local = -1L;
 
-    public IdGeneratorProxy(IAtomicLong blockGenerator, String name,
-                            NodeEngine nodeEngine, IdGeneratorService service) {
+    public IdGeneratorProxy(IAtomicLong blockGenerator, String name, NodeEngine nodeEngine, IdGeneratorService service) {
         super(nodeEngine, service);
         this.name = name;
         this.blockGenerator = blockGenerator;
@@ -50,8 +56,8 @@ public class IdGeneratorProxy extends AbstractDistributedObject<IdGeneratorServi
         synchronized (this) {
             boolean init = blockGenerator.compareAndSet(0, step + 1);
             if (init) {
-                local.set(step);
-                residue.set((int) (id % BLOCK_SIZE) + 1);
+                LOCAL_UPDATER.set(this, step);
+                RESIDUE_UPDATER.set(this, (int) (id % BLOCK_SIZE) + 1);
             }
             return init;
         }
@@ -59,19 +65,19 @@ public class IdGeneratorProxy extends AbstractDistributedObject<IdGeneratorServi
 
     @Override
     public long newId() {
-        int value = residue.getAndIncrement();
+        int value = RESIDUE_UPDATER.getAndIncrement(this);
         if (value >= BLOCK_SIZE) {
             synchronized (this) {
-                value = residue.get();
+                value = residue;
                 if (value >= BLOCK_SIZE) {
-                    local.set(blockGenerator.getAndIncrement());
-                    residue.set(0);
+                    LOCAL_UPDATER.set(this, blockGenerator.getAndIncrement());
+                    RESIDUE_UPDATER.set(this, 0);
                 }
                 //todo: we need to get rid of this.
                 return newId();
             }
         }
-        return local.get() * BLOCK_SIZE + value;
+        return local * BLOCK_SIZE + value;
     }
 
     @Override
@@ -89,7 +95,7 @@ public class IdGeneratorProxy extends AbstractDistributedObject<IdGeneratorServi
         blockGenerator.destroy();
 
         //todo: this behavior is racy; imagine what happens when destroy is called by different threads
-        local.set(-1);
-        residue.set(BLOCK_SIZE);
+        LOCAL_UPDATER.set(this, -1);
+        RESIDUE_UPDATER.set(this, BLOCK_SIZE);
     }
 }

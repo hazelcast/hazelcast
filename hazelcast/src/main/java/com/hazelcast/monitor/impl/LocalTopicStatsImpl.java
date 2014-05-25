@@ -22,30 +22,40 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public class LocalTopicStatsImpl implements LocalTopicStats {
+public class LocalTopicStatsImpl
+        implements LocalTopicStats {
+
+    private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_PUBLISHES_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
+    private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_RECEIVED_MESSAGES_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalTopicStatsImpl.class, "totalReceivedMessages");
 
     private long creationTime;
-    private AtomicLong totalPublishes = new AtomicLong(0);
-    private AtomicLong totalReceivedMessages = new AtomicLong(0);
+
+    // These fields are only accessed through the updaters
+    private volatile long totalPublishes;
+    private volatile long totalReceivedMessages;
 
     public LocalTopicStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeLong(creationTime);
-        out.writeLong(totalPublishes.get());
-        out.writeLong(totalReceivedMessages.get());
+        out.writeLong(totalPublishes);
+        out.writeLong(totalReceivedMessages);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         creationTime = in.readLong();
-        totalPublishes.set(in.readLong());
-        totalReceivedMessages.set(in.readLong());
+        TOTAL_PUBLISHES_UPDATER.set(this, in.readLong());
+        TOTAL_RECEIVED_MESSAGES_UPDATER.set(this, in.readLong());
     }
 
     @Override
@@ -55,20 +65,20 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
 
     @Override
     public long getPublishOperationCount() {
-        return totalPublishes.get();
+        return totalPublishes;
     }
 
     public void incrementPublishes() {
-        totalPublishes.incrementAndGet();
+        TOTAL_PUBLISHES_UPDATER.incrementAndGet(this);
     }
 
     @Override
     public long getReceiveOperationCount() {
-        return totalReceivedMessages.get();
+        return totalReceivedMessages;
     }
 
     public void incrementReceives() {
-        totalReceivedMessages.incrementAndGet();
+        TOTAL_RECEIVED_MESSAGES_UPDATER.incrementAndGet(this);
     }
 
 }

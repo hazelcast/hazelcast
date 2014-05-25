@@ -24,23 +24,56 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializable {
-    private final AtomicLong lastAccessTime = new AtomicLong(0);
-    private final AtomicLong lastUpdateTime = new AtomicLong(0);
-    private final AtomicLong hits = new AtomicLong(0);
-    private final AtomicLong numberOfOtherOperations = new AtomicLong(0);
-    private final AtomicLong numberOfEvents = new AtomicLong(0);
-    private final AtomicLong getCount = new AtomicLong(0);
-    private final AtomicLong putCount = new AtomicLong(0);
-    private final AtomicLong removeCount = new AtomicLong(0);
-    private final AtomicLong totalGetLatencies = new AtomicLong(0);
-    private final AtomicLong totalPutLatencies = new AtomicLong(0);
-    private final AtomicLong totalRemoveLatencies = new AtomicLong(0);
-    private final AtomicLong maxGetLatency = new AtomicLong(0);
-    private final AtomicLong maxPutLatency = new AtomicLong(0);
-    private final AtomicLong maxRemoveLatency = new AtomicLong(0);
+public class LocalMapStatsImpl
+        implements LocalMapStats, IdentifiedDataSerializable {
+
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "lastAccessTime");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_UPDATE_TIME_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "lastUpdateTime");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> HITS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "hits");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> NUMBER_OF_OTHER_OPERATIONS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "numberOfOtherOperations");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> NUMBER_OF_EVENTS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "numberOfEvents");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> GET_COUNT_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "getCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> PUT_COUNT_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "putCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> REMOVE_COUNT_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "removeCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_GET_LATENCIES_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "totalGetLatencies");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_PUT_LATENCIES_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "totalPutLatencies");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_REMOVE_LATENCIES_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "totalRemoveLatencies");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_GET_LATENCY_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "maxGetLatency");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_PUT_LATENCY_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "maxPutLatency");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
+
+    // These fields are only accessed through the updaters
+    private volatile long lastAccessTime;
+    private volatile long lastUpdateTime;
+    private volatile long hits;
+    private volatile long numberOfOtherOperations;
+    private volatile long numberOfEvents;
+    private volatile long getCount;
+    private volatile long putCount;
+    private volatile long removeCount;
+    private volatile long totalGetLatencies;
+    private volatile long totalPutLatencies;
+    private volatile long totalRemoveLatencies;
+    private volatile long maxGetLatency;
+    private volatile long maxPutLatency;
+    private volatile long maxRemoveLatency;
+
     private long ownedEntryCount;
     private long backupEntryCount;
     private long ownedEntryMemoryCost;
@@ -59,15 +92,16 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(getCount.get());
-        out.writeLong(putCount.get());
-        out.writeLong(removeCount.get());
-        out.writeLong(numberOfOtherOperations.get());
-        out.writeLong(numberOfEvents.get());
-        out.writeLong(lastAccessTime.get());
-        out.writeLong(lastUpdateTime.get());
-        out.writeLong(hits.get());
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+        out.writeLong(getCount);
+        out.writeLong(putCount);
+        out.writeLong(removeCount);
+        out.writeLong(numberOfOtherOperations);
+        out.writeLong(numberOfEvents);
+        out.writeLong(lastAccessTime);
+        out.writeLong(lastUpdateTime);
+        out.writeLong(hits);
         out.writeLong(ownedEntryCount);
         out.writeLong(backupEntryCount);
         out.writeInt(backupCount);
@@ -76,12 +110,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(creationTime);
         out.writeLong(lockedEntryCount);
         out.writeLong(dirtyEntryCount);
-        out.writeLong(totalGetLatencies.get());
-        out.writeLong(totalPutLatencies.get());
-        out.writeLong(totalRemoveLatencies.get());
-        out.writeLong(maxGetLatency.get());
-        out.writeLong(maxPutLatency.get());
-        out.writeLong(maxRemoveLatency.get());
+        out.writeLong(totalGetLatencies);
+        out.writeLong(totalPutLatencies);
+        out.writeLong(totalRemoveLatencies);
+        out.writeLong(maxGetLatency);
+        out.writeLong(maxPutLatency);
+        out.writeLong(maxRemoveLatency);
         out.writeLong(heapCost);
         boolean hasNearCache = nearCacheStats != null;
         out.writeBoolean(hasNearCache);
@@ -91,15 +125,16 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        getCount.set(in.readLong());
-        putCount.set(in.readLong());
-        removeCount.set(in.readLong());
-        numberOfOtherOperations.set(in.readLong());
-        numberOfEvents.set(in.readLong());
-        lastAccessTime.set(in.readLong());
-        lastUpdateTime.set(in.readLong());
-        hits.set(in.readLong());
+    public void readData(ObjectDataInput in)
+            throws IOException {
+        GET_COUNT_UPDATER.set(this, in.readLong());
+        PUT_COUNT_UPDATER.set(this, in.readLong());
+        REMOVE_COUNT_UPDATER.set(this, in.readLong());
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_EVENTS_UPDATER.set(this, in.readLong());
+        LAST_ACCESS_TIME_UPDATER.set(this, in.readLong());
+        LAST_UPDATE_TIME_UPDATER.set(this, in.readLong());
+        HITS_UPDATER.set(this, in.readLong());
         ownedEntryCount = in.readLong();
         backupEntryCount = in.readLong();
         backupCount = in.readInt();
@@ -108,12 +143,12 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         creationTime = in.readLong();
         lockedEntryCount = in.readLong();
         dirtyEntryCount = in.readLong();
-        totalGetLatencies.set(in.readLong());
-        totalPutLatencies.set(in.readLong());
-        totalRemoveLatencies.set(in.readLong());
-        maxGetLatency.set(in.readLong());
-        maxPutLatency.set(in.readLong());
-        maxRemoveLatency.set(in.readLong());
+        TOTAL_GET_LATENCIES_UPDATER.set(this, in.readLong());
+        TOTAL_PUT_LATENCIES_UPDATER.set(this, in.readLong());
+        TOTAL_REMOVE_LATENCIES_UPDATER.set(this, in.readLong());
+        MAX_GET_LATENCY_UPDATER.set(this, in.readLong());
+        MAX_PUT_LATENCY_UPDATER.set(this, in.readLong());
+        MAX_REMOVE_LATENCY_UPDATER.set(this, in.readLong());
         heapCost = in.readLong();
         boolean hasNearCache = in.readBoolean();
         if (hasNearCache) {
@@ -174,29 +209,29 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
 
     @Override
     public long getLastAccessTime() {
-        return lastAccessTime.get();
+        return lastAccessTime;
     }
 
     public void setLastAccessTime(long lastAccessTime) {
-        this.lastAccessTime.set(Math.max(this.lastAccessTime.get(), lastAccessTime));
+        LAST_ACCESS_TIME_UPDATER.set(this, Math.max(this.lastAccessTime, lastAccessTime));
     }
 
     @Override
     public long getLastUpdateTime() {
-        return lastUpdateTime.get();
+        return lastUpdateTime;
     }
 
     public void setLastUpdateTime(long lastUpdateTime) {
-        this.lastUpdateTime.set(Math.max(this.lastUpdateTime.get(), lastUpdateTime));
+        LAST_UPDATE_TIME_UPDATER.set(this, Math.max(this.lastUpdateTime, lastUpdateTime));
     }
 
     @Override
     public long getHits() {
-        return hits.get();
+        return hits;
     }
 
     public void setHits(long hits) {
-        this.hits.set(hits);
+        HITS_UPDATER.set(this, hits);
     }
 
     @Override
@@ -219,88 +254,88 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
 
     @Override
     public long total() {
-        return putCount.get() + getCount.get() + removeCount.get() + numberOfOtherOperations.get();
+        return putCount + getCount + removeCount + numberOfOtherOperations;
     }
 
     @Override
     public long getPutOperationCount() {
-        return putCount.get();
+        return putCount;
     }
 
     public void incrementPuts(long latency) {
-        putCount.incrementAndGet();
-        totalPutLatencies.addAndGet(latency);
-        maxPutLatency.set(Math.max(maxPutLatency.get(), latency));
+        PUT_COUNT_UPDATER.incrementAndGet(this);
+        TOTAL_PUT_LATENCIES_UPDATER.addAndGet(this, latency);
+        MAX_PUT_LATENCY_UPDATER.set(this, Math.max(maxPutLatency, latency));
     }
 
     @Override
     public long getGetOperationCount() {
-        return getCount.get();
+        return getCount;
     }
 
     public void incrementGets(long latency) {
-        getCount.incrementAndGet();
-        totalGetLatencies.addAndGet(latency);
-        maxGetLatency.set(Math.max(maxGetLatency.get(), latency));
+        GET_COUNT_UPDATER.incrementAndGet(this);
+        TOTAL_GET_LATENCIES_UPDATER.addAndGet(this, latency);
+        MAX_GET_LATENCY_UPDATER.set(this, Math.max(maxGetLatency, latency));
     }
 
     @Override
     public long getRemoveOperationCount() {
-        return removeCount.get();
+        return removeCount;
     }
 
     public void incrementRemoves(long latency) {
-        removeCount.incrementAndGet();
-        totalRemoveLatencies.addAndGet(latency);
-        maxRemoveLatency.set(Math.max(maxRemoveLatency.get(), latency));
+        REMOVE_COUNT_UPDATER.incrementAndGet(this);
+        TOTAL_REMOVE_LATENCIES_UPDATER.addAndGet(this, latency);
+        MAX_REMOVE_LATENCY_UPDATER.set(this, Math.max(maxRemoveLatency, latency));
     }
 
     @Override
     public long getTotalPutLatency() {
-        return totalPutLatencies.get();
+        return totalPutLatencies;
     }
 
     @Override
     public long getTotalGetLatency() {
-        return totalGetLatencies.get();
+        return totalGetLatencies;
     }
 
     @Override
     public long getTotalRemoveLatency() {
-        return totalRemoveLatencies.get();
+        return totalRemoveLatencies;
     }
 
     @Override
     public long getMaxPutLatency() {
-        return maxPutLatency.get();
+        return maxPutLatency;
     }
 
     @Override
     public long getMaxGetLatency() {
-        return maxGetLatency.get();
+        return maxGetLatency;
     }
 
     @Override
     public long getMaxRemoveLatency() {
-        return maxRemoveLatency.get();
+        return maxRemoveLatency;
     }
 
     @Override
     public long getOtherOperationCount() {
-        return numberOfOtherOperations.get();
+        return numberOfOtherOperations;
     }
 
     public void incrementOtherOperations() {
-        numberOfOtherOperations.incrementAndGet();
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.incrementAndGet(this);
     }
 
     @Override
     public long getEventOperationCount() {
-        return numberOfEvents.get();
+        return numberOfEvents;
     }
 
     public void incrementReceivedEvents() {
-        numberOfEvents.incrementAndGet();
+        NUMBER_OF_EVENTS_UPDATER.incrementAndGet(this);
     }
 
     public void setHeapCost(long heapCost) {

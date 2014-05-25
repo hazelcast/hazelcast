@@ -16,14 +16,18 @@
 
 package com.hazelcast.map;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
  * Size estimator for near cache.
  */
-class NearCacheSizeEstimator implements SizeEstimator<NearCache.CacheRecord> {
+class NearCacheSizeEstimator
+        implements SizeEstimator<NearCache.CacheRecord> {
 
-    private final AtomicLong size = new AtomicLong(0L);
+    private static final AtomicLongFieldUpdater<NearCacheSizeEstimator> SIZE_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(NearCacheSizeEstimator.class, "size");
+
+    private volatile long size = 0L;
 
     protected NearCacheSizeEstimator() {
         super();
@@ -51,14 +55,14 @@ class NearCacheSizeEstimator implements SizeEstimator<NearCache.CacheRecord> {
 
     @Override
     public long getSize() {
-        return size.longValue();
+        return size;
     }
 
     public void add(long size) {
-        this.size.addAndGet(size);
+        SIZE_UPDATER.addAndGet(this, size);
     }
 
     public void reset() {
-        size.set(0L);
+        SIZE_UPDATER.set(this, 0L);
     }
 }
