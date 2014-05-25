@@ -99,8 +99,14 @@ public class NearCacheStatsImpl
 
     @Override
     public String toString() {
-        return "NearCacheStatsImpl{" + "ownedEntryCount=" + ownedEntryCount + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
-                + ", creationTime=" + creationTime + ", hits=" + hits + ", misses=" + misses + ", ratio=" + getRatio() + '}';
+        return "NearCacheStatsImpl{"
+                + "ownedEntryCount=" + ownedEntryCount
+                + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
+                + ", creationTime=" + creationTime
+                + ", hits=" + hits
+                + ", misses=" + misses
+                + ", ratio=" + getRatio()
+                + '}';
     }
 
 }
