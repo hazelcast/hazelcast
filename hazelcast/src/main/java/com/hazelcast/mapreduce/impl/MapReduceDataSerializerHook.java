@@ -73,8 +73,9 @@ public class MapReduceDataSerializerHook
     public static final int KEY_VALUE_SOURCE_SET = 19;
     public static final int KEYS_ASSIGNMENT_RESULT = 20;
     public static final int KEYS_ASSIGNMENT_OPERATION = 21;
+    public static final int HASH_MAP_ADAPTER = 22;
 
-    private static final int LEN = KEYS_ASSIGNMENT_OPERATION + 1;
+    private static final int LEN = HASH_MAP_ADAPTER + 1;
 
     @Override
     public int getFactoryId() {
@@ -214,6 +215,12 @@ public class MapReduceDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PostPonePartitionProcessing();
+            }
+        };
+        constructors[HASH_MAP_ADAPTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new HashMapAdapter();
             }
         };
         return new ArrayDataSerializableFactory(constructors);
