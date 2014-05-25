@@ -22,6 +22,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.PartitionIdAware;
+import com.hazelcast.mapreduce.RemoteMapReduceException;
 import com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation;
 import com.hazelcast.mapreduce.impl.operation.KeysAssignmentResult;
 import com.hazelcast.mapreduce.impl.operation.NotifyRemoteExceptionOperation;
@@ -270,7 +271,7 @@ public final class MapReduceUtil {
         }
 
         if (exceptions.size() > 0) {
-            throw new RuntimeException("Exception on mapreduce operation: " + exceptions);
+            throw new RemoteMapReduceException("Exception on mapreduce operation", exceptions);
         }
         return results;
     }
