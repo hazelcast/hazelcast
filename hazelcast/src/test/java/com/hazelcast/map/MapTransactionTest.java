@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -1072,7 +1073,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
 
-    @Test( expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testValuesWithPagingPredicate() throws TransactionException {
         final int nodeCount = 1;
         final String mapName = randomMapName("testValuesWithPagingPredicate");
@@ -1118,4 +1119,30 @@ public class MapTransactionTest extends HazelcastTestSupport {
         node.shutdown();
     }
 
+    @Test
+    public void testUpdatesInTxnFiringUpdateEvent() {
+        final String mapName = randomMapName("testUpdatesInTxnFiringUpdateEvent");
+        final HazelcastInstance node = createHazelcastInstance();
+        final IMap<String, String> map = node.getMap(mapName);
+        final CountDownLatch expectedUpdateEventCount = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<String, String>() {
+
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+                expectedUpdateEventCount.countDown();
+            }
+
+        }, true);
+
+        map.put("foo", "one");
+
+        TransactionContext context = node.newTransactionContext();
+        context.beginTransaction();
+        TransactionalMap<String, String> transactionalMap = context.getMap(mapName);
+        transactionalMap.put("foo", "three");
+        context.commitTransaction();
+
+        assertOpenEventually("Not reached expected update event count", expectedUpdateEventCount);
+
+    }
 }
