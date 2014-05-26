@@ -393,7 +393,7 @@
     <suppress checks="MagicNumber" files="com.hazelcast.util.SortedHashMap"/>
     <suppress checks="ParameterAssignment" files="com.hazelcast.util.SortedHashMap"/>
     <suppress checks="MagicNumber" files="com.hazelcast.util.UuidUtil"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.util.VersionCheck"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.util.VersionCheck"/>
 
     <!-- ReplicatedMap -->
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.client.proxy.ClientReplicatedMapProxy"/>
