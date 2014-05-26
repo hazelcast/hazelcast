@@ -64,8 +64,8 @@ public class BigIntegerMinAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, BigInteger, BigInteger> {
 
         @Override
-        public Combiner<Key, BigInteger, BigInteger> newCombiner(Key key) {
-            return new BigIntegerMinCombiner<Key>();
+        public Combiner<BigInteger, BigInteger> newCombiner(Key key) {
+            return new BigIntegerMinCombiner();
         }
 
         @Override
@@ -78,8 +78,8 @@ public class BigIntegerMinAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, BigInteger, BigInteger> {
 
         @Override
-        public Reducer<Key, BigInteger, BigInteger> newReducer(Key key) {
-            return new BigIntegerMinReducer<Key>();
+        public Reducer<BigInteger, BigInteger> newReducer(Key key) {
+            return new BigIntegerMinReducer();
         }
 
         @Override
@@ -88,26 +88,29 @@ public class BigIntegerMinAggregation<Key, Value>
         }
     }
 
-    private static final class BigIntegerMinCombiner<Key>
-            extends Combiner<Key, BigInteger, BigInteger> {
+    private static final class BigIntegerMinCombiner
+            extends Combiner<BigInteger, BigInteger> {
 
-        private BigInteger chunkMin = null;
+        private BigInteger min = null;
 
         @Override
-        public void combine(Key key, BigInteger value) {
-            chunkMin = chunkMin == null ? value : value.min(chunkMin);
+        public void combine(BigInteger value) {
+            min = min == null ? value : value.min(min);
         }
 
         @Override
         public BigInteger finalizeChunk() {
-            BigInteger value = chunkMin;
-            chunkMin = null;
-            return value;
+            return min;
+        }
+
+        @Override
+        public void reset() {
+            min = null;
         }
     }
 
-    private static final class BigIntegerMinReducer<Key>
-            extends Reducer<Key, BigInteger, BigInteger> {
+    private static final class BigIntegerMinReducer
+            extends Reducer<BigInteger, BigInteger> {
 
         private volatile BigInteger min = null;
 

@@ -62,8 +62,8 @@ public class LongSumAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Long, Long> {
 
         @Override
-        public Combiner<Key, Long, Long> newCombiner(Key key) {
-            return new LongSumCombiner<Key>();
+        public Combiner<Long, Long> newCombiner(Key key) {
+            return new LongSumCombiner();
         }
 
         @Override
@@ -76,8 +76,8 @@ public class LongSumAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
         @Override
-        public Reducer<Key, Long, Long> newReducer(Key key) {
-            return new LongSumReducer<Key>();
+        public Reducer<Long, Long> newReducer(Key key) {
+            return new LongSumReducer();
         }
 
         @Override
@@ -86,13 +86,13 @@ public class LongSumAggregation<Key, Value>
         }
     }
 
-    private static final class LongSumCombiner<Key>
-            extends Combiner<Key, Long, Long> {
+    private static final class LongSumCombiner
+            extends Combiner<Long, Long> {
 
         private long chunkSum;
 
         @Override
-        public void combine(Key key, Long value) {
+        public void combine(Long value) {
             chunkSum += value;
         }
 
@@ -104,8 +104,8 @@ public class LongSumAggregation<Key, Value>
         }
     }
 
-    private static final class LongSumReducer<Key>
-            extends Reducer<Key, Long, Long> {
+    private static final class LongSumReducer
+            extends Reducer<Long, Long> {
 
         private volatile long sum;
 

@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.math.BigDecimal;
@@ -65,8 +64,8 @@ public class BigDecimalMaxAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
-        public Combiner<Key, BigDecimal, BigDecimal> newCombiner(Key key) {
-            return new BigDecimalMaxCombiner<Key>();
+        public Combiner<BigDecimal, BigDecimal> newCombiner(Key key) {
+            return new BigDecimalMaxCombiner();
         }
 
         @Override
@@ -79,8 +78,8 @@ public class BigDecimalMaxAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
-        public Reducer<Key, BigDecimal, BigDecimal> newReducer(Key key) {
-            return new BigDecimalMaxReducer<Key>();
+        public Reducer<BigDecimal, BigDecimal> newReducer(Key key) {
+            return new BigDecimalMaxReducer();
         }
 
         @Override
@@ -89,26 +88,29 @@ public class BigDecimalMaxAggregation<Key, Value>
         }
     }
 
-    private static final class BigDecimalMaxCombiner<Key>
-            extends Combiner<Key, BigDecimal, BigDecimal> {
+    private static final class BigDecimalMaxCombiner
+            extends Combiner<BigDecimal, BigDecimal> {
 
-        private BigDecimal chunkMax = null;
+        private BigDecimal max = null;
 
         @Override
-        public void combine(Key key, BigDecimal value) {
-            chunkMax = chunkMax == null ? value : value.max(chunkMax);
+        public void combine(BigDecimal value) {
+            max = max == null ? value : value.max(max);
         }
 
         @Override
         public BigDecimal finalizeChunk() {
-            BigDecimal value = chunkMax;
-            chunkMax = null;
-            return value;
+            return max;
+        }
+
+        @Override
+        public void reset() {
+            max = null;
         }
     }
 
-    private static final class BigDecimalMaxReducer<Key>
-            extends Reducer<Key, BigDecimal, BigDecimal> {
+    private static final class BigDecimalMaxReducer
+            extends Reducer<BigDecimal, BigDecimal> {
 
         private volatile BigDecimal max = null;
 

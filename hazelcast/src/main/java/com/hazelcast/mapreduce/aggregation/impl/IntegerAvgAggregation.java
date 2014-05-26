@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
@@ -66,8 +65,8 @@ public class IntegerAvgAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Integer, AvgTuple<Integer, Integer>> {
 
         @Override
-        public Combiner<Key, Integer, AvgTuple<Integer, Integer>> newCombiner(Key key) {
-            return new IntegerAvgCombiner<Key>();
+        public Combiner<Integer, AvgTuple<Integer, Integer>> newCombiner(Key key) {
+            return new IntegerAvgCombiner();
         }
 
         @Override
@@ -80,8 +79,8 @@ public class IntegerAvgAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
 
         @Override
-        public Reducer<Key, AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> newReducer(Key key) {
-            return new IntegerAvgReducer<Key>();
+        public Reducer<AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> newReducer(Key key) {
+            return new IntegerAvgReducer();
         }
 
         @Override
@@ -90,14 +89,14 @@ public class IntegerAvgAggregation<Key, Value>
         }
     }
 
-    private static final class IntegerAvgCombiner<Key>
-            extends Combiner<Key, Integer, AvgTuple<Integer, Integer>> {
+    private static final class IntegerAvgCombiner
+            extends Combiner<Integer, AvgTuple<Integer, Integer>> {
 
         private int count;
         private int amount;
 
         @Override
-        public void combine(Key key, Integer value) {
+        public void combine(Integer value) {
             count++;
             amount += value;
         }
@@ -112,8 +111,8 @@ public class IntegerAvgAggregation<Key, Value>
         }
     }
 
-    private static final class IntegerAvgReducer<Key>
-            extends Reducer<Key, AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
+    private static final class IntegerAvgReducer
+            extends Reducer<AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
 
         private volatile int count;
         private volatile int amount;

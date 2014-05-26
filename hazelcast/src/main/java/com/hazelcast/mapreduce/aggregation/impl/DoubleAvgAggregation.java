@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
@@ -66,8 +65,8 @@ public class DoubleAvgAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Double, AvgTuple<Long, Double>> {
 
         @Override
-        public Combiner<Key, Double, AvgTuple<Long, Double>> newCombiner(Key key) {
-            return new DoubleAvgCombiner<Key>();
+        public Combiner<Double, AvgTuple<Long, Double>> newCombiner(Key key) {
+            return new DoubleAvgCombiner();
         }
 
         @Override
@@ -80,8 +79,8 @@ public class DoubleAvgAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Long, Double>, AvgTuple<Long, Double>> {
 
         @Override
-        public Reducer<Key, AvgTuple<Long, Double>, AvgTuple<Long, Double>> newReducer(Key key) {
-            return new DoubleAvgReducer<Key>();
+        public Reducer<AvgTuple<Long, Double>, AvgTuple<Long, Double>> newReducer(Key key) {
+            return new DoubleAvgReducer();
         }
 
         @Override
@@ -90,14 +89,14 @@ public class DoubleAvgAggregation<Key, Value>
         }
     }
 
-    private static final class DoubleAvgCombiner<Key>
-            extends Combiner<Key, Double, AvgTuple<Long, Double>> {
+    private static final class DoubleAvgCombiner
+            extends Combiner<Double, AvgTuple<Long, Double>> {
 
         private long count;
         private double amount;
 
         @Override
-        public void combine(Key key, Double value) {
+        public void combine(Double value) {
             count++;
             amount += value;
         }
@@ -112,8 +111,8 @@ public class DoubleAvgAggregation<Key, Value>
         }
     }
 
-    private static final class DoubleAvgReducer<Key>
-            extends Reducer<Key, AvgTuple<Long, Double>, AvgTuple<Long, Double>> {
+    private static final class DoubleAvgReducer
+            extends Reducer<AvgTuple<Long, Double>, AvgTuple<Long, Double>> {
 
         private volatile long count;
         private volatile double amount;

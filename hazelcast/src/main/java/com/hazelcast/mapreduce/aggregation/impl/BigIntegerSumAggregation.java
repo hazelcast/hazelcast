@@ -63,8 +63,8 @@ public class BigIntegerSumAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, BigInteger, BigInteger> {
 
         @Override
-        public Combiner<Key, BigInteger, BigInteger> newCombiner(Key key) {
-            return new BigIntegerSumCombiner<Key>();
+        public Combiner<BigInteger, BigInteger> newCombiner(Key key) {
+            return new BigIntegerSumCombiner();
         }
 
         @Override
@@ -77,8 +77,8 @@ public class BigIntegerSumAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, BigInteger, BigInteger> {
 
         @Override
-        public Reducer<Key, BigInteger, BigInteger> newReducer(Key key) {
-            return new BigIntegerSumReducer<Key>();
+        public Reducer<BigInteger, BigInteger> newReducer(Key key) {
+            return new BigIntegerSumReducer();
         }
 
         @Override
@@ -87,26 +87,29 @@ public class BigIntegerSumAggregation<Key, Value>
         }
     }
 
-    private static final class BigIntegerSumCombiner<Key>
-            extends Combiner<Key, BigInteger, BigInteger> {
+    private static final class BigIntegerSumCombiner
+            extends Combiner<BigInteger, BigInteger> {
 
-        private BigInteger chunkSum = BigInteger.ZERO;
+        private BigInteger sum = BigInteger.ZERO;
 
         @Override
-        public void combine(Key key, BigInteger value) {
-            chunkSum = chunkSum.add(value);
+        public void combine(BigInteger value) {
+            sum = sum.add(value);
         }
 
         @Override
         public BigInteger finalizeChunk() {
-            BigInteger value = chunkSum;
-            chunkSum = BigInteger.ZERO;
-            return value;
+            return sum;
+        }
+
+        @Override
+        public void reset() {
+            sum = BigInteger.ZERO;
         }
     }
 
-    private static final class BigIntegerSumReducer<Key>
-            extends Reducer<Key, BigInteger, BigInteger> {
+    private static final class BigIntegerSumReducer
+            extends Reducer<BigInteger, BigInteger> {
 
         private volatile BigInteger sum = BigInteger.ZERO;
 

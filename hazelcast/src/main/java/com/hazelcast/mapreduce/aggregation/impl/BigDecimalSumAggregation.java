@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.math.BigDecimal;
@@ -64,8 +63,8 @@ public class BigDecimalSumAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
-        public Combiner<Key, BigDecimal, BigDecimal> newCombiner(Key key) {
-            return new BigDecimalSumCombiner<Key>();
+        public Combiner<BigDecimal, BigDecimal> newCombiner(Key key) {
+            return new BigDecimalSumCombiner();
         }
 
         @Override
@@ -78,8 +77,8 @@ public class BigDecimalSumAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
-        public Reducer<Key, BigDecimal, BigDecimal> newReducer(Key key) {
-            return new BigDecimalSumReducer<Key>();
+        public Reducer<BigDecimal, BigDecimal> newReducer(Key key) {
+            return new BigDecimalSumReducer();
         }
 
         @Override
@@ -88,26 +87,29 @@ public class BigDecimalSumAggregation<Key, Value>
         }
     }
 
-    private static final class BigDecimalSumCombiner<Key>
-            extends Combiner<Key, BigDecimal, BigDecimal> {
+    private static final class BigDecimalSumCombiner
+            extends Combiner<BigDecimal, BigDecimal> {
 
-        private BigDecimal chunkSum = BigDecimal.ZERO;
+        private BigDecimal sum = BigDecimal.ZERO;
 
         @Override
-        public void combine(Key key, BigDecimal value) {
-            chunkSum = chunkSum.add(value);
+        public void combine(BigDecimal value) {
+            sum = sum.add(value);
         }
 
         @Override
         public BigDecimal finalizeChunk() {
-            BigDecimal value = chunkSum;
-            chunkSum = BigDecimal.ZERO;
-            return value;
+            return sum;
+        }
+
+        @Override
+        public void reset() {
+            sum = BigDecimal.ZERO;
         }
     }
 
-    private static final class BigDecimalSumReducer<Key>
-            extends Reducer<Key, BigDecimal, BigDecimal> {
+    private static final class BigDecimalSumReducer
+            extends Reducer<BigDecimal, BigDecimal> {
 
         private volatile BigDecimal sum = BigDecimal.ZERO;
 

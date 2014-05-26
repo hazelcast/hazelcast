@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
@@ -63,8 +62,8 @@ public class DoubleSumAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Double, Double> {
 
         @Override
-        public Combiner<Key, Double, Double> newCombiner(Key key) {
-            return new DoubleSumCombiner<Key>();
+        public Combiner<Double, Double> newCombiner(Key key) {
+            return new DoubleSumCombiner();
         }
 
         @Override
@@ -77,8 +76,8 @@ public class DoubleSumAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, Double, Double> {
 
         @Override
-        public Reducer<Key, Double, Double> newReducer(Key key) {
-            return new DoubleSumReducer<Key>();
+        public Reducer<Double, Double> newReducer(Key key) {
+            return new DoubleSumReducer();
         }
 
         @Override
@@ -87,13 +86,13 @@ public class DoubleSumAggregation<Key, Value>
         }
     }
 
-    private static final class DoubleSumCombiner<Key>
-            extends Combiner<Key, Double, Double> {
+    private static final class DoubleSumCombiner
+            extends Combiner<Double, Double> {
 
         private long chunkSum;
 
         @Override
-        public void combine(Key key, Double value) {
+        public void combine(Double value) {
             chunkSum += value;
         }
 
@@ -105,8 +104,8 @@ public class DoubleSumAggregation<Key, Value>
         }
     }
 
-    private static final class DoubleSumReducer<Key>
-            extends Reducer<Key, Double, Double> {
+    private static final class DoubleSumReducer
+            extends Reducer<Double, Double> {
 
         private volatile double sum;
 

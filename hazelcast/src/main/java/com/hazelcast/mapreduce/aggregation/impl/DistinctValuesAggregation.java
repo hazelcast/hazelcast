@@ -71,7 +71,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
             extends AbstractAggregationCombinerFactory<Integer, DistinctType, Set<DistinctType>> {
 
         @Override
-        public Combiner<Integer, DistinctType, Set<DistinctType>> newCombiner(Integer key) {
+        public Combiner<DistinctType, Set<DistinctType>> newCombiner(Integer key) {
             return new DistinctValuesCombiner<DistinctType>();
         }
 
@@ -82,12 +82,12 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
     }
 
     private static class DistinctValuesCombiner<DistinctType>
-            extends Combiner<Integer, DistinctType, Set<DistinctType>> {
+            extends Combiner<DistinctType, Set<DistinctType>> {
 
         private final Set<DistinctType> distinctValues = new HashSet<DistinctType>();
 
         @Override
-        public void combine(Integer key, DistinctType value) {
+        public void combine(DistinctType value) {
             distinctValues.add(value);
         }
 
@@ -104,7 +104,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
             extends AbstractAggregationReducerFactory<Integer, Set<DistinctType>, Set<DistinctType>> {
 
         @Override
-        public Reducer<Integer, Set<DistinctType>, Set<DistinctType>> newReducer(Integer key) {
+        public Reducer<Set<DistinctType>, Set<DistinctType>> newReducer(Integer key) {
             return new DistinctValuesReducer<DistinctType>();
         }
 
@@ -115,7 +115,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
     }
 
     private static class DistinctValuesReducer<DistinctType>
-            extends Reducer<Integer, Set<DistinctType>, Set<DistinctType>> {
+            extends Reducer<Set<DistinctType>, Set<DistinctType>> {
 
         private final Set<DistinctType> distinctValues = new SetAdapter<DistinctType>();
 

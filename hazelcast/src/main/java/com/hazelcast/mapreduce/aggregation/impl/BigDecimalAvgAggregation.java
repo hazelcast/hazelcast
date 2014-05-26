@@ -66,8 +66,8 @@ public class BigDecimalAvgAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, BigDecimal, AvgTuple<Long, BigDecimal>> {
 
         @Override
-        public Combiner<Key, BigDecimal, AvgTuple<Long, BigDecimal>> newCombiner(Key key) {
-            return new BigDecimalAvgCombiner<Key>();
+        public Combiner<BigDecimal, AvgTuple<Long, BigDecimal>> newCombiner(Key key) {
+            return new BigDecimalAvgCombiner();
         }
 
         @Override
@@ -80,8 +80,8 @@ public class BigDecimalAvgAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>> {
 
         @Override
-        public Reducer<Key, AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>> newReducer(Key key) {
-            return new BigDecimalAvgReducer<Key>();
+        public Reducer<AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>> newReducer(Key key) {
+            return new BigDecimalAvgReducer();
         }
 
         @Override
@@ -91,29 +91,31 @@ public class BigDecimalAvgAggregation<Key, Value>
     }
 
     private static final class BigDecimalAvgCombiner<Key>
-            extends Combiner<Key, BigDecimal, AvgTuple<Long, BigDecimal>> {
+            extends Combiner<BigDecimal, AvgTuple<Long, BigDecimal>> {
 
         private long count;
         private BigDecimal amount = BigDecimal.ZERO;
 
         @Override
-        public void combine(Key key, BigDecimal value) {
+        public void combine(BigDecimal value) {
             count++;
             amount = amount.add(value);
         }
 
         @Override
         public AvgTuple<Long, BigDecimal> finalizeChunk() {
-            long count = this.count;
-            BigDecimal amount = this.amount;
-            this.count = 0;
-            this.amount = BigDecimal.ZERO;
             return new AvgTuple<Long, BigDecimal>(count, amount);
+        }
+
+        @Override
+        public void reset() {
+            count = 0;
+            amount = BigDecimal.ZERO;
         }
     }
 
     private static final class BigDecimalAvgReducer<Key>
-            extends Reducer<Key, AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>> {
+            extends Reducer<AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>> {
 
         private volatile long count;
         private volatile BigDecimal amount = BigDecimal.ZERO;

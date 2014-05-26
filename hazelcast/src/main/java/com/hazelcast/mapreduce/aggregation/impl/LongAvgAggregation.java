@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
@@ -66,8 +65,8 @@ public class LongAvgAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Long, AvgTuple<Long, Long>> {
 
         @Override
-        public Combiner<Key, Long, AvgTuple<Long, Long>> newCombiner(Key key) {
-            return new LongAvgCombiner<Key>();
+        public Combiner<Long, AvgTuple<Long, Long>> newCombiner(Key key) {
+            return new LongAvgCombiner();
         }
 
         @Override
@@ -80,8 +79,8 @@ public class LongAvgAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Long, Long>, AvgTuple<Long, Long>> {
 
         @Override
-        public Reducer<Key, AvgTuple<Long, Long>, AvgTuple<Long, Long>> newReducer(Key key) {
-            return new LongAvgReducer<Key>();
+        public Reducer<AvgTuple<Long, Long>, AvgTuple<Long, Long>> newReducer(Key key) {
+            return new LongAvgReducer();
         }
 
         @Override
@@ -90,14 +89,14 @@ public class LongAvgAggregation<Key, Value>
         }
     }
 
-    private static final class LongAvgCombiner<Key>
-            extends Combiner<Key, Long, AvgTuple<Long, Long>> {
+    private static final class LongAvgCombiner
+            extends Combiner<Long, AvgTuple<Long, Long>> {
 
         private long count;
         private long amount;
 
         @Override
-        public void combine(Key key, Long value) {
+        public void combine(Long value) {
             count++;
             amount += value;
         }
@@ -112,8 +111,8 @@ public class LongAvgAggregation<Key, Value>
         }
     }
 
-    private static final class LongAvgReducer<Key>
-            extends Reducer<Key, AvgTuple<Long, Long>, AvgTuple<Long, Long>> {
+    private static final class LongAvgReducer
+            extends Reducer<AvgTuple<Long, Long>, AvgTuple<Long, Long>> {
 
         private volatile long count;
         private volatile long amount;

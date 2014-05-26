@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
@@ -66,8 +65,8 @@ public class DoubleMinAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Double, Double> {
 
         @Override
-        public Combiner<Key, Double, Double> newCombiner(Key key) {
-            return new DoubleMinCombiner<Key>();
+        public Combiner<Double, Double> newCombiner(Key key) {
+            return new DoubleMinCombiner();
         }
 
         @Override
@@ -80,8 +79,8 @@ public class DoubleMinAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, Double, Double> {
 
         @Override
-        public Reducer<Key, Double, Double> newReducer(Key key) {
-            return new DoubleMinReducer<Key>();
+        public Reducer<Double, Double> newReducer(Key key) {
+            return new DoubleMinReducer();
         }
 
         @Override
@@ -90,13 +89,13 @@ public class DoubleMinAggregation<Key, Value>
         }
     }
 
-    private static final class DoubleMinCombiner<Key>
-            extends Combiner<Key, Double, Double> {
+    private static final class DoubleMinCombiner
+            extends Combiner<Double, Double> {
 
         private double chunkMin = Double.MAX_VALUE;
 
         @Override
-        public void combine(Key key, Double value) {
+        public void combine(Double value) {
             if (value < chunkMin) {
                 chunkMin = value;
             }
@@ -110,8 +109,8 @@ public class DoubleMinAggregation<Key, Value>
         }
     }
 
-    private static final class DoubleMinReducer<Key>
-            extends Reducer<Key, Double, Double> {
+    private static final class DoubleMinReducer
+            extends Reducer<Double, Double> {
 
         private volatile double min = Double.MAX_VALUE;
 

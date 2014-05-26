@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.math.BigDecimal;
@@ -65,8 +64,8 @@ public class BigDecimalMinAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
-        public Combiner<Key, BigDecimal, BigDecimal> newCombiner(Key key) {
-            return new BigDecimalMinCombiner<Key>();
+        public Combiner<BigDecimal, BigDecimal> newCombiner(Key key) {
+            return new BigDecimalMinCombiner();
         }
 
         @Override
@@ -79,8 +78,8 @@ public class BigDecimalMinAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
-        public Reducer<Key, BigDecimal, BigDecimal> newReducer(Key key) {
-            return new BigDecimalMinReducer<Key>();
+        public Reducer<BigDecimal, BigDecimal> newReducer(Key key) {
+            return new BigDecimalMinReducer();
         }
 
         @Override
@@ -89,26 +88,29 @@ public class BigDecimalMinAggregation<Key, Value>
         }
     }
 
-    private static final class BigDecimalMinCombiner<Key>
-            extends Combiner<Key, BigDecimal, BigDecimal> {
+    private static final class BigDecimalMinCombiner
+            extends Combiner<BigDecimal, BigDecimal> {
 
-        private BigDecimal chunkMin = null;
+        private BigDecimal min = null;
 
         @Override
-        public void combine(Key key, BigDecimal value) {
-            chunkMin = chunkMin == null ? value : value.min(chunkMin);
+        public void combine(BigDecimal value) {
+            min = min == null ? value : value.min(min);
         }
 
         @Override
         public BigDecimal finalizeChunk() {
-            BigDecimal value = chunkMin;
-            chunkMin = null;
-            return value;
+            return min;
+        }
+
+        @Override
+        public void reset() {
+            min = null;
         }
     }
 
-    private static final class BigDecimalMinReducer<Key>
-            extends Reducer<Key, BigDecimal, BigDecimal> {
+    private static final class BigDecimalMinReducer
+            extends Reducer<BigDecimal, BigDecimal> {
 
         private volatile BigDecimal min = null;
 

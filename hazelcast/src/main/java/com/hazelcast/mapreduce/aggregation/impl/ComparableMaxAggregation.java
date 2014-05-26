@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
@@ -66,8 +65,8 @@ public class ComparableMaxAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Comparable, Comparable> {
 
         @Override
-        public Combiner<Key, Comparable, Comparable> newCombiner(Key key) {
-            return new ComparableMaxCombiner<Key>();
+        public Combiner<Comparable, Comparable> newCombiner(Key key) {
+            return new ComparableMaxCombiner();
         }
 
         @Override
@@ -80,8 +79,8 @@ public class ComparableMaxAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, Comparable, Comparable> {
 
         @Override
-        public Reducer<Key, Comparable, Comparable> newReducer(Key key) {
-            return new ComparableMaxReducer<Key>();
+        public Reducer<Comparable, Comparable> newReducer(Key key) {
+            return new ComparableMaxReducer();
         }
 
         @Override
@@ -90,13 +89,13 @@ public class ComparableMaxAggregation<Key, Value>
         }
     }
 
-    private static final class ComparableMaxCombiner<Key>
-            extends Combiner<Key, Comparable, Comparable> {
+    private static final class ComparableMaxCombiner
+            extends Combiner<Comparable, Comparable> {
 
         private Comparable chunkMax = null;
 
         @Override
-        public void combine(Key key, Comparable value) {
+        public void combine(Comparable value) {
             if (chunkMax == null || value.compareTo(chunkMax) > 0) {
                 chunkMax = value;
             }
@@ -110,8 +109,8 @@ public class ComparableMaxAggregation<Key, Value>
         }
     }
 
-    private static final class ComparableMaxReducer<Key>
-            extends Reducer<Key, Comparable, Comparable> {
+    private static final class ComparableMaxReducer
+            extends Reducer<Comparable, Comparable> {
 
         private volatile Comparable max = null;
 

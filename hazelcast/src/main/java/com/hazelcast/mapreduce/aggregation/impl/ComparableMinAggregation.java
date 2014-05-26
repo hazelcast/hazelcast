@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
@@ -66,8 +65,8 @@ public class ComparableMinAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Comparable, Comparable> {
 
         @Override
-        public Combiner<Key, Comparable, Comparable> newCombiner(Key key) {
-            return new ComparableMinCombiner<Key>();
+        public Combiner<Comparable, Comparable> newCombiner(Key key) {
+            return new ComparableMinCombiner();
         }
 
         @Override
@@ -80,8 +79,8 @@ public class ComparableMinAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, Comparable, Comparable> {
 
         @Override
-        public Reducer<Key, Comparable, Comparable> newReducer(Key key) {
-            return new ComparableMinReducer<Key>();
+        public Reducer<Comparable, Comparable> newReducer(Key key) {
+            return new ComparableMinReducer();
         }
 
         @Override
@@ -90,13 +89,13 @@ public class ComparableMinAggregation<Key, Value>
         }
     }
 
-    private static final class ComparableMinCombiner<Key>
-            extends Combiner<Key, Comparable, Comparable> {
+    private static final class ComparableMinCombiner
+            extends Combiner<Comparable, Comparable> {
 
         private Comparable chunkMin = null;
 
         @Override
-        public void combine(Key key, Comparable value) {
+        public void combine(Comparable value) {
             if (chunkMin == null || value.compareTo(chunkMin) < 0) {
                 chunkMin = value;
             }
@@ -110,8 +109,8 @@ public class ComparableMinAggregation<Key, Value>
         }
     }
 
-    private static final class ComparableMinReducer<Key>
-            extends Reducer<Key, Comparable, Comparable> {
+    private static final class ComparableMinReducer
+            extends Reducer<Comparable, Comparable> {
 
         private volatile Comparable min = null;
 

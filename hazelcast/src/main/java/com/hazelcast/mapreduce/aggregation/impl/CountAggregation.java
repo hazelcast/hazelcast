@@ -62,8 +62,8 @@ public class CountAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Object, Long> {
 
         @Override
-        public Combiner<Key, Object, Long> newCombiner(Key key) {
-            return new CountCombiner<Key>();
+        public Combiner<Object, Long> newCombiner(Key key) {
+            return new CountCombiner();
         }
 
         @Override
@@ -76,8 +76,8 @@ public class CountAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
         @Override
-        public Reducer<Key, Long, Long> newReducer(Key key) {
-            return new CountReducer<Key>();
+        public Reducer<Long, Long> newReducer(Key key) {
+            return new CountReducer();
         }
 
         @Override
@@ -86,13 +86,13 @@ public class CountAggregation<Key, Value>
         }
     }
 
-    private static final class CountCombiner<Key>
-            extends Combiner<Key, Object, Long> {
+    private static final class CountCombiner
+            extends Combiner<Object, Long> {
 
         private long chunkCount;
 
         @Override
-        public void combine(Key key, Object value) {
+        public void combine(Object value) {
             chunkCount++;
         }
 
@@ -104,8 +104,8 @@ public class CountAggregation<Key, Value>
         }
     }
 
-    private static final class CountReducer<Key>
-            extends Reducer<Key, Long, Long> {
+    private static final class CountReducer
+            extends Reducer<Long, Long> {
 
         private volatile long count;
 

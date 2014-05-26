@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
@@ -66,8 +65,8 @@ public class IntegerMinAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Integer, Integer> {
 
         @Override
-        public Combiner<Key, Integer, Integer> newCombiner(Key key) {
-            return new IntegerMinCombiner<Key>();
+        public Combiner<Integer, Integer> newCombiner(Key key) {
+            return new IntegerMinCombiner();
         }
 
         @Override
@@ -80,8 +79,8 @@ public class IntegerMinAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, Integer, Integer> {
 
         @Override
-        public Reducer<Key, Integer, Integer> newReducer(Key key) {
-            return new IntegerMinReducer<Key>();
+        public Reducer<Integer, Integer> newReducer(Key key) {
+            return new IntegerMinReducer();
         }
 
         @Override
@@ -90,13 +89,13 @@ public class IntegerMinAggregation<Key, Value>
         }
     }
 
-    private static final class IntegerMinCombiner<Key>
-            extends Combiner<Key, Integer, Integer> {
+    private static final class IntegerMinCombiner
+            extends Combiner<Integer, Integer> {
 
         private int chunkMin = Integer.MAX_VALUE;
 
         @Override
-        public void combine(Key key, Integer value) {
+        public void combine(Integer value) {
             if (value < chunkMin) {
                 chunkMin = value;
             }
@@ -110,8 +109,8 @@ public class IntegerMinAggregation<Key, Value>
         }
     }
 
-    private static final class IntegerMinReducer<Key>
-            extends Reducer<Key, Integer, Integer> {
+    private static final class IntegerMinReducer
+            extends Reducer<Integer, Integer> {
 
         private volatile int min = Integer.MAX_VALUE;
 

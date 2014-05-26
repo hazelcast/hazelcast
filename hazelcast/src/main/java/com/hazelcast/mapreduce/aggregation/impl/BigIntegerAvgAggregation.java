@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.math.BigInteger;
@@ -67,8 +66,8 @@ public class BigIntegerAvgAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, BigInteger, AvgTuple<Long, BigInteger>> {
 
         @Override
-        public Combiner<Key, BigInteger, AvgTuple<Long, BigInteger>> newCombiner(Key key) {
-            return new BigIntegerAvgCombiner<Key>();
+        public Combiner<BigInteger, AvgTuple<Long, BigInteger>> newCombiner(Key key) {
+            return new BigIntegerAvgCombiner();
         }
 
         @Override
@@ -81,8 +80,8 @@ public class BigIntegerAvgAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>> {
 
         @Override
-        public Reducer<Key, AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>> newReducer(Key key) {
-            return new BigIntegerAvgReducer<Key>();
+        public Reducer<AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>> newReducer(Key key) {
+            return new BigIntegerAvgReducer();
         }
 
         @Override
@@ -91,30 +90,32 @@ public class BigIntegerAvgAggregation<Key, Value>
         }
     }
 
-    private static final class BigIntegerAvgCombiner<Key>
-            extends Combiner<Key, BigInteger, AvgTuple<Long, BigInteger>> {
+    private static final class BigIntegerAvgCombiner
+            extends Combiner<BigInteger, AvgTuple<Long, BigInteger>> {
 
         private long count;
         private BigInteger amount = BigInteger.ZERO;
 
         @Override
-        public void combine(Key key, BigInteger value) {
+        public void combine(BigInteger value) {
             count++;
             amount = amount.add(value);
         }
 
         @Override
         public AvgTuple<Long, BigInteger> finalizeChunk() {
-            long count = this.count;
-            BigInteger amount = this.amount;
-            this.count = 0;
-            this.amount = BigInteger.ZERO;
             return new AvgTuple<Long, BigInteger>(count, amount);
+        }
+
+        @Override
+        public void reset() {
+            count = 0;
+            amount = BigInteger.ZERO;
         }
     }
 
-    private static final class BigIntegerAvgReducer<Key>
-            extends Reducer<Key, AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>> {
+    private static final class BigIntegerAvgReducer
+            extends Reducer<AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>> {
 
         private volatile long count;
         private volatile BigInteger amount = BigInteger.ZERO;

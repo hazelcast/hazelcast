@@ -64,8 +64,8 @@ public class BigIntegerMaxAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, BigInteger, BigInteger> {
 
         @Override
-        public Combiner<Key, BigInteger, BigInteger> newCombiner(Key key) {
-            return new BigIntegerMaxCombiner<Key>();
+        public Combiner<BigInteger, BigInteger> newCombiner(Key key) {
+            return new BigIntegerMaxCombiner();
         }
 
         @Override
@@ -78,8 +78,8 @@ public class BigIntegerMaxAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, BigInteger, BigInteger> {
 
         @Override
-        public Reducer<Key, BigInteger, BigInteger> newReducer(Key key) {
-            return new BigIntegerMaxReducer<Key>();
+        public Reducer<BigInteger, BigInteger> newReducer(Key key) {
+            return new BigIntegerMaxReducer();
         }
 
         @Override
@@ -88,26 +88,29 @@ public class BigIntegerMaxAggregation<Key, Value>
         }
     }
 
-    private static final class BigIntegerMaxCombiner<Key>
-            extends Combiner<Key, BigInteger, BigInteger> {
+    private static final class BigIntegerMaxCombiner
+            extends Combiner<BigInteger, BigInteger> {
 
-        private BigInteger chunkMax = null;
+        private BigInteger max = null;
 
         @Override
-        public void combine(Key key, BigInteger value) {
-            chunkMax = chunkMax == null ? value : value.max(chunkMax);
+        public void combine(BigInteger value) {
+            max = max == null ? value : value.max(max);
         }
 
         @Override
         public BigInteger finalizeChunk() {
-            BigInteger value = chunkMax;
-            chunkMax = null;
-            return value;
+            return max;
+        }
+
+        @Override
+        public void reset() {
+            max = null;
         }
     }
 
-    private static final class BigIntegerMaxReducer<Key>
-            extends Reducer<Key, BigInteger, BigInteger> {
+    private static final class BigIntegerMaxReducer
+            extends Reducer<BigInteger, BigInteger> {
 
         private volatile BigInteger max = null;
 

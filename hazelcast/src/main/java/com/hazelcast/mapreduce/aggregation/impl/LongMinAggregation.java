@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
@@ -66,8 +65,8 @@ public class LongMinAggregation<Key, Value>
             extends AbstractAggregationCombinerFactory<Key, Long, Long> {
 
         @Override
-        public Combiner<Key, Long, Long> newCombiner(Key key) {
-            return new LongMinCombiner<Key>();
+        public Combiner<Long, Long> newCombiner(Key key) {
+            return new LongMinCombiner();
         }
 
         @Override
@@ -80,8 +79,8 @@ public class LongMinAggregation<Key, Value>
             extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
         @Override
-        public Reducer<Key, Long, Long> newReducer(Key key) {
-            return new LongMinReducer<Key>();
+        public Reducer<Long, Long> newReducer(Key key) {
+            return new LongMinReducer();
         }
 
         @Override
@@ -90,13 +89,13 @@ public class LongMinAggregation<Key, Value>
         }
     }
 
-    private static final class LongMinCombiner<Key>
-            extends Combiner<Key, Long, Long> {
+    private static final class LongMinCombiner
+            extends Combiner<Long, Long> {
 
         private long chunkMin = Long.MAX_VALUE;
 
         @Override
-        public void combine(Key key, Long value) {
+        public void combine(Long value) {
             if (value < chunkMin) {
                 chunkMin = value;
             }
@@ -110,8 +109,8 @@ public class LongMinAggregation<Key, Value>
         }
     }
 
-    private static final class LongMinReducer<Key>
-            extends Reducer<Key, Long, Long> {
+    private static final class LongMinReducer
+            extends Reducer<Long, Long> {
 
         private volatile long min = Long.MAX_VALUE;
 
