@@ -156,23 +156,26 @@ For our word count example, we are going to have a simple CombinerFactory and Co
 public class WordCountCombinerFactory implements CombinerFactory<String, Long, Long> {
 
     @Override
-    public Combiner<String, Long, Long> newCombiner( String key ) {
+    public Combiner<Long, Long> newCombiner( String key ) {
         return new WordCountCombiner();
     }
 
-    private class WordCountCombiner extends Combiner<String, Long, Long> {
+    private class WordCountCombiner extends Combiner<Long, Long> {
         private long sum = 0;
 
         @Override
-        public void combine( String key, Long value ) {
+        public void combine( Long value ) {
             sum++;
         }
 
         @Override
         public Long finalizeChunk() {
-            long chunk = sum;
+            return sum;
+        }
+        
+        @Override
+        public void reset() {
             sum = 0;
-            return chunk;
         }
     }
 }
@@ -196,11 +199,11 @@ Again for our word count example, the implementation will look similar to the fo
 public class WordCountReducerFactory implements ReducerFactory<String, Long, Long> {
 
     @Override
-    public Reducer<String, Long, Long> newReducer( String key ) {
+    public Reducer<Long, Long> newReducer( String key ) {
         return new WordCountReducer();
     }
 
-    private class WordCountReducer extends Reducer<String, Long, Long> {
+    private class WordCountReducer extends Reducer<Long, Long> {
 
         private volatile long sum = 0;
 

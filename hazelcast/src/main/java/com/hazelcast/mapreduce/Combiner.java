@@ -35,11 +35,11 @@ import com.hazelcast.spi.annotation.Beta;
  * A simple Combiner implementation in combination with a {@link Reducer} could look
  * like that avg-function implementation:
  * <pre>
- * public class AvgCombiner implements Combiner&lt;String, Integer, Tuple&lt;Long, Long>>
+ * public class AvgCombiner implements Combiner&lt;Integer, Tuple&lt;Long, Long>>
  * {
  *   private long count;
  *   private long amount;
- *   public void combine(String key, Integer value)
+ *   public void combine(Integer value)
  *   {
  *     count++;
  *     amount += value;
@@ -47,18 +47,18 @@ import com.hazelcast.spi.annotation.Beta;
  *
  *   public Tuple&lt;Long, Long> finalizeChunk()
  *   {
- *     Tuple&lt;Long, Long> tuple = new Tuple&lt;>(count, amount);
+ *     Tuple&lt;Long, Long> tuple = new Tuple&lt;>( count, amount );
  *     count = 0;
  *     amount = 0;
  *     return tuple;
  *   }
  * }
  *
- * public class SumReducer implements Reducer&lt;String, Tuple&lt;Long, Long>, Integer>
+ * public class SumReducer implements Reducer&lt;Tuple&lt;Long, Long>, Integer>
  * {
  *   private long count;
  *   private long amount;
- *   public void reduce( String key, Tuple&lt;Long, Long> value )
+ *   public void reduce( Tuple&lt;Long, Long> value )
  *   {
  *     count += value.getFirst();
  *     amount += value.getSecond();
@@ -72,13 +72,12 @@ import com.hazelcast.spi.annotation.Beta;
  * </pre>
  * </p>
  *
- * @param <KeyIn>    key type of the resulting keys
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
  * @since 3.2
  */
 @Beta
-public abstract class Combiner<KeyIn, ValueIn, ValueOut> {
+public abstract class Combiner<ValueIn, ValueOut> {
 
     /**
      * This method is called before the first value is submitted to this Combiner instance.
@@ -96,10 +95,9 @@ public abstract class Combiner<KeyIn, ValueIn, ValueOut> {
      * After this method is called you need to reset the internal state to prepare combining of
      * the next chunk.
      *
-     * @param key   key of the mapped values
      * @param value value to be reduced
      */
-    public abstract void combine(KeyIn key, ValueIn value);
+    public abstract void combine(ValueIn value);
 
     /**
      * Creates a chunk of {@link ValueOut} to be send to the {@link Reducer} for the according
@@ -108,6 +106,14 @@ public abstract class Combiner<KeyIn, ValueIn, ValueOut> {
      * @return chunk of intermediate data
      */
     public abstract ValueOut finalizeChunk();
+
+    /**
+     * This method is called always after a chunk of data is retrieved. It is used to reset
+     * the internal state of the Combiner. It is equivalent to resetting the state inside of
+     * {@link #finalizeChunk()} as with the last version of the API.
+     */
+    public void reset() {
+    }
 
     /**
      * This method is called after mapping phase is over. It is intended to be overridden

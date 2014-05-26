@@ -42,6 +42,6 @@ public interface CombinerFactory<KeyIn, ValueIn, ValueOut>
      * @param key key the Combiner is build for
      * @return a Combiner instance specific for the given key
      */
-    Combiner<KeyIn, ValueIn, ValueOut> newCombiner(KeyIn key);
+    Combiner<ValueIn, ValueOut> newCombiner(KeyIn key);
 
 }

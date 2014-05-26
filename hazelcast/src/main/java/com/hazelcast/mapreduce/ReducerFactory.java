@@ -40,6 +40,6 @@ public interface ReducerFactory<KeyIn, ValueIn, ValueOut>
      * @param key key the Reducer is build for
      * @return a Reducer instance specific for the given key
      */
-    Reducer<KeyIn, ValueIn, ValueOut> newReducer(KeyIn key);
+    Reducer<ValueIn, ValueOut> newReducer(KeyIn key);
 
 }

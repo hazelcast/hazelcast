@@ -193,7 +193,7 @@ public class MapReduceManagedContextTest
         private transient HazelcastInstance hazelcastInstance;
 
         @Override
-        public Combiner<String, Integer, Integer> newCombiner(String key) {
+        public Combiner<Integer, Integer> newCombiner(String key) {
             hazelcastInstance.getName();
             return new InjectedCombiner();
         }
@@ -204,12 +204,12 @@ public class MapReduceManagedContextTest
         }
 
         private class InjectedCombiner
-                extends Combiner<String, Integer, Integer> {
+                extends Combiner<Integer, Integer> {
 
             private int count;
 
             @Override
-            public void combine(String key, Integer value) {
+            public void combine(Integer value) {
                 count += value;
             }
 
@@ -228,7 +228,7 @@ public class MapReduceManagedContextTest
         private transient HazelcastInstance hazelcastInstance;
 
         @Override
-        public Reducer<String, Integer, Integer> newReducer(String key) {
+        public Reducer<Integer, Integer> newReducer(String key) {
             hazelcastInstance.getName();
             return new InjectedReducer();
         }
@@ -239,7 +239,7 @@ public class MapReduceManagedContextTest
         }
 
         private class InjectedReducer
-                extends Reducer<String, Integer, Integer> {
+                extends Reducer<Integer, Integer> {
 
             private volatile int count;
 

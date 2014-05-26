@@ -44,7 +44,7 @@ public class DefaultContext<KeyIn, ValueIn>
     private static final AtomicIntegerFieldUpdater<DefaultContext> COLLECTED_UPDATER = AtomicIntegerFieldUpdater
             .newUpdater(DefaultContext.class, "collected");
 
-    private final Map<KeyIn, Combiner<KeyIn, ValueIn, ?>> combiners = new HashMap<KeyIn, Combiner<KeyIn, ValueIn, ?>>();
+    private final Map<KeyIn, Combiner<ValueIn, ?>> combiners = new HashMap<KeyIn, Combiner<ValueIn, ?>>();
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
 
@@ -64,8 +64,8 @@ public class DefaultContext<KeyIn, ValueIn>
 
     @Override
     public void emit(KeyIn key, ValueIn value) {
-        Combiner<KeyIn, ValueIn, ?> combiner = getOrCreateCombiner(key);
-        combiner.combine(key, value);
+        Combiner<ValueIn, ?> combiner = getOrCreateCombiner(key);
+        combiner.combine(value);
         COLLECTED_UPDATER.incrementAndGet(this);
         mapCombineTask.onEmit(this, partitionId);
     }
@@ -73,8 +73,11 @@ public class DefaultContext<KeyIn, ValueIn>
     public <Chunk> Map<KeyIn, Chunk> requestChunk() {
         int mapSize = MapReduceUtil.mapSize(combiners.size());
         Map<KeyIn, Chunk> chunkMap = new HashMapAdapter<KeyIn, Chunk>(mapSize);
-        for (Map.Entry<KeyIn, Combiner<KeyIn, ValueIn, ?>> entry : combiners.entrySet()) {
-            Chunk chunk = (Chunk) entry.getValue().finalizeChunk();
+        for (Map.Entry<KeyIn, Combiner<ValueIn, ?>> entry : combiners.entrySet()) {
+            Combiner<ValueIn, ?> combiner = entry.getValue();
+            Chunk chunk = (Chunk) combiner.finalizeChunk();
+            combiner.reset();
+
             if (chunk != null) {
                 chunkMap.put(entry.getKey(), chunk);
             }
@@ -88,14 +91,14 @@ public class DefaultContext<KeyIn, ValueIn>
     }
 
     public <Chunk> Map<KeyIn, Chunk> finish() {
-        for (Combiner<KeyIn, ValueIn, ?> combiner : combiners.values()) {
+        for (Combiner<ValueIn, ?> combiner : combiners.values()) {
             combiner.finalizeCombine();
         }
         return requestChunk();
     }
 
-    private Combiner<KeyIn, ValueIn, ?> getOrCreateCombiner(KeyIn key) {
-        Combiner<KeyIn, ValueIn, ?> combiner = combiners.get(key);
+    private Combiner<ValueIn, ?> getOrCreateCombiner(KeyIn key) {
+        Combiner<ValueIn, ?> combiner = combiners.get(key);
         if (combiner == null) {
             combiner = combinerFactory.newCombiner(key);
             combiners.put(key, combiner);
@@ -116,21 +119,24 @@ public class DefaultContext<KeyIn, ValueIn>
             implements CombinerFactory<KeyIn, ValueIn, List<ValueIn>> {
 
         @Override
-        public Combiner<KeyIn, ValueIn, List<ValueIn>> newCombiner(KeyIn key) {
-            return new Combiner<KeyIn, ValueIn, List<ValueIn>>() {
+        public Combiner<ValueIn, List<ValueIn>> newCombiner(KeyIn key) {
+            return new Combiner<ValueIn, List<ValueIn>>() {
 
                 private final List<ValueIn> values = new ArrayList<ValueIn>();
 
                 @Override
-                public void combine(KeyIn key, ValueIn value) {
+                public void combine(ValueIn value) {
                     values.add(value);
                 }
 
                 @Override
                 public List<ValueIn> finalizeChunk() {
-                    List<ValueIn> values = new ArrayList<ValueIn>(this.values);
+                    return new ArrayList<ValueIn>(this.values);
+                }
+
+                @Override
+                public void reset() {
                     this.values.clear();
-                    return values;
                 }
             };
         }

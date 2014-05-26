@@ -16,8 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -74,12 +74,9 @@ public class CustomDataSourceMapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(new CustomKeyValueSource());
-        ICompletableFuture<Map<String, Integer>> completableFuture =
-                job.chunkSize(10)
-                        .mapper(new CustomMapper())
-                        .combiner(new CustomCombinerFactory())
-                        .reducer(new CustomReducerFactory())
-                        .submit();
+        ICompletableFuture<Map<String, Integer>> completableFuture = job.chunkSize(10).mapper(new CustomMapper())
+                                                                        .combiner(new CustomCombinerFactory())
+                                                                        .reducer(new CustomReducerFactory()).submit();
 
         Map<String, Integer> result = completableFuture.get();
 
@@ -149,7 +146,8 @@ public class CustomDataSourceMapReduceTest
         }
 
         @Override
-        public void close() throws IOException {
+        public void close()
+                throws IOException {
         }
     }
 
@@ -164,12 +162,12 @@ public class CustomDataSourceMapReduceTest
     }
 
     public static class CustomCombiner
-            extends Combiner<String, Integer, Integer> {
+            extends Combiner<Integer, Integer> {
 
         private int value;
 
         @Override
-        public void combine(String key, Integer value) {
+        public void combine(Integer value) {
             this.value += value;
         }
 
@@ -185,12 +183,13 @@ public class CustomDataSourceMapReduceTest
             implements CombinerFactory<String, Integer, Integer> {
 
         @Override
-        public Combiner<String, Integer, Integer> newCombiner(String key) {
+        public Combiner<Integer, Integer> newCombiner(String key) {
             return new CustomCombiner();
         }
     }
 
-    public static class CustomReducer extends Reducer<String, Integer, Integer> {
+    public static class CustomReducer
+            extends Reducer<Integer, Integer> {
 
         private int value;
 
@@ -209,7 +208,7 @@ public class CustomDataSourceMapReduceTest
             implements ReducerFactory<String, Integer, Integer> {
 
         @Override
-        public Reducer<String, Integer, Integer> newReducer(String key) {
+        public Reducer<Integer, Integer> newReducer(String key) {
             return new CustomReducer();
         }
     }
