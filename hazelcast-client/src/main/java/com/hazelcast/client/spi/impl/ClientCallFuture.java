@@ -134,6 +134,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             if (this.response != null && handler == null) {
                 logger.warning("The Future.set() method can only be called once. Request: " + request
                         + ", current response: " + this.response + ", new response: " + response);
+                return;
             }
 
             if (handler != null && !(response instanceof Throwable)) {
