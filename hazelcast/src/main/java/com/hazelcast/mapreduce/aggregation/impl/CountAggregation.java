@@ -59,20 +59,30 @@ public class CountAggregation<Key, Value>
     }
 
     static final class CountCombinerFactory<Key>
-            implements CombinerFactory<Key, Object, Long> {
+            extends AbstractAggregationCombinerFactory<Key, Object, Long> {
 
         @Override
         public Combiner<Key, Object, Long> newCombiner(Key key) {
             return new CountCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.COUNT_COMBINER_FACTORY;
+        }
     }
 
     static final class CountReducerFactory<Key>
-            implements ReducerFactory<Key, Long, Long> {
+            extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
         @Override
         public Reducer<Key, Long, Long> newReducer(Key key) {
             return new CountReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.COUNT_REDUCER_FACTORY;
         }
     }
 

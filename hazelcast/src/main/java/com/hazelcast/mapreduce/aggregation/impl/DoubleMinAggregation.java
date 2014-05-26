@@ -63,20 +63,30 @@ public class DoubleMinAggregation<Key, Value>
     }
 
     static final class DoubleMinCombinerFactory<Key>
-            implements CombinerFactory<Key, Double, Double> {
+            extends AbstractAggregationCombinerFactory<Key, Double, Double> {
 
         @Override
         public Combiner<Key, Double, Double> newCombiner(Key key) {
             return new DoubleMinCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.DOUBLE_MIN_COMBINER_FACTORY;
+        }
     }
 
     static final class DoubleMinReducerFactory<Key>
-            implements ReducerFactory<Key, Double, Double> {
+            extends AbstractAggregationReducerFactory<Key, Double, Double> {
 
         @Override
         public Reducer<Key, Double, Double> newReducer(Key key) {
             return new DoubleMinReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.DOUBLE_MIN_REDUCER_FACTORY;
         }
     }
 

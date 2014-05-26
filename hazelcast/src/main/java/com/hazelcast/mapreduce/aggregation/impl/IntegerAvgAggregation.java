@@ -63,20 +63,30 @@ public class IntegerAvgAggregation<Key, Value>
     }
 
     static final class IntegerAvgCombinerFactory<Key>
-            implements CombinerFactory<Key, Integer, AvgTuple<Integer, Integer>> {
+            extends AbstractAggregationCombinerFactory<Key, Integer, AvgTuple<Integer, Integer>> {
 
         @Override
         public Combiner<Key, Integer, AvgTuple<Integer, Integer>> newCombiner(Key key) {
             return new IntegerAvgCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.INTEGER_AVG_COMBINER_FACTORY;
+        }
     }
 
     static final class IntegerAvgReducerFactory<Key>
-            implements ReducerFactory<Key, AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
+            extends AbstractAggregationReducerFactory<Key, AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
 
         @Override
         public Reducer<Key, AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> newReducer(Key key) {
             return new IntegerAvgReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.INTEGER_AVG_REDUCER_FACTORY;
         }
     }
 

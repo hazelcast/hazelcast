@@ -54,33 +54,43 @@ public class ComparableMinAggregation<Key, Value>
 
     @Override
     public CombinerFactory<Key, Comparable, Comparable> getCombinerFactory() {
-        return new ComparableMaxCombinerFactory<Key>();
+        return new ComparableMinCombinerFactory<Key>();
     }
 
     @Override
     public ReducerFactory<Key, Comparable, Comparable> getReducerFactory() {
-        return new ComparableMaxReducerFactory<Key>();
+        return new ComparableMinReducerFactory<Key>();
     }
 
-    static final class ComparableMaxCombinerFactory<Key>
-            implements CombinerFactory<Key, Comparable, Comparable> {
+    static final class ComparableMinCombinerFactory<Key>
+            extends AbstractAggregationCombinerFactory<Key, Comparable, Comparable> {
 
         @Override
         public Combiner<Key, Comparable, Comparable> newCombiner(Key key) {
-            return new ComparableMaxCombiner<Key>();
+            return new ComparableMinCombiner<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.COMPARABLE_MIN_COMBINER_FACTORY;
         }
     }
 
-    static final class ComparableMaxReducerFactory<Key>
-            implements ReducerFactory<Key, Comparable, Comparable> {
+    static final class ComparableMinReducerFactory<Key>
+            extends AbstractAggregationReducerFactory<Key, Comparable, Comparable> {
 
         @Override
         public Reducer<Key, Comparable, Comparable> newReducer(Key key) {
-            return new ComparableMaxReducer<Key>();
+            return new ComparableMinReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.COMPARABLE_MIN_REDUCER_FACTORY;
         }
     }
 
-    private static final class ComparableMaxCombiner<Key>
+    private static final class ComparableMinCombiner<Key>
             extends Combiner<Key, Comparable, Comparable> {
 
         private Comparable chunkMin = null;
@@ -100,7 +110,7 @@ public class ComparableMinAggregation<Key, Value>
         }
     }
 
-    private static final class ComparableMaxReducer<Key>
+    private static final class ComparableMinReducer<Key>
             extends Reducer<Key, Comparable, Comparable> {
 
         private volatile Comparable min = null;

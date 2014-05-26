@@ -63,20 +63,30 @@ public class LongMaxAggregation<Key, Value>
     }
 
     static final class LongMaxCombinerFactory<Key>
-            implements CombinerFactory<Key, Long, Long> {
+            extends AbstractAggregationCombinerFactory<Key, Long, Long> {
 
         @Override
         public Combiner<Key, Long, Long> newCombiner(Key key) {
             return new LongMaxCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.LONG_MAX_COMBINER_FACTORY;
+        }
     }
 
     static final class LongMaxReducerFactory<Key>
-            implements ReducerFactory<Key, Long, Long> {
+            extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
         @Override
         public Reducer<Key, Long, Long> newReducer(Key key) {
             return new LongMaxReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.LONG_MAX_REDUCER_FACTORY;
         }
     }
 

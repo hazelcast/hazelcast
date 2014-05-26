@@ -63,20 +63,30 @@ public class ComparableMaxAggregation<Key, Value>
     }
 
     static final class ComparableMaxCombinerFactory<Key>
-            implements CombinerFactory<Key, Comparable, Comparable> {
+            extends AbstractAggregationCombinerFactory<Key, Comparable, Comparable> {
 
         @Override
         public Combiner<Key, Comparable, Comparable> newCombiner(Key key) {
             return new ComparableMaxCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.COMPARABLE_MAX_COMBINER_FACTORY;
+        }
     }
 
     static final class ComparableMaxReducerFactory<Key>
-            implements ReducerFactory<Key, Comparable, Comparable> {
+            extends AbstractAggregationReducerFactory<Key, Comparable, Comparable> {
 
         @Override
         public Reducer<Key, Comparable, Comparable> newReducer(Key key) {
             return new ComparableMaxReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.COMPARABLE_MAX_REDUCER_FACTORY;
         }
     }
 

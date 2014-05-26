@@ -60,20 +60,30 @@ public class IntegerSumAggregation<Key, Value>
     }
 
     static final class IntegerSumCombinerFactory<Key>
-            implements CombinerFactory<Key, Integer, Integer> {
+            extends AbstractAggregationCombinerFactory<Key, Integer, Integer> {
 
         @Override
         public Combiner<Key, Integer, Integer> newCombiner(Key key) {
             return new IntegerSumCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.INTEGER_SUM_COMBINER_FACTORY;
+        }
     }
 
     static final class IntegerSumReducerFactory<Key>
-            implements ReducerFactory<Key, Integer, Integer> {
+            extends AbstractAggregationReducerFactory<Key, Integer, Integer> {
 
         @Override
         public Reducer<Key, Integer, Integer> newReducer(Key key) {
             return new IntegerSumReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.INTEGER_SUM_REDUCER_FACTORY;
         }
     }
 

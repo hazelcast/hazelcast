@@ -59,20 +59,30 @@ public class LongSumAggregation<Key, Value>
     }
 
     static final class LongSumCombinerFactory<Key>
-            implements CombinerFactory<Key, Long, Long> {
+            extends AbstractAggregationCombinerFactory<Key, Long, Long> {
 
         @Override
         public Combiner<Key, Long, Long> newCombiner(Key key) {
             return new LongSumCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.LONG_SUM_COMBINER_FACTORY;
+        }
     }
 
     static final class LongSumReducerFactory<Key>
-            implements ReducerFactory<Key, Long, Long> {
+            extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
         @Override
         public Reducer<Key, Long, Long> newReducer(Key key) {
             return new LongSumReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.LONG_SUM_REDUCER_FACTORY;
         }
     }
 

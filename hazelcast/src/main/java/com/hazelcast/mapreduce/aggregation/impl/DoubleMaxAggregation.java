@@ -63,20 +63,30 @@ public class DoubleMaxAggregation<Key, Value>
     }
 
     static final class DoubleMaxCombinerFactory<Key>
-            implements CombinerFactory<Key, Double, Double> {
+            extends AbstractAggregationCombinerFactory<Key, Double, Double> {
 
         @Override
         public Combiner<Key, Double, Double> newCombiner(Key key) {
             return new DoubleMaxCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.DOUBLE_MAX_COMBINER_FACTORY;
+        }
     }
 
     static final class DoubleMaxReducerFactory<Key>
-            implements ReducerFactory<Key, Double, Double> {
+            extends AbstractAggregationReducerFactory<Key, Double, Double> {
 
         @Override
         public Reducer<Key, Double, Double> newReducer(Key key) {
             return new DoubleMaxReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.DOUBLE_MAX_REDUCER_FACTORY;
         }
     }
 

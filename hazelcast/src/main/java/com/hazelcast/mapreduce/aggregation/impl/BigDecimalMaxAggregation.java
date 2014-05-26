@@ -62,20 +62,30 @@ public class BigDecimalMaxAggregation<Key, Value>
     }
 
     static final class BigDecimalMaxCombinerFactory<Key>
-            implements CombinerFactory<Key, BigDecimal, BigDecimal> {
+            extends AbstractAggregationCombinerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
         public Combiner<Key, BigDecimal, BigDecimal> newCombiner(Key key) {
             return new BigDecimalMaxCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.BIG_DECIMAL_MAX_COMBINER_FACTORY;
+        }
     }
 
     static final class BigDecimalMaxReducerFactory<Key>
-            implements ReducerFactory<Key, BigDecimal, BigDecimal> {
+            extends AbstractAggregationReducerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
         public Reducer<Key, BigDecimal, BigDecimal> newReducer(Key key) {
             return new BigDecimalMaxReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.BIG_DECIMAL_MAX_REDUCER_FACTORY;
         }
     }
 

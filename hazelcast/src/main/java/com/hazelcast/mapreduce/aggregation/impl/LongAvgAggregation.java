@@ -63,20 +63,30 @@ public class LongAvgAggregation<Key, Value>
     }
 
     static final class LongAvgCombinerFactory<Key>
-            implements CombinerFactory<Key, Long, AvgTuple<Long, Long>> {
+            extends AbstractAggregationCombinerFactory<Key, Long, AvgTuple<Long, Long>> {
 
         @Override
         public Combiner<Key, Long, AvgTuple<Long, Long>> newCombiner(Key key) {
             return new LongAvgCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.LONG_AVG_COMBINER_FACTORY;
+        }
     }
 
     static final class LongAvgReducerFactory<Key>
-            implements ReducerFactory<Key, AvgTuple<Long, Long>, AvgTuple<Long, Long>> {
+            extends AbstractAggregationReducerFactory<Key, AvgTuple<Long, Long>, AvgTuple<Long, Long>> {
 
         @Override
         public Reducer<Key, AvgTuple<Long, Long>, AvgTuple<Long, Long>> newReducer(Key key) {
             return new LongAvgReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.LONG_AVG_REDUCER_FACTORY;
         }
     }
 

@@ -63,20 +63,30 @@ public class IntegerMinAggregation<Key, Value>
     }
 
     static final class IntegerMinCombinerFactory<Key>
-            implements CombinerFactory<Key, Integer, Integer> {
+            extends AbstractAggregationCombinerFactory<Key, Integer, Integer> {
 
         @Override
         public Combiner<Key, Integer, Integer> newCombiner(Key key) {
             return new IntegerMinCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.INTEGER_MIN_COMBINER_FACTORY;
+        }
     }
 
     static final class IntegerMinReducerFactory<Key>
-            implements ReducerFactory<Key, Integer, Integer> {
+            extends AbstractAggregationReducerFactory<Key, Integer, Integer> {
 
         @Override
         public Reducer<Key, Integer, Integer> newReducer(Key key) {
             return new IntegerMinReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.INTEGER_MIN_REDUCER_FACTORY;
         }
     }
 

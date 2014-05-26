@@ -63,20 +63,30 @@ public class LongMinAggregation<Key, Value>
     }
 
     static final class LongMinCombinerFactory<Key>
-            implements CombinerFactory<Key, Long, Long> {
+            extends AbstractAggregationCombinerFactory<Key, Long, Long> {
 
         @Override
         public Combiner<Key, Long, Long> newCombiner(Key key) {
             return new LongMinCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.LONG_MIN_COMBINER_FACTORY;
+        }
     }
 
     static final class LongMinReducerFactory<Key>
-            implements ReducerFactory<Key, Long, Long> {
+            extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
         @Override
         public Reducer<Key, Long, Long> newReducer(Key key) {
             return new LongMinReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.LONG_MIN_REDUCER_FACTORY;
         }
     }
 

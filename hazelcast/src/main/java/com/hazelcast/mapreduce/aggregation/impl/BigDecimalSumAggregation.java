@@ -61,20 +61,30 @@ public class BigDecimalSumAggregation<Key, Value>
     }
 
     static final class BigDecimalSumCombinerFactory<Key>
-            implements CombinerFactory<Key, BigDecimal, BigDecimal> {
+            extends AbstractAggregationCombinerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
         public Combiner<Key, BigDecimal, BigDecimal> newCombiner(Key key) {
             return new BigDecimalSumCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.BIG_DECIMAL_SUM_COMBINER_FACTORY;
+        }
     }
 
     static final class BigDecimalSumReducerFactory<Key>
-            implements ReducerFactory<Key, BigDecimal, BigDecimal> {
+            extends AbstractAggregationReducerFactory<Key, BigDecimal, BigDecimal> {
 
         @Override
         public Reducer<Key, BigDecimal, BigDecimal> newReducer(Key key) {
             return new BigDecimalSumReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.BIG_DECIMAL_SUM_REDUCER_FACTORY;
         }
     }
 

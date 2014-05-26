@@ -68,11 +68,16 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
     }
 
     static class DistinctValuesCombinerFactory<DistinctType>
-            implements CombinerFactory<Integer, DistinctType, Set<DistinctType>> {
+            extends AbstractAggregationCombinerFactory<Integer, DistinctType, Set<DistinctType>> {
 
         @Override
         public Combiner<Integer, DistinctType, Set<DistinctType>> newCombiner(Integer key) {
             return new DistinctValuesCombiner<DistinctType>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.DISTINCT_VALUES_COMBINER_FACTORY;
         }
     }
 
@@ -96,11 +101,16 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
     }
 
     static class DistinctValuesReducerFactory<DistinctType>
-            implements ReducerFactory<Integer, Set<DistinctType>, Set<DistinctType>> {
+            extends AbstractAggregationReducerFactory<Integer, Set<DistinctType>, Set<DistinctType>> {
 
         @Override
         public Reducer<Integer, Set<DistinctType>, Set<DistinctType>> newReducer(Integer key) {
             return new DistinctValuesReducer<DistinctType>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.DISTINCT_VALUES_REDUCER_FACTORY;
         }
     }
 

@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.math.BigInteger;
@@ -61,20 +60,30 @@ public class BigIntegerSumAggregation<Key, Value>
     }
 
     static final class BigIntegerSumCombinerFactory<Key>
-            implements CombinerFactory<Key, BigInteger, BigInteger> {
+            extends AbstractAggregationCombinerFactory<Key, BigInteger, BigInteger> {
 
         @Override
         public Combiner<Key, BigInteger, BigInteger> newCombiner(Key key) {
             return new BigIntegerSumCombiner<Key>();
         }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.BIG_INTEGER_SUM_COMBINER_FACTORY;
+        }
     }
 
     static final class BigIntegerSumReducerFactory<Key>
-            implements ReducerFactory<Key, BigInteger, BigInteger> {
+            extends AbstractAggregationReducerFactory<Key, BigInteger, BigInteger> {
 
         @Override
         public Reducer<Key, BigInteger, BigInteger> newReducer(Key key) {
             return new BigIntegerSumReducer<Key>();
+        }
+
+        @Override
+        public int getId() {
+            return AggregationsDataSerializerHook.BIG_INTEGER_SUM_REDUCER_FACTORY;
         }
     }
 
