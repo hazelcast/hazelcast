@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.operation.BasePutOperation;
 import com.hazelcast.map.operation.PutBackupOperation;
 import com.hazelcast.map.record.Record;
@@ -64,6 +65,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         if (record == null || version == record.getVersion()) {
             recordStore.set(dataKey, dataValue, ttl);
             shouldBackup = true;
+            eventType = (record == null ? EntryEventType.ADDED : EntryEventType.UPDATED);
         }
     }
 
