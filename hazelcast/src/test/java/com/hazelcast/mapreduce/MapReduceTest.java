@@ -94,6 +94,49 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000, expected = ExecutionException.class)
+    public void testExceptionDistributionWithCollator()
+            throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(3, h1.getCluster().getMembers().size());
+            }
+        });
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = h1.getJobTracker("default");
+        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        ICompletableFuture<Map<String, List<Integer>>> future =
+                job.mapper(new ExceptionThrowingMapper())
+                   .submit(new Collator<Map.Entry<String, List<Integer>>, Map<String, List<Integer>>>() {
+                       @Override
+                       public Map<String, List<Integer>> collate(Iterable<Map.Entry<String, List<Integer>>> values) {
+                           return null;
+                       }
+                   });
+
+        try {
+            Map<String, List<Integer>> result = future.get();
+            fail();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            assertTrue(e.getCause() instanceof NullPointerException);
+            throw e;
+        }
+    }
+
+    @Test(timeout = 30000, expected = ExecutionException.class)
     public void testExceptionDistribution()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
