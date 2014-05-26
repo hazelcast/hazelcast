@@ -40,7 +40,7 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the cost (in bytes) of the entry.
-     *
+     * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
@@ -52,7 +52,7 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the creation time of the entry.
-     *
+     * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
@@ -71,7 +71,7 @@ public interface EntryView<K, V> {
 
     /**
      * Returns number of hits of the entry.
-     *
+     * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
@@ -83,7 +83,7 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the last access time to the entry.
-     *
+     * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
@@ -95,7 +95,7 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the last time value is flushed to mapstore.
-     *
+     * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
@@ -107,11 +107,12 @@ public interface EntryView<K, V> {
 
     /**
      * Returns the last time value is updated.
-     *
+     * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
+     *
      * @return last update time
      */
     long getLastUpdateTime();
@@ -122,4 +123,11 @@ public interface EntryView<K, V> {
      * @return version
      */
     long getVersion();
+
+    /**
+     * Returns last set time to live second.
+     *
+     * @return time to live second.
+     */
+    long getTtl();
 }

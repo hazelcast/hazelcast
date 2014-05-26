@@ -100,7 +100,7 @@ public final class ResponseHandlerFactory {
         public void sendResponse(Object obj) {
             long callId = op.getCallId();
             Connection conn = op.getConnection();
-            if (!sent.compareAndSet(false, true)) {
+            if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
                 throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
                         + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }

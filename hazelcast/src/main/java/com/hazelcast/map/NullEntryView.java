@@ -66,4 +66,9 @@ class NullEntryView<K, V> implements EntryView<K, V> {
         return 0;
     }
 
+    @Override
+    public long getTtl() {
+        return 0;
+    }
+
 }
