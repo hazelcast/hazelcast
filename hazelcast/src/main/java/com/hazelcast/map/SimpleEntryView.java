@@ -24,8 +24,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * @param <K> key
- * @param <V> value
+ * SimpleEntryView is an implementation of {@link com.hazelcast.core.EntryView} and also it is writable.
+ *
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  */
 public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSerializable {
 
