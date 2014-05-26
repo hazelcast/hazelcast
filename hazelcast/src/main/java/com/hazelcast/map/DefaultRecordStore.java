@@ -758,7 +758,7 @@ public class DefaultRecordStore implements RecordStore {
             final Object notExistingKey = mapService.toObject(key);
             final EntryView<Object, Object> nullEntryView = EntryViews.createNullEntryView(notExistingKey);
             newValue = mergePolicy.merge(name, mergingEntry, nullEntryView);
-            if(newValue == null) {
+            if (newValue == null) {
                 return false;
             }
             newValue = mapStoreWrite(key, newValue, null);
@@ -1070,6 +1070,9 @@ public class DefaultRecordStore implements RecordStore {
     private Record evictIfNotReachable(Record record) {
         if (record == null) {
             return null;
+        }
+        if (isLocked(record.getKey())) {
+            return record;
         }
         if (isReachable(record)) {
             return record;
