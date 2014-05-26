@@ -19,6 +19,17 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -29,6 +40,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -119,6 +136,93 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
 
         assertNoLitterInOpService(hz);
         assertNoLitterInOpService(hz2);
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void testPropagateSerializationErrorOnResponseToCallerGithubIssue2559()
+            throws Exception {
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
+        original.setAccessible(true);
+
+        HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(hz1);
+        OperationService operationService = impl.node.nodeEngine.getOperationService();
+
+        Address address = ((MemberImpl) hz2.getCluster().getLocalMember()).getAddress();
+
+        Operation operation = new GithubIssue2559Operation();
+        String serviceName = DistributedExecutorService.SERVICE_NAME;
+        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(serviceName, operation, address);
+        invocationBuilder.invoke().get();
+    }
+
+    public static class GithubIssue2559Operation
+            extends Operation {
+
+        private GithubIssue2559Value value;
+
+        @Override
+        public void beforeRun()
+                throws Exception {
+        }
+
+        @Override
+        public void run()
+                throws Exception {
+
+            value = new GithubIssue2559Value();
+            value.foo = 10;
+        }
+
+        @Override
+        public void afterRun()
+                throws Exception {
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return true;
+        }
+
+        @Override
+        public Object getResponse() {
+            return value;
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out)
+                throws IOException {
+
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in)
+                throws IOException {
+
+        }
+    }
+
+    public static class GithubIssue2559Value
+            implements DataSerializable {
+
+        private int foo;
+
+        @Override
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+
+            throw new RuntimeException("BAM!");
+        }
+
+        @Override
+        public void readData(ObjectDataInput in)
+                throws IOException {
+            foo = in.readInt();
+        }
     }
 
     private void assertNoLitterInOpService(HazelcastInstance hz) {
