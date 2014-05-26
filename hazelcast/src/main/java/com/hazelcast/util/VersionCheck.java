@@ -17,6 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.IOUtil;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -26,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,8 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-public class VersionCheck {
-
+public final class VersionCheck {
 
     private static final int TIMEOUT = 1000;
     private static final int A_INTERVAL = 5;
@@ -47,9 +49,14 @@ public class VersionCheck {
     private static final int H_INTERVAL = 300;
     private static final int J_INTERVAL = 600;
 
-    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private MessageDigest md;
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     public VersionCheck() {
+        try {
+            md = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException ignored) {
+        }
     }
 
     public void check(final Node hazelcastNode, final String version, final boolean isEnterprise) {
@@ -96,33 +103,50 @@ public class VersionCheck {
 
     private void doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
         final ClassLoader cl = getClass().getClassLoader();
-        String p = "NULL";
+        String downloadId = "NULL";
+        InputStream is = null;
         try {
 
             final Enumeration<URL> resources = cl.getResources("META-INF/MANIFEST.MF");
             while (resources.hasMoreElements()) {
                 final URL url = resources.nextElement();
-                Manifest manifest = new Manifest(url.openStream());
+                is = url.openStream();
+                Manifest manifest = new Manifest(is);
                 final Attributes mainAttributes = manifest.getMainAttributes();
-                p = mainAttributes.getValue("hazelcast.downloadId");
-                if (p != null) {
+                downloadId = mainAttributes.getValue("hazelcast.downloadId");
+                if (downloadId != null) {
                     break;
                 }
             }
         } catch (IOException ignored) {
 
+        } finally {
+            IOUtil.closeResource(is);
         }
 
         String urlStr = "http://www.hazelcast.com/version.jsp?version=" + version
                 + "&m=" + hazelcastNode.getLocalMember().getUuid()
                 + "&e=" + isEnterprise
-                + "&l=" + hazelcastNode.getConfig().getLicenseKey()
-                + "&p=" + p
-                + "&c=" + hazelcastNode.getConfig().getGroupConfig().getName().hashCode()
+                + "&l=" + toMD5String(hazelcastNode.getConfig().getLicenseKey())
+                + "&p=" + downloadId
+                + "&c=" + toMD5String(hazelcastNode.getConfig().getGroupConfig().getName())
                 + "&crsz=" + convertToLetter(hazelcastNode.getClusterService().getMembers().size())
                 + "&cssz=" + convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount());
 
         fetchWebService(urlStr);
+    }
+
+    private String toMD5String(String str) {
+        if (md == null) {
+            return "NULL";
+        }
+        byte byteData[] = md.digest(str.getBytes());
+
+        StringBuffer sb = new StringBuffer();
+        for (byte aByteData : byteData) {
+            sb.append(Integer.toString((aByteData & 0xff) + 0x100, 16).substring(1));
+        }
+        return sb.toString();
     }
 
     private Document fetchWebService(String urlStr) {
@@ -137,12 +161,7 @@ public class VersionCheck {
             return builder.parse(in);
         } catch (Exception ignored) {
         } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException ignored) {
-                }
-            }
+            IOUtil.closeResource(in);
         }
         return null;
     }
