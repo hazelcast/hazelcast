@@ -16,7 +16,16 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.*;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.ClientListener;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -119,7 +128,44 @@ public class ClientServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClientListenerForBothNodes(){
+    public void testConnectedClientsWithReAuth() throws InterruptedException {
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptPeriod(1000 * 10);
+
+        final CountDownLatch countDownLatch = new CountDownLatch(2);
+
+        ;
+        clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED) {
+                    countDownLatch.countDown();
+                }
+
+
+            }
+        }));
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        //restart the node
+        instance.shutdown();
+        Thread.sleep(1000);
+        final HazelcastInstance restartedInstance = Hazelcast.newHazelcastInstance();
+
+        client.getMap(randomMapName()).size(); // do any operation
+
+        assertOpenEventually(countDownLatch); //wait for clients to reconnect & reAuth
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, restartedInstance.getClientService().getConnectedClients().size());
+            }
+        });
+    }
+
+    @Test
+    public void testClientListenerForBothNodes() {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
         final ClientListenerLatch clientListenerLatch = new ClientListenerLatch(2);
@@ -141,7 +187,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
         assertOpenEventually(clientListenerLatch, 5);
     }
 
-    private void assertClientConnected(ClientService... services){
+    private void assertClientConnected(ClientService... services) {
         for (final ClientService service : services) {
             assertTrueEventually(new AssertTask() {
                 @Override
