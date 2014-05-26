@@ -17,15 +17,9 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.management.SerializableClientEndPoint;
-import com.hazelcast.management.SerializableConnectionManagerBean;
-import com.hazelcast.management.SerializableEventServiceBean;
-import com.hazelcast.management.SerializableManagedExecutorBean;
-import com.hazelcast.management.SerializableOperationServiceBean;
-import com.hazelcast.management.SerializablePartitionServiceBean;
-import com.hazelcast.management.SerializableProxyServiceBean;
+import com.hazelcast.management.SerializableMXBeans;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -50,16 +44,6 @@ public interface MemberState extends DataSerializable {
 
     Collection<SerializableClientEndPoint> getClients();
 
-    SerializableEventServiceBean getEventServiceBean();
-
-    SerializableOperationServiceBean getOperationServiceBean();
-
-    SerializableConnectionManagerBean getConnectionManagerBean();
-
-    SerializablePartitionServiceBean getPartitionServiceBean();
-
-    SerializableProxyServiceBean getProxyServiceBean();
-
-    SerializableManagedExecutorBean getManagedExecutorBean(String name);
+    SerializableMXBeans getMXBeans();
 
 }

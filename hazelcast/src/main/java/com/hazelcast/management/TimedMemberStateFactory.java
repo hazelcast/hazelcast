@@ -87,7 +87,21 @@ public class TimedMemberStateFactory {
             serializableClientEndPoints.add(new SerializableClientEndPoint(client));
         }
         memberState.setClients(serializableClientEndPoints);
+        createJMXBeans(memberState);
+        PartitionService partitionService = instance.getPartitionService();
+        Set<Partition> partitions = partitionService.getPartitions();
+        memberState.clearPartitions();
+        for (Partition partition : partitions) {
+            if (partition.getOwner() != null && partition.getOwner().localMember()) {
+                memberState.addPartition(partition.getPartitionId());
+            }
+        }
+        Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
+        createRuntimeProps(memberState);
+        createMemState(memberState, proxyObjects);
+    }
 
+    private void createJMXBeans(MemberStateImpl memberState) {
         final EventService es = instance.node.nodeEngine.getEventService();
         final OperationService os = instance.node.nodeEngine.getOperationService();
         final ConnectionManager cm = instance.node.connectionManager;
@@ -95,20 +109,17 @@ public class TimedMemberStateFactory {
         final ProxyService proxyService = instance.node.nodeEngine.getProxyService();
         final ExecutionService executionService = instance.node.nodeEngine.getExecutionService();
 
+        final SerializableMXBeans beans = new SerializableMXBeans();
         final SerializableEventServiceBean esBean = new SerializableEventServiceBean(es);
-        memberState.setEventServiceBean(esBean);
-
+        beans.setEventServiceBean(esBean);
         final SerializableOperationServiceBean osBean = new SerializableOperationServiceBean(os);
-        memberState.setOperationServiceBean(osBean);
-
+        beans.setOperationServiceBean(osBean);
         final SerializableConnectionManagerBean cmBean = new SerializableConnectionManagerBean(cm);
-        memberState.setConnectionManagerBean(cmBean);
-
+        beans.setConnectionManagerBean(cmBean);
         final SerializablePartitionServiceBean psBean = new SerializablePartitionServiceBean(ps, instance);
-        memberState.setPartitionServiceBean(psBean);
-
+        beans.setPartitionServiceBean(psBean);
         final SerializableProxyServiceBean proxyServiceBean = new SerializableProxyServiceBean(proxyService);
-        memberState.setProxyServiceBean(proxyServiceBean);
+        beans.setProxyServiceBean(proxyServiceBean);
 
         final ManagedExecutorService systemExecutor = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR);
         final ManagedExecutorService operationExecutor = executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR);
@@ -126,25 +137,14 @@ public class TimedMemberStateFactory {
         final SerializableManagedExecutorBean queryExecutorBean = new SerializableManagedExecutorBean(queryExecutor);
         final SerializableManagedExecutorBean ioExecutorBean = new SerializableManagedExecutorBean(ioExecutor);
 
-        memberState.putManagedExecutor(ExecutionService.SYSTEM_EXECUTOR, systemExecutorBean);
-        memberState.putManagedExecutor(ExecutionService.OPERATION_EXECUTOR, operationExecutorBean);
-        memberState.putManagedExecutor(ExecutionService.ASYNC_EXECUTOR, asyncExecutorBean);
-        memberState.putManagedExecutor(ExecutionService.SCHEDULED_EXECUTOR, scheduledExecutorBean);
-        memberState.putManagedExecutor(ExecutionService.CLIENT_EXECUTOR, clientExecutorBean);
-        memberState.putManagedExecutor(ExecutionService.QUERY_EXECUTOR, queryExecutorBean);
-        memberState.putManagedExecutor(ExecutionService.IO_EXECUTOR, ioExecutorBean);
-
-        PartitionService partitionService = instance.getPartitionService();
-        Set<Partition> partitions = partitionService.getPartitions();
-        memberState.clearPartitions();
-        for (Partition partition : partitions) {
-            if (partition.getOwner() != null && partition.getOwner().localMember()) {
-                memberState.addPartition(partition.getPartitionId());
-            }
-        }
-        Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
-        createRuntimeProps(memberState);
-        createMemState(memberState, proxyObjects);
+        beans.putManagedExecutor(ExecutionService.SYSTEM_EXECUTOR, systemExecutorBean);
+        beans.putManagedExecutor(ExecutionService.OPERATION_EXECUTOR, operationExecutorBean);
+        beans.putManagedExecutor(ExecutionService.ASYNC_EXECUTOR, asyncExecutorBean);
+        beans.putManagedExecutor(ExecutionService.SCHEDULED_EXECUTOR, scheduledExecutorBean);
+        beans.putManagedExecutor(ExecutionService.CLIENT_EXECUTOR, clientExecutorBean);
+        beans.putManagedExecutor(ExecutionService.QUERY_EXECUTOR, queryExecutorBean);
+        beans.putManagedExecutor(ExecutionService.IO_EXECUTOR, ioExecutorBean);
+        memberState.setBeans(beans);
     }
 
     private void createRuntimeProps(MemberStateImpl memberState) {
