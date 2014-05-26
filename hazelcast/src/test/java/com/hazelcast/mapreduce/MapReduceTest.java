@@ -35,6 +35,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -724,6 +725,39 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
+    public void testNullFromObjectCombiner()
+            throws Exception {
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker jobTracker = h1.getJobTracker("default");
+        Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMap(m1));
+        JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(1).mapper(new GroupingTestMapper())
+                                                                  .combiner(new ObjectCombinerFactory())
+                                                                  .reducer(new ObjectReducerFactory()).submit();
+
+        int[] expectedResults = new int[4];
+        for (int i = 0; i < 100; i++) {
+            int index = i % 4;
+            expectedResults[index] += i;
+        }
+
+        Map<String, BigInteger> map = future.get();
+        for (int i = 0; i < 4; i++) {
+            assertEquals(BigInteger.valueOf(expectedResults[i]), map.get(String.valueOf(i)));
+        }
+    }
+
+    @Test(timeout = 30000)
     public void testDataSerializableIntermediateObject()
             throws Exception {
 
@@ -783,6 +817,58 @@ public class MapReduceTest
 
             count = in.readInt();
             amount = in.readInt();
+        }
+    }
+
+    public static class ObjectCombinerFactory
+            implements CombinerFactory<String, Integer, BigInteger> {
+
+        @Override
+        public Combiner<String, Integer, BigInteger> newCombiner(String key) {
+            return new ObjectCombiner();
+        }
+    }
+
+    public static class ObjectCombiner
+            extends Combiner<String, Integer, BigInteger> {
+
+        private BigInteger count;
+
+        @Override
+        public void combine(String key, Integer value) {
+            count = count == null ? BigInteger.valueOf(value) : count.add(BigInteger.valueOf(value));
+        }
+
+        @Override
+        public BigInteger finalizeChunk() {
+            BigInteger count = this.count;
+            this.count = null;
+            return count;
+        }
+    }
+
+    public static class ObjectReducerFactory
+            implements ReducerFactory<String, BigInteger, BigInteger> {
+
+        @Override
+        public Reducer<String, BigInteger, BigInteger> newReducer(String key) {
+            return new ObjectReducer();
+        }
+    }
+
+    public static class ObjectReducer
+            extends Reducer<String, BigInteger, BigInteger> {
+
+        private BigInteger count;
+
+        @Override
+        public void reduce(BigInteger value) {
+            count = count == null ? value : value.add(count);
+        }
+
+        @Override
+        public BigInteger finalizeReduce() {
+            return count;
         }
     }
 
