@@ -45,6 +45,10 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
@@ -52,9 +56,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1073,7 +1074,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
 
-    @Test( expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testValuesWithPagingPredicate() throws TransactionException {
         final int nodeCount = 1;
         final String mapName = randomMapName("testValuesWithPagingPredicate");
@@ -1119,4 +1120,30 @@ public class MapTransactionTest extends HazelcastTestSupport {
         node.shutdown();
     }
 
+    @Test
+    public void testUpdatesInTxnFiringUpdateEvent() {
+        final String mapName = randomMapName("testUpdatesInTxnFiringUpdateEvent");
+        final HazelcastInstance node = createHazelcastInstance();
+        final IMap<String, String> map = node.getMap(mapName);
+        final CountDownLatch expectedUpdateEventCount = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<String, String>() {
+
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+                expectedUpdateEventCount.countDown();
+            }
+
+        }, true);
+
+        map.put("foo", "one");
+
+        TransactionContext context = node.newTransactionContext();
+        context.beginTransaction();
+        TransactionalMap<String, String> transactionalMap = context.getMap(mapName);
+        transactionalMap.put("foo", "three");
+        context.commitTransaction();
+
+        assertOpenEventually("Not reached expected update event count", expectedUpdateEventCount);
+
+    }
 }
