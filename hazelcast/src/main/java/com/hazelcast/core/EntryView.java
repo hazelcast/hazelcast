@@ -125,7 +125,9 @@ public interface EntryView<K, V> {
     long getVersion();
 
     /**
-     * @return last set time to live seconds.
+     * Returns last set time to live second.
+     *
+     * @return time to live second.
      */
     long getTtl();
 }
