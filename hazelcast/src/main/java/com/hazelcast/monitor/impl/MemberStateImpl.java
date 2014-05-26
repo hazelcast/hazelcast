@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.hazelcast.management.SerializableClientEndPoint;
+import com.hazelcast.management.SerializableMXBeans;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -47,6 +48,7 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
     private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
+    private SerializableMXBeans beans = new SerializableMXBeans();
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -90,6 +92,7 @@ public class MemberStateImpl implements MemberState {
         for (SerializableClientEndPoint client : clients) {
             client.writeData(out);
         }
+        beans.writeData(out);
     }
 
     @Override
@@ -137,6 +140,7 @@ public class MemberStateImpl implements MemberState {
             ci.readData(in);
             clients.add(ci);
         }
+        beans.readData(in);
     }
 
     public void clearPartitions() {
@@ -146,6 +150,7 @@ public class MemberStateImpl implements MemberState {
     public void addPartition(int partitionId) {
         partitions.add(partitionId);
     }
+
 
     @Override
     public List<Integer> getPartitions() {
@@ -218,6 +223,15 @@ public class MemberStateImpl implements MemberState {
 
     public Collection<SerializableClientEndPoint> getClients() {
         return clients;
+    }
+
+    @Override
+    public SerializableMXBeans getMXBeans() {
+        return beans;
+    }
+
+    public void setBeans(SerializableMXBeans beans) {
+        this.beans = beans;
     }
 
     public void setClients(Collection<SerializableClientEndPoint> clients) {

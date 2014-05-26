@@ -17,9 +17,9 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.management.SerializableClientEndPoint;
+import com.hazelcast.management.SerializableMXBeans;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -43,5 +43,7 @@ public interface MemberState extends DataSerializable {
     List<Integer> getPartitions();
 
     Collection<SerializableClientEndPoint> getClients();
+
+    SerializableMXBeans getMXBeans();
 
 }
