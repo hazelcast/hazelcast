@@ -16,7 +16,10 @@
 
 package com.hazelcast.mapreduce.aggregation;
 
-public interface PropertyExtractor<ValueIn, ValueOut> {
+import java.io.Serializable;
+
+public interface PropertyExtractor<ValueIn, ValueOut>
+        extends Serializable {
 
     ValueOut extract(ValueIn value);
 }

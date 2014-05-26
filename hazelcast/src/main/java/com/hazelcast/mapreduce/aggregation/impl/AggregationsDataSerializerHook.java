@@ -85,7 +85,9 @@ public class AggregationsDataSerializerHook
     public static final int LONG_MIN_REDUCER_FACTORY = 48;
     public static final int LONG_SUM_COMBINER_FACTORY = 49;
     public static final int LONG_SUM_REDUCER_FACTORY = 50;
-    public static final int AVG_TUPLE = 51;
+    public static final int KEY_PREDICATE_SUPPLIER = 51;
+    public static final int PREDICATE_SUPPLIER = 52;
+    public static final int AVG_TUPLE = 53;
 
     private static final int LEN = AVG_TUPLE + 1;
 
@@ -413,6 +415,18 @@ public class AggregationsDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new LongSumAggregation.LongSumReducerFactory();
+            }
+        };
+        constructors[KEY_PREDICATE_SUPPLIER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new KeyPredicateSupplier();
+            }
+        };
+        constructors[PREDICATE_SUPPLIER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PredicateSupplier();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

@@ -18,11 +18,15 @@ package com.hazelcast.mapreduce.aggregation;
 
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.aggregation.impl.AcceptAllSupplier;
+import com.hazelcast.mapreduce.aggregation.impl.KeyPredicateSupplier;
+import com.hazelcast.mapreduce.aggregation.impl.PredicateSupplier;
 import com.hazelcast.query.Predicate;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public abstract class Supplier<KeyIn, ValueIn, ValueOut> {
+public abstract class Supplier<KeyIn, ValueIn, ValueOut>
+        implements Serializable {
 
     public abstract ValueOut apply(Map.Entry<KeyIn, ValueIn> entry);
 
@@ -58,55 +62,5 @@ public abstract class Supplier<KeyIn, ValueIn, ValueOut> {
                                                                                                  Supplier<KeyIn, ValueIn, ValueOut> chainedSupplier) {
 
         return new KeyPredicateSupplier<KeyIn, ValueIn, ValueOut>(keyPredicate, chainedSupplier);
-    }
-
-    private static class PredicateSupplier<KeyIn, ValueIn, ValueOut>
-            extends Supplier<KeyIn, ValueIn, ValueOut> {
-
-        private final Predicate<KeyIn, ValueIn> predicate;
-        private final Supplier<KeyIn, ValueIn, ValueOut> chainedSupplier;
-
-        private PredicateSupplier(Predicate<KeyIn, ValueIn> predicate) {
-            this(predicate, null);
-        }
-
-        private PredicateSupplier(Predicate<KeyIn, ValueIn> predicate, Supplier<KeyIn, ValueIn, ValueOut> chainedSupplier) {
-            this.predicate = predicate;
-            this.chainedSupplier = chainedSupplier;
-        }
-
-        @Override
-        public ValueOut apply(Map.Entry<KeyIn, ValueIn> entry) {
-            if (predicate.apply(entry)) {
-                ValueIn value = entry.getValue();
-                return chainedSupplier != null ? chainedSupplier.apply(entry) : (ValueOut) value;
-            }
-            return null;
-        }
-    }
-
-    private static class KeyPredicateSupplier<KeyIn, ValueIn, ValueOut>
-            extends Supplier<KeyIn, ValueIn, ValueOut> {
-
-        private final KeyPredicate<KeyIn> keyPredicate;
-        private final Supplier<KeyIn, ValueIn, ValueOut> chainedSupplier;
-
-        private KeyPredicateSupplier(KeyPredicate<KeyIn> keyPredicate) {
-            this(keyPredicate, null);
-        }
-
-        private KeyPredicateSupplier(KeyPredicate<KeyIn> keyPredicate, Supplier<KeyIn, ValueIn, ValueOut> chainedSupplier) {
-            this.keyPredicate = keyPredicate;
-            this.chainedSupplier = chainedSupplier;
-        }
-
-        @Override
-        public ValueOut apply(Map.Entry<KeyIn, ValueIn> entry) {
-            if (keyPredicate.evaluate(entry.getKey())) {
-                ValueIn value = entry.getValue();
-                return chainedSupplier != null ? chainedSupplier.apply(entry) : (ValueOut) value;
-            }
-            return null;
-        }
     }
 }
