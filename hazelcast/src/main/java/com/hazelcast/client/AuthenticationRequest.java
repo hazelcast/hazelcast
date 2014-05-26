@@ -147,7 +147,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
     private void reAuthLocal() {
         final Set<ClientEndpoint> endpoints = clientEngine.getEndpoints(principal.getUuid());
         for (ClientEndpoint endpoint : endpoints) {
-            endpoint.authenticated(principal, firstConnection);
+            endpoint.authenticated(principal);
         }
     }
 
