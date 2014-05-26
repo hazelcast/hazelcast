@@ -46,6 +46,7 @@ import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
