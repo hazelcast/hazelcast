@@ -102,6 +102,12 @@ public final class ClientEndpoint implements Client {
         this.authenticated = true;
     }
 
+    void authenticated(ClientPrincipal principal) {
+        this.principal = principal;
+        this.uuid = principal.getUuid();
+        this.authenticated = true;
+    }
+
     public boolean isAuthenticated() {
         return authenticated;
     }

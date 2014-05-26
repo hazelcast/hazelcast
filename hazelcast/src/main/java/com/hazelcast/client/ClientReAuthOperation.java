@@ -42,7 +42,7 @@ public class ClientReAuthOperation extends AbstractOperation implements UrgentSy
         Set<ClientEndpoint> endpoints = service.getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
             ClientPrincipal principal = new ClientPrincipal(clientUuid, getCallerUuid());
-            endpoint.authenticated(principal, firstConnection);
+            endpoint.authenticated(principal);
         }
     }
 
