@@ -35,7 +35,9 @@ public class AggregationsDataSerializerHook
 
     public static final int SUPPLIER_CONSUMING_MAPPER = 0;
     public static final int ACCEPT_ALL_SUPPLIER = 1;
-    public static final int AVG_TUPLE = 2;
+    public static final int DISTINCT_VALUES_MAPPER = 2;
+    public static final int SET_ADAPTER = 3;
+    public static final int AVG_TUPLE = 4;
 
     private static final int LEN = AVG_TUPLE + 1;
 
@@ -57,6 +59,18 @@ public class AggregationsDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AcceptAllSupplier();
+            }
+        };
+        constructors[DISTINCT_VALUES_MAPPER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new DistinctValuesAggregation.DistinctValueMapper();
+            }
+        };
+        constructors[SET_ADAPTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetAdapter();
             }
         };
         constructors[AVG_TUPLE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

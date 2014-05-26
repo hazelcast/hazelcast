@@ -23,7 +23,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -54,5 +57,34 @@ public class BaseAggregationTest
         Aggregation<String, Object, Long> aggregation = Aggregations.count();
         long count = map.aggregate(supplier, aggregation);
         assertEquals(values.length, count);
+    }
+
+    @Test
+    public void testDistinctValuesAggregation()
+            throws Exception {
+
+        final String[] probes = {"Dog", "Food", "Champion", "Hazelcast", "Security", "Integer", "Random", "System"};
+        Set<String> expectation = new HashSet<String>(Arrays.asList(probes));
+
+        String mapName = randomMapName();
+        IMap<String, String> map = HAZELCAST_INSTANCE.getMap(mapName);
+
+        String[] values = buildPlainValues(new ValueProvider<String>() {
+            @Override
+            public String provideRandom(Random random) {
+                int index = random.nextInt(probes.length);
+                return probes[index];
+            }
+        }, String.class);
+
+        for (int i = 0; i < values.length; i++) {
+            map.put("key-" + i, values[i]);
+        }
+
+        Supplier<String, String, String> supplier = Supplier.all();
+        Aggregation<String, String, Set<String>> aggregation = Aggregations.distinctValues();
+        Set<String> distinctValues = map.aggregate(supplier, aggregation);
+        assertEquals(expectation, distinctValues);
+
     }
 }

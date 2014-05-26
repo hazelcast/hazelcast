@@ -32,6 +32,7 @@ import com.hazelcast.mapreduce.aggregation.impl.BigIntegerSumAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.ComparableMaxAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.ComparableMinAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.CountAggregation;
+import com.hazelcast.mapreduce.aggregation.impl.DistinctValuesAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.DoubleAvgAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.DoubleMaxAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.DoubleMinAggregation;
@@ -48,11 +49,18 @@ import com.hazelcast.mapreduce.aggregation.impl.LongSumAggregation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.Set;
 
 public class Aggregations {
 
     public static <Key> Aggregation<Key, Object, Long> count() {
         return new AggregationAdapter(new CountAggregation<Object, Object>());
+    }
+
+    public static <Key, Value, DistinctType> Aggregation<Key, Value, Set<DistinctType>> distinctValues() {
+        AggType<Key, Value, Integer, DistinctType, Set<DistinctType>, Set<DistinctType>, Set<DistinctType>> aggType;
+        aggType = new DistinctValuesAggregation<Key, Value, DistinctType>();
+        return new AggregationAdapter<Key, Value, Set<DistinctType>>(aggType);
     }
 
     public static <Key, Value> Aggregation<Key, Value, Integer> integerAvg() {
