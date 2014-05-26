@@ -231,7 +231,7 @@ public class JobSupervisor {
         return result;
     }
 
-    public <KeyIn, ValueIn, ValueOut> Reducer<KeyIn, ValueIn, ValueOut> getReducerByKey(Object key) {
+    public <KeyIn, ValueIn, ValueOut> Reducer<ValueIn, ValueOut> getReducerByKey(Object key) {
         Reducer reducer = reducers.get(key);
         if (reducer == null && configuration.getReducerFactory() != null) {
             reducer = configuration.getReducerFactory().newReducer(key);
@@ -239,7 +239,7 @@ public class JobSupervisor {
             if (oldReducer != null) {
                 reducer = oldReducer;
             } else {
-                reducer.beginReduce(key);
+                reducer.beginReduce();
             }
         }
         return reducer;
