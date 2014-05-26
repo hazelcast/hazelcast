@@ -17,9 +17,7 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.Logger;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
 /**
@@ -29,18 +27,6 @@ import java.util.List;
  */
 public class RemoteMapReduceException
         extends HazelcastException {
-
-    private static final Field STACK_TRACE;
-
-    static {
-        try {
-            STACK_TRACE = Throwable.class.getDeclaredField("stackTrace");
-            STACK_TRACE.setAccessible(true);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public RemoteMapReduceException(String message, List<Exception> remoteCauses) {
         super(message);
@@ -69,14 +55,6 @@ public class RemoteMapReduceException
                 elements[pos++] = new StackTraceElement(className, methodName, fileName, element.getLineNumber());
             }
         }
-        setStackTrace0(elements);
-    }
-
-    private void setStackTrace0(StackTraceElement[] stackTraceElements) {
-        try {
-            STACK_TRACE.set(this, stackTraceElements);
-        } catch (Exception e) {
-            Logger.getLogger(RemoteMapReduceException.class).finest(e);
-        }
+        setStackTrace(elements);
     }
 }
