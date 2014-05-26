@@ -750,6 +750,7 @@ public class MapReduceTest
         for (int i = 0; i < 100; i++) {
             expectedResult += i;
         }
+        expectedResult = (int) ((double) expectedResult / 100);
 
         assertEquals(expectedResult, (int) future.get());
     }
