@@ -17,11 +17,12 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.EntryViews;
 import com.hazelcast.map.MapEntrySimple;
-import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,6 +31,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 
@@ -107,7 +109,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(dataKey);
-                final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey,mapService.toData(dataValue),record);
+                final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
                 mapService.publishWanReplicationUpdate(name, entryView);
             }
         }

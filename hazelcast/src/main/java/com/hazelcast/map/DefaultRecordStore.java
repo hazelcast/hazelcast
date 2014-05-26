@@ -767,7 +767,7 @@ public class DefaultRecordStore implements RecordStore {
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             Object oldValue = record.getValue();
-            EntryView existingEntry = mapService.createSimpleEntryView(mapService.toObject(record.getKey()),
+            EntryView existingEntry = EntryViews.createSimpleEntryView(mapService.toObject(record.getKey()),
                     mapService.toObject(record.getValue()), record);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             // existing entry will be removed

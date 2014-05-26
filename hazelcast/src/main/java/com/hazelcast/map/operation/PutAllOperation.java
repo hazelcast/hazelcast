@@ -17,9 +17,10 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.EntryViews;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
@@ -82,7 +83,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 keysToInvalidate.add(dataKey);
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     Record record = recordStore.getRecord(dataKey);
-                    final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
+                    final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
                     mapService.publishWanReplicationUpdate(name, entryView);
                 }
                 backupEntrySet.add(entry);

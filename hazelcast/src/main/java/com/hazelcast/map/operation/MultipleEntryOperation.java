@@ -1,13 +1,14 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.EntryViews;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -18,6 +19,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashSet;
@@ -112,7 +114,7 @@ public class MultipleEntryOperation extends AbstractMapOperation
                     } else {
                         Record record = recordStore.getRecord(key);
                         Data tempValue = mapService.toData(dataValue);
-                        final SimpleEntryView entryView = mapService.createSimpleEntryView(key, tempValue, record);
+                        final EntryView entryView = EntryViews.createSimpleEntryView(key, tempValue, record);
                         mapService.publishWanReplicationUpdate(name, entryView);
                     }
                 }
