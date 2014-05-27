@@ -196,6 +196,9 @@ public final class Predicates {
 
         public boolean apply(Map.Entry entry) {
             Comparable entryValue = readAttribute(entry);
+            if (entryValue == null) {
+                return false;
+            }
             Set<Comparable> set = convertedInValues;
             if (set == null) {
                 set = new HashSet<Comparable>(values.length);
@@ -580,6 +583,9 @@ public final class Predicates {
 
         public boolean apply(Map.Entry mapEntry) {
             final Comparable entryValue = readAttribute(mapEntry);
+            if (entryValue == null) {
+                return false;
+            }
             final Comparable attributeValue = convert(mapEntry, entryValue, value);
             final int result = entryValue.compareTo(attributeValue);
             return equal && result == 0 || (less ? (result < 0) : (result > 0));
