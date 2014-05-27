@@ -435,6 +435,14 @@
         <xs:attribute name="connection-timeout-seconds" type="xs:string" use="optional" default="5"/>
     </xs:complexType>
 
+    <xs:complexType name="custom">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" default="false"/>
+        <xs:attribute name="joiner-factory-class-name" type="xs:normalizedString"/>
+    </xs:complexType>
+
     <xs:complexType name="merge-policies">
         <xs:sequence>
             <xs:element name="map-merge-policy" type="map-merge-policy" minOccurs="1" maxOccurs="unbounded"/>
@@ -462,6 +470,7 @@
             <xs:element name="multicast" type="multicast" minOccurs="0"/>
             <xs:element name="tcp-ip" type="tcp-ip" minOccurs="0"/>
             <xs:element name="aws" type="aws" minOccurs="0"/>
+            <xs:element name="custom" type="custom" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 

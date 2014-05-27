@@ -337,6 +337,48 @@ public class XMLConfigBuilderTest {
         assertTrue(mapStoreConfig.isEnabled());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, mapStoreConfig.getInitialLoadMode());
     }
+
+    @Test
+    public void testCustomJoinerFactoryConfigWithProperties(){
+        String xml = "<hazelcast>\n" +
+                      "   <network>\n" +
+                      "       <port auto-increment=\"true\" port-count=\"100\">5701</port>\n" +
+                      "       <join>\n" +
+                      "           <custom enabled=\"true\" joiner-factory-class-name=\"org.myorg.myapp.MyCustomJoinerFactory\">\n" +
+                      "               <properties>\n" +
+                      "                   <property name=\"my-key-1\">my-value-1</property>\n" +
+                      "                   <property name=\"my-key-2\">my-value-2</property>\n" +
+                      "               </properties>\n" +
+                      "           </custom>\n" +
+                      "       </join>\n" +
+                      "   </network>\n" +
+                      "</hazelcast>";
+        final Config config = buildConfig(xml);
+        System.out.println("config = " + config);
+        assertTrue(config.getNetworkConfig().getJoin().getCustomConfig().isEnabled());
+        assertEquals("org.myorg.myapp.MyCustomJoinerFactory", config.getNetworkConfig().getJoin().getCustomConfig().getJoinerFactoryClassName());
+        assertEquals(2, config.getNetworkConfig().getJoin().getCustomConfig().getProperties().size());
+        assertEquals("my-value-1", config.getNetworkConfig().getJoin().getCustomConfig().getProperties().get("my-key-1"));
+        assertEquals("my-value-2", config.getNetworkConfig().getJoin().getCustomConfig().getProperties().get("my-key-2"));
+    }
+
+    @Test
+    public void testCustomJoinerFactoryConfigNoProperties(){
+        String xml = "<hazelcast>\n" +
+                "   <network>\n" +
+                "      <port auto-increment=\"true\" port-count=\"100\">5701</port>\n" +
+                "      <join>\n" +
+                "         <custom enabled=\"true\" joiner-factory-class-name=\"org.myorg.myapp.MyCustomJoinerFactory\" />\n" +
+                "      </join>\n" +
+                "   </network>\n" +
+                "</hazelcast>";
+        final Config config = buildConfig(xml);
+        System.out.println("config = " + config);
+        assertTrue(config.getNetworkConfig().getJoin().getCustomConfig().isEnabled());
+        assertEquals("org.myorg.myapp.MyCustomJoinerFactory", config.getNetworkConfig().getJoin().getCustomConfig().getJoinerFactoryClassName());
+        assertEquals(0, config.getNetworkConfig().getJoin().getCustomConfig().getProperties().size());
+    }
+
     @Test(expected = HazelcastException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml =

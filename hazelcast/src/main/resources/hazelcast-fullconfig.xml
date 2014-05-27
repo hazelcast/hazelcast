@@ -91,6 +91,12 @@
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
             </aws>
+            <custom enabled="false" joiner-factory-class-name="org.myorg.myapp.MyCustomJoinerFactory">
+                <properties>
+                    <property name="my-key-1">my-value-1</property>
+                    <property name="my-key-2">my-value-2</property>
+                </properties>
+            </custom>
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>

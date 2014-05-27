@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
- * Contains the 3 different join configurations; tcp-ip/multicast/aws. Only one of them should be enabled!
+ * Contains the 4 different join configurations; tcp-ip/multicast/aws/custom. Only one of them should be enabled!
  */
 public class JoinConfig {
 
@@ -28,6 +28,8 @@ public class JoinConfig {
     private TcpIpConfig tcpIpConfig = new TcpIpConfig();
 
     private AwsConfig awsConfig = new AwsConfig();
+
+    private CustomConfig customConfig = new CustomConfig();
 
     /**
      * @return the multicastConfig
@@ -77,13 +79,32 @@ public class JoinConfig {
         return this;
     }
 
+    /**
+     * @return the customConfig
+     */
+    public CustomConfig getCustomConfig() {
+        return customConfig;
+    }
+
+    /**
+     * @param customConfig  the CustomConfig to set
+     * @throws IllegalArgumentException if customConfig is null.
+     * @return
+     */
+    public JoinConfig setCustomConfig(CustomConfig customConfig){
+        this.customConfig = isNotNull(customConfig, "customConfig");
+        return this;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("JoinConfig{");
         sb.append("multicastConfig=").append(multicastConfig);
         sb.append(", tcpIpConfig=").append(tcpIpConfig);
         sb.append(", awsConfig=").append(awsConfig);
+        sb.append(", customConfig=").append(customConfig);
         sb.append('}');
         return sb.toString();
     }
+
 }
