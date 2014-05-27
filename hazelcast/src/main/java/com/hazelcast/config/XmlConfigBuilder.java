@@ -109,7 +109,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     private void loadDefaultConfigurationFromClasspath() {
-        logger.info("Looking for 'hazelcast-default.xml' config file in classpath.");
+        logger.info("Loading 'hazelcast-default.xml' from classpath.");
 
         configurationUrl = Config.class.getClassLoader().getResource("hazelcast-default.xml");
 
@@ -125,13 +125,13 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     private boolean loadHazelcastXmlFromClasspath() {
-        logger.info("Looking for 'hazelcast.xml' config file in classpath.");
-
         URL url = Config.class.getClassLoader().getResource("hazelcast.xml");
         if (url == null) {
-            logger.info("Could not find 'hazelcast.xml' in classpath.");
+            logger.finest("Could not find 'hazelcast.xml' in classpath.");
             return false;
         }
+
+        logger.info("Loading 'hazelcast.xml' from classpath.");
 
         configurationUrl = url;
         in = Config.class.getClassLoader().getResourceAsStream("hazelcast.xml");
@@ -142,13 +142,13 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     private boolean loadFromWorkingDirectory() {
-        logger.info("Looking for 'hazelcast.xml' config file in the working directory.");
-
         File file = new File("hazelcast.xml");
         if (!file.exists()) {
-            logger.info("Could not find 'hazelcast.xml' in working directory.");
+            logger.finest("Could not find 'hazelcast.xml' in working directory.");
             return false;
         }
+
+        logger.info("Loading 'hazelcast.xml' from working directory.");
 
         configurationFile = file;
         try {
@@ -160,12 +160,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     private boolean loadFromSystemProperty() {
-        logger.info("Looking for 'hazelcast.config' System property");
-
         String configSystemProperty = System.getProperty("hazelcast.config");
 
         if (configSystemProperty == null) {
-            logger.info("Could not 'hazelcast.config' System property");
+            logger.finest("Could not 'hazelcast.config' System property");
             return false;
         }
 
