@@ -27,6 +27,38 @@ Please see the list of all enhancement issues [here](https://github.com/hazelcas
 
 ### Fixes
 
+**3.2.2 Fixes**
+
+This section lists issues solved for Hazelcast 3.2.2 release.
+
+-	Client security callable fix: https://github.com/hazelcast/hazelcast/pull/2561
+-	Updating a key in a transaction gives listeners an entryAdded() callback instead of entryUpdated() https://github.com/hazelcast/hazelcast/issues/2542
+-	Client ssl engine doesn't need keyStore and keyStorePassword https://github.com/hazelcast/hazelcast/pull/2525
+-	Added support for Mapper, Combiner, Reducer, KeyValueSource to implement HazelcastInstanceAware https://github.com/hazelcast/hazelcast/pull/2502
+-	Fixed alter function https://github.com/hazelcast/hazelcast/pull/2496
+-	Return cached value upon IMap.get() if near cache is enabled https://github.com/hazelcast/hazelcast/pull/2482
+-	Exception initialising hz:client https://github.com/hazelcast/hazelcast/issues/2480
+-	Fixed portable serialization between different services versions https://github.com/hazelcast/hazelcast/pull/2478
+-	Resolves a data race in the client proxy that can lead to an NPE. https://github.com/hazelcast/hazelcast/pull/2474
+-	Fixed partition group hostname matching https://github.com/hazelcast/hazelcast/pull/2470
+-	Client shutdown issue: Improve logging https://github.com/hazelcast/hazelcast/issues/2442
+-	Unnecessary synchronized lock when invoking com.hazelcast.instance.LifecycleServiceImpl.isRunning() https://github.com/hazelcast/hazelcast/issues/2454
+-	If MapStoreFactory throws exception, instance hangs https://github.com/hazelcast/hazelcast/issues/2445
+-	Semaphore is given to the thread that is coming late https://github.com/hazelcast/hazelcast/issues/2443
+-	Lots of exceptions when shutting down connection https://github.com/hazelcast/hazelcast/issues/2441
+-	Migration fails when statistics are disabled https://github.com/hazelcast/hazelcast/issues/2436
+-	3.2.1 regression: nested transactions are not caught and prevented. https://github.com/hazelcast/hazelcast/issues/2404
+-	Heartbeat for Java Client https://github.com/hazelcast/hazelcast/issues/2297
+-	Client proxy init synced https://github.com/hazelcast/hazelcast/pull/2376
+-	Fixes hostname matching problem when interface has wildcards https://github.com/hazelcast/hazelcast/pull/2398
+-	Fix weblogic shutdown backport https://github.com/hazelcast/hazelcast/pull/2391
+-	NotWritablePropertyException connectionAttemptLimit with ssl client config https://github.com/hazelcast/hazelcast/issues/2335
+-	Map-Reduce Operation fails, when another instance tries to form a cluster with an instance running a map reduce task https://github.com/hazelcast/hazelcast/issues/2354
+-	EntryEvent getMember returning null when a node leaves the cluster https://github.com/hazelcast/hazelcast/issues/2358
+-	NullPointerException in Bundle Activator https://github.com/hazelcast/hazelcast/issues/2489
+
+Please see [here](https://github.com/hazelcast/hazelcast/issues?labels=&milestone=46&page=1&state=closed) for the full list of solved issues.
+
 **3.2.1 Fixes**
 
 This section lists issues solved for Hazelcast 3.2.1 release.
