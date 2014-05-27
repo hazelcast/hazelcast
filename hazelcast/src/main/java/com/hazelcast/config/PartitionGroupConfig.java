@@ -87,7 +87,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * </code>
  *
  * <h1>Per Member Partition Groups</h1>
- *
+ * In this partition group configuration, no effort is made to put the primary and backups on a separate physical Member.
  */
 public class PartitionGroupConfig {
 
