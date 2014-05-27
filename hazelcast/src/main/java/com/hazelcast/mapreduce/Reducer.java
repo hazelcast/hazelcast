@@ -22,8 +22,11 @@ import com.hazelcast.spi.annotation.Beta;
  * <p>
  * The abstract Reducer class is used to build reducers for the {@link Job}.<br>
  * Reducers may be distributed inside of the cluster but there is always only one Reducer
- * per key.<br/>
- * <b>Reducers are called in a threadsafe way so internal locking is not required.</b>
+ * per key.
+ * <p/>
+ * Reducers are always called in a thread-safe way however they may be moved from one thread to another
+ * in the internal thread pool. For this reason internal state should be made visible to other threads by for
+ * example using the volatile key word.
  * </p>
  * <p>
  * Due to the fact that there is only one Reducer per key mapped values needs to be
@@ -36,7 +39,8 @@ import com.hazelcast.spi.annotation.Beta;
  * <pre>
  * public class SumReducer implements Reducer&lt;Integer, Integer>
  * {
- *   private int sum = 0;
+ *   private volatile int sum = 0;
+ *
  *   public void reduce( Integer value )
  *   {
  *     sum += value;
