@@ -227,7 +227,7 @@ public final class Predicates {
                 }
                 convertedInValues = set;
             }
-            return entryValue != null && set.contains(entryValue);
+            return set.contains(entryValue);
         }
 
         @Override
