@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,6 +52,7 @@ import static org.junit.Assert.fail;
 public class XMLConfigBuilderTest {
 
     @After
+    @Before
     public void after(){
         System.clearProperty("hazelcast.config");
     }
@@ -92,7 +94,7 @@ public class XMLConfigBuilderTest {
         new XmlConfigBuilder();
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test
     public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
         System.setProperty("hazelcast.config", "classpath:test-hazelcast.xml");
 
