@@ -15,6 +15,12 @@
   ~ limitations under the License.
   -->
 
+<!--
+    The default Hazelcast configuration. This is used when:
+
+    - no hazelcast.xml if present
+
+-->
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.3.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">

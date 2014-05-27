@@ -87,6 +87,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
      */
     public XmlConfigBuilder() {
         String configFile = System.getProperty("hazelcast.config");
+
+        //todo this should be checking for classpath
         try {
             if (configFile != null) {
                 configurationFile = new File(configFile);

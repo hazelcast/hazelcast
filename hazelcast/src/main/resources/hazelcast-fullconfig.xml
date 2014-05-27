@@ -15,6 +15,24 @@
   ~ limitations under the License.
   -->
 
+<!--
+    A comprehensive example of Hazelcast configuration.
+
+    Hazelcast resolves configuration using the following approach:
+
+    1. First is checks to see if the ’hazelcast.config’ system property is set. If it is, then the value is used as the path.
+
+       The config option can be set by adding the following to the java command: - Dhazelcast.config=path_to_the_hazelcast.xml.
+
+       The value can be a normal file path, but can also be a classpath reference if it is prefixed with ’classpath:’.
+
+    2. Else it checks if there is a ’hazelcast.xml’ in the working directory.
+
+    3. After that it checks if there is a ’hazelcast.xml’ in the root of the classpath.
+
+    4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
+       ’hazelcast-default.xml’, which is included in the the Hazelcast jar
+-->
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.3.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
