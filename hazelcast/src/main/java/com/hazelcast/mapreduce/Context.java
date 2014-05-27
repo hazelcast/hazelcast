@@ -30,7 +30,7 @@ import com.hazelcast.spi.annotation.Beta;
 public interface Context<K, V> {
 
     /**
-     * Emits a key-value pair to the sample space. The same key can be used multiple
+     * Emits a key-value pair to the intermediate working space. The same key can be used multiple
      * times to collect values under the same key.
      *
      * @param key   emitted key.
