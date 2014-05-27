@@ -66,6 +66,7 @@ public class XmlClientConfigBuilderTest {
                         "</hazelcast-client>";
 
         File file = File.createTempFile("foo", "bar");
+        file.deleteOnExit();
         PrintWriter writer = new PrintWriter(file, "UTF-8");
         writer.println(xml);
         writer.close();
