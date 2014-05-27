@@ -17,8 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,16 +32,74 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+//it needs to run serial because some tests are relying on System properties they are setting themselves.
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XMLConfigBuilderTest {
+
+    @After
+    public void after(){
+        System.clearProperty("hazelcast.config");
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
+        File file = File.createTempFile("foo", "bar");
+        file.delete();
+        System.setProperty("hazelcast.config", file.getAbsolutePath());
+
+        new XmlConfigBuilder();
+    }
+
+    @Test
+    public void loadingThroughSystemProperty_existingFile() throws IOException {
+        String xml =
+                "<hazelcast>\n" +
+                        "    <group>\n" +
+                        "        <name>foobar</name>\n" +
+                        "        <password>dev-pass</password>\n" +
+                        "    </group>" +
+                        "</hazelcast>";
+
+        File file = File.createTempFile("foo", "bar");
+        PrintWriter writer = new PrintWriter(file, "UTF-8");
+        writer.println(xml);
+        writer.close();
+
+        System.setProperty("hazelcast.config", file.getAbsolutePath());
+
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
+        Config config = configBuilder.build();
+        assertEquals("foobar",config.getGroupConfig().getName());
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void loadingThroughSystemProperty_nonExistingClasspathResource() throws IOException {
+        System.setProperty("hazelcast.config", "classpath:idontexist");
+        new XmlConfigBuilder();
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
+        System.setProperty("hazelcast.config", "classpath:test-hazelcast.xml");
+
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
+        Config config = configBuilder.build();
+        assertEquals("foobar",config.getGroupConfig().getName());
+    }
 
     @Test
     public void testCleanNodeName() {
@@ -64,10 +123,10 @@ public class XMLConfigBuilderTest {
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
 
         Properties properties = new Properties();
-        properties.setProperty("name","s");
-        properties.setProperty("initial.permits","25");
-        properties.setProperty("backupcount.part1","1");
-        properties.setProperty("backupcount.part2","0");
+        properties.setProperty("name", "s");
+        properties.setProperty("initial.permits", "25");
+        properties.setProperty("backupcount.part1", "1");
+        properties.setProperty("backupcount.part2", "0");
         configBuilder.setProperties(properties);
 
         Config config = configBuilder.build();
@@ -116,7 +175,7 @@ public class XMLConfigBuilderTest {
     @Test
     public void readPortCount() {
         //check when it is explicitly set.
-         Config config = buildConfig("<hazelcast>\n" +
+        Config config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <port port-count=\"200\">5701</port>\n" +
                 "    </network>\n" +
@@ -124,7 +183,7 @@ public class XMLConfigBuilderTest {
         assertEquals(200, config.getNetworkConfig().getPortCount());
 
         //check if the default is passed in correctly
-        config = buildConfig( "<hazelcast>\n" +
+        config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <port>5701</port>\n" +
                 "    </network>\n" +
@@ -143,7 +202,7 @@ public class XMLConfigBuilderTest {
         assertFalse(config.getNetworkConfig().isPortAutoIncrement());
 
         //check if the default is picked up correctly
-        config = buildConfig( "<hazelcast>\n" +
+        config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <port>5701</port>\n" +
                 "    </network>\n" +
@@ -204,17 +263,17 @@ public class XMLConfigBuilderTest {
     public void testCaseInsensitivityOfSettings() {
         String xml =
                 "<hazelcast>\n" +
-                        "<map name=\"testCaseInsensitivity\">"+
-                        "<in-memory-format>binary</in-memory-format>     "+
-                        "<backup-count>1</backup-count>                 "  +
-                        "<async-backup-count>0</async-backup-count>    "    +
-                        "<time-to-live-seconds>0</time-to-live-seconds>"     +
-                        "<max-idle-seconds>0</max-idle-seconds>    "          +
-                        "<eviction-policy>none</eviction-policy>  "            +
-                        "<max-size policy=\"per_partition\">0</max-size>"              +
-                        "<eviction-percentage>25</eviction-percentage>"          +
-                        "<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>"+
-                        "</map>"+
+                        "<map name=\"testCaseInsensitivity\">" +
+                        "<in-memory-format>binary</in-memory-format>     " +
+                        "<backup-count>1</backup-count>                 " +
+                        "<async-backup-count>0</async-backup-count>    " +
+                        "<time-to-live-seconds>0</time-to-live-seconds>" +
+                        "<max-idle-seconds>0</max-idle-seconds>    " +
+                        "<eviction-policy>none</eviction-policy>  " +
+                        "<max-size policy=\"per_partition\">0</max-size>" +
+                        "<eviction-percentage>25</eviction-percentage>" +
+                        "<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>" +
+                        "</map>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final MapConfig mapConfig = config.getMapConfig("testCaseInsensitivity");
@@ -228,23 +287,24 @@ public class XMLConfigBuilderTest {
     public void testManagementCenterConfig() {
         String xml =
                 "<hazelcast>\n" +
-                        "<management-center enabled=\"true\" security-token=\"someToken\" cluster-id=\"someClusterId\">"+
-                        "someUrl"+
-                        "</management-center>"+
+                        "<management-center enabled=\"true\" security-token=\"someToken\" cluster-id=\"someClusterId\">" +
+                        "someUrl" +
+                        "</management-center>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertTrue(manCenterCfg.isEnabled());
-        assertEquals("someClusterId",manCenterCfg.getClusterId());
-        assertEquals("someToken",manCenterCfg.getSecurityToken());
-        assertEquals("someUrl",manCenterCfg.getUrl());
+        assertEquals("someClusterId", manCenterCfg.getClusterId());
+        assertEquals("someToken", manCenterCfg.getSecurityToken());
+        assertEquals("someUrl", manCenterCfg.getUrl());
     }
+
     @Test
     public void testNullManagementCenterConfig() {
         String xml =
                 "<hazelcast>\n" +
-                        "<management-center>"+
-                        "</management-center>"+
+                        "<management-center>" +
+                        "</management-center>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
@@ -253,6 +313,7 @@ public class XMLConfigBuilderTest {
         assertNull(manCenterCfg.getSecurityToken());
         assertNull(manCenterCfg.getUrl());
     }
+
     @Test
     public void testEmptyManagementCenterConfig() {
         String xml =
@@ -265,12 +326,13 @@ public class XMLConfigBuilderTest {
         assertNull(manCenterCfg.getSecurityToken());
         assertNull(manCenterCfg.getUrl());
     }
+
     @Test
     public void testNotEnabledManagementCenterConfig() {
         String xml =
                 "<hazelcast>\n" +
-                        "<management-center enabled=\"false\">"+
-                        "</management-center>"+
+                        "<management-center enabled=\"false\">" +
+                        "</management-center>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
@@ -279,13 +341,14 @@ public class XMLConfigBuilderTest {
         assertNull(manCenterCfg.getSecurityToken());
         assertNull(manCenterCfg.getUrl());
     }
+
     @Test
     public void testNotEnabledWithURLManagementCenterConfig() {
         String xml =
                 "<hazelcast>\n" +
-                        "<management-center enabled=\"false\">"+
-                        "http://localhost:8080/mancenter"+
-                        "</management-center>"+
+                        "<management-center enabled=\"false\">" +
+                        "http://localhost:8080/mancenter" +
+                        "</management-center>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
@@ -299,23 +362,24 @@ public class XMLConfigBuilderTest {
     public void testManagementCenterConfig_onlySecurityTokenSet() {
         String xml =
                 "<hazelcast>\n" +
-                        "<management-center security-token=\"someToken\">"+
-                        "</management-center>"+
+                        "<management-center security-token=\"someToken\">" +
+                        "</management-center>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertTrue(manCenterCfg.isEnabled());
-        assertEquals("someToken",manCenterCfg.getSecurityToken());
+        assertEquals("someToken", manCenterCfg.getSecurityToken());
         assertNull(manCenterCfg.getClusterId());
         assertNull(manCenterCfg.getUrl());
     }
+
     @Test
     public void testMapStoreInitialModeLazy() {
         String xml =
                 "<hazelcast>\n" +
-                        "<map name=\"mymap\">"+
-                        "<map-store enabled=\"true\" initial-mode=\"LAZY\"></map-store>"+
-                        "</map>"+
+                        "<map name=\"mymap\">" +
+                        "<map-store enabled=\"true\" initial-mode=\"LAZY\"></map-store>" +
+                        "</map>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         System.out.println("config = " + config);
@@ -323,13 +387,14 @@ public class XMLConfigBuilderTest {
         assertTrue(mapStoreConfig.isEnabled());
         assertEquals(MapStoreConfig.InitialLoadMode.LAZY, mapStoreConfig.getInitialLoadMode());
     }
+
     @Test
     public void testMapStoreInitialModeEager() {
         String xml =
                 "<hazelcast>\n" +
-                        "<map name=\"mymap\">"+
-                        "<map-store enabled=\"true\" initial-mode=\"EAGER\"></map-store>"+
-                        "</map>"+
+                        "<map name=\"mymap\">" +
+                        "<map-store enabled=\"true\" initial-mode=\"EAGER\"></map-store>" +
+                        "</map>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         System.out.println("config = " + config);
@@ -337,11 +402,12 @@ public class XMLConfigBuilderTest {
         assertTrue(mapStoreConfig.isEnabled());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, mapStoreConfig.getInitialLoadMode());
     }
+
     @Test(expected = HazelcastException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml =
                 "<hazelcast>\n" +
-                "</hazelcast";
+                        "</hazelcast";
         buildConfig(invalidXml);
         fail(); //if we, for any reason, we get through the parsing, fail.
     }
