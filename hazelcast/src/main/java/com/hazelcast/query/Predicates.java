@@ -207,7 +207,7 @@ public final class Predicates {
                 }
                 convertedInValues = set;
             }
-            return entryValue != null && set.contains(entryValue);
+            return set.contains(entryValue);
         }
 
         public Set<QueryableEntry> filter(QueryContext queryContext) {
