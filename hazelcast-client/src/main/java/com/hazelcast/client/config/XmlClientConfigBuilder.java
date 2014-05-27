@@ -30,6 +30,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
@@ -217,6 +218,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             return clientConfig;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
+        }finally {
+            IOUtil.closeResource(in);
         }
     }
 
