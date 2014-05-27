@@ -1,0 +1,6 @@
+<hazelcast-client>
+    <group>
+        <name>foobar</name>
+        <password>dev-pass</password>
+    </group>
+</hazelcast-client>
