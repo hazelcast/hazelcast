@@ -89,7 +89,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
      * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
      * <li>it checks if a hazelcast-client.xml is available in the working dir
      * <li>it checks if a hazelcast-client.xml is available on the classpath</li>
-     * <li>it loads the hazelcast-client-default.xml</li></li>
+     * <li>it loads the hazelcast-client-default.xml</li>
      * </ol>
       */
     public XmlClientConfigBuilder() {
