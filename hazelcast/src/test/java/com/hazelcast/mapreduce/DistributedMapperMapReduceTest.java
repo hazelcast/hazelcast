@@ -91,7 +91,7 @@ public class DistributedMapperMapReduceTest
                                                           .combiner(new TestIntermediateCombinerFactory())
                                                           .reducer(new TestIntermediateReducerFactory()).submit();
 
-        // Precalculate results
+        // Pre-calculate results
         int[] expectedResults = new int[4];
         for (int i = 0; i < 100; i++) {
             int index = i % 4;

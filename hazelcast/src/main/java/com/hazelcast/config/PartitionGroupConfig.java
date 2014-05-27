@@ -89,7 +89,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * <h1>Per Member Partition Groups</h1>
  * The default partition scheme. This means each Member is in a group of its own.
  * <p/>
- * Partitions (primaries and backups) will be distributed randomly but on the same physical Member.
+ * Partitions (primaries and backups) will be distributed randomly but not on the same physical Member.
  */
 public class PartitionGroupConfig {
 
