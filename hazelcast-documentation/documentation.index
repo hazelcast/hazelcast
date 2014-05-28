@@ -29,7 +29,7 @@ src/Distributed_Data_Structures.md
 	src/ISemaphore.md
 #	src/IAtomicReference.md
 	src/ICountDownLatch.md
-#	src/IdGenerator.md
+	src/IdGenerator.md
     src/replicatedmap/ReplicatedMap.md
         src/replicatedmap/Considerations.md
         src/replicatedmap/BreakageMapContract.md
