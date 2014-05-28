@@ -49,6 +49,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
@@ -1297,7 +1298,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(NightlyTest.class)
+    @Category(ProblematicTest.class)
     public void testIssue1085WriteBehindBackupWithLongRunnigMapStore() throws InterruptedException {
         final String name = randomMapName("testIssue1085WriteBehindBackup");
         final int expectedStoreCount = 3;
