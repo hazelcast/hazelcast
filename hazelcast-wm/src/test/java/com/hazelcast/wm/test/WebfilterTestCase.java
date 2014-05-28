@@ -53,6 +53,19 @@ public class WebfilterTestCase extends AbstractWebfilterTestCase {
     }
 
     @Test(timeout = 60000)
+    public void testAttributeNames_issue_2434() throws Exception {
+        IMap<String, String> map = hz.getMap("default");
+
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("read", serverPort1, cookieStore);
+
+        String commatSeperatedAttributeNames = executeRequest("names", serverPort1, cookieStore);
+
+        //no name should be created
+        assertEquals("",commatSeperatedAttributeNames);
+    }
+
+    @Test(timeout = 60000)
     public void test_github_issue_2187() throws Exception {
         IMap<String, String> map = hz.getMap("default");
 

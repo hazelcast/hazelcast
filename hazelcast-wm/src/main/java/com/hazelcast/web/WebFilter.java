@@ -718,7 +718,7 @@ public class WebFilter implements Filter {
                 }
             } else {
                 for (Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
-                    if (!entry.getValue().removed) {
+                    if (!entry.getValue().removed && entry.getValue() != NULL_ENTRY) {
                         keys.add(entry.getKey());
                     }
                 }
