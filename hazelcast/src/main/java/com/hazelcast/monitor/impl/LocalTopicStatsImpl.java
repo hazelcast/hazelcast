@@ -17,13 +17,14 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.JsonUtil.getLong;
 
 public class LocalTopicStatsImpl
         implements LocalTopicStats {
@@ -64,7 +65,7 @@ public class LocalTopicStatsImpl
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("creationTime", creationTime);
         root.add("totalPublishes", totalPublishes);
@@ -74,7 +75,9 @@ public class LocalTopicStatsImpl
 
     @Override
     public void fromJson(JsonObject json) {
-
+        creationTime = getLong(json, "creationTime", -1L);
+        TOTAL_PUBLISHES_UPDATER.set(this, getLong(json, "totalPublishes", -1L));
+        TOTAL_RECEIVED_MESSAGES_UPDATER.set(this, getLong(json, "totalReceivedMessages", -1L));
     }
 
     @Override

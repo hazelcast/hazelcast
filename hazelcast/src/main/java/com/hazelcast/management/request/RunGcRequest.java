@@ -17,7 +17,6 @@
 package com.hazelcast.management.request;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ManagementCenterService;
 
 //We want to be able to force a gc.
@@ -44,7 +43,7 @@ public class RunGcRequest implements ConsoleRequest {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         return new JsonObject();
     }
 

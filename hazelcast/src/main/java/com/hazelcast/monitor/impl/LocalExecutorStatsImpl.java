@@ -17,13 +17,14 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.JsonUtil.getLong;
 
 public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
@@ -112,7 +113,7 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("creationTime", creationTime);
         root.add("pending", pending);
@@ -125,6 +126,12 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
     @Override
     public void fromJson(JsonObject json) {
+        creationTime = getLong(json, "creationTime", -1L);
+        PENDING_UPDATER.set(this, getLong(json, "pending", -1L));
+        STARTED_UPDATER.set(this, getLong(json, "started", -1L));
+        TOTAL_START_LATENCY_UPDATER.set(this, getLong(json, "totalStartLatency", -1L));
+        COMPLETED_UPDATER.set(this, getLong(json, "completed", -1L));
+        TOTAL_EXECUTION_TIME_UPDATER.set(this, getLong(json, "totalExecutionTime", -1L));
     }
 
     @Override

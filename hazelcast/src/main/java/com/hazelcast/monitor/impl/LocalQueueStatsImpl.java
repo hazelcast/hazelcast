@@ -17,13 +17,15 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getLong;
 
 public class LocalQueueStatsImpl
         implements LocalQueueStats {
@@ -60,7 +62,7 @@ public class LocalQueueStatsImpl
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("ownedItemCount", ownedItemCount);
         root.add("backupItemCount", backupItemCount);
@@ -79,7 +81,18 @@ public class LocalQueueStatsImpl
 
     @Override
     public void fromJson(JsonObject json) {
-
+        ownedItemCount = getInt(json, "ownedItemCount", -1);
+        backupItemCount = getInt(json, "backupItemCount", -1);
+        minAge = getLong(json, "minAge", -1L);
+        maxAge = getLong(json, "maxAge", -1L);
+        aveAge = getLong(json, "aveAge", -1L);
+        creationTime = getLong(json, "creationTime", -1L);
+        NUMBER_OF_OFFERS_UPDATER.set(this, getLong(json, "numberOfOffers", -1L));
+        NUMBER_OF_POLLS_UPDATER.set(this, getLong(json, "numberOfPolls", -1L));
+        NUMBER_OF_REJECTED_OFFERS_UPDATER.set(this, getLong(json, "numberOfRejectedOffers", -1L));
+        NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, getLong(json, "numberOfEmptyPolls", -1L));
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, getLong(json, "numberOfOtherOperations", -1L));
+        NUMBER_OF_EVENTS_UPDATER.set(this, getLong(json, "numberOfEvents", -1L));
     }
 
 

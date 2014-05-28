@@ -17,9 +17,10 @@
 package com.hazelcast.management.request;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ThreadDumpOperation;
+
+import static com.hazelcast.util.JsonUtil.getBoolean;
 
 public class ThreadDumpRequest implements ConsoleRequest {
 
@@ -61,7 +62,7 @@ public class ThreadDumpRequest implements ConsoleRequest {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("dumpDeadlocks", dumpDeadlocks);
         return root;
@@ -69,6 +70,6 @@ public class ThreadDumpRequest implements ConsoleRequest {
 
     @Override
     public void fromJson(JsonObject json) {
-        dumpDeadlocks = json.get("dumpDeadlocks").asBoolean();
+        dumpDeadlocks = getBoolean(json, "dumpDeadlocks", false);
     }
 }

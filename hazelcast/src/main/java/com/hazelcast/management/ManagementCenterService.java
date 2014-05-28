@@ -447,7 +447,6 @@ public class ManagementCenterService {
                 }
 
                 JsonObject request = JsonObject.readFrom(sb.toString());
-                System.out.println("request = " + request);
                 if (!request.isEmpty()){
                     JsonObject innerRequest = request.get("request").asObject();
                     final int type = innerRequest.get("type").asInt();

@@ -17,13 +17,15 @@
 package com.hazelcast.management.request;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.util.JsonUtil;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.JsonUtil.*;
 
 public class GetMapEntryRequest implements ConsoleRequest {
 
@@ -84,7 +86,7 @@ public class GetMapEntryRequest implements ConsoleRequest {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("mapName", mapName);
         root.add("type", type);
@@ -94,8 +96,8 @@ public class GetMapEntryRequest implements ConsoleRequest {
 
     @Override
     public void fromJson(JsonObject json) {
-        mapName = json.get("mapName").asString();
-        type = json.get("type").asString();
-        key = json.get("key").asString();
+        mapName = getString(json, "mapName");
+        type = getString(json, "type");
+        key = getString(json, "key");
     }
 }

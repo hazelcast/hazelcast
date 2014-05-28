@@ -21,13 +21,17 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import java.io.IOException;
+import com.hazelcast.util.JsonUtil;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static com.hazelcast.util.JsonUtil.getArray;
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.util.JsonUtil.getString;
 
 public final class TimedMemberState implements Cloneable, JsonSerializable {
 
@@ -50,9 +54,10 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         return state;
     }
 
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("master", master);
+        root.add("time", time);
         root.add("clusterName", clusterName);
         JsonArray instanceNames = new JsonArray();
         for (String instanceName : this.instanceNames) {
@@ -72,46 +77,22 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     @Override
     public void fromJson(JsonObject json) {
-
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(time);
-        out.writeBoolean(master);
-        memberState.writeData(out);
-        out.writeUTF(clusterName);
-        int nameCount = (instanceNames == null) ? 0 : instanceNames.size();
-        out.writeInt(nameCount);
-        if (instanceNames != null) {
-            for (String name : instanceNames) {
-                out.writeUTF(name);
-            }
+        time = getLong(json, "time");
+        master = getBoolean(json, "master");
+        clusterName = getString(json, "clusterName");
+        instanceNames = new HashSet<String>();
+        final JsonArray jsonInstanceNames = getArray(json, "instanceNames");
+        for (JsonValue instanceName : jsonInstanceNames.values()) {
+            instanceNames.add(instanceName.asString());
         }
-        int memberCount = (memberList == null) ? 0 : memberList.size();
-        out.writeInt(memberCount);
-        if (memberList != null) {
-            for (String address : memberList) {
-                out.writeUTF(address);
-            }
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        time = in.readLong();
-        master = in.readBoolean();
-        memberState = new MemberStateImpl();
-        memberState.readData(in);
-        clusterName = in.readUTF();
-        int nameCount = in.readInt();
-        instanceNames = new HashSet<String>(nameCount);
-        for (int i = 0; i < nameCount; i++) {
-            instanceNames.add(in.readUTF());
-        }
-        int memberCount = in.readInt();
         memberList = new ArrayList<String>();
-        for (int i = 0; i < memberCount; i++) {
-            memberList.add(in.readUTF());
+        final JsonArray jsonMemberList = getArray(json, "memberList");
+        for (JsonValue member : jsonMemberList.values()) {
+            memberList.add(member.asString());
         }
+        final JsonObject jsonMemberState = getObject(json, "memberState");
+        memberState = new MemberStateImpl();
+        memberState.fromJson(jsonMemberState);
     }
 
     public List<String> getMemberList() {

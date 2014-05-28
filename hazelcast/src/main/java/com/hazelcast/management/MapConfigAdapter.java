@@ -25,7 +25,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
+import com.hazelcast.util.JsonUtil;
 import java.io.IOException;
+
+import static com.hazelcast.util.JsonUtil.*;
 
 public class MapConfigAdapter implements JsonSerializable, DataSerializable {
 
@@ -38,7 +41,7 @@ public class MapConfigAdapter implements JsonSerializable, DataSerializable {
         this.config = mapConfig;
     }
 
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("name", config.getName());
         root.add("memoryFormat", config.getInMemoryFormat().toString());
@@ -58,18 +61,18 @@ public class MapConfigAdapter implements JsonSerializable, DataSerializable {
     @Override
     public void fromJson(JsonObject json) {
         config = new MapConfig();
-        config.setName(json.get("name").asString());
-        config.setInMemoryFormat(InMemoryFormat.valueOf(json.get("memoryFormat").asString()));
-        config.setBackupCount(json.get("backupCount").asInt());
-        config.setAsyncBackupCount(json.get("asyncBackupCount").asInt());
-        config.setEvictionPercentage(json.get("evictionPercentage").asInt());
-        config.setTimeToLiveSeconds(json.get("ttl").asInt());
-        config.setMaxIdleSeconds(json.get("maxIdle").asInt());
-        config.setMaxSizeConfig(new MaxSizeConfig().setSize(json.get("maxSize").asInt())
-                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(json.get("maxSizePolicy").asString())));
-        config.setReadBackupData(json.get("readBackupData").asBoolean());
-        config.setEvictionPolicy(MapConfig.EvictionPolicy.valueOf(json.get("evictionPolicy").asString()));
-        config.setMergePolicy(json.get("mergePolicy").asString());
+        config.setName(getString(json, "name"));
+        config.setInMemoryFormat(InMemoryFormat.valueOf(getString(json, "memoryFormat")));
+        config.setBackupCount(getInt(json, "backupCount"));
+        config.setAsyncBackupCount(getInt(json, "asyncBackupCount"));
+        config.setEvictionPercentage(getInt(json, "evictionPercentage"));
+        config.setTimeToLiveSeconds(getInt(json, "ttl"));
+        config.setMaxIdleSeconds(getInt(json, "maxIdle"));
+        config.setMaxSizeConfig(new MaxSizeConfig().setSize(getInt(json, "maxSize"))
+                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(getString(json, "maxSizePolicy"))));
+        config.setReadBackupData(getBoolean(json, "readBackupData"));
+        config.setEvictionPolicy(MapConfig.EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
+        config.setMergePolicy(getString(json, "mergePolicy"));
     }
 
     @Override

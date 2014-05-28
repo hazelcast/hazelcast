@@ -16,37 +16,34 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.management.SerializableClientEndPoint;
-<<<<<<< HEAD
-import com.hazelcast.management.SerializableMXBeans;
-=======
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
->>>>>>> management center json communication initial commit
+import com.hazelcast.management.SerializableClientEndPoint;
+import com.hazelcast.management.SerializableMXBeans;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.MemberState;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.util.JsonUtil.getArray;
+import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.util.JsonUtil.getString;
 
 public class MemberStateImpl implements MemberState {
 
     public static final int DEFAULT_PARTITION_COUNT = 271;
 
-<<<<<<< HEAD
-    private Address address = new Address();
+    private String address;
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
     private Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     private Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
@@ -56,23 +53,12 @@ public class MemberStateImpl implements MemberState {
     private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
     private SerializableMXBeans beans = new SerializableMXBeans();
-=======
-    String address;
-    Map<String, Long> runtimeProps = new HashMap<String, Long>();
-    Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
-    Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
-    Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
-    Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
-    Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
-    List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
-    Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
->>>>>>> management center json communication initial commit
 
     public MemberStateImpl() {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("address", address);
         JsonObject mapStatsObject = new JsonObject();
@@ -115,107 +101,66 @@ public class MemberStateImpl implements MemberState {
             clientsArray.add(client.toJson());
         }
         root.add("clients", clientsArray);
+        root.add("beans", beans.toJson());
         return root;
     }
 
     @Override
     public void fromJson(JsonObject json) {
-
+        address = getString(json, "address");
+        final Iterator<JsonObject.Member> mapStatsIterator = getObject(json, "mapStats").iterator();
+        while (mapStatsIterator.hasNext()) {
+            final JsonObject.Member next = mapStatsIterator.next();
+            LocalMapStatsImpl stats = new LocalMapStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            mapStats.put(next.getName(), stats);
+        }
+        final Iterator<JsonObject.Member> multiMapStatsIterator = getObject(json, "multiMapStats").iterator();
+        while (multiMapStatsIterator.hasNext()) {
+            final JsonObject.Member next = multiMapStatsIterator.next();
+            LocalMultiMapStatsImpl stats = new LocalMultiMapStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            multiMapStats.put(next.getName(), stats);
+        }
+        final Iterator<JsonObject.Member> queueStatsIterator = getObject(json, "queueStats").iterator();
+        while (queueStatsIterator.hasNext()) {
+            final JsonObject.Member next = queueStatsIterator.next();
+            LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            queueStats.put(next.getName(), stats);
+        }
+        final Iterator<JsonObject.Member> topicStatsIterator = getObject(json, "topicStats").iterator();
+        while (topicStatsIterator.hasNext()) {
+            final JsonObject.Member next = topicStatsIterator.next();
+            LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            topicStats.put(next.getName(), stats);
+        }
+        final Iterator<JsonObject.Member> executorStatsIterator = getObject(json, "executorStats").iterator();
+        while (executorStatsIterator.hasNext()) {
+            final JsonObject.Member next = executorStatsIterator.next();
+            LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            executorStats.put(next.getName(), stats);
+        }
+        final Iterator<JsonObject.Member> propsIterator = getObject(json, "runtimeProps").iterator();
+        while (propsIterator.hasNext()) {
+            final JsonObject.Member next = propsIterator.next();
+            runtimeProps.put(next.getName(), next.getValue().asLong());
+        }
+        final JsonArray jsonPartitions = getArray(json, "partitions");
+        for (JsonValue jsonPartition : jsonPartitions) {
+            partitions.add(jsonPartition.asInt());
+        }
+        final JsonArray jsonClients = getArray(json, "clients");
+        for (JsonValue jsonClient : jsonClients) {
+            final SerializableClientEndPoint client = new SerializableClientEndPoint();
+            client.fromJson(jsonClient.asObject());
+            clients.add(client);
+        }
+        beans = new SerializableMXBeans();
+        beans.fromJson(getObject(json, "beans"));
     }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(address);
-        out.writeInt(mapStats.size());
-        for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
-        out.writeInt(multiMapStats.size());
-        for (Map.Entry<String, LocalMultiMapStatsImpl> entry : multiMapStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
-        out.writeInt(queueStats.size());
-        for (Map.Entry<String, LocalQueueStatsImpl> entry : queueStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
-        out.writeInt(topicStats.size());
-        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
-        out.writeInt(executorStats.size());
-        for (Map.Entry<String, LocalExecutorStatsImpl> entry : executorStats.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
-        }
-
-        out.writeInt(runtimeProps.size());
-        for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeLong(entry.getValue());
-        }
-        out.writeInt(partitions.size());
-        for (Integer lsPartition : partitions) {
-            out.writeInt(lsPartition);
-        }
-        out.writeInt(clients.size());
-        for (SerializableClientEndPoint client : clients) {
-            client.writeData(out);
-        }
-        beans.writeData(out);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        address = in.readUTF();
-        DataSerializable impl;
-        String name;
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            impl = new LocalMapStatsImpl();
-            impl.readData(in);
-            mapStats.put(name, (LocalMapStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            impl = new LocalMultiMapStatsImpl();
-            impl.readData(in);
-            multiMapStats.put(name, (LocalMultiMapStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            impl = new LocalQueueStatsImpl();
-            impl.readData(in);
-            queueStats.put(name, (LocalQueueStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            impl = new LocalTopicStatsImpl();
-            impl.readData(in);
-            topicStats.put(name, (LocalTopicStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            impl = new LocalExecutorStatsImpl();
-            impl.readData(in);
-            executorStats.put(name, (LocalExecutorStatsImpl) impl);
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            name = in.readUTF();
-            runtimeProps.put(name, in.readLong());
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            partitions.add(in.readInt());
-        }
-        for (int i = in.readInt(); i > 0; i--) {
-            SerializableClientEndPoint ci = new SerializableClientEndPoint();
-            ci.readData(in);
-            clients.add(ci);
-        }
-        beans.readData(in);
-    }
-
 
     public void clearPartitions() {
         partitions.clear();

@@ -1,15 +1,14 @@
 package com.hazelcast.management;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import java.io.IOException;
+
+import static com.hazelcast.util.JsonUtil.getInt;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.ConnectionManagerMBean}.
  */
-public class SerializableConnectionManagerBean implements DataSerializable {
+public class SerializableConnectionManagerBean implements JsonSerializable {
 
     private int clientConnectionCount;
     private int activeConnectionCount;
@@ -49,16 +48,18 @@ public class SerializableConnectionManagerBean implements DataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(clientConnectionCount);
-        out.writeInt(activeConnectionCount);
-        out.writeInt(connectionCount);
+    public JsonObject toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("clientConnectionCount", clientConnectionCount);
+        root.add("activeConnectionCount", activeConnectionCount);
+        root.add("connectionCount", connectionCount);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        clientConnectionCount = in.readInt();
-        activeConnectionCount = in.readInt();
-        connectionCount = in.readInt();
+    public void fromJson(JsonObject json) {
+        clientConnectionCount = getInt(json, "clientConnectionCount", -1);
+        activeConnectionCount = getInt(json, "activeConnectionCount", -1);
+        connectionCount = getInt(json, "connectionCount", -1);
     }
 }

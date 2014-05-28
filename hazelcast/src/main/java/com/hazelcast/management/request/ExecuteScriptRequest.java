@@ -24,6 +24,7 @@ import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.JsonUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +32,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.util.JsonUtil.*;
 
 public class ExecuteScriptRequest implements ConsoleRequest {
 
@@ -82,7 +85,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
             final ArrayList list = new ArrayList(targets.size());
             for (String address : targets) {
                 final AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(address);
-                final Address targetAddress = new Address(addressHolder.address, addressHolder.port);
+                final Address targetAddress = new Address(addressHolder.getAddress(), addressHolder.getPort());
                 list.add(mcs.callOnAddress(targetAddress, new ScriptExecutorOperation(engine, script, bindings)));
             }
             results = list;
@@ -118,7 +121,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("script", script);
         root.add("engine", engine);
@@ -133,13 +136,13 @@ public class ExecuteScriptRequest implements ConsoleRequest {
 
     @Override
     public void fromJson(JsonObject json) {
-        script = json.get("script").asString();
-        engine = json.get("engine").asString();
+        script = getString(json, "script", "");
+        engine = getString(json, "engine", "");
         targets = new HashSet<String>();
-        for (JsonValue target : json.get("targets").asArray()) {
+        for (JsonValue target : getArray(json, "targets", new JsonArray())) {
             targets.add(target.asString());
         }
-        targetAllMembers = json.get("targetAllMembers").asBoolean();
+        targetAllMembers = getBoolean(json, "targetAllMembers", false);
         bindings = new HashMap<String, Object>();
     }
 }

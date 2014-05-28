@@ -17,9 +17,10 @@
 package com.hazelcast.management.request;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ConsoleCommandHandler;
 import com.hazelcast.management.ManagementCenterService;
+
+import static com.hazelcast.util.JsonUtil.getString;
 
 public class ConsoleCommandRequest implements ConsoleRequest {
 
@@ -56,7 +57,7 @@ public class ConsoleCommandRequest implements ConsoleRequest {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("command", command);
         return root;
@@ -64,6 +65,6 @@ public class ConsoleCommandRequest implements ConsoleRequest {
 
     @Override
     public void fromJson(JsonObject json) {
-        command = json.get("command").asString();
+        command = getString(json, "command", "");
     }
 }

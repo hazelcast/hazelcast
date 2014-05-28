@@ -17,10 +17,12 @@
 package com.hazelcast.management;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
+import com.hazelcast.util.JsonUtil;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getString;
 import static java.lang.String.format;
 
 /**
@@ -41,7 +43,7 @@ public class ManagementCenterIdentifier implements JsonSerializable{
             }
             return version;
         }
-        throw new IllegalArgumentException(format("version string '%s' is not valid",versionString));
+        throw new IllegalArgumentException(format("version string '%s' is not valid", versionString));
     }
 
     public static String convertVersionToString(int version) {
@@ -71,7 +73,7 @@ public class ManagementCenterIdentifier implements JsonSerializable{
     }
 
 
-    public JsonValue toJson(){
+    public JsonObject toJson(){
         JsonObject root = new JsonObject();
         root.add("version", version);
         root.add("clusterName", clusterName);
@@ -81,9 +83,9 @@ public class ManagementCenterIdentifier implements JsonSerializable{
 
     @Override
     public void fromJson(JsonObject json) {
-        version = json.get("version").asInt();
-        clusterName = json.get("clusterName").asString();
-        address = json.get("address").asString();
+        version = getInt(json, "version");
+        clusterName = getString(json, "clusterName");
+        address = getString(json, "address");
     }
 
     public int getVersion() {

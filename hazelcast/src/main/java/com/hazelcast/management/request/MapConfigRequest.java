@@ -17,7 +17,6 @@
 package com.hazelcast.management.request;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.management.ManagementCenterService;
@@ -25,6 +24,10 @@ import com.hazelcast.management.MapConfigAdapter;
 import com.hazelcast.management.operation.GetMapConfigOperation;
 import com.hazelcast.management.operation.UpdateMapConfigOperation;
 import java.util.Set;
+
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.util.JsonUtil.getString;
 
 public class MapConfigRequest implements ConsoleRequest {
 
@@ -85,7 +88,7 @@ public class MapConfigRequest implements ConsoleRequest {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("mapName", mapName);
         root.add("update", update);
@@ -95,9 +98,9 @@ public class MapConfigRequest implements ConsoleRequest {
 
     @Override
     public void fromJson(JsonObject json) {
-        mapName = json.get("mapName").asString();
-        update = json.get("update").asBoolean();
+        mapName = getString(json, "mapName");
+        update = getBoolean(json, "update");
         config = new MapConfigAdapter();
-        config.fromJson(json.get("config").asObject());
+        config.fromJson(getObject(json, "config"));
     }
 }

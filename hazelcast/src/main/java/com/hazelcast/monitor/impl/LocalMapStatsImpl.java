@@ -24,8 +24,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.JsonUtil;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.JsonUtil.*;
 
 public class LocalMapStatsImpl
         implements LocalMapStats, IdentifiedDataSerializable {
@@ -368,7 +371,7 @@ public class LocalMapStatsImpl
         return MapDataSerializerHook.MAP_STATS;
     }
 
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("getCount", getCount);
         root.add("putCount", putCount);
@@ -401,7 +404,34 @@ public class LocalMapStatsImpl
 
     @Override
     public void fromJson(JsonObject json) {
-
+        GET_COUNT_UPDATER.set(this, getLong(json, "getCount", -1L));
+        PUT_COUNT_UPDATER.set(this, getLong(json, "putCount", -1L));
+        REMOVE_COUNT_UPDATER.set(this, getLong(json, "removeCount", -1L));
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, getLong(json, "numberOfOtherOperations", -1L));
+        NUMBER_OF_EVENTS_UPDATER.set(this, getLong(json, "numberOfEvents", -1L));
+        LAST_ACCESS_TIME_UPDATER.set(this, getLong(json, "lastAccessTime", -1L));
+        LAST_UPDATE_TIME_UPDATER.set(this, getLong(json, "lastUpdateTime", -1L));
+        HITS_UPDATER.set(this, getLong(json, "hits", -1L));
+        ownedEntryCount =  getLong(json, "ownedEntryCount", -1L);
+        backupEntryCount =  getLong(json, "backupEntryCount", -1L);
+        backupCount =  getInt(json, "backupCount", -1);
+        ownedEntryMemoryCost =  getLong(json, "ownedEntryMemoryCost", -1L);
+        backupEntryMemoryCost =  getLong(json, "backupEntryMemoryCost", -1L);
+        creationTime =  getLong(json, "creationTime", -1L);
+        lockedEntryCount =  getLong(json, "lockedEntryCount", -1L);
+        dirtyEntryCount =  getLong(json, "dirtyEntryCount", -1L);
+        TOTAL_GET_LATENCIES_UPDATER.set(this, getLong(json, "totalGetLatencies", -1L));
+        TOTAL_PUT_LATENCIES_UPDATER.set(this, getLong(json, "totalPutLatencies", -1L));
+        TOTAL_REMOVE_LATENCIES_UPDATER.set(this, getLong(json, "totalRemoveLatencies", -1L));
+        MAX_GET_LATENCY_UPDATER.set(this, getLong(json, "maxGetLatency", -1L));
+        MAX_PUT_LATENCY_UPDATER.set(this, getLong(json, "maxPutLatency", -1L));
+        MAX_REMOVE_LATENCY_UPDATER.set(this, getLong(json, "maxRemoveLatency", -1L));
+        heapCost = getLong(json, "heapCost", -1L);
+        final JsonValue jsonNearCacheStats = json.get("nearCacheStats");
+        if (jsonNearCacheStats != null) {
+            nearCacheStats = new NearCacheStatsImpl();
+            nearCacheStats.fromJson(jsonNearCacheStats.asObject());
+        }
     }
 
     @Override

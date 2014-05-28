@@ -17,7 +17,6 @@
 package com.hazelcast.management.request;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.partition.InternalPartitionService;
 import java.lang.management.ManagementFactory;
@@ -66,7 +65,7 @@ public class ClusterPropsRequest implements ConsoleRequest {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         return new JsonObject();
     }
 

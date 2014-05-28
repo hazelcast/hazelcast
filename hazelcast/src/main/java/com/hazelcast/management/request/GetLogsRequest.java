@@ -68,7 +68,7 @@ public class GetLogsRequest implements ConsoleRequest {
     }
 
     @Override
-    public JsonValue toJson() {
+    public JsonObject toJson() {
         return new JsonObject();
     }
 
