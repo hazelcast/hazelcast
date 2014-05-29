@@ -53,7 +53,7 @@ public class ConsoleCommandRequest implements ConsoleRequest {
 
     @Override
     public Object readResponse(JsonObject json) {
-        return json.get("output").asString();
+        return getString(json, "output", "Error while reading response " + ConsoleCommandRequest.class.getName());
     }
 
     @Override

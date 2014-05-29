@@ -58,6 +58,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.ConnectException;
@@ -330,7 +331,8 @@ public class ManagementCenterService {
                     root.add("identifier", identifier.toJson());
                     TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
                     root.add("timedMemberState", timedMemberState.toJson());
-                    outputStream.write(root.toString().getBytes());
+                    root.writeTo(new OutputStreamWriter(outputStream));
+//                    outputStream.write(root.toString().getBytes());
                     outputStream.flush();
                     post(connection);
                 } finally {

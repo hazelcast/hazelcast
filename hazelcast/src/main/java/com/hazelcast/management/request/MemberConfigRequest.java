@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.util.JsonUtil;
 
 public class MemberConfigRequest implements ConsoleRequest {
 
@@ -32,8 +33,8 @@ public class MemberConfigRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in) {
-        return in.get("configXmlString").asString();
+    public Object readResponse(JsonObject json) {
+        return JsonUtil.getString(json, "configXmlString", "Error while reading response " + MemberConfigRequest.class.getName());
     }
 
     @Override

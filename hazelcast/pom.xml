@@ -180,6 +180,8 @@
                         <configuration>
                             <finalName>${project.build.finalName}</finalName>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <createSourcesJar>true</createSourcesJar>
+							<shadeSourcesContent>true</shadeSourcesContent>
                             <relocations>
                                 <relocation>
                                     <pattern>com.eclipsesource.json</pattern>

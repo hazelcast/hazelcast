@@ -24,7 +24,6 @@ import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
-import com.hazelcast.util.JsonUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.JsonUtil.*;
+import static com.hazelcast.util.JsonUtil.getArray;
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getString;
 
 public class ExecuteScriptRequest implements ConsoleRequest {
 
@@ -116,8 +117,8 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in) throws IOException {
-        return in.get("scriptResult").asString();
+    public Object readResponse(JsonObject json) throws IOException {
+        return getString(json, "scriptResult", "Error while reading response " + ExecuteScriptRequest.class.getName());
     }
 
     @Override
@@ -126,7 +127,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         root.add("script", script);
         root.add("engine", engine);
         JsonArray jsonTargets = new JsonArray();
-        for (String target:targets){
+        for (String target : targets) {
             jsonTargets.add(target);
         }
         root.add("targets", jsonTargets);

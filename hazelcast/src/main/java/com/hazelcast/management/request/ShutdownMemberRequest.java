@@ -19,6 +19,8 @@ package com.hazelcast.management.request;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.management.ManagementCenterService;
 
+import static com.hazelcast.util.JsonUtil.getString;
+
 public class ShutdownMemberRequest implements ConsoleRequest {
 
     public ShutdownMemberRequest() {
@@ -30,8 +32,8 @@ public class ShutdownMemberRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in) {
-        return in.get("result").asString();
+    public Object readResponse(JsonObject json) {
+        return getString(json, "result", "successful");
     }
 
     @Override

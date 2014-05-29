@@ -21,6 +21,7 @@ import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ThreadDumpOperation;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getString;
 
 public class ThreadDumpRequest implements ConsoleRequest {
 
@@ -53,10 +54,10 @@ public class ThreadDumpRequest implements ConsoleRequest {
     }
 
     @Override
-    public String readResponse(JsonObject in) {
-        final boolean hasDump = in.get("hasDump").asBoolean();
+    public String readResponse(JsonObject json) {
+        final boolean hasDump = getBoolean(json, "hasDump", false);
         if (hasDump) {
-            return in.get("dump").asString();
+            return getString(json, "dump");
         }
         return null;
     }

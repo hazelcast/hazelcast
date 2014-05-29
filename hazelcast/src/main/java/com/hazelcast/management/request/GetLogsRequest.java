@@ -24,6 +24,7 @@ import com.hazelcast.logging.SystemLogRecord;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.JsonUtil;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -38,10 +39,10 @@ public class GetLogsRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(JsonObject in) {
+    public Object readResponse(JsonObject json) {
         List<SystemLogRecord> list = new LinkedList<SystemLogRecord>();
-        String node = in.get("node").asString();
-        final JsonArray logs = in.get("logs").asArray();
+        String node = JsonUtil.getString(json, "node", "");
+        final JsonArray logs = JsonUtil.getArray(json, "logs", new JsonArray());
         for (JsonValue log : logs) {
             SystemLogRecord systemLogRecord = new SystemLogRecord();
             systemLogRecord.fromJson(log.asObject());
