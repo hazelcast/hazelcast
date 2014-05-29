@@ -30,8 +30,6 @@ import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -50,7 +48,6 @@ public final class VersionCheck {
     private static final int J_INTERVAL = 600;
 
     private MessageDigest md;
-    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     public VersionCheck() {
         try {
@@ -63,7 +60,7 @@ public final class VersionCheck {
         if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {
             return;
         }
-        executor.scheduleAtFixedRate(new Runnable() {
+        hazelcastNode.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
             public void run() {
                 doCheck(hazelcastNode, version, isEnterprise);
             }
@@ -71,7 +68,6 @@ public final class VersionCheck {
     }
 
     public void shutdown() {
-        executor.shutdown();
     }
 
     private String convertToLetter(int size) {
