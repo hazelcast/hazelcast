@@ -38,9 +38,13 @@ to be scheduled, the right thread is found using: threadindex = partitionid mod 
 is put in the workqueue of that worker.
 
 This means that a single partition thread can execute operations for multiple partitions; if there are 271 partitions and
-10 partition-threads, then roughly every thread will execute of operations of 10 partitions. If one partition is slow, e.g.
-a MapEntryProcessor is running which takes time, it will block the execution of other operations that map to the same 
-operation-thread. 
+10 partition-threads, then roughly every thread will execute of operations of 10 partitions. 
+
+If one partition is slow, e.g. a MapEntryProcessor is running which takes time, it will block the execution of other partitions
+that map to the same operation-thread. So it could be that partition 1, and partition 26 of map-x do content for the some partition
+thread because they map to the same one. It can even be that partition 1 for map-x and partition partition 26 of map-y, which
+are completely independent data-structures, still content fo the same thread. So you need to be careful from starving a partition
+from resources.
 
 Currently there is no support for work stealing; so it could be that different partitions, that map to
 the same thread, need to wait till one of the partitions is finished, even though there are other free partition-operation threads
@@ -48,15 +52,15 @@ available.
 
 ### Threading model of non partition aware operations
 
-To execute partition unware operations, they are called generic operation threads, e.g. map.size, an array of OperationThreads 
-is created. This array also is by default 2x number of cores and can be changed using the 
+To execute partition unware operations, e.g. map.size, generic operation threads are used. When the Hazelcast instance is started,
+an array of OperationThreads is created. This array also is by default 2x number of cores and can be changed using the 
 'hazelcast.operation.generic.thread.count' property.
 
 Unlike the partition-aware operation threads, all the generic operation threads, they share the same workqueue: genericWorkQueue. 
 If an  partition unware operation needs to be executed, it is placed in that workqueue and any generic operation thread can execute it.
 The big advantage is that you automatically have work balancing since any generic operation thread is allowed to pick up work from 
- this queue. The disadvantage is that this shared queue can be a contention point; but we have not seen this in in tests since
- performance is dominated by IO and the system isn't executing that many partition unaware operations.
+this queue. The disadvantage is that this shared queue can be a contention point; but we have not seen this in in tests since
+performance is dominated by IO and the system isn't executing that many partition unaware operations.
  
 ### Priority Operations
  
@@ -76,3 +80,13 @@ nothing else than trigger the worker to wakeup and check the priority queue.
 ### Threading model of operation-response and invocation-future
 
 todo:
+
+### Local calls:
+
+When a local partition aware-call is done, an operation is made and handed over to the workqueue of the correct partition-operation-thread
+and a future is returned. When the calling thread calls get on that future, it will acquire a lock and wait for the result 
+to become available. When a response is calculated, the future is looked up, and the waiting thread is notified.  
+
+In the future this will be optimized to reduce the amount of expensive systems calls like lock.acquire/notify and the expensive
+interaction with the operation-queue. Probably we'll add support for a caller-runs mode, so that an operation is directly executed on
+the calling thread.
