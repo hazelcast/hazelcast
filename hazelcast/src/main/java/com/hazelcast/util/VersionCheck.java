@@ -133,7 +133,7 @@ public final class VersionCheck {
     }
 
     private String toMD5String(String str) {
-        if (md == null) {
+        if (md == null || str == null) {
             return "NULL";
         }
         byte byteData[] = md.digest(str.getBytes());
