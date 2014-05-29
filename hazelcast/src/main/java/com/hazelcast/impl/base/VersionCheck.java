@@ -109,7 +109,7 @@ public final class VersionCheck {
                 is = url.openStream();
                 Manifest manifest = new Manifest(is);
                 final Attributes mainAttributes = manifest.getMainAttributes();
-                downloadId = mainAttributes.getValue("hazelcast.downloadId");
+                downloadId = mainAttributes.getValue("hazelcastDownloadId");
                 if (downloadId != null) {
                     break;
                 }
