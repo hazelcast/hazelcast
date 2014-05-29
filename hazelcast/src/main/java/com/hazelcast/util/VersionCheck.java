@@ -50,7 +50,6 @@ public final class VersionCheck {
     private static final int J_INTERVAL = 600;
 
     private MessageDigest md;
-    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     public VersionCheck() {
         try {
@@ -63,7 +62,7 @@ public final class VersionCheck {
         if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {
             return;
         }
-        executor.scheduleAtFixedRate(new Runnable() {
+        hazelcastNode.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
             public void run() {
                 doCheck(hazelcastNode, version, isEnterprise);
             }
@@ -71,7 +70,6 @@ public final class VersionCheck {
     }
 
     public void shutdown() {
-        executor.shutdown();
     }
 
     private String convertToLetter(int size) {
