@@ -16,9 +16,11 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.DateHelperTest;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.ReflectionHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -114,8 +116,8 @@ public class PredicatesTest {
 
     @Test
     public void testAnd() {
-        assertTrue(Predicates.and(greaterThan(null,4), lessThan(null,6)).apply(new DummyEntry(5)));
-        assertFalse(Predicates.and(greaterThan(null,5), lessThan(null,6)).apply(new DummyEntry(4)));
+        assertTrue(Predicates.and(greaterThan(null, 4), lessThan(null, 6)).apply(new DummyEntry(5)));
+        assertFalse(Predicates.and(greaterThan(null, 5), lessThan(null, 6)).apply(new DummyEntry(4)));
     }
 
     @Test
@@ -145,6 +147,21 @@ public class PredicatesTest {
     @Test
     public void testLessEqual() {
         assertTrue(Predicates.lessEqual(null, 4).apply(new DummyEntry(4)));
+    }
+
+    @Test
+    public void testPredicatesAgainstANullField() {
+        assertFalse(Predicates.lessEqual("nullField", 1).apply(new NullDummyEntry()));
+        assertFalse(Predicates.in("nullField", 1).apply(new NullDummyEntry()));
+        assertFalse(Predicates.lessThan("nullField", 1).apply(new NullDummyEntry()));
+        assertFalse(Predicates.greaterEqual("nullField", 1).apply(new NullDummyEntry()));
+        assertFalse(Predicates.greaterThan("nullField", 1).apply(new NullDummyEntry()));
+        assertFalse(Predicates.equal("nullField", 1).apply(new NullDummyEntry()));
+        assertFalse(Predicates.notEqual("nullField", null).apply(new NullDummyEntry()));
+        assertFalse(Predicates.between("nullField", 1, 1).apply(new NullDummyEntry()));
+        assertTrue(Predicates.like("nullField", null).apply(new NullDummyEntry()));
+        assertTrue(Predicates.ilike("nullField", null).apply(new NullDummyEntry()));
+        assertTrue(Predicates.regex("nullField", null).apply(new NullDummyEntry()));
     }
 
     @Test
@@ -311,6 +328,62 @@ public class PredicatesTest {
         @Override
         public AttributeType getAttributeType(String attributeName) {
             return ReflectionHelper.getAttributeType(getValue().getClass());
+        }
+    }
+
+    private class NullDummyEntry implements QueryableEntry {
+
+        private Integer nullField;
+
+        private NullDummyEntry() {
+        }
+
+        public Integer getNullField() {
+            return nullField;
+        }
+
+        public void setNullField(Integer nullField) {
+            this.nullField = nullField;
+        }
+
+        @Override
+        public Object getValue() {
+            return null;
+        }
+
+        @Override
+        public Object setValue(Object value) {
+            return null;
+        }
+
+        @Override
+        public Object getKey() {
+            return 1;
+        }
+
+        @Override
+        public Comparable getAttribute(String attributeName) throws com.hazelcast.query.impl.QueryException {
+            return null;
+        }
+
+        @Override
+        public AttributeType getAttributeType(String attributeName) {
+            return AttributeType.INTEGER;
+        }
+
+        @Override
+        public Data getKeyData() {
+            return null;
+        }
+
+        @Override
+        public Data getValueData() {
+            return null;
+        }
+
+        @Override
+        public Data getIndexKey() {
+            return null;
         }
     }
 
