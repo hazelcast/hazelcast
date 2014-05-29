@@ -27,7 +27,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -50,7 +49,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import java.io.BufferedReader;
@@ -71,14 +69,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getObject;
 
 public class ManagementCenterService {
 
     public static final int HTTP_SUCCESS = 200;
+    public static final int CONNECTION_TIMEOUT_MILLIS = 5000;
+    public static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
+    public static final long DEFAULT_UPDATE_INTERVAL = 5000;
+    public static final long VERSION_MISMATCH_SLEEP_MILLIS = 60000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -87,7 +92,6 @@ public class ManagementCenterService {
 
     private final ConsoleCommandHandler commandHandler;
     private final ManagementCenterConfig managementCenterConfig;
-    private final SerializationService serializationService;
     private final ManagementCenterIdentifier identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
@@ -103,7 +107,6 @@ public class ManagementCenterService {
         commandHandler = new ConsoleCommandHandler(instance);
         taskPollThread = new TaskPollThread();
         stateSendThread = new StateSendThread();
-        serializationService = instance.node.getSerializationService();
         identifier = newManagementCenterIdentifier();
         registerListeners();
     }
@@ -111,11 +114,6 @@ public class ManagementCenterService {
 
     private String getManagementCenterUrl() {
         return managementCenterConfig.getUrl();
-    }
-
-
-    private GroupProperties getGroupProperties() {
-        return instance.node.getGroupProperties();
     }
 
 
@@ -240,6 +238,7 @@ public class ManagementCenterService {
             return s.toString();
         }
     }
+
     public Object callOnThis(Operation operation) {
         return callOnAddress(instance.node.getThisAddress(), operation);
     }
@@ -250,9 +249,7 @@ public class ManagementCenterService {
     }
 
     public void send(Address address, Operation operation) {
-        //todo: clean up needed.
         OperationService operationService = instance.node.nodeEngine.getOperationService();
-
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, address).invoke();
     }
 
@@ -269,11 +266,7 @@ public class ManagementCenterService {
     }
 
     private void post(HttpURLConnection connection) throws IOException {
-        //we need to call 'getResponseCode'. If we don't the data placed in the outputstream, will not be send to the
-        //managementcenter. For more information see:
-        //http://stackoverflow.com/questions/4844535/why-do-you-have-to-call-urlconnectiongetinputstream-to-be-able-to-write-out-to
         int responseCode = connection.getResponseCode();
-
         if (responseCode != HTTP_SUCCESS) {
             logger.warning("Failed to send response, responseCode:" + responseCode + " url:" + connection.getURL());
         }
@@ -281,14 +274,14 @@ public class ManagementCenterService {
 
     private void sleepOnVersionMismatch() throws InterruptedException {
         if (versionMismatch) {
-            Thread.sleep(1000 * 60);
+            Thread.sleep(VERSION_MISMATCH_SLEEP_MILLIS);
             versionMismatch = false;
         }
     }
 
     private class StateSendThread extends Thread {
         private final TimedMemberStateFactory timedMemberStateFactory;
-        private final int updateIntervalMs;
+        private final long updateIntervalMs;
 
         private StateSendThread() {
             super(instance.getThreadGroup(), instance.node.getThreadNamePrefix("MC.State.Sender"));
@@ -296,9 +289,9 @@ public class ManagementCenterService {
             updateIntervalMs = calcUpdateInterval();
         }
 
-        private int calcUpdateInterval() {
-            int updateInterval = managementCenterConfig.getUpdateInterval();
-            return updateInterval > 0 ? updateInterval * 1000 : 5000;
+        private long calcUpdateInterval() {
+            long updateInterval = managementCenterConfig.getUpdateInterval();
+            return updateInterval > 0 ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
         }
 
         @Override
@@ -311,8 +304,10 @@ public class ManagementCenterService {
                 }
             } catch (Throwable throwable) {
                 inspectOutputMemoryError(throwable);
-                logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
-                shutdown();
+                if (!(throwable instanceof InterruptedException)) {
+                    logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
+                    shutdown();
+                }
             }
         }
 
@@ -323,19 +318,20 @@ public class ManagementCenterService {
         private void sendState() throws InterruptedException, MalformedURLException {
             URL url = newCollectorUrl();
             try {
-                //todo: does the connection not need to be closed?
                 HttpURLConnection connection = openConnection(url);
                 OutputStream outputStream = connection.getOutputStream();
+                final OutputStreamWriter writer = new OutputStreamWriter(outputStream);
                 try {
                     JsonObject root = new JsonObject();
                     root.add("identifier", identifier.toJson());
                     TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
                     root.add("timedMemberState", timedMemberState.toJson());
-                    root.writeTo(new OutputStreamWriter(outputStream));
-//                    outputStream.write(root.toString().getBytes());
+                    root.writeTo(writer);
+                    writer.flush();
                     outputStream.flush();
                     post(connection);
                 } finally {
+                    closeResource(writer);
                     closeResource(outputStream);
                 }
             } catch (ConnectException e) {
@@ -356,8 +352,8 @@ public class ManagementCenterService {
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
+            connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
+            connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestMethod("POST");
@@ -405,8 +401,8 @@ public class ManagementCenterService {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
             connection.setRequestMethod("POST");
-            connection.setConnectTimeout(2000);
-            connection.setReadTimeout(2000);
+            connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
+            connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
             return connection;
         }
 
@@ -423,22 +419,20 @@ public class ManagementCenterService {
                     sleep();
                 }
             } catch (Throwable throwable) {
-                inspectOutputMemoryError(throwable);
-                logger.warning("Problem on Hazelcast Management Center Service while polling for a task.", throwable);
+                if(!(throwable instanceof InterruptedException)){
+                    inspectOutputMemoryError(throwable);
+                    logger.warning("Problem on Hazelcast Management Center Service while polling for a task.", throwable);
+                }
             }
         }
 
         private void sleep() throws InterruptedException {
-            //todo: magic numbers are no good.
-            //todo: why the random part
-            //todo: we want configurable frequency for task polling
-            Thread.sleep(700 + rand.nextInt(300));
+            Thread.sleep(SLEEP_BETWEEN_POLL_MILLIS);
         }
 
         private void processTask() {
             InputStream inputStream = null;
             try {
-                //todo: don't we need to close the connection?
                 inputStream = openTaskInputStream();
                 BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
 
@@ -449,22 +443,21 @@ public class ManagementCenterService {
                 }
 
                 JsonObject request = JsonObject.readFrom(sb.toString());
-                if (!request.isEmpty()){
-                    JsonObject innerRequest = request.get("request").asObject();
-                    final int type = innerRequest.get("type").asInt();
-                    final int taskId = request.get("taskId").asInt();
+                if (!request.isEmpty()) {
+                    JsonObject innerRequest = getObject(request, "request");
+                    final int type = getInt(innerRequest, "type");
+                    final int taskId = getInt(request, "taskId");
 
                     Class<? extends ConsoleRequest> requestClass = consoleRequests.get(type);
                     if (requestClass == null) {
                         throw new RuntimeException("Failed to find a request for requestType:" + type);
                     }
                     ConsoleRequest task = requestClass.newInstance();
-                    task.fromJson(innerRequest.get("request").asObject());
+                    task.fromJson(getObject(innerRequest, "request"));
                     processTaskAndSendResponse(taskId, task);
                 }
 
             } catch (Exception e) {
-                //todo: even if there is an internal error with the task, we don't see it. That is kinda shitty
                 logger.warning(e);
             } finally {
                 IOUtil.closeResource(inputStream);
@@ -473,19 +466,21 @@ public class ManagementCenterService {
 
         public void processTaskAndSendResponse(int taskId, ConsoleRequest task) {
             try {
-                //todo: don't we need to close this connection?
                 HttpURLConnection connection = openPostResponseConnection();
                 OutputStream outputStream = connection.getOutputStream();
+                final OutputStreamWriter writer = new OutputStreamWriter(outputStream);
                 try {
                     JsonObject root = new JsonObject();
                     root.add("identifier", identifier.toJson());
                     root.add("taskId", taskId);
                     root.add("type", task.getType());
                     task.writeResponse(ManagementCenterService.this, root);
-                    outputStream.write(root.toString().getBytes());
+                    root.writeTo(writer);
+                    writer.flush();
                     outputStream.flush();
                     post(connection);
                 } finally {
+                    closeResource(writer);
                     closeResource(outputStream);
                 }
             } catch (Exception e) {
@@ -505,9 +500,7 @@ public class ManagementCenterService {
             if (logger.isFinestEnabled()) {
                 logger.finest("Opening getTask connection:" + url);
             }
-
             URLConnection connection = url.openConnection();
-            //todo: why do we set this property if the connection is not going to be re-used?
             connection.setRequestProperty("Connection", "keep-alive");
             return connection;
         }
@@ -519,7 +512,6 @@ public class ManagementCenterService {
 
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
                     + ":" + localAddress.getPort() + "&cluster=" + groupConfig.getName();
-
             return new URL(urlString);
         }
     }
