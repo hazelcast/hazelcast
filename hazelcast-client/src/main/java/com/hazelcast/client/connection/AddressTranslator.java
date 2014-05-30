@@ -18,9 +18,9 @@ public interface AddressTranslator {
     public Address translate(Address address);
 
     /**
-     * Triggers updating the internal lookup table.
+     * Refreshes the internal lookup table if necessary.
      */
-    public void updateLookupTable();
+    public void refresh();
 
     /**
      * Shutdown method to clear internals

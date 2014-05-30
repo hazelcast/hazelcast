@@ -14,7 +14,7 @@ public class DefaultAddressTranslator implements AddressTranslator {
     }
 
     @Override
-    public void updateLookupTable() {
+    public void refresh() {
 
     }
 

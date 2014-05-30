@@ -49,7 +49,7 @@ public class AwsAddressTranslator implements AddressTranslator {
             }
         }
 
-        updateLookupTable();
+        refresh();
 
         privateAddress = getLookupTable().get(address.getHost());
         if (privateAddress != null) {
@@ -68,7 +68,7 @@ public class AwsAddressTranslator implements AddressTranslator {
         return table != null ? table : Collections.<String, String>emptyMap();
     }
 
-    public void updateLookupTable() {
+    public void refresh() {
         try {
             privateToPublic = awsClient.getAddresses();
         } catch (Exception e) {

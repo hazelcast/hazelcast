@@ -106,16 +106,18 @@ public class ClientConfig {
         return securityConfig;
     }
 
-    public void setSecurityConfig(ClientSecurityConfig securityConfig) {
+    public ClientConfig setSecurityConfig(ClientSecurityConfig securityConfig) {
         this.securityConfig = securityConfig;
+        return this;
     }
 
     public ClientNetworkConfig getNetworkConfig() {
         return networkConfig;
     }
 
-    public void setNetworkConfig(ClientNetworkConfig networkConfig) {
+    public ClientConfig setNetworkConfig(ClientNetworkConfig networkConfig) {
         this.networkConfig = networkConfig;
+        return this;
     }
 
     /**

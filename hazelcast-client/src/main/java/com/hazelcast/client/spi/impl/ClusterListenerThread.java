@@ -123,7 +123,6 @@ class ClusterListenerThread extends Thread {
         socketAddresses.addAll(clusterService.getConfigAddresses());
 
         for (ServiceAddressLoader serviceAddressLoader : serviceAddressLoaders) {
-            serviceAddressLoader.updateLookupTable();
             socketAddresses.addAll(serviceAddressLoader.loadAddresses());
         }
 

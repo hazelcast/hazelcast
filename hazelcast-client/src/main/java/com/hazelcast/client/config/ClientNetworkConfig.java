@@ -204,8 +204,9 @@ public class ClientNetworkConfig {
      * @param clientAwsConfig the ClientAwsConfig
      * @see #getAwsConfig()
      */
-    public void setAwsConfig(ClientAwsConfig clientAwsConfig) {
+    public ClientNetworkConfig setAwsConfig(ClientAwsConfig clientAwsConfig) {
         this.clientAwsConfig = clientAwsConfig;
+        return this;
     }
 
     /**

@@ -15,37 +15,28 @@ import java.util.Map;
 import java.util.logging.Level;
 
 /**
- * Aws Address Loader. Calls aws api to load ip addresses related to given credentails.
+ * Aws Address Loader. Calls aws api to load ip addresses related to given credentials.
  */
 public class AwsAddressLoader implements ServiceAddressLoader {
 
     private static final ILogger logger = Logger.getLogger(AwsAddressLoader.class);
     private final AWSClient awsClient;
     private volatile Map<String, String> privateToPublic;
-    private final boolean isInsideAws;
 
     AwsAddressLoader(ClientAwsConfig awsConfig) {
         awsClient = new AWSClient(awsConfig);
-        isInsideAws = awsConfig.isInsideAws();
     }
 
     @Override
     public Collection<InetSocketAddress> loadAddresses() {
+        updateLookupTable();
         final Map<String, String> lookupTable = getLookupTable();
         final Collection<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>(lookupTable.size());
 
-//        if (isInsideAws) { //we can use private addresses if client is inside aws
-            for (String privateAddress : lookupTable.keySet()) {
-                addresses.addAll(AddressHelper.getSocketAddresses(privateAddress));
-            }
-            return addresses;
-//        }
-
-//        //Use public addresses if client is outside aws
-//        for (String publicAddress : lookupTable.values()) {
-//            addresses.addAll(AddressHelper.getSocketAddresses(publicAddress));
-//        }
-//        return addresses;
+        for (String privateAddress : lookupTable.keySet()) {
+            addresses.addAll(AddressHelper.getSocketAddresses(privateAddress));
+        }
+        return addresses;
 
     }
 
@@ -60,8 +51,7 @@ public class AwsAddressLoader implements ServiceAddressLoader {
         return table != null ? table : Collections.<String, String>emptyMap();
     }
 
-    @Override
-    public void updateLookupTable() {
+    private void updateLookupTable() {
         try {
             privateToPublic = awsClient.getAddresses();
         } catch (Exception e) {

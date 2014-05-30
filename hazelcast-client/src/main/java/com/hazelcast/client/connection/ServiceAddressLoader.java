@@ -8,15 +8,13 @@ import java.util.Collection;
  */
 public interface ServiceAddressLoader {
 
+    /**
+     * @return Collection of InetSocketAddress
+     */
     public Collection<InetSocketAddress> loadAddresses();
 
     /**
      * Clear internals.
      */
     public void clear();
-
-    /**
-     * Updates internal lookup table.
-     */
-    public void updateLookupTable();
 }
