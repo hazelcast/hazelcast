@@ -24,59 +24,72 @@ import java.util.List;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
- * With the PartitionGroupConfig you can control how primary and backups are going to be split up. In a
- * multi member cluster, Hazelcast will place the backup partition on a different member to the primary partition
+ * With PartitionGroupConfig you can control how primary and backup partitions are mapped to physical Members.
+ * <p/>
+ * By default, Hazelcast will place the backup partitions on a different member to the primary partition,
  * to prevent data loss.
  * <p/>
- * But in some cases this is not good enough; imagine that you have a 4 member cluster. And imagine that member 1
- * and member 2 run in data center 1 and member 3 and member 5 in data center 2. If you want high availability, you want
- * to all backups of the primary partitions in data center 1 or stored in data center 2. And you want the same high
- * availability for the primary partitions in data center2.
+ * But in some cases this is not good enough; say you have a 4 member cluster. Member 1 and member 2 run
+ * in data center 1 and member 3 and member 4 in data center 2. If you want high availability, you want
+ * all backups of the primary partitions in data center 1 stored in members in data center 2. And vice versa.
  * <p/>
- * With the PartitionGroupConfig this behavior can be controlled. Imagine that members in data center 1 have ip
- * address 10.10.1.* and ip addresses of data center 2 is 10.10.2.* then you can make the following configuration:
+ * With PartitionGroupConfig this behavior can be achieved.
  * <p/>
+ * <h1>Custom Partition Groups</h1>
+ * Say that members in data center 1 have IP addresses in the range 10.10.1.* and for data center 2 they have
+ * the IP address range 10.10.2.*. You would achieve HA vy configuring a <code>CUSTOM</code> partition group as follows:
+ * <p/>
+ * <pre>
  * <code>
  * <partition-group enabled="true" group-type="CUSTOM">
- * <member-group>
- * <interface>10.10.1.*</interface>
- * </member-group>
- * <member-group>
- * <interface>10.10.2.*</interface>
- * </member-group>
+ *      <member-group>
+ *          <interface>10.10.1.*</interface>
+ *      </member-group>
+ *      <member-group>
+ *          <interface>10.10.2.*</interface>
+ *      </member-group>
  * </partition-group>
  * </code>
+ * </pre>
  * <p/>
- * The interfaces can be configured with wildcards '*' and ranges e.g. '10-20'. Each member-group can have as many
- * interfaces as you want.
+ * The interfaces can be configured with wildcards ('*') and also with address ranges e.g. '10-20'. Each member-group
+ * can have an unlimited number of interfaces.
  * <p/>
- * You can define as many groups as you want, Hazelcast will prevent that in a multi member cluster, backups are
- * going to be stored in the same group as the primary.
+ * You can define as many <cdoe>member-group</cdoe>s as you want. Hazelcast will always store backups in a different
+ * member-group to the primary partition.
  * <p/>
- * You need to be careful with selecting overlapping groups, e.g.
+ * <h2>Overlapping Groups</h2>
+ * Care should be taken when selecting overlapping groups, e.g.
  * <code>
  * <partition-group enabled="true" group-type="CUSTOM">
- * <member-group>
- * <interface>10.10.1.1</interface>
- * <interface>10.10.1.2</interface>
- * </member-group>
- * <member-group>
- * <interface>10.10.1.1</interface>
- * <interface>10.10.1.3</interface>
- * </member-group>
+ *      <member-group>
+ *          <interface>10.10.1.1</interface>
+ *          <interface>10.10.1.2</interface>
+ *      </member-group>
+ *      <member-group>
+ *          <interface>10.10.1.1</interface>
+ *          <interface>10.10.1.3</interface>
+ *      </member-group>
  * </partition-group>
  * </code>
- * In this example there are 2 groups, but because interface 10.10.1.1 is shared between the 2 groups, there is still
- * a chance that this member is going to store primary and backups.
+ * In this example there are 2 groups, but because interface 10.10.1.1 is shared between the 2 groups, this  member
+ * may store store primary and backups.
  * <p/>
- * In the previous example we made use of custom group; we creates the groups manually and we configured the
- * interfaces for these groups. There also is another option that doesn't give you the same fine grained control,
- * but can prevent that on a single machine, running multiple HazelcastInstances, a primary and backup are going
- * to be stored. This can be done using the HOST_AWARE group-type:
+ * <h1>Host-Aware Partition Groups</h1>
+ * In the previous example we made use of custom groups.
+ *
+ * If you simply want prevent primary and backup partitions being on the same member host, there is a simpler way:
+ * Host-Aware Partition Groups.
+ *
  * <p/>
  * <code>
  * <partition-group enabled="true" group-type="HOST_AWARE"/>
  * </code>
+ *
+ * <h1>Per Member Partition Groups</h1>
+ * The default partition scheme. This means each Member is in a group of its own.
+ * <p/>
+ * Partitions (primaries and backups) will be distributed randomly but not on the same physical Member.
  */
 public class PartitionGroupConfig {
 

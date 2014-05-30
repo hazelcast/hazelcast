@@ -22,8 +22,11 @@ import com.hazelcast.spi.annotation.Beta;
  * <p>
  * The abstract Reducer class is used to build reducers for the {@link Job}.<br>
  * Reducers may be distributed inside of the cluster but there is always only one Reducer
- * per key.<br/>
- * <b>Reducers are called in a threadsafe way so internal locking is not required.</b>
+ * per key.
+ * <p/>
+ * Reducers are always called in a thread-safe way however they may be moved from one thread to another
+ * in the internal thread pool. For this reason internal state should be made visible to other threads by for
+ * example using the volatile key word.
  * </p>
  * <p>
  * Due to the fact that there is only one Reducer per key mapped values needs to be
@@ -34,10 +37,11 @@ import com.hazelcast.spi.annotation.Beta;
  * <p>
  * A simple Reducer implementation could look like that sum-function implementation:
  * <pre>
- * public class SumReducer implements Reducer&lt;String, Integer, Integer>
+ * public class SumReducer implements Reducer&lt;Integer, Integer>
  * {
- *   private int sum = 0;
- *   public void reduce( String key, Integer value )
+ *   private volatile int sum = 0;
+ *
+ *   public void reduce( Integer value )
  *   {
  *     sum += value;
  *   }
@@ -50,22 +54,19 @@ import com.hazelcast.spi.annotation.Beta;
  * </pre>
  * </p>
  *
- * @param <KeyIn>    key type of the resulting keys
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
  * @since 3.2
  */
 @Beta
-public abstract class Reducer<KeyIn, ValueIn, ValueOut> {
+public abstract class Reducer<ValueIn, ValueOut> {
 
     /**
      * This method is called before the first value is submitted to this Reducer instance.
      * It can be used to setup any internal needed state before starting to reduce the
      * actual values.
-     *
-     * @param key key of the mapped values
      */
-    public void beginReduce(KeyIn key) {
+    public void beginReduce() {
     }
 
     /**

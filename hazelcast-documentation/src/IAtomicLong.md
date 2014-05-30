@@ -30,5 +30,5 @@ public class Member {	public static void main(String[] args) {		HazelcastInsta
 		System.out.println("getAndAlter.result:"+result); 		
 		System.out.println("getAndAlter.value:"+atomicLong.get());		System.exit(0);
 	}}
-```The reason for using a function instead of a simple code line like `atomicLong.set(atomicLong.get()+2));` is that read and write operations of IAtomicLong are not atomic. Since it is a distributed implementation, those operations can be remote ones, which may lead to race problems. By using functions, the data is not pulled in to the code, but the code is sent to the data. And this makes it more scalable.<font color="red">***Note:"***</font> *IAtomicLong has 1 synchronous backup and no asynchronous backups. Its backup count is not configurable.*
+```The reason for using a function instead of a simple code line like `atomicLong.set(atomicLong.get()+2));` is that read and write operations of IAtomicLong are not atomic. Since it is a distributed implementation, those operations can be remote ones, which may lead to race problems. By using functions, the data is not pulled in to the code, but the code is sent to the data. And this makes it more scalable.<font color="red">***Note:***</font> *IAtomicLong has 1 synchronous backup and no asynchronous backups. Its backup count is not configurable.*
 <br></br>

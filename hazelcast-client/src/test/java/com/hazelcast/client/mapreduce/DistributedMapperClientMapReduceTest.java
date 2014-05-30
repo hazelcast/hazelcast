@@ -16,10 +16,10 @@ package com.hazelcast.client.mapreduce;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.Combiner;
@@ -47,7 +47,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 @SuppressWarnings("unused")
-public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduceJobTest {
+public class DistributedMapperClientMapReduceTest
+        extends AbstractClientMapReduceJobTest {
 
     private static final String MAP_NAME = "default";
 
@@ -74,11 +75,8 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Map<String, Integer>> future =
-                job.mapper(new GroupingTestMapper())
-                        .combiner(new TestCombinerFactory())
-                        .reducer(new TestReducerFactory())
-                        .submit();
+        ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
+                                                             .reducer(new TestReducerFactory()).submit();
 
         Map<String, Integer> result = future.get();
 
@@ -111,11 +109,8 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Integer> future =
-                job.mapper(new GroupingTestMapper())
-                        .combiner(new TestCombinerFactory())
-                        .reducer(new TestReducerFactory())
-                        .submit(new TestCollator());
+        ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
+                                                .reducer(new TestReducerFactory()).submit(new TestCollator());
 
         int result = future.get();
 
@@ -151,11 +146,8 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Map<String, Integer>> future =
-                job.mapper(new GroupingTestMapper())
-                        .combiner(new TestCombinerFactory())
-                        .reducer(new TestReducerFactory())
-                        .submit();
+        ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
+                                                             .reducer(new TestReducerFactory()).submit();
 
         future.andThen(new ExecutionCallback<Map<String, Integer>>() {
             @Override
@@ -208,11 +200,8 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
 
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Integer> future =
-                job.mapper(new GroupingTestMapper())
-                        .combiner(new TestCombinerFactory())
-                        .reducer(new TestReducerFactory())
-                        .submit(new TestCollator());
+        ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
+                                                .reducer(new TestReducerFactory()).submit(new TestCollator());
 
         future.andThen(new ExecutionCallback<Integer>() {
             @Override
@@ -244,12 +233,12 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
     }
 
     public static class TestCombiner
-            extends Combiner<String, Integer, Integer> {
+            extends Combiner<Integer, Integer> {
 
         private transient int sum;
 
         @Override
-        public void combine(String key, Integer value) {
+        public void combine(Integer value) {
             sum += value;
         }
 
@@ -268,7 +257,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         }
 
         @Override
-        public Combiner<String, Integer, Integer> newCombiner(String key) {
+        public Combiner<Integer, Integer> newCombiner(String key) {
             return new TestCombiner();
         }
     }
@@ -283,7 +272,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
     }
 
     public static class TestReducer
-            extends Reducer<String, Integer, Integer> {
+            extends Reducer<Integer, Integer> {
 
         private transient int sum;
 
@@ -302,7 +291,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
             implements ReducerFactory<String, Integer, Integer> {
 
         @Override
-        public Reducer<String, Integer, Integer> newReducer(String key) {
+        public Reducer<Integer, Integer> newReducer(String key) {
             return new TestReducer();
         }
     }

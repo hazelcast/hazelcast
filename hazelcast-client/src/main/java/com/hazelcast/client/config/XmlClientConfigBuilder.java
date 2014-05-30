@@ -27,8 +27,10 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -39,13 +41,17 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+/**
+ * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
+ */
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
-    private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
+    private static final ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class);
 
     private ClientConfig clientConfig;
     private InputStream in;
@@ -76,62 +82,125 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         this.in = in;
     }
 
+    /**
+     * Loads the client config using the following resolution mechanism:
+     * <ol>
+     * <li>first it checks if a system property 'hazelcast.client.config' is set. If it exist and it begins with
+     * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
+     * <li>it checks if a hazelcast-client.xml is available in the working dir</li>
+     * <li>it checks if a hazelcast-client.xml is available on the classpath</li>
+     * <li>it loads the hazelcast-client-default.xml</li>
+     * </ol>
+     */
     public XmlClientConfigBuilder() {
-        String configFile = System.getProperty("hazelcast.client.config");
         try {
-            File configurationFile = null;
-            if (configFile != null) {
-                configurationFile = new File(configFile);
-                LOGGER.info("Using configuration file at " + configurationFile.getAbsolutePath());
-                if (!configurationFile.exists()) {
-                    String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
-                    msg += "\nHazelcast will try to use the hazelcast-client.xml config file in the working directory.";
-                    LOGGER.warning(msg);
-                    configurationFile = null;
-                }
+            if (loadFromSystemProperty()) {
+                return;
             }
-            if (configurationFile == null) {
-                configFile = "hazelcast-client.xml";
-                configurationFile = new File("hazelcast-client.xml");
-                if (!configurationFile.exists()) {
-                    configurationFile = null;
-                }
+
+            if (loadFromWorkingDirectory()) {
+                return;
             }
-            URL configurationUrl;
-            if (configurationFile != null) {
-                LOGGER.info("Using configuration file at " + configurationFile.getAbsolutePath());
-                try {
-                    in = new FileInputStream(configurationFile);
-                } catch (final Exception e) {
-                    String msg = "Having problem reading config file at '" + configFile + "'.";
-                    msg += "\nException message: " + e.getMessage();
-                    msg += "\nHazelcast will try to use the hazelcast-client.xml config file in classpath.";
-                    LOGGER.warning(msg);
-                    in = null;
-                }
+
+            if (loadClientHazelcastXmlFromClasspath()) {
+                return;
             }
-            if (in == null) {
-                LOGGER.info("Looking for hazelcast-client.xml config file in classpath.");
-                configurationUrl = Config.class.getClassLoader().getResource("hazelcast-client.xml");
-                if (configurationUrl == null) {
-                    configurationUrl = Config.class.getClassLoader().getResource("hazelcast-client-default.xml");
-                    LOGGER.warning(
-                            "Could not find hazelcast-client.xml in classpath."
-                                    + "\nHazelcast will use hazelcast-client-default.xml config file in jar.");
-                    if (configurationUrl == null) {
-                        LOGGER.warning("Could not find hazelcast-client-default.xml in the classpath!"
-                                + "\nThis may be due to a wrong-packaged or corrupted jar file.");
-                        return;
-                    }
-                }
-                LOGGER.info("Using configuration file " + configurationUrl.getFile() + " in the classpath.");
-                in = configurationUrl.openStream();
-                if (in == null) {
-                    throw new IllegalStateException("Cannot read configuration file, giving up.");
-                }
-            }
-        } catch (final Throwable e) {
-            LOGGER.severe("Error while creating configuration:" + e.getMessage(), e);
+
+            loadDefaultConfigurationFromClasspath();
+        } catch (final RuntimeException e) {
+            throw new HazelcastException("Failed to load ClientConfig", e);
+        }
+    }
+
+    private void loadDefaultConfigurationFromClasspath() {
+        logger.info("Loading 'hazelcast-client-default.xml' from classpath.");
+
+        in = Config.class.getClassLoader().getResourceAsStream("hazelcast-client-default.xml");
+        if (in == null) {
+            throw new HazelcastException("Could not load 'hazelcast-client-default.xml' from classpath");
+        }
+    }
+
+    private boolean loadClientHazelcastXmlFromClasspath() {
+        URL url = Config.class.getClassLoader().getResource("hazelcast-client.xml");
+        if (url == null) {
+            logger.finest("Could not find 'hazelcast-client.xml' in classpath.");
+            return false;
+        }
+
+        logger.info("Loading 'hazelcast-client.xml' from classpath.");
+
+        in = Config.class.getClassLoader().getResourceAsStream("hazelcast-client.xml");
+        if (in == null) {
+            throw new HazelcastException("Could not load 'hazelcast-client.xml' from classpath");
+        }
+        return true;
+    }
+
+    private boolean loadFromWorkingDirectory() {
+        File file = new File("hazelcast-client.xml");
+        if (!file.exists()) {
+            logger.finest("Could not find 'hazelcast-client.xml' in working directory.");
+            return false;
+        }
+
+        logger.info("Loading 'hazelcast-client.xml' from working directory.");
+        try {
+            in = new FileInputStream(file);
+        } catch (FileNotFoundException e) {
+            throw new HazelcastException("Failed to open file: " + file.getAbsolutePath(), e);
+        }
+        return true;
+    }
+
+    private boolean loadFromSystemProperty() {
+        String configSystemProperty = System.getProperty("hazelcast.client.config");
+
+        if (configSystemProperty == null) {
+            logger.finest("Could not 'hazelcast.client.config' System property");
+            return false;
+        }
+
+        logger.info("Loading configuration " + configSystemProperty + " from System property 'hazelcast.client.config'");
+
+        if (configSystemProperty.startsWith("classpath:")) {
+            loadSystemPropertyClassPathResource(configSystemProperty);
+        } else {
+            loadSystemPropertyFileResource(configSystemProperty);
+        }
+        return true;
+    }
+
+    private void loadSystemPropertyFileResource(String configSystemProperty) {
+        //it is a file.
+        File configurationFile = new File(configSystemProperty);
+        logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
+
+        if (!configurationFile.exists()) {
+            String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
+            throw new HazelcastException(msg);
+        }
+
+        try {
+            in = new FileInputStream(configurationFile);
+        } catch (FileNotFoundException e) {
+            throw new HazelcastException("Failed to open file: " + configurationFile.getAbsolutePath(), e);
+        }
+    }
+
+    private void loadSystemPropertyClassPathResource(String configSystemProperty) {
+        //it is a explicit configured classpath resource.
+        String resource = configSystemProperty.substring("classpath:".length());
+
+        logger.info("Using classpath resource at " + resource);
+
+        if (resource.isEmpty()) {
+            throw new HazelcastException("classpath resource can't be empty");
+        }
+
+        in = Config.class.getClassLoader().getResourceAsStream(resource);
+        if (in == null) {
+            throw new HazelcastException("Could not load classpath resource: " + resource);
         }
     }
 
@@ -148,6 +217,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             return clientConfig;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
+        } finally {
+            IOUtil.closeResource(in);
         }
     }
 

@@ -16,8 +16,8 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -82,12 +82,9 @@ public class MultiMapMapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMultiMap(multiMap));
-        ICompletableFuture<Map<String, Integer>> ICompletableFuture =
-                job.chunkSize(10)
-                        .mapper(new MultiMapMapper())
-                        .combiner(new MultiMapCombinerFactory())
-                        .reducer(new MultiMapReducerFactory())
-                        .submit();
+        ICompletableFuture<Map<String, Integer>> ICompletableFuture = job.chunkSize(10).mapper(new MultiMapMapper())
+                                                                         .combiner(new MultiMapCombinerFactory())
+                                                                         .reducer(new MultiMapReducerFactory()).submit();
 
         Map<String, Integer> result = ICompletableFuture.get();
 
@@ -113,12 +110,12 @@ public class MultiMapMapReduceTest
     }
 
     public static class MultiMapCombiner
-            extends Combiner<String, Integer, Integer> {
+            extends Combiner<Integer, Integer> {
 
         private int value;
 
         @Override
-        public void combine(String key, Integer value) {
+        public void combine(Integer value) {
             this.value += value;
         }
 
@@ -134,12 +131,13 @@ public class MultiMapMapReduceTest
             implements CombinerFactory<String, Integer, Integer> {
 
         @Override
-        public Combiner<String, Integer, Integer> newCombiner(String key) {
+        public Combiner<Integer, Integer> newCombiner(String key) {
             return new MultiMapCombiner();
         }
     }
 
-    public static class MultiMapReducer extends Reducer<String, Integer, Integer> {
+    public static class MultiMapReducer
+            extends Reducer<Integer, Integer> {
 
         private int value;
 
@@ -158,7 +156,7 @@ public class MultiMapMapReduceTest
             implements ReducerFactory<String, Integer, Integer> {
 
         @Override
-        public Reducer<String, Integer, Integer> newReducer(String key) {
+        public Reducer<Integer, Integer> newReducer(String key) {
             return new MultiMapReducer();
         }
     }

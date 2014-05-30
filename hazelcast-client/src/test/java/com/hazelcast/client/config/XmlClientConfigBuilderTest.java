@@ -25,8 +25,10 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.XMLConfigBuilderTest;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,8 +41,10 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -55,10 +59,10 @@ import static org.junit.Assert.fail;
 /**
  * This class tests the usage of {@link XmlClientConfigBuilder}
  */
-@RunWith(HazelcastParallelClassRunner.class)
+//tests need to be executed sequentially because of system properties being set/unset
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XmlClientConfigBuilderTest {
-
 
     ClientConfig clientConfig;
 
@@ -67,6 +71,59 @@ public class XmlClientConfigBuilderTest {
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-full.xml");
         clientConfig = new XmlClientConfigBuilder(schemaResource).build();
 
+    }
+
+    @After
+    @Before
+    public void after() {
+        System.clearProperty("hazelcast.client.config");
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
+        File file = File.createTempFile("foo", "bar");
+        file.delete();
+        System.setProperty("hazelcast.client.config", file.getAbsolutePath());
+
+        new XmlClientConfigBuilder();
+    }
+
+    @Test
+    public void loadingThroughSystemProperty_existingFile() throws IOException {
+        String xml =
+                "<hazelcast-client>\n" +
+                        "    <group>\n" +
+                        "        <name>foobar</name>\n" +
+                        "        <password>dev-pass</password>\n" +
+                        "    </group>" +
+                        "</hazelcast-client>";
+
+        File file = File.createTempFile("foo", "bar");
+        file.deleteOnExit();
+        PrintWriter writer = new PrintWriter(file, "UTF-8");
+        writer.println(xml);
+        writer.close();
+
+        System.setProperty("hazelcast.client.config", file.getAbsolutePath());
+
+        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
+        ClientConfig config = configBuilder.build();
+        assertEquals("foobar", config.getGroupConfig().getName());
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void loadingThroughSystemProperty_nonExistingClasspathResource() throws IOException {
+        System.setProperty("hazelcast.client.config", "classpath:idontexist");
+        new XmlClientConfigBuilder();
+    }
+
+    @Test
+    public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
+        System.setProperty("hazelcast.client.config", "classpath:test-hazelcast-client.xml");
+
+        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
+        ClientConfig config = configBuilder.build();
+        assertEquals("foobar", config.getGroupConfig().getName());
     }
 
     @Test
@@ -207,5 +264,4 @@ public class XmlClientConfigBuilderTest {
             fail(xmlFileName + " is not valid because: " + ex.toString());
         }
     }
-
 }

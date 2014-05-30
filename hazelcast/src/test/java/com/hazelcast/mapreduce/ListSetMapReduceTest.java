@@ -66,12 +66,9 @@ public class ListSetMapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(KeyValueSource.fromList(list));
-        ICompletableFuture<Map<String, Integer>> ICompletableFuture =
-                job.chunkSize(10)
-                        .mapper(new ListSetMapper())
-                        .combiner(new ListSetCombinerFactory())
-                        .reducer(new ListSetReducerFactory())
-                        .submit();
+        ICompletableFuture<Map<String, Integer>> ICompletableFuture = job.chunkSize(10).mapper(new ListSetMapper())
+                                                                         .combiner(new ListSetCombinerFactory())
+                                                                         .reducer(new ListSetReducerFactory()).submit();
 
         Map<String, Integer> result = ICompletableFuture.get();
 
@@ -83,7 +80,6 @@ public class ListSetMapReduceTest
             assertEquals(expectedResult, (int) entry.getValue());
         }
     }
-
 
     @Test(timeout = 60000)
     @Category(ProblematicTest.class)
@@ -112,12 +108,9 @@ public class ListSetMapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(KeyValueSource.fromSet(set));
-        ICompletableFuture<Map<String, Integer>> ICompletableFuture =
-                job.chunkSize(10)
-                        .mapper(new ListSetMapper())
-                        .combiner(new ListSetCombinerFactory())
-                        .reducer(new ListSetReducerFactory())
-                        .submit();
+        ICompletableFuture<Map<String, Integer>> ICompletableFuture = job.chunkSize(10).mapper(new ListSetMapper())
+                                                                         .combiner(new ListSetCombinerFactory())
+                                                                         .reducer(new ListSetReducerFactory()).submit();
 
         Map<String, Integer> result = ICompletableFuture.get();
 
@@ -140,12 +133,12 @@ public class ListSetMapReduceTest
     }
 
     public static class ListSetCombiner
-            extends Combiner<String, Integer, Integer> {
+            extends Combiner<Integer, Integer> {
 
         private int value;
 
         @Override
-        public void combine(String key, Integer value) {
+        public void combine(Integer value) {
             this.value += value;
         }
 
@@ -161,12 +154,13 @@ public class ListSetMapReduceTest
             implements CombinerFactory<String, Integer, Integer> {
 
         @Override
-        public Combiner<String, Integer, Integer> newCombiner(String key) {
+        public Combiner<Integer, Integer> newCombiner(String key) {
             return new ListSetCombiner();
         }
     }
 
-    public static class ListSetReducer extends Reducer<String, Integer, Integer> {
+    public static class ListSetReducer
+            extends Reducer<Integer, Integer> {
 
         private int value;
 
@@ -185,7 +179,7 @@ public class ListSetMapReduceTest
             implements ReducerFactory<String, Integer, Integer> {
 
         @Override
-        public Reducer<String, Integer, Integer> newReducer(String key) {
+        public Reducer<Integer, Integer> newReducer(String key) {
             return new ListSetReducer();
         }
     }

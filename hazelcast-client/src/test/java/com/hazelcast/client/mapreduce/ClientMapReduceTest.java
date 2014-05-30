@@ -582,7 +582,7 @@ public class ClientMapReduceTest
     }
 
     public static class TestReducer
-            extends Reducer<String, Integer, Integer> {
+            extends Reducer<Integer, Integer> {
 
         private transient int sum = 0;
 
@@ -604,7 +604,7 @@ public class ClientMapReduceTest
         }
 
         @Override
-        public Reducer<String, Integer, Integer> newReducer(String key) {
+        public Reducer<Integer, Integer> newReducer(String key) {
             return new TestReducer();
         }
     }
