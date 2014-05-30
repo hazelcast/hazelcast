@@ -116,7 +116,7 @@ public class ConfigXmlGenerator {
         final JoinConfig join = netCfg.getJoin();
         xml.append("<join>");
         final MulticastConfig mcast = join.getMulticastConfig();
-        xml.append("<multicast enabled=\"").append(mcast.isEnabled()).append("\">");
+        xml.append("<multicast enabled=\"").append(mcast.isEnabled()).append("\" loopbackModeEnabled=\"").append(mcast.isLoopbackModeEnabled()).append("\">");
         xml.append("<multicast-group>").append(mcast.getMulticastGroup()).append("</multicast-group>");
         xml.append("<multicast-port>").append(mcast.getMulticastPort()).append("</multicast-port>");
         xml.append("<multicast-timeout-seconds>").append(mcast.getMulticastTimeoutSeconds()).append("</multicast-timeout-seconds>");
