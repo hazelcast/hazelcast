@@ -24,11 +24,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.JsonUtil;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.util.JsonUtil.*;
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getLong;
 
 public class LocalMapStatsImpl
         implements LocalMapStats, IdentifiedDataSerializable {
@@ -412,14 +412,14 @@ public class LocalMapStatsImpl
         LAST_ACCESS_TIME_UPDATER.set(this, getLong(json, "lastAccessTime", -1L));
         LAST_UPDATE_TIME_UPDATER.set(this, getLong(json, "lastUpdateTime", -1L));
         HITS_UPDATER.set(this, getLong(json, "hits", -1L));
-        ownedEntryCount =  getLong(json, "ownedEntryCount", -1L);
-        backupEntryCount =  getLong(json, "backupEntryCount", -1L);
-        backupCount =  getInt(json, "backupCount", -1);
-        ownedEntryMemoryCost =  getLong(json, "ownedEntryMemoryCost", -1L);
-        backupEntryMemoryCost =  getLong(json, "backupEntryMemoryCost", -1L);
-        creationTime =  getLong(json, "creationTime", -1L);
-        lockedEntryCount =  getLong(json, "lockedEntryCount", -1L);
-        dirtyEntryCount =  getLong(json, "dirtyEntryCount", -1L);
+        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
+        backupEntryCount = getLong(json, "backupEntryCount", -1L);
+        backupCount = getInt(json, "backupCount", -1);
+        ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
+        backupEntryMemoryCost = getLong(json, "backupEntryMemoryCost", -1L);
+        creationTime = getLong(json, "creationTime", -1L);
+        lockedEntryCount = getLong(json, "lockedEntryCount", -1L);
+        dirtyEntryCount = getLong(json, "dirtyEntryCount", -1L);
         TOTAL_GET_LATENCIES_UPDATER.set(this, getLong(json, "totalGetLatencies", -1L));
         TOTAL_PUT_LATENCIES_UPDATER.set(this, getLong(json, "totalPutLatencies", -1L));
         TOTAL_REMOVE_LATENCIES_UPDATER.set(this, getLong(json, "totalRemoveLatencies", -1L));

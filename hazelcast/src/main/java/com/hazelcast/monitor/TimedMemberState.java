@@ -21,7 +21,6 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
-import com.hazelcast.util.JsonUtil;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
