@@ -14,6 +14,14 @@ public final class EntryViews {
     private EntryViews() {
     }
 
+    /**
+     * Creates a null entry view that has only key and no value.
+     *
+     * @param key the key object which will be wrapped in {@link com.hazelcast.core.EntryView}.
+     * @param <K> the type of key.
+     * @param <V> the type of value.
+     * @return
+     */
     public static <K, V> EntryView<K, V> createNullEntryView(K key) {
         return new NullEntryView<K, V>(key);
     }
