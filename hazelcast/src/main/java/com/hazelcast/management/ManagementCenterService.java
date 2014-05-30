@@ -44,7 +44,6 @@ import com.hazelcast.management.request.MemberConfigRequest;
 import com.hazelcast.management.request.RunGcRequest;
 import com.hazelcast.management.request.ShutdownMemberRequest;
 import com.hazelcast.management.request.ThreadDumpRequest;
-import com.hazelcast.management.request.VersionMismatchLogRequest;
 import com.hazelcast.map.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
@@ -83,7 +82,6 @@ public class ManagementCenterService {
     public static final int CONNECTION_TIMEOUT_MILLIS = 5000;
     public static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
     public static final long DEFAULT_UPDATE_INTERVAL = 5000;
-    public static final long VERSION_MISMATCH_SLEEP_MILLIS = 60000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -97,7 +95,6 @@ public class ManagementCenterService {
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged = false;
-    private volatile boolean versionMismatch = false;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -222,10 +219,6 @@ public class ManagementCenterService {
         }
     }
 
-    public void signalVersionMismatch() {
-        versionMismatch = true;
-    }
-
     public Object callOnAddress(Address address, Operation operation) {
         //todo: why are we always executing on the mapservice??
         OperationService operationService = instance.node.nodeEngine.getOperationService();
@@ -272,13 +265,6 @@ public class ManagementCenterService {
         }
     }
 
-    private void sleepOnVersionMismatch() throws InterruptedException {
-        if (versionMismatch) {
-            Thread.sleep(VERSION_MISMATCH_SLEEP_MILLIS);
-            versionMismatch = false;
-        }
-    }
-
     private class StateSendThread extends Thread {
         private final TimedMemberStateFactory timedMemberStateFactory;
         private final long updateIntervalMs;
@@ -298,7 +284,6 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
-                    sleepOnVersionMismatch();
                     sendState();
                     sleep();
                 }
@@ -383,7 +368,6 @@ public class ManagementCenterService {
             register(new RunGcRequest());
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
-            register(new VersionMismatchLogRequest());
             register(new ShutdownMemberRequest());
             register(new GetSystemWarningsRequest());
         }
@@ -414,12 +398,11 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
-                    sleepOnVersionMismatch();
                     processTask();
                     sleep();
                 }
             } catch (Throwable throwable) {
-                if(!(throwable instanceof InterruptedException)){
+                if (!(throwable instanceof InterruptedException)) {
                     inspectOutputMemoryError(throwable);
                     logger.warning("Problem on Hazelcast Management Center Service while polling for a task.", throwable);
                 }
