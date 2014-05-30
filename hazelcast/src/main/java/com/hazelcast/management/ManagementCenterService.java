@@ -17,6 +17,7 @@
 package com.hazelcast.management;
 
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.ascii.rest.HttpCommand;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -305,7 +306,7 @@ public class ManagementCenterService {
             try {
                 HttpURLConnection connection = openConnection(url);
                 OutputStream outputStream = connection.getOutputStream();
-                final OutputStreamWriter writer = new OutputStreamWriter(outputStream);
+                final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
                 try {
                     JsonObject root = new JsonObject();
                     root.add("identifier", identifier.toJson());
@@ -415,17 +416,11 @@ public class ManagementCenterService {
 
         private void processTask() {
             InputStream inputStream = null;
+            InputStreamReader reader = null;
             try {
                 inputStream = openTaskInputStream();
-                BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
-
-                StringBuilder sb = new StringBuilder();
-                String input;
-                while ((input = in.readLine()) != null) {
-                    sb.append(input);
-                }
-
-                JsonObject request = JsonObject.readFrom(sb.toString());
+                reader = new InputStreamReader(inputStream, "UTF-8");
+                JsonObject request = JsonValue.readFrom(reader).asObject();
                 if (!request.isEmpty()) {
                     JsonObject innerRequest = getObject(request, "request");
                     final int type = getInt(innerRequest, "type");
@@ -443,6 +438,7 @@ public class ManagementCenterService {
             } catch (Exception e) {
                 logger.warning(e);
             } finally {
+                IOUtil.closeResource(reader);
                 IOUtil.closeResource(inputStream);
             }
         }
@@ -451,7 +447,7 @@ public class ManagementCenterService {
             try {
                 HttpURLConnection connection = openPostResponseConnection();
                 OutputStream outputStream = connection.getOutputStream();
-                final OutputStreamWriter writer = new OutputStreamWriter(outputStream);
+                final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
                 try {
                     JsonObject root = new JsonObject();
                     root.add("identifier", identifier.toJson());
