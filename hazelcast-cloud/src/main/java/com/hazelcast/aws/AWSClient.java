@@ -19,7 +19,8 @@ package com.hazelcast.aws;
 import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.config.AwsConfig;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 
 public class AWSClient {
 
@@ -40,7 +41,12 @@ public class AWSClient {
         endpoint = awsConfig.getHostHeader();
     }
 
-    public List<String> getPrivateIpAddresses() throws Exception {
+    public Collection<String> getPrivateIpAddresses() throws Exception {
+        final Map<String, String> result = new DescribeInstances(awsConfig).execute(endpoint);
+        return result.keySet();
+    }
+
+    public Map<String, String> getAddresses() throws Exception {
         return new DescribeInstances(awsConfig).execute(endpoint);
     }
 

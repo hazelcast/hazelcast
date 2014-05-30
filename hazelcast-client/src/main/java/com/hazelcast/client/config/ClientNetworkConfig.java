@@ -86,6 +86,10 @@ public class ClientNetworkConfig {
      */
     private SSLConfig sslConfig;
 
+    /**
+     * Configuration to connect nodes in aws environment
+     */
+    private ClientAwsConfig clientAwsConfig;
 
 
     public boolean isSmartRouting() {
@@ -191,5 +195,26 @@ public class ClientNetworkConfig {
     public ClientNetworkConfig setSSLConfig(SSLConfig sslConfig) {
         this.sslConfig = sslConfig;
         return this;
+    }
+
+    /**
+     * Sets configuration to connect nodes in aws environment.
+     * null value indicates that no AwsConfig should be used.
+     *
+     * @param clientAwsConfig the ClientAwsConfig
+     * @see #getAwsConfig()
+     */
+    public void setAwsConfig(ClientAwsConfig clientAwsConfig) {
+        this.clientAwsConfig = clientAwsConfig;
+    }
+
+    /**
+     * Returns the current {@link ClientAwsConfig}. It is possible that null is returned if no SSLConfig has been
+     *
+     * @return ClientAwsConfig
+     * @see #setAwsConfig(ClientAwsConfig)
+     */
+    public ClientAwsConfig getAwsConfig() {
+        return clientAwsConfig;
     }
 }

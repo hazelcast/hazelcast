@@ -16,22 +16,17 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientImpl;
 import com.hazelcast.client.ClientPrincipal;
-import com.hazelcast.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LifecycleServiceImpl;
+import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.connection.ServiceAddressLoader;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.util.AddressHelper;
-import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.cluster.client.AddMembershipListenerRequest;
-import com.hazelcast.cluster.client.ClientMembershipEvent;
-import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Cluster;
@@ -47,30 +42,22 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 
@@ -78,10 +65,9 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 /**
  * @author mdogan 5/15/13
  */
-public final class ClientClusterServiceImpl implements ClientClusterService {
+public class ClientClusterServiceImpl implements ClientClusterService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
-    private static final int SLEEP_TIME = 1000;
 
     private final HazelcastClient client;
     private final ClientConnectionManagerImpl connectionManager;
@@ -92,7 +78,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
-        clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
+        this.clusterThread = createListenerThread();
         final ClientConfig clientConfig = getClientConfig();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
@@ -110,6 +96,21 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 }
             }
         }
+    }
+
+    ClusterListenerThread createListenerThread() {
+        final ClientAwsConfig awsConfig = client.getClientConfig().getNetworkConfig().getAwsConfig();
+        final Collection<ServiceAddressLoader> serviceAddressLoader = new LinkedList<ServiceAddressLoader>();
+        if (awsConfig != null && awsConfig.isEnabled()) {
+            try {
+                serviceAddressLoader.add(new AwsAddressLoader(awsConfig));
+            } catch (NoClassDefFoundError e) {
+                LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                throw e;
+            }
+        }
+        return new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener",
+                serviceAddressLoader);
     }
 
     public MemberImpl getMember(Address address) {
@@ -147,11 +148,11 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     public Client getLocalClient() {
         ClientPrincipal cp = connectionManager.getPrincipal();
-        ClientConnection conn = clusterThread.conn;
+        ClientConnection conn = clusterThread.getConnection();
         return new ClientImpl(cp != null ? cp.getUuid() : null, conn != null ? conn.getLocalSocketAddress() : null);
     }
 
-    private SerializationService getSerializationService() {
+    SerializationService getSerializationService() {
         return client.getSerializationService();
     }
 
@@ -187,6 +188,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public void start() {
+        clusterThread.init(client);
         clusterThread.start();
 
         try {
@@ -202,248 +204,16 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         clusterThread.shutdown();
     }
 
-    private final class ClusterListenerThread extends Thread {
 
-        private volatile ClientConnection conn;
-        private final List<MemberImpl> members = new LinkedList<MemberImpl>();
-        private final CountDownLatch latch = new CountDownLatch(1);
-
-        private ClusterListenerThread(ThreadGroup group, String name) {
-            super(group, name);
-        }
-
-        public void await() throws InterruptedException {
-            latch.await();
-        }
-
-        public void run() {
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    if (conn == null) {
-                        try {
-                            conn = pickConnection();
-                        } catch (Exception e) {
-                            LOGGER.severe("Error while connecting to cluster!", e);
-                            client.getLifecycleService().shutdown();
-                            latch.countDown();
-                            return;
-                        }
-                    }
-                    getInvocationService().triggerFailedListeners();
-                    loadInitialMemberList();
-                    listenMembershipEvents();
-                } catch (Exception e) {
-                    if (client.getLifecycleService().isRunning()) {
-                        if (LOGGER.isFinestEnabled()) {
-                            LOGGER.warning("Error while listening cluster events! -> " + conn, e);
-                        } else {
-                            LOGGER.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
-                        }
-                    }
-
-                    connectionManager.markOwnerConnectionAsClosed();
-                    IOUtil.closeResource(conn);
-                    conn = null;
-                    fireConnectionEvent(true);
-                }
-                try {
-                    Thread.sleep(SLEEP_TIME);
-                } catch (InterruptedException e) {
-                    latch.countDown();
-                    break;
-                }
-            }
-        }
-
-        private ClientInvocationServiceImpl getInvocationService() {
-            return (ClientInvocationServiceImpl) client.getInvocationService();
-        }
-
-        private ClientConnection pickConnection() throws Exception {
-            final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
-            if (!members.isEmpty()) {
-                for (MemberImpl member : members) {
-                    socketAddresses.add(member.getInetSocketAddress());
-                }
-                Collections.shuffle(socketAddresses);
-            }
-            socketAddresses.addAll(getConfigAddresses());
-            return connectToOne(socketAddresses);
-        }
-
-        private void loadInitialMemberList() throws Exception {
-            final SerializationService serializationService = getSerializationService();
-            final AddMembershipListenerRequest request = new AddMembershipListenerRequest();
-            final SerializableCollection coll = (SerializableCollection) connectionManager.sendAndReceive(request, conn);
-
-            Map<String, MemberImpl> prevMembers = Collections.emptyMap();
-            if (!members.isEmpty()) {
-                prevMembers = new HashMap<String, MemberImpl>(members.size());
-                for (MemberImpl member : members) {
-                    prevMembers.put(member.getUuid(), member);
-                }
-                members.clear();
-            }
-            for (Data data : coll) {
-                members.add((MemberImpl) serializationService.toObject(data));
-            }
-            updateMembersRef();
-            LOGGER.info(membersString());
-            final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
-            final Set<Member> eventMembers = Collections.unmodifiableSet(new LinkedHashSet<Member>(members));
-            for (MemberImpl member : members) {
-                final MemberImpl former = prevMembers.remove(member.getUuid());
-                if (former == null) {
-                    events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_ADDED, eventMembers));
-                }
-            }
-            for (MemberImpl member : prevMembers.values()) {
-                events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
-            }
-            for (MembershipEvent event : events) {
-                fireMembershipEvent(event);
-            }
-            latch.countDown();
-        }
-
-        private void listenMembershipEvents() throws IOException {
-            final SerializationService serializationService = getSerializationService();
-            while (!Thread.currentThread().isInterrupted()) {
-                final Data clientResponseData = conn.read();
-                final ClientResponse clientResponse = serializationService.toObject(clientResponseData);
-                final Object eventObject = serializationService.toObject(clientResponse.getResponse());
-                final ClientMembershipEvent event = (ClientMembershipEvent) eventObject;
-                final MemberImpl member = (MemberImpl) event.getMember();
-                boolean membersUpdated = false;
-                if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                    members.add(member);
-                    membersUpdated = true;
-                } else if (event.getEventType() == ClientMembershipEvent.MEMBER_REMOVED) {
-                    members.remove(member);
-                    membersUpdated = true;
-//                    getConnectionManager().removeConnectionPool(member.getAddress()); //TODO
-                } else if (event.getEventType() == ClientMembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
-                    MemberAttributeChange memberAttributeChange = event.getMemberAttributeChange();
-                    Map<Address, MemberImpl> memberMap = membersRef.get();
-                    if (memberMap != null) {
-                        for (MemberImpl target : memberMap.values()) {
-                            if (target.getUuid().equals(memberAttributeChange.getUuid())) {
-                                final MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
-                                final String key = memberAttributeChange.getKey();
-                                final Object value = memberAttributeChange.getValue();
-                                target.updateAttribute(operationType, key, value);
-                                MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(
-                                        client.getCluster(), target, operationType, key, value);
-                                fireMemberAttributeEvent(memberAttributeEvent);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (membersUpdated) {
-                    ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
-                    updateMembersRef();
-                    LOGGER.info(membersString());
-                    fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
-                            Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
-                }
-            }
-        }
-
-        private void fireMembershipEvent(final MembershipEvent event) {
-            client.getClientExecutionService().executeInternal(new Runnable() {
-                public void run() {
-                    for (MembershipListener listener : listeners.values()) {
-                        if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                            listener.memberAdded(event);
-                        } else {
-                            listener.memberRemoved(event);
-                        }
-                    }
-                }
-            });
-        }
-
-        private void fireMemberAttributeEvent(final MemberAttributeEvent event) {
-            client.getClientExecutionService().executeInternal(new Runnable() {
-                @Override
-                public void run() {
-                    for (MembershipListener listener : listeners.values()) {
-                        listener.memberAttributeChanged(event);
-                    }
-                }
-            });
-        }
-
-        private void updateMembersRef() {
-            final Map<Address, MemberImpl> map = new LinkedHashMap<Address, MemberImpl>(members.size());
-            for (MemberImpl member : members) {
-                map.put(member.getAddress(), member);
-            }
-            membersRef.set(Collections.unmodifiableMap(map));
-        }
-
-        void shutdown() {
-            interrupt();
-            final ClientConnection c = conn;
-            if (c != null) {
-                c.close();
-            }
-        }
-    }
-
-    private ClientConnection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
-        final ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
-        final int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
-        final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
-        int attempt = 0;
-        Throwable lastError = null;
-        while (true) {
-            final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
-            for (InetSocketAddress isa : socketAddresses) {
-                Address address = new Address(isa);
-                try {
-                    final ClientConnection connection = connectionManager.ownerConnection(address);
-                    fireConnectionEvent(false);
-                    return connection;
-                } catch (IOException e) {
-                    lastError = e;
-                    LOGGER.finest("IO error during initial connection...", e);
-                } catch (AuthenticationException e) {
-                    lastError = e;
-                    LOGGER.warning("Authentication error on " + address, e);
-                }
-            }
-            if (attempt++ >= connectionAttemptLimit) {
-                break;
-            }
-            final long remainingTime = nextTry - Clock.currentTimeMillis();
-            LOGGER.warning(
-                    String.format("Unable to get alive cluster connection,"
-                            + " try in %d ms later, attempt %d of %d.",
-                            Math.max(0, remainingTime), attempt, connectionAttemptLimit));
-
-            if (remainingTime > 0) {
-                try {
-                    Thread.sleep(remainingTime);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        }
-        throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
-    }
-
-    private void fireConnectionEvent(boolean disconnected) {
+    void fireConnectionEvent(boolean disconnected) {
         final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
         final LifecycleState state = disconnected ? LifecycleState.CLIENT_DISCONNECTED : LifecycleState.CLIENT_CONNECTED;
         lifecycleService.fireLifecycleEvent(state);
     }
 
-    private Collection<InetSocketAddress> getConfigAddresses() {
+    Collection<InetSocketAddress> getConfigAddresses() {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
-        final List<String> addresses = getClientConfig().getAddresses();
+        final List<String> addresses = getClientConfig().getNetworkConfig().getAddresses();
         Collections.shuffle(addresses);
         for (String address : addresses) {
             socketAddresses.addAll(AddressHelper.getSocketAddresses(address));
@@ -455,7 +225,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return client.getClientConfig();
     }
 
-    private String membersString() {
+    String membersString() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
         final Collection<MemberImpl> members = getMemberList();
         sb.append(members != null ? members.size() : 0);
@@ -467,6 +237,39 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         }
         sb.append("\n}\n");
         return sb.toString();
+    }
+
+    void fireMembershipEvent(final MembershipEvent event) {
+        client.getClientExecutionService().executeInternal(new Runnable() {
+            public void run() {
+                for (MembershipListener listener : listeners.values()) {
+                    if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                        listener.memberAdded(event);
+                    } else {
+                        listener.memberRemoved(event);
+                    }
+                }
+            }
+        });
+    }
+
+    void fireMemberAttributeEvent(final MemberAttributeEvent event) {
+        client.getClientExecutionService().executeInternal(new Runnable() {
+            @Override
+            public void run() {
+                for (MembershipListener listener : listeners.values()) {
+                    listener.memberAttributeChanged(event);
+                }
+            }
+        });
+    }
+
+    Map<Address, MemberImpl> getMembersRef() {
+        return membersRef.get();
+    }
+
+    void setMembersRef(Map<Address, MemberImpl> map) {
+        membersRef.set(map);
     }
 
 }

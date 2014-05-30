@@ -27,6 +27,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
@@ -121,14 +122,18 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
     private final ClientExecutionService executionService;
     private ClientInvocationServiceImpl invocationService;
+    private final AddressTranslator addressTranslator;
 
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
 
     private volatile boolean live;
 
-    public ClientConnectionManagerImpl(HazelcastClient client, LoadBalancer loadBalancer) {
+    public ClientConnectionManagerImpl(HazelcastClient client,
+                                       LoadBalancer loadBalancer,
+                                       AddressTranslator addressTranslator) {
         this.client = client;
+        this.addressTranslator = addressTranslator;
         final ClientConfig config = client.getClientConfig();
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
         final GroupConfig groupConfig = config.getGroupConfig();
@@ -229,6 +234,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             return;
         }
         live = false;
+        addressTranslator.shutdown();
         for (ClientConnection connection : connections.values()) {
             connection.close();
         }
@@ -271,6 +277,14 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
     @Override
     public ClientConnection ownerConnection(Address address) throws Exception {
+        final Address translatedAddress = addressTranslator.translate(address);
+        if (translatedAddress == null) {
+            throw new RetryableIOException(address + " can not be translated! ");
+        }
+        return ownerConnectionInternal(translatedAddress);
+    }
+
+    private ClientConnection ownerConnectionInternal(Address address) throws Exception {
         final ManagerAuthenticator authenticator = new ManagerAuthenticator();
         final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
         ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
@@ -334,13 +348,17 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return clientClusterService.getMember(target) != null;
     }
 
-    private ClientConnection getOrConnect(Address address, Authenticator authenticator) throws Exception {
-        if (address == null) {
-            throw new NullPointerException("Address is required!");
-        }
+    private ClientConnection getOrConnect(Address target, Authenticator authenticator) throws Exception {
         if (!smartRouting) {
-            address = waitForOwnerConnection();
+            target = waitForOwnerConnection();
         }
+
+        Address address = addressTranslator.translate(target);
+
+        if (address == null) {
+            throw new IOException("Address is required!");
+        }
+
         ClientConnection clientConnection = connections.get(address);
         if (clientConnection == null) {
             final Object lock = getLock(address);
@@ -350,12 +368,12 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                     final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, false);
                     final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
                     try {
-                        clientConnection = future.get(connectionTimeout+TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
+                        clientConnection = future.get(connectionTimeout + TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
                     } catch (Exception e) {
                         future.cancel(true);
                         throw new RetryableIOException(e);
                     }
-                    ClientConnection current = connections.putIfAbsent(clientConnection.getRemoteEndpoint(), clientConnection);
+                    ClientConnection current = connections.putIfAbsent(address, clientConnection);
                     if (current != null) {
                         clientConnection.innerClose();
                         clientConnection = current;
@@ -610,7 +628,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     class HeartBeat implements Runnable {
 
         long begin;
-        final int heartBeatTimeout = heartBeatInterval/2;
+        final int heartBeatTimeout = heartBeatInterval / 2;
 
         @Override
         public void run() {

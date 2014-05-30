@@ -20,16 +20,15 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -250,12 +249,49 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             } else if ("socket-options".equals(nodeName)) {
                 handleSocketOptions(child, clientNetworkConfig);
             } else if ("socket-interceptor".equals(nodeName)) {
-                handleSocketInterceptorConfig(node, clientNetworkConfig);
+                handleSocketInterceptorConfig(child, clientNetworkConfig);
             } else if ("ssl".equals(nodeName)) {
-                handleSSLConfig(node, clientNetworkConfig);
+                handleSSLConfig(child, clientNetworkConfig);
+            } else if ("aws".equals(nodeName)) {
+                handleAWS(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
+    }
+
+    private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {
+        final NamedNodeMap atts = node.getAttributes();
+        final ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                clientAwsConfig.setEnabled(checkTrue(value));
+            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
+                clientAwsConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, 5));
+            }
+        }
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
+            final String value = getTextContent(n).trim();
+            if ("secret-key".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setSecretKey(value);
+            } else if ("access-key".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setAccessKey(value);
+            } else if ("region".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setRegion(value);
+            } else if ("host-header".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setHostHeader(value);
+            } else if ("security-group-name".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setSecurityGroupName(value);
+            } else if ("tag-key".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setTagKey(value);
+            } else if ("tag-value".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setTagValue(value);
+            } else if ("inside-aws".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setInsideAws(checkTrue(value));
+            }
+        }
+        clientNetworkConfig.setAwsConfig(clientAwsConfig);
     }
 
     private void handleSSLConfig(final org.w3c.dom.Node node, ClientNetworkConfig clientNetworkConfig) {
@@ -353,25 +389,15 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     private void handleSecurity(Node node) throws Exception {
+        ClientSecurityConfig clientSecurityConfig = new ClientSecurityConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());
-            if ("login-credentials".equals(nodeName)) {
-                handleLoginCredentials(child);
+            if ("credentials".equals(nodeName)) {
+                String className = getTextContent(child);
+                clientSecurityConfig.setCredentialsClassname(className);
             }
         }
-    }
-
-    private void handleLoginCredentials(Node node) {
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials();
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(child.getNodeName());
-            if ("username".equals(nodeName)) {
-                credentials.setUsername(getTextContent(child));
-            } else if ("password".equals(nodeName)) {
-                credentials.setPassword(getTextContent(child));
-            }
-        }
-        clientConfig.setCredentials(credentials);
+        clientConfig.setSecurityConfig(clientSecurityConfig);
     }
 
 }
