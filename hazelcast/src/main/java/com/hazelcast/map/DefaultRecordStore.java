@@ -195,10 +195,6 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public void clearPartition() {
-        final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
-        if (lockService != null) {
-            lockService.clearLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
-        }
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
             for (Data key : records.keySet()) {
