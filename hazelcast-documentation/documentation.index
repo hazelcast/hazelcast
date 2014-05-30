@@ -93,6 +93,7 @@ src/Security.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
 src/Performance.md
+    src/ThreadingModel.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 src/Config.md
