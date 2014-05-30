@@ -1515,6 +1515,24 @@ public class MapStoreTest extends HazelcastTestSupport {
         });
     }
 
+    @Test
+    public void mapStore_setOnIMapDoesNotRemoveKeyFromWriteBehindDeleteQueue() throws Exception {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setEnabled(true)
+                .setImplementation(new SimpleMapStore<String, String>())
+                .setWriteDelaySeconds(Integer.MAX_VALUE);
+
+        Config config = new Config().addMapConfig(new MapConfig("map").setMapStoreConfig(mapStoreConfig));
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<String, String> map = instance.getMap("map");
+        map.put("foo", "bar");
+        map.remove("foo");
+        map.set("foo", "bar");
+
+        assertEquals("bar", map.get("foo"));
+    }
+
 
     public static class RecordingMapStore implements MapStore<String, String> {
 

@@ -720,22 +720,22 @@ public class DefaultRecordStore implements RecordStore {
         return oldValue;
     }
 
-    public boolean set(Data dataKey, Object value, long ttl) {
+    public boolean set(Data key, Object value, long ttl) {
         checkIfLoaded();
         earlyWriteCleanup();
 
-        Record record = records.get(dataKey);
+        Record record = records.get(key);
         boolean newRecord = false;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = mapStoreWrite(dataKey, value, null);
-            record = mapService.createRecord(name, dataKey, value, ttl);
-            records.put(dataKey, record);
+            value = mapStoreWrite(key, value, null);
+            record = mapService.createRecord(name, key, value, ttl);
+            records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
             newRecord = true;
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            value = mapStoreWrite(dataKey, value, record);
+            value = mapStoreWrite(key, value, record);
             // if key exists before, first reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
@@ -744,6 +744,7 @@ public class DefaultRecordStore implements RecordStore {
             updateTtl(record, ttl);
         }
         saveIndex(record);
+        removeFromWriteBehindWaitingDeletions(key);
 
         return newRecord;
     }
