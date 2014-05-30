@@ -20,34 +20,34 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.serialization.ConstantSerializers.DoubleArraySerializer;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ConstantSerializers.BooleanSerializer;
 import com.hazelcast.nio.serialization.ConstantSerializers.ByteSerializer;
 import com.hazelcast.nio.serialization.ConstantSerializers.CharArraySerializer;
-import com.hazelcast.nio.serialization.ConstantSerializers.ShortArraySerializer;
-import com.hazelcast.nio.serialization.ConstantSerializers.ShortSerializer;
-import com.hazelcast.nio.serialization.ConstantSerializers.LongArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.CharSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.DoubleArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.DoubleSerializer;
 import com.hazelcast.nio.serialization.ConstantSerializers.FloatArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.FloatSerializer;
 import com.hazelcast.nio.serialization.ConstantSerializers.IntegerArraySerializer;
 import com.hazelcast.nio.serialization.ConstantSerializers.IntegerSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.LongArraySerializer;
 import com.hazelcast.nio.serialization.ConstantSerializers.LongSerializer;
-import com.hazelcast.nio.serialization.ConstantSerializers.TheByteArraySerializer;
-import com.hazelcast.nio.serialization.ConstantSerializers.DoubleSerializer;
-import com.hazelcast.nio.serialization.ConstantSerializers.BooleanSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.ShortArraySerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.ShortSerializer;
 import com.hazelcast.nio.serialization.ConstantSerializers.StringSerializer;
-import com.hazelcast.nio.serialization.ConstantSerializers.CharSerializer;
-import com.hazelcast.nio.serialization.ConstantSerializers.FloatSerializer;
+import com.hazelcast.nio.serialization.ConstantSerializers.TheByteArraySerializer;
 import com.hazelcast.nio.serialization.DefaultSerializers.BigDecimalSerializer;
-import com.hazelcast.nio.serialization.DefaultSerializers.DateSerializer;
 import com.hazelcast.nio.serialization.DefaultSerializers.BigIntegerSerializer;
+import com.hazelcast.nio.serialization.DefaultSerializers.ClassSerializer;
+import com.hazelcast.nio.serialization.DefaultSerializers.DateSerializer;
+import com.hazelcast.nio.serialization.DefaultSerializers.EnumSerializer;
 import com.hazelcast.nio.serialization.DefaultSerializers.Externalizer;
 import com.hazelcast.nio.serialization.DefaultSerializers.ObjectSerializer;
-import com.hazelcast.nio.serialization.DefaultSerializers.ClassSerializer;
-import com.hazelcast.nio.serialization.DefaultSerializers.EnumSerializer;
 
 import java.io.Externalizable;
 import java.io.InputStream;
@@ -56,15 +56,15 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
-import java.util.Map;
-import java.util.Date;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Queue;
 import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
-import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -95,7 +95,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private final SerializerAdapter portableSerializerAdapter;
     private final ClassLoader classLoader;
     private final ManagedContext managedContext;
-    private final SerializationContextImpl serializationContext;
+    private final PortableContextImpl serializationContext;
     private final PartitioningStrategy globalPartitioningStrategy;
     private final int outputBufferSize;
 
@@ -116,7 +116,7 @@ public final class SerializationServiceImpl implements SerializationService {
         this.outputBufferSize = initialOutputBufferSize;
 
         PortableHookLoader loader = new PortableHookLoader(portableFactories, classLoader);
-        serializationContext = new SerializationContextImpl(this, loader.getFactories().keySet(), version);
+        serializationContext = new PortableContextImpl(this, loader.getFactories().keySet(), version);
         for (ClassDefinition cd : loader.getDefinitions()) {
             serializationContext.registerClassDefinition(cd);
         }
@@ -155,11 +155,12 @@ public final class SerializationServiceImpl implements SerializationService {
         registerClassDefinitions(classDefinitions, checkClassDefErrors);
     }
 
-    private void registerClassDefinitions(final Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
+    private void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
         final Map<Integer, ClassDefinition> classDefMap = new HashMap<Integer, ClassDefinition>(classDefinitions.size());
         for (ClassDefinition cd : classDefinitions) {
             if (classDefMap.containsKey(cd.getClassId())) {
-                throw new HazelcastSerializationException("Duplicate registration found for class-id[" + cd.getClassId() + "]!");
+                throw new HazelcastSerializationException("Duplicate registration found for class-id["
+                        + cd.getClassId() + "]!");
             }
             classDefMap.put(cd.getClassId(), cd);
         }
@@ -212,7 +213,7 @@ public final class SerializationServiceImpl implements SerializationService {
             final Data data = new Data(serializer.getTypeId(), bytes);
             if (obj instanceof Portable) {
                 final Portable portable = (Portable) obj;
-                data.classDefinition = serializationContext.lookup(portable.getFactoryId(), portable.getClassId());
+                data.classDefinition = lookupClassDefinition(portable);
             }
             if (strategy == null) {
                 strategy = globalPartitioningStrategy;
@@ -231,13 +232,17 @@ public final class SerializationServiceImpl implements SerializationService {
         return null;
     }
 
+    private ClassDefinition lookupClassDefinition(Portable portable) {
+        final int version = PortableVersionHelper.getVersion(portable, serializationContext.getVersion());
+        return serializationContext.lookup(portable.getFactoryId(), portable.getClassId(), version);
+    }
+
     public <T> T toObject(final Object object) {
         if (!(object instanceof Data)) {
             return (T) object;
         }
 
         Data data = (Data) object;
-
         if (data.bufferSize() == 0 && data.isDataSerializable()) {
             return null;
         }
@@ -512,7 +517,7 @@ public final class SerializationServiceImpl implements SerializationService {
         return -typeId - 1;
     }
 
-    public SerializationContext getSerializationContext() {
+    public PortableContext getPortableContext() {
         return serializationContext;
     }
 

@@ -122,5 +122,20 @@ public final class ByteUtil {
         return c;
     }
 
+    public static int combineToInt(short x, short y) {
+        return ((int) x << 16) | ((int) y & 0xFFFF);
+    }
+
+    public static short extractShort(int value, boolean lowerBits) {
+        return (short) ((lowerBits) ? value :(value >> 16));
+    }
+
+    public static long combineToLong(int x, int y) {
+        return ((long) x << 32) | ((long) y & 0xFFFFFFFL);
+    }
+
+    public static int extractInt(long value, boolean lowerBits) {
+        return (lowerBits) ? (int) value : (int) (value >> 32);
+    }
 
 }

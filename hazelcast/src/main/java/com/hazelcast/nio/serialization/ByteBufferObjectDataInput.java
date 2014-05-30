@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
-        implements BufferObjectDataInput, SerializationContextAware {
+        implements BufferObjectDataInput, PortableContextAware {
 
     private static final int UTF_BUFFER_SIZE = 1024;
 
@@ -33,7 +33,7 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
 
     private final SerializationService service;
 
-    private final byte[] utfBuffer = new byte[UTF_BUFFER_SIZE];
+    private byte[] utfBuffer;
 
     ByteBufferObjectDataInput(Data data, SerializationService service, ByteOrder order) {
         this(data.buffer, service, order);
@@ -390,6 +390,9 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
     public String readUTF() throws IOException {
+        if (utfBuffer == null) {
+            utfBuffer = new byte[UTF_BUFFER_SIZE];
+        }
         return UTFEncoderDecoder.readUTF(this, utfBuffer);
     }
 
@@ -459,8 +462,8 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
         buffer.close();
     }
 
-    public SerializationContext getSerializationContext() {
-        return service.getSerializationContext();
+    public PortableContext getPortableContext() {
+        return service.getPortableContext();
     }
 
     @Override

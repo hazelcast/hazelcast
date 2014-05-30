@@ -16,24 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.core.ManagedContext;
+interface PortableContextAware {
 
-import java.io.IOException;
-
-public interface SerializationContext {
-
-    int getVersion();
-
-    ClassDefinition lookup(int factoryId, int classId);
-
-    ClassDefinition lookup(int factoryId, int classId, int version);
-
-    ClassDefinition createClassDefinition(int factoryId, byte[] binary) throws IOException;
-
-    ClassDefinition registerClassDefinition(ClassDefinition cd);
-
-    ClassDefinition lookupOrRegisterClassDefinition(Portable portable) throws IOException;
-
-    ManagedContext getManagedContext();
+    PortableContext getPortableContext();
 
 }

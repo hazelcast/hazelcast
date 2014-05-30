@@ -312,7 +312,7 @@ public class EventServiceImpl implements EventService {
             } catch (Exception ignored) {
             }
         } else {
-            final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey, nodeEngine.getSerializationContext());
+            final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey, nodeEngine.getPortableContext());
             packet.setHeader(Packet.HEADER_EVENT);
             nodeEngine.send(packet, subscriber);
         }

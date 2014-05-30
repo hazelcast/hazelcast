@@ -71,7 +71,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
 
             while (buffer.hasRemaining()) {
                 if (packet == null) {
-                    packet = new ClientPacket(connection.getConnectionManager().getSerializationContext());
+                    packet = new ClientPacket(connection.getConnectionManager().getPortableContext());
                 }
                 boolean complete = packet.readFrom(buffer);
                 if (complete) {

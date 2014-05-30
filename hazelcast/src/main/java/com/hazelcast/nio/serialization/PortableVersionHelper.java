@@ -16,18 +16,21 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * DataSerializableFactory is used to create IdentifiedDataSerializable instances during de-serialization.
- *
- * @see com.hazelcast.nio.serialization.IdentifiedDataSerializable
- */
-public interface DataSerializableFactory {
+final class PortableVersionHelper {
 
-    /**
-     * Creates an IdentifiedDataSerializable instance using given type id
-     * @param typeId IdentifiedDataSerializable type id
-     * @return IdentifiedDataSerializable instance or null if type id is not known by this factory
-     */
-    IdentifiedDataSerializable create(int typeId);
+    private PortableVersionHelper() {
+    }
+
+    public static int getVersion(Portable portable, int defaultVersion) {
+        int version = defaultVersion;
+        if (portable instanceof VersionedPortable) {
+            VersionedPortable versionedPortable = (VersionedPortable) portable;
+            version = versionedPortable.getClassVersion();
+            if (version < 0) {
+                throw new IllegalArgumentException("Version cannot be negative!");
+            }
+        }
+        return version;
+    }
 
 }

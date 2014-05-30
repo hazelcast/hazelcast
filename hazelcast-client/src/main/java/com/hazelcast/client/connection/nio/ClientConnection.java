@@ -182,7 +182,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public Data read() throws IOException {
-        ClientPacket packet = new ClientPacket(serializationService.getSerializationContext());
+        ClientPacket packet = new ClientPacket(serializationService.getPortableContext());
         while (true) {
             if (readFromSocket) {
                 int readBytes = socketChannelWrapper.read(readBuffer);

@@ -104,7 +104,7 @@ public class WanNoDelayReplication
                 }
                 if (conn != null && conn.live()) {
                     Data data = node.nodeEngine.getSerializationService().toData(event);
-                    Packet packet = new Packet(data, node.nodeEngine.getSerializationContext());
+                    Packet packet = new Packet(data, node.nodeEngine.getPortableContext());
                     packet.setHeader(Packet.HEADER_WAN_REPLICATION);
                     node.nodeEngine.send(packet, conn);
                 } else {

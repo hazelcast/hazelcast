@@ -18,7 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 
 import java.nio.ByteBuffer;
 
@@ -44,15 +44,15 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
 
     private transient Connection conn;
 
-    public Packet(SerializationContext context) {
+    public Packet(PortableContext context) {
         super(context);
     }
 
-    public Packet(Data value, SerializationContext context) {
+    public Packet(Data value, PortableContext context) {
         this(value, -1, context);
     }
 
-    public Packet(Data value, int partitionId, SerializationContext context) {
+    public Packet(Data value, int partitionId, PortableContext context) {
         super(value, context);
         this.partitionId = partitionId;
     }

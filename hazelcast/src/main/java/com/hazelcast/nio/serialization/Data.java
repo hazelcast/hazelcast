@@ -44,7 +44,7 @@ public final class Data implements IdentifiedDataSerializable {
         this.buffer = bytes;
     }
 
-    public void postConstruct(SerializationContext context) {
+    public void postConstruct(PortableContext context) {
         if (classDefinition != null && classDefinition instanceof BinaryClassDefinitionProxy) {
             try {
                 classDefinition = ((BinaryClassDefinitionProxy) classDefinition).toReal(context);
@@ -65,7 +65,7 @@ public final class Data implements IdentifiedDataSerializable {
         if (classId != NO_CLASS_ID) {
             final int factoryId = in.readInt();
             final int version = in.readInt();
-            SerializationContext context = ((SerializationContextAware) in).getSerializationContext();
+            PortableContext context = ((PortableContextAware) in).getPortableContext();
             classDefinition = context.lookup(factoryId, classId, version);
             int classDefSize = in.readInt();
             if (classDefinition != null) {

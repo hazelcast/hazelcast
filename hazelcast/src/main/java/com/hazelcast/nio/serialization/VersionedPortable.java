@@ -16,8 +16,18 @@
 
 package com.hazelcast.nio.serialization;
 
-interface SerializationContextAware {
+/**
+ * VersionedPortable is an extension to {@link com.hazelcast.nio.serialization.Portable}
+ * to support per class version instead of a global serialization version.
+ *
+ * @see com.hazelcast.nio.serialization.Portable
+ * @see com.hazelcast.nio.serialization.PortableFactory
+ */
+public interface VersionedPortable extends Portable {
 
-    SerializationContext getSerializationContext();
-
+    /**
+     * Returns version for this Portable class
+     * @return class version
+     */
+    int getClassVersion();
 }

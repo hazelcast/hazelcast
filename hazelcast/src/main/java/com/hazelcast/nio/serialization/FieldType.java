@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-
 public enum FieldType {
 
     PORTABLE(0),

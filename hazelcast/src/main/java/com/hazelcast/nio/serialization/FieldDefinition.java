@@ -16,15 +16,38 @@
 
 package com.hazelcast.nio.serialization;
 
+/**
+ * FieldDefinition defines name, type, index of a field
+ */
 public interface FieldDefinition extends DataSerializable {
 
+    /**
+     * @return field type
+     */
     FieldType getType();
 
+    /**
+     * @return field name
+     */
     String getName();
 
+    /**
+     * @return field index
+     */
     int getIndex();
 
+    /**
+     * @return class id of this field's class
+     */
     int getClassId();
 
+    /**
+     * @return factory id of this field's class
+     */
     int getFactoryId();
+
+    /**
+     * @return version of this field's class
+     */
+    int getVersion();
 }
