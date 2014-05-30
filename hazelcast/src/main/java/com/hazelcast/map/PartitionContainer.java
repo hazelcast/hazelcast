@@ -16,6 +16,9 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -61,8 +64,15 @@ public class PartitionContainer {
 
     void destroyMap(String name) {
         RecordStore recordStore = maps.remove(name);
-        if (recordStore != null)
+        if (recordStore != null) {
             recordStore.clearPartition();
+        }
+        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        if (lockService != null) {
+            final DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
+            lockService.clearLockStore(partitionId, namespace);
+        }
     }
 
     void clear() {
