@@ -26,7 +26,8 @@ public class ClientAwsConfig extends AwsConfig {
      *
      * @param insideAws isInsideAws
      */
-    public void setInsideAws(boolean insideAws) {
+    public ClientAwsConfig setInsideAws(boolean insideAws) {
         this.insideAws = insideAws;
+        return this;
     }
 }
