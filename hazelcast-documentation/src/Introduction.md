@@ -47,7 +47,7 @@ Ass you add more nodes, Hazelcast will move one by one some of the primary and b
 
 If you have an application whose main focal point is asynchronous or high performance computing and lots of task executions, then embedded deployment is the most useful. In this type, nodes include both the application and data, see the below illustration.
 
-![](images/P2PCluster.jpg)
+![](images/P2Pcluster.jpg)
 
 
 
