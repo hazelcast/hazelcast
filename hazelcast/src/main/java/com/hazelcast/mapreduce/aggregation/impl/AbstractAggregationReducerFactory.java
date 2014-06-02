@@ -23,6 +23,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+/**
+ * Base class for all internal aggregation ReducerFactories to easy the implementation of
+ * {@link com.hazelcast.nio.serialization.IdentifiedDataSerializable}.
+ *
+ * @param <KeyIn>    the input key type
+ * @param <ValueIn>  the input value type
+ * @param <ValueOut> the output value type
+ */
 abstract class AbstractAggregationReducerFactory<KeyIn, ValueIn, ValueOut>
         implements ReducerFactory<KeyIn, ValueIn, ValueOut>, IdentifiedDataSerializable {
 

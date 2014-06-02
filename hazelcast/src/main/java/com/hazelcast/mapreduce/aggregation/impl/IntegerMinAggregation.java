@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined minimum aggregation for values of type integer.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class IntegerMinAggregation<Key, Value>
         implements AggType<Key, Value, Key, Integer, Integer, Integer, Integer> {
 
@@ -61,6 +67,11 @@ public class IntegerMinAggregation<Key, Value>
         return new IntegerMinReducerFactory<Key>();
     }
 
+    /**
+     * Minimum CombinerFactory for type integer
+     *
+     * @param <Key> the key type
+     */
     static final class IntegerMinCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Integer, Integer> {
 
@@ -75,6 +86,11 @@ public class IntegerMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum ReducerFactory for type integer
+     *
+     * @param <Key> the key type
+     */
     static final class IntegerMinReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Integer, Integer> {
 
@@ -89,6 +105,9 @@ public class IntegerMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum Combiner for type integer
+     */
     private static final class IntegerMinCombiner
             extends Combiner<Integer, Integer> {
 
@@ -109,6 +128,9 @@ public class IntegerMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum Reducer for type integer
+     */
     private static final class IntegerMinReducer
             extends Reducer<Integer, Integer> {
 

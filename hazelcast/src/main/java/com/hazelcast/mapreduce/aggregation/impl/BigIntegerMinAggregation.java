@@ -27,6 +27,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import java.math.BigInteger;
 import java.util.Map;
 
+/**
+ * The predefined minimum aggregation for values of type {@link java.math.BigInteger}.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class BigIntegerMinAggregation<Key, Value>
         implements AggType<Key, Value, Key, BigInteger, BigInteger, BigInteger, BigInteger> {
 
@@ -60,6 +66,11 @@ public class BigIntegerMinAggregation<Key, Value>
         return new BigIntegerMinReducerFactory<Key>();
     }
 
+    /**
+     * Minimum CombinerFactory for type {@link java.math.BigInteger}
+     *
+     * @param <Key> the key type
+     */
     static final class BigIntegerMinCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, BigInteger, BigInteger> {
 
@@ -74,6 +85,11 @@ public class BigIntegerMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum ReducerFactory for type {@link java.math.BigInteger}
+     *
+     * @param <Key> the key type
+     */
     static final class BigIntegerMinReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, BigInteger, BigInteger> {
 
@@ -88,10 +104,13 @@ public class BigIntegerMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum Combiner for type {@link java.math.BigInteger}
+     */
     private static final class BigIntegerMinCombiner
             extends Combiner<BigInteger, BigInteger> {
 
-        private BigInteger min = null;
+        private BigInteger min;
 
         @Override
         public void combine(BigInteger value) {
@@ -109,10 +128,13 @@ public class BigIntegerMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum Reducer for type {@link java.math.BigInteger}
+     */
     private static final class BigIntegerMinReducer
             extends Reducer<BigInteger, BigInteger> {
 
-        private volatile BigInteger min = null;
+        private volatile BigInteger min;
 
         @Override
         public void reduce(BigInteger value) {

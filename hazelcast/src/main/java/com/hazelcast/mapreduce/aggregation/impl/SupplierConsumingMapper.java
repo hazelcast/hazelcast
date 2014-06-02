@@ -26,7 +26,15 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Map;
 
-public class SupplierConsumingMapper<Key, ValueIn, ValueOut>
+/**
+ * The default mapper implementation for most (but not DistinctValues) aggregations.
+ *
+ * @param <Key>      the input key type
+ * @param <ValueIn>  the input value type
+ * @param <ValueOut> the output value type
+ */
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_NO_SERIALVERSIONID")
+class SupplierConsumingMapper<Key, ValueIn, ValueOut>
         implements Mapper<Key, ValueIn, Key, ValueOut>, IdentifiedDataSerializable {
 
     private transient SimpleEntry<Key, ValueIn> entry = new SimpleEntry<Key, ValueIn>();
@@ -36,7 +44,7 @@ public class SupplierConsumingMapper<Key, ValueIn, ValueOut>
     SupplierConsumingMapper() {
     }
 
-    public SupplierConsumingMapper(Supplier<Key, ValueIn, ValueOut> supplier) {
+    SupplierConsumingMapper(Supplier<Key, ValueIn, ValueOut> supplier) {
         this.supplier = supplier;
     }
 
@@ -45,7 +53,9 @@ public class SupplierConsumingMapper<Key, ValueIn, ValueOut>
         entry.key = key;
         entry.value = value;
         ValueOut valueOut = supplier.apply(entry);
-        context.emit(key, valueOut);
+        if (valueOut != null) {
+            context.emit(key, valueOut);
+        }
     }
 
     @Override
@@ -72,6 +82,13 @@ public class SupplierConsumingMapper<Key, ValueIn, ValueOut>
         supplier = in.readObject();
     }
 
+    /**
+     * Internal implementation of an map entry with changeable value to prevent
+     * to much object allocation while supplying
+     *
+     * @param <K> key type
+     * @param <V> value type
+     */
     private static final class SimpleEntry<K, V>
             implements Map.Entry<K, V> {
 

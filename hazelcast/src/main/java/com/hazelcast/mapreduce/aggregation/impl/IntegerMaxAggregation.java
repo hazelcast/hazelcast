@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined maximum aggregation for values of type integer.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class IntegerMaxAggregation<Key, Value>
         implements AggType<Key, Value, Key, Integer, Integer, Integer, Integer> {
 
@@ -61,6 +67,11 @@ public class IntegerMaxAggregation<Key, Value>
         return new IntegerMaxReducerFactory<Key>();
     }
 
+    /**
+     * Maximum CombinerFactory for type integer
+     *
+     * @param <Key> the key type
+     */
     static final class IntegerMaxCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Integer, Integer> {
 
@@ -75,6 +86,11 @@ public class IntegerMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum ReducerFactory for type integer
+     *
+     * @param <Key> the key type
+     */
     static final class IntegerMaxReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Integer, Integer> {
 
@@ -89,6 +105,9 @@ public class IntegerMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum Combiner for type integer
+     */
     private static final class IntegerMaxCombiner
             extends Combiner<Integer, Integer> {
 
@@ -109,6 +128,9 @@ public class IntegerMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum Reducer for type integer
+     */
     private static final class IntegerMaxReducer
             extends Reducer<Integer, Integer> {
 

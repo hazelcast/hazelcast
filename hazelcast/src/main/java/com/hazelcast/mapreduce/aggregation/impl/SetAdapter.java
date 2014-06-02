@@ -24,6 +24,12 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A simple adapter class to serialize values of a {@link java.util.Set} using
+ * Hazelcast serialization support.
+ *
+ * @param <E> element type of the set
+ */
 public class SetAdapter<E>
         extends HashSet<E>
         implements IdentifiedDataSerializable {

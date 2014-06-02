@@ -27,6 +27,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import java.math.BigDecimal;
 import java.util.Map;
 
+/**
+ * The predefined maximum aggregation for values of type {@link java.math.BigDecimal}.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class BigDecimalMaxAggregation<Key, Value>
         implements AggType<Key, Value, Key, BigDecimal, BigDecimal, BigDecimal, BigDecimal> {
 
@@ -60,6 +66,11 @@ public class BigDecimalMaxAggregation<Key, Value>
         return new BigDecimalMaxReducerFactory<Key>();
     }
 
+    /**
+     * Maximum CombinerFactory for type {@link java.math.BigDecimal}
+     *
+     * @param <Key> the key type
+     */
     static final class BigDecimalMaxCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, BigDecimal, BigDecimal> {
 
@@ -74,6 +85,11 @@ public class BigDecimalMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum ReducerFactory for type {@link java.math.BigDecimal}
+     *
+     * @param <Key> the key type
+     */
     static final class BigDecimalMaxReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, BigDecimal, BigDecimal> {
 
@@ -88,10 +104,13 @@ public class BigDecimalMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum Combiner for type {@link java.math.BigDecimal}
+     */
     private static final class BigDecimalMaxCombiner
             extends Combiner<BigDecimal, BigDecimal> {
 
-        private BigDecimal max = null;
+        private BigDecimal max;
 
         @Override
         public void combine(BigDecimal value) {
@@ -109,10 +128,13 @@ public class BigDecimalMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum Reducer for type {@link java.math.BigDecimal}
+     */
     private static final class BigDecimalMaxReducer
             extends Reducer<BigDecimal, BigDecimal> {
 
-        private volatile BigDecimal max = null;
+        private volatile BigDecimal max;
 
         @Override
         public void reduce(BigDecimal value) {

@@ -27,6 +27,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import java.math.BigDecimal;
 import java.util.Map;
 
+/**
+ * The predefined average aggregation for values of type {@link java.math.BigDecimal}.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class BigDecimalAvgAggregation<Key, Value>
         implements AggType<Key, Value, Key, BigDecimal, AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>, BigDecimal> {
 
@@ -62,6 +68,11 @@ public class BigDecimalAvgAggregation<Key, Value>
         return new BigDecimalAvgReducerFactory<Key>();
     }
 
+    /**
+     * Average CombinerFactory for type {@link java.math.BigDecimal}
+     *
+     * @param <Key> the key type
+     */
     static final class BigDecimalAvgCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, BigDecimal, AvgTuple<Long, BigDecimal>> {
 
@@ -76,6 +87,11 @@ public class BigDecimalAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average ReducerFactory for type {@link java.math.BigDecimal}
+     *
+     * @param <Key> the key type
+     */
     static final class BigDecimalAvgReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>> {
 
@@ -90,7 +106,10 @@ public class BigDecimalAvgAggregation<Key, Value>
         }
     }
 
-    private static final class BigDecimalAvgCombiner<Key>
+    /**
+     * Average Combiner for type {@link java.math.BigDecimal}
+     */
+    private static final class BigDecimalAvgCombiner
             extends Combiner<BigDecimal, AvgTuple<Long, BigDecimal>> {
 
         private long count;
@@ -114,7 +133,10 @@ public class BigDecimalAvgAggregation<Key, Value>
         }
     }
 
-    private static final class BigDecimalAvgReducer<Key>
+    /**
+     * Average Reducer for type {@link java.math.BigDecimal}
+     */
+    private static final class BigDecimalAvgReducer
             extends Reducer<AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>> {
 
         private volatile long count;

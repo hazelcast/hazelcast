@@ -28,7 +28,9 @@ import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.MappingJob;
 import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.ReducingSubmittableJob;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
@@ -37,6 +39,7 @@ import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.*;
@@ -602,21 +605,39 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return new DelegatingFuture(f,service.getSerializationService());
     }
 
+
     @Override
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                                     Aggregation<K, SuppliedValue, Result> aggregation) {
 
+        HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
+        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
+        return aggregate(supplier, aggregation, jobTracker);
+    }
+
+    @Override
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation,
+                                                    JobTracker jobTracker) {
+
         try {
-            HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
-            JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
+            ValidationUtil.isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
             Job<K, V> job = jobTracker.newJob(keyValueSource);
             Mapper mapper = aggregation.getMapper(supplier);
             CombinerFactory combinerFactory = aggregation.getCombinerFactory();
             ReducerFactory reducerFactory = aggregation.getReducerFactory();
             Collator collator = aggregation.getCollator();
-            ICompletableFuture<Result> future = job.mapper(mapper).combiner(combinerFactory).reducer(reducerFactory)
-                                                   .submit(collator);
+
+            MappingJob mappingJob = job.mapper(mapper);
+            ReducingSubmittableJob reducingJob;
+            if (combinerFactory != null) {
+                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
+            } else {
+                reducingJob = mappingJob.reducer(reducerFactory);
+            }
+
+            ICompletableFuture<Result> future = reducingJob.submit(collator);
             return future.get();
         } catch (Exception e) {
             throw new HazelcastException(e);

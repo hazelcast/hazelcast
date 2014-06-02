@@ -15,4 +15,3 @@ com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook
 com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook
 com.hazelcast.mapreduce.impl.MapReducePortableHook
 com.hazelcast.replicatedmap.client.ReplicatedMapPortableHook
-com.hazelcast.mapreduce.aggregation.impl.AggregationsPortableHook

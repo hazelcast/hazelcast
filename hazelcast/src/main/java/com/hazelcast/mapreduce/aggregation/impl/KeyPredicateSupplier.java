@@ -25,6 +25,15 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * The default supplier for {@link com.hazelcast.mapreduce.KeyPredicate}s, used
+ * to filter and optionally transform data (using the given
+ * {@link com.hazelcast.mapreduce.aggregation.Supplier}).
+ *
+ * @param <KeyIn>    the input key type
+ * @param <ValueIn>  the input value type
+ * @param <ValueOut> the output value type
+ */
 public class KeyPredicateSupplier<KeyIn, ValueIn, ValueOut>
         extends Supplier<KeyIn, ValueIn, ValueOut>
         implements IdentifiedDataSerializable {

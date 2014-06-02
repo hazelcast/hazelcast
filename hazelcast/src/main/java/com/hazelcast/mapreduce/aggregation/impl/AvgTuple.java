@@ -22,6 +22,13 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+/**
+ * Internal tuple type for average calculations, used to transmit data between
+ * Combiner and Reducer implementations.
+ *
+ * @param <F> first value type
+ * @param <S> second value type
+ */
 public class AvgTuple<F, S>
         implements IdentifiedDataSerializable {
 

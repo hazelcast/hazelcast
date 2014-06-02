@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined count aggregation.
+ *
+ * @param <Key>   the key input type
+ * @param <Value> the value input type
+ */
 public class CountAggregation<Key, Value>
         implements AggType<Key, Value, Key, Object, Long, Long, Long> {
 
@@ -58,6 +64,11 @@ public class CountAggregation<Key, Value>
         return new CountReducerFactory<Key>();
     }
 
+    /**
+     * Count CombinerFactory
+     *
+     * @param <Key> the key type
+     */
     static final class CountCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Object, Long> {
 
@@ -72,6 +83,11 @@ public class CountAggregation<Key, Value>
         }
     }
 
+    /**
+     * Count ReducerFactory
+     *
+     * @param <Key> the key type
+     */
     static final class CountReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
@@ -86,6 +102,9 @@ public class CountAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum Combiner
+     */
     private static final class CountCombiner
             extends Combiner<Object, Long> {
 
@@ -104,6 +123,9 @@ public class CountAggregation<Key, Value>
         }
     }
 
+    /**
+     * Count Reducer
+     */
     private static final class CountReducer
             extends Reducer<Long, Long> {
 

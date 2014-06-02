@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined average aggregation for values of type integer.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class IntegerAvgAggregation<Key, Value>
         implements AggType<Key, Value, Key, Integer, AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>, Integer> {
 
@@ -61,6 +67,11 @@ public class IntegerAvgAggregation<Key, Value>
         return new IntegerAvgReducerFactory<Key>();
     }
 
+    /**
+     * Average CombinerFactory for type long
+     *
+     * @param <Key> the key type
+     */
     static final class IntegerAvgCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Integer, AvgTuple<Integer, Integer>> {
 
@@ -75,6 +86,11 @@ public class IntegerAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average ReducerFactory for type integer
+     *
+     * @param <Key> the key type
+     */
     static final class IntegerAvgReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
 
@@ -89,6 +105,9 @@ public class IntegerAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average Combiner for type integer
+     */
     private static final class IntegerAvgCombiner
             extends Combiner<Integer, AvgTuple<Integer, Integer>> {
 
@@ -111,6 +130,9 @@ public class IntegerAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average Reducer for type integer
+     */
     private static final class IntegerAvgReducer
             extends Reducer<AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
 

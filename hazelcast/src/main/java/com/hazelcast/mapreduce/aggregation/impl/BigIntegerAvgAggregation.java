@@ -27,6 +27,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import java.math.BigInteger;
 import java.util.Map;
 
+/**
+ * The predefined average aggregation for values of type {@link java.math.BigInteger}.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class BigIntegerAvgAggregation<Key, Value>
         implements AggType<Key, Value, Key, BigInteger, AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>, BigInteger> {
 
@@ -62,6 +68,11 @@ public class BigIntegerAvgAggregation<Key, Value>
         return new BigIntegerAvgReducerFactory<Key>();
     }
 
+    /**
+     * Average CombinerFactory for type {@link java.math.BigInteger}
+     *
+     * @param <Key> the key type
+     */
     static final class BigIntegerAvgCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, BigInteger, AvgTuple<Long, BigInteger>> {
 
@@ -76,6 +87,11 @@ public class BigIntegerAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average ReducerFactory for type {@link java.math.BigInteger}
+     *
+     * @param <Key> the key type
+     */
     static final class BigIntegerAvgReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>> {
 
@@ -90,6 +106,9 @@ public class BigIntegerAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average Combiner for type {@link java.math.BigInteger}
+     */
     private static final class BigIntegerAvgCombiner
             extends Combiner<BigInteger, AvgTuple<Long, BigInteger>> {
 
@@ -114,6 +133,9 @@ public class BigIntegerAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average Reducer for type {@link java.math.BigInteger}
+     */
     private static final class BigIntegerAvgReducer
             extends Reducer<AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>> {
 

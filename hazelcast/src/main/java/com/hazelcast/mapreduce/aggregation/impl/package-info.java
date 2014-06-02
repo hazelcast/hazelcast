@@ -15,7 +15,6 @@
  */
 
 /**
- * This package contains the aggregation API and the convenience helper classes
- * to retrieve predefined aggregation implementations.
+ * This package contains a set of predefined aggregation implementations
  */
-package com.hazelcast.mapreduce.aggregation;
+package com.hazelcast.mapreduce.aggregation.impl;

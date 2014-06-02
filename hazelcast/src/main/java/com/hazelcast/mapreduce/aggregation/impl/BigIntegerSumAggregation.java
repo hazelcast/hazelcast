@@ -27,6 +27,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import java.math.BigInteger;
 import java.util.Map;
 
+/**
+ * The predefined sum aggregation for values of type {@link java.math.BigInteger}.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class BigIntegerSumAggregation<Key, Value>
         implements AggType<Key, Value, Key, BigInteger, BigInteger, BigInteger, BigInteger> {
 
@@ -59,6 +65,11 @@ public class BigIntegerSumAggregation<Key, Value>
         return new BigIntegerSumReducerFactory<Key>();
     }
 
+    /**
+     * Sum CombinerFactory for type {@link java.math.BigInteger}
+     *
+     * @param <Key> the key type
+     */
     static final class BigIntegerSumCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, BigInteger, BigInteger> {
 
@@ -73,6 +84,11 @@ public class BigIntegerSumAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum ReducerFactory for type {@link java.math.BigInteger}
+     *
+     * @param <Key> the key type
+     */
     static final class BigIntegerSumReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, BigInteger, BigInteger> {
 
@@ -87,6 +103,9 @@ public class BigIntegerSumAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum Combiner for type {@link java.math.BigInteger}
+     */
     private static final class BigIntegerSumCombiner
             extends Combiner<BigInteger, BigInteger> {
 
@@ -108,6 +127,9 @@ public class BigIntegerSumAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum Reducer for type {@link java.math.BigInteger}
+     */
     private static final class BigIntegerSumReducer
             extends Reducer<BigInteger, BigInteger> {
 

@@ -24,6 +24,20 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The internal interface for Aggregation definitions to make those implementations more type-safe.
+ * Internal AggTypes are adapted to {@link com.hazelcast.mapreduce.aggregation.Aggregation} using
+ * an internal class inside {@link com.hazelcast.mapreduce.aggregation.Aggregations} which is not
+ * part of the public API.
+ *
+ * @param <KeyIn>         the input key type
+ * @param <ValueIn>       the input value type
+ * @param <KeyOut>        the mappers output key type
+ * @param <SuppliedValue> the supplied value type
+ * @param <CombinerValue> the pre-reduced (combined) value type
+ * @param <ReducerValue>  the reduced value type
+ * @param <Result>        the final (mostly collated) value type
+ */
 public interface AggType<KeyIn, ValueIn, KeyOut, SuppliedValue, CombinerValue, ReducerValue, Result> {
 
     Collator<Map.Entry<KeyOut, ReducerValue>, Result> getCollator();

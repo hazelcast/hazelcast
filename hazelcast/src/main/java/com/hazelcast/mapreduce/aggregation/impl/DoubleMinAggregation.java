@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined minimum aggregation for values of type double.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class DoubleMinAggregation<Key, Value>
         implements AggType<Key, Value, Key, Double, Double, Double, Double> {
 
@@ -61,6 +67,11 @@ public class DoubleMinAggregation<Key, Value>
         return new DoubleMinReducerFactory<Key>();
     }
 
+    /**
+     * Minimum CombinerFactory for type double
+     *
+     * @param <Key> the key type
+     */
     static final class DoubleMinCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Double, Double> {
 
@@ -75,6 +86,11 @@ public class DoubleMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum ReducerFactory for type double
+     *
+     * @param <Key> the key type
+     */
     static final class DoubleMinReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Double, Double> {
 
@@ -89,6 +105,9 @@ public class DoubleMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum Combiner for type double
+     */
     private static final class DoubleMinCombiner
             extends Combiner<Double, Double> {
 
@@ -109,6 +128,9 @@ public class DoubleMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum Reducer for type double
+     */
     private static final class DoubleMinReducer
             extends Reducer<Double, Double> {
 

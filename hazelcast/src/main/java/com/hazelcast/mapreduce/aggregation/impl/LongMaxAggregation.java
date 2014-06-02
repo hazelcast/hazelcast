@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined maximum aggregation for values of type long.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class LongMaxAggregation<Key, Value>
         implements AggType<Key, Value, Key, Long, Long, Long, Long> {
 
@@ -61,6 +67,11 @@ public class LongMaxAggregation<Key, Value>
         return new LongMaxReducerFactory<Key>();
     }
 
+    /**
+     * Maximum CombinerFactory for type long
+     *
+     * @param <Key> the key type
+     */
     static final class LongMaxCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Long, Long> {
 
@@ -75,6 +86,11 @@ public class LongMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum ReducerFactory for type long
+     *
+     * @param <Key> the key type
+     */
     static final class LongMaxReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
@@ -89,6 +105,9 @@ public class LongMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum Combiner for type long
+     */
     private static final class LongMaxCombiner
             extends Combiner<Long, Long> {
 
@@ -109,6 +128,9 @@ public class LongMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum Reducer for type long
+     */
     private static final class LongMaxReducer
             extends Reducer<Long, Long> {
 

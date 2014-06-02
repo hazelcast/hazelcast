@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined average aggregation for values of type double.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class DoubleAvgAggregation<Key, Value>
         implements AggType<Key, Value, Key, Double, AvgTuple<Long, Double>, AvgTuple<Long, Double>, Double> {
 
@@ -61,6 +67,11 @@ public class DoubleAvgAggregation<Key, Value>
         return new DoubleAvgReducerFactory<Key>();
     }
 
+    /**
+     * Average CombinerFactory for type double
+     *
+     * @param <Key> the key type
+     */
     static final class DoubleAvgCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Double, AvgTuple<Long, Double>> {
 
@@ -75,6 +86,11 @@ public class DoubleAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average ReducerFactory for type double
+     *
+     * @param <Key> the key type
+     */
     static final class DoubleAvgReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Long, Double>, AvgTuple<Long, Double>> {
 
@@ -89,6 +105,9 @@ public class DoubleAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average Combiner for type double
+     */
     private static final class DoubleAvgCombiner
             extends Combiner<Double, AvgTuple<Long, Double>> {
 
@@ -111,6 +130,9 @@ public class DoubleAvgAggregation<Key, Value>
         }
     }
 
+    /**
+     * Average Reducer for type double
+     */
     private static final class DoubleAvgReducer
             extends Reducer<AvgTuple<Long, Double>, AvgTuple<Long, Double>> {
 

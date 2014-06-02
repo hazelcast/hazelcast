@@ -25,6 +25,15 @@ import com.hazelcast.query.Predicate;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * The default supplier for {@link com.hazelcast.query.Predicate}s, used
+ * to filter and optionally transform data (using the given
+ * {@link com.hazelcast.mapreduce.aggregation.Supplier}).
+ *
+ * @param <KeyIn>    the input key type
+ * @param <ValueIn>  the input value type
+ * @param <ValueOut> the output value type
+ */
 public class PredicateSupplier<KeyIn, ValueIn, ValueOut>
         extends Supplier<KeyIn, ValueIn, ValueOut>
         implements IdentifiedDataSerializable {
@@ -48,7 +57,9 @@ public class PredicateSupplier<KeyIn, ValueIn, ValueOut>
     public ValueOut apply(Map.Entry<KeyIn, ValueIn> entry) {
         if (predicate.apply(entry)) {
             ValueIn value = entry.getValue();
-            return chainedSupplier != null ? chainedSupplier.apply(entry) : (ValueOut) value;
+            if (value != null) {
+                return chainedSupplier != null ? chainedSupplier.apply(entry) : (ValueOut) value;
+            }
         }
         return null;
     }

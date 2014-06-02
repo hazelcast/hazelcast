@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined maximum aggregation for values of type double.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class DoubleMaxAggregation<Key, Value>
         implements AggType<Key, Value, Key, Double, Double, Double, Double> {
 
@@ -61,6 +67,11 @@ public class DoubleMaxAggregation<Key, Value>
         return new DoubleMaxReducerFactory<Key>();
     }
 
+    /**
+     * Maximum CombinerFactory for type double
+     *
+     * @param <Key> the key type
+     */
     static final class DoubleMaxCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Double, Double> {
 
@@ -75,6 +86,11 @@ public class DoubleMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum ReducerFactory for type double
+     *
+     * @param <Key> the key type
+     */
     static final class DoubleMaxReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Double, Double> {
 
@@ -89,6 +105,9 @@ public class DoubleMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum Combiner for type double
+     */
     private static final class DoubleMaxCombiner
             extends Combiner<Double, Double> {
 
@@ -109,6 +128,9 @@ public class DoubleMaxAggregation<Key, Value>
         }
     }
 
+    /**
+     * Maximum Reducer for type double
+     */
     private static final class DoubleMaxReducer
             extends Reducer<Double, Double> {
 

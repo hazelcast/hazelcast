@@ -27,6 +27,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import java.math.BigDecimal;
 import java.util.Map;
 
+/**
+ * The predefined sum aggregation for values of type {@link java.math.BigDecimal}.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class BigDecimalSumAggregation<Key, Value>
         implements AggType<Key, Value, Key, BigDecimal, BigDecimal, BigDecimal, BigDecimal> {
 
@@ -59,6 +65,11 @@ public class BigDecimalSumAggregation<Key, Value>
         return new BigDecimalSumReducerFactory<Key>();
     }
 
+    /**
+     * Sum CombinerFactory for type {@link java.math.BigDecimal}
+     *
+     * @param <Key> the key type
+     */
     static final class BigDecimalSumCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, BigDecimal, BigDecimal> {
 
@@ -73,6 +84,11 @@ public class BigDecimalSumAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum ReducerFactory for type {@link java.math.BigDecimal}
+     *
+     * @param <Key> the key type
+     */
     static final class BigDecimalSumReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, BigDecimal, BigDecimal> {
 
@@ -87,6 +103,9 @@ public class BigDecimalSumAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum Combiner for type {@link java.math.BigDecimal}
+     */
     private static final class BigDecimalSumCombiner
             extends Combiner<BigDecimal, BigDecimal> {
 
@@ -108,6 +127,9 @@ public class BigDecimalSumAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum Reducer for type {@link java.math.BigDecimal}
+     */
     private static final class BigDecimalSumReducer
             extends Reducer<BigDecimal, BigDecimal> {
 

@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined sum aggregation for values of type integer.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class IntegerSumAggregation<Key, Value>
         implements AggType<Key, Value, Key, Integer, Integer, Integer, Integer> {
 
@@ -58,6 +64,11 @@ public class IntegerSumAggregation<Key, Value>
         return new IntegerSumReducerFactory<Key>();
     }
 
+    /**
+     * Sum CombinerFactory for type integer
+     *
+     * @param <Key> the key type
+     */
     static final class IntegerSumCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Integer, Integer> {
 
@@ -72,6 +83,11 @@ public class IntegerSumAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum ReducerFactory for type integer
+     *
+     * @param <Key> the key type
+     */
     static final class IntegerSumReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Integer, Integer> {
 
@@ -86,6 +102,9 @@ public class IntegerSumAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum Combiner for type integer
+     */
     private static final class IntegerSumCombiner
             extends Combiner<Integer, Integer> {
 
@@ -104,6 +123,9 @@ public class IntegerSumAggregation<Key, Value>
         }
     }
 
+    /**
+     * Sum Reducer for type integer
+     */
     private static final class IntegerSumReducer
             extends Reducer<Integer, Integer> {
 

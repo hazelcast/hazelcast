@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined minimum aggregation for values of type {@link java.lang.Comparable}.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class ComparableMinAggregation<Key, Value>
         implements AggType<Key, Value, Key, Comparable, Comparable, Comparable, Comparable> {
 
@@ -61,6 +67,11 @@ public class ComparableMinAggregation<Key, Value>
         return new ComparableMinReducerFactory<Key>();
     }
 
+    /**
+     * Minimum CombinerFactory for type {@link java.lang.Comparable}
+     *
+     * @param <Key> the key type
+     */
     static final class ComparableMinCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Comparable, Comparable> {
 
@@ -75,6 +86,11 @@ public class ComparableMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum ReducerFactory for type {@link java.lang.Comparable}
+     *
+     * @param <Key> the key type
+     */
     static final class ComparableMinReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Comparable, Comparable> {
 
@@ -89,30 +105,36 @@ public class ComparableMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum Combiner for type {@link java.lang.Comparable}
+     */
     private static final class ComparableMinCombiner
             extends Combiner<Comparable, Comparable> {
 
-        private Comparable chunkMin = null;
+        private Comparable min;
 
         @Override
         public void combine(Comparable value) {
-            if (chunkMin == null || value.compareTo(chunkMin) < 0) {
-                chunkMin = value;
+            if (min == null || value.compareTo(min) < 0) {
+                min = value;
             }
         }
 
         @Override
         public Comparable finalizeChunk() {
-            Comparable value = chunkMin;
-            chunkMin = null;
+            Comparable value = min;
+            min = null;
             return value;
         }
     }
 
+    /**
+     * Minimum Reducer for type {@link java.lang.Comparable}
+     */
     private static final class ComparableMinReducer
             extends Reducer<Comparable, Comparable> {
 
-        private volatile Comparable min = null;
+        private volatile Comparable min;
 
         @Override
         public void reduce(Comparable value) {

@@ -26,6 +26,12 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 
 import java.util.Map;
 
+/**
+ * The predefined minimum aggregation for values of type long.
+ *
+ * @param <Key>   the input key type
+ * @param <Value> the input value type
+ */
 public class LongMinAggregation<Key, Value>
         implements AggType<Key, Value, Key, Long, Long, Long, Long> {
 
@@ -61,6 +67,11 @@ public class LongMinAggregation<Key, Value>
         return new LongMinReducerFactory<Key>();
     }
 
+    /**
+     * Minimum CombinerFactory for type long
+     *
+     * @param <Key> the key type
+     */
     static final class LongMinCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Long, Long> {
 
@@ -75,6 +86,11 @@ public class LongMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum ReducerFactory for type long
+     *
+     * @param <Key> the key type
+     */
     static final class LongMinReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Long, Long> {
 
@@ -89,6 +105,9 @@ public class LongMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum Combiner for type long
+     */
     private static final class LongMinCombiner
             extends Combiner<Long, Long> {
 
@@ -109,6 +128,9 @@ public class LongMinAggregation<Key, Value>
         }
     }
 
+    /**
+     * Minimum Reducer for type long
+     */
     private static final class LongMinReducer
             extends Reducer<Long, Long> {
 

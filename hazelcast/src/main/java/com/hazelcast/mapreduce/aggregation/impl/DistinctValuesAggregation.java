@@ -34,8 +34,17 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+/**
+ * The predefined distinct value aggregation.
+ *
+ * @param <Key>          the input key type
+ * @param <Value>        the input value type
+ * @param <DistinctType> the common super type for all distinct values
+ */
 public class DistinctValuesAggregation<Key, Value, DistinctType>
         implements AggType<Key, Value, Integer, DistinctType, Set<DistinctType>, Set<DistinctType>, Set<DistinctType>> {
+
+    private static final int DEFAULT_DISTRIBUTION_FACTOR = 20;
 
     @Override
     public Collator<Map.Entry<Integer, Set<DistinctType>>, Set<DistinctType>> getCollator() {
@@ -67,6 +76,11 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
         return new DistinctValuesReducerFactory<DistinctType>();
     }
 
+    /**
+     * Distinct values CombinerFactory
+     *
+     * @param <DistinctType> the distinct values type
+     */
     static class DistinctValuesCombinerFactory<DistinctType>
             extends AbstractAggregationCombinerFactory<Integer, DistinctType, Set<DistinctType>> {
 
@@ -81,6 +95,11 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
         }
     }
 
+    /**
+     * Distinct values Combiner
+     *
+     * @param <DistinctType> the distinct values type
+     */
     private static class DistinctValuesCombiner<DistinctType>
             extends Combiner<DistinctType, Set<DistinctType>> {
 
@@ -100,6 +119,11 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
         }
     }
 
+    /**
+     * Distinct values ReducerFactory
+     *
+     * @param <DistinctType> the distinct values type
+     */
     static class DistinctValuesReducerFactory<DistinctType>
             extends AbstractAggregationReducerFactory<Integer, Set<DistinctType>, Set<DistinctType>> {
 
@@ -114,6 +138,11 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
         }
     }
 
+    /**
+     * Distinct values Reducer
+     *
+     * @param <DistinctType> the distinct values type
+     */
     private static class DistinctValuesReducer<DistinctType>
             extends Reducer<Set<DistinctType>, Set<DistinctType>> {
 
@@ -130,6 +159,14 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
         }
     }
 
+    /**
+     * A special mapper for distributing reducing of distinct values
+     *
+     * @param <Key>          the input key type
+     * @param <Value>        the input value type
+     * @param <DistinctType> the type of distinct values
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_NO_SERIALVERSIONID")
     static class DistinctValueMapper<Key, Value, DistinctType>
             implements Mapper<Key, Value, Integer, DistinctType>, IdentifiedDataSerializable {
 
@@ -138,21 +175,21 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
 
         static {
             Random random = new Random();
-            DISTRIBUTION_KEYS = new int[20];
+            DISTRIBUTION_KEYS = new int[DEFAULT_DISTRIBUTION_FACTOR];
             for (int i = 0; i < DISTRIBUTION_KEYS.length; i++) {
                 DISTRIBUTION_KEYS[i] = random.nextInt();
             }
         }
 
         private transient SimpleEntry<Key, Value> entry = new SimpleEntry<Key, Value>();
-        private transient int keyPosition = 0;
+        private transient int keyPosition;
 
         private Supplier<Key, Value, DistinctType> supplier;
 
         DistinctValueMapper() {
         }
 
-        public DistinctValueMapper(Supplier<Key, Value, DistinctType> supplier) {
+        DistinctValueMapper(Supplier<Key, Value, DistinctType> supplier) {
             this.supplier = supplier;
         }
 
@@ -162,7 +199,9 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
             entry.key = key;
             entry.value = value;
             DistinctType valueOut = supplier.apply(entry);
-            context.emit(mappingKey, valueOut);
+            if (valueOut != null) {
+                context.emit(mappingKey, valueOut);
+            }
         }
 
         @Override
@@ -197,6 +236,13 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
         }
     }
 
+    /**
+     * Internal implementation of an map entry with changeable value to prevent
+     * to much object allocation while supplying
+     *
+     * @param <K> key type
+     * @param <V> value type
+     */
     private static final class SimpleEntry<K, V>
             implements Map.Entry<K, V> {
 

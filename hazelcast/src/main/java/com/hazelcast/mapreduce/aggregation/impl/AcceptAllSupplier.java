@@ -25,6 +25,15 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * A standard implementation of the {@link com.hazelcast.mapreduce.aggregation.Supplier}
+ * interface which accepts all input values and may apply a given
+ * {@link com.hazelcast.mapreduce.aggregation.PropertyExtractor} on those.
+ *
+ * @param <KeyIn>    the input key type
+ * @param <ValueIn>  the input value type
+ * @param <ValueOut> the output value type
+ */
 public class AcceptAllSupplier<KeyIn, ValueIn, ValueOut>
         extends Supplier<KeyIn, ValueIn, ValueOut>
         implements IdentifiedDataSerializable {
