@@ -281,7 +281,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testLockedKey_afterMapClear() {
+    public void testClear_withLockedKey() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
 
@@ -293,6 +293,38 @@ public class MapLockTest extends HazelcastTestSupport {
         map.lock(KEY);
         map.clear();
 
+        assertEquals("a locked key should not be removed by map clear", false, map.isEmpty());
         assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(KEY));
+    }
+
+    @Test
+    public void testClear_withLockedKey_whenNodeTerminated() {
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance node2 = nodeFactory.newHazelcastInstance();
+
+        final IMap map = node1.getMap(randomString());
+
+        for(int i=0; i<1000; i++){
+            map.put(i, i);
+        }
+
+        Object key = generateKeyOwnedBy(node2);
+        map.put(key, "value");
+        map.lock(key);
+
+        final CountDownLatch cleared = new CountDownLatch(1);
+        new Thread(){
+            public void run() {
+                map.clear();
+                cleared.countDown();
+            }
+        }.start();
+
+        node2.getLifecycleService().terminate();
+
+        assertOpenEventually(cleared);
+        assertEquals("unlocked keys not removed", 1, map.size());
+        assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(key));
     }
 }

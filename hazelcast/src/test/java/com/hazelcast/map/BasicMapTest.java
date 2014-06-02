@@ -407,19 +407,6 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapClear_withLockedKey() {
-        String mapName = "testMapClear_withLockedKey";
-        HazelcastInstance hz = getInstance();
-        IMap<String, String> map = hz.getMap(mapName);
-
-        map.put("key", "val");
-        map.lock("key");
-        map.clear();
-
-        assertEquals("a locked key should not be removed by map clear", false, map.isEmpty());
-    }
-
-    @Test
     public void testMapEvict() {
         IMap<String, String> map = getInstance().getMap("testMapEvict");
         map.put("key1", "value1");
