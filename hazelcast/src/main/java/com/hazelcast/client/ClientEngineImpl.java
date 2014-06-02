@@ -50,6 +50,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -73,12 +74,13 @@ import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
 
-public class ClientEngineImpl implements ClientEngine, CoreService,
-        ManagedService, MembershipAwareService, EventPublishingService<ClientEndpoint, ClientListener> {
+public class ClientEngineImpl
+        implements ClientEngine, CoreService, ManagedService, MembershipAwareService,
+        EventPublishingService<ClientEndpoint, ClientListener>, PostJoinAwareService {
 
     public static final String SERVICE_NAME = "hz:core:clientEngine";
     public static final int DESTROY_ENDPOINT_DELAY_MS = 1111;
-    public static final int ENDPOINT_REMOVE_DELAY_MS = 10;
+    public static final int ENDPOINT_REMOVE_DELAY = 10;
     public static final int THREADS_PER_CORE = 10;
     public static final int RIDICULOUS_THREADS_PER_CORE = 100000;
 
@@ -90,6 +92,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final SerializationService serializationService;
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<Connection, ClientEndpoint>();
+    // client uuid -> member uuid
+    private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
@@ -248,47 +252,40 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         return endpoint;
     }
 
-    ClientEndpoint removeEndpoint(final Connection connection) {
-        return removeEndpoint(connection, false);
+    void removeEndpoint(ClientEndpoint endpoint) {
+        removeEndpoint(endpoint, false);
     }
 
-    ClientEndpoint removeEndpoint(final Connection connection, boolean closeImmediately) {
-        final ClientEndpoint endpoint = endpoints.remove(connection);
-        destroyEndpoint(endpoint, closeImmediately);
-        return endpoint;
-    }
+    void removeEndpoint(ClientEndpoint endpoint, boolean destroyImmediately) {
+        logger.info("Destroying " + endpoint);
+        endpoints.remove(endpoint.getConnection());
+        try {
+            endpoint.destroy();
+        } catch (LoginException e) {
+            logger.warning(e);
+        }
 
-    private void destroyEndpoint(ClientEndpoint endpoint, boolean closeImmediately) {
-        if (endpoint != null) {
-            logger.info("Destroying " + endpoint);
+        final Connection connection = endpoint.getConnection();
+        if (destroyImmediately) {
             try {
-                endpoint.destroy();
-            } catch (LoginException e) {
-                logger.warning(e);
+                connection.close();
+            } catch (Throwable e) {
+                logger.warning("While closing client connection: " + connection, e);
             }
-
-            final Connection connection = endpoint.getConnection();
-            if (closeImmediately) {
-                try {
-                    connection.close();
-                } catch (Throwable e) {
-                    logger.warning("While closing client connection: " + connection, e);
-                }
-            } else {
-                nodeEngine.getExecutionService().schedule(new Runnable() {
-                    public void run() {
-                        if (connection.live()) {
-                            try {
-                                connection.close();
-                            } catch (Throwable e) {
-                                logger.warning("While closing client connection: " + e.toString());
-                            }
+        } else {
+            nodeEngine.getExecutionService().schedule(new Runnable() {
+                public void run() {
+                    if (connection.live()) {
+                        try {
+                            connection.close();
+                        } catch (Throwable e) {
+                            logger.warning("While closing client connection: " + e.toString());
                         }
                     }
-                }, DESTROY_ENDPOINT_DELAY_MS, TimeUnit.MILLISECONDS);
-            }
-            sendClientEvent(endpoint);
+                }
+            }, DESTROY_ENDPOINT_DELAY_MS, TimeUnit.MILLISECONDS);
         }
+        sendClientEvent(endpoint);
     }
 
     @Override
@@ -333,22 +330,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             return;
         }
 
-        final String uuid = event.getMember().getUuid();
+        final String deadMemberUuid = event.getMember().getUuid();
         try {
-            nodeEngine.getExecutionService().schedule(new Runnable() {
-                @Override
-                public void run() {
-                    Iterator<ClientEndpoint> iterator = endpoints.values().iterator();
-                    while (iterator.hasNext()) {
-                        ClientEndpoint endpoint = iterator.next();
-                        String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
-                        if (uuid.equals(ownerUuid)) {
-                            iterator.remove();
-                            destroyEndpoint(endpoint, true);
-                        }
-                    }
-                }
-            }, ENDPOINT_REMOVE_DELAY_MS, TimeUnit.SECONDS);
+            nodeEngine.getExecutionService().schedule(new DestroyEndpointTask(deadMemberUuid),
+                    ENDPOINT_REMOVE_DELAY, TimeUnit.SECONDS);
         } catch (RejectedExecutionException e) {
             if (logger.isFinestEnabled()) {
                 logger.finest(e);
@@ -411,6 +396,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             }
         }
         endpoints.clear();
+        ownershipMappings.clear();
+    }
+
+    void addOwnershipMapping(String clientUuid, String ownerUuid) {
+        ownershipMappings.put(clientUuid, ownerUuid);
+    }
+
+    void removeOwnershipMapping(String clientUuid) {
+        ownershipMappings.remove(clientUuid);
     }
 
     private final class ClientPacketProcessor implements Runnable {
@@ -441,7 +435,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 } else if (endpoint.isAuthenticated()) {
                     processRequest(endpoint, request);
                 } else {
-                    handleAuthenticationFailure(conn, endpoint, request);
+                    handleAuthenticationFailure(endpoint, request);
                 }
             } catch (Throwable e) {
                 handleProcessingFailure(endpoint, request, e);
@@ -521,17 +515,17 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             request.setService(service);
         }
 
-        private void handleAuthenticationFailure(Connection conn, ClientEndpoint endpoint, ClientRequest request) {
+        private void handleAuthenticationFailure(ClientEndpoint endpoint, ClientRequest request) {
             Exception exception;
             if (nodeEngine.isActive()) {
-                String message = "Client " + conn + " must authenticate before any operation.";
+                String message = "Client " + endpoint + " must authenticate before any operation.";
                 logger.severe(message);
                 exception = new AuthenticationException(message);
             } else {
                 exception = new HazelcastInstanceNotActiveException();
             }
             endpoint.sendResponse(exception, request.getCallId());
-            removeEndpoint(conn);
+            removeEndpoint(endpoint);
         }
     }
 
@@ -552,37 +546,85 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                     return;
                 }
 
+                if (!endpoint.isFirstConnection()) {
+                    return;
+                }
+
                 String localMemberUuid = node.getLocalMember().getUuid();
                 String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
                 if (localMemberUuid.equals(ownerUuid)) {
-                    doRemoveEndpoint(connection, endpoint);
+                    callDisconnectionOperation(endpoint);
                 }
             }
         }
 
-        private void doRemoveEndpoint(Connection connection, ClientEndpoint endpoint) {
-            removeEndpoint(connection, true);
-            if (!endpoint.isFirstConnection()) {
-                return;
-            }
-
-            NodeEngine nodeEngine = node.nodeEngine;
+        private void callDisconnectionOperation(ClientEndpoint endpoint) {
             Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
             OperationService operationService = nodeEngine.getOperationService();
-            for (MemberImpl member : memberList) {
-                ClientDisconnectionOperation op = new ClientDisconnectionOperation(endpoint.getUuid());
-                op.setNodeEngine(nodeEngine)
-                        .setServiceName(SERVICE_NAME)
-                        .setService(ClientEngineImpl.this)
-                        .setResponseHandler(createEmptyResponseHandler());
+            ClientDisconnectionOperation op = createClientDisconnectionOperation(endpoint.getUuid());
+            operationService.runOperationOnCallingThread(op);
 
-                if (member.localMember()) {
-                    operationService.runOperationOnCallingThread(op);
-                } else {
+            for (MemberImpl member : memberList) {
+                if (!member.localMember()) {
+                    op = createClientDisconnectionOperation(endpoint.getUuid());
                     operationService.send(op, member.getAddress());
                 }
             }
         }
     }
 
+    private ClientDisconnectionOperation createClientDisconnectionOperation(String clientUuid) {
+        ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid);
+        op.setNodeEngine(nodeEngine)
+                .setServiceName(SERVICE_NAME)
+                .setService(this)
+                .setResponseHandler(createEmptyResponseHandler());
+        return op;
+    }
+
+    private class DestroyEndpointTask implements Runnable {
+        private final String deadMemberUuid;
+
+        public DestroyEndpointTask(String deadMemberUuid) {
+            this.deadMemberUuid = deadMemberUuid;
+        }
+
+        @Override
+        public void run() {
+            removeEndpoints();
+            removeMappings();
+        }
+
+        private void removeEndpoints() {
+            Iterator<ClientEndpoint> iterator = endpoints.values().iterator();
+            while (iterator.hasNext()) {
+                ClientEndpoint endpoint = iterator.next();
+                String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
+                if (deadMemberUuid.equals(ownerUuid)) {
+                    iterator.remove();
+                    removeEndpoint(endpoint, true);
+                }
+            }
+        }
+
+        private void removeMappings() {
+            Iterator<Map.Entry<String, String>> iterator = ownershipMappings.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, String> entry = iterator.next();
+                String clientUuid = entry.getKey();
+                String memberUuid = entry.getValue();
+                if (deadMemberUuid.equals(memberUuid)) {
+                    iterator.remove();
+                    ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid);
+                    nodeEngine.getOperationService().runOperationOnCallingThread(op);
+                }
+            }
+
+        }
+    }
+
+    @Override
+    public Operation getPostJoinOperation() {
+        return ownershipMappings.isEmpty() ? null : new PostJoinClientOperation(ownershipMappings);
+    }
 }
