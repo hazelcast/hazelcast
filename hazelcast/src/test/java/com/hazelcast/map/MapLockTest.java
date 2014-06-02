@@ -282,7 +282,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testLockedKeyAfterMapClear() {
+    public void testLockedKey_afterMapClear() {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
 
