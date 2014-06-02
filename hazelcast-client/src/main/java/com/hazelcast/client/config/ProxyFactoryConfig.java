@@ -22,9 +22,20 @@ public class ProxyFactoryConfig {
 
     private String className;
 
+    public ProxyFactoryConfig() {
+    }
+
     public ProxyFactoryConfig(String className, String service) {
         this.className = className;
         this.service = service;
+    }
+
+    public void setService(String service) {
+        this.service = service;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
     }
 
     public String getClassName() {
