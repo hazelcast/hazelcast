@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,12 +34,11 @@ import org.junit.runner.RunWith;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
-import com.hazelcast.core.Member;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.annotation.QuickTest;
 
 /** Test the multicast loopback mode when there is no other
@@ -47,7 +46,7 @@ import com.hazelcast.test.annotation.QuickTest;
  *  
  * @author St&amp;eacute;phane Galland <galland@arakhne.org>
  */
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MulticastLoopbackModeTest extends HazelcastTestSupport {
 
@@ -77,27 +76,6 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
 		return false;
 	}
 	
-	/** Wait for the real termination of the Hazelcast instance.
-	 * 
-	 * @param hz
-	 */
-	protected static void waitForTermination(HazelcastInstance hz) {
-		TestUtil.terminateInstance(hz);
-		hz.shutdown(); // Only to be sure
-		boolean hasMember = true;
-		do {
-			try {
-				Member m = hz.getCluster().getLocalMember();
-				hasMember = m!=null;
-			}
-			catch(Throwable _) {
-				hasMember = false;
-			}
-		}
-		while (hasMember);
-	}
-
-	private String useNetwork;
 	private String multicastGroup;
 	private HazelcastInstance hz1;
 	private HazelcastInstance hz2;
@@ -108,19 +86,13 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
 				"This test can be processed only if your host has no configured network interface.",
 				hasConfiguredNetworkInterface());
 		this.hz1 = this.hz2 = null;
-		this.useNetwork = System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, Boolean.TRUE.toString());
 		this.multicastGroup = System.clearProperty("hazelcast.multicast.group");
 	}
 
 	@After
 	public void tearDownTests() {
-		if (this.hz2!=null) waitForTermination(this.hz2);
-		if (this.hz1!=null) waitForTermination(this.hz1);
+		Hazelcast.shutdownAll();
 		this.hz1 = this.hz2 = null;
-		if (this.useNetwork==null)
-			System.clearProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK);
-		else
-			System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, this.useNetwork);
 		if (this.multicastGroup==null)
 			System.clearProperty("hazelcast.multicast.group");
 		else
