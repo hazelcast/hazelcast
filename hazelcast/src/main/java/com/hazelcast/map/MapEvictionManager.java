@@ -56,10 +56,8 @@ public class MapEvictionManager {
             final MapService mapService = MapEvictionManager.this.mapService;
             final Map<String, MapContainer> mapContainers = mapService.getMapContainers();
             for (MapContainer mapContainer : mapContainers.values()){
-                if (evictionPolicyConfigured(mapContainer)){
-                    if (checkEvictable(mapContainer)){
-                        evictMap(mapContainer);
-                    }
+                if (evictionPolicyConfigured(mapContainer) && evictable(mapContainer)){
+                    evictMap(mapContainer);
                 }
             }
         }
@@ -79,7 +77,7 @@ public class MapEvictionManager {
             }
         }
 
-        private boolean checkEvictable(MapContainer mapContainer) {
+        private boolean evictable(MapContainer mapContainer) {
             final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
             final MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
             boolean result;
