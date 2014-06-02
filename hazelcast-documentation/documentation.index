@@ -13,11 +13,11 @@ src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md
 		src/Map-Eviction.md
+		src/Map-InMemoryFormat.md
 		src/Map-Persistence.md
 		src/Map-Interceptors.md
 		src/Map-NearCache.md
 		src/Map-EntryStatistics.md
-		src/Map-InMemoryFormat.md
 	src/Queue.md
 		src/Queue-Persistence.md
 	src/MultiMap.md
