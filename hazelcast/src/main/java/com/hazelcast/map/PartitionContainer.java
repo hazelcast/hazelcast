@@ -66,7 +66,12 @@ public class PartitionContainer {
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {
             recordStore.clearPartition();
+        } else {
+            clearLockStore(name);
         }
+    }
+
+    private void clearLockStore(String name) {
         final NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
