@@ -37,6 +37,12 @@ has no capacity and messages for B are dropped.
 
 ### IExecutor Threading:
 
+Executor threading is very straight forward: when a tasks is received to be executed on Executor E, then E will have its
+own ThreadPoolExecutor instance and the work is put on the work-queue of this executor. So Executors are fully isolated;
+although of course they will share the same underlying hardware; most importantly the CPU's. 
+
+The IExecutor can be configured using the ExecutorConfig or using the <executor> section in the XML.
+
 ### Operation Threading:
 
 There are 2 types of operations:
