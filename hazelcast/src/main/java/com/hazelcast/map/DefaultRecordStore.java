@@ -226,9 +226,11 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public void clearPartition() {
-        final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
+        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.clearLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+            final DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
+            lockService.clearLockStore(partitionId, namespace);
         }
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
