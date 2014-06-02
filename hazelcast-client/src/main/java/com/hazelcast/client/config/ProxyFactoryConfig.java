@@ -22,6 +22,9 @@ public class ProxyFactoryConfig {
 
     private String className;
 
+    public ProxyFactoryConfig() {
+    }
+
     public ProxyFactoryConfig(String className, String service) {
         this.className = className;
         this.service = service;
@@ -31,8 +34,16 @@ public class ProxyFactoryConfig {
         return className;
     }
 
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
     public String getService() {
         return service;
+    }
+
+    public void setService(String service) {
+        this.service = service;
     }
 
     @Override
