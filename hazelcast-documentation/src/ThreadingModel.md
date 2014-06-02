@@ -2,6 +2,37 @@
 
 Your application server has its own thread. Hazelcast does not use these - it manages its own threads.
 
+### Event Threading:
+
+Hazelcast uses a shared event-system do deal with components that rely on events like:
+
+* Topic
+* Collections Listeners
+* Near-cache 
+
+Under the hood each member has an array of Thread and each thread has its own work-queue. The following properties
+can be set to alter the behavior of the system:
+
+* hazelcast.event.thread.count: the number of threads in this array. By default this is 5.
+* hazelcast.event.queue.capacity: the capacity of the work-queue. By default 1000000.
+* hazelcast.event.queue.timeout.millis: the timeout for placing an item on the work-queue. By default 250 ms.
+
+If you process a lot of events and have many cores, then probably want to change the 'hazelcast.event.thread.count' to
+a higher value so that more events can be processed in parallel. 
+
+Multiple components share the same event queues, so if there are 2 topics A,B then it could be that for certain messages
+they share the same queue(s) and therefor thread. If there are a lot of pending messages produced by A, then B needs to wait.
+Also when processing a message from A takes a lot of time and the event thread is used for that, B will suffer from this. 
+That is why it is better to offload processing to a dedicate thread(pool) so that systems are better isolated.
+
+If events are produced at a higher rate than they are consumed, the queue will grow in size. To prevent overloading system
+and running into an OOME, the queue is given a capacity of 1M items. When the maximum capacity is reached, the items are
+dropped. This means that the event system is a 'best effort' system; there is no guarantee that you are going to get an
+event. It can also be that Topic A has a lot of pending messages, and therefor B can't receive messages because the queue
+has no capacity and messages for B are dropped.
+
+### IExecutor Threading:
+
 ### Operation Threading:
 
 There are 2 types of operations:
