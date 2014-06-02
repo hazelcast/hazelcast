@@ -25,6 +25,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
+import jnr.ffi.Struct;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -277,5 +278,22 @@ public class MapLockTest extends HazelcastTestSupport {
         assertEquals("TTL of KEY has expired, KEY is locked, we expect VAL", VAL, map.get(KEY));
         map.unlock(KEY);
         assertEquals("TTL of KEY has expired, KEY is unlocked, we expect null", null, map.get(KEY));
+    }
+
+
+    @Test
+    public void testLockedKeyAfterMapClear() {
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
+
+        final IMap map = node1.getMap("map");
+        final String KEY = "key";
+        final String VAL = "val";
+
+        map.put(KEY, VAL);
+        map.lock(KEY);
+        map.clear();
+
+        assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(KEY));
     }
 }

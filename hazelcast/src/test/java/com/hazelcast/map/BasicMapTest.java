@@ -35,6 +35,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -404,6 +405,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         //MapService mapService  = getNode(hz).nodeEngine.getService(MapService.SERVICE_NAME);
         //RecordStore recordStore = mapService.getPartitionContainer(1).getExistingRecordStore(mapName);
         //assertNull(recordStore);
+    }
+
+    @Test
+    public void testMapClear_withLockedKey() {
+        String mapName = "testMapClear_withLockedKey";
+        HazelcastInstance hz = getInstance();
+        IMap<String, String> map = hz.getMap(mapName);
+
+        map.put("key", "val");
+        map.lock("key");
+        map.clear();
+
+        assertEquals("a locked key should not be removed by map clear", false, map.isEmpty());
     }
 
     @Test
