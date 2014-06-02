@@ -55,7 +55,7 @@ Let's describe each property.
 <eviction -policy>LRU</eviction -policy> 
 <max-idle-seconds>60</max-idle-seconds></map>```
 In the above sample, `documents` map starts to evict its entries from a member when the map size exceeds 10000 in that member. Then, the entries least recently used will be evicted. And, the entries not used for more than 60 seconds will be evicted as well.
-#### Evicting Entries with `put` 
+#### Evicting Specific Entries
 Above explained eviction policies and configurations apply to all the entries of a map. The entries that meet the specified eviction conditions are evicted.
 But, you may particularly want to evict some specific map entries.  In this case, you can use the `ttl` and `timeunit` parameters of the method `map.put()`. A sample code line is given below.
 `myMap.put("1", "John", 50, TimeUnit.SECONDS)`
