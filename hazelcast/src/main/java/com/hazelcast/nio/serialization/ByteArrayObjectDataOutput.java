@@ -31,11 +31,11 @@ class ByteArrayObjectDataOutput
 
     protected final int initialSize;
 
-    private final SerializationService serializationService;
-
     protected byte[] buffer;
 
     protected int pos;
+
+    private final SerializationService serializationService;
 
     private byte[] utfBuffer;
 

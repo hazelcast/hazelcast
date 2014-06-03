@@ -31,13 +31,13 @@ class ByteArrayObjectDataInput
 
     protected final int size;
 
-    private final SerializationService serializationService;
-
     protected byte[] buffer;
 
     protected int pos;
 
     protected int mark;
+
+    private final SerializationService serializationService;
 
     private byte[] utfBuffer;
 
