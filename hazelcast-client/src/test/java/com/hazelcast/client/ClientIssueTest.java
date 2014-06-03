@@ -60,7 +60,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @ali 7/3/13
@@ -573,8 +578,35 @@ public class ClientIssueTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance();
 
         assertEquals(null, map.get("a"));
+    }
 
+    @Test
+    public void testLock_WhenDummyClientAndOwnerNodeDiesTogether() throws InterruptedException {
+        testLock_WhenClientAndOwnerNodeDiesTogether(false);
+    }
 
+    @Test
+    public void testLock_WhenSmartClientAndOwnerNodeDiesTogether() throws InterruptedException {
+        testLock_WhenClientAndOwnerNodeDiesTogether(true);
+    }
+
+    private void testLock_WhenClientAndOwnerNodeDiesTogether(boolean smart) throws InterruptedException {
+
+        Hazelcast.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(smart);
+
+        final int tryCount = 5;
+
+        for (int i = 0; i < tryCount; i++) {
+            final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+            final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+            final ILock lock = client.getLock("lock");
+            assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
+            client.getLifecycleService().terminate(); //with client is dead, lock should be released.
+            instance.getLifecycleService().terminate();
+        }
     }
 
 }

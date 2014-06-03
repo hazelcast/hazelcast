@@ -118,7 +118,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
 
     private Object handleUnauthenticated() {
         ClientEngineImpl clientEngine = getService();
-        clientEngine.removeEndpoint(endpoint.getConnection());
+        clientEngine.removeEndpoint(endpoint);
         return new AuthenticationException("Invalid credentials!");
     }
 

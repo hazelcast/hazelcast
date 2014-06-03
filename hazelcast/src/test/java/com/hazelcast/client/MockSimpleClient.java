@@ -17,7 +17,11 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -74,7 +78,8 @@ public class MockSimpleClient implements SimpleClient {
     }
 
     public void close() {
-        clientEngine.removeEndpoint(connection, true);
+        ClientEndpoint endpoint = clientEngine.getEndpoint(connection);
+        clientEngine.removeEndpoint(endpoint, true);
         connection.close();
     }
 
