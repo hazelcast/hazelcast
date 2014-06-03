@@ -35,34 +35,34 @@ Below table lists the advanced configuration properties with their descriptions.
 
 Property Name | Default Value | Type | Description
 :--------------|:---------------|:------|:------------
-`hazelcast.health.monitoring.level`|||
-`hazelcast.health.monitoring.delay.seconds`|30|int|
+`hazelcast.health.monitoring.level`|SILENT|string|Health monitoring log level. When *SILENT*, logs are printed only when values exceed some predefined threshold. When *NOISY*, logs are always printed periodically. Set *OFF* to turn off completely.  
+`hazelcast.health.monitoring.delay.seconds`|30|int|Health monitoring logging interval in seconds.
 `hazelcast.version.check.enabled` | true | bool  |   Enable Hazelcast new version check on startup.
 `hazelcast.prefer.ipv4.stack` | true | bool  |   Prefer Ipv4 network interface when picking a local address.
-`hazelcast.io.thread.count`|3|int|
-`hazelcast.operation.thread.count`|-1|int|
-`hazelcast.operation.generic.thread.count`|-1|int|
-`hazelcast.event.thread.count`|5|int|
-`hazelcast.event.queue.capacity`|1000000|int|
-`hazelcast.event.queue.timeout.millis`|250|int|
-`hazelcast.connect.all.wait.seconds`|120|int|
+`hazelcast.io.thread.count` | 3 | int | Number of input and output threads.
+`hazelcast.operation.thread.count` | -1 | int | Number of partition based operation handler threads. `-1` means CPU core count x 2.
+`hazelcast.operation.generic.thread.count` | -1 | int | Number of generic operation handler threads. `-1` means CPU core count x 2.
+`hazelcast.event.thread.count` | 5 | int | Number of event handler threads.
+`hazelcast.event.queue.capacity` | 1000000 | int | Capacity of internal event queue.
+`hazelcast.event.queue.timeout.millis` | 250 | int | Timeout to enqueue events to event queue.
+`hazelcast.connect.all.wait.seconds` | 120 | int | Timeout to connect all other cluster members when a member is joining to a cluster.
 `hazelcast.memcache.enabled`| true | bool |   Enable [Memcache](#memcache-client) client request listener service.
 `hazelcast.rest.enabled` | true | bool |   Enable [REST](#rest-client) client request listener service.
 `hazelcast.map.load.chunk.size` | 1000 | int |   Chunk size for [MapLoader](#persistence) 's map initialization process (MapLoder.loadAllKeys()).
-`hazelcast.merge.first.run.delay.seconds` | 300 | int |   Inital run delay of [split brain/merge process](#network-partitioning-split-brain-syndrome) in seconds.
+`hazelcast.merge.first.run.delay.seconds` | 300 | int |   Initial run delay of [split brain/merge process](#network-partitioning-split-brain-syndrome) in seconds.
 `hazelcast.merge.next.run.delay.seconds` | 120 | int |   Run interval of [split brain/merge process](#network-partitioning-split-brain-syndrome) in seconds.
-`hazelcast.operation.call.timeout.millis`|||
-`hazelcast.socket.bind.any` | true | bool |   Bind both server-socket and client-sockets to any local interface.
-`hazelcast.socket.server.bind.any` | true | bool |   Bind server-socket to any local interface. If not set, `hazelcast.socket.bind.any` will be used as default.
+`hazelcast.operation.call.timeout.millis`| 60000 | int | Timeout to wait for a response when a remote call is sent, in milliseconds.
+`hazelcast.socket.bind.any` | true | bool | Bind both server-socket and client-sockets to any local interface.
+`hazelcast.socket.server.bind.any` | true | bool | Bind server-socket to any local interface. If not set, `hazelcast.socket.bind.any` will be used as default.
 `hazelcast.socket.client.bind.any` | true | bool |   Bind client-sockets to any local interface. If not set, `hazelcast.socket.bind.any` will be used as default.
-`hazelcast.socket.client.bind`|true|bool|
-`hazelcast.socket.receive.buffer.size` | 32 | int |   Socket receive buffer size in KB.
-`hazelcast.socket.send.buffer.size` | 32 | int  |   Socket send buffer size in KB.
-`hazelcast.socket.linger.seconds`|0|int|
-`hazelcast.socket.keep.alive` | true | bool  |   Socket set keep alive.
+`hazelcast.socket.client.bind`|true|bool|Bind client socket to an interface when connecting to a remote server socket. When set to `false`, client socket is not bound to any inteface.
+`hazelcast.socket.receive.buffer.size` | 32 | int | Socket receive buffer (`SO_RCVBUF`) size in KB.
+`hazelcast.socket.send.buffer.size` | 32 | int  | Socket send buffer (`SO_SNDBUF`) size in KB.
+`hazelcast.socket.linger.seconds`|0|int|Set socket `SO_LINGER` option.
+`hazelcast.socket.keep.alive` | true | bool  | Socket set keep alive (`SO_KEEPALIVE`).
 `hazelcast.socket.no.delay` | true | bool  |   Socket set TCP no delay.
-`hazelcast.shutdownhook.enabled` | true | bool  |   Enable Hazelcast shutdownhook thread.
-`hazelcast.wait.seconds.before.join` | 5 | int  |   Wait time before join operation.
+`hazelcast.shutdownhook.enabled` | true | bool  | Enable Hazelcast shutdownhook thread.
+`hazelcast.wait.seconds.before.join` | 5 | int  | Wait time before join operation.
 `hazelcast.max.join.seconds`|300|int|
 `hazelcast.max.join.merge.target.seconds`|20|int|
 `hazelcast.max.wait.seconds.before.join` | 20 | int  |   Maximum wait time before join operation.
@@ -99,13 +99,3 @@ Property Name | Default Value | Type | Description
 `hazelcast.elastic.memory.shared.storage` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) shared storage.
 `hazelcast.elastic.memory.unsafe.enabled`|false|bool|
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
-
-
-
-
-
-
-
-
-
-
