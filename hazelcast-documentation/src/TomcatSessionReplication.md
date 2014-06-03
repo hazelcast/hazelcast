@@ -1,5 +1,5 @@
 
-## Session Replication
+### Tomcat Based Web Session Replication
 
 ![](images/enterprise-onlycopy.jpg)
 
@@ -12,9 +12,9 @@ Features
 3. Tomcat failover
 4. Deferred write for performance boost
 
-### Deployments
+#### Deployments
 
-#### Client-Server Deployment
+##### Client-Server Deployment
 
 In this deployment type, Tomcat instances work as clients to an existing Hazelcast Cluster.
 
@@ -40,7 +40,7 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 </Context>
 ```
 
-#### P2P Deployment
+##### P2P Deployment
 
 This launches embedded Hazelcast Node in each server instance.
 
@@ -63,7 +63,7 @@ This type of deployment is the simplest approach. You can just configure your To
 ```
 
 
-### Session Affinity 
+#### Session Affinity 
 
 **Sticky Sessions (default)**
 
@@ -78,12 +78,10 @@ Non-Sticky Sessions are not good for performance because you need to move sessio
 
 However, with Non-Sticky caches, load balancing might be super easy as some load increasing case you can distribute the request to the least used Tomcat instance. Hazelcast supports Non-Sticky Sessions as well. 
 
-### Supported Containers
+#### Supported Containers
 
 - Tomcat 6.0.39
 - Tomcat 7.0.54
 
 
-
-
-
+<br></br>

@@ -1,5 +1,7 @@
 
-## HTTP Session Clustering with Hazelcast WM
+## Web Session Replication
+
+### Filter Based Web Session Replication
 
 Assume that you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down, your users on that server will be directed to one of the live servers (B or C), but their sessions will be lost.
 
@@ -162,15 +164,15 @@ Here are the steps to setup Hazelcast Session Clustering:
 
 It is that easy. All HTTP requests will go through Hazelcast `WebFilter` and it will put the session objects into Hazelcast distributed map if needed.
 
-### Client Mode vs. P2P Mode
+#### Client Mode vs. P2P Mode
 
 Hazelcast Session Replication works as P2P by default. You need to set `use-client` parameter to **true** to switch to Client/Server architecture. P2P mode is more flexible and requires no configuration in advance while in Client/Server architecture, clients need to connect to an existing Hazelcast Cluster. In case of connection problems, clients will try to reconnect to the cluster. Default retry count is 3.
 
-### Caching Locally with `deferred-write`
+#### Caching Locally with `deferred-write`
 
 If the value for `deferred-write` is set as **true**, Hazelcast will cache the session locally and will update the local session on set or deletion of an attribute. Only at the end of request, it will update the distributed map with all the updates. So, it will not be updating the distributed map on each attribute update. It will only call it once at the end of request. It will be also caching it, i.e. whenever there is a read for the attribute, it will read it from the cache. If `deferred-write` is **false**, you will not have the attributes cached on any server.
 
-### `sticky-session`
+#### `sticky-session`
 
 Hazelcast holds whole session attributes in a distributed map and in local HTTP session. Local session is required for fast access to data and distributed map is needed for fail-safety.
 
@@ -179,3 +181,5 @@ Hazelcast holds whole session attributes in a distributed map and in local HTTP 
 -   To overcome performance penalty of sending invalidation messages during updates, sticky sessions can be used. If Hazelcast knows sessions are sticky, invalidation will not be sent, because Hazelcast assumes there is no other local session at the moment. When a server is down, requests belonging to a session hold in that server will routed to other one and that server will fetch session data from clustered cache. That means, using sticky sessions, one will not suffer performance penalty of accessing clustered data and can benefit recover from a server failure.
 
 
+
+<br></br>
