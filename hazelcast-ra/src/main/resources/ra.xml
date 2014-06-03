@@ -30,7 +30,7 @@
     <icon></icon>
     <vendor-name>Hazelcast.com</vendor-name>
     <eis-type>Hazelcast</eis-type>
-    <resourceadapter-version>2.6.9-SNAPSHOT</resourceadapter-version>
+    <resourceadapter-version>2.6.9</resourceadapter-version>
 
     <license>
         <description>Copyright (c) Hazelcast.com</description>
