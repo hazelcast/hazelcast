@@ -44,10 +44,21 @@ import static org.junit.Assert.assertTrue;
 public class MapLockTest extends HazelcastTestSupport {
 
     @Test
-    public void testIsLocked_afterDestroy (){
+    public void testIsLocked_afterDestroy(){
         final HazelcastInstance instance = createHazelcastInstance();
         final IMap<Object, Object> map = instance.getMap(randomString());
         final String key = randomString();
+        map.lock(key);
+        map.destroy();
+        Assert.assertFalse(map.isLocked(key));
+    }
+
+    @Test
+    public void testIsLocked_afterDestroy_whenMapContainsKey(){
+        final HazelcastInstance instance = createHazelcastInstance();
+        final IMap<Object, Object> map = instance.getMap(randomString());
+        final String key = randomString();
+        map.put(key, "value");
         map.lock(key);
         map.destroy();
         Assert.assertFalse(map.isLocked(key));
