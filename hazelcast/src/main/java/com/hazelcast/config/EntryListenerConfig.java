@@ -96,13 +96,21 @@ public class EntryListenerConfig extends ListenerConfig {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         EntryListenerConfig that = (EntryListenerConfig) o;
 
-        if (includeValue != that.includeValue) return false;
-        if (local != that.local) return false;
+        if (includeValue != that.includeValue) {
+            return false;
+        }
+        if (local != that.local) {
+            return false;
+        }
 
         return true;
     }

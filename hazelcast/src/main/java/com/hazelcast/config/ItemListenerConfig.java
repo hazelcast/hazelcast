@@ -81,12 +81,18 @@ public class ItemListenerConfig extends ListenerConfig {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         ItemListenerConfig that = (ItemListenerConfig) o;
 
-        if (includeValue != that.includeValue) return false;
+        if (includeValue != that.includeValue) {
+            return false;
+        }
 
         return true;
     }
