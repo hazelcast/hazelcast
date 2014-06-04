@@ -484,8 +484,25 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return evictInternal(getService().toData(key, partitionStrategy));
     }
 
+    /**
+     * This method clears the map and deletaAll on MapStore which if connected to a database,
+     * will delete the records from that database.
+     * <p/>
+     * If you wish to clear the map only without calling deleteAll, use
+     *
+     * @see #clearMapOnly
+     */
     @Override
     public void clear() {
+        clearInternal();
+    }
+
+    /**
+     * This method clears the map.It does not invoke deleteAll on any associated MapStore.
+     * @see #clear
+     */
+    public void clearMapOnly() {
+        //need a different method here that does not call deleteAll
         clearInternal();
     }
 
