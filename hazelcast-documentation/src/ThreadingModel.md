@@ -2,6 +2,15 @@
 
 Your application server has its own thread. Hazelcast does not use these - it manages its own threads.
 
+### IO Threading
+
+Hazelcast uses a pool of thread doing (n)io; so there is not a single thread doing all the io, but there are multiple.
+The number of IO threads can be configured using 'hazelcast.io.thread.count' and defaults to 3. The IO threads don't
+do much; they are waiting for the Selector.select to complete and when sufficient bytes for a Packet have been received,
+the Packet object is created. This Packet is then send to the System where it is de-multiplexed; if the Packet header
+signals it is an operation/response it is handed over to the OperationService (see Operation Threading). If the Packet 
+is an event, it is handed over to the event service (see Event Threading). 
+
 ### Event Threading:
 
 Hazelcast uses a shared event-system do deal with components that rely on events like:
