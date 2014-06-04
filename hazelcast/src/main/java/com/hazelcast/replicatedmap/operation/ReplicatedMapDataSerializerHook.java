@@ -29,7 +29,7 @@ import com.hazelcast.replicatedmap.record.VectorClock;
 import com.hazelcast.util.ConstructorFunction;
 
 /**
- * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the MR framework.
+ * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the replicated map.
  */
 //Deactivated all checkstyle rules because those classes will never comply
 //CHECKSTYLE:OFF

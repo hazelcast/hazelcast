@@ -101,12 +101,13 @@ src/Config.md
 	src/NetworkConfig.md
 		src/ConfigSpecifyInterfaces.md
 		src/EC2AutoDiscovery.md
-		src/IPv6.md
 		src/Ports.md
+		src/IPv6.md
 	src/PartitionGroupConfig.md
 	src/ListenerConfig.md
 	src/WildcardConfiguration.md
 	src/ConfigurationProperties.md
 	src/Logging.md
 	src/EnterpriseConfig.md
+	src/XMLWrapUp.md
 src/FAQ.md

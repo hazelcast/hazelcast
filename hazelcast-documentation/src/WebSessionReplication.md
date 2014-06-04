@@ -1,13 +1,15 @@
 
 ## Web Session Replication
 
+If you are using Tomcat as your web container, please see our [Tomcat based Web Session Replication](#tomcat-based-web-session-replication).
+
 ### Filter Based Web Session Replication
 
 Assume that you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down, your users on that server will be directed to one of the live servers (B or C), but their sessions will be lost.
 
 So we have to have all these sessions backed up somewhere if we do not want to lose the sessions upon server crashes. Hazelcast Web Manager (WM) allows you to cluster user HTTP sessions automatically. The following are required for enabling Hazelcast Session Clustering:
 
--   Target application or web server should support Java 1.5 or higher
+-   Target application or web server should support Java 1.6 or higher
 
 -   Target application or web server should support Servlet 2.4 or higher spec
 

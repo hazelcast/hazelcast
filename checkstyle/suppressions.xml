@@ -399,6 +399,9 @@
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.client.proxy.ClientReplicatedMapProxy"/>
     <suppress checks="MethodCountCheck" files="com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl"/>
 
+    <!-- Aggregations -->
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.mapreduce.aggregation.Aggregations"/>
+
     <!-- NIO -->
     <suppress checks="JavadocMethod" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.nio[\\/]"/>
