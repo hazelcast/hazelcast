@@ -68,7 +68,4 @@ There is also a tag, `required-member`, to specify a particular cluster member w
 ```
 
 In this example, the cluster will not be formed unless the member with IP address 192.168.1.21 is up.
-
-
 <br></br>
-

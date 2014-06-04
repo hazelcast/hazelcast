@@ -115,7 +115,7 @@ OR
 -   Alternatively, you can put Hibernate Annotation's *@Cache* annotation on your entities and collections.
 
 ```java    
-Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Cat implements Serializable {
      ...
 }
@@ -144,6 +144,4 @@ Instead of creating a new `HazelcastInstance` for each `SessionFactory`, an exis
 
 Shutting down `HazelcastInstance` can be disabled during `SessionFactory.close()` by setting `hibernate.cache.hazelcast.shutdown_on_session_factory_close` Hibernate property to false. *(In this case Hazelcast property `hazelcast.shutdownhook.enabled` should not be set to false.)* Default value is `true`.
 
-
-
-
+<br></br>
