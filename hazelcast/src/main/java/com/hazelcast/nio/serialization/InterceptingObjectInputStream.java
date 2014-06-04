@@ -24,6 +24,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 
+/**
+ * This InputStream implementation intercepts {@link #resolveObject(Object)} to
+ * analyse if the read object is of type
+ * {@link com.hazelcast.nio.serialization.InterceptingObjectProxy} (written by
+ * {@link com.hazelcast.nio.serialization.InterceptingObjectOutputStream} which
+ * encapsulates a Hazelcast DataSerializable object.
+ */
 public class InterceptingObjectInputStream
         extends ObjectInputStream {
 

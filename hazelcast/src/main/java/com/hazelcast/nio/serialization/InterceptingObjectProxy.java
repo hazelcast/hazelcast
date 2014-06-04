@@ -21,6 +21,10 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+/**
+ * Proxy class which encapsulates Hazelcast DataSerializable
+ * serialized bytearrays.
+ */
 public class InterceptingObjectProxy
         implements Externalizable {
 

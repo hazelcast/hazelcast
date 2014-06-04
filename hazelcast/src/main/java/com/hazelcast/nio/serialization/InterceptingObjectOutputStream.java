@@ -23,6 +23,13 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
+/**
+ * This OutputStream implementation replaces object implementing
+ * {@link com.hazelcast.nio.serialization.DataSerializable} or subinterfaces
+ * with an {@link com.hazelcast.nio.serialization.InterceptingObjectProxy} which
+ * encapsulates the serialized bytearray to be written to the Java Serializable
+ * object bytestream.
+ */
 public class InterceptingObjectOutputStream
         extends ObjectOutputStream {
     private final SerializationServiceImpl serializationService;
