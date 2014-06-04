@@ -215,12 +215,14 @@ public interface IMap<K, V>
 
 
     /**
-     * This method clears the map and deletaAll on MapStore which if connected to a database,
+     * This method clears the map and deleteAll on MapStore which if connected to a database,
      * will delete the records from that database.
+     * <p/>
+     * Clear does not notify listeners.
      * <p/>
      * If you wish to clear the map only without calling deleteAll, use
      *
-     * @see #clearMapOnly
+     * @see #evictAll to evict entries without calling deletaAll().
      * todo add clearMapOnly method to IMap.
      */
     @Override
