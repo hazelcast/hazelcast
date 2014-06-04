@@ -975,6 +975,53 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
 
+
+    @Test
+    public void dropedEntryProcessorTest_withKeyOwningNodeTermination() {
+        String mapName = randomString();
+        Config cfg = new Config();
+        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(101);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+
+        for(int go=0; go<100; go++){
+
+            System.out.println("======================"+go+"==============================");
+
+            HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+
+
+            final int maxTasks = 20;
+            final Object key  =  generateKeyOwnedBy(instance2);
+
+            final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
+            processorMap.put(key, new ArrayList<Integer>());
+
+            for (int i = 0 ; i < maxTasks ; i++) {
+                processorMap.submitToKey(key, new SimpleEntryProcessor(i));
+                //processorMap.executeOnKey(key, new SimpleEntryProcessor(i));
+
+                if(i==maxTasks/2){
+                    instance2.getLifecycleService().terminate();
+                }
+            }
+
+
+            assertTrueEventually(new AssertTask() {
+                public void run() throws Exception {
+                    List<Integer> actualOrder = processorMap.get(key);
+                    System.out.println("list at assert = "+actualOrder+"size "+actualOrder.size());
+                    assertEquals(actualOrder.size(), maxTasks);
+                }
+            });
+        }
+    }
+
+
+
+
     //problems entry cached some how as Entery value is never set back,  but the list still gets biger in size.
     //in memory Format of Binary object.
 
@@ -988,8 +1035,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void executionOrderTest_withKeyOwningNodeTermination() {
         String mapName = randomString();
         Config cfg = new Config();
-        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.BINARY);
-        //cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+        //cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.BINARY);
+        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
 
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
@@ -1004,8 +1051,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         processorMap.put(key, new ArrayList<Integer>());
 
         for (int i = 0 ; i < maxTasks ; i++) {
-//            processorMap.submitToKey(key, new SimpleEntryProcessor(i));
-            processorMap.executeOnKey(key, new SimpleEntryProcessor(i));
+            processorMap.submitToKey(key, new SimpleEntryProcessor(i));
+            //processorMap.executeOnKey(key, new SimpleEntryProcessor(i));
             if(i==maxTasks/2){
                 instance2.getLifecycleService().terminate();
             } else {
@@ -1023,7 +1070,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
                 List<Integer> actualOrder = processorMap.get(key);
-                System.out.println("SIZE at assert = "+actualOrder.size());
+                System.out.println("list at assert = "+actualOrder);
                 assertEquals(actualOrder.size(), maxTasks);
             }
         });
@@ -1050,20 +1097,19 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
             List l = entry.getValue();
             l.add(value);
-            entry.setValue(l);
+            //entry.setValue(l);  //this is tricky.  if its object format, we should not need, this it its BINARY we whould need but also there is some cacheing going on. ????
 
-            System.out.println("list in entry prosss === "+l);
-
-            System.out.println("size in entry prosss === "+l.size());
-
-            System.out.println("val  of entry pross  === "+value);
+            System.out.println("EntryProcessor => "+l +" size="+l.size()+" last val="+value);
 
             return value;
         }
 
         @Override
         public void processBackup(Map.Entry entry) {
+            System.out.println("===Backup===");
             process(entry);
+            System.out.println("============");
+
         }
 
         @Override
