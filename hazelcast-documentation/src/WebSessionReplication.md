@@ -1,7 +1,7 @@
 
 ## Web Session Replication
 
-If you are using Tomcat as your web container, you can check our Tomcat based Web Session Replication Module. TODO: add link to Tomcat Web Session Module page.
+If you are using Tomcat as your web container, please see our [Tomcat based Web Session Replication](#tomcat-based-web-session-replication).
 
 ### Filter Based Web Session Replication
 
