@@ -31,29 +31,29 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.TempData.DeleteEntryProcessor;
@@ -939,6 +939,150 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(expectedDeserializationCount, serialized.intValue());
         instance.shutdown();
     }
+
+    @Test
+    public void exicutionOrderTest() {
+        String mapName = randomString();
+        Config cfg = new Config();
+        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+
+        final int maxTasks = 20;
+        final Object key = "key";
+        final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
+
+        processorMap.put(key, new ArrayList<Integer>());
+
+        for (int i = 0 ; i < maxTasks ; i++) {
+            processorMap.submitToKey(key, new SimpleEntryProcessor(i));
+        }
+
+        List<Integer> expectedOrder = new ArrayList<Integer>();
+        for (int i = 0 ; i < maxTasks ; i++) {
+            expectedOrder.add(i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                List<Integer> actualOrder = processorMap.get(key);
+                assertEquals(actualOrder.size(), maxTasks);
+            }
+        });
+        List<Integer> actualOrder = processorMap.get(key);
+        assertEquals(expectedOrder, actualOrder);
+    }
+
+
+    //problems entry cached some how as Entery value is never set back,  but the list still gets biger in size.
+    //in memory Format of Binary object.
+
+    //some times one of the entry processor tasks are lost,
+
+    //if all processors are exicuted,  they are not exicuted in the same order that they were invoked.
+
+
+
+    @Test
+    public void executionOrderTest_withKeyOwningNodeTermination() {
+        String mapName = randomString();
+        Config cfg = new Config();
+        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.BINARY);
+        //cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
+
+        final int maxTasks = 20;
+        final Object key  =  generateKeyOwnedBy(instance2);
+
+        final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
+        processorMap.put(key, new ArrayList<Integer>());
+
+        for (int i = 0 ; i < maxTasks ; i++) {
+//            processorMap.submitToKey(key, new SimpleEntryProcessor(i));
+            processorMap.executeOnKey(key, new SimpleEntryProcessor(i));
+            if(i==maxTasks/2){
+                instance2.getLifecycleService().terminate();
+            } else {
+                final IMap<Object, List<Integer>> p = instance3.getMap(mapName);
+                List<Integer> actualOrder = p.get(key);
+                System.out.println(">>>>>> SIZE for now at assert = "+actualOrder.size());
+            }
+        }
+
+        List<Integer> expectedOrder = new ArrayList<Integer>();
+        for (int i = 0 ; i < maxTasks ; i++) {
+            expectedOrder.add(i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                List<Integer> actualOrder = processorMap.get(key);
+                System.out.println("SIZE at assert = "+actualOrder.size());
+                assertEquals(actualOrder.size(), maxTasks);
+            }
+        });
+
+        List<Integer> actualOrder = processorMap.get(key);
+        assertEquals(expectedOrder, actualOrder);
+    }
+
+
+
+
+
+    private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
+        private Integer value;
+
+        public SimpleEntryProcessor() {}
+
+        public SimpleEntryProcessor(Integer value) {
+            this.value = value;
+        }
+
+        @Override
+        public Object process(Map.Entry<Object, List<Integer>> entry) {
+
+            List l = entry.getValue();
+            l.add(value);
+            entry.setValue(l);
+
+            System.out.println("list in entry prosss === "+l);
+
+            System.out.println("size in entry prosss === "+l.size());
+
+            System.out.println("val  of entry pross  === "+value);
+
+            return value;
+        }
+
+        @Override
+        public void processBackup(Map.Entry entry) {
+            process(entry);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(value);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            value = in.readObject();
+        }
+
+        @Override
+        public EntryBackupProcessor<Object, List<Integer>> getBackupProcessor() {
+            return this;
+        }
+    }
+
+
 
     public static class Issue1764Data implements DataSerializable {
 
