@@ -4,53 +4,49 @@ Your application server has its own thread. Hazelcast does not use these - it ma
 
 ### IO Threading
 
-Hazelcast uses a pool of thread doing (n)io; so there is not a single thread doing all the io, but there are multiple.
-The number of IO threads can be configured using 'hazelcast.io.thread.count' and defaults to 3. The IO threads don't
-do much; they are waiting for the Selector.select to complete and when sufficient bytes for a Packet have been received,
-the Packet object is created. This Packet is then send to the System where it is de-multiplexed; if the Packet header
-signals it is an operation/response it is handed over to the OperationService (see Operation Threading). If the Packet 
-is an event, it is handed over to the event service (see Event Threading). 
+Hazelcast uses a pool of thread performng (n)IO; so there is not a single thread doing all the IO, but there are multiple.
+The number of IO threads can be configured using `hazelcast.io.thread.count` system property and defaults to 3. 
 
-### Event Threading:
+IO threads wait for the `Selector.select` to complete. When sufficient bytes for a Packet have been received,
+the Packet object is created. This Packet is then sent to the System where it is de-multiplexed. If the Packet header
+signals that it is an operation/response, it is handed over to the operation service (please see [Operation Threading](#operation-threading)). If the Packet 
+is an event, it is handed over to the event service (please see [Event Threading](#event-threading)). 
 
-Hazelcast uses a shared event-system do deal with components that rely on events like:
+### Event Threading
 
-* Topic
-* Collections Listeners
-* Near-cache 
+Hazelcast uses a shared event system to deal with components that rely on events like topic, collections listeners and near-cache. 
 
-Under the hood each member has an array of event-threads and each thread has its own work-queue. When an event is produced,
-either locally or remote, an event-thread is selected (depending on if there is a message ordering) and the event is placed
-in the work-queue for that event-thread.
+Each cluster member has an array of event threads and each thread has its own work queue. When an event is produced,
+either locally or remote, an event thread is selected (depending on if there is a message ordering) and the event is placed
+in the work queue for that event thread.
 
 The following properties
 can be set to alter the behavior of the system:
 
-* hazelcast.event.thread.count: the number of event-threads in this array. By default this is 5.
-* hazelcast.event.queue.capacity: the capacity of the work-queue. By default 1000000.
-* hazelcast.event.queue.timeout.millis: the timeout for placing an item on the work-queue. By default 250 ms.
+* `hazelcast.event.thread.count`: Number of event-threads in this array. Its default value is 5.
+* `hazelcast.event.queue.capacity`: Capacity of the work queue. Its default value is 1000000.
+* `hazelcast.event.queue.timeout.millis`: Timeout for placing an item on the work queue. Its default value is 250.
 
-If you process a lot of events and have many cores, then probably want to change the 'hazelcast.event.thread.count' to
-a higher value so that more events can be processed in parallel. 
+If you process a lot of events and have many cores, changing the value of `hazelcast.event.thread.count` property to
+a higher value is a good idea. By this way, more events can be processed in parallel.
 
-Multiple components share the same event queues, so if there are 2 topics A,B then it could be that for certain messages
-they share the same queue(s) and therefor event-thread. If there are a lot of pending messages produced by A, then B needs to wait.
-Also when processing a message from A takes a lot of time and the event thread is used for that, B will suffer from this. 
-That is why it is better to offload processing to a dedicate thread(pool) so that systems are better isolated.
+Multiple components share the same event queues. If there are 2 topics, say A and B, for certain messages
+they may share the same queue(s) and hence event thread. If there are a lot of pending messages produced by A, then B needs to wait.
+Also, when processing a message from A takes a lot of time and the event thread is used for that, B will suffer from this. 
+That is why it is better to offload processing to a dedicate thread (pool) so that systems are better isolated.
 
 If events are produced at a higher rate than they are consumed, the queue will grow in size. To prevent overloading system
-and running into an OOME, the queue is given a capacity of 1M items. When the maximum capacity is reached, the items are
-dropped. This means that the event system is a 'best effort' system; there is no guarantee that you are going to get an
-event. It can also be that Topic A has a lot of pending messages, and therefor B can't receive messages because the queue
+and running into an `OutOfMemoryException`, the queue is given a capacity of 1M million items. When the maximum capacity is reached, the items are
+dropped. This means that the event system is a 'best effort' system. There is no guarantee that you are going to get an
+event. It can also be that Topic A has a lot of pending messages, and therefore B cannot receive messages because the queue
 has no capacity and messages for B are dropped.
 
 ### IExecutor Threading:
 
-Executor threading is very straight forward: when a tasks is received to be executed on Executor E, then E will have its
-own ThreadPoolExecutor instance and the work is put on the work-queue of this executor. So Executors are fully isolated;
-although of course they will share the same underlying hardware; most importantly the CPU's. 
+Executor threading is straight forward. When a task is received to be executed on Executor E, then E will have its
+own `ThreadPoolExecutor` instance and the work is put on the work queue of this executor. So, Executors are fully isolated, but of course, they will share the same underlying hardware; most importantly the CPUs. 
 
-The IExecutor can be configured using the ExecutorConfig or using the <executor> section in the XML.
+The IExecutor can be configured using the `ExecutorConfig` (programmatic configuration) or using `<executor>` (declarative configuration).
 
 ### Operation Threading:
 
@@ -122,18 +118,20 @@ Because a worker thread will block on the normal work queue (either partition sp
 is not picked up because it will not be put on the queue it is blocking on. We always send a 'kick the worker' operation that does 
 nothing else than trigger the worker to wakeup and check the priority queue. 
 
-When an Operation is invoked, a Future is returned, e.g. 
+#### Operation-response and Invocation-future
 
-```
+When an Operation is invoked, a `Future` is returned. Let's take the below sample code. 
+
+```java
 GetOperation op = new GetOperation(mapName, key)
 Future f = operationService.invoke(op)
 f.get)
 ```
 
-So the calling side blocks for a reply. In this case the GetOperation is set in the work-queue for the partition of 'key' where
-it eventually is executed. On execution, a response is returned and placed on the genericWorkQueue where it is executed by a 
-'generic operation thread'. This thread will signal the future and notifies the blocked thread that a response is available. 
-In the future we'll expose this Future to the outside world, and we'll provide the ability to register a completion-listener 
+So, the calling side blocks for a reply. In this case, `GetOperation` is set in the work queue for the partition of `key`, where
+it eventually is executed. On execution, a response is returned and placed on the `genericWorkQueue` where it is executed by a 
+"generic operation thread". This thread will signal the `future` and notifies the blocked thread that a response is available. 
+In the future we will expose this Future to the outside world, and we will provide the ability to register a completion listener 
 so you can do asynchronous calls. 
 
 #### Local Calls
