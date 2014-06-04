@@ -122,9 +122,19 @@ Because a worker thread will block on the normal work queue (either partition sp
 is not picked up because it will not be put on the queue it is blocking on. We always send a 'kick the worker' operation that does 
 nothing else than trigger the worker to wakeup and check the priority queue. 
 
-#### Operation-response and Invocation-future
+When an Operation is invoked, a Future is returned, e.g. 
 
-ToDo
+```
+GetOperation op = new GetOperation(mapName, key)
+Future f = operationService.invoke(op)
+f.get)
+```
+
+So the calling side blocks for a reply. In this case the GetOperation is set in the work-queue for the partition of 'key' where
+it eventually is executed. On execution, a response is returned and placed on the genericWorkQueue where it is executed by a 
+'generic operation thread'. This thread will signal the future and notifies the blocked thread that a response is available. 
+In the future we'll expose this Future to the outside world, and we'll provide the ability to register a completion-listener 
+so you can do asynchronous calls. 
 
 #### Local Calls
 
