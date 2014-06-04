@@ -193,7 +193,8 @@ public interface IMap<K, V>
     void flush();
 
     /**
-     * Returns the entries for the given keys.
+     * Returns the entries for the given keys. If any keys are not present in the Map, it will
+     * call {@link MapStore#loadAll(java.util.Collection)}.
      * <p/>
      * <p><b>Warning:</b></p>
      * The returned map is <b>NOT</b> backed by the original map,
@@ -203,12 +204,28 @@ public interface IMap<K, V>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>keys</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     * <p/>
+     *
      *
      * @param keys keys to get
      * @return map of entries
      * @throws NullPointerException if any of the specified keys are null
      */
     Map<K, V> getAll(Set<K> keys);
+
+
+    /**
+     * This method clears the map and deletaAll on MapStore which if connected to a database,
+     * will delete the records from that database.
+     * <p/>
+     * If you wish to clear the map only without calling deleteAll, use
+     *
+     * @see #clearMapOnly
+     * todo add clearMapOnly method to IMap.
+     */
+    @Override
+    void clear();
+
 
     /**
      * Asynchronously gets the given key.
