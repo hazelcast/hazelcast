@@ -85,16 +85,14 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
                 }
             }
 
-            //for(Future f : futures){
-            //    f.get();
-            //}
-
             final int itter = iteration;
             assertTrueEventually(new AssertTask() {
                 public void run() throws Exception {
                     List<Integer> actualOrder = processorMap.get(key);
-                    System.out.println("list at assert = "+actualOrder+"size "+actualOrder.size());
-                    assertEquals("failed to execute all entry processor tasks at iteration "+itter, +actualOrder.size(), maxTasks);
+                    System.out.println("list at assert = " + actualOrder + "size " + actualOrder.size());
+                    //using >= for the test, as it can be the case that an entry processor could be executed more the once
+                    //when the owning node is terminated after running the entry processor (and the backup) but before the response is sent
+                    assertTrue("failed to execute all entry processor tasks at iteration", actualOrder.size() >= maxTasks);
                 }
             });
         }
@@ -102,6 +100,7 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
 
     private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
         private Integer id;
+        private boolean backup=false;
 
         public SimpleEntryProcessor() {}
 
@@ -111,22 +110,20 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry<Object, List<Integer>> entry) {
-
             List l = entry.getValue();
             l.add(id);
-            //entry.setValue(l);  //this is tricky.  if its object format, we should not need, this it its BINARY we whould need but also there is some cacheing going on. ????
 
-            //System.out.println("EntryProcessor => "+l +" size="+l.size()+" last val="+id);
-
+            if(backup){
+                System.out.print("Backup ");
+            }
+            System.out.println("EntryProcessor => "+l +" size="+l.size()+" last val="+id);
             return id;
         }
 
         @Override
         public void processBackup(Map.Entry entry) {
-            //System.out.println("===Backup===");
+            backup=true;
             process(entry);
-            //System.out.println("============");
-
         }
 
         @Override
@@ -144,5 +141,4 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
             return this;
         }
     }
-
 }
