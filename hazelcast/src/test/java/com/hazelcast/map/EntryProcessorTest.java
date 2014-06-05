@@ -967,31 +967,30 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
                 List<Integer> actualOrder = processorMap.get(key);
-                assertEquals(actualOrder.size(), maxTasks);
+                assertEquals("failed to execute all entry processor tasks",  maxTasks, actualOrder.size());
             }
         });
-        List<Integer> actualOrder = processorMap.get(key);
-        assertEquals(expectedOrder, actualOrder);
+        final List<Integer> actualOrder = processorMap.get(key);
+        assertEquals("entry processor tasks executed in unexpected order", expectedOrder, actualOrder);
     }
 
-
-
     @Test
-    public void dropedEntryProcessorTest_withKeyOwningNodeTermination() {
+    public void dropedEntryProcessorTest_withKeyOwningNodeTermination() throws ExecutionException, InterruptedException {
         String mapName = randomString();
         Config cfg = new Config();
         cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
 
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(101);
+        final int maxItterations=50;
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(maxItterations+1);
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
 
-        for(int go=0; go<100; go++){
+        for(int iteration=0; iteration<maxItterations; iteration++){
 
-            System.out.println("======================"+go+"==============================");
+            System.out.println("======================"+iteration+"==============================");
 
             HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
-
 
             final int maxTasks = 20;
             final Object key  =  generateKeyOwnedBy(instance2);
@@ -999,127 +998,69 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
             processorMap.put(key, new ArrayList<Integer>());
 
+            List<Future> futures = new ArrayList<Future>();
+
             for (int i = 0 ; i < maxTasks ; i++) {
-                processorMap.submitToKey(key, new SimpleEntryProcessor(i));
-                //processorMap.executeOnKey(key, new SimpleEntryProcessor(i));
+                Future f = processorMap.submitToKey(key, new SimpleEntryProcessor(i));
+                futures.add(f);
 
                 if(i==maxTasks/2){
                     instance2.getLifecycleService().terminate();
                 }
             }
 
+            for(Future f : futures){
+                f.get();
+            }
 
+            final int itter = iteration;
             assertTrueEventually(new AssertTask() {
                 public void run() throws Exception {
                     List<Integer> actualOrder = processorMap.get(key);
                     System.out.println("list at assert = "+actualOrder+"size "+actualOrder.size());
-                    assertEquals(actualOrder.size(), maxTasks);
+                    assertEquals("failed to execute all entry processor tasks at iteration "+itter, +actualOrder.size(), maxTasks);
                 }
             });
         }
     }
 
-
-
-
-    //problems entry cached some how as Entery value is never set back,  but the list still gets biger in size.
-    //in memory Format of Binary object.
-
-    //some times one of the entry processor tasks are lost,
-
-    //if all processors are exicuted,  they are not exicuted in the same order that they were invoked.
-
-
-
-    @Test
-    public void executionOrderTest_withKeyOwningNodeTermination() {
-        String mapName = randomString();
-        Config cfg = new Config();
-        //cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.BINARY);
-        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
-
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
-        HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
-
-        final int maxTasks = 20;
-        final Object key  =  generateKeyOwnedBy(instance2);
-
-        final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
-        processorMap.put(key, new ArrayList<Integer>());
-
-        for (int i = 0 ; i < maxTasks ; i++) {
-            processorMap.submitToKey(key, new SimpleEntryProcessor(i));
-            //processorMap.executeOnKey(key, new SimpleEntryProcessor(i));
-            if(i==maxTasks/2){
-                instance2.getLifecycleService().terminate();
-            } else {
-                final IMap<Object, List<Integer>> p = instance3.getMap(mapName);
-                List<Integer> actualOrder = p.get(key);
-                System.out.println(">>>>>> SIZE for now at assert = "+actualOrder.size());
-            }
-        }
-
-        List<Integer> expectedOrder = new ArrayList<Integer>();
-        for (int i = 0 ; i < maxTasks ; i++) {
-            expectedOrder.add(i);
-        }
-
-        assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                List<Integer> actualOrder = processorMap.get(key);
-                System.out.println("list at assert = "+actualOrder);
-                assertEquals(actualOrder.size(), maxTasks);
-            }
-        });
-
-        List<Integer> actualOrder = processorMap.get(key);
-        assertEquals(expectedOrder, actualOrder);
-    }
-
-
-
-
-
     private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
-        private Integer value;
+        private Integer id;
 
         public SimpleEntryProcessor() {}
 
-        public SimpleEntryProcessor(Integer value) {
-            this.value = value;
+        public SimpleEntryProcessor(Integer id) {
+            this.id = id;
         }
 
         @Override
         public Object process(Map.Entry<Object, List<Integer>> entry) {
 
             List l = entry.getValue();
-            l.add(value);
+            l.add(id);
             //entry.setValue(l);  //this is tricky.  if its object format, we should not need, this it its BINARY we whould need but also there is some cacheing going on. ????
 
-            System.out.println("EntryProcessor => "+l +" size="+l.size()+" last val="+value);
+            //System.out.println("EntryProcessor => "+l +" size="+l.size()+" last val="+id);
 
-            return value;
+            return id;
         }
 
         @Override
         public void processBackup(Map.Entry entry) {
-            System.out.println("===Backup===");
+            //System.out.println("===Backup===");
             process(entry);
-            System.out.println("============");
+            //System.out.println("============");
 
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(value);
+            out.writeObject(id);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            value = in.readObject();
+            id = in.readObject();
         }
 
         @Override
