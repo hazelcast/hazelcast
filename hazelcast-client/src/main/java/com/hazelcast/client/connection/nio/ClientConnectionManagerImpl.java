@@ -350,7 +350,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                     final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, false);
                     final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
                     try {
-                        clientConnection = future.get(connectionTimeout+TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
+                        clientConnection = future.get(connectionTimeout + TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
                     } catch (Exception e) {
                         future.cancel(true);
                         throw new RetryableIOException(e);
@@ -502,7 +502,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
         @Override
         public void auth(ClientConnection connection) throws AuthenticationException, IOException {
-            final Object response = authenticate(connection, credentials, principal, true, true);
+            final Object response = authenticate(connection, credentials, principal, true);
             principal = (ClientPrincipal) response;
         }
     }
@@ -510,16 +510,15 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private class ClusterAuthenticator implements Authenticator {
         @Override
         public void auth(ClientConnection connection) throws AuthenticationException, IOException {
-            authenticate(connection, credentials, principal, false, false);
+            authenticate(connection, credentials, principal, false);
         }
     }
 
-    private Object authenticate(ClientConnection connection, Credentials credentials, ClientPrincipal principal,
-                                boolean reAuth, boolean firstConnection) throws IOException {
+    private Object authenticate(ClientConnection connection, Credentials credentials, ClientPrincipal principal
+            , boolean firstConnection) throws IOException {
         final SerializationService ss = getSerializationService();
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
         connection.init();
-        auth.setReAuth(reAuth);
         auth.setFirstConnection(firstConnection);
         //contains remoteAddress and principal
         SerializableCollection collectionWrapper;
@@ -610,7 +609,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     class HeartBeat implements Runnable {
 
         long begin;
-        final int heartBeatTimeout = heartBeatInterval/2;
+        final int heartBeatTimeout = heartBeatInterval / 2;
 
         @Override
         public void run() {
