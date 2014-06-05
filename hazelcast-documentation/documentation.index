@@ -108,5 +108,5 @@ src/Config.md
 	src/ConfigurationProperties.md
 	src/Logging.md
 	src/EnterpriseConfig.md
-	src/XMLWrapUp.md
+#	src/XMLWrapUp.md
 src/FAQ.md
