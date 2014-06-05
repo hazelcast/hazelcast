@@ -22,8 +22,4 @@ public interface AddressTranslator {
      */
     public void refresh();
 
-    /**
-     * Shutdown method to clear internals
-     */
-    public void shutdown();
 }

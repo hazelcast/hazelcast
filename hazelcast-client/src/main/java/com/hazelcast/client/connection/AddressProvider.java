@@ -4,17 +4,13 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 
 /**
- * Used to load addresses from third-party services like aws.
+ * Provides initial addresses for client to find and connect to a node
  */
-public interface ServiceAddressLoader {
+public interface AddressProvider {
 
     /**
      * @return Collection of InetSocketAddress
      */
     public Collection<InetSocketAddress> loadAddresses();
 
-    /**
-     * Clear internals.
-     */
-    public void clear();
 }

@@ -76,9 +76,4 @@ public class AwsAddressTranslator implements AddressTranslator {
         }
     }
 
-    @Override
-    public void shutdown() {
-        getLookupTable().clear();
-        privateToPublic = null;
-    }
 }

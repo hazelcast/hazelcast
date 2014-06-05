@@ -4,7 +4,7 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.connection.ServiceAddressLoader;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.cluster.MemberAttributeOperationType;
@@ -43,15 +43,15 @@ class ClusterListenerThread extends Thread {
     private static final int SLEEP_TIME = 1000;
     private volatile ClientConnection conn;
     private final CountDownLatch latch = new CountDownLatch(1);
-    private final Collection<ServiceAddressLoader> serviceAddressLoaders;
+    private final Collection<AddressProvider> addressProviders;
     protected final List<MemberImpl> members = new LinkedList<MemberImpl>();
     private HazelcastClient client;
     private ClientConnectionManagerImpl connectionManager;
     protected ClientClusterServiceImpl clusterService;
 
-    public ClusterListenerThread(ThreadGroup group, String name, Collection<ServiceAddressLoader> serviceAddressLoaders) {
+    public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
         super(group, name);
-        this.serviceAddressLoaders = serviceAddressLoaders;
+        this.addressProviders = addressProviders;
     }
 
     public void init(HazelcastClient client) {
@@ -120,10 +120,8 @@ class ClusterListenerThread extends Thread {
             Collections.shuffle(socketAddresses);
         }
 
-        socketAddresses.addAll(clusterService.getConfigAddresses());
-
-        for (ServiceAddressLoader serviceAddressLoader : serviceAddressLoaders) {
-            socketAddresses.addAll(serviceAddressLoader.loadAddresses());
+        for (AddressProvider addressProvider : addressProviders) {
+            socketAddresses.addAll(addressProvider.loadAddresses());
         }
 
         return connectToOne(socketAddresses);
@@ -219,10 +217,6 @@ class ClusterListenerThread extends Thread {
     }
 
     void shutdown() {
-        for (ServiceAddressLoader serviceAddressLoader : serviceAddressLoaders) {
-            serviceAddressLoader.clear();
-        }
-        serviceAddressLoaders.clear();
         interrupt();
         final ClientConnection c = conn;
         if (c != null) {

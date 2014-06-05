@@ -18,8 +18,4 @@ public class DefaultAddressTranslator implements AddressTranslator {
 
     }
 
-    @Override
-    public void shutdown() {
-
-    }
 }

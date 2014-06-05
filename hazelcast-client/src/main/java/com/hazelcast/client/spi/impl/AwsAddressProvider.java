@@ -2,7 +2,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.aws.AWSClient;
 import com.hazelcast.client.config.ClientAwsConfig;
-import com.hazelcast.client.connection.ServiceAddressLoader;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -17,13 +17,13 @@ import java.util.logging.Level;
 /**
  * Aws Address Loader. Calls aws api to load ip addresses related to given credentials.
  */
-public class AwsAddressLoader implements ServiceAddressLoader {
+public class AwsAddressProvider implements AddressProvider {
 
-    private static final ILogger logger = Logger.getLogger(AwsAddressLoader.class);
+    private static final ILogger logger = Logger.getLogger(AwsAddressProvider.class);
     private final AWSClient awsClient;
     private volatile Map<String, String> privateToPublic;
 
-    AwsAddressLoader(ClientAwsConfig awsConfig) {
+    AwsAddressProvider(ClientAwsConfig awsConfig) {
         awsClient = new AWSClient(awsConfig);
     }
 
@@ -38,12 +38,6 @@ public class AwsAddressLoader implements ServiceAddressLoader {
         }
         return addresses;
 
-    }
-
-    @Override
-    public void clear() {
-        getLookupTable().clear();
-        privateToPublic = null;
     }
 
     private Map<String, String> getLookupTable() {

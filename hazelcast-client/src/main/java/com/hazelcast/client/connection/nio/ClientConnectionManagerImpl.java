@@ -234,7 +234,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             return;
         }
         live = false;
-        addressTranslator.shutdown();
         for (ClientConnection connection : connections.values()) {
             connection.close();
         }

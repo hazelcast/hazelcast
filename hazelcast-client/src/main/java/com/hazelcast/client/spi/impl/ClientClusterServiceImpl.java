@@ -22,7 +22,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.ServiceAddressLoader;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -100,17 +100,20 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     ClusterListenerThread createListenerThread() {
         final ClientAwsConfig awsConfig = client.getClientConfig().getNetworkConfig().getAwsConfig();
-        final Collection<ServiceAddressLoader> serviceAddressLoader = new LinkedList<ServiceAddressLoader>();
+        final Collection<AddressProvider> addressProvider = new LinkedList<AddressProvider>();
+
+        addressProvider.add(new DefaultAddressProvider(getClientConfig().getNetworkConfig()));
+
         if (awsConfig != null && awsConfig.isEnabled()) {
             try {
-                serviceAddressLoader.add(new AwsAddressLoader(awsConfig));
+                addressProvider.add(new AwsAddressProvider(awsConfig));
             } catch (NoClassDefFoundError e) {
                 LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
                 throw e;
             }
         }
         return new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener",
-                serviceAddressLoader);
+                addressProvider);
     }
 
     public MemberImpl getMember(Address address) {
@@ -209,16 +212,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
         final LifecycleState state = disconnected ? LifecycleState.CLIENT_DISCONNECTED : LifecycleState.CLIENT_CONNECTED;
         lifecycleService.fireLifecycleEvent(state);
-    }
-
-    Collection<InetSocketAddress> getConfigAddresses() {
-        final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
-        final List<String> addresses = getClientConfig().getNetworkConfig().getAddresses();
-        Collections.shuffle(addresses);
-        for (String address : addresses) {
-            socketAddresses.addAll(AddressHelper.getSocketAddresses(address));
-        }
-        return socketAddresses;
     }
 
     private ClientConfig getClientConfig() {
