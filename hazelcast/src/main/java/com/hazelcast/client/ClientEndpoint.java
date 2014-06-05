@@ -96,16 +96,15 @@ public final class ClientEndpoint implements Client {
     }
 
     void authenticated(ClientPrincipal principal, boolean firstConnection) {
-        this.principal = principal;
-        this.uuid = principal.getUuid();
+        authenticated(principal);
         this.firstConnection = firstConnection;
-        this.authenticated = true;
     }
 
     void authenticated(ClientPrincipal principal) {
         this.principal = principal;
         this.uuid = principal.getUuid();
         this.authenticated = true;
+        clientEngine.addOwnershipMapping(uuid, principal.getOwnerUuid());
     }
 
     public boolean isAuthenticated() {
