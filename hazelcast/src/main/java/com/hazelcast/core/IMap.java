@@ -18,6 +18,9 @@ package com.hazelcast.core;
 
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 
@@ -65,7 +68,8 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
+public interface IMap<K, V>
+        extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * {@inheritDoc}
@@ -162,7 +166,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     boolean remove(Object key, Object value);
 
-
     /**
      * Removes the mapping for a key from this map if it is present
      * (optional operation).
@@ -190,7 +193,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     void flush();
 
     /**
-     * Returns the entries for the given keys.
+     * Returns the entries for the given keys. If any keys are not present in the Map, it will
+     * call {@link MapStore#loadAll(java.util.Collection)}.
      * <p/>
      * <p><b>Warning:</b></p>
      * The returned map is <b>NOT</b> backed by the original map,
@@ -200,12 +204,30 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>keys</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     * <p/>
+     *
      *
      * @param keys keys to get
      * @return map of entries
      * @throws NullPointerException if any of the specified keys are null
      */
     Map<K, V> getAll(Set<K> keys);
+
+
+    /**
+     * This method clears the map and deleteAll on MapStore which if connected to a database,
+     * will delete the records from that database.
+     * <p/>
+     * Clear does not notify listeners.
+     * <p/>
+     * If you wish to clear the map only without calling deleteAll, use
+     *
+     * @see #evictAll to evict entries without calling deletaAll().
+     * todo add clearMapOnly method to IMap.
+     */
+    @Override
+    void clear();
+
 
     /**
      * Asynchronously gets the given key.
@@ -429,8 +451,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * previously put into the map.
      * </p>
      *
-     * @throws NullPointerException if the specified key or value is null
      * @return a clone of the previous value
+     * @throws NullPointerException if the specified key or value is null
      */
     V putIfAbsent(K key, V value);
 
@@ -636,7 +658,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the waiting time elapsed before the lock was acquired.
      * @throws NullPointerException if the specified key is null
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException;
+    boolean tryLock(K key, long time, TimeUnit timeunit)
+            throws InterruptedException;
 
     /**
      * Releases the lock for the specified key. It never blocks and
@@ -1015,7 +1038,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 
-
     /**
      * Applies the user defined EntryProcessor to the entry mapped by the key with
      * specified ExecutionCallback to listen event status and returns immediately.
@@ -1039,7 +1061,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Future submitToKey(K key, EntryProcessor entryProcessor);
 
-
     /**
      * Applies the user defined EntryProcessor to the all entries in the map.
      * Returns the results mapped by each key in the map.
@@ -1054,4 +1075,33 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 
+    /**
+     * Executes a predefined aggregation on the maps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
+     * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
+     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
+     *
+     * @param supplier        the supplier to select and / or extract a (sub-)value from the map
+     * @param aggregation     the aggregation that is being executed against the map
+     * @param <SuppliedValue> the final type emitted from the supplier
+     * @param <Result>        the resulting aggregation value type
+     * @return Returns the aggregated value
+     */
+    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, SuppliedValue, Result> aggregation);
+
+    /**
+     * Executes a predefined aggregation on the maps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
+     * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
+     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
+     *
+     * @param supplier        the supplier to select and / or extract a (sub-)value from the map
+     * @param aggregation     the aggregation that is being executed against the map
+     * @param jobTracker      the {@link com.hazelcast.mapreduce.JobTracker} instance to execute the aggregation
+     * @param <SuppliedValue> the final type emitted from the supplier
+     * @param <Result>        the resulting aggregation value type
+     * @return Returns the aggregated value
+     */
+    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, SuppliedValue, Result> aggregation,
+                                             JobTracker jobTracker);
 }

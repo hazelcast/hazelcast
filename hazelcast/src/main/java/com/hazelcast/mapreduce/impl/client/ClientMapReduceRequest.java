@@ -31,6 +31,7 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
+import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReducePortableHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
@@ -47,6 +48,7 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
@@ -112,7 +114,11 @@ public class ClientMapReduceRequest<KeyIn, ValueIn> extends InvocationClientRequ
                 future.andThen(new ExecutionCallback<Object>() {
                     @Override
                     public void onResponse(Object response) {
-                        endpoint.sendResponse(response, getCallId());
+                        Object clientResponse = response;
+                        if (clientResponse instanceof HashMap) {
+                            clientResponse = new HashMapAdapter((HashMap) clientResponse);
+                        }
+                        endpoint.sendResponse(clientResponse, getCallId());
                     }
 
                     @Override

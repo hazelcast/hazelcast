@@ -4,11 +4,8 @@
 
 Common Features of all Hazelcast Data Structures:
 
--   Data in the cluster is almost evenly distributed (partitioned) across all nodes. So each node carries \~ (1/n `*` total-data) + backups , n being the number of nodes in the cluster.
 
 -   If a member goes down, its backup replica that also holds the same data, will dynamically redistribute the data including the ownership and locks on them to remaining live nodes. As a result, no data will get lost.
-
--   When a new node joins the cluster, new node takes ownership(responsibility) and load of -some- of the entire data in the cluster. Eventually the new node will carry almost (1/n `*` total-data) + backups and becomes the new partition reducing the load on others.
 
 -   There is no single cluster master or something that can cause single point of failure. Every node in the cluster has equal rights and responsibilities. No-one is superior. And no dependency on external 'server' or 'master' kind of concept.
 

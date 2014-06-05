@@ -21,12 +21,25 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.SimpleEntryView;
+import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.Combiner;
+import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.MappingJob;
+import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.ReducingSubmittableJob;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.*;
@@ -471,8 +484,25 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return evictInternal(getService().toData(key, partitionStrategy));
     }
 
+    /**
+     * This method clears the map and deletaAll on MapStore which if connected to a database,
+     * will delete the records from that database.
+     * <p/>
+     * If you wish to clear the map only without calling deleteAll, use
+     *
+     * @see #clearMapOnly
+     */
     @Override
     public void clear() {
+        clearInternal();
+    }
+
+    /**
+     * This method clears the map.It does not invoke deleteAll on any associated MapStore.
+     * @see #clear
+     */
+    public void clearMapOnly() {
+        //need a different method here that does not call deleteAll
         clearInternal();
     }
 
@@ -590,6 +620,45 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Data keyData = service.toData(key, partitionStrategy);
         ICompletableFuture f = executeOnKeyInternal(keyData,entryProcessor,null);
         return new DelegatingFuture(f,service.getSerializationService());
+    }
+
+
+    @Override
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
+
+        HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
+        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
+        return aggregate(supplier, aggregation, jobTracker);
+    }
+
+    @Override
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation,
+                                                    JobTracker jobTracker) {
+
+        try {
+            ValidationUtil.isNotNull(jobTracker, "jobTracker");
+            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
+            Job<K, V> job = jobTracker.newJob(keyValueSource);
+            Mapper mapper = aggregation.getMapper(supplier);
+            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
+            ReducerFactory reducerFactory = aggregation.getReducerFactory();
+            Collator collator = aggregation.getCollator();
+
+            MappingJob mappingJob = job.mapper(mapper);
+            ReducingSubmittableJob reducingJob;
+            if (combinerFactory != null) {
+                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
+            } else {
+                reducingJob = mappingJob.reducer(reducerFactory);
+            }
+
+            ICompletableFuture<Result> future = reducingJob.submit(collator);
+            return future.get();
+        } catch (Exception e) {
+            throw new HazelcastException(e);
+        }
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {

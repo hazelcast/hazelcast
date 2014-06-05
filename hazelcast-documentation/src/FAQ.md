@@ -27,6 +27,17 @@ Once a node is gone (e.g.crashes) and since data in each node has a backup in ot
 
 So, eventually, no data is lost.
 
+## How do I test the connectivity?
+
+If you notice that there is a problem about a node in joining to a cluster, you may want to perform a connectivity test between the node to be joined and a node from the cluster. The `iperf` tool can be used for this purpose. For example, you can execute the below command on one node (i.e. listening on port 5701):
+
+`iperf -s -p 5701`
+
+And you can execute the below command on the other node:
+
+`iperf -c` *`<IP address>`* `-d -p 5701`
+
+You should see the output which includes connection information such as the IP addresses, transfer speed and bandwidth. Otherwise, if the output says `No route to host`, it means a network connection problem exists.
 
 
 ## How do I choose keys properly?
