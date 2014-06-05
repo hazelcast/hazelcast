@@ -1,5 +1,5 @@
 
-## Partition Group Configuration
+### Partition Grouping
 
 Hazelcast distributes key objects into partitions (blocks) using a consistent hashing algorithm and those partitions are assigned to nodes. That means an entry is stored in a node which is owner of partition to which entry's key is assigned. Total partition count is 271 by default and can be changed with configuration property `hazelcast.map.partition.count`. Please see [Advanced Configuration Properties](#advanced-configuration-properties).
 

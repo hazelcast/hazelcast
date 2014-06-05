@@ -61,7 +61,6 @@ src/IntegratedClustering.md
 	src/WebSessionReplication.md
 		src/TomcatSessionReplication.md
 	src/SpringIntegration.md
-	src/SessionReplication.md
 src/Storage.md
 src/Clients.md
 #	src/ClientTypes.md
@@ -103,7 +102,7 @@ src/Config.md
 		src/EC2AutoDiscovery.md
 		src/Ports.md
 		src/IPv6.md
-	src/PartitionGroupConfig.md
+		src/PartitionGroupConfig.md
 	src/ListenerConfig.md
 	src/WildcardConfiguration.md
 	src/ConfigurationProperties.md
