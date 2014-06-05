@@ -89,7 +89,7 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
             assertTrueEventually(new AssertTask() {
                 public void run() throws Exception {
                     List<Integer> actualOrder = processorMap.get(key);
-                    System.out.println("list at assert = " + actualOrder + "size " + actualOrder.size());
+                    System.out.println("asserting = " + actualOrder + " size " + actualOrder.size());
                     //using >= for the test, as it can be the case that an entry processor could be executed more the once
                     //when the owning node is terminated after running the entry processor (and the backup) but before the response is sent
                     assertTrue("failed to execute all entry processor tasks at iteration", actualOrder.size() >= maxTasks);

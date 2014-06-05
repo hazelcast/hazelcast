@@ -974,56 +974,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals("entry processor tasks executed in unexpected order", expectedOrder, actualOrder);
     }
 
-    @Test
-    public void dropedEntryProcessorTest_withKeyOwningNodeTermination() throws ExecutionException, InterruptedException {
-        String mapName = randomString();
-        Config cfg = new Config();
-        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
-
-
-        final int maxItterations=50;
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(maxItterations+1);
-        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
-
-        for(int iteration=0; iteration<maxItterations; iteration++){
-
-            System.out.println("======================"+iteration+"==============================");
-
-            HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
-
-            final int maxTasks = 20;
-            final Object key  =  generateKeyOwnedBy(instance2);
-
-            final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
-            processorMap.put(key, new ArrayList<Integer>());
-
-            List<Future> futures = new ArrayList<Future>();
-
-            for (int i = 0 ; i < maxTasks ; i++) {
-                Future f = processorMap.submitToKey(key, new SimpleEntryProcessor(i));
-                futures.add(f);
-
-                if(i==maxTasks/2){
-                    instance2.getLifecycleService().terminate();
-                }
-            }
-
-            //for(Future f : futures){
-            //    f.get();
-            //}
-
-            final int itter = iteration;
-            assertTrueEventually(new AssertTask() {
-                public void run() throws Exception {
-                    List<Integer> actualOrder = processorMap.get(key);
-                    System.out.println("list at assert = "+actualOrder+"size "+actualOrder.size());
-                    assertEquals("failed to execute all entry processor tasks at iteration "+itter, +actualOrder.size(), maxTasks);
-                }
-            });
-        }
-    }
-
     private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
         private Integer id;
 
@@ -1035,22 +985,15 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry<Object, List<Integer>> entry) {
-
             List l = entry.getValue();
             l.add(id);
-            //entry.setValue(l);  //this is tricky.  if its object format, we should not need, this it its BINARY we whould need but also there is some cacheing going on. ????
-
-            //System.out.println("EntryProcessor => "+l +" size="+l.size()+" last val="+id);
 
             return id;
         }
 
         @Override
         public void processBackup(Map.Entry entry) {
-            //System.out.println("===Backup===");
             process(entry);
-            //System.out.println("============");
-
         }
 
         @Override
