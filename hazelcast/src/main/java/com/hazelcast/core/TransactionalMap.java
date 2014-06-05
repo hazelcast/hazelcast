@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * <p/>
  * <p/>
  * <p/>
- * <h2>Map Store Interaction</h2>
+ * <h2>MapStore Interaction</h2>
  * When using MapStore, the call to any MapStore methods is outside the transactional boundary.
  * If you need to have an XATransaction spanning Hazelcast operations and one more other XAResources,
  * such as a database, you should not use MapStore. Instead, enlist both resources in a transaction as shown below:
