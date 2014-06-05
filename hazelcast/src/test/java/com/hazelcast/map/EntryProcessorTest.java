@@ -1009,9 +1009,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 }
             }
 
-            for(Future f : futures){
-                f.get();
-            }
+            //for(Future f : futures){
+            //    f.get();
+            //}
 
             final int itter = iteration;
             assertTrueEventually(new AssertTask() {
