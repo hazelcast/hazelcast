@@ -16,9 +16,11 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.proxy.ClientClusterProxy;
@@ -28,10 +30,12 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ProxyManager;
+import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.txn.ClientTransactionManager;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
@@ -43,6 +47,7 @@ import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
@@ -71,6 +76,8 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -98,6 +105,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -114,6 +122,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
     private final ClientConfig config;
@@ -166,7 +175,7 @@ public final class HazelcastClient implements HazelcastInstance {
             lb = new RoundRobinLB();
         }
         loadBalancer = lb;
-        connectionManager = new ClientConnectionManagerImpl(this, loadBalancer);
+        connectionManager = createClientConnectionManager();
         clusterService = new ClientClusterServiceImpl(this);
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
@@ -226,6 +235,22 @@ public final class HazelcastClient implements HazelcastInstance {
         }
         loadBalancer.init(getCluster(), config);
         partitionService.start();
+    }
+
+    ClientConnectionManagerImpl createClientConnectionManager() {
+        final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
+        AddressTranslator addressTranslator;
+        if (awsConfig != null && awsConfig.isEnabled()) {
+            try {
+                addressTranslator = new AwsAddressTranslator(awsConfig);
+            } catch (NoClassDefFoundError e) {
+                LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                throw e;
+            }
+        } else {
+            addressTranslator = new DefaultAddressTranslator();
+        }
+        return new ClientConnectionManagerImpl(this, loadBalancer, addressTranslator);
     }
 
     public Config getConfig() {

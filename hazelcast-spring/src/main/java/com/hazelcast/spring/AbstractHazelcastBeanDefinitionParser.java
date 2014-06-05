@@ -16,7 +16,11 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.*;
+import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -94,10 +98,10 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                                                String... excludeNames) {
             BeanDefinitionBuilder builder = createBeanBuilder(clazz);
             final AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
-            final Node attName = node.getAttributes().getNamedItem(propertyName ); //"name"
+            final Node attName = node.getAttributes().getNamedItem(propertyName); //"name"
             final String name = getTextContent(attName);
             builder.addPropertyValue("name", name);
-            fillValues(node, builder,excludeNames);
+            fillValues(node, builder, excludeNames);
             managedMap.put(name, beanDefinition);
         }
 
@@ -113,13 +117,13 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
         }
 
-        protected void fillAttributeValues(Node node,BeanDefinitionBuilder builder, String... excludeNames) {
+        protected void fillAttributeValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
             Collection<String> epn = excludeNames != null && excludeNames.length > 0 ?
                     new HashSet<String>(Arrays.asList(excludeNames)) : null;
             fillAttributeValues(node, builder, epn);
         }
 
-        protected void fillAttributeValues(Node node,BeanDefinitionBuilder builder, Collection<String> epn) {
+        protected void fillAttributeValues(Node node, BeanDefinitionBuilder builder, Collection<String> epn) {
             final NamedNodeMap atts = node.getAttributes();
             if (atts != null) {
                 for (int a = 0; a < atts.getLength(); a++) {
@@ -168,10 +172,10 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     final Node implRef = attrs.getNamedItem("implementation");
                     final Node classNode = attrs.getNamedItem("class-name");
                     final Node fidNode = attrs.getNamedItem("factory-id");
-                    if(implRef != null) {
+                    if (implRef != null) {
                         factories.put(Integer.parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
                     }
-                    if(classNode != null) {
+                    if (classNode != null) {
                         classNames.put(Integer.parseInt(getTextContent(fidNode)), getTextContent(classNode));
                     }
                 }
@@ -194,10 +198,10 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     final NamedNodeMap attrs = child.getAttributes();
                     final Node implRef = attrs.getNamedItem(implementation);
                     final Node classNode = attrs.getNamedItem(className);
-                    if(implRef != null) {
+                    if (implRef != null) {
                         globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation), getTextContent(implRef));
                     }
-                    if(classNode != null) {
+                    if (classNode != null) {
                         globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
                     }
                 }
@@ -210,20 +214,20 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
                     final Node typeClass = attrs.getNamedItem(typeClassName);
 
-                    if(typeClass != null){
-                        serializerConfigBuilder.addPropertyValue( "typeClassName",getTextContent(typeClass));
+                    if (typeClass != null) {
+                        serializerConfigBuilder.addPropertyValue("typeClassName", getTextContent(typeClass));
                     }
 
-                    if(implRef != null) {
+                    if (implRef != null) {
                         serializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation), getTextContent(implRef));
                     }
-                    if(classNode != null) {
+                    if (classNode != null) {
                         serializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
                     }
                     serializers.add(serializerConfigBuilder.getBeanDefinition());
                 }
             }
-            if(globalSerializerConfigBuilder != null) {
+            if (globalSerializerConfigBuilder != null) {
                 serializationConfigBuilder.addPropertyValue("globalSerializerConfig", globalSerializerConfigBuilder.getBeanDefinition());
             }
             serializationConfigBuilder.addPropertyValue("serializerConfigs", serializers);
@@ -239,10 +243,10 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     final Node implRef = attrs.getNamedItem("implementation");
                     final Node classNode = attrs.getNamedItem("class-name");
                     final Node fidNode = attrs.getNamedItem("factory-id");
-                    if(implRef != null) {
+                    if (implRef != null) {
                         factories.put(Integer.parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
                     }
-                    if(classNode != null) {
+                    if (classNode != null) {
                         classNames.put(Integer.parseInt(getTextContent(fidNode)), getTextContent(classNode));
                     }
                 }
@@ -259,11 +263,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 final String nodeName = cleanNodeName(child.getNodeName());
                 if ("data-serializable-factories".equals(nodeName)) {
                     handleDataSerializableFactories(child, serializationConfigBuilder);
-                }
-                else if ("portable-factories".equals(nodeName)) {
+                } else if ("portable-factories".equals(nodeName)) {
                     handlePortableFactories(child, serializationConfigBuilder);
-                }
-                else if ("serializers".equals(nodeName)) {
+                } else if ("serializers".equals(nodeName)) {
                     handleSerializers(child, serializationConfigBuilder);
                 }
             }

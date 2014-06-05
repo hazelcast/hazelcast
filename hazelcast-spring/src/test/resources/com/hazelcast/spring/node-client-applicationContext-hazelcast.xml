@@ -59,7 +59,7 @@
     </hz:hazelcast>
 
     <hz:client id="client">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
         <hz:properties>
             <hz:property name="hazelcast.client.retry.count">13</hz:property>
         </hz:properties>
@@ -80,7 +80,7 @@
         </hz:network>
     </hz:client>
 
-    <hz:client id="client2"  credentials-ref="credentials" >
+    <hz:client id="client2" credentials-ref="credentials">
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
                     connection-timeout="1000"
@@ -98,7 +98,7 @@
     </hz:client>
 
     <hz:client id="client3"
-               credentials-ref="credentials" >
+               credentials-ref="credentials">
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
                     connection-timeout="1000"
@@ -124,26 +124,28 @@
                           enable-compression="false"
                           enable-shared-object="false"
                           portable-version="10"
-                          use-native-byte-order="false" >
+                          use-native-byte-order="false">
 
             <hz:data-serializable-factories>
-                <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
+                <hz:data-serializable-factory factory-id="1"
+                                              class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
             </hz:data-serializable-factories>
             <hz:portable-factories>
-                <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.serialization.DummyPortableFactory" />
+                <hz:portable-factory factory-id="2"
+                                     class-name="com.hazelcast.spring.serialization.DummyPortableFactory"/>
             </hz:portable-factories>
             <hz:serializers>
-                <hz:serializer type-class="com.hazelcast.nio.serialization.CustomSerializationTest$Foo" class-name="com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer"/>
+                <hz:serializer type-class="com.hazelcast.nio.serialization.CustomSerializationTest$Foo"
+                               class-name="com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer"/>
             </hz:serializers>
         </hz:serialization>
 
 
-
         <hz:proxy-factories>
-            <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService" />
+            <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService"/>
         </hz:proxy-factories>
 
-        <hz:load-balancer type="round-robin" />
+        <hz:load-balancer type="round-robin"/>
 
         <hz:near-cache name="default"
                        time-to-live-seconds="1"
@@ -153,12 +155,33 @@
                        invalidate-on-change="true"/>
 
 
+    </hz:client>
+
+    <hz:client id="client4"
+               credentials-ref="credentials">
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+
+            <hz:aws enabled="false" inside-aws="true" access-key="sample-access-key" secret-key="sample-secret-key"
+                    region="sample-region" security-group-name="sample-group"
+                    tag-key="sample-tag-key" tag-value="sample-tag-value"/>
+        </hz:network>
 
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
-        <property name="username" value="spring-group" />
-        <property name="password" value="spring-group-pass" />
+        <property name="username" value="spring-group"/>
+        <property name="password" value="spring-group-pass"/>
     </bean>
 
     <hz:map id="map1" instance-ref="client" name="map1"/>

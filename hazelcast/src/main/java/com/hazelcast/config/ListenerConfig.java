@@ -138,4 +138,21 @@ public class ListenerConfig {
         return "ListenerConfig [className=" + className + ", implementation=" + implementation + ", includeValue="
                 + isIncludeValue() + ", local=" + isLocal() + "]";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ListenerConfig that = (ListenerConfig) o;
+
+        if (className != null ? !className.equals(that.className) : that.className != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return className != null ? className.hashCode() : 0;
+    }
 }

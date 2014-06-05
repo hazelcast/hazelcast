@@ -45,7 +45,7 @@ public class ItemListenerConfig extends ListenerConfig {
     }
 
     public ItemListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null ){
+        if (readOnly == null) {
             readOnly = new ItemListenerConfigReadOnly(this);
         }
         return readOnly;
@@ -76,5 +76,25 @@ public class ItemListenerConfig extends ListenerConfig {
         sb.append("{includeValue=").append(includeValue);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        ItemListenerConfig that = (ItemListenerConfig) o;
+
+        if (includeValue != that.includeValue) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (includeValue ? 1 : 0);
+        return result;
     }
 }

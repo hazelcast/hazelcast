@@ -141,6 +141,15 @@
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-cloud</artifactId>
+            <version>${project.parent.version}</version>
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>

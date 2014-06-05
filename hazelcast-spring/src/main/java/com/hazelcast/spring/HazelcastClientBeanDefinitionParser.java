@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -128,11 +129,17 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSocketInterceptorConfig(child, clientNetworkConfig);
                 } else if ("ssl".equals(nodeName)) {
                     handleSSLConfig(child, clientNetworkConfig);
+                } else if ("aws".equals(nodeName)) {
+                    handleAws(child, clientNetworkConfig);
                 }
             }
             clientNetworkConfig.addPropertyValue("addresses", members);
 
             configBuilder.addPropertyValue("networkConfig", clientNetworkConfig.getBeanDefinition());
+        }
+
+        private void handleAws(Node node, BeanDefinitionBuilder clientNetworkConfig) {
+            createAndFillBeanBuilder(node, ClientAwsConfig.class, "awsConfig", clientNetworkConfig);
         }
 
         private void handleSSLConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
