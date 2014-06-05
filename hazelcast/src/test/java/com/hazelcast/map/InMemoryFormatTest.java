@@ -19,10 +19,14 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,8 +34,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotSame;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -39,6 +47,32 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class InMemoryFormatTest extends HazelcastTestSupport {
+
+    /**
+     * if statistics enabled InMemoryFormat.Object does not work
+     */
+    @Test
+    public void testIssue2622(){
+        final String mapName = randomString();
+        Config config = new Config();
+        final MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        mapConfig.setStatisticsEnabled(true);
+        config.addMapConfig(mapConfig);
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        final IMap<String, SerializationValue> map = instance.getMap(mapName);
+        final SerializationValue serializationValue = new SerializationValue();
+        map.put("key", serializationValue);
+
+        //EntryProcessor should not trigger de-serialization
+        map.executeOnKey("key", new AbstractEntryProcessor<String, SerializationValue>() {
+            @Override
+            public Object process(final Map.Entry<String, SerializationValue> entry) {
+                return null;
+            }
+        });
+        assertEquals(1, SerializationValue.deSerializeCount.get());
+    }
 
     @Test
     public void equals() {
@@ -123,4 +157,20 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         }
     }
 
+    public static class SerializationValue implements DataSerializable {
+
+        public static AtomicInteger deSerializeCount = new AtomicInteger();
+
+        public SerializationValue() {
+        }
+
+        @Override
+        public void writeData(final ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(final ObjectDataInput in) throws IOException {
+            deSerializeCount.incrementAndGet();
+        }
+    }
 }
