@@ -88,9 +88,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     public V get() throws InterruptedException, ExecutionException {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            e.printStackTrace();
-            return null;
+        } catch (TimeoutException exception) {
+            throw ExceptionUtil.rethrow(exception);
         }
     }
 
