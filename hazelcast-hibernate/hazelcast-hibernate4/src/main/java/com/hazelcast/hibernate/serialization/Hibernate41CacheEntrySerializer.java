@@ -32,7 +32,7 @@ import java.lang.reflect.Field;
 /**
  * The actual CacheKey serializer implementation
  */
-class Hibernate4CacheEntrySerializer
+class Hibernate41CacheEntrySerializer
         implements StreamSerializer<CacheEntry> {
 
     private static final Unsafe UNSAFE = UnsafeHelper.UNSAFE;
@@ -119,7 +119,7 @@ class Hibernate4CacheEntrySerializer
 
     @Override
     public int getTypeId() {
-        return SerializationConstants.HIBERNATE3_TYPE_HIBERNATE_CACHE_ENTRY;
+        return SerializationConstants.HIBERNATE4_TYPE_HIBERNATE_CACHE_ENTRY;
     }
 
     @Override
