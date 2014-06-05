@@ -25,6 +25,44 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Transactional implementation of {@link BaseMap}.
+ * <p/>
+ * <p/>
+ * <p/>
+ * <h2>Map Store Interaction</h2>
+ * When using MapStore, the call to any MapStore methods is outside the transactional boundary.
+ * If you need to have an XATransaction spanning Hazelcast operations and one more other XAResources,
+ * such as a database, you should not use MapStore. Instead, enlist both resources in a transaction as shown below:
+ * <p/>
+ * <code>
+ * final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+ * <p/>
+ * UserTransactionManager tm = new UserTransactionManager();
+ * tm.setTransactionTimeout(60);
+ * tm.begin();
+ * <p/>
+ * final TransactionContext context = client.newTransactionContext();
+ *
+ * final XAResource xaResource = context.getXaResource();
+ * final Transaction transaction = tm.getTransaction();
+ * transaction.enlistResource(xaResource);
+ *
+ * // you can enlist more resources here like a database XAResource
+ * try {
+ *      final TransactionalMap m = context.getMap("map");
+ *      m.put("key", "value");
+ *      final TransactionalQueue queue = context.getQueue("queue");
+ *       queue.offer("item");
+ *
+ *       //you can do other resource operations like store/delete to a database
+ *
+ *      transaction.delistResource(xaResource, XAResource.TMSUCCESS);
+ *      tm.commit();
+ * } catch (Throwable t) {
+ *      t.printStackTrace();
+ *      transaction.delistResource(xaResource, XAResource.TMFAIL);
+ *      tm.rollback();
+ * }
+ * </code>
  *
  * @param <K> key
  * @param <V> value
