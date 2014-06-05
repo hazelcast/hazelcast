@@ -31,6 +31,8 @@ import com.hazelcast.mapreduce.aggregation.impl.BigIntegerMinAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.BigIntegerSumAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.ComparableMaxAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.ComparableMinAggregation;
+
+import com.hazelcast.mapreduce.aggregation.impl.ComparableMinMaxAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.CountAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.DistinctValuesAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.DoubleAvgAggregation;
@@ -45,6 +47,7 @@ import com.hazelcast.mapreduce.aggregation.impl.LongAvgAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.LongMaxAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.LongMinAggregation;
 import com.hazelcast.mapreduce.aggregation.impl.LongSumAggregation;
+import com.hazelcast.mapreduce.aggregation.impl.MinMaxTuple;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.math.BigDecimal;
@@ -138,6 +141,18 @@ public final class Aggregations {
     }
 
     /**
+     * Returns an aggregation to find the integer minimum and maximum of all supplied values.<br/>
+     * This aggregation is similar to <pre>SELECT MIN(value), MAX(value) FROM x</pre>
+     *
+     * @param <Key>   the input key type
+     * @param <Value> the supplied value type
+     * @return the maximum value over all supplied values
+     */
+    public static <Key, Value> Aggregation<Key, Integer, MinMaxTuple<Integer>> integerMinMax() {
+        return new AggregationAdapter(new ComparableMinMaxAggregation<Key, Value>());
+    }
+
+    /**
      * Returns an aggregation to calculate the long average of all supplied values.<br/>
      * This aggregation is similar to <pre>SELECT AVG(value) FROM x</pre>
      *
@@ -186,6 +201,18 @@ public final class Aggregations {
     }
 
     /**
+     * Returns an aggregation to find the long minimimum and maximum of all supplied values.<br/>
+     * This aggregation is similar to <pre>SELECT MIN(value), MAX(value) FROM x</pre>
+     *
+     * @param <Key>   the input key type
+     * @param <Value> the supplied value type
+     * @return the minimum and maximum value over all supplied values
+     */
+    public static <Key, Value> Aggregation<Key, Long, MinMaxTuple<Long>> longMinMax() {
+        return new AggregationAdapter(new ComparableMinMaxAggregation<Key, Value>());
+    }
+
+    /**
      * Returns an aggregation to calculate the double average of all supplied values.<br/>
      * This aggregation is similar to <pre>SELECT AVG(value) FROM x</pre>
      *
@@ -231,6 +258,18 @@ public final class Aggregations {
      */
     public static <Key, Value> Aggregation<Key, Double, Double> doubleMax() {
         return new AggregationAdapter(new DoubleMaxAggregation<Key, Value>());
+    }
+
+    /**
+     * Returns an aggregation to find the double maximum of all supplied values.<br/>
+     * This aggregation is similar to <pre>SELECT MAX(value) FROM x</pre>
+     *
+     * @param <Key>   the input key type
+     * @param <Value> the supplied value type
+     * @return the maximum value over all supplied values
+     */
+    public static <Key, Value> Aggregation<Key, Double, MinMaxTuple<Double>> doubleMinMax() {
+        return new AggregationAdapter(new ComparableMinMaxAggregation<Key, Value>());
     }
 
     /**
@@ -286,6 +325,20 @@ public final class Aggregations {
     }
 
     /**
+     * Returns an aggregation to find the {@link java.math.BigDecimal} minimum and
+     * maximum of all supplied values.<br/>
+     * This aggregation is similar to <pre>SELECT MAX(value) FROM x</pre>
+     *
+     * @param <Key>   the input key type
+     * @param <Value> the supplied value type
+     * @return the minimum and maximum value over all supplied values
+     */
+    public static <Key, Value> Aggregation<Key, BigDecimal, MinMaxTuple<BigDecimal>> bigDecimalMinMax() {
+        return new AggregationAdapter(new ComparableMinMaxAggregation<Key, Value>());
+    }
+
+
+    /**
      * Returns an aggregation to calculate the {@link java.math.BigInteger} average
      * of all supplied values.<br/>
      * This aggregation is similar to <pre>SELECT AVG(value) FROM x</pre>
@@ -338,6 +391,19 @@ public final class Aggregations {
     }
 
     /**
+     * Returns an aggregation to find the {@link java.math.BigInteger} minimum and
+     * maximum of all supplied values.<br/>
+     * This aggregation is similar to <pre>SELECT MIN(value), MAX(value) FROM x</pre>
+     *
+     * @param <Key>   the input key type
+     * @param <Value> the supplied value type
+     * @return the minimum and maximum values over all supplied values
+     */
+    public static <Key, Value> Aggregation<Key, BigInteger, MinMaxTuple<BigInteger>> bigIntegerMinMax() {
+        return new AggregationAdapter(new ComparableMinMaxAggregation<Key, Value>());
+    }
+
+    /**
      * Returns an aggregation to find the minimum value of all supplied
      * {@link java.lang.Comparable} implementing values.<br/>
      * This aggregation is similar to <pre>SELECT MIN(value) FROM x</pre>
@@ -361,6 +427,19 @@ public final class Aggregations {
      */
     public static <Key, Value> Aggregation<Key, Comparable, Comparable> comparableMax() {
         return new AggregationAdapter(new ComparableMaxAggregation<Key, Value>());
+    }
+
+    /**
+     * Returns an aggregation to find the minimum and maximum values of all supplied
+     * {@link java.lang.Comparable} implementing values.<br/>
+     * This aggregation is similar to <pre>SELECT MIN(value), MAX(value) FROM x</pre>
+     *
+     * @param <Key>   the input key type
+     * @param <Value> the supplied value type
+     * @return the minimum and maximum values over all supplied values
+     */
+    public static <Key, Value> Aggregation<Key, Comparable, MinMaxTuple<Comparable>> comparableMinMax() {
+        return new AggregationAdapter(new ComparableMinMaxAggregation<Key, Value>());
     }
 
     /**
