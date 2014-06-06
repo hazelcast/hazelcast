@@ -29,17 +29,22 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * A {@code CacheKey} serializer compatible with the interface introduced in Hibernate 4.2.
+ * A {@code CacheEntry} serializer compatible with the SPI interface introduced in Hibernate 4.2. For reference entries
+ * the {@code CacheEntry} is serialized directly to avoid relying on too many Hibernate implementation details. Entity
+ * entries (the most common type) are serialized by accessing the fields using the interface's methods, instead of via
+ * Reflection like the {@link Hibernate41CacheEntrySerializer 4.1 serializer}.
+ *
+ * @since 3.3
  */
 class Hibernate42CacheEntrySerializer
         implements StreamSerializer<CacheEntry> {
 
     private static final Constructor<StandardCacheEntryImpl> CACHE_ENTRY_CONSTRUCTOR;
+    private static final Class<?>[] CONSTRUCTOR_ARG_TYPES = {Serializable[].class, String.class, boolean.class, Object.class};
 
     static {
         try {
-            CACHE_ENTRY_CONSTRUCTOR = StandardCacheEntryImpl.class.getDeclaredConstructor(
-                    Serializable[].class, String.class, boolean.class, Object.class);
+            CACHE_ENTRY_CONSTRUCTOR = StandardCacheEntryImpl.class.getDeclaredConstructor(CONSTRUCTOR_ARG_TYPES);
             CACHE_ENTRY_CONSTRUCTOR.setAccessible(true);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
@@ -60,8 +65,7 @@ class Hibernate42CacheEntrySerializer
             throws IOException {
 
         try {
-            if (in.readBoolean()) {
-                //Reference
+            if (in.readBoolean()) { // CacheEntry.isReferenceEntry()
                 return readReference(in);
             }
             return readDisassembled(in);
@@ -77,10 +81,10 @@ class Hibernate42CacheEntrySerializer
         try {
             out.writeBoolean(object.isReferenceEntry());
             if (object.isReferenceEntry()) {
-                //Reference entries are not disassembled. Instead, to be serialized, they rely entirely on
-                //the entity itself being Serializable. This is not a common thing (Hibernate is currently
-                //very restrictive about what can be cached by reference), so it may not be worth dealing
-                //with at all. This is just a naive implementation relying on the entity's serialization.
+                // Reference entries are not disassembled. Instead, to be serialized, they rely entirely on
+                // the entity itself being Serializable. This is not a common thing (Hibernate is currently
+                // very restrictive about what can be cached by reference), so it may not be worth dealing
+                // with at all. This is just a naive implementation relying on the entity's serialization.
                 writeReference(out, object);
             } else {
                 writeDisassembled(out, object);
@@ -140,10 +144,20 @@ class Hibernate42CacheEntrySerializer
         out.writeObject(new CacheEntryWrapper(object));
     }
 
-    //Wraps a CacheEntry so that serializing it will not recursively call back into this class
+    /**
+     * Wraps a CacheEntry so that serializing it will not recursively call back into this class.
+     * <p/>
+     * {@code CacheEntry} extends {@code Serializable}, so the entry could theoretically just be written with
+     * {@code ObjectDataOutput.writeObject(Object)}. However, doing so would cause the {@code SerializationService}
+     * to look up the serializer and route the entry right back here again, forming an infinite loop. This wrapper
+     * type, which has no explicit mapping, should fall back on the {@code ObjectSerializer} and be serialized by
+     * a standard {@code ObjectOutputStream}.
+     *
+     * @since 3.3
+     */
     private static class CacheEntryWrapper implements Serializable {
 
-        private final CacheEntry entry; //CacheEntry extends Serializable
+        private final CacheEntry entry;
 
         private CacheEntryWrapper(CacheEntry entry) {
             this.entry = entry;
