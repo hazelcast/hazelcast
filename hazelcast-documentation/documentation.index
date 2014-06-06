@@ -78,7 +78,7 @@ src/Management.md
 	src/MonitoringWithJMX.md
 	src/ClusterUtilities.md
 	src/ManagementCenter.md
-#	src/ClusteredJMX.md
+	src/ClusteredJMX.md
 #	src/ClusteredREST.md
 #src/ServerProtocols.md
 #	src/HazelcastNetworkProtocol.md
