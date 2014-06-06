@@ -16,11 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import static org.junit.Assert.assertEquals;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -28,8 +24,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -190,10 +193,68 @@ public class ServiceLoaderTest {
         assertEquals(1, implementations.size());
     }
 
+    @Test
+    public void loadServicesGivenClassLoaderWithChildFirstOrdering() throws Exception {
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+        String className = "com.hazelcast.util.ServiceLoaderTest$ServiceLoaderTestInterface";
+
+        URLClassLoader parentClassLoader = (URLClassLoader)ServiceLoaderTest.class.getClassLoader();
+        ClassLoader childClassLoader = new ChildFirstClassLoader(parentClassLoader);
+        Class<?> serviceType = childClassLoader.loadClass(className);
+
+        Set<Object> implementations = new HashSet<Object>();
+        Iterator<?> iterator = ServiceLoader.iterator(serviceType, factoryId, childClassLoader);
+        while (iterator.hasNext()) {
+            Object serviceImpl = iterator.next();
+            serviceImpl.getClass().isAssignableFrom(serviceType);
+            implementations.add(serviceImpl);
+        }
+
+        assertEquals(1, implementations.size());
+    }
+
     public static interface ServiceLoaderTestInterface {
     }
 
     public static class ServiceLoaderTestInterfaceImpl
             implements ServiceLoaderTestInterface {
+    }
+
+    /**
+     * This classloader loads any class name starting with com.hazelcast.util itself instead of asking the parent.
+     * Other classes are loaded parent first.
+     */
+    public static class ChildFirstClassLoader extends URLClassLoader {
+        private static final Pattern pattern = Pattern.compile("^com\\.hazelcast\\.util\\..*$");
+        public ChildFirstClassLoader(URLClassLoader classLoader) {
+            super(classLoader.getURLs(), classLoader);
+        }
+
+        @Override
+        protected Class<?> loadClass(final String name,
+            final boolean resolve)
+            throws ClassNotFoundException {
+
+            final Matcher matcher = pattern.matcher(name);
+            if (matcher.matches()) {
+                return loadFromThisClassLoader(name, resolve);
+            }
+            else {
+                return super.loadClass(name, resolve);
+            }
+        }
+
+        private synchronized Class<?> loadFromThisClassLoader(String name, boolean resolve)
+                throws ClassNotFoundException {
+
+            Class<?> c = findLoadedClass(name);
+            if (c == null) {
+                c = findClass(name);
+            }
+            if (resolve) {
+                resolveClass(c);
+            }
+            return c;
+        }
     }
 }
