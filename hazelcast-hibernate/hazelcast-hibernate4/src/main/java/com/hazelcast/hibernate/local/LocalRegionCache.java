@@ -27,11 +27,12 @@ import com.hazelcast.util.Clock;
 import org.hibernate.cache.spi.CacheDataDescription;
 import org.hibernate.cache.spi.access.SoftLock;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.Map;
 import java.util.Iterator;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,8 +66,32 @@ public class LocalRegionCache implements RegionCache {
     protected final Comparator versionComparator;
     protected MapConfig config;
 
+    /**
+     * @param name              the name for this region cache, which is also used to retrieve configuration/topic
+     * @param hazelcastInstance the {@code HazelcastInstance} to which this region cache belongs, used to retrieve
+     *                          configuration and to lookup an {@link ITopic} to register a {@link MessageListener}
+     *                          with (optional)
+     * @param metadata          metadata describing the cached data, used to compare data versions (optional)
+     */
     public LocalRegionCache(final String name, final HazelcastInstance hazelcastInstance,
                             final CacheDataDescription metadata) {
+        this(name, hazelcastInstance, metadata, true);
+    }
+
+    /**
+     * @param name              the name for this region cache, which is also used to retrieve configuration/topic
+     * @param hazelcastInstance the {@code HazelcastInstance} to which this region cache belongs, used to retrieve
+     *                          configuration and to lookup an {@link ITopic} to register a {@link MessageListener}
+     *                          with if {@code withTopic} is {@code true} (optional)
+     * @param metadata          metadata describing the cached data, used to compare data versions (optional)
+     * @param withTopic         {@code true} to register a {@link MessageListener} with the {@link ITopic} whose name
+     *                          matches this region cache <i>if</i> a {@code HazelcastInstance} was provided to look
+     *                          up the topic; otherwise, {@code false} not to register a listener even if an instance
+     *                          was provided
+     * @since 3.3
+     */
+    public LocalRegionCache(final String name, final HazelcastInstance hazelcastInstance,
+                            final CacheDataDescription metadata, final boolean withTopic) {
         try {
             config = hazelcastInstance != null ? hazelcastInstance.getConfig().findMapConfig(name) : null;
         } catch (UnsupportedOperationException ignored) {
@@ -75,7 +100,7 @@ public class LocalRegionCache implements RegionCache {
         cache = new ConcurrentHashMap<Object, Value>();
 
         messageListener = createMessageListener();
-        if (hazelcastInstance != null) {
+        if (withTopic && hazelcastInstance != null) {
             topic = hazelcastInstance.getTopic(name);
             topic.addMessageListener(messageListener);
         } else {
@@ -211,9 +236,10 @@ public class LocalRegionCache implements RegionCache {
             timeToLive = CacheEnvironment.getDefaultCacheTimeoutInMillis();
         }
 
-        if ((maxSize > 0 && maxSize != Integer.MAX_VALUE) || timeToLive > 0) {
+        boolean limitSize = maxSize > 0 && maxSize != Integer.MAX_VALUE;
+        if (limitSize || timeToLive > 0) {
             final Iterator<Entry<Object, Value>> iter = cache.entrySet().iterator();
-            SortedSet<EvictionEntry> entries = null;
+            List<EvictionEntry> entries = null;
             final long now = Clock.currentTimeMillis();
             while (iter.hasNext()) {
                 final Entry<Object, Value> e = iter.next();
@@ -224,22 +250,28 @@ public class LocalRegionCache implements RegionCache {
                 }
                 if (v.getCreationTime() + timeToLive < now) {
                     iter.remove();
-                } else if (maxSize > 0 && maxSize != Integer.MAX_VALUE) {
+                } else if (limitSize) {
                     if (entries == null) {
-                        entries = new TreeSet<EvictionEntry>();
+                        // Use a List rather than a Set for correctness. Using a Set, especially a TreeSet
+                        // based on EvictionEntry.compareTo, causes evictions to be processed incorrectly
+                        // when two or more entries in the map have the same timestamp. In such a case, the
+                        // _first_ entry at a given timestamp is the only one that can be evicted because
+                        // TreeSet does not add "equivalent" entries. A second benefit of using a List is
+                        // that the cost of sorting the entries is not incurred if eviction isn't performed
+                        entries = new ArrayList<EvictionEntry>(cache.size());
                     }
                     entries.add(new EvictionEntry(k, v));
                 }
             }
             final int diff = cache.size() - maxSize;
-            final int k = diff >= 0 ? (diff + maxSize * 20 / 100) : 0;
-            if (k > 0 && entries != null) {
-                int i = 0;
+            final int toRemove = diff >= 0 ? (diff + maxSize * 20 / 100) : 0;
+            if (toRemove > 0 && entries != null) {
+                // Only sort the entries if we're going to evict some
+                Collections.sort(entries);
+                int removed = 0;
                 for (EvictionEntry entry : entries) {
-                    if (cache.remove(entry.key, entry.value)) {
-                        if (++i == k) {
-                            break;
-                        }
+                    if (cache.remove(entry.key, entry.value) && ++removed == toRemove) {
+                        break;
                     }
                 }
             }
@@ -262,7 +294,7 @@ public class LocalRegionCache implements RegionCache {
         }
 
         @Override
-        public boolean equals(Object o) {
+        public boolean equals(final Object o) {
             if (this == o) {
                 return true;
             }
@@ -272,21 +304,13 @@ public class LocalRegionCache implements RegionCache {
 
             EvictionEntry that = (EvictionEntry) o;
 
-            if (key != null ? !key.equals(that.key) : that.key != null) {
-                return false;
-            }
-            if (value != null ? !value.equals(that.value) : that.value != null) {
-                return false;
-            }
-
-            return true;
+            return (key == null ? that.key == null : key.equals(that.key))
+                    && (value == null ? that.value == null : value.equals(that.value));
         }
 
         @Override
         public int hashCode() {
-            return key != null ? key.hashCode() : 0;
+            return key == null ? 0 : key.hashCode();
         }
     }
-
-
 }
