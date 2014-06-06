@@ -29,6 +29,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,6 +52,7 @@ import static org.junit.Assert.*;
 public class EntryProcessorStressTest extends HazelcastTestSupport {
 
     @Test
+    @Category(ProblematicTest.class)
     public void dropedEntryProcessorTest_withKeyOwningNodeTermination() throws ExecutionException, InterruptedException {
         String mapName = randomString();
         Config cfg = new Config();
@@ -89,7 +91,6 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
             assertTrueEventually(new AssertTask() {
                 public void run() throws Exception {
                     List<Integer> actualOrder = processorMap.get(key);
-                    System.out.println("asserting = " + actualOrder + " size " + actualOrder.size());
                     //using >= for the test, as it can be the case that an entry processor could be executed more the once
                     //when the owning node is terminated after running the entry processor (and the backup) but before the response is sent
                     assertTrue("failed to execute all entry processor tasks at iteration", actualOrder.size() >= maxTasks);
