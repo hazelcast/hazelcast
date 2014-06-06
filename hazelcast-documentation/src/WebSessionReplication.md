@@ -174,7 +174,7 @@ Hazelcast Session Replication works as P2P by default. You need to set `use-clie
 
 If the value for `deferred-write` is set as **true**, Hazelcast will cache the session locally and will update the local session on set or deletion of an attribute. Only at the end of request, it will update the distributed map with all the updates. So, it will not be updating the distributed map on each attribute update. It will only call it once at the end of request. It will be also caching it, i.e. whenever there is a read for the attribute, it will read it from the cache. If `deferred-write` is **false**, you will not have the attributes cached on any server.
 
-#### `sticky-session`
+#### sticky-session
 
 Hazelcast holds whole session attributes in a distributed map and in local HTTP session. Local session is required for fast access to data and distributed map is needed for fail-safety.
 
