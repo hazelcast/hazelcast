@@ -155,7 +155,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final ILock lock = client.getLock("lock");

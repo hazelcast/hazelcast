@@ -124,17 +124,20 @@ public final class AuthenticationRequest extends CallableClientRequest {
     private Object handleAuthenticated() {
         ClientEngineImpl clientEngine = getService();
 
-        principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
-
         if (firstConnection) {
+            principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
             reAuthLocal();
             Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
             for (MemberImpl member : members) {
                 if (!member.localMember()) {
-                    ClientReAuthOperation op = new ClientReAuthOperation(principal.getUuid());
+                    ClientReAuthOperation op = new ClientReAuthOperation(endpoint.getUuid());
+                    op.setCallerUuid(clientEngine.getLocalMember().getUuid());
                     clientEngine.sendOperation(op, member.getAddress());
                 }
             }
+        }
+        if (principal == null) {
+            principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
         }
         endpoint.authenticated(principal, firstConnection);
         clientEngine.bind(endpoint);
