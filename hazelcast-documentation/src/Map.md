@@ -37,13 +37,13 @@ public class FillMapMember {
 
 When you run this code, a node is created with a map whose entries are distributed across the node's partitions. See the below illustration. This is a single node cluster for now.
 
-![](1Node.jpg)
+![](images/1Node.jpg)
 
 ***Note:*** *Please note that some of the partitions will not contain any data entry since we have 120 objects and the partition count is 271 by default. This count is configurable and can be changed using the system property `hazelcast.partition.count`. Please see [Advanced Configuration Properties](#advanced-configuration-properties).*
 
 Now, let's create a second node which will result in a cluster with 2 nodes. This is where backups of entries are created, too. Please remember the backup partitions mentioned in [Hazelcast Overview](#hazelcast-overview) section. So, run the above code again to create the second node. Below illustration shows two nodes and how the data and its backup is distributed.
 
-![](2Nodes.jpg)
+![](images/2Nodes.jpg)
 
 As you see, when a new member joins the cluster, it takes ownership (responsibility) and load of -some- of the entire data in the cluster. Eventually, it will carry almost "(1/n `*` total-data) + backups" and reduces the load on others.
 
