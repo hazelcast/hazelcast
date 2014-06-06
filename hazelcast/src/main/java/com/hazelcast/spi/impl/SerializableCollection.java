@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 
 public final class SerializableCollection implements IdentifiedDataSerializable, Iterable<Data> {
@@ -39,10 +40,8 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
     }
 
     public SerializableCollection(Data... dataArray) {
-        this.collection = new ArrayList<Data>();
-        for (Data data : dataArray) {
-            collection.add(data);
-        }
+        this.collection = new ArrayList<Data>(dataArray.length);
+        Collections.addAll(collection, dataArray);
     }
 
     public Collection<Data> getCollection() {

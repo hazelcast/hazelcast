@@ -386,7 +386,7 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            StringBuffer builder = new StringBuffer(attribute)
+            StringBuilder builder = new StringBuilder(attribute)
                     .append(" LIKE '")
                     .append(second)
                     .append("'");
@@ -405,7 +405,7 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            StringBuffer builder = new StringBuffer(attribute)
+            StringBuilder builder = new StringBuilder(attribute)
                     .append(" ILIKE '")
                     .append(second)
                     .append("'");

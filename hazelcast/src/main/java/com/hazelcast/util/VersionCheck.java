@@ -138,7 +138,7 @@ public final class VersionCheck {
         }
         byte byteData[] = md.digest(str.getBytes());
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (byte aByteData : byteData) {
             sb.append(Integer.toString((aByteData & 0xff) + 0x100, 16).substring(1));
         }
