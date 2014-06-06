@@ -52,7 +52,7 @@ public class PartitionServiceMBean  extends HazelcastMBean<InternalPartitionServ
     @ManagedAnnotation("activePartitionCount")
     @ManagedDescription("Number of active partitions")
     public int getActivePartitionCount() {
-        InetSocketAddress address = hazelcastInstance.getCluster().getLocalMember().getInetSocketAddress();
+        InetSocketAddress address = hazelcastInstance.getCluster().getLocalMember().getSocketAddress();
         return managedObject.getMemberPartitions(new Address(address)).size();
     }
 }
