@@ -62,12 +62,6 @@ public class MapEvictionManager {
             }
         }
 
-        private boolean evictionPolicyConfigured(MapContainer mapContainer){
-            final MapConfig.EvictionPolicy evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
-            final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-            return !MapConfig.EvictionPolicy.NONE.equals(evictionPolicy) && maxSizeConfig.getSize() > 0;
-        }
-
         private void evictMap(MapContainer mapContainer) {
             final NodeEngine nodeEngine = mapService.getNodeEngine();
             final MapConfig mapConfig = mapContainer.getMapConfig();
@@ -75,6 +69,12 @@ public class MapEvictionManager {
                 final EvictRunner runner = new EvictRunner(mapConfig, i);
                 nodeEngine.getExecutionService().execute(EXECUTOR_NAME, runner);
             }
+        }
+
+        private boolean evictionPolicyConfigured(MapContainer mapContainer){
+            final MapConfig.EvictionPolicy evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
+            final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
+            return !MapConfig.EvictionPolicy.NONE.equals(evictionPolicy) && maxSizeConfig.getSize() > 0;
         }
 
         private boolean evictable(MapContainer mapContainer) {
