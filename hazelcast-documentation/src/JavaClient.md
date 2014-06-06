@@ -32,7 +32,7 @@ Name and Password parameters seen above can be used to create a secure connectio
 
 In the cases where the security established with `GroupConfig` is not enough and you want your clients connecting securely to the cluster, `ClientSecurityConfig` can be used. This configuration has a `credentials` parameter with which IP address and UID are set (please see [ClientSecurityConfig.java](https://github.com/hazelcast/hazelcast/blob/7133b2a84b4c97cf46f2584f1f608563a94b9e5b/hazelcast-client/src/main/java/com/hazelcast/client/config/ClientSecurityConfig.java)).
 
-## Configuration
+#### Java Client Configuration
 
 To configure the parameters of client-cluster connection, `ClientNetworkConfig` is used. In this class, below parameters are set:
 
@@ -46,25 +46,26 @@ To configure the parameters of client-cluster connection, `ClientNetworkConfig` 
 -	`loadBalancer`: This parameter is used to distribute operations to multiple endpoints. It is meaningful to use it when the operation in question is not a key specific one but is a cluster wide operation (e.g. calculating the size of a map, adding a listener). Default load balancer is Round Robin. The developer can write his/her own load balancer using the [LoadBalancer](https://github.com/hazelcast/hazelcast/blob/7133b2a84b4c97cf46f2584f1f608563a94b9e5b/hazelcast-client/src/main/java/com/hazelcast/client/LoadBalancer.java) interface. 
 -	`executorPoolSize`: Hazelcast has an internal executor service (different from the data structure *Executor Service*) that has threads and queues to perform internal operations such as handling responses. This parameter specifies the size of the pool of threads which perform these operations laying in the executor's queue. If not configured, this parameter has the value as **5 \* *core size of the client*** (i.e. it is 20 for a machine that has 4 cores).
 
-#Aws Config
+#### Configuration for AWS
 
-Declarative Configuration
+Below sample XML and programmatic configurations show how to configure a Java client for connecting to a Hazelcast cluster in AWS. 
+
+Declarative Configuration:
 
 ```xml
 <aws enabled="true">
-    <inside-aws>false</inside-aws>                           <!-- optional default value is false -->
+    <inside-aws>false</inside-aws>  <!-- optional default value is false -->
     <access-key>my-access-key</access-key>
     <secret-key>my-secret-key</secret-key>
-    <region>us-west-1</region>                              <!-- optional, default is us-east-1 -->
-    <host-header>ec2.amazonaws.com</host-header>              <!-- optional, default is ec2.amazonaws.com.
-                                              If set, region shouldn't be set as it will override this property -->
+    <region>us-west-1</region> <!-- optional, default is us-east-1 -->
+    <host-header>ec2.amazonaws.com</host-header> <!-- optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
     <security-group-name>hazelcast-sg</security-group-name> <!-- optional -->
-    <tag-key>type</tag-key>                                  <!-- optional -->
-    <tag-value>hz-nodes</tag-value>                          <!-- optional -->
+    <tag-key>type</tag-key> <!-- optional -->
+    <tag-value>hz-nodes</tag-value> <!-- optional -->
 </aws>
 ```
 
-ProgrammaticConfiguration
+Programmatic Configuration:
 
 ```java
 final ClientConfig clientConfig = new ClientConfig();
@@ -78,8 +79,7 @@ clientAwsConfig.setInsideAws(false)
                .setTagKey("type")
                .setTagValue("hz-nodes");
 clientConfig.getNetworkConfig().setAwsConfig(clientAwsConfig);
-
 final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 ```
 
-Note: If inside-aws parameter is not set, private addresses of nodes will always be converted to public addresses. And client will use public addresses to connect to nodes. In order to use private adresses, you can set it to true. Also note that, when connection outside from aws, setting "inside-aws" to true will cause client not to be able to reach to the nodes.
+<font color='red'>***Note:***</font> *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private adresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
