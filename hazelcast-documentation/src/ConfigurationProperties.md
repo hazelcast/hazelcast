@@ -63,8 +63,8 @@ Property Name | Default Value | Type | Description
 `hazelcast.socket.no.delay` | true | bool  |   Socket set TCP no delay.
 `hazelcast.shutdownhook.enabled` | true | bool  | Enable Hazelcast shutdownhook thread.
 `hazelcast.wait.seconds.before.join` | 5 | int  | Wait time before join operation.
-`hazelcast.max.join.seconds`|300|int|
-`hazelcast.max.join.merge.target.seconds`|20|int|
+`hazelcast.max.join.seconds`|300|int| Join timeout, maximum time to try to join before giving.
+`hazelcast.max.join.merge.target.seconds`|20|int|Split-brain merge timeout for a specific target.
 `hazelcast.max.wait.seconds.before.join` | 20 | int  |   Maximum wait time before join operation.
 `hazelcast.heartbeat.interval.seconds` | 1 | int  |   Heartbeat send interval in seconds.
 `hazelcast.max.no.heartbeat.seconds` | 300 | int  |   Max timeout of heartbeat in seconds for a node to assume it is dead.
@@ -75,8 +75,8 @@ Property Name | Default Value | Type | Description
 `hazelcast.icmp.timeout` | 1000 | int |   ICMP timeout in ms.
 `hazelcast.icmp.ttl` | 0 | int |   ICMP TTL (maximum numbers of hops to try).
 `hazelcast.initial.min.cluster.size` | 0 | int  |   Initial expected cluster size to wait before node to start completely.
-`hazelcast.initial.wait.seconds` | 0 | int  |   Inital time in seconds to wait before node to start completely.
-`hazelcast.map.replica.wait.seconds.for.scheduled.tasks`|||
+`hazelcast.initial.wait.seconds` | 0 | int  |   Initial time in seconds to wait before node to start completely.
+`hazelcast.map.replica.wait.seconds.for.scheduled.tasks`|10|int|Scheduler delay for map tasks those will be executed on backup members.
 `hazelcast.partition.count` | 271 | int  |   Total partition count.
 `hazelcast.logging.type` | jdk | enum |   Name of [logging](#logging-configuration) framework type to send logging events.
 `hazelcast.jmx` | false | bool  |   Enable [JMX](#monitoring-with-jmx) agent.
@@ -87,15 +87,15 @@ Property Name | Default Value | Type | Description
 `hazelcast.connection.monitor.max.faults` | 3 | int  |   Maximum IO error count before disconnecting from a node.
 `hazelcast.partition.migration.interval` | 0 | int |   Interval to run partition migration tasks in seconds.
 `hazelcast.partition.migration.timeout` | 300 | int  |   Timeout for partition migration tasks in seconds.
-`hazelcast.partition.migration.zip.enabled`|true|bool|
-`hazelcast.partition.table.send.interval`|15|int|
-`hazelcast.partition.backup.sync.interval`|30|int|
-`hazelcast.partitioning.strategy.class`|||
+`hazelcast.partition.migration.zip.enabled`|true|bool|Enable compression during partition migration.
+`hazelcast.partition.table.send.interval`|15|int|Interval for publishing partition table periodically to all cluster members.
+`hazelcast.partition.backup.sync.interval`|30|int|Interval for syncing backup replicas.
+`hazelcast.partitioning.strategy.class`|null|string|Class name implementing `com.hazelcast.core.PartitioningStrategy`, which defines key to partition mapping.
 `hazelcast.graceful.shutdown.max.wait` | 600 | int  |   Maximum wait seconds during graceful shutdown.
 `hazelcast.system.log.enabled` | true | bool  |   Enable system logs.
 `hazelcast.elastic.memory.enabled` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) off-heap storage.
 `hazelcast.elastic.memory.total.size` | 128 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) storage total size in MB.
 `hazelcast.elastic.memory.chunk.size` | 1 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) storage chunk size in KB.
 `hazelcast.elastic.memory.shared.storage` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) shared storage.
-`hazelcast.elastic.memory.unsafe.enabled`|false|bool|
+`hazelcast.elastic.memory.unsafe.enabled`|false|bool|Enable usage of `sun.misc.Unsafe` when allocating, reading and modifying off-heap storage.
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
