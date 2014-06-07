@@ -17,12 +17,17 @@
 package com.hazelcast.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,24 +44,21 @@ import com.hazelcast.test.annotation.QuickTest;
 public class ServiceLoaderTest {
 
     @Test
-    public void selectingSimpleSingleClassLoader()
-            throws Exception {
+    public void selectingSimpleSingleClassLoader() {
 
         List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(null);
         assertEquals(1, classLoaders.size());
     }
 
     @Test
-    public void selectingSimpleGivenClassLoader()
-            throws Exception {
+    public void selectingSimpleGivenClassLoader() {
 
         List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(new URLClassLoader(new URL[0]));
         assertEquals(2, classLoaders.size());
     }
 
     @Test
-    public void selectingSimpleDifferentThreadContextClassLoader()
-            throws Exception {
+    public void selectingSimpleDifferentThreadContextClassLoader() {
 
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
@@ -67,8 +69,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void selectingTcclAndGivenClassLoader()
-            throws Exception {
+    public void selectingTcclAndGivenClassLoader() {
 
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
@@ -79,8 +80,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void selectingSameTcclAndGivenClassLoader()
-            throws Exception {
+    public void selectingSameTcclAndGivenClassLoader() {
 
         ClassLoader same = new URLClassLoader(new URL[0]);
 
@@ -93,8 +93,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSingleClassLoader()
-            throws Exception {
+    public void loadServicesSingleClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -109,8 +108,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSimpleGivenClassLoader()
-            throws Exception {
+    public void loadServicesSimpleGivenClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -127,8 +125,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSimpleDifferentThreadContextClassLoader()
-            throws Exception {
+    public void loadServicesSimpleDifferentThreadContextClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -148,8 +145,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesTcclAndGivenClassLoader()
-            throws Exception {
+    public void loadServicesTcclAndGivenClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -171,8 +167,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSameTcclAndGivenClassLoader()
-            throws Exception {
+    public void loadServicesSameTcclAndGivenClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -194,7 +189,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesGivenClassLoaderWithChildFirstOrdering() throws Exception {
+    public void loadServicesGivenClassLoaderWithChildFirstOrdering() throws ClassNotFoundException {
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
         String className = "com.hazelcast.util.ServiceLoaderTest$ServiceLoaderTestInterface";
 
@@ -211,6 +206,49 @@ public class ServiceLoaderTest {
         }
 
         assertEquals(1, implementations.size());
+    }
+
+    @Test(expected=NoSuchElementException.class)
+    public void iteratorExhaustedTest() {
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
+        try {
+            assertTrue(iterator.hasNext());
+            assertNotNull(iterator.next());
+            assertFalse(iterator.hasNext());
+        }
+        catch (NoSuchElementException e) {
+            fail("Methods must not throw NoSuchElementException");
+        }
+        iterator.next();
+    }
+
+    @Test(expected=NoSuchElementException.class)
+    public void iteratorExhaustedTestNoPrefetching() {
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
+        try {
+            assertNotNull(iterator.next());
+        }
+        catch (NoSuchElementException e) {
+            fail("Methods must not throw NoSuchElementException");
+        }
+        iterator.next();
+    }
+
+    @Test
+    public void iteratorHasNextDoesNotAdvance() {
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
+        assertTrue(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertTrue(iterator.hasNext());
     }
 
     public static interface ServiceLoaderTestInterface {
