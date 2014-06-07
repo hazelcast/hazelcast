@@ -1148,6 +1148,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
+
     public void addIndex(final String attribute, final boolean ordered) {
         final NodeEngine nodeEngine = getNodeEngine();
         if (attribute == null) throw new IllegalArgumentException("Attribute name cannot be null");

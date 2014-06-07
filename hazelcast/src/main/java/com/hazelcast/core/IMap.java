@@ -1036,6 +1036,16 @@ public interface IMap<K, V>
      * Index attribute should either have a getter method or be public.
      * You should also make sure to add the indexes before adding
      * entries to this map.
+     * <p/>
+     * <h3>Time to Index</h3>
+     * Indexing time is executed in parallel on each partition by operation threads. The Map
+     * is not blocked during this operation.
+     *
+     * The time taken in proportional to the size of the Map and the number Members.
+     *
+     * <h3>Searches while indexes are being built</h3>
+     * Until the index finishes being created, any searches for the attribute will use a full Map scan,
+     * thus avoiding using a partially built index and returning incorrect results.
      *
      * @param attribute attribute of value
      * @param ordered   <tt>true</tt> if index should be ordered,

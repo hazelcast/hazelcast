@@ -82,6 +82,8 @@ public interface OperationService {
 
     /**
      * Invokes a set of operation on each partition.
+     * <p/>
+     * This method blocks until the operation completes.
      *
      * @param serviceName
      * @param operationFactory the factory responsible creating operations
@@ -93,6 +95,8 @@ public interface OperationService {
 
     /**
      * Invokes an set of operation on selected set of partitions
+     * * <p/>
+     * This method blocks until all operations complete.
      *
      * @param serviceName
      * @param operationFactory the factory responsible creating operations
