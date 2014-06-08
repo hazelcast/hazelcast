@@ -1,10 +1,12 @@
 package com.hazelcast.map;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -15,6 +17,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -22,6 +25,8 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.map.MapEvictionManager.SCHEDULER_INITIAL_DELAY;
 import static com.hazelcast.map.MapEvictionManager.SCHEDULER_PERIOD;
 import static com.hazelcast.map.MapEvictionManager.SCHEDULER_TIME_UNIT;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith (HazelcastParallelClassRunner.class)
@@ -33,34 +38,7 @@ public class MapEvictionManagerTest extends HazelcastTestSupport
     final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
     final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
 
-    final IMap<String, String> mapA = configureMap(randomMapName());
-    final IMap<String, String> mapB = configureMap(randomMapName());
-
-    final CountDownLatch aMapEntryAddedLatch = new CountDownLatch(1);
-    final CountDownLatch bMapEntryAddedLatch = new CountDownLatch(1);
     final CountDownLatch entryEvictedLatch = new CountDownLatch(1);
-
-    final AtomicReference<IMap> lastMapInEvictionLoop = new AtomicReference<IMap>();
-
-    final EntryAdapter<String, String> aMapEntryAddedListener = new EntryAdapter<String, String>()
-    {
-        @Override
-        public void entryAdded(EntryEvent<String, String> event)
-        {
-            lastMapInEvictionLoop.set(mapA);
-            aMapEntryAddedLatch.countDown();
-        }
-    };
-
-    final EntryAdapter<String, String> bMapEntryAddedListener = new EntryAdapter<String, String>()
-    {
-        @Override
-        public void entryAdded(EntryEvent<String, String> event)
-        {
-            lastMapInEvictionLoop.set(mapB);
-            bMapEntryAddedLatch.countDown();
-        }
-    };
 
     final EntryAdapter<String, String> entryEvictedListener = new EntryAdapter<String, String>()
     {
@@ -71,26 +49,29 @@ public class MapEvictionManagerTest extends HazelcastTestSupport
         }
     };
 
+    @Before
+    public void setUp()
+    {
+        configureMap("Alice");
+        configureMap("Bob");
+    }
+
 
     @Test
     public void testEvictionDoesNotStopAtFirstNonEvictableMap() throws InterruptedException
     {
-        //Because order of items in hash map is undefined we need to record it using add entry listener
-        mapA.addEntryListener(aMapEntryAddedListener, true);
-        mapB.addEntryListener(bMapEntryAddedListener, true);
+        final List<DistributedObject> distributedObjects = new ArrayList<DistributedObject>(
+                instance.getDistributedObjects());
+        assertThat(distributedObjects.size(), equalTo(2));
 
-        mapA.put(randomString(), randomString());
-        mapB.put(randomString(), randomString());
+        final IMap lastMapInEvictionLoop = (IMap) distributedObjects.get(1);
 
-        aMapEntryAddedLatch.await();
-        bMapEntryAddedLatch.await();
+        lastMapInEvictionLoop.addEntryListener(entryEvictedListener, true);
 
-        lastMapInEvictionLoop.get().addEntryListener(entryEvictedListener, true);
-
-        //over populating last map
+        //over populating map
         for (int i = 0; i < MAX_SIZE * 2; i++)
         {
-            lastMapInEvictionLoop.get().put(randomString(), randomString());
+            lastMapInEvictionLoop.put(randomString(), randomString());
         }
 
         entryEvictedLatch.await(SCHEDULER_INITIAL_DELAY + SCHEDULER_PERIOD * 2, SCHEDULER_TIME_UNIT);
@@ -100,7 +81,7 @@ public class MapEvictionManagerTest extends HazelcastTestSupport
             @Override
             public void run() throws Exception
             {
-                assertTrue(lastMapInEvictionLoop.get().size() < MAX_SIZE);
+                assertTrue(lastMapInEvictionLoop.size() < MAX_SIZE);
             }
         }, SCHEDULER_TIME_UNIT.toSeconds(SCHEDULER_INITIAL_DELAY + SCHEDULER_PERIOD * 2));
     }
