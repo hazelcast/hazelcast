@@ -1385,7 +1385,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         result = (Boolean) nodeEngine.toObject(response);
                     } catch (Throwable e) {
                         final Level level = node.isActive() && migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
-                        logger.log(level, "Failed migrating from " + fromMember, e);
+                        logger.log(level, "Failed migration from " + fromMember, e);
                     }
                 }
                 if (Boolean.TRUE.equals(result)) {
@@ -1495,7 +1495,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (hasNoTasks) {
                 if (migrating) {
                     migrating = false;
-                    logger.info("All migration tasks has been completed, queues are empty.");
+                    logger.info("All migration tasks have been completed, queues are empty.");
                 }
                 evictCompletedMigrations();
                 Thread.sleep(sleepTime);
