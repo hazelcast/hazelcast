@@ -248,7 +248,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         Set<Member> members = cluster.getMembers();
         List<String> list = new ArrayList<String>(members.size());
         for (Member member: members){
-            list.add(member.getInetSocketAddress().toString());
+            list.add(member.getSocketAddress().toString());
         }
         return list;
     }
