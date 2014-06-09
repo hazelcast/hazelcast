@@ -289,7 +289,7 @@ public class ExecutorServiceProxy
         boolean sync = checkSync();
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, task);
         InternalCompletableFuture future = nodeEngine.getOperationService()
-                                                     .invokeOnTarget(DistributedExecutorService.SERVICE_NAME, op, target);
+                .invokeOnTarget(DistributedExecutorService.SERVICE_NAME, op, target);
         if (sync) {
             Object response;
             try {
@@ -355,7 +355,7 @@ public class ExecutorServiceProxy
         CallableTaskOperation op = new CallableTaskOperation(name, null, task);
         OperationService operationService = nodeEngine.getOperationService();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
-                        .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
+                .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
     }
 
     @Override
@@ -379,7 +379,7 @@ public class ExecutorServiceProxy
         OperationService operationService = nodeEngine.getOperationService();
         Address address = ((MemberImpl) member).getAddress();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
-                        .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
+                .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
     }
 
     private String getRejectionMessage() {
@@ -600,7 +600,7 @@ public class ExecutorServiceProxy
             }
         }
         if (selected.isEmpty()) {
-            throw new IllegalStateException("No member selected with memberSelector[" + memberSelector + "]");
+            throw new RejectedExecutionException("No member selected with memberSelector[" + memberSelector + "]");
         }
         return selected;
     }
