@@ -1,5 +1,13 @@
 package com.hazelcast.map;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -14,15 +22,13 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.EmptyArrays;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 public class MapEvictionManager {
+
+    static long SCHEDULER_INITIAL_DELAY = 1;
+
+    static long SCHEDULER_PERIOD = 1;
+
+    static TimeUnit SCHEDULER_TIME_UNIT = TimeUnit.SECONDS;
 
     private final MapService mapService;
 
@@ -32,7 +38,7 @@ public class MapEvictionManager {
 
     public void init() {
         mapService.getNodeEngine().getExecutionService()
-                .scheduleAtFixedRate(new MapEvictTask(), 1, 1, TimeUnit.SECONDS);
+                .scheduleAtFixedRate(new MapEvictTask(), SCHEDULER_INITIAL_DELAY, SCHEDULER_PERIOD, SCHEDULER_TIME_UNIT);
     }
 
     // todo map evict task is called every second. if load is very high, is it problem? if it is, you can count map-wide puts and fire map-evict in every thousand put
@@ -49,17 +55,10 @@ public class MapEvictionManager {
         public void run() {
             final MapService mapService = MapEvictionManager.this.mapService;
             final Map<String, MapContainer> mapContainers = mapService.getMapContainers();
-            for (MapContainer mapContainer : mapContainers.values()) {
-                final MapConfig.EvictionPolicy evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
-                final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-                if (MapConfig.EvictionPolicy.NONE.equals(evictionPolicy) || maxSizeConfig.getSize() <= 0) {
-                    return;
+            for (MapContainer mapContainer : mapContainers.values()){
+                if (evictionPolicyConfigured(mapContainer) && evictable(mapContainer)){
+                    evictMap(mapContainer);
                 }
-                final boolean evictable = checkEvictable(mapContainer);
-                if (!evictable) {
-                    return;
-                }
-                evictMap(mapContainer);
             }
         }
 
@@ -72,7 +71,13 @@ public class MapEvictionManager {
             }
         }
 
-        private boolean checkEvictable(MapContainer mapContainer) {
+        private boolean evictionPolicyConfigured(MapContainer mapContainer){
+            final MapConfig.EvictionPolicy evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
+            final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
+            return !MapConfig.EvictionPolicy.NONE.equals(evictionPolicy) && maxSizeConfig.getSize() > 0;
+        }
+
+        private boolean evictable(MapContainer mapContainer) {
             final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
             final MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
             boolean result;
