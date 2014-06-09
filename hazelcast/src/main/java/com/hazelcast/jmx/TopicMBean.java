@@ -45,19 +45,19 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
 
     @ManagedAnnotation("localCreationTime")
     @ManagedDescription("the creation time of this topic on this member")
-    public long getLocalCreationTime(){
-       return managedObject.getLocalTopicStats().getCreationTime();
+    public long getLocalCreationTime() {
+        return managedObject.getLocalTopicStats().getCreationTime();
     }
 
     @ManagedAnnotation("localPublishOperationCount")
     @ManagedDescription(" the total number of published messages of this topic on this member")
-    public long getLocalPublishOperationCount(){
-      return managedObject.getLocalTopicStats().getPublishOperationCount();
+    public long getLocalPublishOperationCount() {
+        return managedObject.getLocalTopicStats().getPublishOperationCount();
     }
 
     @ManagedAnnotation("localReceiveOperationCount")
     @ManagedDescription("the total number of received messages of this topic on this member")
-    public long getLocalReceiveOperationCount(){
+    public long getLocalReceiveOperationCount() {
         return managedObject.getLocalTopicStats().getReceiveOperationCount();
     }
 

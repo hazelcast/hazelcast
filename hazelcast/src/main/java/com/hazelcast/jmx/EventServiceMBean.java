@@ -26,10 +26,12 @@ import static com.hazelcast.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.EventService")
 public class EventServiceMBean extends HazelcastMBean<EventService> {
 
+    private static final int INITIAL_CAPACITY = 3;
+
     public EventServiceMBean(HazelcastInstance hazelcastInstance, EventService eventService, ManagementService service) {
         super(eventService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.EventService"));
         properties.put("name", quote(hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));
