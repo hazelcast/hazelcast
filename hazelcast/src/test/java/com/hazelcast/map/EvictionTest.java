@@ -132,12 +132,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final IMap<String, String> map = h.getMap("testIssue585ZeroTTLShouldPreventEvictionWithSet");
         map.set("key", "value", 1, TimeUnit.SECONDS);
         map.set("key", "value2");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, map.size());
-            }
-        });
+        assertSizeEventually(0, map);
     }
 
     /*
@@ -585,12 +580,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
         //wait until eviction is complete
         assertOpenEventually(latch);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, map.size());
-            }
-        });
+        assertSizeEventually(0, map);
     }
 
     @Test(timeout = 120000)
@@ -624,12 +614,7 @@ public class EvictionTest extends HazelcastTestSupport {
                 break;
             }
         }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expectedEntryCountAfterIdleEviction, map.size());
-            }
-        });
+        assertSizeEventually(expectedEntryCountAfterIdleEviction, map);
     }
 
     @Test
@@ -700,14 +685,7 @@ public class EvictionTest extends HazelcastTestSupport {
         //wait until eviction is complete
         assertOpenEventually(latch);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(nsize, map.size());
-            }
-        });
-
-
+        assertSizeEventually(nsize, map);
     }
 
     @Test
@@ -791,11 +769,7 @@ public class EvictionTest extends HazelcastTestSupport {
         //wait until eviction is complete
         assertOpenEventually(latch);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertEquals(0, map.size());
-            }
-        });
+        assertSizeEventually(0, map);
     }
 
     /**
