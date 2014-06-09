@@ -599,6 +599,9 @@ public class ExecutorServiceProxy
                 selected.add(member);
             }
         }
+        if (selected.isEmpty()) {
+            throw new IllegalStateException("No member selected with memberSelector[" + memberSelector + "]");
+        }
         return selected;
     }
 
