@@ -136,7 +136,7 @@ public final class VersionCheck {
         if (md == null || str == null) {
             return "NULL";
         }
-        byte byteData[] = md.digest(str.getBytes());
+        byte[] byteData = md.digest(str.getBytes());
 
         StringBuilder sb = new StringBuilder();
         for (byte aByteData : byteData) {
