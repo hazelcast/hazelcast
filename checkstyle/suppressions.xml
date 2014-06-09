@@ -16,7 +16,6 @@
     <suppress checks="" files="com.hazelcast.management[\\/]"/>
     <suppress checks="" files="com.hazelcast.map[\\/]"/>
     <suppress checks="" files="com.hazelcast.spi.impl[\\/]"/>
-    <suppress checks="" files="com.hazelcast.client[\\/]"/>
 
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
     <suppress checks="" files="com.hazelcast.spring[\\/]"/>
@@ -126,6 +125,28 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.ClientPortableFactory"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.ClientEngineImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.ClientEngineImpl"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.client.spi.impl.AwsAddressTranslator"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.client.connection.nio.ClientAbstractIOSelector"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.client.connection.nio.ClientAbstractIOSelector"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.client.spi.impl.ClientCallFuture"/>
+    <suppress checks="Todo" files="com.hazelcast.client.spi.impl.ClientExecutionServiceImpl"/>
+    <suppress checks="Todo" files="com.hazelcast.client.spi.impl.ClientClusterServiceImpl"/>
+    <suppress checks="Todo" files="com.hazelcast.client.proxy.ClientConditionProxy"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.config.ClientConfig"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.connection.nio.ClientConnection"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.client.connection.nio.ClientConnection"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="MethodLength" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="ExecutableStatement" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.client.spi.impl.ClientExecutionServiceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
 
     <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
@@ -154,7 +175,7 @@
     <suppress checks="MethodLength" files="com.hazelcast.queue.QueueDataSerializerHook"/>
     <suppress checks="MethodCount" files="com.hazelcast.queue.QueueDataSerializerHook"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.queue.QueueDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.queue.QueueDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.queue.QueueDataSerializerHook"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.queue.QueueStoreWrapper"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.queue.QueueStoreWrapper"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.queue.QueueStoreWrapper"/>

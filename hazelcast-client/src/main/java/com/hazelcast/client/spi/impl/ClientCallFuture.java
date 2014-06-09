@@ -47,7 +47,13 @@ import static com.hazelcast.client.config.ClientProperties.PROP_RETRY_WAIT_TIME_
 
 public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
-    static final ILogger logger = Logger.getLogger(ClientCallFuture.class);
+    static final ILogger LOGGER = Logger.getLogger(ClientCallFuture.class);
+    private static final long SLEEP_TIME = 250;
+
+    private final int heartBeatInterval;
+    private final int retryCount;
+    private final int retryWaitTime;
+
 
     private Object response;
 
@@ -60,10 +66,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private final SerializationService serializationService;
 
     private final EventHandler handler;
-
-    public final int heartBeatInterval;
-    public final int retryCount;
-    public final int retryWaitTime;
 
     private AtomicInteger reSendCount = new AtomicInteger();
 
@@ -158,7 +160,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private void setResponse(Object response) {
         synchronized (this) {
             if (this.response != null && handler == null) {
-                logger.warning("The Future.set() method can only be called once. Request: " + request
+                LOGGER.warning("The Future.set() method can only be called once. Request: " + request
                         + ", current response: " + this.response + ", new response: " + response);
                 return;
             }
@@ -274,7 +276,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
         private void sleep() {
             try {
-                Thread.sleep(250);
+                Thread.sleep(SLEEP_TIME);
             } catch (InterruptedException ignored) {
             }
         }
