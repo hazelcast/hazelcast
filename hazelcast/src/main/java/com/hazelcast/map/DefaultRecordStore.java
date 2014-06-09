@@ -42,6 +42,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.AbstractMap;
@@ -1370,7 +1371,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private long getNow() {
-        return MapService.getNow();
+        return Clock.currentTimeMillis();
     }
 
     private void increaseRecordEvictionCriteriaNumber(Record record, MapConfig.EvictionPolicy evictionPolicy) {

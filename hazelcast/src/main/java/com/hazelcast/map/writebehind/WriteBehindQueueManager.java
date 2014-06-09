@@ -32,6 +32,7 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.ExecutorType;
 
 import java.util.ArrayList;
@@ -207,7 +208,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
             this.mapService = mapService;
             this.mapStoreManager = mapStoreManager;
             this.backupRunIntervalTime = getReplicaWaitTime();
-            this.lastRunTime = MapService.getNow();
+            this.lastRunTime = Clock.currentTimeMillis();
         }
 
         private long getReplicaWaitTime() {
@@ -218,7 +219,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
         @Override
         public void run() {
             final MapService mapService = this.mapService;
-            final long now = MapService.getNow();
+            final long now = Clock.currentTimeMillis();
             final NodeEngine nodeEngine = mapService.getNodeEngine();
             final ClusterService clusterService = nodeEngine.getClusterService();
             final InternalPartitionService partitionService = nodeEngine.getPartitionService();
