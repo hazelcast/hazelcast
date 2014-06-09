@@ -73,7 +73,7 @@ class ClusterListenerThread extends Thread {
             try {
                 if (conn == null) {
                     try {
-                        conn = pickConnection();
+                        conn = connectToOne();
                     } catch (Exception e) {
                         LOGGER.severe("Error while connecting to cluster!", e);
                         client.getLifecycleService().shutdown();
@@ -111,7 +111,7 @@ class ClusterListenerThread extends Thread {
         return (ClientInvocationServiceImpl) client.getInvocationService();
     }
 
-    protected ClientConnection pickConnection() throws Exception {
+    private Collection<InetSocketAddress> getSocketAddresses() throws Exception {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
         if (!members.isEmpty()) {
             for (MemberImpl member : members) {
@@ -124,7 +124,7 @@ class ClusterListenerThread extends Thread {
             socketAddresses.addAll(addressProvider.loadAddresses());
         }
 
-        return connectToOne(socketAddresses);
+        return socketAddresses;
     }
 
     private void loadInitialMemberList() throws Exception {
@@ -224,7 +224,7 @@ class ClusterListenerThread extends Thread {
         }
     }
 
-    private ClientConnection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
+    private ClientConnection connectToOne() throws Exception {
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
@@ -232,6 +232,7 @@ class ClusterListenerThread extends Thread {
         Throwable lastError = null;
         while (true) {
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
+            final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
                 try {
