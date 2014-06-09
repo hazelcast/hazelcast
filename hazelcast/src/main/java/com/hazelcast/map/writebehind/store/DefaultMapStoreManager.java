@@ -70,10 +70,11 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
     }
 
     @Override
-    public void process(Collection<DelayedEntry> delayedEntries, Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
+    public Map<Integer, Collection<DelayedEntry>> process(Collection<DelayedEntry> delayedEntries) {
         if (delayedEntries == null || delayedEntries.isEmpty()) {
-            return;
+            return Collections.emptyMap();
         }
+        final Map<Integer, Collection<DelayedEntry>> failsPerPartition = new HashMap<Integer, Collection<DelayedEntry>>();
         final List<DelayedEntry> entriesToProcess = new ArrayList<DelayedEntry>();
         StoreOperationType operationType = null;
         StoreOperationType previousOperationType;
@@ -92,9 +93,10 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
             }
             entriesToProcess.add(entry);
         }
-        final Collection<DelayedEntry> faileds = callHandler(entriesToProcess, operationType);
-        addToFails(faileds, failsPerPartition);
+        final Collection<DelayedEntry> failures = callHandler(entriesToProcess, operationType);
+        addToFails(failures, failsPerPartition);
         entriesToProcess.clear();
+        return failsPerPartition;
     }
 
     private void addToFails(Collection<DelayedEntry> fails, Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
@@ -168,7 +170,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
     }
 
     /**
-     * @param entry
+     * @param entry delayed entry to be stored.
      * @return failed entry list if any.
      */
     private Collection<DelayedEntry> callSingleStoreWithListeners(final DelayedEntry entry,
@@ -208,7 +210,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
     }
 
     /**
-     * @param batchMap
+     * @param batchMap contains batched delayed entries.
      * @return failed entry list if any.
      */
     private Collection<DelayedEntry> callBatchStoreWithListeners(final Map<Object, DelayedEntry> batchMap,

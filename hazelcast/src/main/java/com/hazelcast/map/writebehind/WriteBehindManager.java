@@ -24,6 +24,11 @@ import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Main contract for write behind managers.
+ * <p/>
+ * Write behind queue(WBQ) manager which is used by
+ * {@link com.hazelcast.map.MapContainer} to control
+ * write behind queues. Provides co-operation between
+ * WBQ and {@link com.hazelcast.map.writebehind.store.MapStoreManager}
  */
 public interface WriteBehindManager {
 
@@ -37,5 +42,6 @@ public interface WriteBehindManager {
 
     ScheduledExecutorService getScheduler();
 
+    long getLastRunTime();
 }
 

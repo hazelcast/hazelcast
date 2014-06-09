@@ -223,6 +223,7 @@ public class ReplicatedMapTest
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testAddTtlBinaryDelay0()
             throws Exception {
 

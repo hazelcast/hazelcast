@@ -98,6 +98,8 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
     public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = "hazelcast.elastic.memory.unsafe.enabled";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
+    public static final String PROP_MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE = "hazelcast.max.per.node.size.of.write.behind.queue";
+
 
     /**
      * This property will only be used temporary until we have exposed the hosted management center to the public.
@@ -233,8 +235,9 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
+    public final GroupProperty MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE;
+
     /**
-     *
      * @param config
      */
     public GroupProperties(Config config) {
@@ -313,6 +316,8 @@ public class GroupProperties {
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
         ELASTIC_MEMORY_UNSAFE_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_UNSAFE_ENABLED, "false");
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
+        MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE
+                = new GroupProperty(config, PROP_MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE, "50000");
     }
 
     public static class GroupProperty {

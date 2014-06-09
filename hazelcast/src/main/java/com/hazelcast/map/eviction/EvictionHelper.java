@@ -112,8 +112,7 @@ public final class EvictionHelper {
         final int evictableBaseIndex = index == 0 ? index : Math.min(evictableSize, index - 1);
         final long criteriaValue = criterias[evictableBaseIndex];
         int evictedRecordCounter = 0;
-        for (final Map.Entry<Data, Record> entry : entries.entrySet()) {
-            final Record record = entry.getValue();
+        for (final Record record : entries.values()) {
             final long value = getEvictionCriteriaValue(record, evictionPolicy);
             if (value <= criteriaValue) {
                 final Data tmpKey = record.getKey();
@@ -133,7 +132,6 @@ public final class EvictionHelper {
             }
         }
     }
-
 
     public static void fireEvent(Data key, Object value, String mapName, MapService mapService) {
         final NodeEngine nodeEngine = mapService.getNodeEngine();

@@ -18,14 +18,10 @@ package com.hazelcast.map.eviction;
 
 import com.hazelcast.map.record.Record;
 
-import java.io.PrintStream;
-
 /**
  * AbstractReachabilityHandler.
  */
 abstract class AbstractReachabilityHandler implements ReachabilityHandler<Record> {
-
-    private static final boolean DEBUG = false;
 
     protected ReachabilityHandler<Record> successorHandler;
 
@@ -56,13 +52,6 @@ abstract class AbstractReachabilityHandler implements ReachabilityHandler<Record
     @Override
     public void resetHandler() {
         successorHandler = null;
-    }
-
-    protected static final PrintStream log(String msg, Object... args) {
-        if (!DEBUG) {
-            return null;
-        }
-        return System.out.printf(msg + "\n", args);
     }
 
 }

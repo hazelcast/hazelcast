@@ -3,6 +3,7 @@ package com.hazelcast.map.writebehind;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A bounded queue which throws {@link ReachedMaxSizeException} when it reaches max size.
@@ -12,37 +13,63 @@ import java.util.List;
 class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
 
     /**
-     * upper bound which is used to provide back-pressure.
+     * Per node write behind queue item counter.
      */
-    private static final int DEFAULT_MAX_SIZE = 2048;
+    private final AtomicInteger writeBehindQueueItemCounter;
 
+    /**
+     * Allowed max size per node which is used to provide back-pressure.
+     */
     private final int maxSize;
 
-    BoundedArrayWriteBehindQueue() {
-        this(DEFAULT_MAX_SIZE);
+    BoundedArrayWriteBehindQueue(int maxSize, AtomicInteger writeBehindQueueItemCounter) {
+        super();
+        this.maxSize = maxSize;
+        this.writeBehindQueueItemCounter = writeBehindQueueItemCounter;
     }
 
-    BoundedArrayWriteBehindQueue(List<T> list, int maxSize) {
+    BoundedArrayWriteBehindQueue(List<T> list, int maxSize, AtomicInteger writeBehindQueueItemCounter) {
         super(list);
         this.maxSize = maxSize;
+        this.writeBehindQueueItemCounter = writeBehindQueueItemCounter;
     }
-
-    BoundedArrayWriteBehindQueue(int maxSize) {
-        super();
-        if (maxSize < 1) {
-            throw new IllegalArgumentException("Queue max size should be greater than 0 but found [" + maxSize + "]");
-        }
-        this.maxSize = maxSize;
-    }
-
 
     @Override
     public boolean offer(T t) {
-        final int currentSize = size();
-        if (hasReachedMaxSize(currentSize)) {
-            throw new ReachedMaxSizeException("Queue already reached max capacity [" + maxSize + "]");
+        final int perNodeMaxSize = getPerNodeMaxSize();
+        if (hasReachedMaxSize(perNodeMaxSize)) {
+            throw new ReachedMaxSizeException("Queue already reached per node max capacity [" + maxSize + "]");
         }
+        incrementPerNodeMaxSize();
         return super.offer(t);
+    }
+
+    @Override
+    public void removeFirst() {
+        super.removeFirst();
+        decrementPerNodeMaxSize();
+    }
+
+    @Override
+    public T remove(int index) {
+        final T removed = super.remove(index);
+        decrementPerNodeMaxSize();
+        return removed;
+    }
+
+    @Override
+    public List<T> removeAll() {
+        final List<T> removes = super.removeAll();
+        final int size = removes.size();
+        decrementPerNodeMaxSize(size);
+        return removes;
+    }
+
+    @Override
+    public void clear() {
+        final int size = size();
+        super.clear();
+        decrementPerNodeMaxSize(size);
     }
 
     @Override
@@ -50,7 +77,7 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
         if (list == null || list.isEmpty()) {
             return WriteBehindQueues.emptyWriteBehindQueue();
         }
-        return new BoundedArrayWriteBehindQueue<T>(new ArrayList<T>(list), maxSize);
+        return new BoundedArrayWriteBehindQueue<T>(new ArrayList<T>(list), maxSize, writeBehindQueueItemCounter);
     }
 
     @Override
@@ -58,12 +85,14 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
         if (collection == null || collection.isEmpty()) {
             return;
         }
-        final int currentSize = size();
-        final int desiredSize = currentSize + collection.size();
+        final int perNodeMaxSize = getPerNodeMaxSize();
+        final int size = collection.size();
+        final int desiredSize = perNodeMaxSize + size;
         if (hasReachedMaxSize(desiredSize)) {
-            throw new ReachedMaxSizeException("Remaining empty slots are not appropriate for this collection."
-                    + " Remaining = [" + (maxSize - currentSize) + "]");
+            throw new ReachedMaxSizeException("Remaining per node space is not enough for this collection."
+                    + " Remaining = [" + (maxSize - perNodeMaxSize) + "]");
         }
+        incrementPerNodeMaxSize(size);
         super.addFront(collection);
     }
 
@@ -72,16 +101,38 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
         if (collection == null || collection.isEmpty()) {
             return;
         }
-        final int currentSize = size();
-        final int desiredSize = currentSize + collection.size();
+        final int perNodeMaxSize = getPerNodeMaxSize();
+        final int size = collection.size();
+        final int desiredSize = perNodeMaxSize + size;
         if (hasReachedMaxSize(desiredSize)) {
-            throw new ReachedMaxSizeException("Remaining empty slots are not appropriate for this collection."
-                    + " Remaining = [" + (maxSize - currentSize) + "]");
+            throw new ReachedMaxSizeException("Remaining per node space is not enough for this collection."
+                    + " Remaining = [" + (maxSize - perNodeMaxSize) + "]");
         }
+        incrementPerNodeMaxSize(size);
         super.addEnd(collection);
     }
 
     private boolean hasReachedMaxSize(int size) {
         return size >= maxSize;
+    }
+
+    private int getPerNodeMaxSize() {
+        return writeBehindQueueItemCounter.intValue();
+    }
+
+    private void incrementPerNodeMaxSize() {
+        writeBehindQueueItemCounter.incrementAndGet();
+    }
+
+    private void incrementPerNodeMaxSize(int count) {
+        writeBehindQueueItemCounter.addAndGet(count);
+    }
+
+    private void decrementPerNodeMaxSize() {
+        writeBehindQueueItemCounter.decrementAndGet();
+    }
+
+    private void decrementPerNodeMaxSize(int size) {
+        writeBehindQueueItemCounter.addAndGet(-size);
     }
 }

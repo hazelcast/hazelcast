@@ -75,6 +75,11 @@ public final class WriteBehindManagers {
         }
 
         @Override
+        public long getLastRunTime() {
+            return 0;
+        }
+
+        @Override
         public Collection<Data> flush(WriteBehindQueue queue) {
             return Collections.emptyList();
         }
