@@ -1,18 +1,17 @@
 package com.hazelcast.management;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.InternalPartitionService;
-import java.io.IOException;
 import java.net.InetSocketAddress;
+
+import static com.hazelcast.util.JsonUtil.getInt;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.PartitionServiceMBean}.
  */
-public class SerializablePartitionServiceBean implements DataSerializable {
+public class SerializablePartitionServiceBean implements JsonSerializable {
 
     private int partitionCount;
     private int activePartitionCount;
@@ -44,14 +43,16 @@ public class SerializablePartitionServiceBean implements DataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(partitionCount);
-        out.writeInt(activePartitionCount);
+    public JsonObject toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("partitionCount", partitionCount);
+        root.add("activePartitionCount", activePartitionCount);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        partitionCount = in.readInt();
-        activePartitionCount = in.readInt();
+    public void fromJson(JsonObject json) {
+        partitionCount = getInt(json, "partitionCount", -1);
+        activePartitionCount = getInt(json, "activePartitionCount", -1);
     }
 }

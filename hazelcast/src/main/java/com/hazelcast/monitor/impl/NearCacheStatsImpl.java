@@ -1,12 +1,14 @@
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.JsonUtil.getLong;
 
 public class NearCacheStatsImpl
         implements NearCacheStats {
@@ -15,7 +17,6 @@ public class NearCacheStatsImpl
             .newUpdater(NearCacheStatsImpl.class, "hits");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> MISSES_UPDATER = AtomicLongFieldUpdater
             .newUpdater(NearCacheStatsImpl.class, "misses");
-
     private long ownedEntryCount;
     private long ownedEntryMemoryCost;
     private long creationTime;
@@ -86,6 +87,7 @@ public class NearCacheStatsImpl
         out.writeLong(ownedEntryMemoryCost);
         out.writeLong(hits);
         out.writeLong(misses);
+        out.writeLong(creationTime);
     }
 
     @Override
@@ -95,6 +97,27 @@ public class NearCacheStatsImpl
         this.ownedEntryMemoryCost = in.readLong();
         HITS_UPDATER.set(this, in.readLong());
         MISSES_UPDATER.set(this, in.readLong());
+        this.creationTime = in.readLong();
+    }
+
+    @Override
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("ownedEntryCount", ownedEntryCount);
+        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
+        root.add("creationTime", creationTime);
+        root.add("hits", hits);
+        root.add("misses", misses);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
+        ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
+        creationTime = getLong(json, "creationTime", -1L);
+        HITS_UPDATER.set(this, getLong(json, "hits", -1L));
+        MISSES_UPDATER.set(this, getLong(json, "misses", -1L));
     }
 
     @Override
