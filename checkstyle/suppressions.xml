@@ -22,7 +22,6 @@
     <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
     <suppress checks="" files="com.hazelcast.spring[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
-    <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="" files="com.hazelcast.wm[\\/]"/>
 
     <suppress checks="" files="com.hazelcast.web.WebFilter"/>
