@@ -26,11 +26,13 @@ import static com.hazelcast.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.OperationService")
 public class OperationServiceMBean extends HazelcastMBean<OperationService> {
 
+    private static final int INITIAL_CAPACITY = 3;
+
     public OperationServiceMBean(HazelcastInstance hazelcastInstance, OperationService operationService,
                                  ManagementService service) {
         super(operationService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.OperationService"));
         properties.put("name", quote("operationService" + hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));
