@@ -592,7 +592,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             }
         }
         if (selected.isEmpty()) {
-            throw new IllegalStateException("No member selected with memberSelector[" + memberSelector + "]");
+            throw new RejectedExecutionException("No member selected with memberSelector[" + memberSelector + "]");
         }
         return selected;
     }

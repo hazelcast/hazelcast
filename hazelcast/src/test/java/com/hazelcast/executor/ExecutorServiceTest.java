@@ -93,7 +93,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         return instance.getExecutorService(name);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RejectedExecutionException.class)
     public void testEmptyMemberSelector() {
         final HazelcastInstance instance = createHazelcastInstance();
         final String name = randomString();
