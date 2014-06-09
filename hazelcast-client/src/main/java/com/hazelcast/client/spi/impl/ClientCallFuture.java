@@ -74,13 +74,13 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
 
     public ClientCallFuture(HazelcastClient client, ClientRequest request, EventHandler handler) {
-        int interval = client.clientProperties.HEARTBEAT_INTERVAL.getInteger();
+        int interval = client.clientProperties.heartbeatInterval.getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
 
-        int retry = client.clientProperties.RETRY_COUNT.getInteger();
+        int retry = client.clientProperties.retryCount.getInteger();
         this.retryCount = retry > 0 ? retry : Integer.parseInt(PROP_RETRY_COUNT_DEFAULT);
 
-        int waitTime = client.clientProperties.RETRY_WAIT_TIME.getInteger();
+        int waitTime = client.clientProperties.retryWaitTime.getInteger();
         this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_RETRY_WAIT_TIME_DEFAULT);
 
 

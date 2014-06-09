@@ -41,13 +41,14 @@ class ClusterListenerThread extends Thread {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerThread.class);
     private static final int SLEEP_TIME = 1000;
+    protected final List<MemberImpl> members = new LinkedList<MemberImpl>();
+    protected ClientClusterServiceImpl clusterService;
     private volatile ClientConnection conn;
     private final CountDownLatch latch = new CountDownLatch(1);
     private final Collection<AddressProvider> addressProviders;
-    protected final List<MemberImpl> members = new LinkedList<MemberImpl>();
     private HazelcastClient client;
     private ClientConnectionManagerImpl connectionManager;
-    protected ClientClusterServiceImpl clusterService;
+
 
     public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
         super(group, name);

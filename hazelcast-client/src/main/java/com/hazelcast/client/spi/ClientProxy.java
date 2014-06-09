@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public abstract class ClientProxy implements DistributedObject {
 
-    private final static AtomicReferenceFieldUpdater<ClientProxy, ClientContext> CONTEXT_UPDATER =
+    private static final AtomicReferenceFieldUpdater<ClientProxy, ClientContext> CONTEXT_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(ClientProxy.class, ClientContext.class, "context");
 
     protected final String instanceName;

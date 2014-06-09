@@ -86,7 +86,8 @@ public final class ProxyManager {
 
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
-    private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
+    private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies
+            = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
@@ -270,9 +271,9 @@ public final class ProxyManager {
                 }
             }
             if (proxy instanceof Throwable) {
-                throw ExceptionUtil.rethrow((Throwable)proxy);
+                throw ExceptionUtil.rethrow((Throwable) proxy);
             }
-            return (ClientProxy)proxy;
+            return (ClientProxy) proxy;
         }
 
         void set(Object o) {

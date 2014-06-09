@@ -154,13 +154,13 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             c = new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
         }
 
-        int timeout = client.clientProperties.CONNECTION_TIMEOUT.getInteger();
+        int timeout = client.clientProperties.clientProperty.getInteger();
         this.connectionTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_CONNECTION_TIMEOUT_DEFAULT);
 
-        int interval = client.clientProperties.HEARTBEAT_INTERVAL.getInteger();
+        int interval = client.clientProperties.heartbeatInterval.getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
 
-        int failedHeartbeat = client.clientProperties.MAX_FAILED_HEARTBEAT_COUNT.getInteger();
+        int failedHeartbeat = client.clientProperties.maxFailedHeartbeatCount.getInteger();
         this.maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat
                 : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
 
