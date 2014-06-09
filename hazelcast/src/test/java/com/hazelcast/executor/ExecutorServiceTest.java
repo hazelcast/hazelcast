@@ -26,6 +26,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -90,6 +91,20 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         config.addExecutorConfig(new ExecutorConfig(name, poolSize));
         final HazelcastInstance instance = createHazelcastInstance(config);
         return instance.getExecutorService(name);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testEmptyMemberSelector() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        final String name = randomString();
+        final IExecutorService executorService = instance.getExecutorService(name);
+        HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
+        executorService.execute(task, new MemberSelector() {
+            @Override
+            public boolean select(final Member member) {
+                return false;
+            }
+        });
     }
 
     @Test
