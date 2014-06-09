@@ -28,19 +28,19 @@ public class CountDownLatchMBean extends HazelcastMBean<ICountDownLatch> {
 
     @ManagedAnnotation("name")
     @ManagedDescription("")
-    public String name(){
+    public String name() {
         return managedObject.getName();
     }
 
     @ManagedAnnotation("count")
     @ManagedDescription("Current Count")
-    public int getCount(){
+    public int getCount() {
         return managedObject.getCount();
     }
 
     @ManagedAnnotation(value = "countDown", operation = true)
     @ManagedDescription("perform a countdown operation")
-    public void countDown(){
+    public void countDown() {
         managedObject.countDown();
     }
 

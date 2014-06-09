@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,7 @@ public class AtomicLongMBean extends HazelcastMBean<IAtomicLong> {
 
     public AtomicLongMBean(IAtomicLong managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("IAtomicLong",managedObject.getName());
+        objectName = service.createObjectName("IAtomicLong", managedObject.getName());
     }
 
     @ManagedAnnotation("name")
@@ -76,7 +76,7 @@ public class AtomicLongMBean extends HazelcastMBean<IAtomicLong> {
 
     @ManagedAnnotation(value = "getAndSet", operation = true)
     @ManagedDescription("get the current value then set")
-    public long  getAndSet(long value) {
+    public long getAndSet(long value) {
         return managedObject.getAndSet(value);
     }
 

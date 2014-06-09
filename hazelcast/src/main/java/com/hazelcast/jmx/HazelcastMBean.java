@@ -16,7 +16,21 @@
 
 package com.hazelcast.jmx;
 
-import javax.management.*;
+import javax.management.Attribute;
+import javax.management.DynamicMBean;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import javax.management.AttributeNotFoundException;
+import javax.management.MBeanRegistration;
+import javax.management.MBeanException;
+import javax.management.ReflectionException;
+import javax.management.MalformedObjectNameException;
+import javax.management.MBeanInfo;
+import javax.management.AttributeList;
+import javax.management.InvalidAttributeValueException;
+import javax.management.MBeanAttributeInfo;
+import javax.management.IntrospectionException;
+import javax.management.MBeanOperationInfo;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -37,7 +51,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         this.service = service;
     }
 
-    public void register(HazelcastMBean mbean){
+    public void register(HazelcastMBean mbean) {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {
             mbs.registerMBean(mbean, mbean.objectName);
@@ -48,26 +62,26 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
 
     private void scan() throws Exception {
         ManagedDescription descAnn = getClass().getAnnotation(ManagedDescription.class);
-        if (descAnn != null){
+        if (descAnn != null) {
             description = descAnn.value();
         }
 
-        for (Method method: getClass().getMethods()){
+        for (Method method : getClass().getMethods()) {
 
-            if (method.isAnnotationPresent(ManagedAnnotation.class)){
+            if (method.isAnnotationPresent(ManagedAnnotation.class)) {
                 ManagedAnnotation ann = method.getAnnotation(ManagedAnnotation.class);
                 String name = ann.value();
-                if (name.isEmpty()){
+                if (name.isEmpty()) {
                     throw new IllegalArgumentException("Name cannot be empty!");
                 }
                 boolean operation = ann.operation();
                 HashMap<String, BeanInfo> map = operation ? operationMap : attributeMap;
-                if (map.containsKey(name)){
+                if (map.containsKey(name)) {
                     throw new IllegalArgumentException("Duplicate name: " + name);
                 }
                 descAnn = method.getAnnotation(ManagedDescription.class);
                 String desc = null;
-                if (descAnn != null){
+                if (descAnn != null) {
                     desc = descAnn.value();
                 }
                 map.put(name, new BeanInfo(name, desc, method));
@@ -78,8 +92,9 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
     @Override
     public Object getAttribute(String attribute)
             throws AttributeNotFoundException, MBeanException, ReflectionException {
-        if (attribute == null || attribute.length() == 0)
+        if (attribute == null || attribute.length() == 0) {
             throw new NullPointerException("Invalid null attribute requested");
+        }
         BeanInfo info = attributeMap.get(attribute);
         try {
             return info.method.invoke(this);
@@ -88,11 +103,11 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         }
     }
 
-    public void setObjectName(Hashtable<String,String> properties){
+    public void setObjectName(Hashtable<String, String> properties) {
         try {
             objectName = new ObjectName(ManagementService.DOMAIN, properties);
         } catch (MalformedObjectNameException e) {
-            throw new IllegalArgumentException("Failed to create an ObjectName",e);
+            throw new IllegalArgumentException("Failed to create an ObjectName", e);
         }
     }
 
@@ -123,11 +138,11 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
     @Override
     public Object invoke(String actionName, Object[] params, String[] signature)
             throws MBeanException, ReflectionException {
-        if (actionName == null || actionName.isEmpty()){
+        if (actionName == null || actionName.isEmpty()) {
             throw new IllegalArgumentException("Empty actionName");
         }
         BeanInfo info = operationMap.get(actionName);
-        if (info == null){
+        if (info == null) {
             throw new UnsupportedOperationException("Operation: " + actionName + " not registered");
         }
         try {
@@ -143,19 +158,19 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         return new MBeanInfo(className, description, attributeInfos(), null, operationInfos(), null);
     }
 
-    private MBeanAttributeInfo[] attributeInfos(){
+    private MBeanAttributeInfo[] attributeInfos() {
         MBeanAttributeInfo[] array = new MBeanAttributeInfo[attributeMap.size()];
         int i = 0;
-        for (BeanInfo beanInfo: attributeMap.values()){
+        for (BeanInfo beanInfo : attributeMap.values()) {
             array[i++] = beanInfo.getAttributeInfo();
         }
         return array;
     }
 
-    private MBeanOperationInfo[] operationInfos(){
+    private MBeanOperationInfo[] operationInfos() {
         MBeanOperationInfo[] array = new MBeanOperationInfo[operationMap.size()];
         int i = 0;
-        for (BeanInfo beanInfo: operationMap.values()){
+        for (BeanInfo beanInfo : operationMap.values()) {
             array[i++] = beanInfo.getOperationInfo();
         }
         return array;
@@ -167,7 +182,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         final String description;
         transient Method method;
 
-        public BeanInfo(String name, String description, Method method){
+        public BeanInfo(String name, String description, Method method) {
             this.name = name;
             this.description = description;
             this.method = method;
@@ -181,7 +196,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
             }
         }
 
-        public MBeanOperationInfo getOperationInfo(){
+        public MBeanOperationInfo getOperationInfo() {
             return new MBeanOperationInfo(description, method);
         }
     }
