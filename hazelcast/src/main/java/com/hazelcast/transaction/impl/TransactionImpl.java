@@ -167,7 +167,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
         //init caller thread
-        if(threadId == null){
+        if (threadId == null) {
             threadId = Thread.currentThread().getId();
             setThreadFlag(Boolean.TRUE);
         }
