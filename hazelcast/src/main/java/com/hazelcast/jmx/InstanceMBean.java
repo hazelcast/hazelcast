@@ -37,6 +37,7 @@ import static com.hazelcast.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance")
 public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
+    private static final int INITIAL_CAPACITY = 3;
     final Config config;
     final Cluster cluster;
     private final NodeMBean nodeMBean;
@@ -57,7 +58,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     protected InstanceMBean(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService) {
         super(hazelcastInstance, managementService);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance"));
         properties.put("instance", quote(hazelcastInstance.getName()));
         properties.put("name", quote(hazelcastInstance.getName()));
@@ -85,7 +86,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         proxyServiceMBean = new ProxyServiceMBean(hazelcastInstance, node.nodeEngine.getProxyService(), service);
         register(proxyServiceMBean);
 
-        partitionServiceMBean = new PartitionServiceMBean(hazelcastInstance, node.partitionService,service);
+        partitionServiceMBean = new PartitionServiceMBean(hazelcastInstance, node.partitionService, service);
         register(partitionServiceMBean);
 
         clientEngineMBean = new ClientEngineMBean(hazelcastInstance, node.clientEngine, service);
@@ -176,7 +177,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         return nodeMBean;
     }
 
-    public HazelcastInstance getHazelcastInstance(){
+    public HazelcastInstance getHazelcastInstance() {
         return managedObject;
     }
 
@@ -220,34 +221,34 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
     @ManagedAnnotation("groupName")
     @ManagedDescription("Group Name")
-    public String getGroupName(){
+    public String getGroupName() {
         return config.getGroupConfig().getName();
     }
 
     @ManagedAnnotation("port")
     @ManagedDescription("Network Port")
-    public int getPort(){
+    public int getPort() {
         return config.getNetworkConfig().getPort();
     }
 
     @ManagedAnnotation("clusterTime")
     @ManagedDescription("Cluster-wide Time")
-    public long getClusterTime(){
+    public long getClusterTime() {
         return cluster.getClusterTime();
     }
 
     @ManagedAnnotation("memberCount")
     @ManagedDescription("size of the cluster")
-    public int getMemberCount(){
+    public int getMemberCount() {
         return cluster.getMembers().size();
     }
 
     @ManagedAnnotation("Members")
     @ManagedDescription("List of Members")
-    public List<String> getMembers(){
+    public List<String> getMembers() {
         Set<Member> members = cluster.getMembers();
         List<String> list = new ArrayList<String>(members.size());
-        for (Member member: members){
+        for (Member member : members) {
             list.add(member.getSocketAddress().toString());
         }
         return list;
@@ -255,13 +256,13 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
     @ManagedAnnotation("running")
     @ManagedDescription("Running state")
-    public boolean isRunning(){
+    public boolean isRunning() {
         return managedObject.getLifecycleService().isRunning();
     }
 
     @ManagedAnnotation(value = "shutdown", operation = true)
     @ManagedDescription("Shutdown the Node")
-    public void shutdown(){
+    public void shutdown() {
         managedObject.getLifecycleService().shutdown();
     }
 
