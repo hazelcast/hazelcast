@@ -11,7 +11,6 @@
 
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
 
-    <suppress checks="" files="com.hazelcast.ascii[\\/]"/>
     <suppress checks="" files="com.hazelcast.config[\\/]"/>
     <suppress checks="" files="com.hazelcast.core[\\/]"/>
     <suppress checks="" files="com.hazelcast.jmx[\\/]"/>
@@ -27,6 +26,7 @@
     <suppress checks="" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="" files="com.hazelcast.wm[\\/]"/>
 
+    <suppress checks="" files="com.hazelcast.web.WebFilter"/>
 
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
     <suppress checks="MagicNumberCheck" files="[\\/]examples[\\/]"/>
