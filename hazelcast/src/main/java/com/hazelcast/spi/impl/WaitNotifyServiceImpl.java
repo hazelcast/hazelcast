@@ -371,11 +371,13 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("WaitNotifyService{");
-        sb.append("delayQueue=" + delayQueue.size());
+        sb.append("delayQueue=");
+        sb.append(delayQueue.size());
         sb.append(" \n[");
         for (Queue<WaitingOp> ScheduledOps : mapWaitingOps.values()) {
             sb.append("\t");
-            sb.append(ScheduledOps.size() + ", ");
+            sb.append(ScheduledOps.size());
+            sb.append(", ");
         }
         sb.append("]\n}");
         return sb.toString();
