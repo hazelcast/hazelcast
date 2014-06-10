@@ -48,7 +48,6 @@ This section lists issues solved for Hazelcast 3.2.2 release.
 -	Lots of exceptions when shutting down connection https://github.com/hazelcast/hazelcast/issues/2441
 -	Migration fails when statistics are disabled https://github.com/hazelcast/hazelcast/issues/2436
 -	3.2.1 regression: nested transactions are not caught and prevented. https://github.com/hazelcast/hazelcast/issues/2404
--	Heartbeat for Java Client https://github.com/hazelcast/hazelcast/issues/2297
 -	Client proxy init synced https://github.com/hazelcast/hazelcast/pull/2376
 -	Fixes hostname matching problem when interface has wildcards https://github.com/hazelcast/hazelcast/pull/2398
 -	Fix weblogic shutdown backport https://github.com/hazelcast/hazelcast/pull/2391
