@@ -37,8 +37,14 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.test.HazelcastTestSupport.*;
-import static org.junit.Assert.*;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -477,5 +483,53 @@ public class ClientNearCacheTest {
         map.remove(key);
 
         assertFalse(map.containsKey(key));
+    }
+
+    @Test
+    public void testNearCache_clearFromRemote() {
+        final String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
+        final IMap<Integer, Integer> map = client.getMap(mapName);
+
+        final int size = 147;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+
+        h1.getMap(mapName).clear();
+
+        //near cache should be empty
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                for (int i = 0; i < size; i++) {
+                    assertNull(map.get(i));
+                }
+            }
+        });
+    }
+
+    @Test
+    public void testNearCache_clearFromClient() {
+        final String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
+        final IMap<Integer, Integer> map = client.getMap(mapName);
+
+        final int size = 147;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        //populate near cache
+        for (int i = 0; i < size; i++) {
+            map.get(i);
+        }
+
+        map.clear();
+
+        //near cache should be empty
+        for (int i = 0; i < size; i++) {
+            assertNull(map.get(i));
+        }
     }
 }
