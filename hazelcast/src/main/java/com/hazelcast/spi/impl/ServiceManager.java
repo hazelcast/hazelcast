@@ -124,6 +124,20 @@ final class ServiceManager {
         registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
         registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
+        
+        //try to init optional JCACHE
+        try {
+            final String _className="javax.cache.Caching";
+            ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+            Class _theClass = ClassLoaderUtil.loadClass(classLoader, _className);
+            if(_theClass != null){
+                final Object serviceObject = createServiceObject("com.hazelcast.cache.CacheService");
+                registerService(CacheService.SERVICE_NAME, serviceObject);
+            }
+        } catch (ClassNotFoundException e) {
+            logger.finest("javax.cache api not found.");
+        }
+
     }
 
     private void initServices(Map<String, Properties> serviceProps, Map<String, Object> serviceConfigObjects) {

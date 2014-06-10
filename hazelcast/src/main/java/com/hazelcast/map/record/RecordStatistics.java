@@ -53,6 +53,20 @@ public class RecordStatistics implements DataSerializable {
         this.expirationTime = expirationTime;
     }
 
+    /**
+     * Determines if the Cache Entry associated with this value would be expired
+     * at the specified time
+     *
+     * @param now time in milliseconds (since the Epoc)
+     * @return true if the value would be expired at the specified time
+     */
+    public static boolean isExpiredAt(long expirationTime,long now) {
+        return expirationTime > -1 && expirationTime <= now;
+    }
+    public boolean isExpiredAt(long now) {
+        return expirationTime > -1 && expirationTime <= now;
+    }
+
     public void access() {
         hits++;
     }
