@@ -157,6 +157,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return client.getSerializationService();
     }
 
+    public String addMembershipListener(MembershipListener listener) {
+        return addMembershipListenerWithInit(listener);
+    }
+
     public String addMembershipListenerWithInit(MembershipListener listener) {
         final String id = UuidUtil.buildRandomUuidString();
         listeners.put(id, listener);

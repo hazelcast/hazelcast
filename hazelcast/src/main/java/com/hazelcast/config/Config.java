@@ -60,6 +60,8 @@ public class Config {
 
     private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
+    private final Map<String, CacheConfig> cacheConfigs = new ConcurrentHashMap<String, CacheConfig>();
+
     private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
 
     private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
@@ -236,6 +238,59 @@ public class Config {
         this.mapConfigs.clear();
         this.mapConfigs.putAll(mapConfigs);
         for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+    public <K,V> CacheConfig<K,V> findCacheConfig(String name){
+        name = getBaseName(name);
+        CacheConfig<K,V> config;
+        if ((config = lookupByPattern(cacheConfigs, name)) != null){
+            return config.getAsReadOnly();
+        }
+        return this.<K,V>getCacheConfig("default").getAsReadOnly();
+    }
+
+    public <K,V> CacheConfig<K,V> getCacheConfig(String name) {
+        name = getBaseName(name);
+        CacheConfig config;
+        if ((config = lookupByPattern(cacheConfigs, name)) != null) return config;
+        CacheConfig defConfig = cacheConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new CacheConfig();
+            defConfig.setName("default");
+            addCacheConfig(defConfig);
+        }
+        config = new CacheConfig<K,V>(defConfig);
+        config.setName(name);
+        addCacheConfig(config);
+        return config;
+    }
+
+    public Config addCacheConfig(CacheConfig cacheConfig) {
+        cacheConfigs.put(cacheConfig.getName(), cacheConfig);
+        return this;
+    }
+
+    public Config removeCacheConfig(String cacheName) {
+        cacheConfigs.remove(cacheName);
+        return this;
+    }
+
+    /**
+     * @return the cacheConfigs
+     */
+    public Map<String, CacheConfig> getCacheConfigs() {
+        return cacheConfigs;
+    }
+
+    /**
+     * @param cacheConfigs the cacheConfigs to set
+     */
+    public Config setCacheConfigs(Map<String, CacheConfig> cacheConfigs) {
+        this.cacheConfigs.clear();
+        this.cacheConfigs.putAll(cacheConfigs);
+        for (final Entry<String, CacheConfig> entry : this.cacheConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

@@ -76,6 +76,7 @@
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
         <animal.sniffer.plugin.version>1.11</animal.sniffer.plugin.version>
+        <jsr107.api.version>1.0.0</jsr107.api.version>
     </properties>
     <licenses>
         <license>
@@ -760,6 +761,12 @@
     </distributionManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>${jsr107.api.version}</version>
+            <!--<scope>provided</scope>-->
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
