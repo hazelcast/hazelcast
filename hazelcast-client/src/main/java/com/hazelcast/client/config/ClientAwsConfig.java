@@ -7,7 +7,7 @@ import com.hazelcast.config.AwsConfig;
  * to connect to nodes in aws environment.
  */
 public class ClientAwsConfig extends AwsConfig {
-    private boolean insideAws = false;
+    private boolean insideAws;
 
     /**
      * If client is inside aws, it will use private ip addresses directly,

@@ -19,7 +19,7 @@ import java.util.logging.Level;
  */
 public class AwsAddressProvider implements AddressProvider {
 
-    private static final ILogger logger = Logger.getLogger(AwsAddressProvider.class);
+    private static final ILogger LOGGER = Logger.getLogger(AwsAddressProvider.class);
     private final AWSClient awsClient;
     private volatile Map<String, String> privateToPublic;
 
@@ -49,7 +49,7 @@ public class AwsAddressProvider implements AddressProvider {
         try {
             privateToPublic = awsClient.getAddresses();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
+            LOGGER.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
         }
     }
 }

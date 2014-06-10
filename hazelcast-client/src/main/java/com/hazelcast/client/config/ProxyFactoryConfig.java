@@ -48,13 +48,21 @@ public class ProxyFactoryConfig {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ProxyFactoryConfig that = (ProxyFactoryConfig) o;
 
-        if (className != null ? !className.equals(that.className) : that.className != null) return false;
-        if (service != null ? !service.equals(that.service) : that.service != null) return false;
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (service != null ? !service.equals(that.service) : that.service != null) {
+            return false;
+        }
 
         return true;
     }

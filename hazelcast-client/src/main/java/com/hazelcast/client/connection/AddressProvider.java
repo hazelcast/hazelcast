@@ -11,6 +11,6 @@ public interface AddressProvider {
     /**
      * @return Collection of InetSocketAddress
      */
-    public Collection<InetSocketAddress> loadAddresses();
+    Collection<InetSocketAddress> loadAddresses();
 
 }

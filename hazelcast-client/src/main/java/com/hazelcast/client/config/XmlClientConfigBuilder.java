@@ -51,7 +51,9 @@ import java.net.URL;
  */
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
-    private static final ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class);
+    private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
+
+    private static final int DEFAULT_VALUE = 5;
 
     private ClientConfig clientConfig;
     private InputStream in;
@@ -113,7 +115,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     private void loadDefaultConfigurationFromClasspath() {
-        logger.info("Loading 'hazelcast-client-default.xml' from classpath.");
+        LOGGER.info("Loading 'hazelcast-client-default.xml' from classpath.");
 
         in = Config.class.getClassLoader().getResourceAsStream("hazelcast-client-default.xml");
         if (in == null) {
@@ -124,11 +126,11 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     private boolean loadClientHazelcastXmlFromClasspath() {
         URL url = Config.class.getClassLoader().getResource("hazelcast-client.xml");
         if (url == null) {
-            logger.finest("Could not find 'hazelcast-client.xml' in classpath.");
+            LOGGER.finest("Could not find 'hazelcast-client.xml' in classpath.");
             return false;
         }
 
-        logger.info("Loading 'hazelcast-client.xml' from classpath.");
+        LOGGER.info("Loading 'hazelcast-client.xml' from classpath.");
 
         in = Config.class.getClassLoader().getResourceAsStream("hazelcast-client.xml");
         if (in == null) {
@@ -140,11 +142,11 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     private boolean loadFromWorkingDirectory() {
         File file = new File("hazelcast-client.xml");
         if (!file.exists()) {
-            logger.finest("Could not find 'hazelcast-client.xml' in working directory.");
+            LOGGER.finest("Could not find 'hazelcast-client.xml' in working directory.");
             return false;
         }
 
-        logger.info("Loading 'hazelcast-client.xml' from working directory.");
+        LOGGER.info("Loading 'hazelcast-client.xml' from working directory.");
         try {
             in = new FileInputStream(file);
         } catch (FileNotFoundException e) {
@@ -157,11 +159,11 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         String configSystemProperty = System.getProperty("hazelcast.client.config");
 
         if (configSystemProperty == null) {
-            logger.finest("Could not 'hazelcast.client.config' System property");
+            LOGGER.finest("Could not 'hazelcast.client.config' System property");
             return false;
         }
 
-        logger.info("Loading configuration " + configSystemProperty + " from System property 'hazelcast.client.config'");
+        LOGGER.info("Loading configuration " + configSystemProperty + " from System property 'hazelcast.client.config'");
 
         if (configSystemProperty.startsWith("classpath:")) {
             loadSystemPropertyClassPathResource(configSystemProperty);
@@ -174,7 +176,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     private void loadSystemPropertyFileResource(String configSystemProperty) {
         //it is a file.
         File configurationFile = new File(configSystemProperty);
-        logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
+        LOGGER.info("Using configuration file at " + configurationFile.getAbsolutePath());
 
         if (!configurationFile.exists()) {
             String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
@@ -192,7 +194,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         //it is a explicit configured classpath resource.
         String resource = configSystemProperty.substring("classpath:".length());
 
-        logger.info("Using classpath resource at " + resource);
+        LOGGER.info("Using classpath resource at " + resource);
 
         if (resource.isEmpty()) {
             throw new HazelcastException("classpath resource can't be empty");
@@ -339,7 +341,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 clientAwsConfig.setEnabled(checkTrue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                clientAwsConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, 5));
+                clientAwsConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE));
             }
         }
         for (Node n : new IterableNodeList(node.getChildNodes())) {

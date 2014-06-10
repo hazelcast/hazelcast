@@ -114,7 +114,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private final IOSelector outSelector;
     private final boolean smartRouting;
     private final Object ownerConnectionLock = new Object();
-    private volatile ClientConnection ownerConnection = null;
+    private volatile ClientConnection ownerConnection;
 
     private final Credentials credentials;
     private volatile ClientPrincipal principal;
@@ -154,14 +154,15 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             c = new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
         }
 
-        int timeout = client.clientProperties.CONNECTION_TIMEOUT.getInteger();
+        int timeout = client.clientProperties.clientProperty.getInteger();
         this.connectionTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_CONNECTION_TIMEOUT_DEFAULT);
 
-        int interval = client.clientProperties.HEARTBEAT_INTERVAL.getInteger();
+        int interval = client.clientProperties.heartbeatInterval.getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
 
-        int failedHeartbeat = client.clientProperties.MAX_FAILED_HEARTBEAT_COUNT.getInteger();
-        this.maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
+        int failedHeartbeat = client.clientProperties.maxFailedHeartbeatCount.getInteger();
+        this.maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat
+                : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
 
         this.smartRouting = networkConfig.isSmartRouting();
         this.executionService = client.getClientExecutionService();
@@ -419,7 +420,8 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 socketChannel.socket().connect(address.getInetSocketAddress(), connectionTimeout);
                 SocketChannelWrapper socketChannelWrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
                 final ClientConnection clientConnection = new ClientConnection(ClientConnectionManagerImpl.this, inSelector,
-                        outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper, executionService, invocationService);
+                        outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper,
+                        executionService, invocationService);
                 socketChannel.configureBlocking(true);
                 if (socketInterceptor != null) {
                     socketInterceptor.onConnect(socket);

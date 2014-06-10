@@ -9,6 +9,9 @@ import com.eclipsesource.json.JsonValue;
  */
 public final class JsonUtil {
 
+    private JsonUtil() {
+    }
+
     public static int getInt(JsonObject object, String field) {
         final JsonValue value = object.get(field);
         throwExceptionIfNull(value, field);
@@ -135,5 +138,4 @@ public final class JsonUtil {
         }
     }
 
-    private JsonUtil(){}
 }

@@ -34,6 +34,8 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
 
     private static final int TIMEOUT = 3;
 
+    private static final int WAIT_TIME = 5000;
+
     protected final ILogger logger;
 
     protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
@@ -49,7 +51,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
     protected ClientAbstractIOSelector(ThreadGroup threadGroup, String threadName) {
         super(threadGroup, threadName);
         this.logger = Logger.getLogger(getClass().getName());
-        this.waitTime = 5000;
+        this.waitTime = WAIT_TIME;
         Selector selectorTemp = null;
         try {
             selectorTemp = Selector.open();
