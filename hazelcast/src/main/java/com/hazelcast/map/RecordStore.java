@@ -65,7 +65,7 @@ public interface RecordStore {
 
     Record getRecord(Data key);
 
-    void putRecord(Data key, Record record);
+    Record putRecord(Data key, Record record);
 
     void deleteRecord(Data key);
 

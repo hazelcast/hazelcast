@@ -22,6 +22,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.PartitionIdAware;
+import com.hazelcast.mapreduce.RemoteMapReduceException;
 import com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation;
 import com.hazelcast.mapreduce.impl.operation.KeysAssignmentResult;
 import com.hazelcast.mapreduce.impl.operation.NotifyRemoteExceptionOperation;
@@ -235,6 +236,7 @@ public final class MapReduceUtil {
         Collection<MemberImpl> members = cs.getMemberList();
         List<V> results = returnsResponse ? new ArrayList<V>() : null;
 
+        List<Exception> exceptions = new ArrayList<Exception>(members.size());
         for (MemberImpl member : members) {
             try {
                 Operation operation = operationFactory.createOperation();
@@ -255,7 +257,7 @@ public final class MapReduceUtil {
                     if (returnsResponse) {
                         InvocationBuilder ib = os.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress());
 
-                        V response = (V) ib.invoke().get();
+                        V response = (V) ib.invoke().getSafely();
                         if (response != null) {
                             results.add(response);
                         }
@@ -264,8 +266,12 @@ public final class MapReduceUtil {
                     }
                 }
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                exceptions.add(e);
             }
+        }
+
+        if (exceptions.size() > 0) {
+            throw new RemoteMapReduceException("Exception on mapreduce operation", exceptions);
         }
         return results;
     }

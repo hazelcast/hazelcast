@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.2.2-SNAPSHOT</version>
+    <version>3.2.3-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>

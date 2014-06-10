@@ -156,5 +156,6 @@
     <!-- the invokeAll is so scary that Peter doesn't dare to touch it. Need get someone involved who write it-->
     <suppress checks="" files="com.hazelcast.executor.ExecutorServiceProxy"/>
 
+    <suppress checks="MagicNumber" files="com.hazelcast.util.VersionCheck"/>
     <suppress checks="ReturnCount" files="com.hazelcast.logging.Slf4jFactory"/>
 </suppressions>

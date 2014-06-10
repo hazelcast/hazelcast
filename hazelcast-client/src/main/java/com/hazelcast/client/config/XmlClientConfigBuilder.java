@@ -18,10 +18,17 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.*;
+import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -239,9 +246,9 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             } else if ("socket-options".equals(nodeName)) {
                 handleSocketOptions(child, clientNetworkConfig);
             } else if ("socket-interceptor".equals(nodeName)) {
-                handleSocketInterceptorConfig(node, clientNetworkConfig);
+                handleSocketInterceptorConfig(child, clientNetworkConfig);
             } else if ("ssl".equals(nodeName)) {
-                handleSSLConfig(node, clientNetworkConfig);
+                handleSSLConfig(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
@@ -342,25 +349,15 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     private void handleSecurity(Node node) throws Exception {
+        ClientSecurityConfig clientSecurityConfig = new ClientSecurityConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());
-            if ("login-credentials".equals(nodeName)) {
-                handleLoginCredentials(child);
+            if ("credentials".equals(nodeName)) {
+                String className = getTextContent(child);
+                clientSecurityConfig.setCredentialsClassname(className);
             }
         }
-    }
-
-    private void handleLoginCredentials(Node node) {
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials();
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(child.getNodeName());
-            if ("username".equals(nodeName)) {
-                credentials.setUsername(getTextContent(child));
-            } else if ("password".equals(nodeName)) {
-                credentials.setPassword(getTextContent(child));
-            }
-        }
-        clientConfig.setCredentials(credentials);
+        clientConfig.setSecurityConfig(clientSecurityConfig);
     }
 
 }

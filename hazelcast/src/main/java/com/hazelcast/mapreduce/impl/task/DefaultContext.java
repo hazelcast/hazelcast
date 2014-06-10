@@ -19,6 +19,8 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.Combiner;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
+import com.hazelcast.mapreduce.impl.HashMapAdapter;
+import com.hazelcast.mapreduce.impl.MapReduceUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,10 +67,13 @@ public class DefaultContext<KeyIn, ValueIn>
     }
 
     public <Chunk> Map<KeyIn, Chunk> requestChunk() {
-        Map<KeyIn, Chunk> chunkMap = new HashMap<KeyIn, Chunk>(combiners.size());
+        int mapSize = MapReduceUtil.mapSize(combiners.size());
+        Map<KeyIn, Chunk> chunkMap = new HashMapAdapter<KeyIn, Chunk>(mapSize);
         for (Map.Entry<KeyIn, Combiner<KeyIn, ValueIn, ?>> entry : combiners.entrySet()) {
             Chunk chunk = (Chunk) entry.getValue().finalizeChunk();
-            chunkMap.put(entry.getKey(), chunk);
+            if (chunk != null) {
+                chunkMap.put(entry.getKey(), chunk);
+            }
         }
         collected.set(0);
         return chunkMap;

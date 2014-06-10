@@ -65,4 +65,25 @@ public class CollectionEventFilter implements EventFilter, IdentifiedDataSeriali
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_EVENT_FILTER;
     }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CollectionEventFilter that = (CollectionEventFilter) o;
+        if (includeValue != that.includeValue) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return (includeValue ? 1 : 0);
+    }
 }

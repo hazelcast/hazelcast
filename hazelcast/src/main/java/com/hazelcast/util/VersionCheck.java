@@ -17,99 +17,147 @@
 package com.hazelcast.util;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOUtil;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.logging.Level;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Enumeration;
+import java.util.concurrent.TimeUnit;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
-public class VersionCheck {
+public final class VersionCheck {
 
-    private VersionCheck(){}
+    private static final int TIMEOUT = 1000;
+    private static final int A_INTERVAL = 5;
+    private static final int B_INTERVAL = 10;
+    private static final int C_INTERVAL = 20;
+    private static final int D_INTERVAL = 40;
+    private static final int E_INTERVAL = 60;
+    private static final int F_INTERVAL = 100;
+    private static final int G_INTERVAL = 150;
+    private static final int H_INTERVAL = 300;
+    private static final int J_INTERVAL = 600;
 
-    public static void check(final Node hazelcastNode, final String buildDate, final String version) {
+    private MessageDigest md;
+
+    public VersionCheck() {
+        try {
+            md = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException ignored) {
+        }
+    }
+
+    public void check(final Node hazelcastNode, final String version, final boolean isEnterprise) {
         if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {
             return;
         }
-        new Thread(new Runnable() {
+        hazelcastNode.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
             public void run() {
-                doCheck(hazelcastNode, buildDate, version);
+                doCheck(hazelcastNode, version, isEnterprise);
             }
-        }).start();
+        }, 0, 1, TimeUnit.DAYS);
     }
 
-    private static void doCheck(Node hazelcastNode, String buildDate, String version) {
-        ILogger logger = hazelcastNode.getLogger(VersionCheck.class.getName());
-        String urlStr = "http://www.hazelcast.com/version.jsp?version=" + version;
+    public void shutdown() {
+    }
+
+    private String convertToLetter(int size) {
+        String letter;
+        if (size < A_INTERVAL) {
+            letter = "A";
+        } else if (size < B_INTERVAL) {
+            letter = "B";
+        } else if (size < C_INTERVAL) {
+            letter = "C";
+        } else if (size < D_INTERVAL) {
+            letter = "D";
+        } else if (size < E_INTERVAL) {
+            letter = "E";
+        } else if (size < F_INTERVAL) {
+            letter = "F";
+        } else if (size < G_INTERVAL) {
+            letter = "G";
+        } else if (size < H_INTERVAL) {
+            letter = "H";
+        } else if (size < J_INTERVAL) {
+            letter = "J";
+        } else {
+            letter = "I";
+        }
+        return letter;
+
+    }
+
+    private void doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
+        final ClassLoader cl = getClass().getClassLoader();
+        String downloadId = "NULL";
+        InputStream is = null;
         try {
-            Document doc = fetchWebService(urlStr);
-            if (doc != null) {
-                org.w3c.dom.Node nodeFinal = (org.w3c.dom.Node) XPathFactory.newInstance().newXPath().evaluate("/hazelcast-version/final", doc, XPathConstants.NODE);
-                String finalVersion = nodeFinal.getAttributes().getNamedItem("version").getTextContent();
-                String finalDate = nodeFinal.getAttributes().getNamedItem("date").getTextContent();
-                org.w3c.dom.Node nodeSnapshot = (org.w3c.dom.Node) XPathFactory.newInstance().newXPath().evaluate("/hazelcast-version/snapshot", doc, XPathConstants.NODE);
-                String snapshotVersion = nodeSnapshot.getAttributes().getNamedItem("version").getTextContent();
-                String snapshotDate = nodeSnapshot.getAttributes().getNamedItem("date").getTextContent();
-                if (!version.contains("SNAPSHOT")) {
-                    // final version...check final
-                    int currentDate = Integer.parseInt(buildDate);
-                    int finalOne = Integer.parseInt(finalDate);
-                    if (currentDate < finalOne) {
-                        StringBuilder sb = new StringBuilder("Newer version of Hazelcast is available.\n");
-                        sb.append("======================================\n");
-                        sb.append("\n");
-                        sb.append("You are running " + version + "\t[" + buildDate + "]\n");
-                        sb.append("Newer version " + finalVersion + "\t[" + finalDate + "]\n");
-                        sb.append("\n");
-                        sb.append("======================================\n");
-                        logger.warning(sb.toString());
-                    }
-                } else {
-                    // snapshot
-                    int currentDate = Integer.parseInt(buildDate);
-                    int availableOne = Integer.parseInt(snapshotDate);
-                    if (currentDate < availableOne) {
-                        StringBuilder sb = new StringBuilder("Newer version of Hazelcast snapshot is available.\n");
-                        sb.append("======================================\n");
-                        sb.append("\n");
-                        sb.append("You are running " + version + "\t[" + buildDate + "]\n");
-                        sb.append("Newer version " + snapshotVersion + "\t[" + snapshotDate + "]\n");
-                        sb.append("\n");
-                        sb.append("======================================\n");
-                        logger.warning(sb.toString());
-                    }
+
+            final Enumeration<URL> resources = cl.getResources("META-INF/MANIFEST.MF");
+            while (resources.hasMoreElements()) {
+                final URL url = resources.nextElement();
+                is = url.openStream();
+                Manifest manifest = new Manifest(is);
+                final Attributes mainAttributes = manifest.getMainAttributes();
+                downloadId = mainAttributes.getValue("hazelcastDownloadId");
+                if (downloadId != null) {
+                    break;
                 }
             }
-        } catch (Throwable e) {
+        } catch (IOException ignored) {
+
+        } finally {
+            IOUtil.closeResource(is);
         }
+
+        String urlStr = "http://www.hazelcast.com/version.jsp?version=" + version
+                + "&m=" + hazelcastNode.getLocalMember().getUuid()
+                + "&e=" + isEnterprise
+                + "&l=" + toMD5String(hazelcastNode.getConfig().getLicenseKey())
+                + "&p=" + downloadId
+                + "&c=" + toMD5String(hazelcastNode.getConfig().getGroupConfig().getName())
+                + "&crsz=" + convertToLetter(hazelcastNode.getClusterService().getMembers().size())
+                + "&cssz=" + convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount());
+
+        fetchWebService(urlStr);
     }
 
-    private static Document fetchWebService(String urlStr) {
+    private String toMD5String(String str) {
+        if (md == null || str == null) {
+            return "NULL";
+        }
+        byte byteData[] = md.digest(str.getBytes());
+
+        StringBuffer sb = new StringBuffer();
+        for (byte aByteData : byteData) {
+            sb.append(Integer.toString((aByteData & 0xff) + 0x100, 16).substring(1));
+        }
+        return sb.toString();
+    }
+
+    private Document fetchWebService(String urlStr) {
         InputStream in = null;
         try {
             URL url = new URL(urlStr);
             URLConnection conn = url.openConnection();
-            conn.setConnectTimeout(1000 * 2);
-            conn.setReadTimeout(1000 * 2);
+            conn.setConnectTimeout(TIMEOUT * 2);
+            conn.setReadTimeout(TIMEOUT * 2);
             in = new BufferedInputStream(conn.getInputStream());
             final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             return builder.parse(in);
         } catch (Exception ignored) {
         } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                }
-            }
+            IOUtil.closeResource(in);
         }
         return null;
     }

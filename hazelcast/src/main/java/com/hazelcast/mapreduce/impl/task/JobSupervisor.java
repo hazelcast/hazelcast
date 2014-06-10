@@ -22,6 +22,7 @@ import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
+import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
@@ -218,8 +219,8 @@ public class JobSupervisor {
     public Map<Object, Object> getJobResults() {
         Map<Object, Object> result;
         if (configuration.getReducerFactory() != null) {
-            int mapsize = MapReduceUtil.mapSize(reducers.size());
-            result = new HashMap<Object, Object>(mapsize);
+            int mapSize = MapReduceUtil.mapSize(reducers.size());
+            result = new HashMapAdapter<Object, Object>(mapSize);
             for (Map.Entry<Object, Reducer> entry : reducers.entrySet()) {
                 result.put(entry.getKey(), entry.getValue().finalizeReduce());
             }
@@ -287,25 +288,35 @@ public class JobSupervisor {
             String jobId = configuration.getJobId();
             NodeEngine nodeEngine = configuration.getNodeEngine();
             GetResultOperationFactory operationFactory = new GetResultOperationFactory(name, jobId);
-            List<Map> results = MapReduceUtil.executeOperation(operationFactory, mapReduceService, nodeEngine, true);
 
-            boolean reducedResult = configuration.getReducerFactory() != null;
+            try {
+                List<Map> results = MapReduceUtil.executeOperation(operationFactory, mapReduceService, nodeEngine, true);
+                boolean reducedResult = configuration.getReducerFactory() != null;
 
-            if (results != null) {
-                Map<Object, Object> mergedResults = new HashMap<Object, Object>();
-                for (Map<?, ?> map : results) {
-                    for (Map.Entry entry : map.entrySet()) {
-                        collectResults(reducedResult, mergedResults, entry);
+                if (results != null) {
+                    Map<Object, Object> mergedResults = new HashMap<Object, Object>();
+                    for (Map<?, ?> map : results) {
+                        for (Map.Entry entry : map.entrySet()) {
+                            collectResults(reducedResult, mergedResults, entry);
+                        }
                     }
-                }
 
+                    // Get the initial future object to eventually set the result and cleanup
+                    TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+                    jobTracker.unregisterMapCombineTask(jobId);
+                    jobTracker.unregisterReducerTask(jobId);
+                    mapReduceService.destroyJobSupervisor(this);
+
+                    future.setResult(mergedResults);
+                }
+            } catch (Exception e) {
                 // Get the initial future object to eventually set the result and cleanup
                 TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
                 jobTracker.unregisterMapCombineTask(jobId);
                 jobTracker.unregisterReducerTask(jobId);
                 mapReduceService.destroyJobSupervisor(this);
 
-                future.setResult(mergedResults);
+                future.setResult(e);
             }
         }
     }

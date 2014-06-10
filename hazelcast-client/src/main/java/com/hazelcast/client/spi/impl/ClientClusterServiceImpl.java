@@ -90,7 +90,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
-        this.connectionManager = (ClientConnectionManagerImpl)client.getConnectionManager();
+        this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
         final ClientConfig clientConfig = getClientConfig();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
@@ -201,7 +201,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         clusterThread.shutdown();
     }
 
-    private class ClusterListenerThread extends Thread  {
+    private class ClusterListenerThread extends Thread {
 
         private ClusterListenerThread(ThreadGroup group, String name) {
             super(group, name);
@@ -220,7 +220,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 try {
                     if (conn == null) {
                         try {
-                            conn = pickConnection();
+                            conn = connectToOne();
                         } catch (Exception e) {
                             logger.severe("Error while connecting to cluster!", e);
                             client.getLifecycleService().shutdown();
@@ -254,11 +254,11 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
         }
 
-        private ClientInvocationServiceImpl getInvocationService(){
-            return (ClientInvocationServiceImpl)client.getInvocationService();
+        private ClientInvocationServiceImpl getInvocationService() {
+            return (ClientInvocationServiceImpl) client.getInvocationService();
         }
 
-        private ClientConnection pickConnection() throws Exception {
+        protected Collection<InetSocketAddress> getSocketAddresses() {
             final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
             if (!members.isEmpty()) {
                 for (MemberImpl member : members) {
@@ -267,7 +267,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 Collections.shuffle(socketAddresses);
             }
             socketAddresses.addAll(getConfigAddresses());
-            return connectToOne(socketAddresses);
+            return socketAddresses;
         }
 
         private void loadInitialMemberList() throws Exception {
@@ -390,49 +390,51 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 c.close();
             }
         }
-    }
 
-    private ClientConnection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
-        final ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
-        final int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
-        final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
-        int attempt = 0;
-        Throwable lastError = null;
-        while (true) {
-            final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
-            for (InetSocketAddress isa : socketAddresses) {
-                Address address = new Address(isa);
-                try {
-                    final ClientConnection connection = connectionManager.ownerConnection(address);
-                    fireConnectionEvent(false);
-                    return connection;
-                } catch (IOException e) {
-                    lastError = e;
-                    logger.finest("IO error during initial connection...", e);
-                } catch (AuthenticationException e) {
-                    lastError = e;
-                    logger.warning("Authentication error on " + address, e);
+        private ClientConnection connectToOne() throws Exception {
+            final ClientNetworkConfig networkConfig = getClientConfig().getNetworkConfig();
+            final int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+            final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+            int attempt = 0;
+            Throwable lastError = null;
+            while (true) {
+                final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
+                final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
+                for (InetSocketAddress isa : socketAddresses) {
+                    Address address = new Address(isa);
+                    try {
+                        final ClientConnection connection = connectionManager.ownerConnection(address);
+                        fireConnectionEvent(false);
+                        return connection;
+                    } catch (IOException e) {
+                        lastError = e;
+                        logger.finest("IO error during initial connection...", e);
+                    } catch (AuthenticationException e) {
+                        lastError = e;
+                        logger.warning("Authentication error on " + address, e);
+                    }
                 }
-            }
-            if (attempt++ >= connectionAttemptLimit) {
-                break;
-            }
-            final long remainingTime = nextTry - Clock.currentTimeMillis();
-            logger.warning(
-                    String.format("Unable to get alive cluster connection," +
-                            " try in %d ms later, attempt %d of %d.",
-                            Math.max(0, remainingTime), attempt, connectionAttemptLimit));
-
-            if (remainingTime > 0) {
-                try {
-                    Thread.sleep(remainingTime);
-                } catch (InterruptedException e) {
+                if (attempt++ >= connectionAttemptLimit) {
                     break;
                 }
+                final long remainingTime = nextTry - Clock.currentTimeMillis();
+                logger.warning(
+                        String.format("Unable to get alive cluster connection," +
+                                " try in %d ms later, attempt %d of %d.",
+                                Math.max(0, remainingTime), attempt, connectionAttemptLimit));
+
+                if (remainingTime > 0) {
+                    try {
+                        Thread.sleep(remainingTime);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
             }
+            throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
         }
-        throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
     }
+
 
     private void fireConnectionEvent(boolean disconnected) {
         final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();

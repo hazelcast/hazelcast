@@ -21,6 +21,7 @@ import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.SizeEstimator;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordReplicationInfo;
 import com.hazelcast.nio.ObjectDataInput;
@@ -88,8 +89,12 @@ public class MapReplicationOperation extends AbstractOperation {
                     Data key = recordReplicationInfo.getKey();
                     Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1, false);
                     mapService.applyRecordInfo(newRecord, mapName, recordReplicationInfo);
-                    recordStore.putRecord(key, newRecord);
-                    updateSizeEstimator(newRecord,recordStore);
+                    // put record.
+                    final Record existingRecord = recordStore.putRecord(key, newRecord);
+                    // size estimator calculations.
+                    final SizeEstimator sizeEstimator = recordStore.getSizeEstimator();
+                    updateSizeEstimator(-calculateRecordSize(existingRecord, sizeEstimator), sizeEstimator);
+                    updateSizeEstimator(calculateRecordSize(newRecord, sizeEstimator), sizeEstimator);
                 }
             }
         }
@@ -148,9 +153,12 @@ public class MapReplicationOperation extends AbstractOperation {
         return data == null || data.isEmpty();
     }
 
-    private void updateSizeEstimator(Record record, RecordStore recordStore) {
-        final long cost = recordStore.getSizeEstimator().getCost(record);
-        recordStore.getSizeEstimator().add(cost);
+    private void updateSizeEstimator(long recordSize, SizeEstimator sizeEstimator) {
+        sizeEstimator.add(recordSize);
+    }
+
+    private long calculateRecordSize(Record record, SizeEstimator sizeEstimator) {
+        return sizeEstimator.getCost(record);
     }
 
 }
