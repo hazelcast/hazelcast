@@ -30,8 +30,6 @@ import static java.lang.String.format;
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class MembershipEvent extends EventObject {
 
-    public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
-
     /**
      * This event type is fired when a new member joins the cluster.
      */
@@ -43,14 +41,15 @@ public class MembershipEvent extends EventObject {
      */
     public static final int MEMBER_REMOVED = 2;
 
-
-    private static final long serialVersionUID = -2010865371829087371L;
-
     /**
      * This event type is fired if a member attribute has been changed or removed.
      *
      * @since 3.2
      */
+    public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
+
+
+    private static final long serialVersionUID = -2010865371829087371L;
 
     private final Member member;
 

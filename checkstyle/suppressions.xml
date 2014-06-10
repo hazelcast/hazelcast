@@ -65,7 +65,7 @@
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.core[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.corer[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.core[\\/]"/>
     <suppress checks="MethodCount" files="com.hazelcast.core.HazelcastInstance"/>
     <suppress checks="MethodCount" files="com.hazelcast.core.IMap"/>
