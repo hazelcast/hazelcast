@@ -12,7 +12,6 @@
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
 
     <suppress checks="" files="com.hazelcast.config[\\/]"/>
-    <suppress checks="" files="com.hazelcast.core[\\/]"/>
     <suppress checks="" files="com.hazelcast.management[\\/]"/>
     <suppress checks="" files="com.hazelcast.map[\\/]"/>
 
@@ -63,6 +62,13 @@
     <suppress checks="" files="com.hazelcast.cluster.FinalizeJoinOperation"/>
     <suppress checks="" files="com.hazelcast.cluster.JoinCheckOperation"/>
 
+    <!-- Core-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.core[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.core[\\/]"/>
+    <suppress checks="MethodCount" files="com.hazelcast.core.HazelcastInstance"/>
+    <suppress checks="MethodCount" files="com.hazelcast.core.IMap"/>
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
