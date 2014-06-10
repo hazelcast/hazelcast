@@ -17,21 +17,17 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.map.MapKeySet;
-import com.hazelcast.map.record.DataRecord;
-import com.hazelcast.map.record.ObjectRecord;
+import com.hazelcast.map.record.DataRecordWithStats;
+import com.hazelcast.map.record.ObjectRecordWithStats;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordStatistics;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.CacheConcurrentHashMap;
 import com.hazelcast.util.Clock;
 
-import javax.cache.Cache;
 import javax.cache.event.EventType;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
@@ -40,12 +36,8 @@ import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -342,7 +334,7 @@ public class CacheRecordStore implements ICacheRecordStore{
         if(record == null || isExpired){
             return false;
         } else {
-            if(compare(record.getValue(),value)){
+            if(compare(record.getValue(), value)){
                 deleteCacheEntry(key);
                 deleteRecord(key);
             } else {
@@ -639,10 +631,10 @@ public class CacheRecordStore implements ICacheRecordStore{
         final Data dataValue = cacheService.toData(value);
         switch (cacheConfig.getInMemoryFormat()) {
             case BINARY:
-                record = new DataRecord(keyData, dataValue,true);
+                record = new DataRecordWithStats(keyData, dataValue);
                 break;
             case OBJECT:
-                record = new ObjectRecord(keyData,value,true);
+                record = new ObjectRecordWithStats(keyData,value);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
@@ -691,7 +683,7 @@ public class CacheRecordStore implements ICacheRecordStore{
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
         }
-        cacheService.publishEvent(name, EventType.REMOVED,record.getKey(), dataOldValue, null);
+        cacheService.publishEvent(name, EventType.REMOVED, record.getKey(), dataOldValue, null);
     }
 
     protected Object readThroughCache(Data key) throws CacheLoaderException{
