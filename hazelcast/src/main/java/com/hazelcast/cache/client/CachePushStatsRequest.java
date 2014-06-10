@@ -64,7 +64,7 @@ public class CachePushStatsRequest extends CallableClientRequest {
         final Node node = ((NodeEngineImpl) nodeEngine).getNode();
         final ManagementCenterService managementCenterService = node.getManagementCenterService();
         if (managementCenterService != null) {
-            managementCenterService.addClientState(clientState);
+//            managementCenterService.addClientState(clientState);
         }
         return null;
     }

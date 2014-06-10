@@ -18,11 +18,11 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-class DataRecordWithStats extends AbstractRecordWithStats<Data> {
+public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
 
     protected Data value;
 
-    DataRecordWithStats(Data keyData, Data value) {
+    public DataRecordWithStats(Data keyData, Data value) {
         super(keyData);
         this.value = value;
     }

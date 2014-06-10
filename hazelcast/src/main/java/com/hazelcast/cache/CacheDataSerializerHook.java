@@ -40,7 +40,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class CacheDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_DS_FACTORY, -24);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_DS_FACTORY, -25);
 
     public static final short GET = 0;
     public static final short CONTAINS_KEY = 1;

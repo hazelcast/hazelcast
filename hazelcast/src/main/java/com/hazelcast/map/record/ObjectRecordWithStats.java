@@ -2,7 +2,7 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
+public class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
 
     private Object value;
 
