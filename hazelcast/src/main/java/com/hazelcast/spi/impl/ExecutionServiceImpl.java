@@ -60,6 +60,13 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public final class ExecutionServiceImpl implements ExecutionService {
 
+    private static final int CORE_POOL_SIZE = 3;
+    private static final long KEEP_ALIVE_TIME = 60L;
+    private static final long INITIAL_DELAY = 1000;
+    private static final long PERIOD = 100;
+    private static final int BEGIN_INDEX = 3;
+    private static final long AWAIT_TIME = 3;
+
     private final NodeEngineImpl nodeEngine;
     private final ExecutorService cachedExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
@@ -70,6 +77,15 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final ConcurrentMap<String, ManagedExecutorService> executors
             = new ConcurrentHashMap<String, ManagedExecutorService>();
 
+    private final ConstructorFunction<String, ManagedExecutorService> constructor =
+            new ConstructorFunction<String, ManagedExecutorService>() {
+                public ManagedExecutorService createNew(String name) {
+                    final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
+                    final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
+                    return createExecutor(name, cfg.getPoolSize(), queueCapacity, ExecutorType.CACHED);
+                }
+            };
+
     public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         final Node node = nodeEngine.getNode();
@@ -79,7 +95,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 node.getThreadPoolNamePrefix("cached"), classLoader);
 
         cachedExecutorService = new ThreadPoolExecutor(
-                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+                CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(), threadFactory, new RejectedExecutionHandler() {
             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                 if (logger.isFinestEnabled()) {
@@ -102,8 +118,9 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         // Register CompletableFuture task
         completableFutureTask = new CompletableFutureTask();
-        scheduleWithFixedDelay(completableFutureTask, 1000, 100, TimeUnit.MILLISECONDS);
+        scheduleWithFixedDelay(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
     }
+
 
     private void enableRemoveOnCancelIfAvailable() {
         try {
@@ -129,24 +146,15 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return executor;
     }
 
-    private final ConstructorFunction<String, ManagedExecutorService> constructor =
-            new ConstructorFunction<String, ManagedExecutorService>() {
-                public ManagedExecutorService createNew(String name) {
-                    final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
-                    final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
-                    return createExecutor(name, cfg.getPoolSize(), queueCapacity, ExecutorType.CACHED);
-                }
-            };
-
     private ManagedExecutorService createExecutor(String name, int poolSize, int queueCapacity, ExecutorType type) {
         ManagedExecutorService executor;
         if (type == ExecutorType.CACHED) {
             executor = new CachedExecutorServiceDelegate(nodeEngine, name, cachedExecutorService, poolSize, queueCapacity);
         } else if (type == ExecutorType.CONCRETE) {
             Node node = nodeEngine.getNode();
-            String internalName = name.startsWith("hz:") ? name.substring(3) : name;
+            String internalName = name.startsWith("hz:") ? name.substring(BEGIN_INDEX) : name;
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
-                    60, TimeUnit.SECONDS,
+                    KEEP_ALIVE_TIME, TimeUnit.SECONDS,
                     new LinkedBlockingQueue<Runnable>(queueCapacity),
                     new PoolExecutorThreadFactory(node.threadGroup,
                             node.getThreadPoolNamePrefix(internalName), node.getConfigClassLoader())
@@ -238,7 +246,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         cachedExecutorService.shutdown();
         scheduledExecutorService.shutdownNow();
         try {
-            cachedExecutorService.awaitTermination(3, TimeUnit.SECONDS);
+            cachedExecutorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             logger.finest(e);
         }
@@ -312,7 +320,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
-    static class CompletableFutureEntry<V> {
+    static final class CompletableFutureEntry<V> {
         private final BasicCompletableFuture<V> completableFuture;
         private final CompletableFutureTask completableFutureTask;
 
@@ -337,7 +345,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
     }
 
-    private static class ScheduledExecutorServiceDelegate implements ScheduledExecutorService {
+    private static final class ScheduledExecutorServiceDelegate implements ScheduledExecutorService {
 
         private final ScheduledExecutorService scheduledExecutorService;
         private final ExecutorService executor;
@@ -369,17 +377,20 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         @Override
         public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-            return scheduledExecutorService.schedule(new ScheduledTaskRunner(command, executor), delay, unit);
+            return scheduledExecutorService.schedule(
+                    new ScheduledTaskRunner(command, executor), delay, unit);
         }
 
         @Override
         public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-            return scheduledExecutorService.scheduleAtFixedRate(new ScheduledTaskRunner(command, executor), initialDelay, period, unit);
+            return scheduledExecutorService.scheduleAtFixedRate(
+                    new ScheduledTaskRunner(command, executor), initialDelay, period, unit);
         }
 
         @Override
         public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-            return scheduledExecutorService.scheduleWithFixedDelay(new ScheduledTaskRunner(command, executor), initialDelay, delay, unit);
+            return scheduledExecutorService.scheduleWithFixedDelay(
+                    new ScheduledTaskRunner(command, executor), initialDelay, delay, unit);
         }
 
         @Override
@@ -408,22 +419,26 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
 
         @Override
-        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
+                throws InterruptedException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+                throws InterruptedException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
+                throws InterruptedException, ExecutionException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
             throw new UnsupportedOperationException();
         }
 

@@ -39,12 +39,12 @@ public final class BasicTargetInvocation extends BasicInvocation {
     }
 
     @Override
-    public final Address getTarget() {
+    public Address getTarget() {
         return target;
     }
 
     @Override
-    final ExceptionAction onException(Throwable t) {
+    ExceptionAction onException(Throwable t) {
         return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onException(t);
     }
 }
