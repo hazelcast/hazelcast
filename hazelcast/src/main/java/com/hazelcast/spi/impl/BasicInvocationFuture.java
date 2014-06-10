@@ -29,10 +29,10 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
+    volatile boolean interrupted;
     private BasicInvocation basicInvocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
     private volatile Object response;
-    volatile boolean interrupted;
 
     BasicInvocationFuture(BasicInvocation basicInvocation, final Callback<E> callback) {
         this.basicInvocation = basicInvocation;
@@ -173,9 +173,11 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             return response;
         }
         long timeoutMs = unit.toMillis(time);
-        if (timeoutMs < 0) timeoutMs = 0;
+        if (timeoutMs < 0) {
+            timeoutMs = 0;
+        }
 
-        final long maxCallTimeout = basicInvocation.callTimeout  > 0 ? basicInvocation.callTimeout * 2 : Long.MAX_VALUE;
+        final long maxCallTimeout = basicInvocation.callTimeout > 0 ? basicInvocation.callTimeout * 2 : Long.MAX_VALUE;
         final boolean longPolling = timeoutMs > maxCallTimeout;
         int pollCount = 0;
 
@@ -386,7 +388,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         return sb.toString();
     }
 
-    private static class ExecutionCallbackNode<E> {
+    private static final class ExecutionCallbackNode<E> {
         private final ExecutionCallback<E> callback;
         private final Executor executor;
         private final ExecutionCallbackNode<E> next;
@@ -398,7 +400,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
-    private static class ExecutorCallbackAdapter<E> implements ExecutionCallback<E> {
+    private static final class ExecutorCallbackAdapter<E> implements ExecutionCallback<E> {
         private final Callback callback;
 
         private ExecutorCallbackAdapter(Callback callback) {
