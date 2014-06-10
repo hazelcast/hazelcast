@@ -21,6 +21,7 @@
     <suppress checks="" files="com.hazelcast.spring[\\/]"/>
     <suppress checks="" files="com.hazelcast.aws[\\/]"/>
     <suppress checks="" files="com.hazelcast.wm[\\/]"/>
+    <!--- <suppress checks="" files="com.hazelcast.client[\\/]"/> not completed ---> 
 
     <suppress checks="" files="com.hazelcast.web.WebFilter"/>
 
