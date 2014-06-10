@@ -4,7 +4,10 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 
-public class JsonUtil {
+/**
+ * Utility class to deal with Json.
+ */
+public final class JsonUtil {
 
     public static int getInt(JsonObject object, String field) {
         final JsonValue value = object.get(field);
@@ -131,4 +134,6 @@ public class JsonUtil {
             throw new IllegalArgumentException("No field found named : " + field);
         }
     }
+
+    private JsonUtil(){}
 }
