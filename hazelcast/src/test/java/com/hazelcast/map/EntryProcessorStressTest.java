@@ -18,13 +18,11 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,16 +34,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.map.TempData.DeleteEntryProcessor;
-import static com.hazelcast.map.TempData.LoggingEntryProcessor;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -59,12 +54,12 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
         cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
 
 
-        final int maxItterations=50;
+        final int maxIterations=50;
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(maxItterations+1);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(maxIterations+1);
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
 
-        for(int iteration=0; iteration<maxItterations; iteration++){
+        for(int iteration=0; iteration<maxIterations; iteration++){
 
             System.out.println("======================"+iteration+"==============================");
 
@@ -76,18 +71,14 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
             final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
             processorMap.put(key, new ArrayList<Integer>());
 
-            List<Future> futures = new ArrayList<Future>();
-
             for (int i = 0 ; i < maxTasks ; i++) {
-                Future f = processorMap.submitToKey(key, new SimpleEntryProcessor(i));
-                futures.add(f);
+                processorMap.submitToKey(key, new SimpleEntryProcessor(i));
 
                 if(i==maxTasks/2){
                     instance2.getLifecycleService().terminate();
                 }
             }
 
-            final int itter = iteration;
             assertTrueEventually(new AssertTask() {
                 public void run() throws Exception {
                     List<Integer> actualOrder = processorMap.get(key);
