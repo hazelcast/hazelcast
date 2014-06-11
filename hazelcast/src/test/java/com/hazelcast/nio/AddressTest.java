@@ -1,10 +1,16 @@
 package com.hazelcast.nio;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class AddressTest {
 
     @Test(expected = IllegalArgumentException.class)
