@@ -89,36 +89,8 @@ public final class Address implements IdentifiedDataSerializable {
         this.hostSet = address.hostSet;
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(port);
-        out.write(type);
-        if (host != null) {
-            byte[] address = stringToBytes(host);
-            out.writeInt(address.length);
-            out.write(address);
-        } else {
-            out.writeInt(0);
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        port = in.readInt();
-        type = in.readByte();
-        int len = in.readInt();
-        if (len > 0) {
-            byte[] address = new byte[len];
-            in.readFully(address);
-            host = bytesToString(address);
-        }
-    }
-
     public String getHost() {
         return host;
-    }
-
-    @Override
-    public String toString() {
-        return "Address[" + getHost() + "]:" + port;
     }
 
     public int getPort() {
@@ -167,6 +139,31 @@ public final class Address implements IdentifiedDataSerializable {
     }
 
     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(port);
+        out.write(type);
+        if (host != null) {
+            byte[] address = stringToBytes(host);
+            out.writeInt(address.length);
+            out.write(address);
+        } else {
+            out.writeInt(0);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        port = in.readInt();
+        type = in.readByte();
+        int len = in.readInt();
+        if (len > 0) {
+            byte[] address = new byte[len];
+            in.readFully(address);
+            host = bytesToString(address);
+        }
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -183,6 +180,11 @@ public final class Address implements IdentifiedDataSerializable {
         int result = port;
         result = 31 * result + host.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "Address[" + getHost() + "]:" + port;
     }
 
     private static InetAddress resolve(InetSocketAddress inetSocketAddress) {
