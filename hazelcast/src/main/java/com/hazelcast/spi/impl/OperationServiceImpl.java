@@ -26,10 +26,21 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.partition.PartitionServiceImpl;
-import com.hazelcast.partition.PartitionView;
-import com.hazelcast.spi.*;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -39,10 +50,26 @@ import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
-import com.hazelcast.util.scheduler.*;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -66,7 +93,6 @@ final class OperationServiceImpl implements OperationService {
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
     final ConcurrentMap<Long, Semaphore> backupCalls;
     private final int operationThreadCount;
-    private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
     private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {
@@ -100,8 +126,6 @@ final class OperationServiceImpl implements OperationService {
 
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         backupCalls = new ConcurrentHashMap<Long, Semaphore>(1000, 0.75f, concurrencyLevel);
-        backupScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
-                new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
     }
 
     @Override
@@ -245,16 +269,16 @@ final class OperationServiceImpl implements OperationService {
                 if (partitionId < 0) {
                     throw new IllegalArgumentException("Partition id cannot be negative! -> " + partitionId);
                 }
-                final PartitionView partitionView = nodeEngine.getPartitionService().getPartition(partitionId);
-                if (partitionView == null) {
+                final InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+                if (partition == null) {
                     throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                             op.getClass().getName(), op.getServiceName());
                 }
-                if (retryDuringMigration(op) && node.partitionService.isPartitionMigrating(partitionId)) {
+                if (retryDuringMigration(op) && partition.isMigrating()) {
                     throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                         op.getClass().getName(), op.getServiceName());
                 }
-                final Address owner = partitionView.getReplicaAddress(op.getReplicaIndex());
+                final Address owner = partition.getReplicaAddress(op.getReplicaIndex());
                 if (op.validatesTarget() && !node.getThisAddress().equals(owner)) {
                     throw new WrongTargetException(node.getThisAddress(), owner, partitionId, op.getReplicaIndex(),
                             op.getClass().getName(), op.getServiceName());
@@ -358,111 +382,72 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private int sendBackups(BackupAwareOperation backupAwareOp) throws Exception {
-        final Operation op = (Operation) backupAwareOp;
-        final boolean returnsResponse = op.returnsResponse();
-        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-        final int maxBackups = Math.min(partitionService.getMemberGroupsSize() - 1, PartitionView.MAX_BACKUP_COUNT);
+        Operation op = (Operation) backupAwareOp;
+        boolean returnsResponse = op.returnsResponse();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
 
-        int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
-                ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
+        int maxBackupCount = InternalPartition.MAX_BACKUP_COUNT;
+        int maxPossibleBackupCount = Math.min(partitionService.getMemberGroupsSize() - 1, maxBackupCount);
 
-        int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
-                ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
+        int requestedSyncBackupCount = backupAwareOp.getSyncBackupCount() > 0
+                ? Math.min(maxBackupCount, backupAwareOp.getSyncBackupCount()) : 0;
 
-        if (!returnsResponse || op.isAsync()) {
+        int requestedAsyncBackupCount = backupAwareOp.getAsyncBackupCount() > 0
+                ? Math.min(maxBackupCount - requestedSyncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
+
+        int totalRequestedBackupCount = requestedSyncBackupCount + requestedAsyncBackupCount;
+        if (totalRequestedBackupCount == 0) {
+            return 0;
+        }
+
+        int partitionId = op.getPartitionId();
+        long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(partitionId, totalRequestedBackupCount);
+
+        int syncBackupCount = Math.min(maxPossibleBackupCount, requestedSyncBackupCount);
+        int asyncBackupCount = Math.min(maxPossibleBackupCount - syncBackupCount, requestedAsyncBackupCount);
+        if (!returnsResponse) {
             asyncBackupCount += syncBackupCount;
             syncBackupCount = 0;
         }
 
-        final int totalBackupCount = syncBackupCount + asyncBackupCount;
-        if (totalBackupCount > 0) {
-            final String serviceName = op.getServiceName();
-            final int partitionId = op.getPartitionId();
-            final long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(partitionId, totalBackupCount);
-            final PartitionView partition = partitionService.getPartition(partitionId);
-            for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
-                final Operation backupOp = backupAwareOp.getBackupOperation();
-                if (backupOp == null) {
-                    throw new IllegalArgumentException("Backup operation should not be null!");
-                }
+        int totalBackupCount = syncBackupCount + asyncBackupCount;
+        if (totalBackupCount == 0) {
+            return 0;
+        }
 
-                backupOp.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName);
-                final Backup backup = new Backup(backupOp, op.getCallerAddress(), replicaVersions, replicaIndex <= syncBackupCount);
-                backup.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName)
-                        .setCallerUuid(nodeEngine.getLocalMember().getUuid());
-                OperationAccessor.setCallId(backup, op.getCallId());
+        int sentSyncBackupCount = 0;
+        String serviceName = op.getServiceName();
+        InternalPartition partition = partitionService.getPartition(partitionId);
 
-                final Address target = partition.getReplicaAddress(replicaIndex);
-                if (target != null) {
-                    if (target.equals(node.getThisAddress())) {
-                        throw new IllegalStateException("Normally shouldn't happen! Owner node and backup node are the same! " + partition);
-                    } else {
-                        send(backup, target);
-                    }
+        for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
+            Address target = partition.getReplicaAddress(replicaIndex);
+            if (target != null) {
+                if (target.equals(node.getThisAddress())) {
+                    throw new IllegalStateException("Normally shouldn't happen! Owner node and backup node " +
+                            "are the same! " + partition);
                 } else {
-                    scheduleBackup(op, backup, partitionId, replicaIndex);
-                }
-            }
-        }
-        return syncBackupCount;
-    }
-
-    private void scheduleBackup(Operation op, Backup backup, int partitionId, int replicaIndex) {
-        final RemoteCallKey key = new RemoteCallKey(op);
-        if (logger.isFinestEnabled()) {
-            logger.finest("Scheduling -> " + backup);
-        }
-        backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
-    }
-
-    private class ScheduledBackupProcessor implements ScheduledEntryProcessor<Object, ScheduledBackup> {
-
-        public void process(EntryTaskScheduler<Object, ScheduledBackup> scheduler, Collection<ScheduledEntry<Object, ScheduledBackup>> scheduledEntries) {
-            for (ScheduledEntry<Object, ScheduledBackup> entry : scheduledEntries) {
-                final ScheduledBackup backup = entry.getValue();
-                if (!backup.backup()) {
-                    final int retries = backup.retries;
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Re-scheduling[" + retries + "] -> " + backup);
+                    Operation backupOp = backupAwareOp.getBackupOperation();
+                    if (backupOp == null) {
+                        throw new IllegalArgumentException("Backup operation should not be null!");
                     }
-                    scheduler.schedule(entry.getScheduledDelayMillis() * retries, entry.getKey(), backup);
+
+                    backupOp.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName);
+                    Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
+
+                    boolean isSyncBackup = replicaIndex <= syncBackupCount;
+                    Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, isSyncBackup);
+                    backup.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName)
+                            .setCallerUuid(nodeEngine.getLocalMember().getUuid());
+                    OperationAccessor.setCallId(backup, op.getCallId());
+                    send(backup, target);
+
+                    if (isSyncBackup) {
+                        sentSyncBackupCount++;
+                    }
                 }
             }
         }
-    }
-
-    private class ScheduledBackup {
-        final Backup backup;
-        final int partitionId;
-        final int replicaIndex;
-        volatile int retries = 0;
-
-        private ScheduledBackup(Backup backup, int partitionId, int replicaIndex) {
-            this.backup = backup;
-            this.partitionId = partitionId;
-            this.replicaIndex = replicaIndex;
-        }
-
-        public boolean backup() {
-            final PartitionService partitionService = nodeEngine.getPartitionService();
-            final PartitionView partition = partitionService.getPartition(partitionId);
-            final Address target = partition.getReplicaAddress(replicaIndex);
-            if (target != null && !target.equals(node.getThisAddress())) {
-                send(backup, target);
-                return true;
-            }
-            return ++retries >= 10; // if retried 10 times, give-up!
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("ScheduledBackup{");
-            sb.append("backup=").append(backup);
-            sb.append(", partitionId=").append(partitionId);
-            sb.append(", replicaIndex=").append(replicaIndex);
-            sb.append('}');
-            return sb.toString();
-        }
+        return sentSyncBackupCount;
     }
 
     private void handleOperationError(Operation op, Throwable e) {
@@ -703,7 +688,6 @@ final class OperationServiceImpl implements OperationService {
         }
         remoteCalls.clear();
         backupCalls.clear();
-        backupScheduler.cancelAll();
         for (ExecutorService executor : operationExecutors) {
             try {
                 executor.awaitTermination(3, TimeUnit.SECONDS);

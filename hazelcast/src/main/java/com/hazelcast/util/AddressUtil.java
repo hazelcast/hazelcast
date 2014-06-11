@@ -17,18 +17,31 @@
 package com.hazelcast.util;
 
 import java.io.IOException;
-import java.net.*;
-import java.util.*;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedList;
 
 public final class AddressUtil {
+
+    private static final int NUMBER_OF_ADDRESSES = 255;
 
     private AddressUtil() {
     }
 
-    public static boolean matchAnyInterface(final String address, final Collection<String> interfaces) {
-        if (interfaces == null || interfaces.size() == 0) return false;
-
-        for (final String interfaceMask : interfaces) {
+    public static boolean matchAnyInterface(String address, Collection<String> interfaces) {
+        if (interfaces == null || interfaces.size() == 0) {
+            return false;
+        }
+        for (String interfaceMask : interfaces) {
             if (matchInterface(address, interfaceMask)) {
                 return true;
             }
@@ -36,7 +49,7 @@ public final class AddressUtil {
         return false;
     }
 
-    public static boolean matchInterface(final String address, final String interfaceMask) {
+    public static boolean matchInterface(String address, String interfaceMask) {
         final AddressMatcher mask;
         try {
             mask = getAddressMatcher(interfaceMask);
@@ -44,6 +57,41 @@ public final class AddressUtil {
             return false;
         }
         return mask.match(address);
+    }
+
+    public static boolean matchAnyDomain(String name, Collection<String> patterns) {
+        if (patterns == null || patterns.size() == 0) {
+            return false;
+        }
+        for (String pattern : patterns) {
+            if (matchDomain(name, pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean matchDomain(String name, String pattern) {
+        final int index = pattern.indexOf('*');
+        if (index == -1) {
+            return name.equals(pattern);
+        } else {
+            String[] names = name.split("\\.");
+            String[] patterns = pattern.split("\\.");
+            if (patterns.length > names.length) {
+                return false;
+            }
+            int nameIndexDiff = names.length - patterns.length;
+            for (int i = patterns.length - 1; i > -1; i--) {
+                if ("*".equals(patterns[i])) {
+                    continue;
+                }
+                if (!patterns[i].equals(names[i + nameIndexDiff])) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     public static AddressHolder getAddressHolder(String address) {
@@ -84,7 +132,8 @@ public final class AddressUtil {
 
     public static boolean isIpAddress(String address) {
         try {
-            return getAddressMatcher(address) != null;
+            getAddressMatcher(address);
+            return true;
         } catch (InvalidAddressException e) {
             return false;
         }
@@ -93,7 +142,7 @@ public final class AddressUtil {
     public static InetAddress fixScopeIdAndGetInetAddress(final InetAddress inetAddress) throws SocketException {
         Inet6Address resultInetAddress = null;
         if (inetAddress instanceof Inet6Address &&
-            (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
+                (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
             final Inet6Address inet6Address = (Inet6Address) inetAddress;
             if (inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
                 Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -103,10 +152,10 @@ public final class AddressUtil {
                     while (addresses.hasMoreElements()) {
                         InetAddress address = addresses.nextElement();
                         if (address instanceof Inet6Address &&
-                            Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
+                                Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
                             if (resultInetAddress != null) {
                                 throw new IllegalArgumentException("This address " + inet6Address +
-                                                                   " is bound to more than one network interface!");
+                                        " is bound to more than one network interface!");
                             }
                             resultInetAddress = (Inet6Address) address;
                         }
@@ -152,7 +201,7 @@ public final class AddressUtil {
                             continue;
                         }
                         if (inet6Address.isLinkLocalAddress() && address.isLinkLocalAddress()
-                            || inet6Address.isSiteLocalAddress() && address.isSiteLocalAddress()) {
+                                || inet6Address.isSiteLocalAddress() && address.isSiteLocalAddress()) {
                             final Inet6Address newAddress = Inet6Address.getByAddress(null, inet6Address.getAddress(),
                                     ((Inet6Address) address).getScopeId());
                             possibleAddresses.addFirst(newAddress);
@@ -163,7 +212,7 @@ public final class AddressUtil {
             }
             if (possibleAddresses.isEmpty()) {
                 throw new IllegalArgumentException("Could not find a proper network interface" +
-                                                   " to connect to " + inet6Address);
+                        " to connect to " + inet6Address);
             }
             return possibleAddresses;
         }
@@ -176,12 +225,12 @@ public final class AddressUtil {
         }
         final Collection<String> addresses = new HashSet<String>();
         final String first3 = addressMatcher.address[0] + "." +
-                              addressMatcher.address[1] + "." +
-                              addressMatcher.address[2]  ;
+                addressMatcher.address[1] + "." +
+                addressMatcher.address[2]  ;
         final String lastPart = addressMatcher.address[3];
         final int dashPos ;
         if ("*".equals(lastPart)) {
-            for (int j = 0; j <= 255; j++) {
+            for (int j = 0; j <= NUMBER_OF_ADDRESSES; j++) {
                 addresses.add(first3 + "." + j);
             }
         } else if ((dashPos = lastPart.indexOf('-')) > 0) {
@@ -196,6 +245,13 @@ public final class AddressUtil {
         return addresses;
     }
 
+    /**
+     * Gets an AddressMatcher for a given addresses.
+     *
+     * @param address the address
+     * @return the returned AddressMatcher. The returned value will never be null.
+     * @throws com.hazelcast.util.AddressUtil.InvalidAddressException if the address is not valid.
+     */
     public static AddressMatcher getAddressMatcher(String address) {
         final AddressMatcher matcher;
         final int indexColon = address.indexOf(':');
@@ -431,9 +487,7 @@ public final class AddressUtil {
         }
 
         public void setAddress(String ip[]) {
-            for (int i = 0; i < ip.length; i++) {
-                this.address[i] = ip[i];
-            }
+            System.arraycopy(ip, 0, this.address, 0, ip.length);
         }
 
         public boolean match(final AddressMatcher matcher) {
@@ -470,9 +524,7 @@ public final class AddressUtil {
         }
 
         public void setAddress(String ip[]) {
-            for (int i = 0; i < ip.length; i++) {
-                this.address[i] = ip[i];
-            }
+            System.arraycopy(ip, 0, this.address, 0, ip.length);
         }
 
         public boolean match(final AddressMatcher matcher) {

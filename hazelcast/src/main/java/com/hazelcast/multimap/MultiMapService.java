@@ -31,7 +31,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
@@ -136,7 +136,7 @@ public class MultiMapService implements ManagedService, RemoteService,
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
+            InternalPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
             MultiMapContainer multiMapContainer = partitionContainer.getCollectionContainer(name);
             if (multiMapContainer == null) {
@@ -261,7 +261,7 @@ public class MultiMapService implements ManagedService, RemoteService,
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
+            InternalPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
             MultiMapContainer multiMapContainer = partitionContainer.getCollectionContainer(name);
             if (multiMapContainer == null) {

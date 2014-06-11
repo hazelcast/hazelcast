@@ -24,13 +24,10 @@ import com.hazelcast.partition.PartitionDataSerializerHook;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 5/16/13
- */
+//This is an internal structure, so doesn't matter if we expose arrays.
 public final class PartitionsResponse implements IdentifiedDataSerializable {
 
     private Address[] members;
-
     private int[] ownerIndexes;
 
     public PartitionsResponse() {
@@ -39,6 +36,14 @@ public final class PartitionsResponse implements IdentifiedDataSerializable {
     public PartitionsResponse(Address[] members, int[] ownerIndexes) {
         this.members = members;
         this.ownerIndexes = ownerIndexes;
+    }
+
+    public Address[] getMembers() {
+        return members;
+    }
+
+    public int[] getOwnerIndexes() {
+        return ownerIndexes;
     }
 
     @Override
@@ -72,18 +77,10 @@ public final class PartitionsResponse implements IdentifiedDataSerializable {
             a.readData(in);
             members[i] = a;
         }
-        len =  in.readInt();
+        len = in.readInt();
         ownerIndexes = new int[len];
         for (int i = 0; i < len; i++) {
             ownerIndexes[i] = in.readInt();
         }
-    }
-
-    public Address[] getMembers() {
-        return members;
-    }
-
-    public int[] getOwnerIndexes() {
-        return ownerIndexes;
     }
 }

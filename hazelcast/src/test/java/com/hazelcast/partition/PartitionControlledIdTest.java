@@ -61,7 +61,8 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     public void setUp() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         Config config = new Config();
-        config.getMapConfig("default").setPartitioningStrategyConfig(new PartitioningStrategyConfig(new StringAndPartitionAwarePartitioningStrategy()));
+        config.getMapConfig("default").setPartitioningStrategyConfig(new PartitioningStrategyConfig(
+                StringAndPartitionAwarePartitioningStrategy.INSTANCE));
         instances = factory.newInstances(config);
         warmUpPartitions(instances);
     }

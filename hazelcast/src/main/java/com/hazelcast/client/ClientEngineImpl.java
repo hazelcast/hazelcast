@@ -25,14 +25,31 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.nio.TcpIpConnectionManager;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.CoreService;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.MembershipServiceEvent;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -42,8 +59,17 @@ import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
@@ -142,7 +168,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return serializationService.toData(obj);
     }
 
-    public PartitionService getPartitionService() {
+    public InternalPartitionService getPartitionService() {
         return nodeEngine.getPartitionService();
     }
 

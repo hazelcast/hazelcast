@@ -29,12 +29,13 @@ import java.util.concurrent.ConcurrentMap;
 
 public class PartitionServiceProxy implements com.hazelcast.core.PartitionService {
 
-    private final PartitionServiceImpl partitionService;
-    private final ConcurrentMap<Integer, PartitionProxy> mapPartitions = new ConcurrentHashMap<Integer, PartitionProxy>();
+    private final InternalPartitionService partitionService;
+    private final ConcurrentMap<Integer, PartitionProxy> mapPartitions
+            = new ConcurrentHashMap<Integer, PartitionProxy>();
     private final Set<Partition> partitions = new TreeSet<Partition>();
     private final Random random = new Random();
 
-    public PartitionServiceProxy(PartitionServiceImpl partitionService) {
+    public PartitionServiceProxy(InternalPartitionService partitionService) {
         this.partitionService = partitionService;
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
             PartitionProxy partitionProxy = new PartitionProxy(i);
@@ -48,19 +49,23 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
         return Integer.toString(random.nextInt(partitionService.getPartitionCount()));
     }
 
+    @Override
     public Set<Partition> getPartitions() {
         return partitions;
     }
 
+    @Override
     public PartitionProxy getPartition(Object key) {
-        final int partitionId = partitionService.getPartitionId(key);
+        int partitionId = partitionService.getPartitionId(key);
         return getPartition(partitionId);
     }
 
+    @Override
     public String addMigrationListener(final MigrationListener migrationListener) {
         return partitionService.addMigrationListener(migrationListener);
     }
 
+    @Override
     public boolean removeMigrationListener(final String registrationId) {
         return partitionService.removeMigrationListener(registrationId);
     }
@@ -77,18 +82,23 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
             this.partitionId = partitionId;
         }
 
+        @Override
         public int getPartitionId() {
             return partitionId;
         }
 
+        @Override
         public Member getOwner() {
             Address address = partitionService.getPartitionOwner(partitionId);
-            if (address != null) {
-                return partitionService.getMember(address);
+            if (address == null) {
+                return null;
             }
-            return null;
+
+            //todo: why are we calling the partitionService twice, why don't we immediately get the member?
+            return partitionService.getMember(address);
         }
 
+        @Override
         public int compareTo(Object o) {
             PartitionProxy partition = (PartitionProxy) o;
             Integer id = partitionId;
@@ -97,8 +107,12 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             PartitionProxy partition = (PartitionProxy) o;
             return partitionId == partition.partitionId;
         }
@@ -110,7 +124,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
 
         @Override
         public String toString() {
-            return "Partition [" + + partitionId + "], owner=" + getOwner();
+            return "Partition [" + +partitionId + "], owner=" + getOwner();
         }
     }
 }

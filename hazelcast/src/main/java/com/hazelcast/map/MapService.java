@@ -22,11 +22,26 @@ import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.merge.*;
-import com.hazelcast.map.operation.*;
+import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
+import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
+import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.map.operation.ClearOperation;
+import com.hazelcast.map.operation.DeleteOperation;
+import com.hazelcast.map.operation.InvalidateNearCacheOperation;
+import com.hazelcast.map.operation.MapReplicationOperation;
+import com.hazelcast.map.operation.MergeOperation;
+import com.hazelcast.map.operation.PostJoinMapOperation;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordStatistics;
@@ -38,14 +53,30 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.partition.PartitionView;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.ReplicationSupportingService;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.transaction.impl.TransactionSupport;
@@ -55,7 +86,18 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationEvent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -321,7 +363,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     private List<Integer> getMemberPartitions() {
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         List<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
         return Collections.unmodifiableList(partitions);
     }
@@ -971,11 +1013,11 @@ public class MapService implements ManagedService, MigrationAwareService,
 
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
-        final com.hazelcast.partition.PartitionService partitionService = nodeEngine.getPartitionService();
+        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
 
         Address thisAddress = clusterService.getThisAddress();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
-            PartitionView partition = partitionService.getPartition(partitionId);
+            InternalPartition partition = partitionService.getPartition(partitionId);
             if (partition.getOwner().equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);

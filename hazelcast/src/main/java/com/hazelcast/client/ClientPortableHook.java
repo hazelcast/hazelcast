@@ -16,7 +16,11 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +40,10 @@ public class ClientPortableHook implements PortableHook {
     public static final int CREATE_PROXY = 7;
     public static final int DESTROY_PROXY = 8;
     public static final int LISTENER = 9;
+    public static final int MEMBERSHIP_LISTENER = 10;
+    public static final int CLIENT_PING = 11;
+    public static final int GET_PARTITIONS = 12;
+    public static final int REMOVE_LISTENER = 13;
 
     public int getFactoryId() {
         return ID;

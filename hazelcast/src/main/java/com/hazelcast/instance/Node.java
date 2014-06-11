@@ -19,9 +19,27 @@ package com.hazelcast.instance;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.ClientEngineImpl;
-import com.hazelcast.cluster.*;
-import com.hazelcast.config.*;
-import com.hazelcast.core.*;
+import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.cluster.ConfigCheck;
+import com.hazelcast.cluster.JoinRequest;
+import com.hazelcast.cluster.Joiner;
+import com.hazelcast.cluster.MulticastJoiner;
+import com.hazelcast.cluster.MulticastService;
+import com.hazelcast.cluster.NodeMulticastListener;
+import com.hazelcast.cluster.TcpIpJoiner;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.MigrationListener;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.logging.SystemLogService;
@@ -33,13 +51,16 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
-import com.hazelcast.util.*;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.VersionCheck;
 
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
@@ -72,7 +93,7 @@ public class Node {
 
     public final ClientEngineImpl clientEngine;
 
-    public final PartitionServiceImpl partitionService;
+    public final InternalPartitionServiceImpl partitionService;
 
     public final ClusterServiceImpl clusterService;
 
@@ -165,7 +186,7 @@ public class Node {
         nodeEngine = new NodeEngineImpl(this);
         clientEngine = new ClientEngineImpl(this);
         connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
-        partitionService = new PartitionServiceImpl(this);
+        partitionService = new InternalPartitionServiceImpl(this);
         clusterService = new ClusterServiceImpl(this);
         textCommandService = new TextCommandServiceImpl(this);
         initializer.printNodeInfo(this);
@@ -272,7 +293,7 @@ public class Node {
         return clusterService;
     }
 
-    public PartitionServiceImpl getPartitionService() {
+    public InternalPartitionServiceImpl getPartitionService() {
         return partitionService;
     }
 

@@ -19,11 +19,14 @@ package com.hazelcast.partition.strategy;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.core.PartitioningStrategy;
 
+
 /**
- * @author mdogan 8/25/13
+ * A {@link PartitioningStrategy} that checks if the key implements {@link PartitionAware}.
+ * If so, the {@link PartitionAware#getPartitionKey()} is called. Otherwise null is returned.
  */
 public class DefaultPartitioningStrategy implements PartitioningStrategy {
 
+    @Override
     public Object getPartitionKey(Object key) {
         if (key instanceof PartitionAware) {
             return ((PartitionAware) key).getPartitionKey();

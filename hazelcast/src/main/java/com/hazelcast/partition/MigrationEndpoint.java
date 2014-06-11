@@ -20,16 +20,13 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-/**
- * @author mdogan 11/29/12
- */
 public enum MigrationEndpoint {
 
     SOURCE(0), DESTINATION(1);
 
     private final byte code;
 
-    private MigrationEndpoint(final int code) {
+    private MigrationEndpoint(int code) {
         this.code = (byte) code;
     }
 
@@ -38,7 +35,7 @@ public enum MigrationEndpoint {
     }
 
     public static MigrationEndpoint readFrom(DataInput in) throws IOException {
-        final byte code = in.readByte();
+        byte code = in.readByte();
         return code == 0 ? SOURCE : DESTINATION;
     }
 }

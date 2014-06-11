@@ -24,9 +24,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.PartitionDataSerializerHook;
-import com.hazelcast.partition.PartitionServiceImpl;
-import com.hazelcast.partition.Partitions;
+import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -39,7 +39,7 @@ import java.util.Map;
 public final class GetPartitionsRequest extends CallableClientRequest implements IdentifiedDataSerializable, RetryableRequest {
 
     public Object call() throws Exception {
-        final PartitionServiceImpl service = getService();
+        final InternalPartitionServiceImpl service = getService();
         service.firstArrangement();
         final ClusterService clusterService = getClientEngine().getClusterService();
         final Collection<MemberImpl> memberList = clusterService.getMemberList();
@@ -52,10 +52,10 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
             addressMap.put(address, k);
             k++;
         }
-        final Partitions partitions = service.getPartitions();
-        final int[] indexes = new int[partitions.size()];
+        InternalPartition[] partitions = service.getPartitions();
+        int[] indexes = new int[partitions.length];
         for (int i = 0; i < indexes.length; i++) {
-            final Address owner = partitions.get(i).getOwner();
+            Address owner = partitions[i].getOwner();
             int index = -1;
             if (owner != null) {
                 final Integer idx = addressMap.get(owner);
@@ -71,7 +71,7 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
 
     @Override
     public String getServiceName() {
-        return PartitionServiceImpl.SERVICE_NAME;
+        return InternalPartitionServiceImpl.SERVICE_NAME;
     }
 
     @Override

@@ -24,30 +24,31 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
-/**
- * @author mdogan 5/7/12
- */
 public class PartitionRuntimeState implements DataSerializable {
 
-    protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
+    protected final ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
 
-    private Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
+    private final Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
     private long masterTime = Clock.currentTimeMillis();
     private int version;
     private Collection<MigrationInfo> completedMigrations;
-
-    private transient Address endpoint;
+    private Address endpoint;
 
     public PartitionRuntimeState() {
-        super();
     }
 
-    public PartitionRuntimeState(final Collection<MemberInfo> memberInfos,
-                                 final Partitions partitions,
-                                 final Collection<MigrationInfo> migrationInfos,
-                                 final long masterTime, int version) {
+    public PartitionRuntimeState(Collection<MemberInfo> memberInfos,
+                                 InternalPartition[] partitions,
+                                 Collection<MigrationInfo> migrationInfos,
+                                 long masterTime, int version) {
         this.masterTime = masterTime;
         this.version = version;
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(memberInfos.size());
@@ -65,38 +66,43 @@ public class PartitionRuntimeState implements DataSerializable {
         addressIndexes.put(memberInfo.getAddress(), memberIndex);
     }
 
-    protected void setPartitions(Partitions partitions, Map<Address, Integer> addressIndexes) {
-        for (PartitionView partition : partitions) {
-            ShortPartitionInfo spi = new ShortPartitionInfo(partition.getPartitionId());
-            for (int i = 0; i < PartitionImpl.MAX_REPLICA_COUNT; i++) {
-                Address address = partition.getReplicaAddress(i);
+    protected void setPartitions(InternalPartition[] partitions, Map<Address, Integer> addressIndexes) {
+        for (InternalPartition partition : partitions) {
+            ShortPartitionInfo partitionInfo = new ShortPartitionInfo(partition.getPartitionId());
+            for (int index = 0; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
+                Address address = partition.getReplicaAddress(index);
                 if (address == null) {
-                    spi.addressIndexes[i] = -1;
+                    partitionInfo.addressIndexes[index] = -1;
                 } else {
                     Integer knownIndex = addressIndexes.get(address);
-                    spi.addressIndexes[i] = (knownIndex == null) ? -1 : knownIndex;
+                    if (knownIndex == null && index == 0) {
+                        throw new IllegalStateException("Unknown owner address in partition state! "
+                                + "Address: " + address + ", " + partition);
+                    }
+                    partitionInfo.addressIndexes[index] = knownIndex != null ? addressIndexes.get(address) : -1;
                 }
             }
-            partitionInfos.add(spi);
+            partitionInfos.add(partitionInfo);
         }
     }
 
-    public PartitionView[] getPartitions() {
+    public PartitionInfo[] getPartitions() {
         int size = partitionInfos.size();
-        PartitionView[] partitions = new PartitionView[size];
-        for (ShortPartitionInfo spi : partitionInfos) {
-            PartitionImpl partition = new PartitionImpl(spi.partitionId, null);
-            int[] addressIndexes = spi.addressIndexes;
+        PartitionInfo[] result = new PartitionInfo[size];
+        for (ShortPartitionInfo partitionInfo : partitionInfos) {
+            Address[] replicas = new Address[InternalPartition.MAX_REPLICA_COUNT];
+            int partitionId = partitionInfo.partitionId;
+            result[partitionId] = new PartitionInfo(partitionId, replicas);
+            int[] addressIndexes = partitionInfo.addressIndexes;
             for (int c = 0; c < addressIndexes.length; c++) {
                 int index = addressIndexes[c];
                 if (index != -1) {
-                    partition.setReplicaAddress(c, members.get(index).getAddress());
+                    replicas[c] = members.get(index).getAddress();
                 }
             }
-            partitions[spi.partitionId] = partition;
         }
 
-        return partitions;
+        return result;
     }
 
     public List<MemberInfo> getMembers() {
@@ -111,7 +117,7 @@ public class PartitionRuntimeState implements DataSerializable {
         return endpoint;
     }
 
-    void setEndpoint(final Address endpoint) {
+    public void setEndpoint(final Address endpoint) {
         this.endpoint = endpoint;
     }
 
@@ -119,6 +125,7 @@ public class PartitionRuntimeState implements DataSerializable {
         return completedMigrations != null ? completedMigrations : Collections.<MigrationInfo>emptyList();
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         masterTime = in.readLong();
         version = in.readInt();
@@ -149,6 +156,7 @@ public class PartitionRuntimeState implements DataSerializable {
         }
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(masterTime);
         out.writeInt(version);
@@ -188,10 +196,10 @@ public class PartitionRuntimeState implements DataSerializable {
         return version;
     }
 
-    private class ShortPartitionInfo implements DataSerializable {
+    private static class ShortPartitionInfo implements DataSerializable {
 
         int partitionId;
-        int[] addressIndexes = new int[PartitionImpl.MAX_REPLICA_COUNT];
+        final int[] addressIndexes = new int[InternalPartition.MAX_REPLICA_COUNT];
 
         ShortPartitionInfo(int partitionId) {
             this.partitionId = partitionId;
@@ -200,16 +208,18 @@ public class PartitionRuntimeState implements DataSerializable {
         ShortPartitionInfo() {
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(partitionId);
-            for (int i = 0; i < PartitionImpl.MAX_REPLICA_COUNT; i++) {
+            for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                 out.writeInt(addressIndexes[i]);
             }
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             partitionId = in.readInt();
-            for (int i = 0; i < PartitionImpl.MAX_REPLICA_COUNT; i++) {
+            for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
                 addressIndexes[i] = in.readInt();
             }
         }

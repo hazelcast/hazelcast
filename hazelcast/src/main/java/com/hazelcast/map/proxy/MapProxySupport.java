@@ -20,18 +20,72 @@ import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.*;
-import com.hazelcast.map.operation.*;
+import com.hazelcast.map.EntryEventFilter;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapKeySet;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapValueCollection;
+import com.hazelcast.map.NearCache;
+import com.hazelcast.map.QueryEventFilter;
+import com.hazelcast.map.QueryResult;
+import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.operation.AddIndexOperation;
+import com.hazelcast.map.operation.AddInterceptorOperation;
+import com.hazelcast.map.operation.BasePutOperation;
+import com.hazelcast.map.operation.BaseRemoveOperation;
+import com.hazelcast.map.operation.ClearOperation;
+import com.hazelcast.map.operation.ContainsKeyOperation;
+import com.hazelcast.map.operation.ContainsValueOperationFactory;
+import com.hazelcast.map.operation.EntryOperation;
+import com.hazelcast.map.operation.EvictOperation;
+import com.hazelcast.map.operation.GetEntryViewOperation;
+import com.hazelcast.map.operation.GetOperation;
+import com.hazelcast.map.operation.KeyBasedMapOperation;
+import com.hazelcast.map.operation.MapEntrySetOperation;
+import com.hazelcast.map.operation.MapFlushOperation;
+import com.hazelcast.map.operation.MapGetAllOperationFactory;
+import com.hazelcast.map.operation.MapIsEmptyOperation;
+import com.hazelcast.map.operation.MapKeySetOperation;
+import com.hazelcast.map.operation.MapValuesOperation;
+import com.hazelcast.map.operation.PartitionWideEntryOperationFactory;
+import com.hazelcast.map.operation.PutAllOperation;
+import com.hazelcast.map.operation.PutIfAbsentOperation;
+import com.hazelcast.map.operation.PutOperation;
+import com.hazelcast.map.operation.PutTransientOperation;
+import com.hazelcast.map.operation.QueryOperation;
+import com.hazelcast.map.operation.QueryPartitionOperation;
+import com.hazelcast.map.operation.RemoveIfSameOperation;
+import com.hazelcast.map.operation.RemoveInterceptorOperation;
+import com.hazelcast.map.operation.RemoveOperation;
+import com.hazelcast.map.operation.ReplaceIfSameOperation;
+import com.hazelcast.map.operation.ReplaceOperation;
+import com.hazelcast.map.operation.SetOperation;
+import com.hazelcast.map.operation.SizeOperationFactory;
+import com.hazelcast.map.operation.TryPutOperation;
+import com.hazelcast.map.operation.TryRemoveOperation;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
@@ -39,8 +93,17 @@ import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -136,10 +199,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         // todo action for read-backup true is not well tested.
         if (mapConfig.isReadBackupData()) {
             int backupCount = mapConfig.getTotalBackupCount();
-            PartitionService partitionService = mapService.getNodeEngine().getPartitionService();
+            InternalPartitionService partitionService = mapService.getNodeEngine().getPartitionService();
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
-                PartitionView partition = partitionService.getPartition(partitionId);
+                InternalPartition partition = partitionService.getPartition(partitionId);
                 if (nodeEngine.getThisAddress().equals(partition.getReplicaAddress(i))) {
                     Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
                     if (val != null) {
@@ -419,7 +482,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private Collection<Integer> getPartitionsForKeys(Set<Data> keys) {
-        PartitionService partitionService = getNodeEngine().getPartitionService();
+        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitions = partitionService.getPartitionCount();
         int capacity = Math.min(partitions, keys.size()); //todo: is there better way to estimate size?
         Set<Integer> partitionIds = new HashSet<Integer>(capacity);
@@ -436,7 +499,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         int factor = 3;
-        PartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         int partitionCount = partitionService.getPartitionCount();
         boolean tooManyEntries = entries.size() > (partitionCount * factor);

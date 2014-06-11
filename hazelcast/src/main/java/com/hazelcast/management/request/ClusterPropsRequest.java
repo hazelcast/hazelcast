@@ -19,7 +19,7 @@ package com.hazelcast.management.request;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -53,7 +53,7 @@ public class ClusterPropsRequest implements ConsoleRequest {
         Map<String, String> properties = new LinkedHashMap<String, String>();
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        final PartitionServiceImpl partitionService = mcs.getHazelcastInstance().node.getPartitionService();
+        InternalPartitionServiceImpl partitionService = mcs.getHazelcastInstance().node.getPartitionService();
         properties.put("hazelcast.cl_version", mcs.getHazelcastInstance().node.initializer.getVersion());
         properties.put("date.cl_startTime", Long.toString(runtimeMxBean.getStartTime()));
         properties.put("seconds.cl_upTime", Long.toString(runtimeMxBean.getUptime()));

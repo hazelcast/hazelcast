@@ -23,7 +23,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Callback;
@@ -527,7 +527,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         return serviceName;
     }
 
-    PartitionView getPartition() {
+    InternalPartition getPartition() {
         return nodeEngine.getPartitionService().getPartition(partitionId);
     }
 

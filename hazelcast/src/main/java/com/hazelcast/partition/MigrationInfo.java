@@ -32,8 +32,8 @@ public class MigrationInfo implements DataSerializable {
     private Address master;
     private String masterUuid;
 
-    private transient final AtomicBoolean processing = new AtomicBoolean(false);
-    private transient volatile boolean valid = true;
+    private final AtomicBoolean processing = new AtomicBoolean(false);
+    private volatile boolean valid = true;
 
     public MigrationInfo() {
     }
@@ -56,42 +56,43 @@ public class MigrationInfo implements DataSerializable {
         return partitionId;
     }
 
-    void setMasterUuid(String uuid) {
+    public void setMasterUuid(String uuid) {
         masterUuid = uuid;
     }
 
-    String getMasterUuid() {
+    public String getMasterUuid() {
         return masterUuid;
     }
 
-    Address getMaster() {
+    public Address getMaster() {
         return master;
     }
 
-    void setMaster(Address master) {
+    public void setMaster(Address master) {
         this.master = master;
     }
 
-    boolean startProcessing() {
+    public boolean startProcessing() {
         return processing.compareAndSet(false, true);
     }
 
-    boolean isProcessing() {
+    public boolean isProcessing() {
         return processing.get();
     }
 
-    void doneProcessing() {
+    public void doneProcessing() {
         processing.set(false);
     }
 
-    boolean isValid() {
+    public boolean isValid() {
         return valid;
     }
 
-    void invalidate() {
+    public void invalidate() {
         valid = false;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionId);
         boolean hasFrom = source != null;
@@ -102,13 +103,14 @@ public class MigrationInfo implements DataSerializable {
         destination.writeData(out);
 
         out.writeUTF(masterUuid);
-        final boolean b = master != null;
+        boolean b = master != null;
         out.writeBoolean(b);
         if (b) {
             master.writeData(out);
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         partitionId = in.readInt();
         boolean hasFrom = in.readBoolean();
@@ -128,15 +130,27 @@ public class MigrationInfo implements DataSerializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         MigrationInfo that = (MigrationInfo) o;
 
-        if (partitionId != that.partitionId) return false;
-        if (destination != null ? !destination.equals(that.destination) : that.destination != null) return false;
-        if (masterUuid != null ? !masterUuid.equals(that.masterUuid) : that.masterUuid != null) return false;
-        if (source != null ? !source.equals(that.source) : that.source != null) return false;
+        if (partitionId != that.partitionId) {
+            return false;
+        }
+        if (destination != null ? !destination.equals(that.destination) : that.destination != null) {
+            return false;
+        }
+        if (masterUuid != null ? !masterUuid.equals(that.masterUuid) : that.masterUuid != null) {
+            return false;
+        }
+        if (source != null ? !source.equals(that.source) : that.source != null) {
+            return false;
+        }
 
         return true;
     }
@@ -152,7 +166,7 @@ public class MigrationInfo implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("MigrationInfo");
         sb.append("{ partitionId=").append(partitionId);
         sb.append(", source=").append(source);
