@@ -397,6 +397,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return Math.min(config.getMaxSize(),getItemQueue().size());
     }
 
+    public int txMapSize() {
+        return txMap.size();
+    }
+
     public int backupSize(){
         return getBackupMap().size();
     }

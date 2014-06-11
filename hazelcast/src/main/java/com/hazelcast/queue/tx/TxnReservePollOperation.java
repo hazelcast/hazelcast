@@ -18,6 +18,7 @@ package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -52,7 +53,8 @@ public class TxnReservePollOperation extends QueueOperation implements WaitSuppo
     }
 
     public boolean shouldWait() {
-        return getWaitTimeout() != 0 && getOrCreateContainer().size() == 0;
+        final QueueContainer container = getOrCreateContainer();
+        return getWaitTimeout() != 0 && (container.size() + container.txMapSize()) == 0;
     }
 
     public void onWaitExpire() {
