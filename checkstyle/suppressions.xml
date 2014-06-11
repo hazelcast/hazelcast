@@ -22,7 +22,7 @@
     <suppress checks="" files="com.hazelcast.web.WebFilter"/>
 
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
-    <suppress checks="MagicNumberCheck" files="[\\/]examples[\\/]"/>
+    <suppress checks="MagicNumberCheck" files="ClientConsoleApp.java"/>
     <suppress checks="FileLengthCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodCountCheck" files="ConsoleApp.java"/>
     <suppress checks="ClassFanOutComplexityCheck" files="ConsoleApp.java"/>
