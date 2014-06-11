@@ -409,7 +409,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return txMap.size();
     }
 
-    public int backupSize(){
+    public int backupSize() {
         return getBackupMap().size();
     }
 
