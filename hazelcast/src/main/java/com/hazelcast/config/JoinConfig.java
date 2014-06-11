@@ -57,7 +57,7 @@ public class JoinConfig {
      * @throws IllegalArgumentException if tcpIpConfig is null.
      */
     public JoinConfig setTcpIpConfig(final TcpIpConfig tcpIpConfig) {
-        this.tcpIpConfig = isNotNull(tcpIpConfig,"tcpIpConfig");
+        this.tcpIpConfig = isNotNull(tcpIpConfig, "tcpIpConfig");
         return this;
     }
 
@@ -73,7 +73,7 @@ public class JoinConfig {
      * @throws IllegalArgumentException if awsConfig is null.
      */
     public JoinConfig setAwsConfig(final AwsConfig awsConfig) {
-        this.awsConfig = isNotNull(awsConfig,"awsConfig");
+        this.awsConfig = isNotNull(awsConfig, "awsConfig");
         return this;
     }
 

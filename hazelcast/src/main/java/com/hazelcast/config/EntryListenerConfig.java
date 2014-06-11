@@ -20,7 +20,7 @@ import com.hazelcast.core.EntryListener;
 
 public class EntryListenerConfig extends ListenerConfig {
 
-    private boolean local = false;
+    private boolean local;
 
     private boolean includeValue = true;
 
@@ -95,14 +95,24 @@ public class EntryListenerConfig extends ListenerConfig {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         EntryListenerConfig that = (EntryListenerConfig) o;
 
-        if (includeValue != that.includeValue) return false;
-        if (local != that.local) return false;
+        if (includeValue != that.includeValue) {
+            return false;
+        }
+        if (local != that.local) {
+            return false;
+        }
 
         return true;
     }

@@ -21,8 +21,8 @@ import java.util.List;
 
 public class MultiMapConfig {
 
-    public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
-    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
+    public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name;
     private String valueCollectionType = ValueCollectionType.SET.toString();
