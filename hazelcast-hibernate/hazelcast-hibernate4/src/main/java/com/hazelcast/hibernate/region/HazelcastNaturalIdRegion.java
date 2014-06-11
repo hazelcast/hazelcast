@@ -43,7 +43,8 @@ public class HazelcastNaturalIdRegion extends AbstractTransactionalDataRegion<IM
     public NaturalIdRegionAccessStrategy buildAccessStrategy(final AccessType accessType) throws CacheException {
         if (null == accessType) {
             throw new CacheException(
-                    "Got null AccessType while attempting to determine a proper NaturalIdRegionAccessStrategy. This can't happen!");
+                    "Got null AccessType while attempting to determine a proper NaturalIdRegionAccessStrategy. "
+                            + "This can't happen!");
         }
         if (AccessType.READ_ONLY.equals(accessType)) {
             return new NaturalIdRegionAccessStrategyAdapter(
