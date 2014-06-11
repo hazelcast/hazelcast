@@ -1,15 +1,17 @@
 package com.hazelcast.management;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.util.executor.ManagedExecutorService;
-import java.io.IOException;
+
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.util.JsonUtil.getString;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.ManagedExecutorServiceMBean}.
  */
-public class SerializableManagedExecutorBean implements DataSerializable {
+public class SerializableManagedExecutorBean implements JsonSerializable {
 
     private String name;
     private int queueSize;
@@ -89,24 +91,26 @@ public class SerializableManagedExecutorBean implements DataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeInt(queueSize);
-        out.writeInt(poolSize);
-        out.writeInt(remainingQueueCapacity);
-        out.writeInt(maximumPoolSize);
-        out.writeBoolean(isTerminated);
-        out.writeLong(completedTaskCount);
+    public JsonObject toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("name", name);
+        root.add("queueSize", queueSize);
+        root.add("poolSize", poolSize);
+        root.add("remainingQueueCapacity", remainingQueueCapacity);
+        root.add("maximumPoolSize", maximumPoolSize);
+        root.add("isTerminated", isTerminated);
+        root.add("completedTaskCount", completedTaskCount);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        queueSize = in.readInt();
-        poolSize = in.readInt();
-        remainingQueueCapacity = in.readInt();
-        maximumPoolSize = in.readInt();
-        isTerminated = in.readBoolean();
-        completedTaskCount = in.readLong();
+    public void fromJson(JsonObject json) {
+        name = getString(json, "name");
+        queueSize = getInt(json, "queueSize");
+        poolSize = getInt(json, "poolSize");
+        remainingQueueCapacity = getInt(json, "remainingQueueCapacity");
+        maximumPoolSize = getInt(json, "maximumPoolSize");
+        isTerminated = getBoolean(json, "isTerminated");
+        completedTaskCount = getLong(json, "completedTaskCount");
     }
 }

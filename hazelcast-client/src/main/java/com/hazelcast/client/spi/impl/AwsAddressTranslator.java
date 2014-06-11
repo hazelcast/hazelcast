@@ -18,7 +18,7 @@ import java.util.logging.Level;
  */
 public class AwsAddressTranslator implements AddressTranslator {
 
-    private static final ILogger logger = Logger.getLogger(AwsAddressTranslator.class);
+    private static final ILogger LOGGER = Logger.getLogger(AwsAddressTranslator.class);
     private volatile Map<String, String> privateToPublic;
     private final AWSClient awsClient;
     private final boolean isInsideAws;
@@ -72,7 +72,7 @@ public class AwsAddressTranslator implements AddressTranslator {
         try {
             privateToPublic = awsClient.getAddresses();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
+            LOGGER.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
         }
     }
 

@@ -63,8 +63,12 @@ public final class BasicOperationScheduler {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 3;
 
-    private final ILogger logger;
+    //all operations for specific partitions will be executed on these threads, .e.g map.put(key,value).
+    final OperationThread[] partitionOperationThreads;
 
+    //all operations that are not specific for a partition will be executed here, e.g heartbeat or map.size
+    final OperationThread[] genericOperationThreads;
+    private final ILogger logger;
     private final Node node;
     private final ExecutionService executionService;
     private final BasicOperationProcessor processor;
@@ -73,12 +77,6 @@ public final class BasicOperationScheduler {
     //and a task gets processed as quickly as possible.
     private final BlockingQueue genericWorkQueue = new LinkedBlockingQueue();
     private final ConcurrentLinkedQueue genericPriorityWorkQueue = new ConcurrentLinkedQueue();
-
-    //all operations for specific partitions will be executed on these threads, .e.g map.put(key,value).
-    final OperationThread[] partitionOperationThreads;
-
-    //all operations that are not specific for a partition will be executed here, e.g heartbeat or map.size
-    final OperationThread[] genericOperationThreads;
 
     //The genericOperationRandom is used when a generic operation is scheduled, and a generic OperationThread
     //needs to be selected.
@@ -249,12 +247,12 @@ public final class BasicOperationScheduler {
             throw new IllegalStateException("Could not found executor with name: " + executorName);
         }
         if (op instanceof PartitionAware) {
-            throw new IllegalStateException("PartitionAwareOperation " + op + " can't be executed on a " +
-                    "custom executor with name: " + executorName);
+            throw new IllegalStateException("PartitionAwareOperation " + op + " can't be executed on a "
+                    + "custom executor with name: " + executorName);
         }
         if (op instanceof UrgentSystemOperation) {
-            throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom " +
-                    "executor with name: " + executorName);
+            throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom "
+                    + "executor with name: " + executorName);
         }
         executor.execute(new LocalOperationProcessor(op));
     }
@@ -405,7 +403,7 @@ public final class BasicOperationScheduler {
         }
 
         private void doRun() {
-            for (; ; ) {
+            for (;;) {
                 Object task;
                 try {
                     task = workQueue.take();
@@ -434,7 +432,7 @@ public final class BasicOperationScheduler {
         }
 
         private void processPriorityMessages() {
-            for (; ; ) {
+            for (;;) {
                 Object task = priorityWorkQueue.poll();
                 if (task == null) {
                     return;
@@ -468,7 +466,7 @@ public final class BasicOperationScheduler {
         }
 
         private void doRun() {
-            for (; ; ) {
+            for (;;) {
                 Object task;
                 try {
                     task = workQueue.take();
@@ -499,7 +497,7 @@ public final class BasicOperationScheduler {
     /**
      * Process the operation that has been send locally to this OperationService.
      */
-    private class LocalOperationProcessor implements Runnable {
+    private final class LocalOperationProcessor implements Runnable {
         private final Operation op;
 
         private LocalOperationProcessor(Operation op) {

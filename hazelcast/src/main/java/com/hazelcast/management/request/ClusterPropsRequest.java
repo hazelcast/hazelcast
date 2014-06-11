@@ -16,14 +16,12 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
-
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -38,45 +36,41 @@ public class ClusterPropsRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(ObjectDataInput in) throws IOException {
+    public Object readResponse(JsonObject in) {
         Map<String, String> properties = new LinkedHashMap<String, String>();
-        int size = in.readInt();
-        String[] temp;
-        for (int i = 0; i < size; i++) {
-            temp = in.readUTF().split(":#");
-            properties.put(temp[0], temp.length == 1 ? "" : temp[1]);
+        final Iterator<JsonObject.Member> iterator = in.iterator();
+        while (iterator.hasNext()) {
+            final JsonObject.Member property = iterator.next();
+            properties.put(property.getName(), property.getValue().asString());
         }
         return properties;
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         InternalPartitionService partitionService = mcs.getHazelcastInstance().node.getPartitionService();
 
-        Map<String, String> properties = new LinkedHashMap<String, String>();
-        properties.put("hazelcast.cl_version", mcs.getHazelcastInstance().node.getBuildInfo().getVersion());
-        properties.put("date.cl_startTime", Long.toString(runtimeMxBean.getStartTime()));
-        properties.put("seconds.cl_upTime", Long.toString(runtimeMxBean.getUptime()));
-        properties.put("memory.cl_freeMemory", Long.toString(runtime.freeMemory()));
-        properties.put("memory.cl_totalMemory", Long.toString(runtime.totalMemory()));
-        properties.put("memory.cl_maxMemory", Long.toString(runtime.maxMemory()));
-        properties.put("return.hasOngoingMigration", Boolean.toString(partitionService.hasOnGoingMigration()));
-        properties.put("data.cl_migrationTasksCount", Long.toString(partitionService.getMigrationQueueSize()));
-
-        dos.writeInt(properties.size());
-
-        for (Map.Entry<String, String> entry : properties.entrySet()) {
-            dos.writeUTF(entry.getKey() + ":#" + entry.getValue());
-        }
+        JsonObject properties = new JsonObject();
+        properties.add("hazelcast.cl_version", mcs.getHazelcastInstance().node.getBuildInfo().getVersion());
+        properties.add("date.cl_startTime", Long.toString(runtimeMxBean.getStartTime()));
+        properties.add("seconds.cl_upTime", Long.toString(runtimeMxBean.getUptime()));
+        properties.add("memory.cl_freeMemory", Long.toString(runtime.freeMemory()));
+        properties.add("memory.cl_totalMemory", Long.toString(runtime.totalMemory()));
+        properties.add("memory.cl_maxMemory", Long.toString(runtime.maxMemory()));
+        properties.add("return.hasOngoingMigration", Boolean.toString(partitionService.hasOnGoingMigration()));
+        properties.add("data.cl_migrationTasksCount", Long.toString(partitionService.getMigrationQueueSize()));
+        root.add("result", properties);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public JsonObject toJson() {
+        return new JsonObject();
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void fromJson(JsonObject json) {
+
     }
 }

@@ -542,9 +542,14 @@ public interface IMap<K, V>
      * doesn't return the old value which is more efficient.
      * <p/>
      * <p><b>Warning:</b></p>
+     * This method breaks the contract of EntryListener.
+     * When an entry is updated by set(), it fires an EntryEvent with a null oldValue.
+     * <p/>
+     * <p><b>Warning-2:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     * <p/>
      *
      * @param key   key of the entry
      * @param value value of the entry

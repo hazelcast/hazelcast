@@ -28,6 +28,7 @@ import static com.hazelcast.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.PartitionServiceMBean")
 public class PartitionServiceMBean  extends HazelcastMBean<InternalPartitionService> {
 
+    private static final int INITIAL_CAPACITY = 3;
     private final HazelcastInstanceImpl hazelcastInstance;
 
     public PartitionServiceMBean(HazelcastInstanceImpl hazelcastInstance, InternalPartitionService partitionService,
@@ -35,7 +36,7 @@ public class PartitionServiceMBean  extends HazelcastMBean<InternalPartitionServ
         super(partitionService, service);
 
         this.hazelcastInstance = hazelcastInstance;
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.PartitionServiceMBean"));
         properties.put("name", quote(hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

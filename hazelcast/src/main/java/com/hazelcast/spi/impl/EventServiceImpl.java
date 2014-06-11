@@ -288,13 +288,15 @@ public class EventServiceImpl implements EventService {
         if (nodeEngine.isActive()) {
             try {
                 if (reg.listener != null) {
-                    eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey, eventQueueTimeoutMs));
+                    eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener
+                            , orderKey, eventQueueTimeoutMs));
                 } else {
                     logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
                 }
             } catch (RejectedExecutionException e) {
                 if (eventExecutor.isLive()) {
-                    logger.warning("EventQueue overloaded! " + event + " failed to publish to " + reg.serviceName + ":" + reg.topic);
+                    logger.warning("EventQueue overloaded! " + event
+                            + " failed to publish to " + reg.serviceName + ":" + reg.topic);
                 }
             }
         }
@@ -404,7 +406,8 @@ public class EventServiceImpl implements EventService {
         private Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
             Collection<Registration> listenerList = registrations.get(topic);
             if (listenerList == null && forceCreate) {
-                return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, new ConstructorFunction<String, Collection<Registration>>() {
+                return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic
+                        , new ConstructorFunction<String, Collection<Registration>>() {
                     public Collection<Registration> createNew(String key) {
                         return Collections.newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
                     }
@@ -466,8 +469,8 @@ public class EventServiceImpl implements EventService {
     }
 
     private class EventPacketProcessor implements StripedRunnable {
-        private EventPacket eventPacket;
         int orderKey;
+        private EventPacket eventPacket;
 
         private EventPacketProcessor() {
         }
@@ -552,7 +555,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private class LocalEventDispatcher implements StripedRunnable, TimeoutRunnable {
+    private final class LocalEventDispatcher implements StripedRunnable, TimeoutRunnable {
         final String serviceName;
         final Object event;
         final Object listener;
@@ -578,7 +581,7 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
-        public final void run() {
+        public void run() {
             final EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
             if (service != null) {
                 service.dispatchEvent(event, listener);
@@ -641,16 +644,30 @@ public class EventServiceImpl implements EventService {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             Registration that = (Registration) o;
 
-            if (id != null ? !id.equals(that.id) : that.id != null) return false;
-            if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) return false;
-            if (topic != null ? !topic.equals(that.topic) : that.topic != null) return false;
-            if (filter != null ? !filter.equals(that.filter) : that.filter != null) return false;
-            if (subscriber != null ? !subscriber.equals(that.subscriber) : that.subscriber != null) return false;
+            if (id != null ? !id.equals(that.id) : that.id != null) {
+                return false;
+            }
+            if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) {
+                return false;
+            }
+            if (topic != null ? !topic.equals(that.topic) : that.topic != null) {
+                return false;
+            }
+            if (filter != null ? !filter.equals(that.filter) : that.filter != null) {
+                return false;
+            }
+            if (subscriber != null ? !subscriber.equals(that.subscriber) : that.subscriber != null) {
+                return false;
+            }
 
             return true;
         }
@@ -698,7 +715,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    public final static class EventPacket implements IdentifiedDataSerializable {
+    public static final class EventPacket implements IdentifiedDataSerializable {
 
         private String id;
         private String serviceName;
@@ -814,7 +831,7 @@ public class EventServiceImpl implements EventService {
     public static class RegistrationOperation extends AbstractOperation {
 
         private Registration registration;
-        private boolean response = false;
+        private boolean response;
 
         public RegistrationOperation() {
         }

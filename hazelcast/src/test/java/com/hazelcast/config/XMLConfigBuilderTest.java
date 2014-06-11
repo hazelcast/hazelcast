@@ -290,15 +290,13 @@ public class XMLConfigBuilderTest {
     public void testManagementCenterConfig() {
         String xml =
                 "<hazelcast>\n" +
-                        "<management-center enabled=\"true\" security-token=\"someToken\" cluster-id=\"someClusterId\">" +
+                        "<management-center enabled=\"true\">" +
                         "someUrl" +
                         "</management-center>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertTrue(manCenterCfg.isEnabled());
-        assertEquals("someClusterId", manCenterCfg.getClusterId());
-        assertEquals("someToken", manCenterCfg.getSecurityToken());
         assertEquals("someUrl", manCenterCfg.getUrl());
     }
 
@@ -312,8 +310,6 @@ public class XMLConfigBuilderTest {
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getClusterId());
-        assertNull(manCenterCfg.getSecurityToken());
         assertNull(manCenterCfg.getUrl());
     }
 
@@ -325,8 +321,6 @@ public class XMLConfigBuilderTest {
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getClusterId());
-        assertNull(manCenterCfg.getSecurityToken());
         assertNull(manCenterCfg.getUrl());
     }
 
@@ -340,8 +334,6 @@ public class XMLConfigBuilderTest {
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getClusterId());
-        assertNull(manCenterCfg.getSecurityToken());
         assertNull(manCenterCfg.getUrl());
     }
 
@@ -356,24 +348,7 @@ public class XMLConfigBuilderTest {
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
         assertFalse(manCenterCfg.isEnabled());
-        assertNull(manCenterCfg.getClusterId());
-        assertNull(manCenterCfg.getSecurityToken());
         assertEquals("http://localhost:8080/mancenter", manCenterCfg.getUrl());
-    }
-
-    @Test
-    public void testManagementCenterConfig_onlySecurityTokenSet() {
-        String xml =
-                "<hazelcast>\n" +
-                        "<management-center security-token=\"someToken\">" +
-                        "</management-center>" +
-                        "</hazelcast>";
-        final Config config = buildConfig(xml);
-        final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
-        assertTrue(manCenterCfg.isEnabled());
-        assertEquals("someToken", manCenterCfg.getSecurityToken());
-        assertNull(manCenterCfg.getClusterId());
-        assertNull(manCenterCfg.getUrl());
     }
 
     @Test

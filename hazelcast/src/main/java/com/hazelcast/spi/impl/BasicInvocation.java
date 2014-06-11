@@ -54,8 +54,7 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  */
 abstract class BasicInvocation implements ResponseHandler, Runnable {
 
-    private final static AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
+    public static final long TIMEOUT = 5;
 
     static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
@@ -67,7 +66,10 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
-    static class InternalResponse {
+    private static final AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
+
+    static final class InternalResponse {
 
         private String toString;
 
@@ -92,20 +94,22 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     protected final int tryCount;
     protected final long tryPauseMillis;
     protected final ILogger logger;
-    private final BasicInvocationFuture invocationFuture;
-
-    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
-    private volatile Boolean responseReceived = Boolean.FALSE;
-    private volatile int invokeCount = 0;
-    boolean remote = false;
-    private final String executorName;
     final boolean resultDeserialized;
-    private Address invTarget;
-    private MemberImpl invTargetMember;
+    boolean remote;
     volatile int backupsCompleted;
     volatile NormalResponse potentialResponse;
     volatile int backupsExpected;
 
+    private final BasicInvocationFuture invocationFuture;
+
+    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
+    private volatile Boolean responseReceived = Boolean.FALSE;
+    private volatile int invokeCount;
+
+    private final String executorName;
+
+    private Address invTarget;
+    private MemberImpl invTargetMember;
 
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
@@ -173,7 +177,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     public final BasicInvocationFuture invoke() {
-        if (invokeCount > 0) {   // no need to be pessimistic.
+        if (invokeCount > 0) {
+            // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
         }
 
@@ -227,7 +232,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+                notify(new WrongTargetException(thisAddress, null, partitionId
+                        , replicaIndex, op.getClass().getName(), serviceName));
             } else {
                 notify(new HazelcastInstanceNotActiveException());
             }
@@ -241,14 +247,14 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
 
         if (op.getPartitionId() != partitionId) {
-            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
-                    " is not equal to the partition id of invocation: " + partitionId));
+            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
+                    + " is not equal to the partition id of invocation: " + partitionId));
             return;
         }
 
         if (op.getReplicaIndex() != replicaIndex) {
-            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
-                    " is not equal to the replica index of invocation: " + replicaIndex));
+            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
+                    + " is not equal to the replica index of invocation: " + replicaIndex));
             return;
         }
 
@@ -346,7 +352,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         if (response instanceof NormalResponse && op instanceof BackupAwareOperation) {
             final NormalResponse resp = (NormalResponse) response;
             if (resp.getBackupCount() > 0) {
-                waitForBackups(resp.getBackupCount(), 5, TimeUnit.SECONDS, resp);
+                waitForBackups(resp.getBackupCount(), TIMEOUT, TimeUnit.SECONDS, resp);
                 return;
             }
         }

@@ -25,12 +25,12 @@ import static com.hazelcast.jmx.ManagementService.quote;
 
 @ManagedDescription("HazelcastInstance.ManagedExecutorService")
 public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorService> {
-
+    private static final int INITIAL_CAPACITY = 3;
     public ManagedExecutorServiceMBean(HazelcastInstance hazelcastInstance, ManagedExecutorService executorService,
                                        ManagementService service) {
         super(executorService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.ManagedExecutorService"));
         properties.put("name", quote(executorService.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

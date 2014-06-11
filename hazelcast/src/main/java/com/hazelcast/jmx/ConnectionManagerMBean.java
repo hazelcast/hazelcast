@@ -24,7 +24,7 @@ import java.util.Hashtable;
 import static com.hazelcast.jmx.ManagementService.quote;
 
 @ManagedDescription("HazelcastInstance.ConnectionManager")
-public class ConnectionManagerMBean  extends HazelcastMBean<ConnectionManager> {
+public class ConnectionManagerMBean extends HazelcastMBean<ConnectionManager> {
 
     public ConnectionManagerMBean(HazelcastInstance hazelcastInstance, ConnectionManager connectionManager,
                                   ManagementService service) {
@@ -37,7 +37,7 @@ public class ConnectionManagerMBean  extends HazelcastMBean<ConnectionManager> {
         setObjectName(properties);
     }
 
-    public ConnectionManager getConnectionManager(){
+    public ConnectionManager getConnectionManager() {
         return managedObject;
     }
 

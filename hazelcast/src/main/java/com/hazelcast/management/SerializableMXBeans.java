@@ -1,13 +1,13 @@
 package com.hazelcast.management;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import java.io.IOException;
+import com.eclipsesource.json.JsonObject;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
-public class SerializableMXBeans implements DataSerializable{
+import static com.hazelcast.util.JsonUtil.getObject;
+
+public class SerializableMXBeans implements JsonSerializable {
 
     private SerializableEventServiceBean eventServiceBean;
     private SerializableOperationServiceBean operationServiceBean;
@@ -69,38 +69,40 @@ public class SerializableMXBeans implements DataSerializable{
         managedExecutorBeans.put(name, bean);
     }
 
-
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(managedExecutorBeans.size());
+    public JsonObject toJson() {
+        final JsonObject root = new JsonObject();
+        JsonObject managedExecutors = new JsonObject();
         for (Map.Entry<String, SerializableManagedExecutorBean> entry : managedExecutorBeans.entrySet()) {
-            out.writeUTF(entry.getKey());
-            entry.getValue().writeData(out);
+            managedExecutors.add(entry.getKey(), entry.getValue().toJson());
         }
-        eventServiceBean.writeData(out);
-        operationServiceBean.writeData(out);
-        connectionManagerBean.writeData(out);
-        partitionServiceBean.writeData(out);
-        proxyServiceBean.writeData(out);
+        root.add("managedExecutorBeans", managedExecutors);
+        root.add("eventServiceBean", eventServiceBean.toJson());
+        root.add("operationServiceBean", operationServiceBean.toJson());
+        root.add("connectionManagerBean", connectionManagerBean.toJson());
+        root.add("partitionServiceBean", partitionServiceBean.toJson());
+        root.add("proxyServiceBean", proxyServiceBean.toJson());
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        for (int i = in.readInt(); i > 0; i--) {
-            String name = in.readUTF();
+    public void fromJson(JsonObject json) {
+        final Iterator<JsonObject.Member> managedExecutorsIteartor = getObject(json, "managedExecutorBeans").iterator();
+        while (managedExecutorsIteartor.hasNext()) {
+            final JsonObject.Member next = managedExecutorsIteartor.next();
             SerializableManagedExecutorBean managedExecutorBean = new SerializableManagedExecutorBean();
-            managedExecutorBean.readData(in);
-            managedExecutorBeans.put(name, managedExecutorBean);
+            managedExecutorBean.fromJson(next.getValue().asObject());
+            managedExecutorBeans.put(next.getName(), managedExecutorBean);
         }
         eventServiceBean = new SerializableEventServiceBean();
-        eventServiceBean.readData(in);
+        eventServiceBean.fromJson(getObject(json, "eventServiceBean"));
         operationServiceBean = new SerializableOperationServiceBean();
-        operationServiceBean.readData(in);
+        operationServiceBean.fromJson(getObject(json, "operationServiceBean"));
         connectionManagerBean = new SerializableConnectionManagerBean();
-        connectionManagerBean.readData(in);
-        partitionServiceBean = new SerializablePartitionServiceBean();
-        partitionServiceBean.readData(in);
+        connectionManagerBean.fromJson(getObject(json, "connectionManagerBean"));
         proxyServiceBean = new SerializableProxyServiceBean();
-        proxyServiceBean.readData(in);
+        proxyServiceBean.fromJson(getObject(json, "proxyServiceBean"));
+        partitionServiceBean = new SerializablePartitionServiceBean();
+        partitionServiceBean.fromJson(getObject(json, "partitionServiceBean"));
     }
 }
