@@ -23,7 +23,7 @@
 
     <vendor-name>Hazelcast.com</vendor-name>
     <eis-type>Hazelcast</eis-type>
-    <resourceadapter-version>3.1.7</resourceadapter-version>
+    <resourceadapter-version>3.1.8</resourceadapter-version>
 
     <license>
         <description>Copyright (c) 2008-2013, Hazelcast, Inc.</description>
