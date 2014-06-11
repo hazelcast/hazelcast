@@ -591,6 +591,9 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
                 selected.add(member);
             }
         }
+        if (selected.isEmpty()) {
+            throw new RejectedExecutionException("No member selected with memberSelector[" + memberSelector + "]");
+        }
         return selected;
     }
 
