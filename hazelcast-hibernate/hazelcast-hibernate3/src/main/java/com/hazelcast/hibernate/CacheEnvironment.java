@@ -24,7 +24,7 @@ import java.util.Properties;
 
 public final class CacheEnvironment {
 
-    private CacheEnvironment(){}
+    public static final String EXPLICIT_VERSION_CHECK = "hibernate.cache.hazelcast.explicit_version_check";
 
     public static final String CONFIG_FILE_PATH_LEGACY = Environment.CACHE_PROVIDER_CONFIG;
 
@@ -44,11 +44,14 @@ public final class CacheEnvironment {
 
     public static final String HAZELCAST_INSTANCE_NAME = "hibernate.cache.hazelcast.instance_name";
 
-    private static final int MAXIMUM_LOCK_TIMEOUT = 10000; // milliseconds
+    // milliseconds
+    private static final int MAXIMUM_LOCK_TIMEOUT = 10000;
 
-    private final static int DEFAULT_CACHE_TIMEOUT = (3600 * 1000); // one hour in milliseconds
+    // one hour in milliseconds
+    private static final int DEFAULT_CACHE_TIMEOUT = (3600 * 1000);
 
-    public static final String EXPLICIT_VERSION_CHECK = "hibernate.cache.hazelcast.explicit_version_check";
+    private CacheEnvironment() {
+    }
 
     public static String getConfigFilePath(Properties props) {
         String configResourcePath = PropertiesHelper.getString(CacheEnvironment.CONFIG_FILE_PATH_LEGACY, props, null);

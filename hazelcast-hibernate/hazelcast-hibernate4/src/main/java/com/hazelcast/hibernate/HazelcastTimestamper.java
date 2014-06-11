@@ -23,17 +23,22 @@ import com.hazelcast.instance.GroupProperties;
 
 public final class HazelcastTimestamper {
 
-    private HazelcastTimestamper(){}
+    private static final int SEC_TO_MS = 1000;
+
+    private HazelcastTimestamper() {
+    }
 
     public static long nextTimestamp(HazelcastInstance instance) {
-        return instance.getCluster().getClusterTime(); // System time in ms.
+        // System time in ms.
+        return instance.getCluster().getClusterTime();
     }
 
     public static int getTimeout(HazelcastInstance instance, String regionName) {
         try {
             final MapConfig cfg = instance.getConfig().findMapConfig(regionName);
             if (cfg.getTimeToLiveSeconds() > 0) {
-                return cfg.getTimeToLiveSeconds() * 1000; // TTL in ms.
+                // TTL in ms
+                return cfg.getTimeToLiveSeconds() * SEC_TO_MS;
             }
         } catch (UnsupportedOperationException ignored) {
             // HazelcastInstance is instance of HazelcastClient.

@@ -27,7 +27,11 @@ import com.hazelcast.util.Clock;
 import org.hibernate.cache.spi.CacheDataDescription;
 import org.hibernate.cache.spi.access.SoftLock;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,6 +40,24 @@ import java.util.concurrent.ConcurrentMap;
  * @author mdogan 11/9/12
  */
 public class LocalRegionCache implements RegionCache {
+
+    private static final long SEC_TO_MS = 1000L;
+    private static final int MAX_SIZE = 100000;
+
+
+    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
+        @Override
+        public String toString() {
+            return "Lock::Success";
+        }
+    };
+
+    private static final SoftLock LOCK_FAILURE = new SoftLock() {
+        @Override
+        public String toString() {
+            return "Lock::Failure";
+        }
+    };
 
     protected final ITopic<Object> topic;
     protected final MessageListener<Object> messageListener;
@@ -73,7 +95,7 @@ public class LocalRegionCache implements RegionCache {
     }
 
     public boolean update(final Object key, final Object value, final Object currentVersion,
-                       final Object previousVersion, final SoftLock lock) {
+                          final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
             return false;
         }
@@ -81,7 +103,7 @@ public class LocalRegionCache implements RegionCache {
         final Value currentValue = cache.get(key);
         if (lock == LOCK_SUCCESS) {
             if (currentValue != null && currentVersion != null
-                && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
+                    && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
                 return false;
             }
         }
@@ -183,9 +205,9 @@ public class LocalRegionCache implements RegionCache {
         final long timeToLive;
         if (config != null) {
             maxSize = config.getMaxSizeConfig().getSize();
-            timeToLive = config.getTimeToLiveSeconds() * 1000L;
+            timeToLive = config.getTimeToLiveSeconds() * SEC_TO_MS;
         } else {
-            maxSize = 100000;
+            maxSize = MAX_SIZE;
             timeToLive = CacheEnvironment.getDefaultCacheTimeoutInMillis();
         }
 
@@ -224,7 +246,7 @@ public class LocalRegionCache implements RegionCache {
         }
     }
 
-    static private class EvictionEntry implements Comparable<EvictionEntry> {
+    private static final class EvictionEntry implements Comparable<EvictionEntry> {
         final Object key;
         final Value value;
 
@@ -241,13 +263,21 @@ public class LocalRegionCache implements RegionCache {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             EvictionEntry that = (EvictionEntry) o;
 
-            if (key != null ? !key.equals(that.key) : that.key != null) return false;
-            if (value != null ? !value.equals(that.value) : that.value != null) return false;
+            if (key != null ? !key.equals(that.key) : that.key != null) {
+                return false;
+            }
+            if (value != null ? !value.equals(that.value) : that.value != null) {
+                return false;
+            }
 
             return true;
         }
@@ -258,18 +288,5 @@ public class LocalRegionCache implements RegionCache {
         }
     }
 
-    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
-        @Override
-        public String toString() {
-            return "Lock::Success";
-        }
-    };
-
-    private static final SoftLock LOCK_FAILURE = new SoftLock() {
-        @Override
-        public String toString() {
-            return "Lock::Failure";
-        }
-    };
 
 }
