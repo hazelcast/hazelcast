@@ -214,8 +214,13 @@ public class ListenerTest extends HazelcastTestSupport {
         }, true);
         map.replace(1, 1, 2);  // should succeed and fire entryUpdated() exactly once
         map.replace(1, 1, 2);  // should fail
-        assertEquals(addCount.get(), 0);
-        assertEquals(updateCount.get(), 1);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(addCount.get(), 0);
+                assertEquals(updateCount.get(), 1);
+            }
+        });
     }
 
     /**
