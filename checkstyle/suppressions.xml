@@ -23,12 +23,12 @@
 
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
     <suppress checks="MagicNumberCheck" files="[\\/]examples[\\/]"/>
-    <suppress checks="FileLengthCheck" files="TestApp.java"/>
-    <suppress checks="MethodCountCheck" files="TestApp.java"/>
-    <suppress checks="ClassFanOutComplexityCheck" files="TestApp.java"/>
-    <suppress checks="CyclomaticComplexityCheck" files="TestApp.java"/>
-    <suppress checks="NPathComplexityCheck" files="TestApp.java"/>
-    <suppress checks="MethodLengthCheck" files="TestApp.java"/>
+    <suppress checks="FileLengthCheck" files="ConsoleApp.java"/>
+    <suppress checks="MethodCountCheck" files="ConsoleApp.java"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="ConsoleApp.java"/>
+    <suppress checks="CyclomaticComplexityCheck" files="ConsoleApp.java"/>
+    <suppress checks="NPathComplexityCheck" files="ConsoleApp.java"/>
+    <suppress checks="MethodLengthCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodLengthCheck" files="AllTest.java"/>
     <suppress checks="MethodCountCheck" files="AllTest.java"/>
     <suppress checks="AnonInnerLengthCheck" files="SimpleFunctionalMapTest.java"/>

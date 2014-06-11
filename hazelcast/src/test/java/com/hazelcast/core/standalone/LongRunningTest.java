@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.examples;
+package com.hazelcast.core.standalone;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;

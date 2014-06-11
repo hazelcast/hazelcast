@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.examples;
+package com.hazelcast.multimap.standalone;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -35,7 +35,7 @@ public final class SimpleMultiMapTest {
 
 
 
-    private static Logger logger = Logger.getLogger(SimpleMapTest.class.getName());
+    private static Logger logger = Logger.getLogger(SimpleMultiMapTest.class.getName());
     private static HazelcastInstance instance = Hazelcast.newHazelcastInstance(null);
     private static final int STATS_SECONDS = 10;
     private static int threadCount = 40;

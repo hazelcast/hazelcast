@@ -16,8 +16,8 @@
 
 package com.hazelcast.management;
 
+import com.hazelcast.console.ConsoleApp;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.examples.TestApp;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -25,12 +25,12 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ConsoleCommandHandler {
 
-    private final ConsoleApp app;
+    private final ConsoleHandlerApp app;
     private final Lock lock = new ReentrantLock();
     private final StringBuilder buffer = new StringBuilder();
 
     public ConsoleCommandHandler(HazelcastInstance instance) {
-        this.app = new ConsoleApp(instance);
+        this.app = new ConsoleHandlerApp(instance);
     }
 
     public String handleCommand(final String command) throws InterruptedException {
@@ -55,8 +55,8 @@ public class ConsoleCommandHandler {
         return output;
     }
 
-    private class ConsoleApp extends TestApp {
-        public ConsoleApp(HazelcastInstance hazelcast) {
+    private class ConsoleHandlerApp extends ConsoleApp {
+        public ConsoleHandlerApp(HazelcastInstance hazelcast) {
             super(hazelcast);
         }
 

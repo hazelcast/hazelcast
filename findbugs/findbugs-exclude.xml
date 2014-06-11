@@ -8,13 +8,13 @@
     <!--<Package name="com.hazelcast.examples" />-->
     <!--</Match>-->
     <Match>
-        <Class name="com.hazelcast.examples.TestApp"/>
+        <Class name="com.hazelcast.console.ConsoleApp"/>
         <!--System.exit()-->
         <Bug code="Dm" />
     </Match>
 
     <Match>
-        <Package name="com.hazelcast.client.examples"/>
+        <Package name="com.hazelcast.client.console"/>
     </Match>
 
     <!-- all these issues below need to be resolved in 3.3-->

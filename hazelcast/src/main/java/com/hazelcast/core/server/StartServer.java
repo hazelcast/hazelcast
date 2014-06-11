@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.examples;
+package com.hazelcast.core.server;
 
 import com.hazelcast.core.Hazelcast;
 

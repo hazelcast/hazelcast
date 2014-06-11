@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.examples;
+package com.hazelcast.client.console;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
@@ -38,7 +38,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
-import com.hazelcast.examples.LineReader;
+import com.hazelcast.console.LineReader;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -70,7 +70,7 @@ import java.util.concurrent.locks.Lock;
 
 import static java.lang.String.format;
 
-public class ClientTestApp implements EntryListener, ItemListener, MessageListener {
+public class ClientConsoleApp implements EntryListener, ItemListener, MessageListener {
 
     private static final int ONE_KB = 1024;
     private static final int ONE_THOUSAND = 1000;
@@ -103,7 +103,7 @@ public class ClientTestApp implements EntryListener, ItemListener, MessageListen
 
     private volatile boolean running;
 
-    public ClientTestApp(HazelcastInstance hazelcast) {
+    public ClientConsoleApp(HazelcastInstance hazelcast) {
         this.hazelcast = hazelcast;
     }
 
@@ -1629,8 +1629,8 @@ public class ClientTestApp implements EntryListener, ItemListener, MessageListen
             clientConfig = new ClientConfig();
         }
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        ClientTestApp clientTestApp = new ClientTestApp(client);
-        clientTestApp.start(args);
+        ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client);
+        clientConsoleApp.start(args);
     }
 
 }
