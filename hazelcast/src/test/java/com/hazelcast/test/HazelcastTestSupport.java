@@ -105,10 +105,37 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("the size of the collection is correct", expectedSize, c.size());
+                assertEquals("the size of the collection is not correct", expectedSize, c.size());
             }
         }, timeoutSeconds);
     }
+
+    public static void assertSizeEventually(int expectedSize, Map<?, ?> m) {
+        assertSizeEventually(expectedSize, m, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertSizeEventually(final int expectedSize, final Map<?, ?> m, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("the size of the map is not correct", expectedSize, m.size());
+            }
+        }, timeoutSeconds);
+    }
+
+    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance) {
+        assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals("the size of the cluster is not correct", expectedSize, instance.getCluster().getMembers().size());
+            }
+        }, timeoutSeconds);
+    }
+
 
     public static void assertJoinable(long timeoutSeconds, Thread... threads) {
         try {

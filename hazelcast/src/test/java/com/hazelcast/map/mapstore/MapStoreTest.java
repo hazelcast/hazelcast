@@ -480,12 +480,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
 
         sleepSeconds(10);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, map.size());
-            }
-        });
+        assertSizeEventually(0, map);
         assertEquals(total, testMapStore.getStore().size());
     }
 
@@ -1507,12 +1502,7 @@ public class MapStoreTest extends HazelcastTestSupport {
             sleepMillis(1000);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expectedStoreSizeEventually, store.getStore().size());
-            }
-        });
+        assertSizeEventually(expectedStoreSizeEventually, store.getStore());
     }
 
     @Test

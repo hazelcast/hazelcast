@@ -19,7 +19,6 @@ package com.hazelcast.mapreduce;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -65,12 +64,7 @@ public class CustomDataSourceMapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(new CustomKeyValueSource());
