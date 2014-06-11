@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.examples;
+package com.hazelcast.queue.standalone;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;

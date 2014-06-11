@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.examples;
+package com.hazelcast.console;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExecutorConfig;
@@ -78,7 +78,7 @@ import static java.lang.String.format;
  *
  * @author alex, talip
  */
-public class TestApp implements EntryListener, ItemListener, MessageListener {
+public class ConsoleApp implements EntryListener, ItemListener, MessageListener {
 
     private static final int LOAD_EXECUTORS_COUNT = 16;
     private static final int ONE_KB = 1024;
@@ -112,7 +112,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private volatile boolean running;
 
-    public TestApp(HazelcastInstance hazelcast) {
+    public ConsoleApp(HazelcastInstance hazelcast) {
         this.hazelcast = hazelcast;
     }
 
@@ -1654,8 +1654,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
             config.addExecutorConfig(new ExecutorConfig("e" + k).setPoolSize(k));
         }
-        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
-        testApp.start(args);
+        ConsoleApp consoleApp = new ConsoleApp(Hazelcast.newHazelcastInstance(null));
+        consoleApp.start(args);
     }
 
 }

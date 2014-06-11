@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.examples;
-
 /**
- * Reads a line of input
+ * <p>This package contains classes related to ConsoleApp<br/>
  */
-public interface LineReader {
 
-    String readLine() throws Exception;
-
-}
+package com.hazelcast.console;

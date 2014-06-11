@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * Contains ClientTestApp.java
+ * <p>This package contains ClientConsoleApp<br/>
  */
-package com.hazelcast.client.examples;
+
+package com.hazelcast.client.console;

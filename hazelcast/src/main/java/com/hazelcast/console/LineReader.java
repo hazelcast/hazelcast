@@ -14,25 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.examples;
-
-import com.hazelcast.core.Hazelcast;
+package com.hazelcast.console;
 
 /**
- * Starts a Hazelcast server
+ * Reads a line of input
  */
-public final class StartServer {
+public interface LineReader {
 
+    String readLine() throws Exception;
 
-    private StartServer() {
-    }
-
-    /**
-     * Creates a server instance of Hazelcast
-     *
-     * @param args none
-     */
-    public static void main(String[] args) {
-        Hazelcast.newHazelcastInstance(null);
-    }
 }
