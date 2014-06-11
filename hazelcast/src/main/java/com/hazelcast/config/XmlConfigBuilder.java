@@ -540,7 +540,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             for (int a = 0; a < atts.getLength(); a++) {
                 final org.w3c.dom.Node att = atts.item(a);
                 String methodName = "set" + getMethodName(att.getNodeName());
-                Method method = getMethod(target, methodName);
+                Method method = getMethod(target, methodName, true);
                 final String value = att.getNodeValue();
                 invoke(target, method, value);
             }
@@ -548,14 +548,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             String methodName = "set" + getMethodName(cleanNodeName(n.getNodeName()));
-            Method method = getMethod(target, methodName);
+            Method method = getMethod(target, methodName, true);
             invoke(target, method, value);
         }
         String mName = "set" + target.getClass().getSimpleName();
-        Method method = getMethod(parent, mName);
+        Method method = getMethod(parent, mName, false);
         if (method == null) {
             mName = "add" + target.getClass().getSimpleName();
-            method = getMethod(parent, mName);
+            method = getMethod(parent, mName, false);
         }
         method.invoke(parent, target);
     }
@@ -584,11 +584,23 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private Method getMethod(Object target, String methodName) {
+    private Method getMethod(Object target, String methodName, boolean requiresArg) {
         Method[] methods = target.getClass().getMethods();
         for (Method method : methods) {
             if (method.getName().equalsIgnoreCase(methodName)) {
-                return method;
+                if (requiresArg) {
+                    Class<?>[] args = method.getParameterTypes();
+                    if (args == null || args.length == 0) {
+                        continue;
+                    }
+                    Class<?> arg = method.getParameterTypes()[0];
+                    // this list has to match the options in invoke(Object, Method, String)
+                    if (arg == String.class || arg == int.class || arg == long.class || arg == boolean.class) {
+                        return method;
+                    }
+                } else {
+                    return method;
+                }
             }
         }
         return null;
