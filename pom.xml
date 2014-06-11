@@ -212,7 +212,7 @@
     <profiles>
 
         <profile>
-            <id>Coverage</id>
+            <id>test-coverage-Local</id>
             <build>
                 <plugins>
                     <plugin>
@@ -253,7 +253,7 @@
 
 
                             <includes>
-                                <include>**/ClientMapBasicTest.java</include>
+                                <include>**/YourTestFileHear.java</include>
                             </includes>
 
                         </configuration>
