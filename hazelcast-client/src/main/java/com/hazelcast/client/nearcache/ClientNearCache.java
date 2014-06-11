@@ -23,7 +23,6 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.client.MapRemoveEntryListenerRequest;
@@ -112,11 +111,19 @@ public class ClientNearCache<K> {
                 request = new MapAddEntryListenerRequest(mapName, false);
                 handler = new EventHandler<PortableEntryEvent>() {
                     public void handle(PortableEntryEvent event) {
-                        final Data key = event.getKey();
-                        if (event.getEventType() == EntryEventType.CLEARED) {
-                            cache.clear();
-                        } else {
-                            cache.remove(key);
+                        switch (event.getEventType()) {
+                            case ADDED:
+                            case REMOVED:
+                            case UPDATED:
+                            case EVICTED:
+                                final Data key = event.getKey();
+                                cache.remove(key);
+                                break;
+                            case CLEARED:
+                                cache.clear();
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                         }
                     }
 
