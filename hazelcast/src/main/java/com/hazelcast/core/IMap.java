@@ -221,8 +221,7 @@ public interface IMap<K, V>
      * @param keys keys of the values entries to load
      * @param replaceExistingValues when true existing values in the Map will
      *                              be replaced by those loaded from the MapLoader
-     * @return map of loaded key-value pairs.
-     * loadAll(Set<K> keys, boolean replaceExistingValues,
+     * void loadAll(Set<K> keys, boolean replaceExistingValues);
      */
 
     /**
@@ -234,8 +233,7 @@ public interface IMap<K, V>
      * @param keys keys of the values entries to load
      * @param replaceExistingValues when true existing values in the Map will
      *                              be replaced by those loaded from the MapLoader
-     * @return map of loaded key-value pairs.
-     * loadAll(boolean replaceExistingValues));
+     * void loadAll(boolean replaceExistingValues));
      */
 
 
