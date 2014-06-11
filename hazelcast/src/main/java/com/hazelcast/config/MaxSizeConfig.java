@@ -70,9 +70,10 @@ public class MaxSizeConfig {
 
     @Override
     public String toString() {
-        return "MaxSizeConfig{" +
-                "maxSizePolicy='" + maxSizePolicy + '\'' +
-                ", size=" + size +
-                '}';
+        return "MaxSizeConfig{"
+                + "maxSizePolicy='" + maxSizePolicy
+                + '\''
+                + ", size=" + size
+                + '}';
     }
 }

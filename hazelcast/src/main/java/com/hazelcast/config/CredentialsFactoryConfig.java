@@ -22,9 +22,9 @@ import java.util.Properties;
 
 public class CredentialsFactoryConfig {
 
-    private String className = null;
+    private String className;
 
-    private ICredentialsFactory implementation = null;
+    private ICredentialsFactory implementation;
 
     private Properties properties = new Properties();
 

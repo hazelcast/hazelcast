@@ -27,8 +27,8 @@ public class MapStoreConfig {
     public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;
 
     private boolean enabled = true;
-    private String className = null;
-    private String factoryClassName = null;
+    private String className;
+    private String factoryClassName;
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
     private Object implementation;
     private Object factoryImplementation;
@@ -56,7 +56,7 @@ public class MapStoreConfig {
     }
 
     public MapStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null ) {
+        if (readOnly == null) {
             readOnly = new MapStoreConfigReadOnly(this);
         }
         return readOnly;
@@ -208,7 +208,7 @@ public class MapStoreConfig {
 
     /**
      * Sets initial load mode
-     *
+     * <p/>
      * LAZY: Default load mode where load is async
      * EAGER: load mode where load is blocked till all partitions are loaded
      *
@@ -222,13 +222,14 @@ public class MapStoreConfig {
 
     @Override
     public String toString() {
-        return "MapStoreConfig{" +
-                "className='" + className + '\'' +
-                ", enabled=" + enabled +
-                ", writeDelaySeconds=" + writeDelaySeconds +
-                ", implementation=" + implementation +
-                ", properties=" + properties +
-                ", initialLoadMode=" + initialLoadMode +
-                '}';
+        return "MapStoreConfig{"
+                + "className='" + className
+                + '\''
+                + ", enabled=" + enabled
+                + ", writeDelaySeconds=" + writeDelaySeconds
+                + ", implementation=" + implementation
+                + ", properties=" + properties
+                + ", initialLoadMode=" + initialLoadMode
+                + '}';
     }
 }

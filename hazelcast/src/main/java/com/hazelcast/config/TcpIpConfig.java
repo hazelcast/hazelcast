@@ -25,20 +25,22 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * Contains the configuration for the Tcp/Ip join mechanism.
- *
+ * <p/>
  * The Tcp/Ip join mechanism relies on one or more well known members. So when a new member wants to join
  * a cluster, it will try to connect to one of the well known members. If it is able to connect, it will now
  * about all members in the cluster and doesn't rely on these well known members anymore.
  */
 public class TcpIpConfig {
 
-    private int connectionTimeoutSeconds = 5;
+    private static final int CONNECTION_TIMEOUT_SEC = 5;
 
-    private boolean enabled = false;
+    private int connectionTimeoutSeconds = CONNECTION_TIMEOUT_SEC;
+
+    private boolean enabled;
 
     private List<String> members = new ArrayList<String>();
 
-    private String requiredMember = null;
+    private String requiredMember;
 
     /**
      * Returns the connection timeout.
@@ -58,11 +60,11 @@ public class TcpIpConfig {
      *
      * @param connectionTimeoutSeconds the connection timeout in seconds.
      * @return the updated TcpIpConfig
-     * @see #getConnectionTimeoutSeconds()
      * @throws IllegalArgumentException if connectionTimeoutSeconds is smaller than 0.
+     * @see #getConnectionTimeoutSeconds()
      */
     public TcpIpConfig setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
-        if(connectionTimeoutSeconds<0){
+        if (connectionTimeoutSeconds < 0) {
             throw new IllegalArgumentException("connection timeout can't be smaller than 0");
         }
         this.connectionTimeoutSeconds = connectionTimeoutSeconds;
@@ -105,9 +107,9 @@ public class TcpIpConfig {
 
     /**
      * Sets the well known members.
-     *
+     * <p/>
      * If members is empty, calling this method will have the same effect as calling {@link #clear()}.
-     *
+     * <p/>
      * A member can be a comma separated string, e..g '10.11.12.1,10.11.12.2' which indicates multiple members
      * are going to be added.
      *
@@ -116,22 +118,22 @@ public class TcpIpConfig {
      * @throws IllegalArgumentException if members is null.
      */
     public TcpIpConfig setMembers(final List<String> members) {
-        isNotNull(members,"members");
+        isNotNull(members, "members");
 
         this.members.clear();
 
         for (String member : members) {
-          addMember(member);
+            addMember(member);
         }
         return this;
     }
 
     /**
      * Adds a 'well known' member.
-     *
+     * <p/>
      * Each HazelcastInstance will try to connect to at least one of the members to find all other members
      * and create a cluster.
-     *
+     * <p/>
      * A member can be a comma separated string, e..g '10.11.12.1,10.11.12.2' which indicates multiple members
      * are going to be added.
      *
@@ -141,7 +143,7 @@ public class TcpIpConfig {
      * @see #getMembers()
      */
     public TcpIpConfig addMember(String member) {
-        member = hasText(member,"member");
+        member = hasText(member, "member");
 
         StringTokenizer tokenizer = new StringTokenizer(member, ",");
         while (tokenizer.hasMoreTokens()) {
@@ -154,7 +156,7 @@ public class TcpIpConfig {
 
     /**
      * Removes all members.
-     *
+     * <p/>
      * Can safely be called when there are no members.
      *
      * @return the updated configuration.
@@ -177,7 +179,7 @@ public class TcpIpConfig {
 
     /**
      * Sets the required member. If a null value is passed, it means that there is no required member.
-     *
+     * <p/>
      * With a required member configured, the cluster will only start up when this required member is up.
      * Setting the required member can be tricky, since if that member doesn't come up, the cluster won't start.
      *

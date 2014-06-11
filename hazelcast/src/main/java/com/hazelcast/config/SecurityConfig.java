@@ -23,7 +23,7 @@ import java.util.Set;
 
 public class SecurityConfig {
 
-    private boolean enabled = false;
+    private boolean enabled;
 
     private CredentialsFactoryConfig memberCredentialsConfig = new CredentialsFactoryConfig();
 

@@ -39,7 +39,9 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class ConfigXmlGenerator {
 
-    private static final ILogger logger = Logger.getLogger(ConfigXmlGenerator.class);
+    private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGenerator.class);
+
+    private static final int INDENT = 5;
 
     private final boolean formatted;
 
@@ -66,7 +68,7 @@ public class ConfigXmlGenerator {
      * @return the XML string.
      */
     public String generate(Config config) {
-        isNotNull(config,"Config");
+        isNotNull(config, "Config");
 
         final StringBuilder xml = new StringBuilder();
         xml.append("<hazelcast ")
@@ -119,8 +121,10 @@ public class ConfigXmlGenerator {
         xml.append("<multicast enabled=\"").append(mcast.isEnabled()).append("\">");
         xml.append("<multicast-group>").append(mcast.getMulticastGroup()).append("</multicast-group>");
         xml.append("<multicast-port>").append(mcast.getMulticastPort()).append("</multicast-port>");
-        xml.append("<multicast-timeout-seconds>").append(mcast.getMulticastTimeoutSeconds()).append("</multicast-timeout-seconds>");
-        xml.append("<multicast-time-to-live>").append(mcast.getMulticastTimeToLive()).append("</multicast-time-to-live>");
+        xml.append("<multicast-timeout-seconds>").append(mcast.getMulticastTimeoutSeconds())
+                .append("</multicast-timeout-seconds>");
+        xml.append("<multicast-time-to-live>").append(mcast.getMulticastTimeToLive())
+                .append("</multicast-time-to-live>");
         if (!mcast.getTrustedInterfaces().isEmpty()) {
             xml.append("<trusted-interfaces>");
             for (String trustedInterface : mcast.getTrustedInterfaces()) {
@@ -219,21 +223,34 @@ public class ConfigXmlGenerator {
         final Collection<MapConfig> mCfgs = config.getMapConfigs().values();
         for (MapConfig m : mCfgs) {
             xml.append("<map name=\"").append(m.getName()).append("\">");
-            xml.append("<in-memory-format>").append(m.getInMemoryFormat()).append("</in-memory-format>");
-            xml.append("<backup-count>").append(m.getBackupCount()).append("</backup-count>");
-            xml.append("<async-backup-count>").append(m.getAsyncBackupCount()).append("</async-backup-count>");
-            xml.append("<time-to-live-seconds>").append(m.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
-            xml.append("<max-idle-seconds>").append(m.getMaxIdleSeconds()).append("</max-idle-seconds>");
-            xml.append("<eviction-policy>").append(m.getEvictionPolicy()).append("</eviction-policy>");
-            xml.append("<max-size policy=\"").append(m.getMaxSizeConfig().getMaxSizePolicy()).append("\">").append(m.getMaxSizeConfig().getSize()).append("</max-size>");
+            xml.append("<in-memory-format>").append(m.getInMemoryFormat())
+                    .append("</in-memory-format>");
+            xml.append("<backup-count>").append(m.getBackupCount())
+                    .append("</backup-count>");
+            xml.append("<async-backup-count>").append(m.getAsyncBackupCount())
+                    .append("</async-backup-count>");
+            xml.append("<time-to-live-seconds>").append(m.getTimeToLiveSeconds())
+                    .append("</time-to-live-seconds>");
+            xml.append("<max-idle-seconds>").append(m.getMaxIdleSeconds())
+                    .append("</max-idle-seconds>");
+            xml.append("<eviction-policy>").append(m.getEvictionPolicy())
+                    .append("</eviction-policy>");
+            xml.append("<max-size policy=\"").append(m.getMaxSizeConfig().getMaxSizePolicy())
+                    .append("\">").append(m.getMaxSizeConfig().getSize())
+                    .append("</max-size>");
             xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
-            xml.append("<merge-policy>").append(m.getMergePolicy()).append("</merge-policy>");
-            xml.append("<read-backup-data>").append(m.isReadBackupData()).append("</read-backup-data>");
-            xml.append("<statistics-enabled>").append(m.isStatisticsEnabled()).append("</statistics-enabled>");
+            xml.append("<merge-policy>").append(m.getMergePolicy())
+                    .append("</merge-policy>");
+            xml.append("<read-backup-data>").append(m.isReadBackupData())
+                    .append("</read-backup-data>");
+            xml.append("<statistics-enabled>").append(m.isStatisticsEnabled())
+                    .append("</statistics-enabled>");
             if (m.getMapStoreConfig() != null) {
                 final MapStoreConfig s = m.getMapStoreConfig();
-                xml.append("<map-store enabled=\"").append(s.isEnabled()).append("\">");
-                final String clazz = s.getImplementation() != null ? s.getImplementation().getClass().getName() : s.getClassName();
+                xml.append("<map-store enabled=\"").append(s.isEnabled())
+                        .append("\">");
+                final String clazz = s.getImplementation()
+                        != null ? s.getImplementation().getClass().getName() : s.getClassName();
                 xml.append("<class-name>").append(clazz).append("</class-name>");
                 final String factoryClass = s.getFactoryImplementation() != null
                         ? s.getFactoryImplementation().getClass().getName()
@@ -274,8 +291,10 @@ public class ConfigXmlGenerator {
             if (!m.getEntryListenerConfigs().isEmpty()) {
                 xml.append("<entry-listeners>");
                 for (EntryListenerConfig lc : m.getEntryListenerConfigs()) {
-                    xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue()).append("\" local=\"").append(lc.isLocal()).append("\">");
-                    final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue())
+                            .append("\" local=\"").append(lc.isLocal()).append("\">");
+                    final String clazz = lc.getImplementation()
+                            != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
                     xml.append(clazz);
                     xml.append("</entry-listener>");
                 }
@@ -300,8 +319,10 @@ public class ConfigXmlGenerator {
             if (!mm.getEntryListenerConfigs().isEmpty()) {
                 xml.append("<entry-listeners>");
                 for (EntryListenerConfig lc : mm.getEntryListenerConfigs()) {
-                    xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue()).append("\" local=\"").append(lc.isLocal()).append("\">");
-                    final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue())
+                            .append("\" local=\"").append(lc.isLocal()).append("\">");
+                    final String clazz = lc.getImplementation()
+                            != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
                     xml.append(clazz);
                     xml.append("</entry-listener>");
                 }
@@ -322,12 +343,14 @@ public class ConfigXmlGenerator {
         final Collection<TopicConfig> tCfgs = config.getTopicConfigs().values();
         for (TopicConfig t : tCfgs) {
             xml.append("<topic name=\"").append(t.getName()).append("\">");
-            xml.append("<global-ordering-enabled>").append(t.isGlobalOrderingEnabled()).append("</global-ordering-enabled>");
+            xml.append("<global-ordering-enabled>").append(t.isGlobalOrderingEnabled())
+                    .append("</global-ordering-enabled>");
             if (!t.getMessageListenerConfigs().isEmpty()) {
                 xml.append("<message-listeners>");
                 for (ListenerConfig lc : t.getMessageListenerConfigs()) {
                     xml.append("<message-listener>");
-                    final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    final String clazz = lc.getImplementation()
+                            != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
                     xml.append(clazz);
                     xml.append("</message-listener>");
                 }
@@ -347,14 +370,15 @@ public class ConfigXmlGenerator {
             xml.append("<listeners>");
             for (ListenerConfig lc : config.getListenerConfigs()) {
                 xml.append("<listener>");
-                final String clazz = lc.getImplementation() != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                final String clazz = lc.getImplementation()
+                        != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
                 xml.append(clazz);
                 xml.append("</listener>");
             }
             xml.append("</listeners>");
         }
         xml.append("</hazelcast>");
-        return format(xml.toString(), 5);
+        return format(xml.toString(), INDENT);
     }
 
     private String format(final String input, int indent) {
@@ -371,8 +395,8 @@ public class ConfigXmlGenerator {
             try {
                 transformerFactory.setAttribute("indent-number", indent);
             } catch (IllegalArgumentException e) {
-                if(logger.isFinestEnabled()){
-                    logger.finest( "Failed to set indent-number attribute; cause: " + e.getMessage());
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Failed to set indent-number attribute; cause: " + e.getMessage());
                 }
             }
             Transformer transformer = transformerFactory.newTransformer();
@@ -385,14 +409,14 @@ public class ConfigXmlGenerator {
             try {
                 transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", Integer.toString(indent));
             } catch (IllegalArgumentException e) {
-                if(logger.isFinestEnabled()){
-                    logger.finest( "Failed to set indent-amount property; cause: " + e.getMessage());
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Failed to set indent-amount property; cause: " + e.getMessage());
                 }
             }
             transformer.transform(xmlInput, xmlOutput);
             return xmlOutput.getWriter().toString();
         } catch (Exception e) {
-            logger.warning(e);
+            LOGGER.warning(e);
             return input;
         }
     }

@@ -29,7 +29,7 @@ import java.util.Properties;
 
 public abstract class AbstractXmlConfigHelper {
 
-    private final static ILogger logger = Logger.getLogger(AbstractXmlConfigHelper.class);
+    private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
 
     protected boolean domLevel3 = true;
 
@@ -60,7 +60,7 @@ public abstract class AbstractXmlConfigHelper {
         public Iterator<Node> iterator() {
             return new Iterator<Node>() {
 
-                private int index = 0;
+                private int index;
                 private Node next;
 
                 private boolean findNext() {
@@ -176,26 +176,27 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected boolean checkTrue(final String value) {
-        return "true".equalsIgnoreCase(value) ||
-                "yes".equalsIgnoreCase(value) ||
-                "on".equalsIgnoreCase(value);
+        return "true".equalsIgnoreCase(value)
+                || "yes".equalsIgnoreCase(value)
+                || "on".equalsIgnoreCase(value);
     }
 
     protected int getIntegerValue(final String parameterName, final String value, final int defaultValue) {
         try {
             return Integer.parseInt(value);
         } catch (final Exception e) {
-            logger.info( parameterName + " parameter value, [" + value
+            LOGGER.info(parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
-            logger.warning(e);
+            LOGGER.warning(e);
             return defaultValue;
         }
     }
 
     protected String getAttribute(org.w3c.dom.Node node, String attName) {
         final Node attNode = node.getAttributes().getNamedItem(attName);
-        if (attNode == null)
+        if (attNode == null) {
             return null;
+        }
         return getTextContent(attNode);
     }
 
@@ -218,7 +219,9 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected void fillProperties(final org.w3c.dom.Node node, Properties properties) {
-        if (properties == null) return;
+        if (properties == null) {
+            return;
+        }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             if (n.getNodeType() == org.w3c.dom.Node.TEXT_NODE || n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
                 continue;

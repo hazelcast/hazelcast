@@ -21,7 +21,12 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.Map;
+import java.util.Collection;
+import java.util.Set;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.HashSet;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -30,7 +35,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class SerializationConfig {
 
-    private int portableVersion = 0;
+    private int portableVersion;
 
     private Map<Integer, String> dataSerializableFactoryClasses;
 
@@ -46,15 +51,15 @@ public class SerializationConfig {
 
     private boolean checkClassDefErrors = true;
 
-    private boolean useNativeByteOrder = false;
+    private boolean useNativeByteOrder;
 
     private ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
 
-    private boolean enableCompression = false;
+    private boolean enableCompression;
 
     private boolean enableSharedObject = true;
 
-    private boolean allowUnsafe = false;
+    private boolean allowUnsafe;
 
     private Set<ClassDefinition> classDefinitions;
 
@@ -117,9 +122,10 @@ public class SerializationConfig {
         return this;
     }
 
-    public SerializationConfig addDataSerializableFactoryClass(int factoryId, Class<? extends DataSerializableFactory> dataSerializableFactoryClass) {
-       String factoryClassName = isNotNull(dataSerializableFactoryClass, "dataSerializableFactoryClass").getName();
-       return addDataSerializableFactoryClass(factoryId, factoryClassName);
+    public SerializationConfig addDataSerializableFactoryClass(int factoryId, Class<?
+            extends DataSerializableFactory> dataSerializableFactoryClass) {
+        String factoryClassName = isNotNull(dataSerializableFactoryClass, "dataSerializableFactoryClass").getName();
+        return addDataSerializableFactoryClass(factoryId, factoryClassName);
     }
 
     public Map<Integer, DataSerializableFactory> getDataSerializableFactories() {
@@ -186,8 +192,8 @@ public class SerializationConfig {
     }
 
     public SerializationConfig addClassDefinition(ClassDefinition classDefinition) {
-        if(!getClassDefinitions().add(classDefinition)) {
-            throw new IllegalArgumentException("ClassDefinition for class-id[" +classDefinition.getClassId()
+        if (!getClassDefinitions().add(classDefinition)) {
+            throw new IllegalArgumentException("ClassDefinition for class-id[" + classDefinition.getClassId()
                     + "] already exists!");
         }
         return this;

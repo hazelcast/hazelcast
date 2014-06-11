@@ -11,7 +11,6 @@
 
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
 
-    <suppress checks="" files="com.hazelcast.config[\\/]"/>
     <suppress checks="" files="com.hazelcast.management[\\/]"/>
     <suppress checks="" files="com.hazelcast.map[\\/]"/>
 
@@ -69,6 +68,37 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.core[\\/]"/>
     <suppress checks="MethodCount" files="com.hazelcast.core.HazelcastInstance"/>
     <suppress checks="MethodCount" files="com.hazelcast.core.IMap"/>
+
+    <!-- Config-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.config[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.config[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.config[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.config[\\/]"/>
+    <suppress checks="AnonInnerLength" files="com.hazelcast.config.AbstractXmlConfigHelper"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.AbstractXmlConfigHelper"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.config.Config"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.Config"/>
+    <suppress checks="MethodCount" files="com.hazelcast.config.Config"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.config.Config"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.config.ConfigLoader"/>
+    <suppress checks="MethodLength" files="com.hazelcast.config.ConfigXmlGenerator"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.config.ConfigXmlGenerator"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.ConfigXmlGenerator"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.config.LoginModuleConfig"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="MethodCount" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.config.MaxSizeConfig"/>
+    <suppress checks="MethodCount" files="com.hazelcast.config.SerializationConfig"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.config.TcpIpConfig"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="MethodLength" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="MethodCount" files="com.hazelcast.config.XmlConfigBuilder"/>
+
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>

@@ -25,7 +25,8 @@ public class JobTrackerConfig {
     public static final int DEFAULT_CHUNK_SIZE = 1000;
     public static final int DEFAULT_QUEUE_SIZE = 0;
     public static final boolean DEFAULT_COMMUNICATE_STATS = true;
-    public static final TopologyChangedStrategy DEFAULT_TOPOLOGY_CHANGED_STRATEGY = TopologyChangedStrategy.CANCEL_RUNNING_OPERATION;
+    public static final TopologyChangedStrategy DEFAULT_TOPOLOGY_CHANGED_STRATEGY
+            = TopologyChangedStrategy.CANCEL_RUNNING_OPERATION;
 
     private String name;
     private int maxThreadSize = DEFAULT_MAX_THREAD_SIZE;

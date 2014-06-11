@@ -24,7 +24,8 @@ public class WanTargetClusterConfig {
     String groupPassword = "dev-pass";
     String replicationImpl;
     Object replicationImplObject;
-    List<String> endpoints; // ip:port
+    // ip:port
+    List<String> endpoints;
 
     public String getGroupName() {
         return groupName;
