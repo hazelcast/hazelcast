@@ -60,7 +60,7 @@ public final class Address implements IdentifiedDataSerializable {
      *
      * @param inetSocketAddress the InetSocketAddress to use
      * @throws java.lang.NullPointerException if inetSocketAddress is null
-     * @throws java.lang.IllegalStateException if the address can't be resolved.
+     * @throws java.lang.IllegalArgumentException if the address can't be resolved.
      */
     public Address(InetSocketAddress inetSocketAddress) {
         this(resolve(inetSocketAddress), inetSocketAddress.getPort());
@@ -73,7 +73,7 @@ public final class Address implements IdentifiedDataSerializable {
 
         InetAddress address = inetSocketAddress.getAddress();
         if(address == null){
-            throw new IllegalStateException("Can't resolve address: "+inetSocketAddress);
+            throw new IllegalArgumentException("Can't resolve address: "+inetSocketAddress);
         }
         return address;
     }

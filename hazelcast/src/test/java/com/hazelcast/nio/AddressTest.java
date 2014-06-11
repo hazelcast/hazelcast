@@ -7,7 +7,7 @@ import java.net.UnknownHostException;
 
 public class AddressTest {
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void newAddress_InetSocketAddress_whenHostUnresolved() throws UnknownHostException {
         InetSocketAddress inetAddress = InetSocketAddress.createUnresolved("dontexist", 1);
         new Address(inetAddress);
