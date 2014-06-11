@@ -47,7 +47,6 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     private final ProxyServiceMBean proxyServiceMBean;
     private final ClientEngineMBean clientEngineMBean;
     private final ManagedExecutorServiceMBean systemExecutorMBean;
-    private final ManagedExecutorServiceMBean operationExecutorMBean;
     private final ManagedExecutorServiceMBean asyncExecutorMBean;
     private final ManagedExecutorServiceMBean scheduledExecutorMBean;
     private final ManagedExecutorServiceMBean clientExecutorMBean;
@@ -96,10 +95,6 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
                 hazelcastInstance, executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR), service);
         register(systemExecutorMBean);
 
-        operationExecutorMBean = new ManagedExecutorServiceMBean(
-                hazelcastInstance, executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR), service);
-        register(operationExecutorMBean);
-
         asyncExecutorMBean = new ManagedExecutorServiceMBean(
                 hazelcastInstance, executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR), service);
         register(asyncExecutorMBean);
@@ -127,10 +122,6 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
     public ManagedExecutorServiceMBean getSystemExecutorMBean() {
         return systemExecutorMBean;
-    }
-
-    public ManagedExecutorServiceMBean getOperationExecutorMBean() {
-        return operationExecutorMBean;
     }
 
     public ManagedExecutorServiceMBean getAsyncExecutorMBean() {
