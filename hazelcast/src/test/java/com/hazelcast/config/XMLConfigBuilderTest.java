@@ -406,6 +406,22 @@ public class XMLConfigBuilderTest {
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, mapStoreConfig.getInitialLoadMode());
     }
 
+    @Test
+    public void testMapStoreWriteBatchSize() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<map name=\"mymap\">" +
+                        "<map-store >" +
+                        "<write-batch-size>23</write-batch-size>" +
+                        "</map-store>" +
+                        "</map>" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        System.out.println("config = " + config);
+        final MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+        assertEquals(23, mapStoreConfig.getWriteBatchSize());
+    }
+
     @Test(expected = HazelcastException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml =

@@ -26,6 +26,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class ExpirationManager {
 
+    private static final long INITIAL_DELAY = 5;
+
+    private static final long PERIOD = 5;
+
+    private static final TimeUnit UNIT = TimeUnit.SECONDS;
+
     private final MapService mapService;
 
     public ExpirationManager(MapService mapService) {
@@ -34,7 +40,7 @@ public class ExpirationManager {
 
     public void start() {
         mapService.getNodeEngine().getExecutionService()
-                .scheduleAtFixedRate(new ClearExpiredRecordsTask(), 5, 5, TimeUnit.SECONDS);
+                .scheduleAtFixedRate(new ClearExpiredRecordsTask(), INITIAL_DELAY, PERIOD, UNIT);
     }
 
     /**
@@ -46,7 +52,7 @@ public class ExpirationManager {
 
         private static final int EXPIRATION_PERCENTAGE = 10;
 
-        private static final long MIN_MILLIS_DIFF_BETWEEN_TWO_RUNS = 2000;
+        private static final long MIN_MILLIS_DIFF_BETWEEN_TWO_RUNS = 1000;
 
         private final Comparator<PartitionContainer> partitionContainerComparator = new Comparator<PartitionContainer>() {
             @Override
@@ -77,7 +83,7 @@ public class ExpirationManager {
                         continue;
                     }
                     if (currentlyRunningCleanupOperationsCount > getMaxCleanupOperationCountInOneRound()
-                            || notInProcessibleTimeWindow(partitionContainer, now)
+                            || notInProcessableTimeWindow(partitionContainer, now)
                             || notAnyExpirableRecord(partitionContainer)) {
                         continue;
                     }
@@ -122,7 +128,7 @@ public class ExpirationManager {
             return partitionContainer.hasRunningCleanup();
         }
 
-        private boolean notInProcessibleTimeWindow(PartitionContainer partitionContainer, long now) {
+        private boolean notInProcessableTimeWindow(PartitionContainer partitionContainer, long now) {
             return now - partitionContainer.getLastCleanupTime() < MIN_MILLIS_DIFF_BETWEEN_TWO_RUNS;
         }
 
@@ -163,7 +169,6 @@ public class ExpirationManager {
         }
     }
 
-    // TODO : local operation call ??
     private Operation createExpirationOperation(int expirationPercentage, int partitionId) {
         final MapService mapService = this.mapService;
         final ClearExpiredOperation clearExpiredOperation = new ClearExpiredOperation(expirationPercentage);

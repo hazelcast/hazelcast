@@ -115,8 +115,7 @@ public class MapContainer {
         if (!isWriteBehindMapStoreEnabled()) {
             return;
         }
-        this.writeBehindQueueManager
-                = WriteBehindManagers.createWriteBehindManager(name, mapService, storeWrapper);
+        this.writeBehindQueueManager = createWriteBehindManager();
         // listener for delete operations.
         this.writeBehindQueueManager.addStoreListener(new StoreListener<DelayedEntry>() {
             @Override
@@ -143,6 +142,11 @@ public class MapContainer {
         });
 
         this.writeBehindQueueManager.start();
+    }
+
+    private WriteBehindManager createWriteBehindManager() {
+        return WriteBehindManagers.createWriteBehindManager(name, mapService,
+                storeWrapper, mapConfig.getMapStoreConfig());
     }
 
     private RecordFactory createRecordFactory(NodeEngine nodeEngine) {

@@ -41,7 +41,5 @@ public interface WriteBehindManager {
     Collection<Data> flush(WriteBehindQueue<DelayedEntry> queue);
 
     ScheduledExecutorService getScheduler();
-
-    long getLastRunTime();
 }
 

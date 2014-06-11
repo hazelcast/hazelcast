@@ -1,6 +1,7 @@
 package com.hazelcast.map.writebehind.store;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,14 +18,7 @@ public interface MapStoreManager<E> {
      * @param delayedEntries to be written to store.
      * @return failed store operations per partition.
      */
-    Map<Integer, Collection<E>> process(Collection<E> delayedEntries);
-
-    /**
-     * TODO this seems to belong a configuration thingy.
-     *
-     * @param reduceStoreOperationsIfPossible combine operations on same key.
-     */
-    void setReduceStoreOperationsIfPossible(boolean reduceStoreOperationsIfPossible);
+    Map<Integer, List<E>> process(List<E> delayedEntries);
 
     void callAfterStoreListeners(Collection<E> entries);
 

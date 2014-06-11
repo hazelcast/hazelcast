@@ -1,8 +1,5 @@
-package com.hazelcast.map.mapstore;
+package com.hazelcast.map.writebehind;
 
-import com.hazelcast.map.writebehind.DelayedEntry;
-import com.hazelcast.map.writebehind.ReachedMaxSizeException;
-import com.hazelcast.map.writebehind.WriteBehindQueue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -10,6 +7,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
@@ -18,6 +17,32 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class WriteBehindQueueTest extends HazelcastTestSupport {
+
+
+    @Test
+    public void testName() throws Exception {
+        List ls = new ArrayList<String>();
+        for (int i = 0; i < 9; i++) {
+            ls.add(i);
+        }
+
+        List<String> tmp;
+        int page = 0;
+        while ((tmp = getBatchPages(ls, 12, page++)) != null) {
+            System.out.println("list = [" + tmp.size() + "], batchSize = [" + 12 + "], pageNumber = [" + page + "]");
+
+        }
+
+    }
+
+    private List<String> getBatchPages(List<String> list, int batchSize, int pageNumber) {
+        int start = pageNumber * batchSize;
+        int end = Math.min(start + batchSize, list.size());
+        if(start >= end) {
+            return null;
+        }
+        return list.subList(start, end);
+    }
 
     @Test
     public void smoke() {

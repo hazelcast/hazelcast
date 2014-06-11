@@ -18,6 +18,7 @@ package com.hazelcast.map.writebehind;
 
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapService;
@@ -78,13 +79,13 @@ class WriteBehindQueueManager implements WriteBehindManager {
 
     private final ILogger logger;
 
-    WriteBehindQueueManager(String mapName, MapService mapService, MapStore mapStore) {
+    WriteBehindQueueManager(String mapName, MapService mapService, MapStore mapStore, MapStoreConfig mapStoreConfig) {
         this.scheduledExecutor = getScheduledExecutorService(mapName, mapService);
         this.mapService = mapService;
         this.logger = mapService.getNodeEngine().getLogger(WriteBehindQueueManager.class);
         this.listeners = new ArrayList<StoreListener>(2);
         this.mapStoreManager = MapStoreManagers.newMapStoreManager(mapService, mapStore, listeners);
-        this.processor = new StoreProcessor(mapName, mapService, mapStoreManager);
+        this.processor = new StoreProcessor(mapName, mapService, mapStoreManager, mapStoreConfig);
     }
 
     @Override
@@ -113,7 +114,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
 
     private Collection<Data> flush0(List<DelayedEntry> delayedEntries) {
         Collections.sort(delayedEntries, DELAYED_ENTRY_COMPARATOR);
-        final Map<Integer, Collection<DelayedEntry>> failedStoreOpPerPartition = mapStoreManager.process(delayedEntries);
+        final Map<Integer, List<DelayedEntry>> failedStoreOpPerPartition = mapStoreManager.process(delayedEntries);
         if (failedStoreOpPerPartition.size() > 0) {
             printErrorLog(failedStoreOpPerPartition);
         }
@@ -137,14 +138,9 @@ class WriteBehindQueueManager implements WriteBehindManager {
         return scheduledExecutor;
     }
 
-    @Override
-    public long getLastRunTime() {
-        return processor.getLastRunTime();
-    }
-
-    private void printErrorLog(Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
+    private void printErrorLog(Map<Integer, List<DelayedEntry>> failsPerPartition) {
         int size = 0;
-        final Collection<Collection<DelayedEntry>> values = failsPerPartition.values();
+        final Collection<List<DelayedEntry>> values = failsPerPartition.values();
         for (Collection<DelayedEntry> value : values) {
             size += value.size();
         }
@@ -200,15 +196,23 @@ class WriteBehindQueueManager implements WriteBehindManager {
         /**
          * Last run time of this processor.
          */
-        private volatile long lastRunTime;
+        private long lastRunTime;
+
+        /**
+         * The number of operations to be included in each batch processing round.
+         */
+        private final int writeBatchSize;
+
 
         private StoreProcessor(String mapName, MapService mapService,
-                               MapStoreManager mapStoreManager) {
+                               MapStoreManager mapStoreManager, MapStoreConfig mapStoreConfig) {
             this.mapName = mapName;
             this.mapService = mapService;
             this.mapStoreManager = mapStoreManager;
             this.backupRunIntervalTime = getReplicaWaitTime();
             this.lastRunTime = Clock.currentTimeMillis();
+            this.writeBatchSize = mapStoreConfig.getWriteBatchSize();
+
         }
 
         private long getReplicaWaitTime() {
@@ -261,13 +265,60 @@ class WriteBehindQueueManager implements WriteBehindManager {
             if (sortedDelayedEntries.isEmpty()) {
                 return;
             }
-            lastRunTime = now;
             Collections.sort(sortedDelayedEntries, DELAYED_ENTRY_COMPARATOR);
-            Map<Integer, Collection<DelayedEntry>> failsPerPartition = mapStoreManager.process(sortedDelayedEntries);
-            removeProcessedEntries(mapName, partitionToEntryCountHolder);
+            if (writeBatchSize > 1) {
+                doStoreUsingBatchSize(sortedDelayedEntries, partitionToEntryCountHolder);
+            } else {
+                doStore(sortedDelayedEntries, partitionToEntryCountHolder);
+            }
+            lastRunTime = now;
+        }
+
+        /**
+         * Store chunk by chunk using write batch size {@link StoreProcessor#writeBatchSize}
+         *
+         * @param sortedDelayedEntries entries to be stored.
+         * @param countHolder          holds per partition count of candidate entries to be processed.
+         */
+        private void doStoreUsingBatchSize(List<DelayedEntry> sortedDelayedEntries, Map<Integer, Integer> countHolder) {
+            int page = 0;
+            List<DelayedEntry> delayedEntryList;
+            while ((delayedEntryList = getBatchChunk(sortedDelayedEntries, writeBatchSize, page++)) != null) {
+                doStore(delayedEntryList, countHolder);
+            }
+        }
+
+        /**
+         * Store dummy. Tries to store in one processing round.
+         *
+         * @param sortedDelayedEntries entries to be stored.
+         * @param countHolder          holds per partition count of candidate entries to be processed.
+         */
+        private void doStore(List<DelayedEntry> sortedDelayedEntries, Map<Integer, Integer> countHolder) {
+            final Map<Integer, List<DelayedEntry>> failsPerPartition = mapStoreManager.process(sortedDelayedEntries);
+            removeProcessedEntries(mapName, countHolder);
             addFailsToQueue(mapName, failsPerPartition);
         }
 
+        /**
+         * Used to partition the list to chunks.
+         *
+         * @param list        to be paged.
+         * @param batchSize   batch operation size.
+         * @param chunkNumber batch chunk number.
+         * @return sub-list of list if any or null.
+         */
+        private List<DelayedEntry> getBatchChunk(List<DelayedEntry> list, int batchSize, int chunkNumber) {
+            if (list == null || list.isEmpty()) {
+                return null;
+            }
+            final int start = chunkNumber * batchSize;
+            final int end = Math.min(start + batchSize, list.size());
+            if (start >= end) {
+                return null;
+            }
+            return list.subList(start, end);
+        }
 
         /**
          * @param queue          write behind queue.
@@ -305,13 +356,13 @@ class WriteBehindQueueManager implements WriteBehindManager {
             return partitionContainer.getExistingRecordStore(mapName);
         }
 
-        private void addFailsToQueue(String mapName, Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
+        private void addFailsToQueue(String mapName, Map<Integer, List<DelayedEntry>> failsPerPartition) {
             if (failsPerPartition.isEmpty()) {
                 return;
             }
-            for (Map.Entry<Integer, Collection<DelayedEntry>> entry : failsPerPartition.entrySet()) {
+            for (Map.Entry<Integer, List<DelayedEntry>> entry : failsPerPartition.entrySet()) {
                 final Integer partitionId = entry.getKey();
-                final Collection<DelayedEntry> fails = failsPerPartition.get(partitionId);
+                final List<DelayedEntry> fails = failsPerPartition.get(partitionId);
                 if (fails == null || fails.isEmpty()) {
                     continue;
                 }
@@ -320,6 +371,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
                     continue;
                 }
                 final WriteBehindQueue<DelayedEntry> queue = recordStore.getWriteBehindQueue();
+                Collections.sort(fails, DELAYED_ENTRY_COMPARATOR);
                 queue.addFront(fails);
             }
         }
@@ -334,9 +386,6 @@ class WriteBehindQueueManager implements WriteBehindManager {
             }
         }
 
-        public long getLastRunTime() {
-            return lastRunTime;
-        }
     }
 
 }

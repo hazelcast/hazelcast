@@ -1222,21 +1222,21 @@ public class DefaultRecordStore implements RecordStore {
         if (!mapContainer.isWriteBehindMapStoreEnabled()) {
             return;
         }
-        if (!inEvictableTimeWindow(now) || evictionStagingArea.isEmpty()) {
+        if (evictionStagingArea.isEmpty() || !inEvictableTimeWindow(now)) {
             return;
         }
-        final long lastRunTime = mapContainer.getWriteBehindManager().getLastRunTime();
+        final long nextItemsStoreTimeInWriteBehindQueue = getNextItemsStoreTimeInWriteBehindQueue();
         final int size = evictionStagingArea.size();
         final int evictionPercentage = 20;
-        int maxIterationCount = getMaxIterationCount(size, evictionPercentage);
+        int maxAllowedIterationCount = getMaxIterationCount(size, evictionPercentage);
         initStagingAreaIterator();
         while (evictionStagingAreaIterator.hasNext()) {
-            if (maxIterationCount <= 0) {
+            if (maxAllowedIterationCount <= 0) {
                 break;
             }
-            --maxIterationCount;
+            --maxAllowedIterationCount;
             final DelayedEntry entry = evictionStagingAreaIterator.next();
-            if (lastRunTime > entry.getStoreTime()) {
+            if (entry.getStoreTime() < nextItemsStoreTimeInWriteBehindQueue) {
                 evictionStagingAreaIterator.remove();
             }
             initExpirationIterator();
@@ -1244,6 +1244,14 @@ public class DefaultRecordStore implements RecordStore {
                 break;
             }
         }
+    }
+
+    private long getNextItemsStoreTimeInWriteBehindQueue() {
+        final DelayedEntry firstEntryInQueue = writeBehindQueue.get(0);
+        if (firstEntryInQueue == null) {
+            return 0L;
+        }
+        return firstEntryInQueue.getStoreTime();
     }
 
     private void putEvictionStagingArea(Data key, Object value, long lastUpdateTime) {

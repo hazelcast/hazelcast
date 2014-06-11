@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.writebehind;
 
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.writebehind.store.StoreListener;
@@ -34,8 +35,10 @@ public final class WriteBehindManagers {
     }
 
     public static WriteBehindManager createWriteBehindManager(String mapName,
-                                                              MapService service, MapStoreWrapper storeWrapper) {
-        return new WriteBehindQueueManager(mapName, service, storeWrapper);
+                                                              MapService service,
+                                                              MapStoreWrapper storeWrapper,
+                                                              MapStoreConfig mapStoreConfig) {
+        return new WriteBehindQueueManager(mapName, service, storeWrapper, mapStoreConfig);
     }
 
     public static WriteBehindManager emptyWriteBehindManager() {
@@ -72,11 +75,6 @@ public final class WriteBehindManagers {
         @Override
         public ScheduledExecutorService getScheduler() {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long getLastRunTime() {
-            return 0;
         }
 
         @Override

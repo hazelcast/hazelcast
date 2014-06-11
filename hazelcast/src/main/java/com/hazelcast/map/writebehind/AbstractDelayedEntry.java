@@ -46,4 +46,11 @@ abstract class AbstractDelayedEntry<K> {
         return partitionId;
     }
 
+    @Override
+    public int hashCode() {
+        int result = 1;
+        result = 31 * result + (key == null ? 0 : key.hashCode());
+        result = 31 * result + (int) (storeTime ^ (storeTime >>> 32));
+        return result;
+    }
 }

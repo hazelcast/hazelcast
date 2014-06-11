@@ -48,12 +48,6 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
 
     private final ILogger logger;
 
-    /**
-     * If more than one operations are waiting for a key in the same batch buffer,
-     * process only last one according to queueing time. Default is true.
-     */
-    private boolean reduceStoreOperationsIfPossible = true;
-
     DefaultMapStoreManager(MapService mapService, MapStore mapStore, List<StoreListener> listeners) {
         if (listeners == null) {
             throw new IllegalArgumentException("First, set store listeners.");
@@ -65,16 +59,11 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
     }
 
     @Override
-    public void setReduceStoreOperationsIfPossible(boolean reduceStoreOperationsIfPossible) {
-        this.reduceStoreOperationsIfPossible = reduceStoreOperationsIfPossible;
-    }
-
-    @Override
-    public Map<Integer, Collection<DelayedEntry>> process(Collection<DelayedEntry> delayedEntries) {
+    public Map<Integer, List<DelayedEntry>> process(List<DelayedEntry> delayedEntries) {
         if (delayedEntries == null || delayedEntries.isEmpty()) {
             return Collections.emptyMap();
         }
-        final Map<Integer, Collection<DelayedEntry>> failsPerPartition = new HashMap<Integer, Collection<DelayedEntry>>();
+        final Map<Integer, List<DelayedEntry>> failsPerPartition = new HashMap<Integer, List<DelayedEntry>>();
         final List<DelayedEntry> entriesToProcess = new ArrayList<DelayedEntry>();
         StoreOperationType operationType = null;
         StoreOperationType previousOperationType;
@@ -87,25 +76,25 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
                 operationType = StoreOperationType.WRITE;
             }
             if (previousOperationType != null && !previousOperationType.equals(operationType)) {
-                final Collection<DelayedEntry> faileds = callHandler(entriesToProcess, previousOperationType);
-                addToFails(faileds, failsPerPartition);
+                final List<DelayedEntry> failures = callHandler(entriesToProcess, previousOperationType);
+                addToFails(failures, failsPerPartition);
                 entriesToProcess.clear();
             }
             entriesToProcess.add(entry);
         }
-        final Collection<DelayedEntry> failures = callHandler(entriesToProcess, operationType);
+        final List<DelayedEntry> failures = callHandler(entriesToProcess, operationType);
         addToFails(failures, failsPerPartition);
         entriesToProcess.clear();
         return failsPerPartition;
     }
 
-    private void addToFails(Collection<DelayedEntry> fails, Map<Integer, Collection<DelayedEntry>> failsPerPartition) {
+    private void addToFails(List<DelayedEntry> fails, Map<Integer, List<DelayedEntry>> failsPerPartition) {
         if (fails == null || fails.isEmpty()) {
             return;
         }
         for (DelayedEntry entry : fails) {
             final int partitionId = entry.getPartitionId();
-            Collection<DelayedEntry> delayedEntriesPerPartition = failsPerPartition.get(partitionId);
+            List<DelayedEntry> delayedEntriesPerPartition = failsPerPartition.get(partitionId);
             if (delayedEntriesPerPartition == null) {
                 delayedEntriesPerPartition = new ArrayList<DelayedEntry>();
                 failsPerPartition.put(partitionId, delayedEntriesPerPartition);
@@ -122,7 +111,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
      * @param delayedEntries sorted entries to be processed.
      * @return failed entry list if any.
      */
-    private Collection<DelayedEntry> callHandler(Collection<DelayedEntry> delayedEntries, StoreOperationType operationType) {
+    private List<DelayedEntry> callHandler(Collection<DelayedEntry> delayedEntries, StoreOperationType operationType) {
         final int size = delayedEntries.size();
         if (size == 0) {
             return Collections.emptyList();
@@ -132,16 +121,16 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
             final DelayedEntry delayedEntry = iterator.next();
             return callSingleStoreWithListeners(delayedEntry, operationType);
         }
-        final DelayedEntry[] delayeds = delayedEntries.toArray(new DelayedEntry[delayedEntries.size()]);
-        final Map<Object, DelayedEntry> batchMap = prepareBatchMap(delayeds);
+        final DelayedEntry[] delayedEntriesArray = delayedEntries.toArray(new DelayedEntry[delayedEntries.size()]);
+        final Map<Object, DelayedEntry> batchMap = prepareBatchMap(delayedEntriesArray);
 
         // if all batch is on same key, call single store.
         if (batchMap.size() == 1) {
-            final DelayedEntry delayedEntry = delayeds[delayeds.length - 1];
+            final DelayedEntry delayedEntry = delayedEntriesArray[delayedEntriesArray.length - 1];
             return callSingleStoreWithListeners(delayedEntry, operationType);
         }
-        final Collection<DelayedEntry> failedEntryList = callBatchStoreWithListeners(batchMap, operationType);
-        final Collection<DelayedEntry> failedTries = new ArrayList<DelayedEntry>();
+        final List<DelayedEntry> failedEntryList = callBatchStoreWithListeners(batchMap, operationType);
+        final List<DelayedEntry> failedTries = new ArrayList<DelayedEntry>();
         for (DelayedEntry entry : failedEntryList) {
             final Collection<DelayedEntry> tmpFails = callSingleStoreWithListeners(entry, operationType);
             failedTries.addAll(tmpFails);
@@ -149,20 +138,15 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
         return failedTries;
     }
 
-    private Map prepareBatchMap(DelayedEntry[] delayeds) {
+    private Map prepareBatchMap(DelayedEntry[] delayedEntries) {
         final Map<Object, DelayedEntry> batchMap = new HashMap<Object, DelayedEntry>();
-        final int length = delayeds.length;
+        final int length = delayedEntries.length;
         // process in reverse order since we do want to process
         // last store operation on a specific key
-        // when reduceStoreOperationsIfPossible is true.
         for (int i = length - 1; i >= 0; i--) {
-            final DelayedEntry delayedEntry = delayeds[i];
+            final DelayedEntry delayedEntry = delayedEntries[i];
             final Object key = delayedEntry.getKey();
-            if (reduceStoreOperationsIfPossible) {
-                if (!batchMap.containsKey(key)) {
-                    batchMap.put(key, delayedEntry);
-                }
-            } else {
+            if (!batchMap.containsKey(key)) {
                 batchMap.put(key, delayedEntry);
             }
         }
@@ -173,8 +157,8 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
      * @param entry delayed entry to be stored.
      * @return failed entry list if any.
      */
-    private Collection<DelayedEntry> callSingleStoreWithListeners(final DelayedEntry entry,
-                                                                  final StoreOperationType operationType) {
+    private List<DelayedEntry> callSingleStoreWithListeners(final DelayedEntry entry,
+                                                            final StoreOperationType operationType) {
         return retryCall(new RetryTask<DelayedEntry>() {
             private List<DelayedEntry> failedDelayedEntries = Collections.emptyList();
 
@@ -192,7 +176,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
              * Call when store failed.
              */
             @Override
-            public Collection<DelayedEntry> failedList() {
+            public List<DelayedEntry> failedList() {
                 failedDelayedEntries = Collections.singletonList(entry);
                 return failedDelayedEntries;
             }
@@ -213,8 +197,8 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
      * @param batchMap contains batched delayed entries.
      * @return failed entry list if any.
      */
-    private Collection<DelayedEntry> callBatchStoreWithListeners(final Map<Object, DelayedEntry> batchMap,
-                                                                 final StoreOperationType operationType) {
+    private List<DelayedEntry> callBatchStoreWithListeners(final Map<Object, DelayedEntry> batchMap,
+                                                           final StoreOperationType operationType) {
         return retryCall(new RetryTask<DelayedEntry>() {
             private List<DelayedEntry> failedDelayedEntries = Collections.emptyList();
 
@@ -231,7 +215,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
              * Call when store failed.
              */
             @Override
-            public Collection<DelayedEntry> failedList() {
+            public List<DelayedEntry> failedList() {
                 failedDelayedEntries = new ArrayList<DelayedEntry>(batchMap.values().size());
                 failedDelayedEntries.addAll(batchMap.values());
                 return failedDelayedEntries;
@@ -270,7 +254,7 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
         }
     }
 
-    private Collection<DelayedEntry> retryCall(RetryTask task) {
+    private List<DelayedEntry> retryCall(RetryTask task) {
         boolean result = false;
         Throwable throwable = null;
         int k = 0;
@@ -301,13 +285,13 @@ class DefaultMapStoreManager implements MapStoreManager<DelayedEntry> {
     /**
      * Main contract for retry operations.
      *
-     * @param <T>
+     * @param <T> the type of object to be processed in this task.
      */
     private interface RetryTask<T> {
 
         boolean run() throws Exception;
 
-        Collection<T> failedList();
+        List<T> failedList();
     }
 
     private void sleepSeconds(long secs) {
