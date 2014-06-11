@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
+import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.io.File;
@@ -46,7 +47,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -57,7 +60,7 @@ public class HazelcastXaTest {
 
     UserTransactionManager tm = null;
 
-    public void cleanAtomikosLogs(){
+    public void cleanAtomikosLogs() {
         try {
             File currentDir = new File(".");
             final File[] tmLogs = currentDir.listFiles(new FilenameFilter() {
@@ -168,6 +171,31 @@ public class HazelcastXaTest {
             context1.rollbackTransaction(); //for setting ThreadLocal of unfinished transaction
         } catch (Throwable ignored) {
         }
+    }
+
+    @Test
+    public void testRecovery_singleInstanceRemaining() throws XAException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final TransactionContext context = instance.newTransactionContext();
+        final XAResource xaResource = context.getXaResource();
+        final MyXid xid = new MyXid();
+        xaResource.start(xid, XAResource.TMNOFLAGS);
+        final TransactionalMap<Object, Object> map = context.getMap("map");
+        map.put("key", "value");
+        xaResource.prepare(xid);
+
+        instance.shutdown();
+
+        final TransactionContext context1 = instance1.newTransactionContext();
+        final XAResource xaResource1 = context1.getXaResource();
+        final Xid[] recovered = xaResource1.recover(XAResource.TMNOFLAGS);
+        for (Xid xid1 : recovered) {
+            xaResource1.commit(xid1, false);
+        }
+
+        assertEquals("value", instance1.getMap("map").get("key"));
+
     }
 
     public static class MyXid implements Xid {
