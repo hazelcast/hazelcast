@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -188,11 +189,13 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
+    @Ignore
     public void testXSDDefaultXML() throws SAXException, IOException {
         testXSDConfigXML("hazelcast-default.xml");
     }
 
     @Test
+    @Ignore
     public void testFullConfigXML() throws SAXException, IOException {
         testXSDConfigXML("hazelcast-fullconfig.xml");
     }
