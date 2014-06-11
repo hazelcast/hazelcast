@@ -59,27 +59,15 @@ public final class Address implements IdentifiedDataSerializable {
      * Creates a new Address
      *
      * @param inetSocketAddress the InetSocketAddress to use
-     * @throws java.lang.NullPointerException if inetSocketAddress is null
+     * @throws java.lang.NullPointerException     if inetSocketAddress is null
      * @throws java.lang.IllegalArgumentException if the address can't be resolved.
      */
     public Address(InetSocketAddress inetSocketAddress) {
         this(resolve(inetSocketAddress), inetSocketAddress.getPort());
     }
 
-    private static InetAddress resolve(InetSocketAddress inetSocketAddress) {
-        if(inetSocketAddress == null){
-            throw new NullPointerException("inetSocketAddress can't be null");
-        }
-
-        InetAddress address = inetSocketAddress.getAddress();
-        if(address == null){
-            throw new IllegalArgumentException("Can't resolve address: "+inetSocketAddress);
-        }
-        return address;
-    }
-
     public Address(String hostname, InetAddress inetAddress, int port) {
-        if(inetAddress == null){
+        if (inetAddress == null) {
             throw new NullPointerException("inetAddress can't be null");
         }
 
@@ -145,25 +133,6 @@ public final class Address implements IdentifiedDataSerializable {
         return new InetSocketAddress(getInetAddress(), port);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Address)) {
-            return false;
-        }
-        final Address address = (Address) o;
-        return port == address.port && this.type == address.type && this.host.equals(address.host);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = port;
-        result = 31 * result + host.hashCode();
-        return result;
-    }
-
     public boolean isIPv4() {
         return type == IPV4;
     }
@@ -195,5 +164,36 @@ public final class Address implements IdentifiedDataSerializable {
     @Override
     public int getId() {
         return ID;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Address)) {
+            return false;
+        }
+        final Address address = (Address) o;
+        return port == address.port && this.type == address.type && this.host.equals(address.host);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = port;
+        result = 31 * result + host.hashCode();
+        return result;
+    }
+
+    private static InetAddress resolve(InetSocketAddress inetSocketAddress) {
+        if (inetSocketAddress == null) {
+            throw new NullPointerException("inetSocketAddress can't be null");
+        }
+
+        InetAddress address = inetSocketAddress.getAddress();
+        if (address == null) {
+            throw new IllegalArgumentException("Can't resolve address: " + inetSocketAddress);
+        }
+        return address;
     }
 }
