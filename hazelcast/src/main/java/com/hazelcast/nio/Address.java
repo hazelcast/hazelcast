@@ -55,11 +55,34 @@ public final class Address implements IdentifiedDataSerializable {
         hostSet = false;
     }
 
+    /**
+     * Creates a new Address
+     *
+     * @param inetSocketAddress the InetSocketAddress to use
+     * @throws java.lang.NullPointerException if inetSocketAddress is null
+     * @throws java.lang.IllegalArgumentException if the address can't be resolved.
+     */
     public Address(InetSocketAddress inetSocketAddress) {
-        this(inetSocketAddress.getAddress(), inetSocketAddress.getPort());
+        this(resolve(inetSocketAddress), inetSocketAddress.getPort());
+    }
+
+    private static InetAddress resolve(InetSocketAddress inetSocketAddress) {
+        if(inetSocketAddress == null){
+            throw new NullPointerException("inetSocketAddress can't be null");
+        }
+
+        InetAddress address = inetSocketAddress.getAddress();
+        if(address == null){
+            throw new IllegalArgumentException("Can't resolve address: "+inetSocketAddress);
+        }
+        return address;
     }
 
     public Address(String hostname, InetAddress inetAddress, int port) {
+        if(inetAddress == null){
+            throw new NullPointerException("inetAddress can't be null");
+        }
+
         type = (inetAddress instanceof Inet4Address) ? IPv4 : IPv6;
         String[] addressArgs = inetAddress.getHostAddress().split("\\%");
         host = hostname != null ? hostname : addressArgs[0];
