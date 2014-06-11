@@ -151,25 +151,13 @@ public final class UTFEncoderDecoder {
                               final int beginIndex, final int endIndex,
                               byte[] buffer) throws IOException {
         final int utflen = in.readShort();
-        int c = 0;
-        int char2 = 0;
-        int char3 = 0;
+        int c;
+        int char2;
+        int char3;
         int count = 0;
         int charArrCount = beginIndex;
-        int lastCount = -1;
         while (count < utflen) {
-            c = buffered(buffer, count, utflen, in) & 0xff;
-            if (c > 127) {
-                break;
-            }
-            lastCount = count;
-            count++;
-            data[charArrCount++] = (char) c;
-        }
-        while (count < utflen) {
-            if (lastCount > -1 && lastCount < count) {
-                c = buffered(buffer, count, utflen, in) & 0xff;
-            }
+            c = buffered(buffer, count++, utflen, in) & 0xff;
             switch (c >> 4) {
                 case 0:
                 case 1:
@@ -180,14 +168,11 @@ public final class UTFEncoderDecoder {
                 case 6:
                 case 7:
                     /* 0xxxxxxx */
-                    lastCount = count;
-                    count++;
                     data[charArrCount++] = (char) c;
                     break;
                 case 12:
                 case 13:
                     /* 110x xxxx 10xx xxxx */
-                    lastCount = count++;
                     if (count + 1 > utflen) {
                         throw new UTFDataFormatException("malformed input: partial character at end");
                     }
@@ -199,7 +184,6 @@ public final class UTFEncoderDecoder {
                     break;
                 case 14:
                     /* 1110 xxxx 10xx xxxx 10xx xxxx */
-                    lastCount = count++;
                     if (count + 2 > utflen) {
                         throw new UTFDataFormatException("malformed input: partial character at end");
                     }
@@ -225,10 +209,10 @@ public final class UTFEncoderDecoder {
         buffer[innerPos] = value;
     }
 
-    private byte buffered(byte[] buffer, int pos, int utfLenght, DataInput in) throws IOException {
+    private byte buffered(byte[] buffer, int pos, int utfLength, DataInput in) throws IOException {
         int innerPos = pos % buffer.length;
         if (innerPos == 0) {
-            int length = Math.min(buffer.length, utfLenght - pos);
+            int length = Math.min(buffer.length, utfLength - pos);
             in.readFully(buffer, 0, length);
         }
         return buffer[innerPos];
