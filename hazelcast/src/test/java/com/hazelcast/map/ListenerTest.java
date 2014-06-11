@@ -193,6 +193,35 @@ public class ListenerTest extends HazelcastTestSupport {
      * test for issue 589
      */
     @Test
+    public void replaceFiresUpdatedEvent() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Object, Object> map = h1.getMap("map");
+        map.put(1, 1);
+        final AtomicInteger updateCount = new AtomicInteger(0);
+        final AtomicInteger addCount = new AtomicInteger(0);
+        map.addEntryListener(new EntryAdapter<Object, Object>() {
+            @Override
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                addCount.incrementAndGet();
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                updateCount.incrementAndGet();
+            }
+        }, true);
+        map.replace(1, 1, 2);  // should succeed and fire entryUpdated() exactly once
+        map.replace(1, 1, 2);  // should fail
+        assertEquals(addCount.get(), 0);
+        assertEquals(updateCount.get(), 1);
+    }
+
+    /**
+     * test for issue 589
+     */
+    @Test
     public void setFiresAlwaysAddEvent() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
