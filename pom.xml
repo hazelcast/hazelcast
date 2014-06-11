@@ -253,7 +253,7 @@
 
 
                             <includes>
-                                <include>**/BasicMapTest.java</include>
+                                <include>**/ClientMapBasicTest.java</include>
                             </includes>
 
                         </configuration>
