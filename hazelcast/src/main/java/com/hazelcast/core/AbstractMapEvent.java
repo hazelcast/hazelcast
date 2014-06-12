@@ -2,7 +2,10 @@ package com.hazelcast.core;
 
 import java.util.EventObject;
 
-abstract class AbstractMapEvent extends EventObject implements MapEvent {
+/**
+ * Abstract map event.
+ */
+public abstract class AbstractMapEvent extends EventObject implements MapEvent {
 
     protected final String name;
 

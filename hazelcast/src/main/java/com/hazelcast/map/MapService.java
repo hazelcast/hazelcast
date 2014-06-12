@@ -26,7 +26,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.MapWideEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
@@ -906,9 +905,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     private void dispatchEntryEventData(EventData eventData, EntryListener listener) {
         final EntryEventData entryEventData = (EntryEventData) eventData;
         final Member member = getMemberOrNull(eventData);
-        if (member == null) {
-            return;
-        }
+
         final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);

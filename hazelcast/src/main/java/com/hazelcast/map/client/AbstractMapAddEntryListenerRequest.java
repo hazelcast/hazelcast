@@ -22,10 +22,10 @@ import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapWideEvent;
 import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapWideEvent;
 import com.hazelcast.map.QueryEventFilter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -93,6 +93,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
             public void entryEvicted(EntryEvent<Object, Object> event) {
                 handleEvent(event);
             }
+
             // TODO what should this method do?
             @Override
             public void evictedAll(MapWideEvent event) {

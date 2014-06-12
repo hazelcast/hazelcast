@@ -18,7 +18,7 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapWideEvent;
+import com.hazelcast.map.MapWideEvent;
 import com.hazelcast.replicatedmap.ReplicatedMapProxy;
 
 import java.util.Collection;
