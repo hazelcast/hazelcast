@@ -126,7 +126,15 @@ public final class Predicates {
 
         public BetweenPredicate(String first, Comparable from, Comparable to) {
             super(first);
-            this.from = from;
+
+            if (from == null) {
+                throw new IllegalArgumentException();
+            } else if (to == null) {
+                throw new IllegalArgumentException();
+            } else {
+                this.from = from;
+            }
+
             this.to = to;
         }
 
@@ -210,6 +218,11 @@ public final class Predicates {
 
         public InPredicate(String attribute, Comparable... values) {
             super(attribute);
+            for (Comparable value : values) {
+                if (value == null) {
+                    throw new IllegalArgumentException();
+                }
+            }
             this.values = values;
         }
 
@@ -623,7 +636,12 @@ public final class Predicates {
         }
 
         public GreaterLessPredicate(String attribute, Comparable value, boolean equal, boolean less) {
-            super(attribute, value);
+            super(attribute);
+            if (value == null) {
+                throw new IllegalArgumentException();
+            } else {
+                this.value = value;
+            }
             this.equal = equal;
             this.less = less;
         }
@@ -711,6 +729,10 @@ public final class Predicates {
         protected Comparable value;
 
         public EqualPredicate() {
+        }
+
+        public EqualPredicate(String attribute) {
+            super(attribute);
         }
 
         public EqualPredicate(String attribute, Comparable value) {

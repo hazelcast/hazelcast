@@ -28,6 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 
 import static com.hazelcast.instance.TestUtil.toData;
 import static com.hazelcast.query.Predicates.and;
@@ -46,8 +47,7 @@ import static com.hazelcast.query.SampleObjects.Employee;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Map.Entry;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -183,6 +183,45 @@ public class PredicatesTest {
         assertTrue(predicate.apply(createEntry("1", value)));
         e = new PredicateBuilder().getEntryObject();
         assertTrue(e.get("id").equal(12).apply(createEntry("1", value)));
+    }
+
+    @Test
+    public void testNull() {
+        try {
+            Predicates.between("", null, null);
+            fail("Between failed");
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Predicates.lessThan("",null);
+            fail("lessThan Failed");
+        }catch(Exception ignored){
+        }
+
+        try {
+            Predicates.lessEqual("", null);
+            fail("lessEqual Failed");
+        }catch(Exception ignored){
+        }
+
+        try {
+            Predicates.greaterThan("",null);
+            fail("greaterThan Failed");
+        }catch(Exception ignored){
+        }
+
+        try {
+            Predicates.greaterEqual("",null);
+            fail("greaterEqual Failed");
+        }catch(Exception ignored){
+        }
+
+        try {
+            Predicates.in("",null,2,"value");
+            fail("In Failed");
+        }catch(Exception ignored){
+        }
     }
 
     private class DummyEntry extends QueryEntry {
