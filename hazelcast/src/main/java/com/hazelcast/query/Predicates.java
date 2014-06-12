@@ -126,15 +126,10 @@ public final class Predicates {
 
         public BetweenPredicate(String first, Comparable from, Comparable to) {
             super(first);
-
-            if (from == null) {
-                throw new IllegalArgumentException();
-            } else if (to == null) {
-                throw new IllegalArgumentException();
-            } else {
-                this.from = from;
+            if (from == null || to == null) {
+                throw new NullPointerException("Arguments can't be null");
             }
-
+            this.from = from;
             this.to = to;
         }
 
@@ -637,11 +632,12 @@ public final class Predicates {
 
         public GreaterLessPredicate(String attribute, Comparable value, boolean equal, boolean less) {
             super(attribute);
+
             if (value == null) {
-                throw new IllegalArgumentException();
-            } else {
-                this.value = value;
+                throw new NullPointerException("Arguments can't be null");
             }
+
+            this.value = value;
             this.equal = equal;
             this.less = less;
         }

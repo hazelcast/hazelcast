@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
 
 import static com.hazelcast.instance.TestUtil.toData;
 import static com.hazelcast.query.Predicates.and;
@@ -185,43 +184,39 @@ public class PredicatesTest {
         assertTrue(e.get("id").equal(12).apply(createEntry("1", value)));
     }
 
-    @Test
-    public void testNull() {
-        try {
-            Predicates.between("", null, null);
-            fail("Between failed");
-        } catch (Exception ignored) {
-        }
+    @Test(expected = NullPointerException.class)
+    public void testBetweenNull() {
+        assertNull(Predicates.between("", null, null));
+    }
 
-        try {
-            Predicates.lessThan("",null);
-            fail("lessThan Failed");
-        }catch(Exception ignored){
-        }
+    @Test(expected = NullPointerException.class)
+    public void testLessThanNull() {
+        assertNull(Predicates.lessThan("", null));
+    }
 
-        try {
-            Predicates.lessEqual("", null);
-            fail("lessEqual Failed");
-        }catch(Exception ignored){
-        }
+    @Test(expected = NullPointerException.class)
+    public void testLessEqualNull() {
+        assertNull(Predicates.lessEqual("", null));
+    }
 
-        try {
-            Predicates.greaterThan("",null);
-            fail("greaterThan Failed");
-        }catch(Exception ignored){
-        }
+    @Test(expected = NullPointerException.class)
+    public void testGreaterThanNull() {
+        assertNull(Predicates.greaterThan("", null));
+    }
 
-        try {
-            Predicates.greaterEqual("",null);
-            fail("greaterEqual Failed");
-        }catch(Exception ignored){
-        }
+    @Test(expected = NullPointerException.class)
+    public void testGreaterEqualNull() {
+        assertNull(Predicates.greaterEqual("", null));
+    }
 
-        try {
-            Predicates.in("",null,2,"value");
-            fail("In Failed");
-        }catch(Exception ignored){
-        }
+    @Test(expected = NullPointerException.class)
+    public void testInNullWithNullArgument() {
+        assertNull(Predicates.in("", null, 2, "value"));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testInNullWithNullArray() {
+        assertNull(Predicates.in("", null));
     }
 
     private class DummyEntry extends QueryEntry {
@@ -295,6 +290,7 @@ public class PredicatesTest {
         public Data getIndexKey() {
             return null;
         }
+
     }
 
     private static Entry createEntry(final Object key, final Object value) {
