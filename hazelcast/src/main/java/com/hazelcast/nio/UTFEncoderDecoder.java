@@ -130,9 +130,9 @@ public final class UTFEncoderDecoder {
     }
 
     public String readUTF0(final DataInput in, byte[] buffer) throws IOException {
-//        if (!isPowerOfTwo(buffer.length)) {
-//            throw new IllegalArgumentException("Size of the buffer has to be power of two");
-//        } //TODO: Do we want to be fast or defensive?
+        if (!isPowerOfTwo(buffer.length)) {
+            throw new IllegalArgumentException("Size of the buffer has to be power of two");
+        }
         boolean isNull = in.readBoolean();
         if (isNull) {
             return null;
@@ -152,7 +152,6 @@ public final class UTFEncoderDecoder {
     private boolean isPowerOfTwo(int x) {
         return (x & (x - 1)) == 0;
     }
-
 
     private void readShortUTF(final DataInput in, final char[] data,
                               final int beginIndex, byte[] buffer) throws IOException {
