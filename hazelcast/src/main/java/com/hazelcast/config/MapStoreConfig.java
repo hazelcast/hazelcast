@@ -28,8 +28,8 @@ public class MapStoreConfig {
     public static final int DEFAULT_WRITE_BATCH_SIZE = 1;
 
     private boolean enabled = true;
-    private String className = null;
-    private String factoryClassName = null;
+    private String className;
+    private String factoryClassName;
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
     private int writeBatchSize = DEFAULT_WRITE_BATCH_SIZE;
     private Object implementation;
@@ -250,17 +250,17 @@ public class MapStoreConfig {
 
     @Override
     public String toString() {
-        return "MapStoreConfig{" +
-                "enabled=" + enabled +
-                ", className='" + className + '\'' +
-                ", factoryClassName='" + factoryClassName + '\'' +
-                ", writeDelaySeconds=" + writeDelaySeconds +
-                ", writeBatchSize=" + writeBatchSize +
-                ", implementation=" + implementation +
-                ", factoryImplementation=" + factoryImplementation +
-                ", properties=" + properties +
-                ", readOnly=" + readOnly +
-                ", initialLoadMode=" + initialLoadMode +
-                '}';
+        return "MapStoreConfig{"
+                + "enabled=" + enabled
+                + ", className='" + className + '\''
+                + ", factoryClassName='" + factoryClassName + '\''
+                + ", writeDelaySeconds=" + writeDelaySeconds
+                + ", writeBatchSize=" + writeBatchSize
+                + ", implementation=" + implementation
+                + ", factoryImplementation=" + factoryImplementation
+                + ", properties=" + properties
+                + ", readOnly=" + readOnly
+                + ", initialLoadMode=" + initialLoadMode
+                + '}';
     }
 }
