@@ -130,6 +130,9 @@ public final class UTFEncoderDecoder {
     }
 
     public String readUTF0(final DataInput in, byte[] buffer) throws IOException {
+//        if (!isPowerOfTwo(buffer.length)) {
+//            throw new IllegalArgumentException("Size of the buffer has to be power of two");
+//        } //TODO: Do we want to be fast or defensive?
         boolean isNull = in.readBoolean();
         if (isNull) {
             return null;
@@ -140,16 +143,19 @@ public final class UTFEncoderDecoder {
             int chunkSize = length / STRING_CHUNK_SIZE + 1;
             for (int i = 0; i < chunkSize; i++) {
                 int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
-                int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-                readShortUTF(in, data, beginIndex, endIndex, buffer);
+                readShortUTF(in, data, beginIndex, buffer);
             }
         }
         return stringCreator.buildString(data);
     }
 
+    private boolean isPowerOfTwo(int x) {
+        return (x & (x - 1)) == 0;
+    }
+
+
     private void readShortUTF(final DataInput in, final char[] data,
-                              final int beginIndex, final int endIndex,
-                              byte[] buffer) throws IOException {
+                              final int beginIndex, byte[] buffer) throws IOException {
         final int utflen = in.readShort();
         int count = 0;
         int charArrCount = beginIndex;
@@ -223,7 +229,7 @@ public final class UTFEncoderDecoder {
     }
 
     private byte buffered(byte[] buffer, int pos, int utfLength, DataInput in) throws IOException {
-        int innerPos = pos % buffer.length;
+        int innerPos = pos & (buffer.length - 1); // it's the same as "pos % buffer.length" when buffer.length is power of two
         if (innerPos == 0) {
             int length = Math.min(buffer.length, utfLength - pos);
             in.readFully(buffer, 0, length);

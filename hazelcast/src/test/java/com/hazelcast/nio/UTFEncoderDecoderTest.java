@@ -30,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.UTFDataFormatException;
 import java.lang.reflect.Constructor;
 import java.util.Random;
 import org.junit.Test;
@@ -44,6 +45,15 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     private static final Random RANDOM = new Random();
     private static final int BENCHMARK_ROUNDS = 10; // 100;
+
+    @Test(expected = IllegalArgumentException.class)
+    public void bufferSizeMustAlwaysBePowerOfTwo() throws IOException {
+        byte[] buffer = new byte[1023];
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(new byte[0]);
+        DataInputStream dis = new DataInputStream(bais);
+        UTFEncoderDecoder.readUTF(dis, buffer);
+    }
 
     @Test
     public void testEmptyText_Default() throws Exception {
