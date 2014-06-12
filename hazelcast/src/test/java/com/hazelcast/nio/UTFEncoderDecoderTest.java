@@ -325,7 +325,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue2674() throws Exception{
+    public void testIssue2674_multibyte_char_at_position_that_even_multiple_of_buffer_size() throws Exception {
         SerializationService serializationService = new SerializationServiceBuilder().build();
 
         for (int i : new int[]{50240, 100240, 80240}) {
