@@ -21,11 +21,11 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.transaction.impl.Transaction;
-
+import com.hazelcast.transaction.impl.XAResourceImpl;
+import java.util.UUID;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
-import java.util.UUID;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
@@ -180,7 +180,11 @@ public class XAResourceProxy implements XAResource {
         }
         if (xaResource instanceof XAResourceProxy) {
             XAResourceProxy other = (XAResourceProxy) xaResource;
-            return transactionManager.equals(other.transactionManager);
+            return transactionManager.getGroupName().equals(other.transactionManager.getGroupName());
+        }
+        if (xaResource instanceof XAResourceImpl) {
+            XAResourceImpl other = (XAResourceImpl) xaResource;
+            return transactionManager.getGroupName().equals(other.getGroupName());
         }
         return false;
     }

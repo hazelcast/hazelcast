@@ -19,6 +19,7 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -53,6 +54,14 @@ public class ClientTransactionManager {
 
     public HazelcastClient getClient() {
         return client;
+    }
+
+    public String getGroupName(){
+        final GroupConfig groupConfig = client.getClientConfig().getGroupConfig();
+        if (groupConfig == null) {
+            throw new RuntimeException("GroupConfig cannot be null client is participate in XA Transaction");
+        }
+        return groupConfig.getName();
     }
 
     public TransactionContext newTransactionContext() {
