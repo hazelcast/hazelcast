@@ -16,19 +16,21 @@
 
 package com.hazelcast.management;
 
-import java.io.*;
+import com.eclipsesource.json.JsonObject;
+import com.hazelcast.util.JsonUtil;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getString;
 import static java.lang.String.format;
 
 /**
  * Identifier for the ManagementCenter. This information is used when a member identifies itself to the
  * ManagementCenter. It contains information like version/clustername/address.
  */
-public class ManagementCenterIdentifier implements Serializable {
+public class ManagementCenterIdentifier implements JsonSerializable{
 
-    private final static long serialVersionUID = 1;
 
     public static int getVersionAsInt(String versionString) throws IllegalArgumentException {
         int version = 0;
@@ -41,7 +43,7 @@ public class ManagementCenterIdentifier implements Serializable {
             }
             return version;
         }
-        throw new IllegalArgumentException(format("version string '%s' is not valid",versionString));
+        throw new IllegalArgumentException(format("version string '%s' is not valid", versionString));
     }
 
     public static String convertVersionToString(int version) {
@@ -71,18 +73,19 @@ public class ManagementCenterIdentifier implements Serializable {
     }
 
 
-    public void read(InputStream in) throws IOException {
-        DataInputStream dataInput = new DataInputStream(in);
-        version = dataInput.readInt();
-        clusterName = dataInput.readUTF();
-        address = dataInput.readUTF();
+    public JsonObject toJson(){
+        JsonObject root = new JsonObject();
+        root.add("version", version);
+        root.add("clusterName", clusterName);
+        root.add("address", address);
+        return root;
     }
 
-    public void write(OutputStream out) throws IOException {
-        DataOutputStream dataOutput = new DataOutputStream(out);
-        dataOutput.writeInt(version);
-        dataOutput.writeUTF(clusterName);
-        dataOutput.writeUTF(address);
+    @Override
+    public void fromJson(JsonObject json) {
+        version = getInt(json, "version");
+        clusterName = getString(json, "clusterName");
+        address = getString(json, "address");
     }
 
     public int getVersion() {

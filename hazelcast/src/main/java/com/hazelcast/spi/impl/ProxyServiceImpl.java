@@ -59,10 +59,21 @@ public class ProxyServiceImpl
         implements ProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {
 
     static final String SERVICE_NAME = "hz:core:proxyService";
+    private static final int TRY_COUNT = 10;
+    private static final long TIME = 3;
+
+    private final ConstructorFunction<String, ProxyRegistry> registryConstructor =
+            new ConstructorFunction<String, ProxyRegistry>() {
+                public ProxyRegistry createNew(String serviceName) {
+                    return new ProxyRegistry(serviceName);
+                }
+            };
 
     private final NodeEngineImpl nodeEngine;
-    private final ConcurrentMap<String, ProxyRegistry> registries = new ConcurrentHashMap<String, ProxyRegistry>();
-    private final ConcurrentMap<String, DistributedObjectListener> listeners = new ConcurrentHashMap<String, DistributedObjectListener>();
+    private final ConcurrentMap<String, ProxyRegistry> registries =
+            new ConcurrentHashMap<String, ProxyRegistry>();
+    private final ConcurrentMap<String, DistributedObjectListener> listeners =
+            new ConcurrentHashMap<String, DistributedObjectListener>();
     private final ILogger logger;
 
     ProxyServiceImpl(NodeEngineImpl nodeEngine) {
@@ -74,11 +85,6 @@ public class ProxyServiceImpl
         nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, new Object());
     }
 
-    private final ConstructorFunction<String, ProxyRegistry> registryConstructor = new ConstructorFunction<String, ProxyRegistry>() {
-        public ProxyRegistry createNew(String serviceName) {
-            return new ProxyRegistry(serviceName);
-        }
-    };
 
     @Override
     public int getProxyCount() {
@@ -130,8 +136,8 @@ public class ProxyServiceImpl
             }
 
             Future f = nodeEngine.getOperationService()
-                                 .createInvocationBuilder(SERVICE_NAME, new DistributedObjectDestroyOperation(serviceName, name),
-                                         member.getAddress()).setTryCount(10).invoke();
+                    .createInvocationBuilder(SERVICE_NAME, new DistributedObjectDestroyOperation(serviceName, name),
+                            member.getAddress()).setTryCount(TRY_COUNT).invoke();
             calls.add(f);
         }
 
@@ -139,7 +145,7 @@ public class ProxyServiceImpl
 
         for (Future f : calls) {
             try {
-                f.get(3, TimeUnit.SECONDS);
+                f.get(TIME, TimeUnit.SECONDS);
             } catch (Exception e) {
                 logger.finest(e);
             }
@@ -207,7 +213,8 @@ public class ProxyServiceImpl
                 final ProxyRegistry registry = getOrPutIfAbsent(registries, serviceName, registryConstructor);
                 if (!registry.contains(eventPacket.getName())) {
                     registry.createProxy(eventPacket.getName(), false,
-                            true); // listeners will be called if proxy is created here.
+                            true);
+                    // listeners will be called if proxy is created here.
                 }
             } catch (HazelcastInstanceNotActiveException ignored) {
             }
@@ -233,7 +240,7 @@ public class ProxyServiceImpl
         return proxies.isEmpty() ? null : new PostJoinProxyOperation(proxies);
     }
 
-    private class ProxyRegistry {
+    private final class ProxyRegistry {
 
         final String serviceName;
         final RemoteService service;
@@ -378,7 +385,7 @@ public class ProxyServiceImpl
         }
     }
 
-    private class ProxyEventProcessor
+    private final class ProxyEventProcessor
             implements StripedRunnable {
 
         final EventType type;
@@ -445,7 +452,8 @@ public class ProxyServiceImpl
                 throws IOException {
             super.writeInternal(out);
             out.writeUTF(serviceName);
-            out.writeObject(name); // writing as object for backward-compatibility
+            out.writeObject(name);
+            // writing as object for backward-compatibility
         }
 
         @Override
@@ -516,7 +524,8 @@ public class ProxyServiceImpl
             if (len > 0) {
                 for (ProxyInfo proxy : proxies) {
                     out.writeUTF(proxy.serviceName);
-                    out.writeObject(proxy.objectName); // writing as object for backward-compatibility
+                    out.writeObject(proxy.objectName);
+                    // writing as object for backward-compatibility
                 }
             }
         }
@@ -536,7 +545,7 @@ public class ProxyServiceImpl
         }
     }
 
-    private static class ProxyInfo {
+    private static final class ProxyInfo {
         final String serviceName;
         final String objectName;
 

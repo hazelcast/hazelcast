@@ -39,6 +39,8 @@ public class DescribeInstances {
     private final EC2RequestSigner rs;
     private final AwsConfig awsConfig;
 
+    private Map<String, String> attributes = new HashMap<String, String>();
+
     public DescribeInstances(AwsConfig awsConfig) {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
@@ -65,7 +67,6 @@ public class DescribeInstances {
         return df.format(new Date());
     }
 
-    private Map<String, String> attributes = new HashMap<String, String>();
 
     public String getQueryString() {
         return CloudyUtility.getQueryString(attributes);
@@ -79,7 +80,7 @@ public class DescribeInstances {
         attributes.put("Signature", value);
     }
 
-    public Map<String,String> execute(String endpoint) throws Exception {
+    public Map<String, String> execute(String endpoint) throws Exception {
         rs.sign(this, endpoint);
         InputStream stream = callService(endpoint);
         return CloudyUtility.unmarshalTheResponse(stream, awsConfig);

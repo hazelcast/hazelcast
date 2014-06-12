@@ -55,7 +55,8 @@ public final class DistributedObjectEventPacket implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(eventType == EventType.CREATED);
         out.writeUTF(serviceName);
-        out.writeObject(name); // writing as object for backward-compatibility
+        // writing as object for backward-compatibility
+        out.writeObject(name);
     }
 
     @Override

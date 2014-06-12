@@ -98,7 +98,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                                                String... excludeNames) {
             BeanDefinitionBuilder builder = createBeanBuilder(clazz);
             final AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
-            final Node attName = node.getAttributes().getNamedItem(propertyName); //"name"
+            //"name"
+            final Node attName = node.getAttributes().getNamedItem(propertyName);
             final String name = getTextContent(attName);
             builder.addPropertyValue("name", name);
             fillValues(node, builder, excludeNames);
@@ -106,20 +107,22 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void fillValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
-            Collection<String> epn = excludeNames != null && excludeNames.length > 0 ?
-                    new HashSet<String>(Arrays.asList(excludeNames)) : null;
+            Collection<String> epn = excludeNames != null && excludeNames.length > 0
+                    ? new HashSet<String>(Arrays.asList(excludeNames)) : null;
             fillAttributeValues(node, builder, epn);
             for (Node n : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 String name = xmlToJavaName(cleanNodeName(n));
-                if (epn != null && epn.contains(name)) continue;
+                if (epn != null && epn.contains(name)) {
+                    continue;
+                }
                 String value = getTextContent(n);
                 builder.addPropertyValue(name, value);
             }
         }
 
         protected void fillAttributeValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
-            Collection<String> epn = excludeNames != null && excludeNames.length > 0 ?
-                    new HashSet<String>(Arrays.asList(excludeNames)) : null;
+            Collection<String> epn = excludeNames != null && excludeNames.length > 0
+                    ? new HashSet<String>(Arrays.asList(excludeNames)) : null;
             fillAttributeValues(node, builder, epn);
         }
 
@@ -129,7 +132,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 for (int a = 0; a < atts.getLength(); a++) {
                     final Node att = atts.item(a);
                     final String name = xmlToJavaName(att.getNodeName());
-                    if (epn != null && epn.contains(name)) continue;
+                    if (epn != null && epn.contains(name)) {
+                        continue;
+                    }
                     final String value = att.getNodeValue();
                     builder.addPropertyValue(name, value);
                 }
@@ -153,9 +158,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected ManagedList parseProxyFactories(Node node, Class proxyFactoryConfigClass) {
             ManagedList list = new ManagedList();
-            for (Node _node : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+            for (Node instanceNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 final BeanDefinitionBuilder confBuilder = createBeanBuilder(proxyFactoryConfigClass);
-                fillAttributeValues(_node, confBuilder);
+                fillAttributeValues(instanceNode, confBuilder);
                 list.add(confBuilder.getBeanDefinition());
             }
             return list;
@@ -173,7 +178,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     final Node classNode = attrs.getNamedItem("class-name");
                     final Node fidNode = attrs.getNamedItem("factory-id");
                     if (implRef != null) {
-                        factories.put(Integer.parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
+                        factories.put(Integer.parseInt(getTextContent(fidNode))
+                                , new RuntimeBeanReference(getTextContent(implRef)));
                     }
                     if (classNode != null) {
                         classNames.put(Integer.parseInt(getTextContent(fidNode)), getTextContent(classNode));
@@ -199,7 +205,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     final Node implRef = attrs.getNamedItem(implementation);
                     final Node classNode = attrs.getNamedItem(className);
                     if (implRef != null) {
-                        globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation), getTextContent(implRef));
+                        globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation)
+                                , getTextContent(implRef));
                     }
                     if (classNode != null) {
                         globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
@@ -228,7 +235,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 }
             }
             if (globalSerializerConfigBuilder != null) {
-                serializationConfigBuilder.addPropertyValue("globalSerializerConfig", globalSerializerConfigBuilder.getBeanDefinition());
+                serializationConfigBuilder.addPropertyValue("globalSerializerConfig"
+                        , globalSerializerConfigBuilder.getBeanDefinition());
             }
             serializationConfigBuilder.addPropertyValue("serializerConfigs", serializers);
         }
@@ -244,7 +252,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     final Node classNode = attrs.getNamedItem("class-name");
                     final Node fidNode = attrs.getNamedItem("factory-id");
                     if (implRef != null) {
-                        factories.put(Integer.parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
+                        factories.put(Integer.parseInt(getTextContent(fidNode))
+                                , new RuntimeBeanReference(getTextContent(implRef)));
                     }
                     if (classNode != null) {
                         classNames.put(Integer.parseInt(getTextContent(fidNode)), getTextContent(classNode));

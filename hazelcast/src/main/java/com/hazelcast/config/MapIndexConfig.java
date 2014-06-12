@@ -26,7 +26,7 @@ import static com.hazelcast.util.ValidationUtil.hasText;
 public class MapIndexConfig {
 
     private String attribute;
-    private boolean ordered = false;
+    private boolean ordered;
     private MapIndexConfigReadOnly readOnly;
 
     /**
@@ -39,7 +39,7 @@ public class MapIndexConfig {
      * Creates a MapIndexConfig with the given attribute and ordered setting.
      *
      * @param attribute the attribute that is going to be indexed.
-     * @param ordered if the index is ordered.
+     * @param ordered   if the index is ordered.
      * @see #setOrdered(boolean)
      * @see #setAttribute(String)
      */
@@ -54,7 +54,7 @@ public class MapIndexConfig {
     }
 
     public MapIndexConfigReadOnly getAsReadOnly() {
-        if (readOnly == null ){
+        if (readOnly == null) {
             readOnly = new MapIndexConfigReadOnly(this);
         }
         return readOnly;
@@ -78,7 +78,7 @@ public class MapIndexConfig {
      * @throws IllegalArgumentException if attribute is null or an empty string.
      */
     public MapIndexConfig setAttribute(String attribute) {
-        this.attribute = hasText(attribute,"Map index attribute");
+        this.attribute = hasText(attribute, "Map index attribute");
         return this;
     }
 

@@ -39,9 +39,13 @@ public class SystemLogService {
     }
 
     public List<SystemLogRecord> getSystemWarnings() {
-        ArrayList<SystemLogRecord> systemLogList = new ArrayList<SystemLogRecord>();
+        ArrayList<SystemLog> systemLogList = new ArrayList<SystemLog>();
         ((LinkedBlockingQueue) warningLevelLogs).drainTo(systemLogList);
-        return systemLogList;
+        ArrayList<SystemLogRecord> records = new ArrayList<SystemLogRecord>();
+        for (SystemLog log : systemLogList) {
+            records.add(new SystemLogRecord(log.getDate(), log.toString(), log.getType().toString()));
+        }
+        return records;
     }
 
     public List<SystemLogRecord> getLogBundle() {

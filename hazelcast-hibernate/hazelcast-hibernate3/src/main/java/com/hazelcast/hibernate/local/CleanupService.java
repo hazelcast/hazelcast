@@ -29,6 +29,9 @@ import java.util.concurrent.TimeUnit;
  */
 public final class CleanupService {
 
+    private static final long FIXED_DELAY = 60;
+    private static final long FIXED_DELAY1 = 60;
+
     private final String name;
     private final ScheduledExecutorService executor;
 
@@ -42,7 +45,7 @@ public final class CleanupService {
             public void run() {
                 cache.cleanup();
             }
-        }, 60, 60, TimeUnit.SECONDS);
+        }, FIXED_DELAY, FIXED_DELAY1, TimeUnit.SECONDS);
     }
 
     public void stop() {
@@ -58,7 +61,7 @@ public final class CleanupService {
         }
     }
 
-    private static class CleanupThread extends Thread {
+    private static final class CleanupThread extends Thread {
 
         private CleanupThread(final Runnable target, final String name) {
             super(target, name);

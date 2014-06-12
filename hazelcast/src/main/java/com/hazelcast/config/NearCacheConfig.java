@@ -17,11 +17,11 @@
 package com.hazelcast.config;
 
 public class NearCacheConfig {
-    public final static int DEFAULT_TTL_SECONDS = 0;
-    public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
-    public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
-    public final static String DEFAULT_EVICTION_POLICY = "LRU";
-    public final static InMemoryFormat DEFAULT_MEMORY_FORMAT = InMemoryFormat.BINARY;
+    public static final int DEFAULT_TTL_SECONDS = 0;
+    public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
+    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+    public static final String DEFAULT_EVICTION_POLICY = "LRU";
+    public static final InMemoryFormat DEFAULT_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
@@ -39,9 +39,13 @@ public class NearCacheConfig {
 
     private NearCacheConfigReadOnly readOnly;
 
-    private boolean cacheLocalEntries = false;
+    private boolean cacheLocalEntries;
 
-    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds, boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
+    public NearCacheConfig() {
+    }
+
+    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy
+            , int maxIdleSeconds, boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxSize = maxSize;
         this.evictionPolicy = evictionPolicy;
@@ -66,9 +70,6 @@ public class NearCacheConfig {
             readOnly = new NearCacheConfigReadOnly(this);
         }
         return readOnly;
-    }
-
-    public NearCacheConfig() {
     }
 
     public String getName() {

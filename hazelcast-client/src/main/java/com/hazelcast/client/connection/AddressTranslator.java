@@ -15,11 +15,11 @@ public interface AddressTranslator {
      * @param address
      * @return new address if given address is known, otherwise return null
      */
-    public Address translate(Address address);
+    Address translate(Address address);
 
     /**
      * Refreshes the internal lookup table if necessary.
      */
-    public void refresh();
+    void refresh();
 
 }

@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-
 import java.io.IOException;
 
 public class UpdateManagementCenterUrlOperation extends Operation {
@@ -50,7 +49,7 @@ public class UpdateManagementCenterUrlOperation extends Operation {
             service = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         }
 
-        if (service != null){
+        if (service != null) {
             service.updateManagementCenterUrl(newUrl);
         }
     }

@@ -16,7 +16,22 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 
@@ -33,6 +48,7 @@ import java.util.regex.Pattern;
 public class ManagementService implements DistributedObjectListener {
 
     public static final String DOMAIN = "com.hazelcast";
+    private static final int INITIAL_CAPACITY = 3;
 
     final HazelcastInstanceImpl instance;
     private final boolean enabled;
@@ -62,7 +78,7 @@ public class ManagementService implements DistributedObjectListener {
 
         }
         this.instanceMBean = instanceMBean;
-        this.registrationId =  instance.addDistributedObjectListener(this);
+        this.registrationId = instance.addDistributedObjectListener(this);
         for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
             registerDistributedObject(distributedObject);
         }
@@ -118,7 +134,7 @@ public class ManagementService implements DistributedObjectListener {
 
     private void registerDistributedObject(DistributedObject distributedObject) {
         HazelcastMBean bean = createHazelcastBean(distributedObject);
-        if (bean != null){
+        if (bean != null) {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             if (!mbs.isRegistered(bean.objectName)) {
                 try {
@@ -137,111 +153,111 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
-    private void unregisterDistributedObject(DistributedObject distributedObject){
+    private void unregisterDistributedObject(DistributedObject distributedObject) {
         final String objectType = getObjectType(distributedObject);
-        if (objectType != null){
+        if (objectType != null) {
             ObjectName objectName = createObjectName(objectType, distributedObject.getName());
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             if (mbs.isRegistered(objectName)) {
                 try {
                     mbs.unregisterMBean(objectName);
                 } catch (Exception e) {
-                    logger.warning( "Error while un-registering " + objectName, e);
+                    logger.warning("Error while un-registering " + objectName, e);
                 }
             }
         }
     }
 
-    private HazelcastMBean createHazelcastBean(DistributedObject distributedObject){
+    private HazelcastMBean createHazelcastBean(DistributedObject distributedObject) {
         try {
-            if (distributedObject instanceof IList){
-                return new ListMBean((IList)distributedObject, this);
+            if (distributedObject instanceof IList) {
+                return new ListMBean((IList) distributedObject, this);
             }
-            if (distributedObject instanceof IAtomicLong){
-                return new AtomicLongMBean((IAtomicLong)distributedObject, this);
+            if (distributedObject instanceof IAtomicLong) {
+                return new AtomicLongMBean((IAtomicLong) distributedObject, this);
             }
-            if (distributedObject instanceof IAtomicReference){
-                return new AtomicReferenceMBean((IAtomicReference)distributedObject, this);
+            if (distributedObject instanceof IAtomicReference) {
+                return new AtomicReferenceMBean((IAtomicReference) distributedObject, this);
             }
-            if (distributedObject instanceof ICountDownLatch){
-                return new CountDownLatchMBean((ICountDownLatch)distributedObject, this);
+            if (distributedObject instanceof ICountDownLatch) {
+                return new CountDownLatchMBean((ICountDownLatch) distributedObject, this);
             }
-            if (distributedObject instanceof ILock){
-                return new LockMBean((ILock)distributedObject, this);
+            if (distributedObject instanceof ILock) {
+                return new LockMBean((ILock) distributedObject, this);
             }
-            if (distributedObject instanceof IMap){
-                return new MapMBean((IMap)distributedObject, this);
+            if (distributedObject instanceof IMap) {
+                return new MapMBean((IMap) distributedObject, this);
             }
-            if (distributedObject instanceof MultiMap){
-                return new MultiMapMBean((MultiMap)distributedObject, this);
+            if (distributedObject instanceof MultiMap) {
+                return new MultiMapMBean((MultiMap) distributedObject, this);
             }
-            if (distributedObject instanceof IQueue){
-                return new QueueMBean((IQueue)distributedObject, this);
+            if (distributedObject instanceof IQueue) {
+                return new QueueMBean((IQueue) distributedObject, this);
             }
-            if (distributedObject instanceof ISemaphore){
-                return new SemaphoreMBean((ISemaphore)distributedObject, this);
+            if (distributedObject instanceof ISemaphore) {
+                return new SemaphoreMBean((ISemaphore) distributedObject, this);
             }
-            if (distributedObject instanceof IExecutorService){
-                return new ExecutorServiceMBean((IExecutorService)distributedObject, this);
+            if (distributedObject instanceof IExecutorService) {
+                return new ExecutorServiceMBean((IExecutorService) distributedObject, this);
             }
-            if (distributedObject instanceof ISet){
-                return new SetMBean((ISet)distributedObject, this);
+            if (distributedObject instanceof ISet) {
+                return new SetMBean((ISet) distributedObject, this);
             }
-            if (distributedObject instanceof ITopic){
-                return new TopicMBean((ITopic)distributedObject, this);
+            if (distributedObject instanceof ITopic) {
+                return new TopicMBean((ITopic) distributedObject, this);
             }
         } catch (HazelcastInstanceNotActiveException ignored) {
         }
         return null;
     }
 
-    private String getObjectType(DistributedObject distributedObject){
-        if (distributedObject instanceof IList){
+    private String getObjectType(DistributedObject distributedObject) {
+        if (distributedObject instanceof IList) {
             return "IList";
         }
-        if (distributedObject instanceof IAtomicLong){
+        if (distributedObject instanceof IAtomicLong) {
             return "IAtomicLong";
         }
-        if (distributedObject instanceof IAtomicReference){
+        if (distributedObject instanceof IAtomicReference) {
             return "IAtomicReference";
         }
-        if (distributedObject instanceof ICountDownLatch){
+        if (distributedObject instanceof ICountDownLatch) {
             return "ICountDownLatch";
         }
-        if (distributedObject instanceof ILock){
+        if (distributedObject instanceof ILock) {
             return "ILock";
         }
-        if (distributedObject instanceof IMap){
+        if (distributedObject instanceof IMap) {
             return "IMap";
         }
-        if (distributedObject instanceof MultiMap){
+        if (distributedObject instanceof MultiMap) {
             return "MultiMap";
         }
-        if (distributedObject instanceof IQueue){
+        if (distributedObject instanceof IQueue) {
             return "IQueue";
         }
-        if (distributedObject instanceof ISemaphore){
+        if (distributedObject instanceof ISemaphore) {
             return "ISemaphore";
         }
-        if (distributedObject instanceof ISet){
+        if (distributedObject instanceof ISet) {
             return "ISet";
         }
-        if (distributedObject instanceof ITopic){
+        if (distributedObject instanceof ITopic) {
             return "ITopic";
         }
-        if (distributedObject instanceof IExecutorService){
+        if (distributedObject instanceof IExecutorService) {
             return "IExecutorService";
         }
         return null;
     }
 
-    protected ObjectName createObjectName(String type, String name){
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+    protected ObjectName createObjectName(String type, String name) {
+        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
         properties.put("instance", quote(instance.getName()));
-        if (type != null){
+        if (type != null) {
             properties.put("type", quote(type));
         }
-        if (name != null){
+        if (name != null) {
             properties.put("name", quote(name));
         }
         try {
@@ -251,7 +267,7 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
-    public static String quote(String text){
+    public static String quote(String text) {
         return Pattern.compile("[:\",=*?]")
                 .matcher(text)
                 .find() ? ObjectName.quote(text) : text;

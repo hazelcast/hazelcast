@@ -18,12 +18,20 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.map.MapService;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.lang.reflect.Field;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,6 +59,39 @@ public class ClientMapIssueTest {
         Hazelcast.shutdownAll();
     }
 
+    @Test
+    public void testListenerRegistrations() throws Exception {
+        final String mapName = "testListener";
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client1 = HazelcastClient.newHazelcastClient();
+        final IMap<Object, Object> map = client1.getMap(mapName);
+        map.addEntryListener(new EntryListener<Object, Object>() {
+            @Override
+            public void entryAdded(EntryEvent<Object, Object> event) {
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+            }
+        }, true);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        instance1.getLifecycleService().terminate();
+        instance1 = Hazelcast.newHazelcastInstance();
+        final Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
+        original.setAccessible(true);
+        final HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(instance1);
+        final EventService eventService = impl.node.nodeEngine.getEventService();
+        final Collection<EventRegistration> regs = eventService.getRegistrations(MapService.SERVICE_NAME, mapName);
+        assertEquals("there should be only one registrations" , 1 , regs.size());
+    }
 
     @Test
     public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {

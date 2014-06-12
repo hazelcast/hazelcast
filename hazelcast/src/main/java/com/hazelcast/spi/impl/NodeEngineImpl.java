@@ -58,6 +58,14 @@ import java.util.concurrent.TimeUnit;
 public class NodeEngineImpl
         implements NodeEngine {
 
+    private static final int RETRY_NUMBER = 5;
+    private static final int DELAY_FACTOR = 100;
+
+    final InternalOperationService operationService;
+    final ExecutionServiceImpl executionService;
+    final EventServiceImpl eventService;
+    final WaitNotifyServiceImpl waitNotifyService;
+
     private final Node node;
     private final ILogger logger;
 
@@ -65,11 +73,6 @@ public class NodeEngineImpl
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
-
-    final InternalOperationService operationService;
-    final ExecutionServiceImpl executionService;
-    final EventServiceImpl eventService;
-    final WaitNotifyServiceImpl waitNotifyService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -224,17 +227,17 @@ public class NodeEngineImpl
                 futureSend = new FutureSend(packet, target);
             }
             final int retries = futureSend.retries;
-            if (retries < 5 && node.isActive()) {
+            if (retries < RETRY_NUMBER && node.isActive()) {
                 connectionManager.getOrConnect(target, true);
                 // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
-                executionService.schedule(futureSend, (retries + 1) * 100, TimeUnit.MILLISECONDS);
+                executionService.schedule(futureSend, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
                 return true;
             }
             return false;
         }
     }
 
-    private class FutureSend
+    private final class FutureSend
             implements Runnable {
         private final Packet packet;
         private final Address target;

@@ -21,7 +21,6 @@ import com.hazelcast.client.executor.tasks.*;
 import com.hazelcast.core.*;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -33,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import static com.hazelcast.test.HazelcastTestSupport.*;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -69,11 +67,7 @@ public class ClientExecutorServiceExecuteTest {
         service.execute( new MapPutRunnable(mapName));
         final IMap map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                assertEquals(1, map.size());
-            }
-        });
+        assertSizeEventually(1, map);
     }
 
     @Test
@@ -85,11 +79,7 @@ public class ClientExecutorServiceExecuteTest {
         service.execute( new MapPutRunnable(mapName), selector);
         final IMap map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                assertEquals(1, map.size());
-            }
-        });
+        assertSizeEventually(1, map);
     }
 
     @Test(expected = NullPointerException.class)
@@ -178,11 +168,7 @@ public class ClientExecutorServiceExecuteTest {
         service.executeOnMembers(new MapPutRunnable(mapName), collection);
 
         final IMap map = client.getMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                assertTrue(map.isEmpty());
-            }
-        });
+        assertSizeEventually(0, map);
     }
 
     @Test(expected = NullPointerException.class)
@@ -201,11 +187,7 @@ public class ClientExecutorServiceExecuteTest {
         service.executeOnMembers(new MapPutRunnable(mapName), selector);
 
         final IMap map = client.getMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                assertEquals(CLUSTER_SIZE, map.size());
-            }
-        });
+        assertSizeEventually(CLUSTER_SIZE, map);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -223,10 +205,6 @@ public class ClientExecutorServiceExecuteTest {
         service.executeOnAllMembers(new MapPutRunnable(mapName));
 
         final IMap map = client.getMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                assertEquals(CLUSTER_SIZE, map.size());
-            }
-        });
+        assertSizeEventually(CLUSTER_SIZE, map);
     }
 }

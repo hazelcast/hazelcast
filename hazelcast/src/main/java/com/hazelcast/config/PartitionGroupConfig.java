@@ -79,7 +79,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * The interfaces can be configured with wildcards ('*') and also with address ranges e.g. '10-20'. Each member-group
  * can have an unlimited number of interfaces.
  * <p/>
- * You can define as many <cdoe>member-group</cdoe>s as you want. Hazelcast will always store backups in a different
+ * You can define as many <code>member-group</code> s as you want. Hazelcast will always store backups in a different
  * member-group to the primary partition.
  * <p/>
  * <h2>Overlapping Groups</h2>
@@ -102,7 +102,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class PartitionGroupConfig {
 
-    private boolean enabled = false;
+    private boolean enabled;
 
     private MemberGroupType groupType = MemberGroupType.PER_MEMBER;
 

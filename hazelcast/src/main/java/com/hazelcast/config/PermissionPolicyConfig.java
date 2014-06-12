@@ -22,9 +22,9 @@ import java.util.Properties;
 
 public class PermissionPolicyConfig {
 
-    private String className = null;
+    private String className;
 
-    private IPermissionPolicy implementation = null;
+    private IPermissionPolicy implementation;
 
     private Properties properties = new Properties();
 

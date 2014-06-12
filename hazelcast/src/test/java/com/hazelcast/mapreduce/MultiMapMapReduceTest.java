@@ -19,7 +19,6 @@ package com.hazelcast.mapreduce;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -61,12 +60,7 @@ public class MultiMapMapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
 
         MultiMap<Integer, Integer> multiMap = h1.getMultiMap("default");
         for (int i = 0; i < 1000; i++) {

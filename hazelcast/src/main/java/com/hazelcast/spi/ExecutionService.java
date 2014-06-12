@@ -31,12 +31,10 @@ import java.util.concurrent.TimeUnit;
  * <p/>
  * It also has functionality for scheduling tasks.
  *
- * @author mdogan 12/14/12
  */
 public interface ExecutionService {
 
     String SYSTEM_EXECUTOR = "hz:system";
-    String OPERATION_EXECUTOR = "hz:global-operation";
     String ASYNC_EXECUTOR = "hz:async";
     String SCHEDULED_EXECUTOR = "hz:scheduled";
     String CLIENT_EXECUTOR = "hz:client";

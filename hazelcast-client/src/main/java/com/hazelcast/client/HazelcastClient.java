@@ -47,7 +47,6 @@ import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
-import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
@@ -121,8 +120,10 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
-    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS
+            = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
+    public final ClientProperties clientProperties;
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
     private final ClientConfig config;
@@ -138,7 +139,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
-    public final ClientProperties clientProperties;
+
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;

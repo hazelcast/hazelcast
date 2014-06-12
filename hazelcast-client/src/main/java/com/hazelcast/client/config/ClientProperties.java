@@ -21,7 +21,6 @@ package com.hazelcast.client.config;
  */
 public class ClientProperties {
 
-
     public static final String PROP_CONNECTION_TIMEOUT = "hazelcast.client.connection.timeout";
     public static final String PROP_CONNECTION_TIMEOUT_DEFAULT = "5000";
 
@@ -37,19 +36,20 @@ public class ClientProperties {
     public static final String PROP_RETRY_WAIT_TIME = "hazelcast.client.retry.wait.time";
     public static final String PROP_RETRY_WAIT_TIME_DEFAULT = "250";
 
+    public final ClientProperty clientProperty;
+    public final ClientProperty heartbeatInterval;
+    public final ClientProperty maxFailedHeartbeatCount;
+    public final ClientProperty retryCount;
+    public final ClientProperty retryWaitTime;
 
-    public final ClientProperty CONNECTION_TIMEOUT;
-    public final ClientProperty HEARTBEAT_INTERVAL;
-    public final ClientProperty MAX_FAILED_HEARTBEAT_COUNT;
-    public final ClientProperty RETRY_COUNT;
-    public final ClientProperty RETRY_WAIT_TIME;
 
     public ClientProperties(ClientConfig clientConfig) {
-        CONNECTION_TIMEOUT = new ClientProperty(clientConfig, PROP_CONNECTION_TIMEOUT, PROP_CONNECTION_TIMEOUT_DEFAULT);
-        HEARTBEAT_INTERVAL = new ClientProperty(clientConfig, PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT);
-        MAX_FAILED_HEARTBEAT_COUNT = new ClientProperty(clientConfig, PROP_MAX_FAILED_HEARTBEAT_COUNT, PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
-        RETRY_COUNT = new ClientProperty(clientConfig, PROP_RETRY_COUNT, PROP_RETRY_COUNT_DEFAULT);
-        RETRY_WAIT_TIME = new ClientProperty(clientConfig, PROP_RETRY_WAIT_TIME, PROP_RETRY_WAIT_TIME_DEFAULT);
+        clientProperty = new ClientProperty(clientConfig, PROP_CONNECTION_TIMEOUT, PROP_CONNECTION_TIMEOUT_DEFAULT);
+        heartbeatInterval = new ClientProperty(clientConfig, PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT);
+        maxFailedHeartbeatCount = new ClientProperty(clientConfig
+                , PROP_MAX_FAILED_HEARTBEAT_COUNT, PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
+        retryCount = new ClientProperty(clientConfig, PROP_RETRY_COUNT, PROP_RETRY_COUNT_DEFAULT);
+        retryWaitTime = new ClientProperty(clientConfig, PROP_RETRY_WAIT_TIME, PROP_RETRY_WAIT_TIME_DEFAULT);
     }
 
     public static class ClientProperty {

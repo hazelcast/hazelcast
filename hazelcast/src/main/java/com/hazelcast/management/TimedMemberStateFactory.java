@@ -64,8 +64,8 @@ public class TimedMemberStateFactory {
         GroupConfig groupConfig = instance.getConfig().getGroupConfig();
         TimedMemberState timedMemberState = new TimedMemberState();
         timedMemberState.setMaster(instance.node.isMaster());
+        timedMemberState.setMemberList(new ArrayList<String>());
         if (timedMemberState.getMaster()) {
-            timedMemberState.setMemberList(new ArrayList<String>());
             Set<Member> memberSet = instance.getCluster().getMembers();
             for (Member member : memberSet) {
                 MemberImpl memberImpl = (MemberImpl) member;
@@ -81,12 +81,12 @@ public class TimedMemberStateFactory {
 
     private void createMemberState(MemberStateImpl memberState) {
         final Node node = instance.node;
-        memberState.setAddress(node.getThisAddress());
         final HashSet<SerializableClientEndPoint> serializableClientEndPoints = new HashSet<SerializableClientEndPoint>();
         for (Client client : instance.node.clientEngine.getClients()) {
             serializableClientEndPoints.add(new SerializableClientEndPoint(client));
         }
         memberState.setClients(serializableClientEndPoints);
+        memberState.setAddress(node.getThisAddress().getHost() + ":" + node.getThisAddress().getPort());
         createJMXBeans(memberState);
         PartitionService partitionService = instance.getPartitionService();
         Set<Partition> partitions = partitionService.getPartitions();
@@ -122,7 +122,6 @@ public class TimedMemberStateFactory {
         beans.setProxyServiceBean(proxyServiceBean);
 
         final ManagedExecutorService systemExecutor = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR);
-        final ManagedExecutorService operationExecutor = executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR);
         final ManagedExecutorService asyncExecutor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
         final ManagedExecutorService scheduledExecutor = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR);
         final ManagedExecutorService clientExecutor = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR);
@@ -130,7 +129,6 @@ public class TimedMemberStateFactory {
         final ManagedExecutorService ioExecutor = executionService.getExecutor(ExecutionService.IO_EXECUTOR);
 
         final SerializableManagedExecutorBean systemExecutorBean = new SerializableManagedExecutorBean(systemExecutor);
-        final SerializableManagedExecutorBean operationExecutorBean = new SerializableManagedExecutorBean(operationExecutor);
         final SerializableManagedExecutorBean asyncExecutorBean = new SerializableManagedExecutorBean(asyncExecutor);
         final SerializableManagedExecutorBean scheduledExecutorBean = new SerializableManagedExecutorBean(scheduledExecutor);
         final SerializableManagedExecutorBean clientExecutorBean = new SerializableManagedExecutorBean(clientExecutor);
@@ -138,7 +136,6 @@ public class TimedMemberStateFactory {
         final SerializableManagedExecutorBean ioExecutorBean = new SerializableManagedExecutorBean(ioExecutor);
 
         beans.putManagedExecutor(ExecutionService.SYSTEM_EXECUTOR, systemExecutorBean);
-        beans.putManagedExecutor(ExecutionService.OPERATION_EXECUTOR, operationExecutorBean);
         beans.putManagedExecutor(ExecutionService.ASYNC_EXECUTOR, asyncExecutorBean);
         beans.putManagedExecutor(ExecutionService.SCHEDULED_EXECUTOR, scheduledExecutorBean);
         beans.putManagedExecutor(ExecutionService.CLIENT_EXECUTOR, clientExecutorBean);

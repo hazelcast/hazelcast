@@ -32,7 +32,8 @@ public abstract class AbstractGeneralRegion<Cache extends RegionCache> extends A
 
     private final Cache cache;
 
-    protected AbstractGeneralRegion(final HazelcastInstance instance, final String name, final Properties props, final Cache cache) {
+    protected AbstractGeneralRegion(final HazelcastInstance instance, final String name
+            , final Properties props, final Cache cache) {
         super(instance, name, props);
         this.cache = cache;
     }

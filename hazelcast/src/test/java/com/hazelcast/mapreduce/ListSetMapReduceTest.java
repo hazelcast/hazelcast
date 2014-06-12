@@ -50,12 +50,7 @@ public class ListSetMapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
 
         int expectedResult = 0;
         IList<Integer> list = h1.getList("default");

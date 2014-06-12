@@ -38,6 +38,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class IMapRegionCache implements RegionCache {
 
+    private static final long COMPARISON_VALUE = 500;
+
+    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
+    };
+
+    private static final SoftLock LOCK_FAILURE = new SoftLock() {
+    };
+
     private final String name;
     private final HazelcastInstance hazelcastInstance;
     private final IMap<Object, Object> map;
@@ -55,7 +63,7 @@ public class IMapRegionCache implements RegionCache {
         this.map = hazelcastInstance.getMap(this.name);
         lockTimeout = CacheEnvironment.getLockTimeoutInMillis(props);
         final long maxOperationTimeout = HazelcastTimestamper.getMaxOperationTimeout(hazelcastInstance);
-        tryLockAndGetTimeout = Math.min(maxOperationTimeout, 500);
+        tryLockAndGetTimeout = Math.min(maxOperationTimeout, COMPARISON_VALUE);
         explicitVersionCheckEnabled = CacheEnvironment.isExplicitVersionCheckEnabled(props);
         logger = createLogger(name, hazelcastInstance);
     }
@@ -69,7 +77,7 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public boolean update(final Object key, final Object value, final Object currentVersion,
-                       final Object previousVersion, final SoftLock lock) {
+                          final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
             logger.warning("Cache lock could not be acquired!");
             return false;
@@ -81,8 +89,8 @@ public class IMapRegionCache implements RegionCache {
                     if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
                         try {
                             final CacheEntry previousEntry = (CacheEntry) map.get(key);
-                            if (previousEntry == null ||
-                                versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                            if (previousEntry == null
+                                    || versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
                                 map.set(key, value);
                                 return true;
                             } else {
@@ -165,8 +173,4 @@ public class IMapRegionCache implements RegionCache {
             return Logger.getLogger(name);
         }
     }
-
-    private static final SoftLock LOCK_SUCCESS = new SoftLock() {};
-
-    private static final SoftLock LOCK_FAILURE = new SoftLock() {};
 }
