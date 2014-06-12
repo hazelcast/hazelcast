@@ -49,16 +49,16 @@ public final class Predicates {
         return value;
     }
 
-    public static Predicate and(Predicate x, Predicate y) {
-        return new AndPredicate(x, y);
+    public static Predicate and(Predicate... predicates) {
+        return new AndPredicate(predicates);
     }
 
     public static Predicate not(Predicate predicate) {
         return new NotPredicate(predicate);
     }
 
-    public static Predicate or(Predicate x, Predicate y) {
-        return new OrPredicate(x, y);
+    public static Predicate or(Predicate... predicates) {
+        return new OrPredicate(predicates);
     }
 
     public static Predicate notEqual(String attribute, Comparable y) {
