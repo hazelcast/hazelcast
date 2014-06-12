@@ -14,27 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring.context;
-
-import java.lang.annotation.Target;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Documented;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.ElementType;
-
 /**
- * Annotates a class for injection of Spring dependencies.
- *
- * @author mdogan 4/6/12
+ * Provides Spring interfaces/classes for Hazelcast.
  */
-
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Inherited
-@Documented
-public @interface SpringAware {
-
-    String beanName() default "";
-
-}
+package com.hazelcast.spring;

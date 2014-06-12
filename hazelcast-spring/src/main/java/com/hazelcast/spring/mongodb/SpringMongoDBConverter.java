@@ -41,41 +41,55 @@ public class SpringMongoDBConverter implements MongoDBConverter {
 
     public DBObject toDBObject(Object obj) {
         DBObject dbObject = new BasicDBObject();
-        if(isStandardClass(obj.getClass()))
+        if (isStandardClass(obj.getClass())) {
             obj = new ValueWrapper(obj);
+        }
         mongoTemplate.getConverter().write(obj, dbObject);
         return dbObject;
     }
 
     public Object toObject(Class clazz, DBObject dbObject) {
-        if(clazz.equals(ValueWrapper.class))
+        if (clazz.equals(ValueWrapper.class)) {
             return dbObject.get("value");
+        }
         return mongoTemplate.getConverter().read(clazz, dbObject);
     }
 
     public static boolean isStandardClass(Class clazz) {
-        if (clazz.isAssignableFrom(Date.class)) // standard, pass
+        if (clazz.isAssignableFrom(Date.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(Number.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(Number.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(String.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(String.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(ObjectId.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(ObjectId.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(BSONObject.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(BSONObject.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(Boolean.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(Boolean.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(Double.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(Double.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(Integer.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(Integer.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(Long.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(Long.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(Pattern.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(Pattern.class)) {
+            // standard, pass
             return true;
-        else if (clazz.isAssignableFrom(UUID.class)) // standard, pass
+        } else if (clazz.isAssignableFrom(UUID.class)) {
+            // standard, pass
             return true;
+        }
 
         return false;
     }

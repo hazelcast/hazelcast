@@ -14,7 +14,6 @@
     <suppress checks="" files="com.hazelcast.management[\\/]"/>
     <suppress checks="" files="com.hazelcast.map[\\/]"/>
 
-    <suppress checks="" files="com.hazelcast.spring[\\/]"/>
     <!-- <suppress checks="" files="com.hazelcast.client[\\/]"/> not completed --> 
 
     <suppress checks="" files="com.hazelcast.web.WebFilter"/>
@@ -698,6 +697,27 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
     <suppress checks="MagicNumber" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
+
+    <!-- Spring-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.spring.AbstractHazelcastBeanDefinitionParser"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spring.AbstractHazelcastBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastClientBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastClientBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastInstanceDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="MethodCount" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="ExecutableStatement" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastTypeBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spring.context.SpringManagedContext"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>
+    <suppress checks="ArrayTrailingComma" files="com.hazelcast.spring.HazelcastNamespaceHandler"/>
+
 
 </suppressions>
 
