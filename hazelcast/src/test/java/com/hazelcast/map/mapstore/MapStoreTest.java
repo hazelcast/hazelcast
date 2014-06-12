@@ -1311,7 +1311,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int expectedStoreCount = 3;
         final int nodeCount = 3;
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "30");
+        config.setProperty(GroupProperties.PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "30");
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
@@ -1542,7 +1542,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         final Node node = getNode(instance);
-        final int maxSize = node.getGroupProperties().MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE.getInteger();
+        final int maxSize = node.getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
         IMap map = instance.getMap("default");
         for (int i = 0; i < maxSize + 1; i++) {
             map.put(i,i);

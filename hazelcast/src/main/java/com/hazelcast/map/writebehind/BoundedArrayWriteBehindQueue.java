@@ -36,8 +36,8 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
 
     @Override
     public boolean offer(T t) {
-        final int perNodeMaxSize = getPerNodeMaxSize();
-        if (hasReachedMaxSize(perNodeMaxSize)) {
+        final int currentPerNodeCount = currentPerNodeCount();
+        if (hasReachedMaxSize(currentPerNodeCount)) {
             throw new ReachedMaxSizeException("Queue already reached per node max capacity [" + maxSize + "]");
         }
         incrementPerNodeMaxSize();
@@ -85,12 +85,12 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
         if (collection == null || collection.isEmpty()) {
             return;
         }
-        final int perNodeMaxSize = getPerNodeMaxSize();
+        final int currentPerNodeCount = currentPerNodeCount();
         final int size = collection.size();
-        final int desiredSize = perNodeMaxSize + size;
+        final int desiredSize = currentPerNodeCount + size;
         if (hasReachedMaxSize(desiredSize)) {
             throw new ReachedMaxSizeException("Remaining per node space is not enough for this collection."
-                    + " Remaining = [" + (maxSize - perNodeMaxSize) + "]");
+                    + " Remaining = [" + (maxSize - currentPerNodeCount) + "]");
         }
         incrementPerNodeMaxSize(size);
         super.addFront(collection);
@@ -101,12 +101,12 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
         if (collection == null || collection.isEmpty()) {
             return;
         }
-        final int perNodeMaxSize = getPerNodeMaxSize();
+        final int currentPerNodeCount = currentPerNodeCount();
         final int size = collection.size();
-        final int desiredSize = perNodeMaxSize + size;
+        final int desiredSize = currentPerNodeCount + size;
         if (hasReachedMaxSize(desiredSize)) {
             throw new ReachedMaxSizeException("Remaining per node space is not enough for this collection."
-                    + " Remaining = [" + (maxSize - perNodeMaxSize) + "]");
+                    + " Remaining = [" + (maxSize - currentPerNodeCount) + "]");
         }
         incrementPerNodeMaxSize(size);
         super.addEnd(collection);
@@ -116,7 +116,7 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
         return size >= maxSize;
     }
 
-    private int getPerNodeMaxSize() {
+    private int currentPerNodeCount() {
         return writeBehindQueueItemCounter.intValue();
     }
 

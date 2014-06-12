@@ -69,8 +69,9 @@ public class DefaultRecordStore implements RecordStore {
     private static final long DEFAULT_TTL = -1L;
     /**
      * Number of reads before clean up.
+     * A nice number such as 2^n - 1.
      */
-    private static final int POST_READ_CHECK_POINT = 0x3F;
+    private static final int POST_READ_CHECK_POINT = 63;
     private final String name;
     private final int partitionId;
     private final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
@@ -122,7 +123,7 @@ public class DefaultRecordStore implements RecordStore {
      * <p/>
      * Method {@link com.hazelcast.map.DefaultRecordStore#cleanupEvictionStagingArea} will try to evict this staging area.
      */
-    private final Map<Integer, DelayedEntry> evictionStagingArea;
+    private final Map<Data, DelayedEntry> evictionStagingArea;
 
     /**
      * used in LRU eviction logic.
@@ -1240,7 +1241,7 @@ public class DefaultRecordStore implements RecordStore {
             if (entry.getStoreTime() < nextItemsStoreTimeInWriteBehindQueue) {
                 evictionStagingAreaIterator.remove();
             }
-            initExpirationIterator();
+            initStagingAreaIterator();
             if (!evictionStagingAreaIterator.hasNext()) {
                 break;
             }
@@ -1264,35 +1265,28 @@ public class DefaultRecordStore implements RecordStore {
         }
         final long storeTime = lastUpdateTime + getWriteDelayTime();
         final DelayedEntry<Void, Object> delayedEntry = DelayedEntry.createWithNullKey(value, storeTime);
-        evictionStagingArea.put(key.hashCode(), delayedEntry);
+        evictionStagingArea.put(key, delayedEntry);
     }
 
     private Object getFromEvictionStagingArea(Data key) {
         if (!mapContainer.isWriteBehindMapStoreEnabled()) {
             return null;
         }
-        // first create a delayed entry with only hash of the key since this map uses key comparison to find
-        // the entry.
-        final int hashCode = key.hashCode();
-        final DelayedEntry entryWithNullKey = evictionStagingArea.get(hashCode);
+        final DelayedEntry entryWithNullKey = evictionStagingArea.get(key);
         if (entryWithNullKey == null) {
             return null;
         }
         return mapService.toObject(entryWithNullKey.getValue());
     }
 
-    private Object removeFromEvictionStagingArea(Data key) {
+    private void removeFromEvictionStagingArea(Data key) {
         if (!mapContainer.isWriteBehindMapStoreEnabled()) {
-            return null;
+            return;
         }
-        // first create a delayed entry with only hash of the key since this map uses key comparison to find
-        // the entry.
-        final int hashCode = key.hashCode();
-        final Object value = evictionStagingArea.remove(hashCode);
+        final Object value = evictionStagingArea.remove(key);
         if (value == null) {
-            return null;
+            return;
         }
-        return mapService.toObject(value);
     }
 
     private Map<Object, Object> getFromEvictionStagingArea(Set<Data> keys) {
@@ -1535,12 +1529,12 @@ public class DefaultRecordStore implements RecordStore {
         return WriteBehindQueues.createDefaultWriteBehindQueue(maxPerNodeWriteBehindQueueSize, counter);
     }
 
-    private Map<Integer, DelayedEntry> createEvictionStagingArea() {
+    private Map<Data, DelayedEntry> createEvictionStagingArea() {
         final boolean writeBehindMapStoreEnabled = mapContainer.isWriteBehindMapStoreEnabled();
         if (!writeBehindMapStoreEnabled) {
             return Collections.emptyMap();
         }
-        return new ConcurrentHashMap<Integer, DelayedEntry>();
+        return new ConcurrentHashMap<Data, DelayedEntry>();
     }
 
     private Set<Data> createWriteBehindWaitingDeletionsSet() {

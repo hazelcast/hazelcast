@@ -217,7 +217,7 @@ class WriteBehindQueueManager implements WriteBehindManager {
 
         private long getReplicaWaitTime() {
             return TimeUnit.SECONDS.toMillis(mapService.getNodeEngine().getGroupProperties()
-                    .MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS.getInteger());
+                    .MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getInteger());
         }
 
         @Override

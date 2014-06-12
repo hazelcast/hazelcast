@@ -1055,6 +1055,6 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public int getMaxPerNodeSizeOfWriteBehindQueue() {
-        return nodeEngine.getGroupProperties().MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE.getInteger();
+        return nodeEngine.getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
     }
 }

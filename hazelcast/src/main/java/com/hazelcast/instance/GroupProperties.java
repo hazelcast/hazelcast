@@ -74,8 +74,8 @@ public class GroupProperties {
     public static final String PROP_ICMP_TTL = "hazelcast.icmp.ttl";
     public static final String PROP_INITIAL_MIN_CLUSTER_SIZE = "hazelcast.initial.min.cluster.size";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
-    public static final String PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS
-            = "hazelcast.map.replica.wait.seconds.for.scheduled.tasks";
+    public static final String PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
+            = "hazelcast.map.replica.scheduled.task.delay.seconds";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
@@ -98,7 +98,7 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
     public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = "hazelcast.elastic.memory.unsafe.enabled";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
-    public static final String PROP_MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE = "hazelcast.max.per.node.size.of.write.behind.queue";
+    public static final String PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY = "hazelcast.map.write.behind.queue.capacity";
 
 
     /**
@@ -189,7 +189,7 @@ public class GroupProperties {
 
     public final GroupProperty INITIAL_MIN_CLUSTER_SIZE;
 
-    public final GroupProperty MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS;
+    public final GroupProperty MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS;
 
     public final GroupProperty PARTITION_COUNT;
 
@@ -235,7 +235,7 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
-    public final GroupProperty MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE;
+    public final GroupProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY;
 
     /**
      * @param config
@@ -292,8 +292,8 @@ public class GroupProperties {
         ICMP_TTL = new GroupProperty(config, PROP_ICMP_TTL, "0");
         INITIAL_MIN_CLUSTER_SIZE = new GroupProperty(config, PROP_INITIAL_MIN_CLUSTER_SIZE, "0");
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
-        MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS
-                = new GroupProperty(config, PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "10");
+        MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
+                = new GroupProperty(config, PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "10");
         PARTITION_COUNT = new GroupProperty(config, PROP_PARTITION_COUNT, "271");
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
@@ -316,8 +316,8 @@ public class GroupProperties {
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
         ELASTIC_MEMORY_UNSAFE_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_UNSAFE_ENABLED, "false");
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
-        MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE
-                = new GroupProperty(config, PROP_MAX_PER_NODE_SIZE_OF_WRITE_BEHIND_QUEUE, "50000");
+        MAP_WRITE_BEHIND_QUEUE_CAPACITY
+                = new GroupProperty(config, PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY, "50000");
     }
 
     public static class GroupProperty {
