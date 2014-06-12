@@ -190,7 +190,7 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     /**
-     * test for issue 589
+     * Test that replace(key, oldValue, newValue) generates entryUpdated events, not entryAdded.
      */
     @Test
     public void replaceFiresUpdatedEvent() throws InterruptedException {
