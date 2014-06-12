@@ -22,16 +22,38 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MemberAttributeServiceEvent;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.MembershipServiceEvent;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SerializableCollection;
-import com.hazelcast.transaction.*;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.ExceptionUtil;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.Xid;
-import java.util.*;
-import java.util.concurrent.*;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
 
@@ -60,6 +82,11 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         logger = nodeEngine.getLogger(TransactionManagerService.class);
     }
 
+    public String getGroupName() {
+        return nodeEngine.getConfig().getGroupConfig().getName();
+    }
+
+    @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         if (task == null) {
             throw new NullPointerException("TransactionalTask is required!");

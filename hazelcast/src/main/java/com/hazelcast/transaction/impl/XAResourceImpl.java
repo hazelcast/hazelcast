@@ -20,7 +20,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionException;
-
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
@@ -159,9 +158,12 @@ public class XAResourceImpl implements XAResource {
     public synchronized boolean isSameRM(XAResource xaResource) throws XAException {
         if (xaResource instanceof XAResourceImpl) {
             XAResourceImpl other = (XAResourceImpl) xaResource;
-            return transactionManager.equals(other.transactionManager);
+            return transactionManager.getGroupName().equals(other.transactionManager.getGroupName());
+        } else {
+            // since XaResourceProxy is in client package and client package has dependency on ours,
+            // we give our resource to them to check whether they are the same.
+            return xaResource.isSameRM(this);
         }
-        return false;
     }
 
     @Override
@@ -181,6 +183,10 @@ public class XAResourceImpl implements XAResource {
     }
 
     //XAResource --END
+
+    public String getGroupName() {
+        return transactionManager.getGroupName();
+    }
 
     private void nullCheck(Xid xid) throws XAException {
         if (xid == null) {

@@ -50,6 +50,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -195,7 +196,15 @@ public class HazelcastXaTest {
         }
 
         assertEquals("value", instance1.getMap("map").get("key"));
+    }
 
+    @Test
+    public void testIsSame() throws Exception {
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final XAResource resource1 = instance1.newTransactionContext().getXaResource();
+        final XAResource resource2 = instance2.newTransactionContext().getXaResource();
+        assertTrue(resource1.isSameRM(resource2));
     }
 
     public static class MyXid implements Xid {
