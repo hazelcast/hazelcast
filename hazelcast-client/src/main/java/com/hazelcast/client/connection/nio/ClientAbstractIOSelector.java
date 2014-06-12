@@ -61,22 +61,27 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         this.selector = selectorTemp;
     }
 
+    @Override
     public Selector getSelector() {
         return selector;
     }
 
+    @Override
     public void addTask(Runnable runnable) {
         selectorQueue.add(runnable);
     }
 
+    @Override
     public void wakeup() {
         selector.wakeup();
     }
 
+    @Override
     public void shutdown() {
         selectorQueue.clear();
         try {
             addTask(new Runnable() {
+                @Override
                 public void run() {
                     live = false;
                     shutdownLatch.countDown();
@@ -87,6 +92,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         }
     }
 
+    @Override
     public void awaitShutdown() {
         try {
             shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
@@ -104,6 +110,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         }
     }
 
+    @Override
     public final void run() {
         try {
             //noinspection WhileLoopSpinsOnField
