@@ -151,13 +151,10 @@ public final class UTFEncoderDecoder {
                               final int beginIndex, final int endIndex,
                               byte[] buffer) throws IOException {
         final int utflen = in.readShort();
-        int c;
-        int char2;
-        int char3;
         int count = 0;
         int charArrCount = beginIndex;
         while (count < utflen) {
-            c = buffered(buffer, count++, utflen, in) & 0xff;
+            int c = buffered(buffer, count++, utflen, in) & 0xff;
             switch (c >> 4) {
                 case 0:
                 case 1:
@@ -167,38 +164,54 @@ public final class UTFEncoderDecoder {
                 case 5:
                 case 6:
                 case 7:
-                    /* 0xxxxxxx */
-                    data[charArrCount++] = (char) c;
+                    decodeOneByteChar(data, charArrCount, c);
                     break;
                 case 12:
                 case 13:
-                    /* 110x xxxx 10xx xxxx */
-                    if (count + 1 > utflen) {
-                        throw new UTFDataFormatException("malformed input: partial character at end");
-                    }
-                    char2 = buffered(buffer, count++, utflen, in);
-                    if ((char2 & 0xC0) != 0x80) {
-                        throw new UTFDataFormatException("malformed input around byte " + count);
-                    }
-                    data[charArrCount++] = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
+                    count = decodeTwoBytesChar(data, charArrCount, c, in, buffer, utflen, count);
                     break;
                 case 14:
-                    /* 1110 xxxx 10xx xxxx 10xx xxxx */
-                    if (count + 2 > utflen) {
-                        throw new UTFDataFormatException("malformed input: partial character at end");
-                    }
-                    char2 = buffered(buffer, count++, utflen, in);
-                    char3 = buffered(buffer, count++, utflen, in);
-                    if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
-                        throw new UTFDataFormatException("malformed input around byte " + (count - 1));
-                    }
-                    data[charArrCount++] = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
+                    count = decodeThreeBytesChar(data, charArrCount, c, in, buffer, utflen, count);
                     break;
                 default:
                     /* 10xx xxxx, 1111 xxxx */
                     throw new UTFDataFormatException("malformed input around byte " + count);
             }
+            charArrCount++;
         }
+    }
+
+    private int decodeThreeBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen, int count) throws IOException {
+        /* 1110 xxxx 10xx xxxx 10xx xxxx */
+        if (count + 2 > utflen) {
+            throw new UTFDataFormatException("malformed input: partial character at end");
+        }
+        int char2 = buffered(buffer, count++, utflen, in);
+        int char3 = buffered(buffer, count++, utflen, in);
+        if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
+            throw new UTFDataFormatException("malformed input around byte " + (count - 1));
+        }
+        data[charArrCount] = (char) (((char1 & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
+        return count;
+    }
+
+    private int decodeTwoBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen, int count) throws IOException {
+    /* 110x xxxx 10xx xxxx */
+        if (count + 1 > utflen) {
+            throw new UTFDataFormatException("malformed input: partial character at end");
+        }
+        int char2 = buffered(buffer, count++, utflen, in);
+        if ((char2 & 0xC0) != 0x80) {
+            throw new UTFDataFormatException("malformed input around byte " + count);
+        }
+        data[charArrCount] = (char) (((char1 & 0x1F) << 6) | (char2 & 0x3F));
+        return count;
+    }
+
+    private void decodeOneByteChar(char[] data, int charArrCount, int c) {
+    /* 0xxxxxxx */
+        data[charArrCount] = (char) c;
+        return;
     }
 
     private void buffering(byte[] buffer, int pos, byte value, DataOutput out) throws IOException {
