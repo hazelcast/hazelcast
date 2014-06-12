@@ -34,6 +34,7 @@ import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.MapWideEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
@@ -1398,6 +1399,11 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
 
     @Override
     public void entryEvicted(EntryEvent event) {
+        println(event);
+    }
+
+    @Override
+    public void evictedAll(MapWideEvent event) {
         println(event);
     }
 

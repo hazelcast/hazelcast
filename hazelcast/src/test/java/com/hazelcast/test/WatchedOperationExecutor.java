@@ -3,6 +3,7 @@ package com.hazelcast.test;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapWideEvent;
 import com.hazelcast.core.ReplicatedMap;
 
 import java.util.Arrays;
@@ -98,6 +99,11 @@ public class WatchedOperationExecutor {
         @Override
         public void entryEvicted(EntryEvent event) {
             handleEvent(event.getEventType());
+        }
+
+        @Override
+        public void evictedAll(MapWideEvent event) {
+
         }
 
         private void handleEvent(EntryEventType eventType) {

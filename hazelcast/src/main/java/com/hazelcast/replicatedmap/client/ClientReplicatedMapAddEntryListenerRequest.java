@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapWideEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
@@ -88,6 +89,11 @@ public class ClientReplicatedMapAddEntryListenerRequest
 
             public void entryEvicted(EntryEvent<Object, Object> event) {
                 handleEvent(event);
+            }
+            // TODO what should this method do?
+            @Override
+            public void evictedAll(MapWideEvent event) {
+
             }
         };
 

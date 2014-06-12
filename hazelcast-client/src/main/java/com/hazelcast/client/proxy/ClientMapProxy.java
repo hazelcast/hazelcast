@@ -45,6 +45,7 @@ import com.hazelcast.map.client.MapContainsKeyRequest;
 import com.hazelcast.map.client.MapContainsValueRequest;
 import com.hazelcast.map.client.MapDeleteRequest;
 import com.hazelcast.map.client.MapEntrySetRequest;
+import com.hazelcast.map.client.MapEvictAllRequest;
 import com.hazelcast.map.client.MapEvictRequest;
 import com.hazelcast.map.client.MapExecuteOnAllKeysRequest;
 import com.hazelcast.map.client.MapExecuteOnKeyRequest;
@@ -515,6 +516,13 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    public void evictAll() {
+        clearNearCache();
+        MapEvictAllRequest request = new MapEvictAllRequest(name);
+        invoke(request);
+    }
+
+    @Override
     public Set<K> keySet() {
         MapKeySetRequest request = new MapKeySetRequest(name);
         MapKeySet mapKeySet = invoke(request);
@@ -959,6 +967,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     private void invalidateNearCache(Data key) {
         if (nearCache != null) {
             nearCache.invalidate(key);
+        }
+    }
+
+    private void clearNearCache() {
+        if (nearCache != null) {
+            nearCache.clear();
         }
     }
 

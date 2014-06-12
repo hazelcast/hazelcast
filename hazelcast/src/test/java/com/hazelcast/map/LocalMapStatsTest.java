@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -39,4 +40,15 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertTrue(lastUpdateTime2 > lastUpdateTime);
     }
 
+    @Test
+    public void testEvictAll() throws Exception {
+        HazelcastInstance h1 = createHazelcastInstance();
+        IMap<String, String> map = h1.getMap(name);
+        map.put("key", "value");
+        map.evictAll();
+
+        final long heapCost = map.getLocalMapStats().getHeapCost();
+
+        assertEquals(0L, heapCost);
+    }
 }
