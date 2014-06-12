@@ -22,21 +22,21 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.MapWideEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.concurrent.CountDownLatch;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
+
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -320,6 +320,11 @@ public class ClientMultiMapListenersTest {
                 evictLatch.countDown();
             }
         }
+
+        @Override
+        public void evictedAll(MapWideEvent event) {
+            // TODO what to do here?
+        }
     }
 
     static class CountDownValueNullListener extends MyEntryListener {
@@ -354,6 +359,11 @@ public class ClientMultiMapListenersTest {
             if(event.getValue() == null){
                 evictLatch.countDown();
             }
+        }
+
+        @Override
+        public void evictedAll(MapWideEvent event) {
+            // TODO what to do here?
         }
     };
 }

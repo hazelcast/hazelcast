@@ -26,17 +26,18 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapWideEvent;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.lang.reflect.Field;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -80,6 +81,11 @@ public class ClientMapIssueTest {
 
             @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
+            }
+
+            @Override
+            public void evictedAll(MapWideEvent event) {
+
             }
         }, true);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
