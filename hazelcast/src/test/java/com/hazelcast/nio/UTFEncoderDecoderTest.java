@@ -28,6 +28,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -46,12 +47,20 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
     private static final int BENCHMARK_ROUNDS = 10; // 100;
 
     @Test(expected = IllegalArgumentException.class)
-    public void bufferSizeMustAlwaysBePowerOfTwo() throws IOException {
+    public void testReadUTF_bufferSizeMustAlwaysBePowerOfTwo() throws IOException {
         byte[] buffer = new byte[1023];
 
         ByteArrayInputStream bais = new ByteArrayInputStream(new byte[0]);
         DataInputStream dis = new DataInputStream(bais);
         UTFEncoderDecoder.readUTF(dis, buffer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testWriteUTF_bufferSizeMustAlwaysBePowerOfTwo() throws IOException {
+        byte[] buffer = new byte[1023];
+
+        DataOutput dataOutput = new DataOutputStream(new ByteArrayOutputStream());
+        UTFEncoderDecoder.writeUTF(dataOutput, "foo", buffer);
     }
 
     @Test

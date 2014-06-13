@@ -64,6 +64,9 @@ public final class UTFEncoderDecoder {
     }
 
     public void writeUTF0(final DataOutput out, final String str, byte[] buffer) throws IOException {
+        if (!QuickMath.isPowerOfTwo(buffer.length)) {
+            throw new IllegalArgumentException("Size of the buffer has to be power of two, was "+buffer.length);
+        }
         boolean isNull = str == null;
         out.writeBoolean(isNull);
         if (isNull) {
@@ -188,7 +191,8 @@ public final class UTFEncoderDecoder {
         }
     }
 
-    private int decodeThreeBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen, int count) throws IOException {
+    private int decodeThreeBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen,
+                                     int count) throws IOException {
         /* 1110 xxxx 10xx xxxx 10xx xxxx */
         if (count + 2 > utflen) {
             throw new UTFDataFormatException("malformed input: partial character at end");
@@ -202,7 +206,8 @@ public final class UTFEncoderDecoder {
         return count;
     }
 
-    private int decodeTwoBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen, int count) throws IOException {
+    private int decodeTwoBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen,
+                                   int count) throws IOException {
     /* 110x xxxx 10xx xxxx */
         if (count + 1 > utflen) {
             throw new UTFDataFormatException("malformed input: partial character at end");
