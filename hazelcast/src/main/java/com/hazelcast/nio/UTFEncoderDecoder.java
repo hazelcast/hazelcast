@@ -186,7 +186,8 @@ public final class UTFEncoderDecoder {
         }
     }
 
-    private int decodeThreeBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen, int count) throws IOException {
+    private int decodeThreeBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen,
+                                     int count) throws IOException {
         /* 1110 xxxx 10xx xxxx 10xx xxxx */
         if (count + 2 > utflen) {
             throw new UTFDataFormatException("malformed input: partial character at end");
@@ -200,7 +201,8 @@ public final class UTFEncoderDecoder {
         return count;
     }
 
-    private int decodeTwoBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen, int count) throws IOException {
+    private int decodeTwoBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen,
+                                   int count) throws IOException {
     /* 110x xxxx 10xx xxxx */
         if (count + 1 > utflen) {
             throw new UTFDataFormatException("malformed input: partial character at end");
@@ -228,7 +230,8 @@ public final class UTFEncoderDecoder {
     }
 
     private byte buffered(byte[] buffer, int pos, int utfLength, DataInput in) throws IOException {
-        int innerPos = pos & (buffer.length - 1); // it's the same as "pos % buffer.length" when buffer.length is power of two
+        // it's the same as "pos % buffer.length" when buffer.length is power of two
+        int innerPos = pos & (buffer.length - 1);
         if (innerPos == 0) {
             int length = Math.min(buffer.length, utfLength - pos);
             in.readFully(buffer, 0, length);
