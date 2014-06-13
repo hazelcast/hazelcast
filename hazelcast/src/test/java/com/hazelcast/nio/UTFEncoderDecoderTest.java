@@ -30,7 +30,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.UTFDataFormatException;
 import java.lang.reflect.Constructor;
 import java.util.Random;
 import org.junit.Test;
@@ -339,8 +338,8 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
     }
 
 
-    private String createString(int lenth) {
-        char[] c = new char[lenth];
+    private String createString(int length) {
+        char[] c = new char[length];
         for (int i = 0; i < c.length; i++) {
             c[i] = 'a';
         }
