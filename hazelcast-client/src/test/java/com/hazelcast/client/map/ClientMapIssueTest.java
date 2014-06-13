@@ -25,8 +25,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapWideEvent;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -84,7 +84,7 @@ public class ClientMapIssueTest {
             }
 
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
 
             }
         }, true);

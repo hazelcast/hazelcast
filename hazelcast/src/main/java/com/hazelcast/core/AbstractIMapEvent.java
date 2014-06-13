@@ -5,7 +5,7 @@ import java.util.EventObject;
 /**
  * Abstract map event.
  */
-public abstract class AbstractMapEvent extends EventObject implements MapEvent {
+public abstract class AbstractIMapEvent extends EventObject implements IMapEvent {
 
     protected final String name;
 
@@ -21,7 +21,7 @@ public abstract class AbstractMapEvent extends EventObject implements MapEvent {
      * @param eventType Type of event as an integer.{@link EntryEventType}
      * @throws IllegalArgumentException if source is null.
      */
-    public AbstractMapEvent(Object source, Member member, int eventType) {
+    public AbstractIMapEvent(Object source, Member member, int eventType) {
         super(source);
         this.name = (String) source;
         this.member = member;
@@ -66,7 +66,7 @@ public abstract class AbstractMapEvent extends EventObject implements MapEvent {
 
     @Override
     public String toString() {
-        return String.format("entryEventType=%s, member=%s, name='%s'"
-                , entryEventType, member, name);
+        return String.format("entryEventType=%s, member=%s, name='%s'",
+                entryEventType, member, name);
     }
 }

@@ -22,7 +22,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.map.MapWideEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -322,7 +322,7 @@ public class ClientMultiMapListenersTest {
         }
 
         @Override
-        public void evictedAll(MapWideEvent event) {
+        public void onEvictAll(MapEvent event) {
             // TODO what to do here?
         }
     }
@@ -362,7 +362,7 @@ public class ClientMultiMapListenersTest {
         }
 
         @Override
-        public void evictedAll(MapWideEvent event) {
+        public void onEvictAll(MapEvent event) {
             // TODO what to do here?
         }
     };

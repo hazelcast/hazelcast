@@ -3,7 +3,7 @@ package com.hazelcast.core;
 /**
  * Map events common contract.
  */
-public interface MapEvent {
+public interface IMapEvent {
 
     /**
      * Returns the member fired this event.

@@ -39,7 +39,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
-import com.hazelcast.map.MapWideEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -1381,7 +1381,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     @Override
-    public void evictedAll(MapWideEvent event) {
+    public void onEvictAll(MapEvent event) {
         println(event);
     }
 

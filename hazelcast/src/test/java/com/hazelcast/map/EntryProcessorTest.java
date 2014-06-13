@@ -588,7 +588,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
 
             }
         }, true);
@@ -661,7 +661,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
 
             }
         }, true);
@@ -741,7 +741,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
 
             }
         }, true);

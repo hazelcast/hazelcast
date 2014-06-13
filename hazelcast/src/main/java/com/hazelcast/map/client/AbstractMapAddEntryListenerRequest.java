@@ -23,9 +23,9 @@ import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.EntryEventFilter;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapWideEvent;
 import com.hazelcast.map.QueryEventFilter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -96,7 +96,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
             // TODO what should this method do?
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
 
             }
         };

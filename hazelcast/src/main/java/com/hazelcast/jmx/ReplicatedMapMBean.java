@@ -18,7 +18,7 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.map.MapWideEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.replicatedmap.ReplicatedMapProxy;
 
 import java.util.Collection;
@@ -60,7 +60,7 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
             }
 
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
 
             }
         };

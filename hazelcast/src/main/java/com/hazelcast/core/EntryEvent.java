@@ -25,7 +25,7 @@ package com.hazelcast.core;
  * @see com.hazelcast.core.IMap#addEntryListener(EntryListener, boolean)
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
-public class EntryEvent<K, V> extends AbstractMapEvent {
+public class EntryEvent<K, V> extends AbstractIMapEvent {
 
     private static final long serialVersionUID = -2296203982913729851L;
 

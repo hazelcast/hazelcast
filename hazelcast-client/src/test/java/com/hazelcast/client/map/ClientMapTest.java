@@ -30,7 +30,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.map.MapWideEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -739,7 +739,7 @@ public class ClientMapTest {
         }
 
         @Override
-        public void evictedAll(MapWideEvent event) {
+        public void onEvictAll(MapEvent event) {
             // TODO what to do here?
         }
 

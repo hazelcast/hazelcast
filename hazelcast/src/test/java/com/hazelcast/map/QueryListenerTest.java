@@ -80,7 +80,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
 
             }
         };

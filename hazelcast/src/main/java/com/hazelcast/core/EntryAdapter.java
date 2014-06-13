@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.map.MapWideEvent;
+import com.hazelcast.map.MapEvent;
 
 /**
  * Adapter for EntryListener.
@@ -48,7 +48,7 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
     }
 
     @Override
-    public void evictedAll(MapWideEvent event) {
+    public void onEvictAll(MapEvent event) {
 
     }
 

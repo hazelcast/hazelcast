@@ -25,7 +25,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.MapEvent;
+import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
@@ -901,13 +901,13 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (member == null) {
             return;
         }
-        final MapWideEvent event = createMapWideEvent(mapWideEventData, member);
+        final MapEvent event = createMapWideEvent(mapWideEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);
     }
 
-    private MapWideEvent createMapWideEvent(MapWideEventData mapWideMapEventData, Member member) {
-        return new MapWideEvent(mapWideMapEventData.getMapName(), member,
+    private MapEvent createMapWideEvent(MapWideEventData mapWideMapEventData, Member member) {
+        return new MapEvent(mapWideMapEventData.getMapName(), member,
                 mapWideMapEventData.getEventType(), mapWideMapEventData.getNumberOfEntries());
     }
 
@@ -935,7 +935,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(), getSerializationService());
     }
 
-    private void dispatch0(MapEvent event, EntryListener listener) {
+    private void dispatch0(IMapEvent event, EntryListener listener) {
         switch (event.getEventType()) {
             case ADDED:
                 listener.entryAdded((EntryEvent) event);
@@ -950,7 +950,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 listener.entryRemoved((EntryEvent) event);
                 break;
             case EVICT_ALL:
-                listener.evictedAll((MapWideEvent) event);
+                listener.onEvictAll((MapEvent) event);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
@@ -958,7 +958,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
 
-    private void incrementEventStats(MapEvent event) {
+    private void incrementEventStats(IMapEvent event) {
         final String mapName = event.getName();
         MapContainer mapContainer = getMapContainer(mapName);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {

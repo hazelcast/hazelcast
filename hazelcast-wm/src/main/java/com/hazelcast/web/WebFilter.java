@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.MapWideEvent;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.util.UuidUtil;
 
 import javax.servlet.Filter;
@@ -160,7 +160,7 @@ public class WebFilter implements Filter {
 
                 // TODO what should this method do?
                 @Override
-                public void evictedAll(MapWideEvent event) {
+                public void onEvictAll(MapEvent event) {
 
                 }
             }, false);

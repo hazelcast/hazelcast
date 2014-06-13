@@ -26,7 +26,7 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         final IMap map = node.getMap(randomMapName());
         map.addLocalEntryListener(new EntryAdapter() {
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
                 final int numberOfEntries = event.getNumberOfEntriesAffected();
                 for (int i = 0; i < numberOfEntries; i++) {
                     countDownLatch.countDown();
@@ -50,7 +50,7 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         final IMap map = node.getMap(randomMapName());
         map.addLocalEntryListener(new EntryAdapter() {
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
                 final int numberOfEntries = event.getNumberOfEntriesAffected();
                 for (int i = 0; i < numberOfEntries; i++) {
                     countDownLatch.countDown();
@@ -80,7 +80,7 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         final IMap map = node1.getMap(mapName);
         map.addEntryListener(new EntryAdapter() {
             @Override
-            public void evictedAll(MapWideEvent event) {
+            public void onEvictAll(MapEvent event) {
                 System.out.println("event = " + event);
                 final int numberOfEntries = event.getNumberOfEntriesAffected();
                 for (int i = 0; i < numberOfEntries; i++) {

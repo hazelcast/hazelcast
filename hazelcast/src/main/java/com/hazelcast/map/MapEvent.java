@@ -1,12 +1,12 @@
 package com.hazelcast.map;
 
-import com.hazelcast.core.AbstractMapEvent;
+import com.hazelcast.core.AbstractIMapEvent;
 import com.hazelcast.core.Member;
 
 /**
  * Used for map-wide events like {@link com.hazelcast.core.EntryEventType#EVICT_ALL}.
  */
-public class MapWideEvent extends AbstractMapEvent {
+public class MapEvent extends AbstractIMapEvent {
 
     private static final long serialVersionUID = -4948640313865667023L;
 
@@ -15,7 +15,7 @@ public class MapWideEvent extends AbstractMapEvent {
      */
     private final int numberOfEntriesAffected;
 
-    public MapWideEvent(Object source, Member member, int eventType, int numberOfEntriesAffected) {
+    public MapEvent(Object source, Member member, int eventType, int numberOfEntriesAffected) {
         super(source, member, eventType);
         this.numberOfEntriesAffected = numberOfEntriesAffected;
     }

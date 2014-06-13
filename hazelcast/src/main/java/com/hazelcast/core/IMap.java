@@ -895,7 +895,7 @@ public interface IMap<K, V>
      * The EVICT_ALL event is fired for any registered listeners.
      *
      * @see #clear()
-     * void evictAll();
+     * void onEvictAll();
      */
     void evictAll();
 
