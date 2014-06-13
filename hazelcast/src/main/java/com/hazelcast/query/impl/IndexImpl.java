@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,10 +65,10 @@ public class IndexImpl implements Index {
         if (newValue == null) {
             newValue = NULL;
         }
-        recordValues.put(key, newValue);
         if (newValue.getClass().isEnum()) {
             newValue = TypeConverters.ENUM_CONVERTER.convert(newValue);
         }
+        recordValues.put(key, newValue);
         if (oldValue == null) {
             // new
             indexStore.newIndex(newValue, e);
