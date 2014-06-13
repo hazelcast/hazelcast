@@ -631,6 +631,7 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="MethodLength" files="com.hazelcast.nio.UTFEncoderDecoder"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="ExecutableStatement" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="IllegalImport" files="com.hazelcast.nio.UnsafeHelper"/>

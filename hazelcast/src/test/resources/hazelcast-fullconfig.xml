@@ -247,6 +247,7 @@
             <class-name>com.hazelcast.examples.DummyStore</class-name>
             <!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
             <write-delay-seconds>0</write-delay-seconds>
+            <write-batch-size>1</write-batch-size>
             <properties>
                 <property name="dummy.property">value</property>
             </properties>

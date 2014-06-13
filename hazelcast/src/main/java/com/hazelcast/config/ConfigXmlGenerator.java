@@ -259,6 +259,7 @@ public class ConfigXmlGenerator {
                     xml.append("<factory-class-name>").append(factoryClass).append("</factory-class-name>");
                 }
                 xml.append("<write-delay-seconds>").append(s.getWriteDelaySeconds()).append("</write-delay-seconds>");
+                xml.append("<write-batch-size>").append(s.getWriteBatchSize()).append("</write-batch-size>");
                 appendProperties(xml, s.getProperties());
                 xml.append("</map-store>");
             }
