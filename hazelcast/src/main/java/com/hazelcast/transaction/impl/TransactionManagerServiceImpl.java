@@ -340,7 +340,10 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
         final Set<RecoveredTransaction> localSet = recoverLocal();
         for (RecoveredTransaction rt : localSet) {
+            TransactionImpl tx = new TransactionImpl(this, nodeEngine, rt.getTxnId(), rt.getTxLogs(),
+                    rt.getTimeoutMillis(), rt.getStartTime(), rt.getCallerUuid());
             xidSet.add(rt.getXid());
+            managedTransactions.put(rt.getXid(), tx);
         }
         return xidSet.toArray(new Xid[xidSet.size()]);
     }
