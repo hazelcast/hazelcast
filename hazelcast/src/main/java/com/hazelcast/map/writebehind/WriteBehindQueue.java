@@ -29,6 +29,9 @@ public interface WriteBehindQueue<E> {
 
     /**
      * adds to the end.
+     *
+     * @param e item to be offered
+     * @return <code>true</code> if added, <code>false</code> otherwise.
      */
     boolean offer(E e);
 
@@ -47,49 +50,54 @@ public interface WriteBehindQueue<E> {
     E get(int index);
 
     /**
-     * @return {@code true} if at least one
-     * element present like {@code o.equals(e)}.
+     * Removes item in that index from queue.
+     *
+     * @param index index of item.
+     * @return item removed or <tt>null</tt>
+     * if index is out of bounds.
      */
-    boolean contains(E o);
+    E remove(int index);
+
 
     int size();
 
     void clear();
 
     /**
-     * @return A copy of queue at that moment.
-     * Returned copy has same characteristics with the original.
+     * @return A copy of queue at that moment. Returned copy has same characteristics with the original.
      */
     WriteBehindQueue<E> getSnapShot();
 
     /**
      * Add this collection to the front of the queue.
      *
-     * @param collection
+     * @param collection collection to be added in front of this queue.
      */
     void addFront(Collection<E> collection);
 
     /**
      * Add this collection to the end of the queue.
      *
-     * @param collection
+     * @param collection collection to be added end of this queue.
      */
     void addEnd(Collection<E> collection);
 
 
     /**
-     * Returns all in this queue and clears the queue.
+     * Removes and returns all items in this queue.
+     *
+     * @return removed items in this queue.
      */
-    List<E>  fetchAndRemoveAll();
+    List<E> removeAll();
 
     /**
-     * TODO is "enabled" really needed?
-     * <p/>
      * Empty or a real queue.
      */
     boolean isEnabled();
 
     /**
+     * Returns list representation of this queue.
+     *
      * @return list representation of this queue.
      */
     List<E> asList();

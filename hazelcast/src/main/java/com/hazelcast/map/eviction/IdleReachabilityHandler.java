@@ -23,16 +23,16 @@ import com.hazelcast.map.record.Record;
  */
 class IdleReachabilityHandler extends AbstractReachabilityHandler {
 
-    private final long idleTimeOutInNanos;
+    private final long idleTime;
 
-    public IdleReachabilityHandler(long idleTimeOutInNanos) {
-        assert idleTimeOutInNanos > 0L : String.format("Not valid idleTimeOutInNanos %d", idleTimeOutInNanos);
+    public IdleReachabilityHandler(long idleTime) {
+        assert idleTime > 0L : String.format("Not valid idleTime %d", idleTime);
 
-        this.idleTimeOutInNanos = idleTimeOutInNanos;
+        this.idleTime = idleTime;
     }
 
     @Override
-    public Record handle(Record record, long criteria, long timeInNanos) {
+    public Record handle(Record record, long criteria, long time) {
         if (record == null) {
             return null;
         }
@@ -41,12 +41,10 @@ class IdleReachabilityHandler extends AbstractReachabilityHandler {
         final long lastAccessTime = record.getLastAccessTime();
 
         assert lastAccessTime > 0L;
-        assert timeInNanos > 0L;
-        assert timeInNanos >= lastAccessTime;
+        assert time > 0L;
+        assert time >= lastAccessTime;
 
-        result = timeInNanos - lastAccessTime >= idleTimeOutInNanos;
-
-        log("%s is asked for check and said %s", this.getClass().getName(), result);
+        result = time - lastAccessTime >= idleTime;
 
         return result ? null : record;
     }

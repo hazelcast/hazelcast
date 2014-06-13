@@ -538,6 +538,7 @@
                 <xs:element name="factory-class-name" type="xs:string"/>
             </xs:choice>
             <xs:element name="write-delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="write-batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="enabled" default="true" type="xs:boolean"/>

@@ -1037,6 +1037,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("write-delay-seconds".equals(nodeName)) {
                 mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", getTextContent(n).trim(),
                         MapStoreConfig.DEFAULT_WRITE_DELAY_SECONDS));
+            } else if ("write-batch-size".equals(nodeName)) {
+                mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n).trim(),
+                        MapStoreConfig.DEFAULT_WRITE_BATCH_SIZE));
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, mapStoreConfig.getProperties());
             }

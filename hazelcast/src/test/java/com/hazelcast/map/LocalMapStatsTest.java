@@ -5,11 +5,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
 
@@ -21,8 +20,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testLastAccessTime() throws InterruptedException {
-        final TimeUnit timeUnit = TimeUnit.NANOSECONDS;
-        final long startTime = timeUnit.toMillis(System.nanoTime());
+        final long startTime = Clock.currentTimeMillis();
 
         HazelcastInstance h1 = createHazelcastInstance();
         IMap<String, String> map1 = h1.getMap(name);
