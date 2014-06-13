@@ -65,7 +65,7 @@ public final class UTFEncoderDecoder {
 
     public void writeUTF0(final DataOutput out, final String str, byte[] buffer) throws IOException {
         if (!QuickMath.isPowerOfTwo(buffer.length)) {
-            throw new IllegalArgumentException("Size of the buffer has to be power of two, was "+buffer.length);
+            throw new IllegalArgumentException("Size of the buffer has to be power of two, was " + buffer.length);
         }
         boolean isNull = str == null;
         out.writeBoolean(isNull);
@@ -136,7 +136,7 @@ public final class UTFEncoderDecoder {
 
     public String readUTF0(final DataInput in, byte[] buffer) throws IOException {
         if (!QuickMath.isPowerOfTwo(buffer.length)) {
-            throw new IllegalArgumentException("Size of the buffer has to be power of two, was "+buffer.length);
+            throw new IllegalArgumentException("Size of the buffer has to be power of two, was " + buffer.length);
         }
         boolean isNull = in.readBoolean();
         if (isNull) {

@@ -8,7 +8,9 @@ package com.hazelcast.util;
  *
  *
  */
-public class QuickMath {
+public final class QuickMath {
+
+    private QuickMath() { }
 
     /**
      * Return true if input argument is power of two.
@@ -24,7 +26,7 @@ public class QuickMath {
     }
 
     /**
-     * Computes the remainder of the division of <code><a/code> by <code>b</code>.
+     * Computes the remainder of the division of <code>a</code> by <code>b</code>.
      * <code>a</code> has to be non-negative integer and <code>b</code> has to be power of two
      * otherwise the result is undefined.
      *
@@ -33,6 +35,6 @@ public class QuickMath {
      * @return remainder of the division of a by b.
      */
     public static int mod(int a, int b) {
-        return a & (b-1);
+        return a & (b - 1);
     }
 }
