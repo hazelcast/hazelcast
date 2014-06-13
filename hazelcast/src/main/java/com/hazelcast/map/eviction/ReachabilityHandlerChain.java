@@ -52,8 +52,8 @@ public class ReachabilityHandlerChain {
         }
     }
 
-    public Record isReachable(Record record, long criteria, long nowInNanos) {
-        return firstHandler.process(record, criteria, nowInNanos);
+    public Record isReachable(Record record, long criteria, long now) {
+        return firstHandler.process(record, criteria, now);
     }
 
     public void addHandler(ReachabilityHandler<Record> handler) {

@@ -72,4 +72,8 @@ public interface Record<V> {
 
     void setLastUpdateTime(long lastUpdatedTime);
 
+    long getCreationTime();
+
+    void setCreationTime(long creationTime);
+
 }

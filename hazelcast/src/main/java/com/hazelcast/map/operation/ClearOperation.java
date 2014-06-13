@@ -17,13 +17,9 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
-import java.io.IOException;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
@@ -45,7 +41,7 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
 
         final RecordStore recordStore = mapService.getExistingRecordStore(getPartitionId(), name);
         //if there is no recordStore, then there is nothing to clear.
-        if(recordStore == null) {
+        if (recordStore == null) {
             shouldBackup = false;
             return;
         }
