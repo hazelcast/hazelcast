@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
 
 import static com.hazelcast.instance.TestUtil.toData;
 import static com.hazelcast.query.Predicates.and;
