@@ -115,9 +115,8 @@ public final class Predicates {
 
         public BetweenPredicate(String first, Comparable from, Comparable to) {
             super(first);
-
             if (from == null || to == null) {
-                throw new IllegalArgumentException();
+                throw new NullPointerException("Arguments can't be null");
             }
             this.from = from;
             this.to = to;
@@ -196,9 +195,13 @@ public final class Predicates {
 
         public InPredicate(String attribute, Comparable... values) {
             super(attribute);
+
+            if (values == null) {
+                throw new NullPointerException("Array can't be null");
+            }
             for (Comparable value : values) {
                 if (value == null) {
-                    throw new IllegalArgumentException();
+                    throw new NullPointerException("Elements can't be null");
                 }
             }
             this.values = values;
@@ -589,13 +592,15 @@ public final class Predicates {
             super(attribute);
 
             if (value == null) {
-                throw new IllegalArgumentException();
+                throw new NullPointerException("Arguments can't be null");
             }
 
             this.value = value;
             this.equal = equal;
             this.less = less;
         }
+
+
 
         public boolean apply(Map.Entry mapEntry) {
             final Comparable entryValue = readAttribute(mapEntry);
