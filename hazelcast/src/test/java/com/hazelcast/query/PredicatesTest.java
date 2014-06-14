@@ -46,7 +46,8 @@ import static com.hazelcast.query.SampleObjects.Employee;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Map.Entry;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -186,37 +187,37 @@ public class PredicatesTest {
 
     @Test(expected = NullPointerException.class)
     public void testBetweenNull() {
-        assertNull(Predicates.between("", null, null));
+        Predicates.between("", null, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testLessThanNull() {
-        assertNull(Predicates.lessThan("", null));
+        Predicates.lessThan("", null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testLessEqualNull() {
-        assertNull(Predicates.lessEqual("", null));
+        Predicates.lessEqual("", null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testGreaterThanNull() {
-        assertNull(Predicates.greaterThan("", null));
+        Predicates.greaterThan("", null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testGreaterEqualNull() {
-        assertNull(Predicates.greaterEqual("", null));
+        Predicates.greaterEqual("", null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testInNullWithNullArgument() {
-        assertNull(Predicates.in("", null, 2, "value"));
+        Predicates.in("", null, 2, "value");
     }
 
     @Test(expected = NullPointerException.class)
     public void testInNullWithNullArray() {
-        assertNull(Predicates.in("", null));
+        Predicates.in("", null);
     }
 
     private class DummyEntry extends QueryEntry {

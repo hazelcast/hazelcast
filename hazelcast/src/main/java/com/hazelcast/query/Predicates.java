@@ -213,9 +213,13 @@ public final class Predicates {
 
         public InPredicate(String attribute, Comparable... values) {
             super(attribute);
+
+            if (values == null) {
+                throw new NullPointerException("Array can't be null");
+            }
             for (Comparable value : values) {
                 if (value == null) {
-                    throw new IllegalArgumentException();
+                    throw new NullPointerException("Elements can't be null");
                 }
             }
             this.values = values;
