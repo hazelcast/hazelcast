@@ -164,16 +164,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public boolean isReuseSocketAddress() {
-        return node.getConfig().getNetworkConfig().isReuseAddress();
-    }
-
-    @Override
-    public int getSocketPort() {
-        return node.getConfig().getNetworkConfig().getPort();
-    }
-
-    @Override
     public boolean isSocketBind() {
         return node.groupProperties.SOCKET_CLIENT_BIND.getBoolean();
     }
@@ -181,11 +171,6 @@ public class NodeIOService implements IOService {
     @Override
     public boolean isSocketBindAny() {
         return node.groupProperties.SOCKET_CLIENT_BIND_ANY.getBoolean();
-    }
-
-    @Override
-    public boolean isSocketPortAutoIncrement() {
-        return node.getConfig().getNetworkConfig().isPortAutoIncrement();
     }
 
     @Override

@@ -45,7 +45,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -188,7 +187,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return connectionsMap.size();
     }
 
-    @Override
     public boolean isSSLEnabled() {
         return socketChannelWrapperFactory instanceof SSLSocketChannelWrapperFactory;
     }
@@ -531,11 +529,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     public boolean isLive() {
         return live;
-    }
-
-    @Override
-    public Map<Address, Connection> getReadonlyConnectionMap() {
-        return Collections.unmodifiableMap(connectionsMap);
     }
 
     private void log(Level level, String message) {

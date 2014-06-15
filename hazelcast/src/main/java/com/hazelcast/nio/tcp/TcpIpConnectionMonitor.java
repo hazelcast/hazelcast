@@ -70,7 +70,7 @@ public class TcpIpConnectionMonitor {
         lastFaultTime = 0L;
     }
 
-    private /*synchronized*/ String getCauseDescription(Throwable t) {
+    private  String getCauseDescription(Throwable t) {
         StringBuilder s = new StringBuilder(" Cause => ");
         if (t != null) {
             s.append(t.getClass().getName()).append(" {").append(t.getMessage()).append("}");

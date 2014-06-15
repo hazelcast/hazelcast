@@ -169,6 +169,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         return in;
     }
 
+    @Override
     public int write(ByteBuffer input) throws IOException {
         if (!handshakeCompleted) {
             handshake();
@@ -237,6 +238,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         return readBytesCount;
     }
 
+    @Override
     public void close() throws IOException {
         sslEngine.closeOutbound();
         try {

@@ -86,7 +86,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 buffer.put(stringToBytes(Protocols.CLUSTER));
                 registerWrite();
             } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
-                socketWriter = new SocketClientDataWriter(connection);
+                socketWriter = new SocketClientDataWriter();
             } else {
                 socketWriter = new SocketTextWriter(connection);
             }
@@ -123,6 +123,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.live()) {
@@ -170,6 +171,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
     }
 
+    @Override
     public void run() {
         informSelector.set(true);
         if (ready) {

@@ -24,5 +24,4 @@ import java.nio.ByteBuffer;
 public interface SocketReadable {
 
     boolean readFrom(ByteBuffer source);
-
 }

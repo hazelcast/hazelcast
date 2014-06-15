@@ -40,7 +40,6 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
     private SelectionKey sk;
 
     public AbstractSelectionHandler(final TcpIpConnection connection) {
-        super();
         this.connection = connection;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();

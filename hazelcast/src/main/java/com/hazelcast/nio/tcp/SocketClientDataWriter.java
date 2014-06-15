@@ -22,9 +22,7 @@ import java.nio.ByteBuffer;
 
 class SocketClientDataWriter implements SocketWriter<DataAdapter> {
 
-    SocketClientDataWriter(TcpIpConnection connection) {
-    }
-
+    @Override
     public boolean write(DataAdapter writer, ByteBuffer socketBuffer) throws Exception {
         return writer.writeTo(socketBuffer);
     }

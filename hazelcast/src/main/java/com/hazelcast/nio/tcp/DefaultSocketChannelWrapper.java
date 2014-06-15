@@ -40,11 +40,6 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
     }
 
     @Override
-    public int validOps() {
-        return socketChannel.validOps();
-    }
-
-    @Override
     public Socket socket() {
         return socketChannel.socket();
     }
@@ -55,18 +50,8 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
     }
 
     @Override
-    public boolean isConnectionPending() {
-        return socketChannel.isConnectionPending();
-    }
-
-    @Override
     public boolean connect(SocketAddress socketAddress) throws IOException {
         return socketChannel.connect(socketAddress);
-    }
-
-    @Override
-    public boolean finishConnect() throws IOException {
-        return socketChannel.finishConnect();
     }
 
     @Override

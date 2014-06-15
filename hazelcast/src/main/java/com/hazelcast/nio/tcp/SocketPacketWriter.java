@@ -48,6 +48,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
         }
     }
 
+    @Override
     public boolean write(Packet socketWritable, ByteBuffer socketBuffer) throws Exception {
         return packetWriter.writePacket(socketWritable, socketBuffer);
     }
@@ -57,6 +58,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
     }
 
     private static class DefaultPacketWriter implements PacketWriter {
+        @Override
         public boolean writePacket(Packet packet, ByteBuffer socketBB) {
             return packet.writeTo(socketBB);
         }
@@ -83,6 +85,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
             return c;
         }
 
+        @Override
         public boolean writePacket(Packet packet, ByteBuffer socketBuffer) throws Exception {
             if (!packetWritten) {
                 if (socketBuffer.remaining() < CONST_BUFFER_NO) {
