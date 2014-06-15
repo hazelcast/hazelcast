@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.util.QuickMath;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -62,6 +64,9 @@ public final class UTFEncoderDecoder {
     }
 
     public void writeUTF0(final DataOutput out, final String str, byte[] buffer) throws IOException {
+        if (!QuickMath.isPowerOfTwo(buffer.length)) {
+            throw new IllegalArgumentException("Size of the buffer has to be power of two, was " + buffer.length);
+        }
         boolean isNull = str == null;
         out.writeBoolean(isNull);
         if (isNull) {
@@ -130,8 +135,8 @@ public final class UTFEncoderDecoder {
     }
 
     public String readUTF0(final DataInput in, byte[] buffer) throws IOException {
-        if (!isPowerOfTwo(buffer.length)) {
-            throw new IllegalArgumentException("Size of the buffer has to be power of two");
+        if (!QuickMath.isPowerOfTwo(buffer.length)) {
+            throw new IllegalArgumentException("Size of the buffer has to be power of two, was " + buffer.length);
         }
         boolean isNull = in.readBoolean();
         if (isNull) {
@@ -222,7 +227,7 @@ public final class UTFEncoderDecoder {
     }
 
     private void buffering(byte[] buffer, int pos, byte value, DataOutput out) throws IOException {
-        int innerPos = pos % buffer.length;
+        int innerPos = QuickMath.mod(pos, buffer.length);
         if (pos > 0 && innerPos == 0) {
             out.write(buffer, 0, buffer.length);
         }
@@ -230,8 +235,7 @@ public final class UTFEncoderDecoder {
     }
 
     private byte buffered(byte[] buffer, int pos, int utfLength, DataInput in) throws IOException {
-        // it's the same as "pos % buffer.length" when buffer.length is power of two
-        int innerPos = pos & (buffer.length - 1);
+        int innerPos = QuickMath.mod(pos, buffer.length);
         if (innerPos == 0) {
             int length = Math.min(buffer.length, utfLength - pos);
             in.readFully(buffer, 0, length);
