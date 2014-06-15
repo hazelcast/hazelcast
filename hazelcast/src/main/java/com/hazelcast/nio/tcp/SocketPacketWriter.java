@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.CipherHelper;
+import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.crypto.Cipher;

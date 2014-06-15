@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
+import com.hazelcast.nio.Protocols;
+import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.util.Clock;
 
@@ -31,7 +33,7 @@ import java.util.logging.Level;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
- * The writing side of the {@link com.hazelcast.nio.TcpIpConnection}.
+ * The writing side of the {@link TcpIpConnection}.
  */
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
@@ -186,7 +188,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void shutdown() {
         while (poll() != null) {
         }
-        ;
     }
 
     long getLastHandle() {

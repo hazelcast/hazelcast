@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.ssl;
 
-import com.hazelcast.nio.DefaultSocketChannelWrapper;
+import com.hazelcast.nio.tcp.DefaultSocketChannelWrapper;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;

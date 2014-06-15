@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
+
+import com.hazelcast.nio.SocketWritable;
 
 import java.nio.ByteBuffer;
 

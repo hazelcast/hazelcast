@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOService;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -62,11 +63,12 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         this.selector = selectorTemp;
     }
 
-
+    @Override
     public final void shutdown() {
         selectorQueue.clear();
         try {
             addTask(new Runnable() {
+                @Override
                 public void run() {
                     live = false;
                     shutdownLatch.countDown();
@@ -77,6 +79,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
+    @Override
     public final void awaitShutdown() {
         try {
             shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
@@ -84,6 +87,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
+    @Override
     public final void addTask(Runnable runnable) {
         selectorQueue.add(runnable);
     }
@@ -99,6 +103,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
+    @Override
     public final void run() {
         try {
             //noinspection WhileLoopSpinsOnField
@@ -158,10 +163,12 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
+    @Override
     public final Selector getSelector() {
         return selector;
     }
 
+    @Override
     public final void wakeup() {
         selector.wakeup();
     }

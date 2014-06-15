@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
-
-import java.nio.channels.SelectionKey;
-
-final class OutSelectorImpl extends AbstractIOSelector {
-
-    OutSelectorImpl(IOService ioService, int id) {
-        super(ioService, ioService.getThreadPrefix() + "out-" + id);
-    }
-
-    protected void handleSelectionKey(SelectionKey sk) {
-        if (sk.isValid() && sk.isWritable()) {
-            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
-            final SelectionHandler handler = (SelectionHandler) sk.attachment();
-            handler.handle();
-        }
-    }
-}
+/**
+ * <p>TContains functionality for the TCP/IP Networking between cluster members<br/>
+ */
+package com.hazelcast.nio.tcp;

@@ -14,21 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.util.Properties;
+import java.nio.ByteBuffer;
 
-/**
- * An interface that provides the ability to intercept the creation of sockets.
- *
- * This class should belong in the {@link com.hazelcast.nio.tcp} package; unfortunately we can't move this
- * interface since it is a public API.
- */
-public interface SocketInterceptor {
+public interface SocketReader {
 
-    void init(Properties properties);
-
-    void onConnect(Socket connectedSocket) throws IOException;
+    void read(ByteBuffer bb) throws Exception;
 }

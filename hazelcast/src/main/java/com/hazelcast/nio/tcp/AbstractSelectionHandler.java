@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.nio.ConnectionType;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;

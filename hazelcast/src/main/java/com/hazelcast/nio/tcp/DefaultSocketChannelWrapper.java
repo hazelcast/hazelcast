@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.Selector;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 
 public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
 
@@ -34,58 +34,72 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
         this.socketChannel = socketChannel;
     }
 
+    @Override
     public boolean isBlocking() {
         return socketChannel.isBlocking();
     }
 
+    @Override
     public int validOps() {
         return socketChannel.validOps();
     }
 
+    @Override
     public Socket socket() {
         return socketChannel.socket();
     }
 
+    @Override
     public boolean isConnected() {
         return socketChannel.isConnected();
     }
 
+    @Override
     public boolean isConnectionPending() {
         return socketChannel.isConnectionPending();
     }
 
+    @Override
     public boolean connect(SocketAddress socketAddress) throws IOException {
         return socketChannel.connect(socketAddress);
     }
 
+    @Override
     public boolean finishConnect() throws IOException {
         return socketChannel.finishConnect();
     }
 
+    @Override
     public int read(ByteBuffer byteBuffer) throws IOException {
         return socketChannel.read(byteBuffer);
     }
 
+    @Override
     public int write(ByteBuffer byteBuffer) throws IOException {
         return socketChannel.write(byteBuffer);
     }
 
+    @Override
     public SelectableChannel configureBlocking(boolean b) throws IOException {
         return socketChannel.configureBlocking(b);
     }
 
+    @Override
     public boolean isOpen() {
         return socketChannel.isOpen();
     }
 
+    @Override
     public void close() throws IOException {
         socketChannel.close();
     }
 
+    @Override
     public SelectionKey keyFor(Selector selector) {
         return socketChannel.keyFor(selector);
     }
 
+    @Override
     public SelectionKey register(Selector selector, int ops, Object attachment) throws ClosedChannelException {
         return socketChannel.register(selector, ops, attachment);
     }

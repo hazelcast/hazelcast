@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.util.Clock;
 
@@ -45,6 +47,7 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         buffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
     }
 
+    @Override
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.live()) {
@@ -119,6 +122,7 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         }
     }
 
+    @Override
     public void run() {
         registerOp(ioSelector.getSelector(), SelectionKey.OP_READ);
     }

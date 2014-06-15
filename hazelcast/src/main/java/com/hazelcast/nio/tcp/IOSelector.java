@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import java.nio.channels.Selector;
 

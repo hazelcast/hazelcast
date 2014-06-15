@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.SocketWritable;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -34,8 +38,8 @@ import java.net.SocketAddress;
  *     <li>the side where it sends data to the remote machine</li>
  * </ol>
  *
- * The reading side is the {@link com.hazelcast.nio.ReadHandler} and the writing side of this connection
- * is the {@link com.hazelcast.nio.WriteHandler}.
+ * The reading side is the {@link com.hazelcast.nio.tcp.ReadHandler} and the writing side of this connection
+ * is the {@link com.hazelcast.nio.tcp.WriteHandler}.
  */
 public final class TcpIpConnection implements Connection {
 
@@ -59,7 +63,7 @@ public final class TcpIpConnection implements Connection {
 
     private final int connectionId;
 
-    private ConnectionMonitor monitor;
+    private TcpIpConnectionMonitor monitor;
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
                            int connectionId, SocketChannelWrapper socketChannel) {
@@ -160,11 +164,11 @@ public final class TcpIpConnection implements Connection {
         this.endPoint = endPoint;
     }
 
-    public void setMonitor(ConnectionMonitor monitor) {
+    public void setMonitor(TcpIpConnectionMonitor monitor) {
         this.monitor = monitor;
     }
 
-    public ConnectionMonitor getMonitor() {
+    public TcpIpConnectionMonitor getMonitor() {
         return monitor;
     }
 
