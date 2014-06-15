@@ -26,6 +26,9 @@ import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 
+/**
+ * The reading side of the {@link com.hazelcast.nio.Connection}.
+ */
 final class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     private final ByteBuffer buffer;

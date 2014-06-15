@@ -30,6 +30,9 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
+/**
+ * The writing side of the {@link com.hazelcast.nio.TcpIpConnection}.
+ */
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
     private static final long TIMEOUT = 3;

@@ -27,6 +27,15 @@ import java.net.SocketAddress;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
+ *
+ * A Connection has 2 sides:
+ * <ol>
+ *     <li>the side where it receives data from the remote  machine</li>
+ *     <li>the side where it sends data to the remote machine</li>
+ * </ol>
+ *
+ * The reading side is the {@link com.hazelcast.nio.ReadHandler} and the writing side of this connection
+ * is the {@link com.hazelcast.nio.WriteHandler}.
  */
 public final class TcpIpConnection implements Connection {
 
