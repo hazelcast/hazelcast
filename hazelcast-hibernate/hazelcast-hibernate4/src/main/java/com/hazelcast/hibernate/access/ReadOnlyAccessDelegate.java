@@ -21,7 +21,6 @@ import org.hibernate.cache.CacheException;
 import org.hibernate.cache.spi.access.SoftLock;
 
 import java.util.Properties;
-import java.util.logging.Level;
 
 /**
  * @author Leo Kim (lkim@limewire.com)
@@ -66,7 +65,7 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
      */
     @Override
     public void unlockItem(final Object key, final SoftLock lock) throws CacheException {
-        LOG.warning("Attempting to unlock an item from a read-only cache region");
+        log.warning("Attempting to unlock an item from a read-only cache region");
     }
 
     /**
@@ -74,7 +73,7 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
      */
     @Override
     public void unlockRegion(final SoftLock lock) throws CacheException {
-        LOG.warning("Attempting to unlock a read-only cache region");
+        log.warning("Attempting to unlock a read-only cache region");
     }
 
     /**

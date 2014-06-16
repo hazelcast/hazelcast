@@ -21,9 +21,9 @@ import java.util.List;
 
 public abstract class CollectionConfig<T extends CollectionConfig> {
 
-    public final static int DEFAULT_MAX_SIZE = 0;
-    public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
-    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
+    public static final int DEFAULT_MAX_SIZE = 0;
+    public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name;
     private List<ItemListenerConfig> listenerConfigs;
@@ -52,11 +52,11 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
 
     public T setName(String name) {
         this.name = name;
-        return (T)this;
+        return (T) this;
     }
 
     public List<ItemListenerConfig> getItemListenerConfigs() {
-        if (listenerConfigs == null){
+        if (listenerConfigs == null) {
             listenerConfigs = new ArrayList<ItemListenerConfig>();
         }
         return listenerConfigs;
@@ -64,7 +64,7 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
 
     public T setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
-        return (T)this;
+        return (T) this;
     }
 
     public int getTotalBackupCount() {
@@ -77,7 +77,7 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
 
     public T setBackupCount(int backupCount) {
         this.backupCount = backupCount;
-        return (T)this;
+        return (T) this;
     }
 
     public int getAsyncBackupCount() {
@@ -86,7 +86,7 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
 
     public T setAsyncBackupCount(int asyncBackupCount) {
         this.asyncBackupCount = asyncBackupCount;
-        return (T)this;
+        return (T) this;
     }
 
     public int getMaxSize() {
@@ -95,7 +95,7 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
 
     public T setMaxSize(int maxSize) {
         this.maxSize = maxSize;
-        return (T)this;
+        return (T) this;
     }
 
     public boolean isStatisticsEnabled() {
@@ -104,10 +104,10 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
 
     public T setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
-        return (T)this;
+        return (T) this;
     }
 
-    public void addItemListenerConfig(ItemListenerConfig itemListenerConfig){
+    public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         getItemListenerConfigs().add(itemListenerConfig);
     }
 }

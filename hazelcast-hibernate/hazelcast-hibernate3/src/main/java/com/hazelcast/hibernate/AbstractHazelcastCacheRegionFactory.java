@@ -29,14 +29,13 @@ import org.hibernate.cache.access.AccessType;
 import org.hibernate.cfg.Settings;
 
 import java.util.Properties;
-import java.util.logging.Level;
 
 public abstract class AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
+    protected HazelcastInstance instance;
     private final ILogger logger = Logger.getLogger(getClass());
 
-    private IHazelcastInstanceLoader instanceLoader = null;
-    protected HazelcastInstance instance;
+    private IHazelcastInstanceLoader instanceLoader;
 
     public AbstractHazelcastCacheRegionFactory() {
     }
@@ -75,7 +74,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
 
     public void stop() {
         if (instanceLoader != null) {
-            logger.info( "Shutting down " + getClass().getSimpleName());
+            logger.info("Shutting down " + getClass().getSimpleName());
             instanceLoader.unloadInstance();
             instance = null;
             instanceLoader = null;

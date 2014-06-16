@@ -19,6 +19,8 @@ package com.hazelcast.nio;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -26,6 +28,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -42,6 +45,23 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     private static final Random RANDOM = new Random();
     private static final int BENCHMARK_ROUNDS = 10; // 100;
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testReadUTF_bufferSizeMustAlwaysBePowerOfTwo() throws IOException {
+        byte[] buffer = new byte[1023];
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(new byte[0]);
+        DataInputStream dis = new DataInputStream(bais);
+        UTFEncoderDecoder.readUTF(dis, buffer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testWriteUTF_bufferSizeMustAlwaysBePowerOfTwo() throws IOException {
+        byte[] buffer = new byte[1023];
+
+        DataOutput dataOutput = new DataOutputStream(new ByteArrayOutputStream());
+        UTFEncoderDecoder.writeUTF(dataOutput, "foo", buffer);
+    }
 
     @Test
     public void testEmptyText_Default() throws Exception {
@@ -310,6 +330,30 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         User user = map.get("1");
         assertEquals("", user.getName());
         assertEquals("demirci", user.getSurname());
+    }
+
+    @Test
+    public void testIssue2674_multibyte_char_at_position_that_even_multiple_of_buffer_size() throws Exception {
+        SerializationService serializationService = new SerializationServiceBuilder().build();
+
+        for (int i : new int[]{50240, 100240, 80240}) {
+            String originalString = createString(i);
+            BufferObjectDataOutput dataOutput = serializationService.createObjectDataOutput(100000);
+            dataOutput.writeUTF(originalString);
+            BufferObjectDataInput dataInput = serializationService.createObjectDataInput(dataOutput.toByteArray());
+
+            assertEquals(originalString, dataInput.readUTF());
+        }
+    }
+
+
+    private String createString(int length) {
+        char[] c = new char[length];
+        for (int i = 0; i < c.length; i++) {
+            c[i] = 'a';
+        }
+        c[10240] = 'å';
+        return new String(c);
     }
 
     private static void assertContains(String className, String classType) {

@@ -35,6 +35,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -705,15 +706,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         config.getMapConfig("default").setStatisticsEnabled(true);
         HazelcastInstance instance = getInstance();
         final IMap<Integer, Integer> map = instance.getMap("testEntryView");
-        final TimeUnit timeUnit = TimeUnit.NANOSECONDS;
-        long time1 = timeUnit.toMillis(System.nanoTime());
+        long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
         map.put(2, 2);
         map.put(3, 3);
-        long time2 = timeUnit.toMillis(System.nanoTime());
+        long time2 = Clock.currentTimeMillis();
         map.get(3);
         map.get(3);
-        long time3 = timeUnit.toMillis(System.nanoTime());
+        long time3 = Clock.currentTimeMillis();
         map.put(2, 22);
 
         EntryView<Integer, Integer> entryView1 = map.getEntryView(1);

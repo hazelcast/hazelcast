@@ -26,6 +26,7 @@ public class ClientInSelectorImpl extends ClientAbstractIOSelector {
         super(threadGroup, "InSelector");
     }
 
+    @Override
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isReadable()) {
             final SelectionHandler handler = (SelectionHandler) sk.attachment();

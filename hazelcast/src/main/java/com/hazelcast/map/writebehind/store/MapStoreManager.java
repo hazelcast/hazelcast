@@ -1,23 +1,24 @@
 package com.hazelcast.map.writebehind.store;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Map store managers main contract.
  * Responsible for processing map store logic.
+ *
  * @param <E> Type of object which is going to be processed by map store.
  */
 public interface MapStoreManager<E> {
 
-    void process(Collection<E> delayedEntries, Map<Integer, Collection<E>> failsPerPartition);
-
     /**
-     * TODO this seems to belong a configuration thingy.
+     * Process store operations and returns failed operation per partition map.
      *
-     * @param reduceStoreOperationsIfPossible combine operations on same key.
+     * @param delayedEntries to be written to store.
+     * @return failed store operations per partition.
      */
-    void setReduceStoreOperationsIfPossible(boolean reduceStoreOperationsIfPossible);
+    Map<Integer, List<E>> process(List<E> delayedEntries);
 
     void callAfterStoreListeners(Collection<E> entries);
 

@@ -27,9 +27,9 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class ListenerConfig {
 
-    protected String className = null;
+    protected String className;
 
-    protected EventListener implementation = null;
+    protected EventListener implementation;
 
     private ListenerConfigReadOnly readOnly;
 
@@ -46,7 +46,7 @@ public class ListenerConfig {
      * @throws IllegalArgumentException if className is null or an empty String.
      */
     public ListenerConfig(String className) {
-       setClassName(className);
+        setClassName(className);
     }
 
     public ListenerConfig(ListenerConfig config) {
@@ -58,10 +58,10 @@ public class ListenerConfig {
      * Creates a ListenerConfig with the given implementation.
      *
      * @param implementation the implementation to use as EventListener.
-     * @throws  IllegalArgumentException if the implementation is null.
+     * @throws IllegalArgumentException if the implementation is null.
      */
     public ListenerConfig(EventListener implementation) {
-        this.implementation = isNotNull(implementation,"implementation");
+        this.implementation = isNotNull(implementation, "implementation");
     }
 
     public ListenerConfig getAsReadOnly() {
@@ -83,7 +83,7 @@ public class ListenerConfig {
 
     /**
      * Sets the class name of the EventListener.
-     *
+     * <p/>
      * If a implementation was set, it will be removed.
      *
      * @param className the name of the class of the EventListener.
@@ -110,7 +110,7 @@ public class ListenerConfig {
 
     /**
      * Sets the EventListener implementation.
-     *
+     * <p/>
      * If a className was set, it will be removed.
      *
      * @param implementation the EventListener implementation.
@@ -120,7 +120,7 @@ public class ListenerConfig {
      * @see #getImplementation()
      */
     public ListenerConfig setImplementation(EventListener implementation) {
-        this.implementation = isNotNull(implementation,"implementation");
+        this.implementation = isNotNull(implementation, "implementation");
         this.className = null;
         return this;
     }
@@ -141,13 +141,18 @@ public class ListenerConfig {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ListenerConfig that = (ListenerConfig) o;
 
-        if (className != null ? !className.equals(that.className) : that.className != null) return false;
-
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
         return true;
     }
 

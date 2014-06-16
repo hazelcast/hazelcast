@@ -54,7 +54,8 @@ public class TxnReservePollOperation extends QueueOperation implements WaitSuppo
 
     @Override
     public boolean shouldWait() {
-        return getWaitTimeout() != 0 && getOrCreateContainer().size() == 0;
+        final QueueContainer container = getOrCreateContainer();
+        return getWaitTimeout() != 0 && (container.size() + container.txMapSize()) == 0;
     }
 
     @Override
