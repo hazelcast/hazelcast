@@ -29,6 +29,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.transaction.impl.Transaction.State.*;
@@ -66,6 +67,14 @@ final class TransactionProxy {
 
     public long getTimeoutMillis() {
         return options.getTimeoutMillis();
+    }
+
+    public boolean setTimeoutMillis(long timeoutMillis) {
+        if (state == NO_TXN) {
+            options.setTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
+            return true;
+        }
+        return false;
     }
 
     void begin() {

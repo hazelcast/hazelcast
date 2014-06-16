@@ -45,8 +45,13 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
     private final Map<Object, TransactionLog> txLogMap = new HashMap<Object, TransactionLog>();
     private final String txnId;
+<<<<<<< HEAD
     private Long threadId ;
     private final long timeoutMillis;
+=======
+    private Long threadId;
+    private long timeoutMillis;
+>>>>>>> 02ef204... add proper methods to provide timeout from xa resource to underlying transaction implementation, fixes #2569
     private final int durability;
     private final TransactionType transactionType;
     private final String txOwnerUuid;
@@ -363,6 +368,14 @@ final class TransactionImpl implements Transaction, TransactionSupport {
 
     public long getTimeoutMillis() {
         return timeoutMillis;
+    }
+
+    public boolean setTimeoutMillis(long timeoutMillis) {
+        if (state == NO_TXN) {
+            this.timeoutMillis = timeoutMillis;
+            return true;
+        }
+        return false;
     }
 
     @Override

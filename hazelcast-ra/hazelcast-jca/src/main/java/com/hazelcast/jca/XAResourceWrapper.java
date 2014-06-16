@@ -34,6 +34,7 @@ public class XAResourceWrapper implements XAResource {
     private final ManagedConnectionImpl managedConnection;
     private int transactionTimeoutSeconds;
     private XAResource inner;
+    private volatile boolean isStarted;
 
     public XAResourceWrapper(ManagedConnectionImpl managedConnectionImpl) {
         this.managedConnection = managedConnectionImpl;
@@ -55,7 +56,12 @@ public class XAResourceWrapper implements XAResource {
                 throw new XAException(XAException.XAER_INVAL);
         }
 
+<<<<<<< HEAD
         if(inner != null){
+=======
+        if (inner != null) {
+            isStarted = true;
+>>>>>>> 02ef204... add proper methods to provide timeout from xa resource to underlying transaction implementation, fixes #2569
             inner.start(xid, flags);
         }
 
@@ -120,7 +126,14 @@ public class XAResourceWrapper implements XAResource {
 
     @Override
     public boolean setTransactionTimeout(int seconds) throws XAException {
+<<<<<<< HEAD
         this.transactionTimeoutSeconds=seconds;
+=======
+        if (!isStarted) {
+            this.transactionTimeoutSeconds = seconds;
+            return true;
+        }
+>>>>>>> 02ef204... add proper methods to provide timeout from xa resource to underlying transaction implementation, fixes #2569
         return false;
     }
 

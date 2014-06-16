@@ -28,6 +28,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.Transaction;
 
+import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
@@ -141,6 +142,10 @@ public class TransactionContextProxy implements TransactionContext {
 
     public boolean isXAManaged() {
         return transaction.getXid() != null;
+    }
+
+    public boolean setTransactionTimeout(int seconds) {
+        return transaction.setTimeoutMillis(TimeUnit.SECONDS.toMillis(seconds));
     }
 
     private static class TransactionalObjectKey {
