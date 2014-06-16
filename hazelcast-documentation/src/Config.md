@@ -37,8 +37,8 @@ To configure Hazelcast programmatically, just instantiate a `Config` object and 
 
 ```java
 Config cfg = new Config();
-cfg.setPort(5900);
-cfg.setPortAutoIncrement(false);
+cfg.getNetworkConfig().setPort(5900);
+cfg.getNetworkConfig().setPortAutoIncrement(false);
         
 NetworkConfig network = cfg.getNetworkConfig();
 JoinConfig join = network.getJoin();
