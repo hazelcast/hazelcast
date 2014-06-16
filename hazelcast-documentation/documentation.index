@@ -87,11 +87,11 @@ src/Management.md
 src/Security.md
 	src/Encryption.md
 	src/SSL.md
-	src/EnablingSecurityforHE.md
 	src/Credentials.md
 	src/ClusterLoginModule.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
+	src/EnablingSecurityforHE.md
 src/Performance.md
     src/ThreadingModel.md
 src/WAN.md
