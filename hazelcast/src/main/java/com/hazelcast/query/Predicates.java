@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
  */
 public final class Predicates {
 
-    //we don't want instances.
+    //we don't want instances. private constructor.
     private Predicates() {
     }
 
@@ -69,12 +69,6 @@ public final class Predicates {
         return new NotPredicate(predicate);
     }
 
-    /**
-     * Or predicate.
-     * @param x
-     * @param y
-     * @return
-     */
     public static Predicate or(Predicate x, Predicate y) {
         return new OrPredicate(x, y);
     }
