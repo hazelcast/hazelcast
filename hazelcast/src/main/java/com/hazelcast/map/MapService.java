@@ -729,14 +729,14 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
 
-    public void publishMapWideEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected) {
+    public void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected) {
         final Collection<EventRegistration> registrations = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
         if (registrations.isEmpty()) {
             return;
         }
         final String source = nodeEngine.getThisAddress().toString();
-        final MapWideEventData mapWideEventData = new MapWideEventData(source, mapName, caller, eventType.getType(), numberOfEntriesAffected);
-        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrations, mapWideEventData, mapName.hashCode());
+        final MapEventData mapEventData = new MapEventData(source, mapName, caller, eventType.getType(), numberOfEntriesAffected);
+        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrations, mapEventData, mapName.hashCode());
 
     }
 
@@ -888,27 +888,27 @@ public class MapService implements ManagedService, MigrationAwareService,
     public void dispatchEvent(EventData eventData, EntryListener listener) {
         if (eventData instanceof EntryEventData) {
             dispatchEntryEventData(eventData, listener);
-        } else if (eventData instanceof MapWideEventData) {
-            dispatchMapWideEventData(eventData, listener);
+        } else if (eventData instanceof MapEventData) {
+            dispatchMapEventData(eventData, listener);
         } else {
             throw new IllegalArgumentException("Unknown map event data");
         }
     }
 
-    private void dispatchMapWideEventData(EventData eventData, EntryListener listener) {
-        final MapWideEventData mapWideEventData = (MapWideEventData) eventData;
+    private void dispatchMapEventData(EventData eventData, EntryListener listener) {
+        final MapEventData mapEventData = (MapEventData) eventData;
         final Member member = getMemberOrNull(eventData);
         if (member == null) {
             return;
         }
-        final MapEvent event = createMapWideEvent(mapWideEventData, member);
+        final MapEvent event = createMapEvent(mapEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);
     }
 
-    private MapEvent createMapWideEvent(MapWideEventData mapWideMapEventData, Member member) {
-        return new MapEvent(mapWideMapEventData.getMapName(), member,
-                mapWideMapEventData.getEventType(), mapWideMapEventData.getNumberOfEntries());
+    private MapEvent createMapEvent(MapEventData mapEventData, Member member) {
+        return new MapEvent(mapEventData.getMapName(), member,
+                mapEventData.getEventType(), mapEventData.getNumberOfEntries());
     }
 
     private void dispatchEntryEventData(EventData eventData, EntryListener listener) {

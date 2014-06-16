@@ -32,7 +32,7 @@ public class MapEvent extends AbstractIMapEvent {
 
     @Override
     public String toString() {
-        return "MapWideEvent{"
+        return "MapEvent{"
                 + super.toString()
                 + ", numberOfEntriesAffected=" + numberOfEntriesAffected +
                 '}';

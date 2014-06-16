@@ -406,7 +406,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
             }
-            publishMapWideEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
+            publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -1217,8 +1217,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         getService().clearNearCache(name);
     }
 
-    private void publishMapWideEvent(int numberOfAffectedEntries, EntryEventType eventType) {
-        getService().publishMapWideEvent(getNodeEngine().getThisAddress(),
+    private void publishMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
+        getService().publishMapEvent(getNodeEngine().getThisAddress(),
                 name, eventType, numberOfAffectedEntries);
     }
 

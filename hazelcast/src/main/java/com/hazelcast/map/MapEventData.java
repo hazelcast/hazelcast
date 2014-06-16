@@ -9,14 +9,14 @@ import java.io.IOException;
 /**
  * Map wide event's data.
  */
-public class MapWideEventData extends AbstractEventData {
+public class MapEventData extends AbstractEventData {
 
     protected int numberOfEntries;
 
-    public MapWideEventData() {
+    public MapEventData() {
     }
 
-    public MapWideEventData(String source, String mapName, Address caller, int eventType, int numberOfEntries) {
+    public MapEventData(String source, String mapName, Address caller, int eventType, int numberOfEntries) {
         super(source, mapName, caller, eventType);
         this.numberOfEntries = numberOfEntries;
     }
@@ -39,7 +39,7 @@ public class MapWideEventData extends AbstractEventData {
 
     @Override
     public String toString() {
-        return "MapWideEventData{"
+        return "MapEventData{"
                 + super.toString()
                 + ", numberOfEntries=" + numberOfEntries
                 + '}';
