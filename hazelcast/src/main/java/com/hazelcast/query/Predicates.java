@@ -34,7 +34,8 @@ import java.util.regex.Pattern;
 public final class Predicates {
 
     //we don't want instances.
-    private Predicates(){}
+    private Predicates() {
+    }
 
     public static Predicate instanceOf(final Class klass) {
         return new InstanceOfPredicate(klass);
@@ -114,6 +115,9 @@ public final class Predicates {
 
         public BetweenPredicate(String first, Comparable from, Comparable to) {
             super(first);
+            if (from == null || to == null) {
+                throw new NullPointerException("Arguments can't be null");
+            }
             this.from = from;
             this.to = to;
         }
@@ -191,6 +195,15 @@ public final class Predicates {
 
         public InPredicate(String attribute, Comparable... values) {
             super(attribute);
+
+            if (values == null) {
+                throw new NullPointerException("Array can't be null");
+            }
+            for (Comparable value : values) {
+                if (value == null) {
+                    throw new NullPointerException("Elements can't be null");
+                }
+            }
             this.values = values;
         }
 
@@ -576,10 +589,18 @@ public final class Predicates {
         }
 
         public GreaterLessPredicate(String attribute, Comparable value, boolean equal, boolean less) {
-            super(attribute, value);
+            super(attribute);
+
+            if (value == null) {
+                throw new NullPointerException("Arguments can't be null");
+            }
+
+            this.value = value;
             this.equal = equal;
             this.less = less;
         }
+
+
 
         public boolean apply(Map.Entry mapEntry) {
             final Comparable entryValue = readAttribute(mapEntry);
@@ -660,6 +681,10 @@ public final class Predicates {
         public EqualPredicate() {
         }
 
+        public EqualPredicate(String attribute) {
+            super(attribute);
+        }
+
         public EqualPredicate(String attribute, Comparable value) {
             super(attribute);
             this.value = value;
@@ -708,10 +733,10 @@ public final class Predicates {
         }
 
         protected Comparable convert(Map.Entry mapEntry, Comparable entryValue, Comparable attributeValue) {
-            if (attributeValue == null ) {
+            if (attributeValue == null) {
                 return null;
             }
-            if( attributeValue instanceof IndexImpl.NullObject ){
+            if (attributeValue instanceof IndexImpl.NullObject) {
                 return IndexImpl.NULL;
             }
             AttributeType type = attributeType;
@@ -786,7 +811,7 @@ public final class Predicates {
             try {
                 klass = in.getClassLoader().loadClass(klassName);
             } catch (ClassNotFoundException e) {
-                throw new HazelcastSerializationException("Failed to load class: "+klass,e);
+                throw new HazelcastSerializationException("Failed to load class: " + klass, e);
             }
         }
 
