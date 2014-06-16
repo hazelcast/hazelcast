@@ -18,20 +18,28 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.query.Predicates.AndPredicate;
 import com.hazelcast.query.Predicates.EqualPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.io.IOException;
+import java.util.concurrent.ConcurrentMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.util.concurrent.ConcurrentMap;
-
 import static com.hazelcast.instance.TestUtil.toData;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -49,6 +57,18 @@ public class IndexTest {
 
     private QueryRecord newRecord(Object key, final Comparable attributeValue) {
         return new QueryRecord(toData(key), attributeValue);
+    }
+
+    @Test
+    public void testRemoveEnumIndex() {
+        IndexService is = new IndexService();
+        is.addOrGetIndex("favoriteCity", false);
+        Data key = ss.toData(1);
+        Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
+        is.saveEntryIndex(new QueryEntry(ss, key, key, value));
+        assertNotNull(is.getIndex("favoriteCity"));
+        is.removeEntryIndex(key);
+        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
     }
 
     @Test
@@ -112,6 +132,36 @@ public class IndexTest {
             return FACTORY_ID;
         }
     }
+
+    private static class SerializableWithEnum implements DataSerializable {
+
+        enum City {
+            Istanbul,
+            Rize,
+            Krakow,
+            Trabzon;
+        }
+
+        private City favoriteCity;
+
+        private SerializableWithEnum() {
+        }
+
+        private SerializableWithEnum(City favoriteCity) {
+            this.favoriteCity = favoriteCity;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(favoriteCity);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            favoriteCity = in.readObject();
+        }
+    }
+
 
     private static class MainPortable implements Portable {
 
