@@ -31,7 +31,8 @@ public class MapEvent extends AbstractIMapEvent {
     public String toString() {
         return "MapEvent{"
                 + super.toString()
-                + ", numberOfEntriesAffected=" + numberOfEntriesAffected +
-                '}';
+                + ", numberOfEntriesAffected=" + numberOfEntriesAffected
+                + '}';
+
     }
 }
