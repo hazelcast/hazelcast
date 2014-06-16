@@ -59,7 +59,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
             }
 
             @Override
-            public void onEvictAll(MapEvent event) {
+            public void mapEvicted(MapEvent event) {
                 totalEvictedEntryCount.addAndGet(event.getNumberOfEntriesAffected());
             }
         };

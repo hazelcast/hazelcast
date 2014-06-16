@@ -1403,7 +1403,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
     }
 
     @Override
-    public void onEvictAll(MapEvent event) {
+    public void mapEvicted(MapEvent event) {
         println(event);
     }
 

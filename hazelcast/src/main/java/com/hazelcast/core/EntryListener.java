@@ -61,7 +61,7 @@ public interface EntryListener<K, V> extends EventListener {
     /**
      * Invoked when all entries evicted by {@link IMap#evictAll()}.
      *
-     * @param event entry event
+     * @param event map event
      */
-    void onEvictAll(MapEvent event);
+    void mapEvicted(MapEvent event);
 }

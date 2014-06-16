@@ -289,7 +289,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void onEvictAll(MapEvent event) {
+            public void mapEvicted(MapEvent event) {
 
             }
         }, true);
@@ -957,7 +957,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void onEvictAll(MapEvent event) {
+            public void mapEvicted(MapEvent event) {
 
             }
         };
@@ -1009,7 +1009,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void onEvictAll(MapEvent event) {
+            public void mapEvicted(MapEvent event) {
 
             }
         };
@@ -1079,7 +1079,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void onEvictAll(MapEvent event) {
+            public void mapEvicted(MapEvent event) {
 
             }
         };
@@ -1136,7 +1136,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
 
             @Override
-            public void onEvictAll(MapEvent event) {
+            public void mapEvicted(MapEvent event) {
 
             }
         };

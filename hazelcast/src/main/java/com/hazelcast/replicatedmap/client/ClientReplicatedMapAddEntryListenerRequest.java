@@ -109,7 +109,7 @@ public class ClientReplicatedMapAddEntryListenerRequest
         }
 
         @Override
-        public void onEvictAll(MapEvent event) {
+        public void mapEvicted(MapEvent event) {
             // TODO what should this method do?
         }
 

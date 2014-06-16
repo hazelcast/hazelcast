@@ -950,7 +950,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 listener.entryRemoved((EntryEvent) event);
                 break;
             case EVICT_ALL:
-                listener.onEvictAll((MapEvent) event);
+                listener.mapEvicted((MapEvent) event);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid event type: " + event.getEventType());

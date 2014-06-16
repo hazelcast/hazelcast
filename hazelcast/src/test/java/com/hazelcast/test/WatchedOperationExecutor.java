@@ -102,7 +102,7 @@ public class WatchedOperationExecutor {
         }
 
         @Override
-        public void onEvictAll(MapEvent event) {
+        public void mapEvicted(MapEvent event) {
 
         }
 

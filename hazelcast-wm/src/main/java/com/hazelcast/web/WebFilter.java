@@ -160,7 +160,7 @@ public class WebFilter implements Filter {
 
                 // TODO what should this method do?
                 @Override
-                public void onEvictAll(MapEvent event) {
+                public void mapEvicted(MapEvent event) {
 
                 }
             }, false);

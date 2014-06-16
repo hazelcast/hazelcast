@@ -48,7 +48,7 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
     }
 
     @Override
-    public void onEvictAll(MapEvent event) {
+    public void mapEvicted(MapEvent event) {
 
     }
 

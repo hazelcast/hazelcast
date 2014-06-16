@@ -39,7 +39,7 @@ public class DummyEntryListener implements EntryListener {
     }
 
     @Override
-    public void onEvictAll(MapEvent event) {
+    public void mapEvicted(MapEvent event) {
 
     }
 }

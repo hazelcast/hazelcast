@@ -123,7 +123,7 @@ public class ClientMultiMapListenerStressTest {
         }
 
         @Override
-        public void onEvictAll(MapEvent event) {
+        public void mapEvicted(MapEvent event) {
             // TODO what to do here?
         }
     };

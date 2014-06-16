@@ -96,7 +96,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
             // TODO what should this method do?
             @Override
-            public void onEvictAll(MapEvent event) {
+            public void mapEvicted(MapEvent event) {
 
             }
         };

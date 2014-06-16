@@ -84,7 +84,7 @@ public class ClientMapIssueTest {
             }
 
             @Override
-            public void onEvictAll(MapEvent event) {
+            public void mapEvicted(MapEvent event) {
 
             }
         }, true);

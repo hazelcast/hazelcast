@@ -1381,7 +1381,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     @Override
-    public void onEvictAll(MapEvent event) {
+    public void mapEvicted(MapEvent event) {
         println(event);
     }
 

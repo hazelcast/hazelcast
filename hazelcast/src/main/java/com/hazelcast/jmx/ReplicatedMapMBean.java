@@ -60,7 +60,7 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
             }
 
             @Override
-            public void onEvictAll(MapEvent event) {
+            public void mapEvicted(MapEvent event) {
 
             }
         };

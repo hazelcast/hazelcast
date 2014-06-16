@@ -322,7 +322,7 @@ public class ClientMultiMapListenersTest {
         }
 
         @Override
-        public void onEvictAll(MapEvent event) {
+        public void mapEvicted(MapEvent event) {
             // TODO what to do here?
         }
     }
@@ -362,7 +362,7 @@ public class ClientMultiMapListenersTest {
         }
 
         @Override
-        public void onEvictAll(MapEvent event) {
+        public void mapEvicted(MapEvent event) {
             // TODO what to do here?
         }
     };
