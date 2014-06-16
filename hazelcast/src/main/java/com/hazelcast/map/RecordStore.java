@@ -79,6 +79,13 @@ public interface RecordStore {
 
     Map<Data, Record> getReadonlyRecordMap();
 
+    /**
+     * Returns read only records map by waiting map store load.
+     *
+     * @return read only record map.
+     */
+    Map<Data, Record> getReadonlyRecordMapByWaitingMapStoreLoad();
+
     Set<Data> keySet();
 
     int size();
