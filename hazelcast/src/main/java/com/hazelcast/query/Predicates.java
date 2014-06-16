@@ -69,6 +69,12 @@ public final class Predicates {
         return new NotPredicate(predicate);
     }
 
+    /**
+     * Or predicate.
+     * @param x
+     * @param y
+     * @return
+     */
     public static Predicate or(Predicate x, Predicate y) {
         return new OrPredicate(x, y);
     }
