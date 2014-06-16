@@ -103,7 +103,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeChar(int position, final int v) throws IOException {
         write(position, (v >>> 8) & 0xFF);
-        write(position, (v) & 0xFF);
+        write(position + 1, (v) & 0xFF);
     }
 
     public void writeChars(final String s) throws IOException {
@@ -178,7 +178,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeShort(int position, final int v) throws IOException {
         write(position, (v >>> 8) & 0xFF);
-        write(position, (v) & 0xFF);
+        write(position + 1, (v) & 0xFF);
     }
 
     public void writeUTF(final String str) throws IOException {
