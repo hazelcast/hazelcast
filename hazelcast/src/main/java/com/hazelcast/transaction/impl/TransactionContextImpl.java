@@ -28,6 +28,7 @@ import com.hazelcast.transaction.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author mdogan 2/26/13
@@ -132,6 +133,10 @@ final class TransactionContextImpl implements TransactionContext {
 
     Transaction getTransaction() {
         return transaction;
+    }
+
+    public boolean setTransactionTimeout(int seconds) {
+        return transaction.setTimeoutMillis(TimeUnit.SECONDS.toMillis(seconds));
     }
 
     private static class TransactionalObjectKey {

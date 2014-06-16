@@ -164,6 +164,22 @@ public class ClientXaTest {
         assertTrue(clientResource.isSameRM(resource2));
     }
 
+    @Test
+    public void testTimeoutSetting() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final XAResource resource = instance.newTransactionContext().getXaResource();
+        final int timeout = 100;
+        final boolean result = resource.setTransactionTimeout(timeout);
+        assertTrue(result);
+        assertEquals(timeout, resource.getTransactionTimeout());
+        final MyXid myXid = new MyXid();
+        resource.start(myXid,0);
+        assertFalse(resource.setTransactionTimeout(120));
+        assertEquals(timeout, resource.getTransactionTimeout());
+        resource.commit(myXid,true);
+    }
+
+
     public static class MyXid implements Xid {
 
         public int getFormatId() {

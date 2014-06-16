@@ -27,14 +27,26 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
-import static com.hazelcast.transaction.impl.Transaction.State.*;
+import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMIT_FAILED;
+import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
+import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
+import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 
 final class TransactionImpl implements Transaction, TransactionSupport {
 
@@ -45,8 +57,8 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
     private final Map<Object, TransactionLog> txLogMap = new HashMap<Object, TransactionLog>();
     private final String txnId;
-    private Long threadId ;
-    private final long timeoutMillis;
+    private Long threadId;
+    private long timeoutMillis;
     private final int durability;
     private final TransactionType transactionType;
     private final String txOwnerUuid;
@@ -150,7 +162,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
         //init caller thread
-        if(threadId == null){
+        if (threadId == null) {
             threadId = Thread.currentThread().getId();
             setThreadFlag(Boolean.TRUE);
         }
@@ -263,7 +275,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 state = COMMIT_FAILED;
                 throw ExceptionUtil.rethrow(e, TransactionException.class);
             }
-        }finally {
+        } finally {
             setThreadFlag(null);
         }
     }
@@ -275,7 +287,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     }
 
     public void rollback() throws IllegalStateException {
-        try{
+        try {
             if (state == NO_TXN || state == ROLLED_BACK) {
                 throw new IllegalStateException("Transaction is not active");
             }
@@ -329,7 +341,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
 
     }
 
-    public void setRollbackOnly(){
+    public void setRollbackOnly() {
         state = ROLLING_BACK;
     }
 
@@ -363,6 +375,14 @@ final class TransactionImpl implements Transaction, TransactionSupport {
 
     public long getTimeoutMillis() {
         return timeoutMillis;
+    }
+
+    public boolean setTimeoutMillis(long timeoutMillis) {
+        if (state == NO_TXN) {
+            this.timeoutMillis = timeoutMillis;
+            return true;
+        }
+        return false;
     }
 
     @Override
