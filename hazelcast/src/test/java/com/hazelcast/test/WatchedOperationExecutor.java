@@ -3,7 +3,7 @@ package com.hazelcast.test;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.map.MapEvent;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.ReplicatedMap;
 
 import java.util.Arrays;

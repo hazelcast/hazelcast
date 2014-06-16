@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.map.MapEvent;
-
 /**
  * Adapter for EntryListener.
  *

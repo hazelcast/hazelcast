@@ -23,7 +23,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.MapEvent;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.query.Predicate;

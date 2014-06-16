@@ -18,7 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.map.MapEvent;
+import com.hazelcast.core.MapEvent;
 
 public class DummyEntryListener implements EntryListener {
 

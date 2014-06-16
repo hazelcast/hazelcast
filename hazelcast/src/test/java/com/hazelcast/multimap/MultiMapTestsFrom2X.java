@@ -20,7 +20,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.MapEvent;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;

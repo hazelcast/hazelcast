@@ -1,7 +1,4 @@
-package com.hazelcast.map;
-
-import com.hazelcast.core.AbstractIMapEvent;
-import com.hazelcast.core.Member;
+package com.hazelcast.core;
 
 /**
  * Used for map-wide events like {@link com.hazelcast.core.EntryEventType#EVICT_ALL}.
