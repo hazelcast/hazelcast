@@ -30,11 +30,10 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.util.ExceptionUtil;
-
-import javax.transaction.xa.Xid;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import javax.transaction.xa.Xid;
 
 /**
  * @author ali 14/02/14
@@ -56,7 +55,7 @@ public class ClientTransactionManager {
         return client;
     }
 
-    public String getGroupName(){
+    public String getGroupName() {
         final GroupConfig groupConfig = client.getClientConfig().getGroupConfig();
         if (groupConfig == null) {
             throw new RuntimeException("GroupConfig cannot be null client is participate in XA Transaction");
