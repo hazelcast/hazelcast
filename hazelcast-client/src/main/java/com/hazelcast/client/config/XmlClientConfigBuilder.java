@@ -26,8 +26,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
