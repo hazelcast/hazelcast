@@ -47,8 +47,8 @@ import static com.hazelcast.query.SampleObjects.Employee;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Map.Entry;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -196,6 +196,41 @@ public class PredicatesTest {
         assertTrue(e.get("id").equal(12).apply(createEntry("1", value)));
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testBetweenNull() {
+        Predicates.between("", null, null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testLessThanNull() {
+        Predicates.lessThan("", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testLessEqualNull() {
+        Predicates.lessEqual("", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testGreaterThanNull() {
+        Predicates.greaterThan("", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testGreaterEqualNull() {
+        Predicates.greaterEqual("", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testInNullWithNullArgument() {
+        Predicates.in("", null, 2, "value");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testInNullWithNullArray() {
+        Predicates.in("", null);
+    }
+
     private class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
@@ -267,6 +302,7 @@ public class PredicatesTest {
         public Data getIndexKey() {
             return null;
         }
+
     }
 
     private static Entry createEntry(final Object key, final Object value) {
