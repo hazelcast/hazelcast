@@ -65,7 +65,7 @@ public class IndexImpl implements Index {
         if (newValue == null) {
             newValue = NULL;
         }
-        if (newValue.getClass().isEnum()) {
+        else if (newValue.getClass().isEnum()) {
             newValue = TypeConverters.ENUM_CONVERTER.convert(newValue);
         }
         recordValues.put(key, newValue);
