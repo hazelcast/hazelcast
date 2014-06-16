@@ -26,25 +26,27 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
+import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -148,6 +150,18 @@ public class ClientXaTest {
             context1.rollbackTransaction(); //for setting ThreadLocal of unfinished transaction
         } catch (Throwable ignored) {
         }
+    }
+
+    @Test
+    public void testIsSame() throws Exception {
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final XAResource resource1 = instance1.newTransactionContext().getXaResource();
+        final XAResource resource2 = instance2.newTransactionContext().getXaResource();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final XAResource clientResource = client.newTransactionContext().getXaResource();
+        assertTrue(clientResource.isSameRM(resource1));
+        assertTrue(clientResource.isSameRM(resource2));
     }
 
     public static class MyXid implements Xid {
