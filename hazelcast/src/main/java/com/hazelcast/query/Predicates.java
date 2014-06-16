@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
  */
 public final class Predicates {
 
-    //we don't want instances.
+    //we don't want instances. private constructor.
     private Predicates() {
     }
 

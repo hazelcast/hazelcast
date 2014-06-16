@@ -40,7 +40,7 @@ public class SerializerConfig {
     }
 
     public SerializerConfig setClass(final Class<? extends Serializer> clazz) {
-        String className = clazz == null?null:clazz.getName();
+        String className = clazz == null ? null : clazz.getName();
         return setClassName(className);
     }
 

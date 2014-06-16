@@ -413,7 +413,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final Node maxSizePolicyNode = node.getAttributes().getNamedItem("max-size-policy");
             if (maxSizePolicyNode != null) {
                 maxSizeConfigBuilder
-                        .addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode)), MaxSizeConfig.MaxSizePolicy.valueOf(getTextContent(maxSizePolicyNode)));
+                        .addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode))
+                                , MaxSizeConfig.MaxSizePolicy.valueOf(getTextContent(maxSizePolicyNode)));
             }
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(childNode.getNodeName());
@@ -540,7 +541,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 mapStoreConfigBuilder.addPropertyReference(xmlToJavaName(implAttrName), getTextContent(implRef));
             }
             if (initialMode != null) {
-                final MapStoreConfig.InitialLoadMode mode = MapStoreConfig.InitialLoadMode.valueOf(upperCaseInternal(getTextContent(initialMode)));
+                final MapStoreConfig.InitialLoadMode mode
+                        = MapStoreConfig.InitialLoadMode.valueOf(upperCaseInternal(getTextContent(initialMode)));
                 mapStoreConfigBuilder.addPropertyValue("initialLoadMode", mode);
             }
             mapConfigBuilder.addPropertyValue("mapStoreConfig", beanDefinition);
@@ -570,12 +572,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("message-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
                     topicConfigBuilder.addPropertyValue("messageListenerConfigs", listeners);
-                }
-                else  if ("statistics-enabled".equals(cleanNodeName(childNode))) {
+                } else if ("statistics-enabled".equals(cleanNodeName(childNode))) {
                     final String statisticsEnabled = getTextContent(childNode);
                     topicConfigBuilder.addPropertyValue("statisticsEnabled", statisticsEnabled);
-                }
-                else  if ("global-ordering-enabled".equals(cleanNodeName(childNode))) {
+                } else if ("global-ordering-enabled".equals(cleanNodeName(childNode))) {
                     final String globalOrderingEnabled = getTextContent(childNode);
                     topicConfigBuilder.addPropertyValue("globalOrderingEnabled", globalOrderingEnabled);
                 }
@@ -624,8 +624,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             if (implementation != null) {
                 credentialsConfigBuilder.addPropertyReference("implementation", implementation);
             }
-            Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' " +
-                    "attributes is required to create CredentialsFactory!");
+            Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' "
+                    + "attributes is required to create CredentialsFactory!");
             for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());
                 if ("properties".equals(nodeName)) {
@@ -677,8 +677,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             if (implementation != null) {
                 permPolicyConfigBuilder.addPropertyReference("implementation", implementation);
             }
-            Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' " +
-                    "attributes is required to create PermissionPolicy!");
+            Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' "
+                    + "attributes is required to create PermissionPolicy!");
             for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());
                 if ("properties".equals(nodeName)) {

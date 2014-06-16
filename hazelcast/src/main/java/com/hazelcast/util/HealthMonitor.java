@@ -19,7 +19,6 @@ package com.hazelcast.util;
 import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jmx.InstanceMBean;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.EventService;
@@ -46,8 +45,6 @@ public class HealthMonitor extends Thread {
     private final Runtime runtime;
     private final OperatingSystemMXBean osMxBean;
     private final HealthMonitorLevel logLevel;
-    private final HazelcastInstanceImpl hazelcastInstance;
-    private final InstanceMBean instanceMBean;
     private final int delaySeconds;
     private final ExecutionService executionService;
     private final EventService eventService;
@@ -62,13 +59,11 @@ public class HealthMonitor extends Thread {
         super(hazelcastInstance.node.threadGroup, hazelcastInstance.node.getThreadNamePrefix("HealthMonitor"));
         setDaemon(true);
 
-        this.hazelcastInstance = hazelcastInstance;
         this.node = hazelcastInstance.node;
         this.logger = node.getLogger(HealthMonitor.class.getName());
         this.runtime = Runtime.getRuntime();
         this.osMxBean = ManagementFactory.getOperatingSystemMXBean();
         this.logLevel = logLevel;
-        this.instanceMBean = hazelcastInstance.getManagementService().getInstanceMBean();
         this.delaySeconds = delaySeconds;
         this.threadMxBean = ManagementFactory.getThreadMXBean();
         this.executionService = node.nodeEngine.getExecutionService();
@@ -94,7 +89,7 @@ public class HealthMonitor extends Thread {
                     break;
                 case SILENT:
                     metrics = new HealthMetrics();
-                    if (metrics.exceedsTreshold()) {
+                    if (metrics.exceedsThreshold()) {
                         logger.log(Level.INFO, metrics.toString());
                     }
                     break;
@@ -125,7 +120,6 @@ public class HealthMonitor extends Thread {
         private final int peakThreadCount;
         private final int asyncExecutorQueueSize;
         private final int clientExecutorQueueSize;
-        private final int operationExecutorQueueSize;
         private final int queryExecutorQueueSize;
         private final int scheduledExecutorQueueSize;
         private final int systemExecutorQueueSize;
@@ -155,7 +149,6 @@ public class HealthMonitor extends Thread {
             peakThreadCount = threadMxBean.getPeakThreadCount();
             asyncExecutorQueueSize = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR).getQueueSize();
             clientExecutorQueueSize = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR).getQueueSize();
-            operationExecutorQueueSize = executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR).getQueueSize();
             queryExecutorQueueSize = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR).getQueueSize();
             scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).getQueueSize();
             systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).getQueueSize();
@@ -172,7 +165,7 @@ public class HealthMonitor extends Thread {
             connectionCount = connectionManager.getConnectionCount();
         }
 
-        public boolean exceedsTreshold() {
+        public boolean exceedsThreshold() {
             if (memoryUsedOfMaxPercentage > treshold) {
                 return true;
             }
@@ -208,7 +201,6 @@ public class HealthMonitor extends Thread {
             sb.append("event.q.size=").append(eventQueueSize).append(", ");
             sb.append("executor.q.async.size=").append(asyncExecutorQueueSize).append(", ");
             sb.append("executor.q.client.size=").append(clientExecutorQueueSize).append(", ");
-            sb.append("executor.q.operation.size=").append(operationExecutorQueueSize).append(", ");
             sb.append("executor.q.query.size=").append(queryExecutorQueueSize).append(", ");
             sb.append("executor.q.scheduled.size=").append(scheduledExecutorQueueSize).append(", ");
             sb.append("executor.q.io.size=").append(ioExecutorQueueSize).append(", ");

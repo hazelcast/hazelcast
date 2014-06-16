@@ -43,7 +43,7 @@ public class PartitioningStrategyConfig {
     }
 
     public PartitioningStrategyConfigReadOnly getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new PartitioningStrategyConfigReadOnly(this);
         }
         return readOnly;

@@ -11,27 +11,21 @@
 
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
 
-    <suppress checks="" files="com.hazelcast.config[\\/]"/>
-    <suppress checks="" files="com.hazelcast.core[\\/]"/>
     <suppress checks="" files="com.hazelcast.management[\\/]"/>
     <suppress checks="" files="com.hazelcast.map[\\/]"/>
-    <suppress checks="" files="com.hazelcast.spi.impl[\\/]"/>
 
-    <suppress checks="" files="com.hazelcast.hibernate[\\/]"/>
-    <suppress checks="" files="com.hazelcast.spring[\\/]"/>
-    <suppress checks="" files="com.hazelcast.aws[\\/]"/>
-    <suppress checks="" files="com.hazelcast.wm[\\/]"/>
+    <!-- <suppress checks="" files="com.hazelcast.client[\\/]"/> not completed --> 
 
     <suppress checks="" files="com.hazelcast.web.WebFilter"/>
 
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
-    <suppress checks="MagicNumberCheck" files="[\\/]examples[\\/]"/>
-    <suppress checks="FileLengthCheck" files="TestApp.java"/>
-    <suppress checks="MethodCountCheck" files="TestApp.java"/>
-    <suppress checks="ClassFanOutComplexityCheck" files="TestApp.java"/>
-    <suppress checks="CyclomaticComplexityCheck" files="TestApp.java"/>
-    <suppress checks="NPathComplexityCheck" files="TestApp.java"/>
-    <suppress checks="MethodLengthCheck" files="TestApp.java"/>
+    <suppress checks="MagicNumberCheck" files="ClientConsoleApp.java"/>
+    <suppress checks="FileLengthCheck" files="ConsoleApp.java"/>
+    <suppress checks="MethodCountCheck" files="ConsoleApp.java"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="ConsoleApp.java"/>
+    <suppress checks="CyclomaticComplexityCheck" files="ConsoleApp.java"/>
+    <suppress checks="NPathComplexityCheck" files="ConsoleApp.java"/>
+    <suppress checks="MethodLengthCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodLengthCheck" files="AllTest.java"/>
     <suppress checks="MethodCountCheck" files="AllTest.java"/>
     <suppress checks="AnonInnerLengthCheck" files="SimpleFunctionalMapTest.java"/>
@@ -64,6 +58,44 @@
     <suppress checks="" files="com.hazelcast.cluster.ConfigCheck"/>
     <suppress checks="" files="com.hazelcast.cluster.FinalizeJoinOperation"/>
     <suppress checks="" files="com.hazelcast.cluster.JoinCheckOperation"/>
+
+    <!-- Core-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.core[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.core[\\/]"/>
+    <suppress checks="MethodCount" files="com.hazelcast.core.HazelcastInstance"/>
+    <suppress checks="MethodCount" files="com.hazelcast.core.IMap"/>
+
+    <!-- Config-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.config[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.config[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.config[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.config[\\/]"/>
+    <suppress checks="AnonInnerLength" files="com.hazelcast.config.AbstractXmlConfigHelper"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.AbstractXmlConfigHelper"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.config.Config"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.Config"/>
+    <suppress checks="MethodCount" files="com.hazelcast.config.Config"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.config.Config"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.config.ConfigLoader"/>
+    <suppress checks="MethodLength" files="com.hazelcast.config.ConfigXmlGenerator"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.config.ConfigXmlGenerator"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.ConfigXmlGenerator"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.config.LoginModuleConfig"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="MethodCount" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.config.MaxSizeConfig"/>
+    <suppress checks="MethodCount" files="com.hazelcast.config.SerializationConfig"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.config.TcpIpConfig"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="MethodLength" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="MethodCount" files="com.hazelcast.config.XmlConfigBuilder"/>
 
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
@@ -299,6 +331,53 @@
     <suppress checks="MethodCount" files="com.hazelcast.spi.Operation"/>
     <suppress checks="IllegalType" files="com.hazelcast.spi.DistributedObjectAccessor"/>
     <suppress checks="" files="com.hazelcast.spi.Operation"/>
+
+    <!-- spi.impl -->
+    <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocation"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocation"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
+    <suppress checks="Todo" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="MethodLength" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="Todo" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicPartitionInvocation"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.spi.impl.EventServiceImpl"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.EventServiceImpl"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.spi.impl.EventServiceImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.EventServiceImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.EventServiceImpl"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.spi.impl.ExecutionServiceImpl"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.spi.impl.ExecutionServiceImpl"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.ExecutionServiceImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.ExecutionServiceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <suppress checks="Todo" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.spi.impl.ProxyServiceImpl"/>
+    <suppress checks="MethodLength" files="com.hazelcast.spi.impl.ServiceManager"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.ServiceManager"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.ServiceManager"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.spi.impl.ServiceManager"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.spi.impl.ServiceManager"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.ServiceManager"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiDataSerializerHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiPortableHook"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.WaitNotifyServiceImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.WaitNotifyServiceImpl"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.spi.impl.WaitNotifyServiceImpl"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.spi.impl.WaitNotifyServiceImpl"/>
+
+
 
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
@@ -552,6 +631,7 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="MethodLength" files="com.hazelcast.nio.UTFEncoderDecoder"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="ExecutableStatement" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="IllegalImport" files="com.hazelcast.nio.UnsafeHelper"/>
@@ -588,6 +668,56 @@
     <suppress checks="MethodCount" files="com.hazelcast.jmx.ReplicatedMapMBean"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.jmx.SetMBean"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.jmx.TopicMBean"/>
+
+    <!-- Aws-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.aws[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.aws[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.aws[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.aws[\\/]"/>
+    <suppress checks="HideUtilityClassConstructor" files="com.hazelcast.aws.impl.Constants"/>
+
+
+    <!-- Hibernate-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.hibernate[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.hibernate[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.hibernate[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.hibernate[\\/]"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.region.AbstractGeneralRegion"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.CacheEnvironment"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.hibernate.instance.HazelcastClientLoader"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.hibernate.instance.HazelcastClientLoader"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.HazelcastTimestamper"/>
+    <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate3CacheEntrySerializer"/>
+    <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate4CacheEntrySerializer"/>
+    <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate3CacheKeySerializer"/>
+    <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate4CacheKeySerializer"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.hibernate.distributed.IMapRegionCache"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.hibernate.distributed.IMapRegionCache"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
+
+    <!-- Spring-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.spring[\\/]"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.spring.AbstractHazelcastBeanDefinitionParser"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spring.AbstractHazelcastBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastClientBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastClientBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastInstanceDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="MethodCount" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="ExecutableStatement" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastTypeBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spring.context.SpringManagedContext"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>
+    <suppress checks="ArrayTrailingComma" files="com.hazelcast.spring.HazelcastNamespaceHandler"/>
 
 
 </suppressions>

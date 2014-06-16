@@ -6,7 +6,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -17,7 +16,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 
@@ -82,12 +81,7 @@ public class ClientExecutionPoolSizeLowTest {
                 server2.getLifecycleService().terminate();
             }
         }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(COUNT, map.size());
-            }
-        });
+        assertSizeEventually(COUNT, map);
     }
 
     @Test
@@ -98,12 +92,7 @@ public class ClientExecutionPoolSizeLowTest {
                 server1.getLifecycleService().terminate();
             }
         }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(COUNT, map.size());
-            }
-        });
+        assertSizeEventually(COUNT, map);
     }
 
 }

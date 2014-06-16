@@ -18,11 +18,13 @@ package com.hazelcast.config;
 
 public class ManagementCenterConfig {
 
-    private boolean enabled = false;
-    
+    private static final int UPDATE_INTERVAL = 5;
+
+    private boolean enabled;
+
     private String url;
-    
-    private int updateInterval = 5;
+
+    private int updateInterval = UPDATE_INTERVAL;
 
     public ManagementCenterConfig() {
     }

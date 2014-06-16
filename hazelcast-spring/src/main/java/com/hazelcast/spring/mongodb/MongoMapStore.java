@@ -18,21 +18,30 @@ package com.hazelcast.spring.mongodb;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
-import com.mongodb.*;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCursor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MongoMapStore implements MapStore, MapLoaderLifecycleSupport {
 
+    protected static final Logger LOGGER = Logger.getLogger(MongoMapStore.class.getName());
+
     private String mapName;
     private MongoDBConverter converter;
     private DBCollection coll;
     private MongoTemplate mongoTemplate;
-
-    protected static final Logger logger = Logger.getLogger(MongoMapStore.class.getName());
 
     public MongoTemplate getMongoTemplate() {
         return mongoTemplate;
@@ -49,7 +58,7 @@ public class MongoMapStore implements MapStore, MapLoaderLifecycleSupport {
     }
 
     public void storeAll(Map map) {
-        for(Map.Entry entry: (Set<Map.Entry>)map.entrySet()){
+        for (Map.Entry entry : (Set<Map.Entry>) map.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
             store(key, value);
@@ -75,14 +84,15 @@ public class MongoMapStore implements MapStore, MapLoaderLifecycleSupport {
         DBObject dbo = new BasicDBObject();
         dbo.put("_id", key);
         DBObject obj = coll.findOne(dbo);
-        if (obj == null)
+        if (obj == null) {
             return null;
+        }
 
         try {
             Class clazz = Class.forName(obj.get("_class").toString());
             return converter.toObject(clazz, obj);
         } catch (ClassNotFoundException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            LOGGER.log(Level.WARNING, e.getMessage(), e);
         }
         return null;
     }
@@ -101,7 +111,7 @@ public class MongoMapStore implements MapStore, MapLoaderLifecycleSupport {
                 Class clazz = Class.forName(obj.get("_class").toString());
                 map.put(obj.get("_id"), converter.toObject(clazz, obj));
             } catch (ClassNotFoundException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                LOGGER.log(Level.WARNING, e.getMessage(), e);
             }
         }
         return map;

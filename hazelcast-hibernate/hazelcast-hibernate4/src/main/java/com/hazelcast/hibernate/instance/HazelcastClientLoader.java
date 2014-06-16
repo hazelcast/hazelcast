@@ -31,7 +31,9 @@ import java.util.Properties;
 
 class HazelcastClientLoader implements IHazelcastInstanceLoader {
 
-    private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class);
+    private static final int CONNECTION_ATTEMPT_LIMIT = 10;
+
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceFactory.class);
 
     private final Properties props = new Properties();
     private HazelcastInstance client;
@@ -42,7 +44,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
 
     public HazelcastInstance loadInstance() throws CacheException {
         if (client != null && client.getLifecycleService().isRunning()) {
-            logger.warning("Current HazelcastClient is already active! Shutting it down...");
+            LOGGER.warning("Current HazelcastClient is already active! Shutting it down...");
             unloadInstance();
         }
         String address = ConfigurationHelper.getString(CacheEnvironment.NATIVE_CLIENT_ADDRESS, props, null);
@@ -55,12 +57,12 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
             try {
                 clientConfig = new XmlClientConfigBuilder(configResourcePath).build();
             } catch (IOException e) {
-                logger.warning("Could not load client configuration: " + configResourcePath, e);
+                LOGGER.warning("Could not load client configuration: " + configResourcePath, e);
             }
         }
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
-            clientConfig.getNetworkConfig().setConnectionAttemptLimit(10);
+            clientConfig.getNetworkConfig().setConnectionAttemptLimit(CONNECTION_ATTEMPT_LIMIT);
         }
         if (group != null) {
             clientConfig.getGroupConfig().setName(group);

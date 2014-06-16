@@ -66,12 +66,7 @@ public class MapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -102,12 +97,7 @@ public class MapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -146,12 +136,7 @@ public class MapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -183,12 +168,7 @@ public class MapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -221,12 +201,7 @@ public class MapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -363,12 +338,7 @@ public class MapReduceTest
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
 
         final IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {

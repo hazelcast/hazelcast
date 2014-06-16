@@ -21,10 +21,10 @@ import java.util.List;
 
 public class QueueConfig {
 
-    public final static int DEFAULT_MAX_SIZE = 0;
-    public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
-    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
-    public final static int DEFAULT_EMPTY_QUEUE_TTL = -1;
+    public static final int DEFAULT_MAX_SIZE = 0;
+    public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
+    public static final int DEFAULT_EMPTY_QUEUE_TTL = -1;
 
     private String name;
     private List<ItemListenerConfig> listenerConfigs;
@@ -51,8 +51,8 @@ public class QueueConfig {
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
     }
 
-    public QueueConfigReadOnly getAsReadOnly(){
-        if (readOnly == null){
+    public QueueConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
             readOnly = new QueueConfigReadOnly(this);
         }
         return readOnly;

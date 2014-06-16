@@ -28,6 +28,7 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.concurrent.RejectedExecutionException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -178,7 +179,7 @@ public class ClientExecutorServiceTest {
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = RejectedExecutionException.class)
     public void testExecute_withNoMemberSelected() {
         final IExecutorService service = client.getExecutorService(randomString());
         final String mapName = randomString();
