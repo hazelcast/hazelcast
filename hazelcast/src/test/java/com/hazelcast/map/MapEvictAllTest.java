@@ -77,11 +77,11 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(5);
         final HazelcastInstance node1 = instanceFactory.newHazelcastInstance();
         final HazelcastInstance node2 = instanceFactory.newHazelcastInstance();
-        final IMap map = node1.getMap(mapName);
-        map.addEntryListener(new EntryAdapter() {
+        final IMap map1 = node1.getMap(mapName);
+        final IMap map2 = node2.getMap(mapName);
+        map1.addEntryListener(new EntryAdapter() {
             @Override
             public void onEvictAll(MapEvent event) {
-                System.out.println("event = " + event);
                 final int numberOfEntries = event.getNumberOfEntriesAffected();
                 for (int i = 0; i < numberOfEntries; i++) {
                     countDownLatch.countDown();
@@ -89,11 +89,13 @@ public class MapEvictAllTest extends HazelcastTestSupport {
             }
         }, false);
         for (int i = 0; i < 10000; i++) {
-            map.put(i, i);
+            map1.put(i, i);
         }
-        map.evictAll();
+        map1.evictAll();
         assertOpenEventually(countDownLatch);
         assertEquals(0, countDownLatch.getCount());
+        assertEquals(0, map1.getLocalMapStats().getHeapCost());
+        assertEquals(0, map2.getLocalMapStats().getHeapCost());
 
 
     }
