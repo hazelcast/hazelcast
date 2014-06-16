@@ -574,6 +574,75 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     @Override
+    public int evictAll() {
+        checkIfLoaded();
+        final int size = size();
+        final Set<Data> keysToPreserve = evictAll0();
+        removeIndexByPreserving(keysToPreserve);
+        return size - keysToPreserve.size();
+    }
+
+    @Override
+    public void evictAllBackup() {
+        evictAll0();
+    }
+
+    /**
+     * Internal evict all provides common functionality to all {@link #evictAll()}
+     *
+     * @return preserved keys.
+     */
+    private Set<Data> evictAll0() {
+        resetSizeEstimator();
+        resetAccessSequenceNumber();
+
+        Set<Data> keysToPreserve = Collections.emptySet();
+        final Map<Data, Record> recordsToPreserve = getLockedRecords();
+        if (!recordsToPreserve.isEmpty()) {
+            keysToPreserve = recordsToPreserve.keySet();
+            updateSizeEstimator(calculateRecordSize(recordsToPreserve.values()));
+        }
+        clearRecordsMap(recordsToPreserve);
+        return keysToPreserve;
+    }
+
+    /**
+     * Removes indexes by excluding keysToPreserve.
+     *
+     * @param keysToPreserve should not be removed from index.
+     */
+    private void removeIndexByPreserving(Set<Data> keysToPreserve) {
+        final Set<Data> currentKeySet = records.keySet();
+        currentKeySet.removeAll(keysToPreserve);
+
+        removeIndex(currentKeySet);
+    }
+
+    /**
+     * Returns locked records.
+     *
+     * @return map of locked records.
+     */
+    private Map<Data, Record> getLockedRecords() {
+        if (lockStore == null) {
+            return Collections.emptyMap();
+        }
+        final Collection<Data> lockedKeys = lockStore.getLockedKeys();
+        if (lockedKeys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final Map<Data, Record> lockedRecords = new HashMap<Data, Record>(lockedKeys.size());
+        // Locked records should not be removed!
+        for (Data key : lockedKeys) {
+            Record record = records.get(key);
+            if (record != null) {
+                lockedRecords.put(key, record);
+            }
+        }
+        return lockedRecords;
+    }
+
+    @Override
     public void removeBackup(Data key) {
         final long now = getNow();
         earlyWriteCleanup(now);
@@ -1490,6 +1559,20 @@ public class DefaultRecordStore implements RecordStore {
 
     private long calculateRecordSize(Record record) {
         return sizeEstimator.getCost(record);
+    }
+
+    /**
+     * Returns total size of collection.
+     *
+     * @param collection which's size to be calculated.
+     * @return total size of collection.
+     */
+    private long calculateRecordSize(Collection<Record> collection) {
+        long totalSize = 0L;
+        for (Record record : collection) {
+            totalSize += calculateRecordSize(record);
+        }
+        return totalSize;
     }
 
     private void resetSizeEstimator() {

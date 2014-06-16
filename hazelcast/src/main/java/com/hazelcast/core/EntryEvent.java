@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import java.util.EventObject;
-
 /**
  * Map Entry event.
  *
@@ -27,11 +25,9 @@ import java.util.EventObject;
  * @see com.hazelcast.core.IMap#addEntryListener(EntryListener, boolean)
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
-public class EntryEvent<K, V> extends EventObject {
+public class EntryEvent<K, V> extends AbstractIMapEvent {
 
     private static final long serialVersionUID = -2296203982913729851L;
-
-    protected final EntryEventType entryEventType;
 
     protected K key;
 
@@ -39,27 +35,16 @@ public class EntryEvent<K, V> extends EventObject {
 
     protected V value;
 
-    protected final Member member;
-
-    protected final String name;
 
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
     }
 
     public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value) {
-        super(source);
-        this.name = (String) source;
-        this.member = member;
+        super(source, member, eventType);
         this.key = key;
         this.oldValue = oldValue;
         this.value = value;
-        this.entryEventType = EntryEventType.getByType(eventType);
-    }
-
-    @Override
-    public Object getSource() {
-        return name;
     }
 
     /**
@@ -74,7 +59,7 @@ public class EntryEvent<K, V> extends EventObject {
     /**
      * Returns the old value of the entry event
      *
-     * @return
+     * @return old value.
      */
     public V getOldValue() {
         return this.oldValue;
@@ -83,46 +68,19 @@ public class EntryEvent<K, V> extends EventObject {
     /**
      * Returns the value of the entry event
      *
-     * @return
+     * @return value.
      */
     public V getValue() {
         return value;
     }
 
-    /**
-     * Returns the member fired this event.
-     *
-     * @return the member fired this event.
-     */
-    public Member getMember() {
-        return member;
-    }
-
-    /**
-     * Return the event type
-     *
-     * @return event type
-     */
-    public EntryEventType getEventType() {
-        return entryEventType;
-    }
-
-    /**
-     * Returns the name of the map for this event.
-     *
-     * @return name of the map.
-     */
-    public String getName() {
-        return name;
-    }
-
     @Override
     public String toString() {
-        return "EntryEvent {" + getSource()
-                + "} key=" + getKey()
-                + ", oldValue=" + getOldValue()
-                + ", value=" + getValue()
-                + ", event=" + entryEventType
-                + ", by " + member;
+        return "EntryEvent{"
+                + super.toString()
+                + ", key=" + key
+                + ", oldValue=" + oldValue
+                + ", value=" + value
+                + '}';
     }
 }

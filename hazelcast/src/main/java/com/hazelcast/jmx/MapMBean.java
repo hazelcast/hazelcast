@@ -19,6 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 
@@ -55,6 +56,11 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
             public void entryEvicted(EntryEvent event) {
                 totalEvictedEntryCount.incrementAndGet();
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+                totalEvictedEntryCount.addAndGet(event.getNumberOfEntriesAffected());
             }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);

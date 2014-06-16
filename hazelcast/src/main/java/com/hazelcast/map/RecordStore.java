@@ -101,6 +101,18 @@ public interface RecordStore {
 
     Object evict(Data key);
 
+    /**
+     * Evicts all keys except locked ones.
+     *
+     * @return number of evicted entries.
+     */
+    int evictAll();
+
+    /**
+     * Evicts all keys except locked ones on backup.
+     */
+    void evictAllBackup();
+
     Collection<Data> valuesData();
 
     MapContainer getMapContainer();

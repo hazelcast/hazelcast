@@ -18,6 +18,7 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.replicatedmap.ReplicatedMapProxy;
 
 import java.util.Collection;
@@ -56,6 +57,11 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
 
             @Override
             public void entryEvicted(EntryEvent event) {
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
             }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);
