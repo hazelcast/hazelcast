@@ -39,8 +39,6 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.ExceptionUtil;
-
-import javax.transaction.xa.Xid;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,6 +53,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import javax.transaction.xa.Xid;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
 
@@ -78,6 +77,10 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     public TransactionManagerServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(TransactionManagerService.class);
+    }
+
+    public String getGroupName() {
+        return nodeEngine.getConfig().getGroupConfig().getName();
     }
 
     @Override
