@@ -225,6 +225,11 @@ public class DefaultRecordStore implements RecordStore {
         return Collections.unmodifiableMap(records);
     }
 
+    public Map<Data, Record> getReadonlyRecordMapByWaitingMapStoreLoad() {
+        checkIfLoaded();
+        return getReadonlyRecordMap();
+    }
+
     public void clearPartition() {
         final NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
