@@ -33,6 +33,7 @@ public class XAResourceImpl implements XAResource {
 
     private final TransactionContextImpl transactionContext;
     private final ILogger logger;
+    private boolean isTimeoutSet;
 
     private int transactionTimeoutSeconds;
 
@@ -178,7 +179,10 @@ public class XAResourceImpl implements XAResource {
 
     @Override
     public synchronized boolean setTransactionTimeout(int seconds) throws XAException {
-        this.transactionTimeoutSeconds = seconds;
+        if (transactionContext.setTransactionTimeout(seconds)) {
+            this.transactionTimeoutSeconds = seconds;
+            return true;
+        }
         return false;
     }
 

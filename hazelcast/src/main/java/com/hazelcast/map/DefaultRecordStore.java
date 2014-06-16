@@ -462,6 +462,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
 
+    // TODO Does it need to load from store on backup?
     public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
@@ -474,13 +475,13 @@ public class DefaultRecordStore implements RecordStore {
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
-    private Record getRecordInternal(Data dataKey, boolean enableIndex) {
+    private Record getRecordInternal(Data key, boolean enableIndex) {
         Record record = null;
         if (mapContainer.getStore() != null) {
-            final Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
+            final Object value = loadFromStoreOrStagingArea(key);
             if (value != null) {
-                record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL, getNow());
-                records.put(dataKey, record);
+                record = mapService.createRecord(name, key, value, DEFAULT_TTL, getNow());
+                records.put(key, record);
                 if (enableIndex) {
                     saveIndex(record);
                 }
@@ -575,6 +576,7 @@ public class DefaultRecordStore implements RecordStore {
             deleteRecord(key);
             removeIndex(key);
         }
+        removeFromWriteBehindWaitingDeletions(key);
         return value;
     }
 
@@ -673,7 +675,7 @@ public class DefaultRecordStore implements RecordStore {
         boolean removed = false;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = getFromStoreOrEvictionStagingArea(key);
+                oldValue = loadFromStoreOrStagingArea(key);
             }
             if (oldValue == null) {
                 return false;
@@ -703,7 +705,7 @@ public class DefaultRecordStore implements RecordStore {
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = getFromStoreOrEvictionStagingArea(key);
+                oldValue = loadFromStoreOrStagingArea(key);
                 if (oldValue != null) {
                     removeIndex(key);
                     mapStoreDelete(null, key, now);
@@ -726,17 +728,14 @@ public class DefaultRecordStore implements RecordStore {
     @Override
     public Object get(Data key) {
         checkIfLoaded();
-        if (hasWaitingWriteBehindDeleteOperation(key)) {
-            // not reachable record.
-            return null;
-        }
+
         long now = getNow();
         Record record = records.get(key);
         record = nullIfExpired(record);
         Object value = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                value = getFromStoreOrEvictionStagingArea(key);
+                value = loadFromStoreOrStagingArea(key);
                 if (value != null) {
                     record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
                     records.put(key, record);
@@ -753,7 +752,10 @@ public class DefaultRecordStore implements RecordStore {
         return value;
     }
 
-    public Object getFromStoreOrEvictionStagingArea(Data key) {
+    public Object loadFromStoreOrStagingArea(Data key) {
+        if (hasWaitingWriteBehindDeleteOperation(key)) {
+            return null;
+        }
         final Object fromStagingArea = getFromEvictionStagingArea(key);
         return fromStagingArea == null ? mapContainer.getStore().load(mapService.toObject(key)) :
                 fromStagingArea;
@@ -770,9 +772,6 @@ public class DefaultRecordStore implements RecordStore {
         }
         for (Data dataKey : keySet) {
             Record record = records.get(dataKey);
-            if (hasWaitingWriteBehindDeleteOperation(dataKey)) {
-                continue;
-            }
             if (record == null) {
                 if (mapContainer.getStore() != null) {
                     keyMapForLoader.put(mapService.toObject(dataKey), dataKey);
@@ -822,15 +821,11 @@ public class DefaultRecordStore implements RecordStore {
 
         final long now = getNow();
         Record record = records.get(key);
-        if (hasWaitingWriteBehindDeleteOperation(key)) {
-            // not reachable record.
-            return false;
-        }
         record = nullIfExpired(record);
 
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                Object value = getFromStoreOrEvictionStagingArea(key);
+                Object value = loadFromStoreOrStagingArea(key);
                 if (value != null) {
                     record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
                     records.put(key, record);
@@ -887,7 +882,7 @@ public class DefaultRecordStore implements RecordStore {
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(key));
+                oldValue = loadFromStoreOrStagingArea(key);
             }
             value = mapService.interceptPut(name, null, value);
             value = mapStoreWrite(key, value, null, now);
@@ -1120,7 +1115,7 @@ public class DefaultRecordStore implements RecordStore {
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(key));
+                oldValue = loadFromStoreOrStagingArea(key);
                 if (oldValue != null) {
                     record = mapService.createRecord(name, key, oldValue, DEFAULT_TTL, now);
                     records.put(key, record);
