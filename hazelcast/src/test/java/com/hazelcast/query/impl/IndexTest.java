@@ -68,7 +68,7 @@ public class IndexTest {
         is.saveEntryIndex(new QueryEntry(ss, key, key, value));
         assertNotNull(is.getIndex("favoriteCity"));
         is.removeEntryIndex(key);
-        assertNull(is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul));
+        assertEquals(0,is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
     }
 
     @Test
