@@ -1545,11 +1545,25 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int maxSize = node.getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
         IMap map = instance.getMap("default");
         for (int i = 0; i < maxSize + 1; i++) {
-            map.put(i,i);
+            map.put(i, i);
         }
     }
 
-        public static class RecordingMapStore implements MapStore<String, String> {
+    @Test
+    public void testDelete_thenPutIfAbsent_withWriteBehindEnabled() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        Config config = newConfig(testMapStore, 100);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        IMap map = instance.getMap("default");
+        map.put(1, 1);
+        map.delete(1);
+        final Object putIfAbsent = map.putIfAbsent(1, 2);
+
+        assertNull(putIfAbsent);
+    }
+
+    public static class RecordingMapStore implements MapStore<String, String> {
 
         private static final boolean DEBUG = false;
 
