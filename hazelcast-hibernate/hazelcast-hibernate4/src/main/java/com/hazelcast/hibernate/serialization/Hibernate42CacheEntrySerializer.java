@@ -65,7 +65,7 @@ class Hibernate42CacheEntrySerializer
             throws IOException {
 
         try {
-            if (in.readBoolean()) { // CacheEntry.isReferenceEntry()
+            if (in.readBoolean()) {
                 return readReference(in);
             }
             return readDisassembled(in);
@@ -155,7 +155,7 @@ class Hibernate42CacheEntrySerializer
      *
      * @since 3.3
      */
-    private static class CacheEntryWrapper implements Serializable {
+    private static final class CacheEntryWrapper implements Serializable {
 
         private final CacheEntry entry;
 
