@@ -104,7 +104,6 @@ src/Config.md
 		src/IPv6.md
 		src/PartitionGroupConfig.md
 	src/ListenerConfig.md
-	src/WildcardConfiguration.md
 	src/ConfigurationProperties.md
 	src/Logging.md
 	src/EnterpriseConfig.md
