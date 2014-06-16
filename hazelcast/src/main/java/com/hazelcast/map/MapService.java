@@ -29,6 +29,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.client.ClientEntryListener;
 import com.hazelcast.map.eviction.ExpirationManager;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
@@ -110,7 +111,7 @@ import java.util.logging.Level;
  * The SPI Service for the Map.
  */
 public class MapService implements ManagedService, MigrationAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
+        TransactionalService, RemoteService, EventPublishingService<EventData, Object>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
     /**
      * Service name.
@@ -775,7 +776,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             dataValue = dataValue != null ? dataValue : dataOldValue;
         }
         EventData event = new EventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType.getType());
-        int orderKey = dataKey.hashCode();
+        int orderKey = dataKey == null ? -1 : dataKey.hashCode();
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event, orderKey);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues(), orderKey);
     }
@@ -790,7 +791,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return registration.getId();
     }
 
-    public String addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
+    public String addEventListener(Object entryListener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, eventFilter, entryListener);
         return registration.getId();
     }
@@ -870,8 +871,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return mapContainer.getRecordFactory().isEquals(value1, value2);
     }
 
-    @SuppressWarnings("unchecked")
-    public void dispatchEvent(EventData eventData, EntryListener listener) {
+    public void dispatchEvent(EventData eventData, Object listener) {
         Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getMapName(),
                 eventData.getDataKey(), eventData.getDataNewValue(), eventData.getDataOldValue(), getSerializationService());
@@ -881,6 +881,21 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
             return;
         }
+
+        if (listener instanceof ClientEntryListener) {
+            dispatchClientEvent(event, (ClientEntryListener) listener);
+        } else if (listener instanceof EntryListener) {
+            dispatchEvent(event, (EntryListener) listener);
+        }
+
+        MapContainer mapContainer = getMapContainer(eventData.getMapName());
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            getLocalMapStatsImpl(eventData.getMapName()).incrementReceivedEvents();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <K, V> void dispatchEvent(EntryEvent<K, V> event, EntryListener listener) {
         switch (event.getEventType()) {
             case ADDED:
                 listener.entryAdded(event);
@@ -894,13 +909,16 @@ public class MapService implements ManagedService, MigrationAwareService,
             case REMOVED:
                 listener.entryRemoved(event);
                 break;
+            case CLEARED:
+                //No op
+                break;
             default:
                 throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
         }
-        MapContainer mapContainer = getMapContainer(eventData.getMapName());
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            getLocalMapStatsImpl(eventData.getMapName()).incrementReceivedEvents();
-        }
+    }
+
+    private <K, V> void dispatchClientEvent(EntryEvent<K, V> event, ClientEntryListener listener) {
+        listener.handleEvent(event);
     }
 
     public SerializationService getSerializationService() {

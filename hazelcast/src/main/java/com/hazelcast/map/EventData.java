@@ -80,7 +80,7 @@ public class EventData implements DataSerializable {
         out.writeUTF(source);
         out.writeUTF(mapName);
         out.writeObject(caller);
-        dataKey.writeData(out);
+        IOUtil.writeNullableData(out, dataKey);
         IOUtil.writeNullableData(out, dataNewValue);
         IOUtil.writeNullableData(out, dataOldValue);
         out.writeInt(eventType);
@@ -90,7 +90,7 @@ public class EventData implements DataSerializable {
         source = in.readUTF();
         mapName = in.readUTF();
         caller = in.readObject();
-        dataKey = IOUtil.readData(in);
+        dataKey = IOUtil.readNullableData(in);
         dataNewValue = IOUtil.readNullableData(in);
         dataOldValue = IOUtil.readNullableData(in);
         eventType = in.readInt();

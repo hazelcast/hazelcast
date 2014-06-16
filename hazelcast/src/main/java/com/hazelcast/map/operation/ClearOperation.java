@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -46,6 +47,11 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
             return;
         }
         recordStore.clear();
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        mapService.publishEvent(getCallerAddress(), name, EntryEventType.CLEARED, null, null, null);
     }
 
     public boolean shouldBackup() {

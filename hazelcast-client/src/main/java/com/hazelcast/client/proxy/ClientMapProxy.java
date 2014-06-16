@@ -895,6 +895,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public void clear() {
         MapClearRequest request = new MapClearRequest(name);
+        invalidateNearCache();
         invoke(request);
     }
 
@@ -944,6 +945,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                     case EVICTED:
                         listener.entryEvicted(entryEvent);
                         break;
+                    case CLEARED:
+                        // No operation
+                        break;
                     default:
                         throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                 }
@@ -959,6 +963,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     private void invalidateNearCache(Data key) {
         if (nearCache != null) {
             nearCache.invalidate(key);
+        }
+    }
+
+    private void invalidateNearCache() {
+        if (nearCache != null) {
+            nearCache.invalidate();
         }
     }
 

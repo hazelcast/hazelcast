@@ -81,7 +81,7 @@ public class PortableEntryEvent implements Portable {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
         IOUtil.writeNullableData(out, oldValue);
     }
@@ -91,8 +91,7 @@ public class PortableEntryEvent implements Portable {
         eventType = EntryEventType.getByType(reader.readInt("e"));
         uuid = reader.readUTF("u");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
         oldValue = IOUtil.readNullableData(in);
     }

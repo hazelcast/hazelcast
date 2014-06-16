@@ -66,9 +66,9 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         final ClientEngine clientEngine = getClientEngine();
         final MapService mapService = getService();
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        ClientEntryListener<Object, Object> listener = new ClientEntryListener<Object, Object>() {
 
-            private void handleEvent(EntryEvent<Object, Object> event) {
+            public void handleEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.live()) {
                     Data key = clientEngine.toData(event.getKey());
                     Data value = clientEngine.toData(event.getValue());
@@ -78,21 +78,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                 }
             }
 
-            public void entryAdded(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
 
-            public void entryRemoved(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
-
-            public void entryUpdated(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
-
-            public void entryEvicted(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
         };
 
         EventFilter eventFilter;
