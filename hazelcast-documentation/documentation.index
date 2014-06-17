@@ -70,6 +70,7 @@ src/Clients.md
 	src/RESTClient.md
 	src/MemcacheClient.md
 src/Serialization.md
+	src/Serializable.md
 	src/DataSerialization.md
 	src/PortableSerialization.md
 	src/CustomSerialization.md
@@ -104,8 +105,8 @@ src/Config.md
 		src/IPv6.md
 		src/PartitionGroupConfig.md
 	src/ListenerConfig.md
-	src/ConfigurationProperties.md
 	src/Logging.md
+	src/ConfigurationProperties.md
 	src/EnterpriseConfig.md
 #	src/XMLWrapUp.md
 src/FAQ.md
