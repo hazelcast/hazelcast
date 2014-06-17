@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Callback;
 
 import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.processor.EntryProcessor;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -34,7 +35,6 @@ public interface ICacheRecordStore {
     Object get(Data key, ExpiryPolicy expiryPolicy);
 
     void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
-
 
     Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
 
@@ -48,7 +48,6 @@ public interface ICacheRecordStore {
 
     boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
 
-
     boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy, String caller);
 
     Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
@@ -59,19 +58,13 @@ public interface ICacheRecordStore {
 
     int size();
 
-    void clear();
+    void clear(Set<Data> keys, boolean isRemoveAll);
 
     void destroy();
 
-    boolean hasExpiringEntry();
-
-    void onClear();
-
-    void onEntryInvalidated(Data key, String source);
-
-    void onDestroy();
-
-    Callback<Data> createEvictionCallback();
+//    boolean hasExpiringEntry();
+//
+//    Callback<Data> createEvictionCallback();
 
     CacheConfig getConfig();
 
@@ -82,4 +75,9 @@ public interface ICacheRecordStore {
     void own(Data key, Object value, RecordStatistics recordStatistics);
 
     CacheKeyIteratorResult iterator(int segmentIndex, int tableIndex, int size);
+
+    Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments);
+
+    void setRecordStoreMode(boolean storeOrBackup);
+
 }

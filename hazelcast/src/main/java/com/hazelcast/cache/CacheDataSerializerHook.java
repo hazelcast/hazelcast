@@ -19,6 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.operation.CacheClearOperation;
 import com.hazelcast.cache.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.operation.CacheContainsKeyOperation;
+import com.hazelcast.cache.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.operation.CacheGetAllOperation;
 import com.hazelcast.cache.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.operation.CacheGetAndRemoveOperation;
@@ -66,6 +67,8 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
     public static final short EVENT = 19;
     public static final short KEY_ITERATOR = 20;
     public static final short KEY_ITERATION_RESULT = 21;
+    public static final short ENTRY_PROCESSOR = 22;
+    public static final short CLEAR_RESPONSE = 23;
 
 
     public int getFactoryId() {
@@ -119,6 +122,10 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
                         return new CacheKeyIteratorOperation();
                     case KEY_ITERATION_RESULT:
                         return new CacheKeyIteratorResult();
+                    case ENTRY_PROCESSOR:
+                        return new CacheEntryProcessorOperation();
+                    case CLEAR_RESPONSE:
+                        return new CacheClearResponse();
                 }
                 throw new IllegalArgumentException("Unknown type-id: " + typeId);
             }

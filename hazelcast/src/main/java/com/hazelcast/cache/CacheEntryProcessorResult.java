@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.operation;
+package com.hazelcast.cache;
 
-import com.hazelcast.cache.CacheDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ReadonlyOperation;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.EntryProcessorResult;
 
-/**
- * @author mdogan 05/02/14
- */
-public class CacheContainsKeyOperation extends AbstractCacheOperation implements ReadonlyOperation {
+public class CacheEntryProcessorResult<T> implements EntryProcessorResult<T> {
 
-    public CacheContainsKeyOperation() {
+
+    private T result;
+    private Throwable exception;
+
+    public CacheEntryProcessorResult(T result) {
+        this.result = result;
     }
 
-    public CacheContainsKeyOperation(String name, Data key) {
-        super(name, key);
-    }
-
-    @Override
-    public void run() throws Exception {
-        response = cache != null && cache.contains(key);
+    public CacheEntryProcessorResult(Throwable exception) {
+        this.exception = exception;
     }
 
     @Override
-    public int getId() {
-        return CacheDataSerializerHook.CONTAINS_KEY;
+    public T get() throws EntryProcessorException {
+        if(result != null){
+            return result;
+        }
+        throw new EntryProcessorException(exception);
     }
+
+
 }

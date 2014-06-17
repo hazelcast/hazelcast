@@ -16,28 +16,58 @@
 
 package com.hazelcast.cache.operation;
 
+import com.hazelcast.cache.CacheClearResponse;
 import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.NormalResponse;
+
+import javax.cache.CacheException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author mdogan 06/02/14
  */
-public class CacheClearOperation extends PartitionWideCacheOperation {
+public class CacheClearOperation extends PartitionWideCacheOperation implements BackupAwareOperation {
+
+    private boolean isRemoveAll;
+    private Set<Data> keys;
 
     public CacheClearOperation() {
     }
 
-    public CacheClearOperation(String name) {
+    public CacheClearOperation(String name, Set<Data> keys, boolean isRemoveAll) {
         super(name);
+        this.keys = keys;
+        this.isRemoveAll = isRemoveAll;
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         CacheService service = getService();
+        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+
         ICacheRecordStore cache = service.getCache(name, getPartitionId());
         if (cache != null) {
-            cache.clear();
+            Set<Data> filteredKeys = null;
+            if (keys != null) {
+                filteredKeys = new HashSet<Data>();
+                for (Data k : keys) {
+                    if (partitionService.getPartitionId(k) == getPartitionId()) {
+                        filteredKeys.add(k);
+                    }
+                }
+            }
+            try {
+                cache.clear(filteredKeys, isRemoveAll);
+            } catch (CacheException e) {
+                response = new CacheClearResponse(e);
+            }
         }
     }
 
@@ -45,4 +75,25 @@ public class CacheClearOperation extends PartitionWideCacheOperation {
     public int getId() {
         return CacheDataSerializerHook.CLEAR;
     }
+
+    @Override
+    public boolean shouldBackup() {
+        return false;
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return 0;
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return 0;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return null;
+    }
+
 }

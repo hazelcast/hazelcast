@@ -18,7 +18,7 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
+class DataRecordWithStats extends AbstractRecordWithStats<Data> {
 
     protected Data value;
 

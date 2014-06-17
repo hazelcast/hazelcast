@@ -53,8 +53,17 @@ abstract class AbstractCacheOperation extends AbstractNamedOperation
         CacheService service = getService();
         if (this instanceof BackupAwareOperation) {
             cache = service.getOrCreateCache(name, getPartitionId());
+            cache.setRecordStoreMode(false);
         } else {
             cache = service.getCache(name, getPartitionId());
+            cache.setRecordStoreMode(true);
+        }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (this instanceof BackupAwareOperation) {
+            cache.setRecordStoreMode(true);//shutdown backup mode
         }
     }
 
