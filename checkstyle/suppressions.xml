@@ -688,7 +688,7 @@
     <suppress checks="InnerAssignment" files="com.hazelcast.hibernate.instance.HazelcastClientLoader"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.HazelcastTimestamper"/>
     <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate3CacheEntrySerializer"/>
-    <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate4CacheEntrySerializer"/>
+    <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate41CacheEntrySerializer"/>
     <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate3CacheKeySerializer"/>
     <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate4CacheKeySerializer"/>
     <suppress checks="ReturnCount" files="com.hazelcast.hibernate.distributed.IMapRegionCache"/>

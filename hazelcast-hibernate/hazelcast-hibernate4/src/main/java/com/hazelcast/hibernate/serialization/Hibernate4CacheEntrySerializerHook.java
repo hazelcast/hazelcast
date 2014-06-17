@@ -51,10 +51,15 @@ public class Hibernate4CacheEntrySerializerHook
 
     @Override
     public Serializer createSerializer() {
-        if (cacheEntryClass != null) {
-            return new Hibernate4CacheEntrySerializer();
+        if (cacheEntryClass == null) {
+            return null;
         }
-        return null;
+        if (cacheEntryClass.isInterface()) {
+            //Hibernate 4.2 and later have a CacheEntry interface, not a class
+            return new Hibernate42CacheEntrySerializer();
+        }
+        //Hibernate 4.1 and earlier have a CacheEntry class
+        return new Hibernate41CacheEntrySerializer();
     }
 
     @Override

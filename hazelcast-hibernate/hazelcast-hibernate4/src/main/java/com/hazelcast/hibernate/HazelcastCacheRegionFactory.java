@@ -22,7 +22,7 @@ import com.hazelcast.hibernate.region.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.region.HazelcastEntityRegion;
 import com.hazelcast.hibernate.region.HazelcastTimestampsRegion;
 import org.hibernate.cache.CacheException;
-import org.hibernate.cache.RegionFactory;
+import org.hibernate.cache.spi.RegionFactory;
 import org.hibernate.cache.spi.CacheDataDescription;
 import org.hibernate.cache.spi.CollectionRegion;
 import org.hibernate.cache.spi.EntityRegion;
