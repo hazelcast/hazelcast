@@ -2,9 +2,8 @@
 
 
 
-## Data Serialization
+## DataSerializable
 
-For a faster serialization of objects, Hazelcast recommends to implement `com.hazelcast.nio.serialization.IdentifiedDataSerializable` which is slightly better version of `com.hazelcast.nio.serialization.DataSerializable`.
 
 Here is an example of a class implementing `com.hazelcast.nio.serialization.DataSerializable` interface.
 
@@ -70,9 +69,11 @@ public class Employee implements com.hazelcast.nio.serialization.DataSerializabl
 }
 ```
 
-As you can see, since `address` field itself is `DataSerializable`, it is calling `address.writeData(out)` when writing and `address.readData(in)` when reading. Also note that, the order of writing and reading fields should be the same. While Hazelcast serializes a DataSerializable, it writes the `className` first and when de-serializes it, `className` is used to instantiate the object using reflection. 
+As you can see, since `address` field itself is `DataSerializable`, it is calling `address.writeData(out)` when writing and `address.readData(in)` when reading. Also note that, the order of writing and reading fields should be the same. While Hazelcast serializes a DataSerializable, it writes the `className` first and when de-serializes it, `className` is used to instantiate the object using reflection.
 
 ### IdentifiedDataSerializable
+
+For a faster serialization of objects, Hazelcast recommends to implement `com.hazelcast.nio.serialization.IdentifiedDataSerializable` which is slightly better version of `DataSerializable`.
 
 To avoid the reflection and long class names, `IdentifiedDataSerializable` can be used instead of `DataSerializable`. Note that, `IdentifiedDataSerializable` extends `DataSerializable` and introduces two new methods.
 
