@@ -46,14 +46,14 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
             final Object valueBeforeProcess = mapService.toObject(mapEntry.getValue());
             entry = new MapEntrySimple(objectKey, valueBeforeProcess);
             backupProcessor.processBackup(entry);
-            if (entry.getValue() == null) {
+            if(!entry.isModified())
+                continue;
+            if (entry.getValue() == null ) {
                 recordStore.remove(key);
-            } else {
+            } else{
                 recordStore.putBackup(key, entry.getValue());
             }
-
         }
-
     }
 
     @Override
