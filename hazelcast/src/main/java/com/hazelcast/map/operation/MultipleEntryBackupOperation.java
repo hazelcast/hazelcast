@@ -9,6 +9,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,14 +47,14 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
             final Object valueBeforeProcess = mapService.toObject(mapEntry.getValue());
             entry = new MapEntrySimple(objectKey, valueBeforeProcess);
             backupProcessor.processBackup(entry);
+            if (!entry.isModified())
+                continue;
             if (entry.getValue() == null) {
-                recordStore.removeBackup(key);
+                recordStore.remove(key);
             } else {
                 recordStore.putBackup(key, entry.getValue());
             }
-
         }
-
     }
 
     @Override
