@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class SumAggregationTest
+public class MapSumAggregationTest
         extends AbstractAggregationTest {
 
     @Test
