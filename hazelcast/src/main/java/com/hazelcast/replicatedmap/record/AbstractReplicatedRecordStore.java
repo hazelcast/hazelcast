@@ -66,13 +66,12 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             if (current == null) {
                 oldValue = null;
             } else {
-                vectorClock = current.getVectorClock();
                 oldValue = (V) current.getValue();
 
                 // Force removal of the underlying stored entry
                 storage.remove(marshalledKey, current);
 
-                vectorClock.incrementClock(localMember);
+                vectorClock = current.incrementVectorClock(localMember);
                 ReplicationMessage message = buildReplicationMessage(key, null, vectorClock, -1);
                 replicationPublisher.publishReplicatedMessage(message);
             }
@@ -130,14 +129,12 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         synchronized (getMutex(marshalledKey)) {
             final long ttlMillis = ttl == 0 ? 0 : timeUnit.toMillis(ttl);
             final ReplicatedRecord old = storage.get(marshalledKey);
-            final VectorClock vectorClock;
+            ReplicatedRecord<K, V> record = old;
             if (old == null) {
-                vectorClock = new VectorClock();
-                ReplicatedRecord<K, V> record = buildReplicatedRecord(marshalledKey, marshalledValue, vectorClock, ttlMillis);
+                record = buildReplicatedRecord(marshalledKey, marshalledValue, new VectorClock(), ttlMillis);
                 storage.put(marshalledKey, record);
             } else {
                 oldValue = (V) old.getValue();
-                vectorClock = old.getVectorClock();
                 storage.get(marshalledKey).setValue(marshalledValue, localMemberHash, ttlMillis);
             }
             if (ttlMillis > 0) {
@@ -146,7 +143,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 cancelTtlEntry(marshalledKey);
             }
 
-            vectorClock.incrementClock(localMember);
+            VectorClock vectorClock = record.incrementVectorClock(localMember);
             ReplicationMessage message = buildReplicationMessage(key, value, vectorClock, ttlMillis);
             replicationPublisher.publishReplicatedMessage(message);
         }

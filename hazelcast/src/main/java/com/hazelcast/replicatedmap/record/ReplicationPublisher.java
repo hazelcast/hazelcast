@@ -143,6 +143,10 @@ public class ReplicationPublisher<K, V>
     }
 
     public void queueUpdateMessage(final ReplicationMessage update) {
+        Member origin = update.getOrigin();
+        if (localMember.equals(origin)) {
+            return;
+        }
         executorService.execute(new Runnable() {
             @Override
             public void run() {
@@ -335,15 +339,13 @@ public class ReplicationPublisher<K, V>
                     if (localEntry.getLatestUpdateHash() >= update.getUpdateHash()) {
                         applyTheUpdate(update, localEntry);
                     } else {
-                        currentVectorClock.applyVector(updateVectorClock);
-                        currentVectorClock.incrementClock(localMember);
+                        VectorClock newVectorClock = localEntry.applyAndIncrementVectorClock(updateVectorClock, localMember);
 
                         Object key = update.getKey();
                         V value = localEntry.getValue();
                         long ttlMillis = update.getTtlMillis();
                         int latestUpdateHash = localEntry.getLatestUpdateHash();
-                        ReplicationMessage message = new ReplicationMessage(name, key, value, currentVectorClock, localMember,
-                                latestUpdateHash, ttlMillis);
+                        ReplicationMessage message = new ReplicationMessage(name, key, value, newVectorClock, localMember, latestUpdateHash, ttlMillis);
 
                         distributeReplicationMessage(message, true);
                     }
@@ -353,7 +355,6 @@ public class ReplicationPublisher<K, V>
     }
 
     private void applyTheUpdate(ReplicationMessage<K, V> update, ReplicatedRecord<K, V> localEntry) {
-        VectorClock localVectorClock = localEntry.getVectorClock();
         VectorClock remoteVectorClock = update.getVectorClock();
         K marshalledKey = (K) replicatedRecordStore.marshallKey(update.getKey());
         V marshalledValue = (V) replicatedRecordStore.marshallValue(update.getValue());
@@ -366,7 +367,7 @@ public class ReplicationPublisher<K, V>
             storage.remove(marshalledKey, localEntry);
         }
 
-        localVectorClock.applyVector(remoteVectorClock);
+        localEntry.applyVectorClock(remoteVectorClock);
         if (ttlMillis > 0) {
             replicatedRecordStore.scheduleTtlEntry(ttlMillis, marshalledKey, null);
         } else {
