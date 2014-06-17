@@ -945,7 +945,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         List<QueryEntry> list = new LinkedList<QueryEntry>();
         PartitionContainer container = getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(mapName);
-        Map<Data, Record> records = recordStore.getReadonlyRecordMap();
+        Map<Data, Record> records = recordStore.getReadonlyRecordMapByWaitingMapStoreLoad();
         SerializationService serializationService = nodeEngine.getSerializationService();
         final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
