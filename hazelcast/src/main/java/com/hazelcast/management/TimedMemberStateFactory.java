@@ -15,6 +15,8 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -52,6 +54,7 @@ import java.util.Set;
 public class TimedMemberStateFactory {
 
     private static final int PERCENT_MULTIPLIER = 100;
+    private static final ILogger LOGGER = Logger.getLogger(TimedMemberStateFactory.class);
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
 
@@ -232,6 +235,8 @@ public class TimedMemberStateFactory {
                 count = handleMultimap(memberState, count, config, (MultiMap) distributedObject);
             } else if (distributedObject instanceof IExecutorService) {
                 count = handleExecutorService(memberState, count, config, (IExecutorService) distributedObject);
+            } else {
+                LOGGER.finest("Distributed object ignored for monitoring: " + distributedObject.getName());
             }
         }
 
@@ -304,6 +309,8 @@ public class TimedMemberStateFactory {
                     count = collectTopicName(setLongInstanceNames, count, config, (ITopic) distributedObject);
                 } else if (distributedObject instanceof IExecutorService) {
                     count = collectExecutorServiceName(setLongInstanceNames, count, config, (IExecutorService) distributedObject);
+                } else {
+                    LOGGER.finest("Distributed object ignored for monitoring: " + distributedObject.getName());
                 }
             }
         }
