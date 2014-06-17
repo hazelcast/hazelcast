@@ -35,20 +35,20 @@ import java.util.Set;
  * A vector clock implementation based on hashcodes of the Hazelcast members UUID to solve conflicts on
  * replication updates
  */
-public final class VectorClock
+public final class VectorClockTimestamp
         implements IdentifiedDataSerializable {
 
     private Map<Member, Integer> clocks;
 
-    public VectorClock() {
+    public VectorClockTimestamp() {
         this.clocks = Collections.emptyMap();
     }
 
-    private VectorClock(Map<Member, Integer> clocks) {
+    private VectorClockTimestamp(Map<Member, Integer> clocks) {
         this.clocks = Collections.unmodifiableMap(clocks);
     }
 
-    VectorClock incrementClock0(Member localMember) {
+    VectorClockTimestamp incrementClock0(Member localMember) {
         Map<Member, Integer> copy = new HashMap<Member, Integer>(clocks);
         Integer clock = copy.get(localMember);
         if (clock == null) {
@@ -56,10 +56,10 @@ public final class VectorClock
         }
 
         copy.put(localMember, ++clock);
-        return new VectorClock(copy);
+        return new VectorClockTimestamp(copy);
     }
 
-    VectorClock applyVector0(VectorClock update) {
+    VectorClockTimestamp applyVector0(VectorClockTimestamp update) {
         Map<Member, Integer> copy = new HashMap<Member, Integer>(clocks);
         for (Member m : update.clocks.keySet()) {
             final Integer currentClock = copy.get(m);
@@ -68,7 +68,7 @@ public final class VectorClock
                 copy.put(m, updateClock);
             }
         }
-        return new VectorClock(copy);
+        return new VectorClockTimestamp(copy);
     }
 
     @Override
@@ -119,17 +119,17 @@ public final class VectorClock
         return i1 < i2;
     }
 
-    static VectorClock copyVector(VectorClock vectorClock) {
+    static VectorClockTimestamp copyVector(VectorClockTimestamp vectorClockTimestamp) {
         Map<Member, Integer> clocks = new HashMap<Member, Integer>();
-        for (Entry<Member, Integer> entry : vectorClock.clocks.entrySet()) {
+        for (Entry<Member, Integer> entry : vectorClockTimestamp.clocks.entrySet()) {
             MemberImpl member = new MemberImpl((MemberImpl) entry.getKey());
             Integer value = entry.getValue();
             clocks.put(member, value);
         }
-        return new VectorClock(clocks);
+        return new VectorClockTimestamp(clocks);
     }
 
-    static boolean happenedBefore(VectorClock x, VectorClock y) {
+    static boolean happenedBefore(VectorClockTimestamp x, VectorClockTimestamp y) {
         Set<Member> members = new HashSet<Member>(x.clocks.keySet());
         members.addAll(y.clocks.keySet());
 

@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.record.VectorClock;
+import com.hazelcast.replicatedmap.record.VectorClockTimestamp;
 import com.hazelcast.util.ConstructorFunction;
 
 /**
@@ -60,7 +60,7 @@ public class ReplicatedMapDataSerializerHook
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
         constructors[VECTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new VectorClock();
+                return new VectorClockTimestamp();
             }
         };
         constructors[RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -75,7 +75,7 @@ public class ReplicatedMapDataSerializerHook
         };
         constructors[REPL_CLEAR_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new VectorClock();
+                return new VectorClockTimestamp();
             }
         };
         constructors[REPL_MULTI_UPDATE_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

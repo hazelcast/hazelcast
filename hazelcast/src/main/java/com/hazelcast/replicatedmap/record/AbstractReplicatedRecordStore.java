@@ -62,7 +62,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         K marshalledKey = (K) marshallKey(key);
         synchronized (getMutex(marshalledKey)) {
             final ReplicatedRecord current = storage.get(marshalledKey);
-            final VectorClock vectorClock;
+            final VectorClockTimestamp vectorClockTimestamp;
             if (current == null) {
                 oldValue = null;
             } else {
@@ -71,8 +71,8 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 // Force removal of the underlying stored entry
                 storage.remove(marshalledKey, current);
 
-                vectorClock = current.incrementVectorClock(localMember);
-                ReplicationMessage message = buildReplicationMessage(key, null, vectorClock, -1);
+                vectorClockTimestamp = current.incrementVectorClock(localMember);
+                ReplicationMessage message = buildReplicationMessage(key, null, vectorClockTimestamp, -1);
                 replicationPublisher.publishReplicatedMessage(message);
             }
             cancelTtlEntry(marshalledKey);
@@ -131,7 +131,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             final ReplicatedRecord old = storage.get(marshalledKey);
             ReplicatedRecord<K, V> record = old;
             if (old == null) {
-                record = buildReplicatedRecord(marshalledKey, marshalledValue, new VectorClock(), ttlMillis);
+                record = buildReplicatedRecord(marshalledKey, marshalledValue, new VectorClockTimestamp(), ttlMillis);
                 storage.put(marshalledKey, record);
             } else {
                 oldValue = (V) old.getValue();
@@ -143,8 +143,8 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 cancelTtlEntry(marshalledKey);
             }
 
-            VectorClock vectorClock = record.incrementVectorClock(localMember);
-            ReplicationMessage message = buildReplicationMessage(key, value, vectorClock, ttlMillis);
+            VectorClockTimestamp vectorClockTimestamp = record.incrementVectorClock(localMember);
+            ReplicationMessage message = buildReplicationMessage(key, value, vectorClockTimestamp, ttlMillis);
             replicationPublisher.publishReplicatedMessage(message);
         }
         Object unmarshalledOldValue = unmarshallValue(oldValue);
@@ -274,11 +274,11 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         return replicatedMapService.removeEventListener(getName(), id);
     }
 
-    private ReplicationMessage buildReplicationMessage(Object key, Object value, VectorClock vectorClock, long ttlMillis) {
-        return new ReplicationMessage(getName(), key, value, vectorClock, localMember, localMemberHash, ttlMillis);
+    private ReplicationMessage buildReplicationMessage(Object key, Object value, VectorClockTimestamp timestamp, long ttlMillis) {
+        return new ReplicationMessage(getName(), key, value, timestamp, localMember, localMemberHash, ttlMillis);
     }
 
-    private ReplicatedRecord buildReplicatedRecord(Object key, Object value, VectorClock vectorClock, long ttlMillis) {
-        return new ReplicatedRecord(key, value, vectorClock, localMemberHash, ttlMillis);
+    private ReplicatedRecord buildReplicatedRecord(Object key, Object value, VectorClockTimestamp timestamp, long ttlMillis) {
+        return new ReplicatedRecord(key, value, timestamp, localMemberHash, ttlMillis);
     }
 }

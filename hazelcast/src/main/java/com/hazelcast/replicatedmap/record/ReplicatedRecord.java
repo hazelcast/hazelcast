@@ -39,8 +39,8 @@ public class ReplicatedRecord<K, V>
             .newUpdater(ReplicatedRecord.class, "hits");
     private static final AtomicLongFieldUpdater<ReplicatedRecord> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
             .newUpdater(ReplicatedRecord.class, "hits");
-    private static final AtomicReferenceFieldUpdater<ReplicatedRecord, VectorClock> VECTOR_CLOCK_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(ReplicatedRecord.class, VectorClock.class, "vectorClock");
+    private static final AtomicReferenceFieldUpdater<ReplicatedRecord, VectorClockTimestamp> VECTOR_CLOCK_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(ReplicatedRecord.class, VectorClockTimestamp.class, "vectorClockTimestamp");
 
     // These fields are only accessed through the updaters
     private volatile long hits;
@@ -48,7 +48,7 @@ public class ReplicatedRecord<K, V>
 
     private K key;
     private V value;
-    private volatile VectorClock vectorClock;
+    private volatile VectorClockTimestamp vectorClockTimestamp;
     private int latestUpdateHash;
     private long ttlMillis;
     private volatile long updateTime = System.currentTimeMillis();
@@ -56,10 +56,10 @@ public class ReplicatedRecord<K, V>
     public ReplicatedRecord() {
     }
 
-    public ReplicatedRecord(K key, V value, VectorClock vectorClock, int hash, long ttlMillis) {
+    public ReplicatedRecord(K key, V value, VectorClockTimestamp vectorClockTimestamp, int hash, long ttlMillis) {
         this.key = key;
         this.value = value;
-        this.vectorClock = vectorClock;
+        this.vectorClockTimestamp = vectorClockTimestamp;
         this.latestUpdateHash = hash;
         this.ttlMillis = ttlMillis;
     }
@@ -74,40 +74,40 @@ public class ReplicatedRecord<K, V>
         return value;
     }
 
-    public VectorClock getVectorClock() {
-        return vectorClock;
+    public VectorClockTimestamp getVectorClockTimestamp() {
+        return vectorClockTimestamp;
     }
 
-    public VectorClock applyAndIncrementVectorClock(VectorClock otherVectorClock, Member member) {
+    public VectorClockTimestamp applyAndIncrementVectorClock(VectorClockTimestamp otherVectorClockTimestamp, Member member) {
         for (;;) {
-            VectorClock vectorClock = this.vectorClock;
-            VectorClock vectorClockCopy = VectorClock.copyVector(vectorClock);
-            vectorClockCopy = vectorClockCopy.applyVector0(otherVectorClock);
-            vectorClockCopy = vectorClockCopy.incrementClock0(member);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClock, vectorClockCopy)) {
-                return vectorClockCopy;
+            VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
+            VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
+            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector0(otherVectorClockTimestamp);
+            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock0(member);
+            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
+                return vectorClockTimestampCopy;
             }
         }
     }
 
-    public VectorClock applyVectorClock(VectorClock otherVectorClock) {
+    public VectorClockTimestamp applyVectorClock(VectorClockTimestamp otherVectorClockTimestamp) {
         for (;;) {
-            VectorClock vectorClock = this.vectorClock;
-            VectorClock vectorClockCopy = VectorClock.copyVector(vectorClock);
-            vectorClockCopy = vectorClockCopy.applyVector0(otherVectorClock);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClock, vectorClockCopy)) {
-                return vectorClockCopy;
+            VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
+            VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
+            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector0(otherVectorClockTimestamp);
+            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
+                return vectorClockTimestampCopy;
             }
         }
     }
 
-    public VectorClock incrementVectorClock(Member member) {
+    public VectorClockTimestamp incrementVectorClock(Member member) {
         for (;;) {
-            VectorClock vectorClock = this.vectorClock;
-            VectorClock vectorClockCopy = VectorClock.copyVector(vectorClock);
-            vectorClockCopy = vectorClockCopy.incrementClock0(member);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClock, vectorClockCopy)) {
-                return vectorClockCopy;
+            VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
+            VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
+            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock0(member);
+            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
+                return vectorClockTimestampCopy;
             }
         }
     }
@@ -162,7 +162,7 @@ public class ReplicatedRecord<K, V>
             throws IOException {
         out.writeObject(key);
         out.writeObject(value);
-        vectorClock.writeData(out);
+        vectorClockTimestamp.writeData(out);
         out.writeInt(latestUpdateHash);
         out.writeLong(ttlMillis);
     }
@@ -172,8 +172,8 @@ public class ReplicatedRecord<K, V>
             throws IOException {
         key = in.readObject();
         value = in.readObject();
-        vectorClock = new VectorClock();
-        vectorClock.readData(in);
+        vectorClockTimestamp = new VectorClockTimestamp();
+        vectorClockTimestamp.readData(in);
         latestUpdateHash = in.readInt();
         ttlMillis = in.readLong();
     }
@@ -222,7 +222,7 @@ public class ReplicatedRecord<K, V>
         final StringBuilder sb = new StringBuilder("ReplicatedRecord{");
         sb.append("key=").append(key);
         sb.append(", value=").append(value);
-        sb.append(", vector=").append(vectorClock);
+        sb.append(", vector=").append(vectorClockTimestamp);
         sb.append(", latestUpdateHash=").append(latestUpdateHash);
         sb.append(", ttlMillis=").append(ttlMillis);
         sb.append('}');
