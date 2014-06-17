@@ -17,6 +17,8 @@
 package com.hazelcast.mapreduce.aggregation;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.mapreduce.KeyPredicate;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -25,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -32,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class BaseAggregationTest
+public class MapBaseAggregationTest
         extends AbstractAggregationTest {
 
     @Test
@@ -57,6 +60,56 @@ public class BaseAggregationTest
         Aggregation<String, Object, Long> aggregation = Aggregations.count();
         long count = map.aggregate(supplier, aggregation);
         assertEquals(values.length, count);
+    }
+
+    @Test
+    public void testKeyPredicateAggregation()
+            throws Exception {
+
+        String mapName = randomMapName();
+        IMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+
+        Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
+            @Override
+            public Integer provideRandom(Random random) {
+                return random(1000, 2000);
+            }
+        }, Integer.class);
+
+        for (int i = 0; i < values.length; i++) {
+            map.put(i, values[i]);
+        }
+
+        KeyPredicate<Integer> keyPredicate = new SelectorKeyPredicate(values.length / 2);
+        Supplier<Integer, Integer, Object> supplier = Supplier.fromKeyPredicate(keyPredicate);
+        Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
+        long count = map.aggregate(supplier, aggregation);
+        assertEquals(values.length / 2, count);
+    }
+
+    @Test
+    public void testPredicateAggregation()
+            throws Exception {
+
+        String mapName = randomMapName();
+        IMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+
+        Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
+            @Override
+            public Integer provideRandom(Random random) {
+                return random(1000, 2000);
+            }
+        }, Integer.class);
+
+        for (int i = 0; i < values.length; i++) {
+            map.put(i, values[i]);
+        }
+
+        Predicate<Integer, Integer> predicate = new SelectorPredicate(values.length / 2);
+        Supplier<Integer, Integer, Object> supplier = Supplier.fromPredicate(predicate);
+        Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
+        long count = map.aggregate(supplier, aggregation);
+        assertEquals(values.length / 2, count);
     }
 
     @Test
@@ -86,5 +139,40 @@ public class BaseAggregationTest
         Set<String> distinctValues = map.aggregate(supplier, aggregation);
         assertEquals(expectation, distinctValues);
 
+    }
+
+    public static class SelectorKeyPredicate implements KeyPredicate<Integer> {
+
+        private int maxKey;
+
+        public SelectorKeyPredicate() {
+        }
+
+        public SelectorKeyPredicate(int maxKey) {
+            this.maxKey = maxKey;
+        }
+
+        @Override
+        public boolean evaluate(Integer key) {
+            return key != null && key < maxKey;
+        }
+    }
+
+    public static class SelectorPredicate implements Predicate<Integer, Integer> {
+
+        private int maxKey;
+
+        public SelectorPredicate() {
+        }
+
+        public SelectorPredicate(int maxKey) {
+            this.maxKey = maxKey;
+        }
+
+        @Override
+        public boolean apply(Map.Entry<Integer, Integer> mapEntry) {
+            Integer key = mapEntry.getKey();
+            return key != null && key < maxKey;
+        }
     }
 }

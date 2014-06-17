@@ -31,11 +31,11 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class MinAggregationTest
+public class MapAvgAggregationTest
         extends AbstractAggregationTest {
 
     @Test
-    public void testBigDecimalMin()
+    public void testBigDecimalAvg()
             throws Exception {
 
         BigDecimal[] values = buildPlainValues(new ValueProvider<BigDecimal>() {
@@ -47,17 +47,17 @@ public class MinAggregationTest
 
         BigDecimal expectation = BigDecimal.ZERO;
         for (int i = 0; i < values.length; i++) {
-            BigDecimal value = values[i];
-            expectation = i == 0 ? value : expectation.min(value);
+            expectation = expectation.add(values[i]);
         }
+        expectation = expectation.divide(BigDecimal.valueOf(values.length));
 
-        Aggregation<String, BigDecimal, BigDecimal> aggregation = Aggregations.bigDecimalMin();
-        BigDecimal result = testMin(values, aggregation);
+        Aggregation<String, BigDecimal, BigDecimal> aggregation = Aggregations.bigDecimalAvg();
+        BigDecimal result = testAvg(values, aggregation);
         assertEquals(expectation, result);
     }
 
     @Test
-    public void testBigIntegerMin()
+    public void testBigIntegerAvg()
             throws Exception {
 
         BigInteger[] values = buildPlainValues(new ValueProvider<BigInteger>() {
@@ -69,17 +69,17 @@ public class MinAggregationTest
 
         BigInteger expectation = BigInteger.ZERO;
         for (int i = 0; i < values.length; i++) {
-            BigInteger value = values[i];
-            expectation = i == 0 ? value : expectation.min(value);
+            expectation = expectation.add(values[i]);
         }
+        expectation = expectation.divide(BigInteger.valueOf(values.length));
 
-        Aggregation<String, BigInteger, BigInteger> aggregation = Aggregations.bigIntegerMin();
-        BigInteger result = testMin(values, aggregation);
+        Aggregation<String, BigInteger, BigInteger> aggregation = Aggregations.bigIntegerAvg();
+        BigInteger result = testAvg(values, aggregation);
         assertEquals(expectation, result);
     }
 
     @Test
-    public void testDoubleMin()
+    public void testDoubleAvg()
             throws Exception {
 
         Double[] values = buildPlainValues(new ValueProvider<Double>() {
@@ -89,21 +89,19 @@ public class MinAggregationTest
             }
         }, Double.class);
 
-        double expectation = Double.MAX_VALUE;
+        double expectation = 0;
         for (int i = 0; i < values.length; i++) {
-            double value = values[i];
-            if (value < expectation) {
-                expectation = value;
-            }
+            expectation += values[i];
         }
+        expectation = expectation / values.length;
 
-        Aggregation<String, Double, Double> aggregation = Aggregations.doubleMin();
-        double result = testMin(values, aggregation);
+        Aggregation<String, Double, Double> aggregation = Aggregations.doubleAvg();
+        double result = testAvg(values, aggregation);
         assertEquals(expectation, result, 0.0);
     }
 
     @Test
-    public void testIntegerMin()
+    public void testIntegerAvg()
             throws Exception {
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
@@ -113,21 +111,19 @@ public class MinAggregationTest
             }
         }, Integer.class);
 
-        int expectation = Integer.MAX_VALUE;
+        int expectation = 0;
         for (int i = 0; i < values.length; i++) {
-            int value = values[i];
-            if (value < expectation) {
-                expectation = value;
-            }
+            expectation += values[i];
         }
+        expectation = (int) ((double) expectation / values.length);
 
-        Aggregation<String, Integer, Integer> aggregation = Aggregations.integerMin();
-        int result = testMin(values, aggregation);
+        Aggregation<String, Integer, Integer> aggregation = Aggregations.integerAvg();
+        int result = testAvg(values, aggregation);
         assertEquals(expectation, result);
     }
 
     @Test
-    public void testLongMin()
+    public void testLongAvg()
             throws Exception {
 
         Long[] values = buildPlainValues(new ValueProvider<Long>() {
@@ -137,21 +133,19 @@ public class MinAggregationTest
             }
         }, Long.class);
 
-        long expectation = Long.MAX_VALUE;
+        long expectation = 0;
         for (int i = 0; i < values.length; i++) {
-            long value = values[i];
-            if (value < expectation) {
-                expectation = value;
-            }
+            expectation += values[i];
         }
+        expectation = (long) ((double) expectation / values.length);
 
-        Aggregation<String, Long, Long> aggregation = Aggregations.longMin();
-        long result = testMin(values, aggregation);
+        Aggregation<String, Long, Long> aggregation = Aggregations.longAvg();
+        long result = testAvg(values, aggregation);
         assertEquals(expectation, result);
     }
 
     @Test
-    public void testBigDecimalMinWithExtractor()
+    public void testBigDecimalAvgWithExtractor()
             throws Exception {
 
         Value<BigDecimal>[] values = buildValues(new ValueProvider<BigDecimal>() {
@@ -163,17 +157,17 @@ public class MinAggregationTest
 
         BigDecimal expectation = BigDecimal.ZERO;
         for (int i = 0; i < values.length; i++) {
-            Value<BigDecimal> value = values[i];
-            expectation = i == 0 ? value.value : expectation.min(value.value);
+            expectation = expectation.add(values[i].value);
         }
+        expectation = expectation.divide(BigDecimal.valueOf(values.length));
 
-        Aggregation<String, BigDecimal, BigDecimal> aggregation = Aggregations.bigDecimalMin();
-        BigDecimal result = testMinWithExtractor(values, aggregation);
+        Aggregation<String, BigDecimal, BigDecimal> aggregation = Aggregations.bigDecimalAvg();
+        BigDecimal result = testAvgWithExtractor(values, aggregation);
         assertEquals(expectation, result);
     }
 
     @Test
-    public void testBigIntegerMinWithExtractor()
+    public void testBigIntegerAvgWithExtractor()
             throws Exception {
 
         Value<BigInteger>[] values = buildValues(new ValueProvider<BigInteger>() {
@@ -185,17 +179,17 @@ public class MinAggregationTest
 
         BigInteger expectation = BigInteger.ZERO;
         for (int i = 0; i < values.length; i++) {
-            Value<BigInteger> value = values[i];
-            expectation = i == 0 ? value.value : expectation.min(value.value);
+            expectation = expectation.add(values[i].value);
         }
+        expectation = expectation.divide(BigInteger.valueOf(values.length));
 
-        Aggregation<String, BigInteger, BigInteger> aggregation = Aggregations.bigIntegerMin();
-        BigInteger result = testMinWithExtractor(values, aggregation);
+        Aggregation<String, BigInteger, BigInteger> aggregation = Aggregations.bigIntegerAvg();
+        BigInteger result = testAvgWithExtractor(values, aggregation);
         assertEquals(expectation, result);
     }
 
     @Test
-    public void testDoubleMinWithExtractor()
+    public void testDoubleAvgWithExtractor()
             throws Exception {
 
         Value<Double>[] values = buildValues(new ValueProvider<Double>() {
@@ -205,21 +199,19 @@ public class MinAggregationTest
             }
         });
 
-        double expectation = Double.MAX_VALUE;
+        double expectation = 0;
         for (int i = 0; i < values.length; i++) {
-            double value = values[i].value;
-            if (value < expectation) {
-                expectation = value;
-            }
+            expectation += values[i].value;
         }
+        expectation = expectation / values.length;
 
-        Aggregation<String, Double, Double> aggregation = Aggregations.doubleMin();
-        double result = testMinWithExtractor(values, aggregation);
+        Aggregation<String, Double, Double> aggregation = Aggregations.doubleAvg();
+        double result = testAvgWithExtractor(values, aggregation);
         assertEquals(expectation, result, 0.0);
     }
 
     @Test
-    public void testIntegerMinWithExtractor()
+    public void testIntegerAvgWithExtractor()
             throws Exception {
 
         Value<Integer>[] values = buildValues(new ValueProvider<Integer>() {
@@ -229,21 +221,19 @@ public class MinAggregationTest
             }
         });
 
-        int expectation = Integer.MAX_VALUE;
+        int expectation = 0;
         for (int i = 0; i < values.length; i++) {
-            int value = values[i].value;
-            if (value < expectation) {
-                expectation = value;
-            }
+            expectation += values[i].value;
         }
+        expectation = (int) ((double) expectation / values.length);
 
-        Aggregation<String, Integer, Integer> aggregation = Aggregations.integerMin();
-        int result = testMinWithExtractor(values, aggregation);
+        Aggregation<String, Integer, Integer> aggregation = Aggregations.integerAvg();
+        int result = testAvgWithExtractor(values, aggregation);
         assertEquals(expectation, result);
     }
 
     @Test
-    public void testLongMinWithExtractor()
+    public void testLongAvgWithExtractor()
             throws Exception {
 
         Value<Long>[] values = buildValues(new ValueProvider<Long>() {
@@ -253,20 +243,18 @@ public class MinAggregationTest
             }
         });
 
-        long expectation = Long.MAX_VALUE;
+        long expectation = 0;
         for (int i = 0; i < values.length; i++) {
-            long value = values[i].value;
-            if (value < expectation) {
-                expectation = value;
-            }
+            expectation += values[i].value;
         }
+        expectation = (long) ((double) expectation / values.length);
 
-        Aggregation<String, Long, Long> aggregation = Aggregations.longMin();
-        long result = testMinWithExtractor(values, aggregation);
+        Aggregation<String, Long, Long> aggregation = Aggregations.longAvg();
+        long result = testAvgWithExtractor(values, aggregation);
         assertEquals(expectation, result);
     }
 
-    private <T, R> R testMin(T[] values, Aggregation<String, T, R> aggregation)
+    private <T, R> R testAvg(T[] values, Aggregation<String, T, R> aggregation)
             throws Exception {
 
         String mapName = randomMapName();
@@ -280,7 +268,7 @@ public class MinAggregationTest
         return map.aggregate(supplier, aggregation);
     }
 
-    private <T, R> R testMinWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
+    private <T, R> R testAvgWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
             throws Exception {
 
         String mapName = randomMapName();

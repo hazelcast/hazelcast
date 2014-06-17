@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.aggregation;
 
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -31,8 +31,30 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class MaxAggregationTest
+public class MultiMapMaxAggregationTest
         extends AbstractAggregationTest {
+
+    @Test
+    public void testComparableMax()
+            throws Exception {
+
+        BigDecimal[] values = buildPlainValues(new ValueProvider<BigDecimal>() {
+            @Override
+            public BigDecimal provideRandom(Random random) {
+                return BigDecimal.valueOf(10000.0D + random(1000, 2000));
+            }
+        }, BigDecimal.class);
+
+        BigDecimal expectation = BigDecimal.ZERO;
+        for (int i = 0; i < values.length; i++) {
+            BigDecimal value = values[i];
+            expectation = i == 0 ? value : expectation.max(value);
+        }
+
+        Aggregation<String, Comparable, Comparable> aggregation = Aggregations.comparableMax();
+        Comparable result = testMax(values, aggregation);
+        assertEquals(expectation, result);
+    }
 
     @Test
     public void testBigDecimalMax()
@@ -270,7 +292,7 @@ public class MaxAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<String, T> map = HAZELCAST_INSTANCE.getMap(mapName);
+        MultiMap<String, T> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
             map.put("key-" + i, values[i]);
@@ -284,7 +306,7 @@ public class MaxAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMap(mapName);
+        MultiMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
             map.put("key-" + i, values[i]);
