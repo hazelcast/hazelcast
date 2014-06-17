@@ -2,7 +2,6 @@ package com.hazelcast.management;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.util.JsonUtil;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 

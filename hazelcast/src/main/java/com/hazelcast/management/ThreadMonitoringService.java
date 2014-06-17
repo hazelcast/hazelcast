@@ -26,20 +26,28 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Service for monitoring threads.
+ */
 public class ThreadMonitoringService {
 
+    private static final int PERCENT_MULTIPLIER = 100;
     final ConcurrentMap<Long, ThreadCpuInfo> knownThreads = new ConcurrentHashMap<Long, ThreadCpuInfo>(100);
     final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
     private final ThreadGroup threadGroup;
+
 
     public ThreadMonitoringService(ThreadGroup threadGroup) {
         this.threadGroup = threadGroup;
     }
 
+    /**
+     * Holder class for {@link java.lang.Thread} with CPU time.
+     */
     static class ThreadCpuInfo {
         final Thread thread;
-        long lastSet = 0;
-        long lastValue = 0;
+        long lastSet;
+        long lastValue;
 
         ThreadCpuInfo(Thread thread) {
             this.thread = thread;
@@ -55,8 +63,12 @@ public class ThreadMonitoringService {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             ThreadCpuInfo that = (ThreadCpuInfo) o;
             return thread.getId() == that.thread.getId();
         }
@@ -68,12 +80,12 @@ public class ThreadMonitoringService {
 
         @Override
         public String toString() {
-            return "ThreadCpuInfo{" +
-                    "name='" + thread.getName() + '\'' +
-                    ", threadId=" + thread.getId() +
-                    ", lastSet=" + lastSet +
-                    ", lastValue=" + lastValue +
-                    '}';
+            return "ThreadCpuInfo{"
+                    + "name='" + thread.getName() + '\''
+                    + ", threadId=" + thread.getId()
+                    + ", lastSet=" + lastSet
+                    + ", lastValue=" + lastValue
+                    + '}';
         }
     }
 
@@ -86,8 +98,8 @@ public class ThreadMonitoringService {
             long now = System.nanoTime();
             for (Thread thread : threads) {
                 ThreadCpuInfoConstructor constructor = new ThreadCpuInfoConstructor(thread);
-                final ThreadCpuInfo t = ConcurrencyUtil.getOrPutIfAbsent(knownThreads,thread.getId(), constructor);
-                int percentage = (int) ((t.setNewValue(threadMXBean.getThreadCpuTime(thread.getId()), now)) * 100);
+                final ThreadCpuInfo t = ConcurrencyUtil.getOrPutIfAbsent(knownThreads, thread.getId(), constructor);
+                int percentage = (int) ((t.setNewValue(threadMXBean.getThreadCpuTime(thread.getId()), now)) * PERCENT_MULTIPLIER);
                 monitoredThreads.add(new MonitoredThread(thread.getName(), thread.getId(), percentage));
             }
             return monitoredThreads;
@@ -96,11 +108,14 @@ public class ThreadMonitoringService {
         }
     }
 
-    private static class ThreadCpuInfoConstructor implements  ConstructorFunction<Long,ThreadCpuInfo>{
+    /**
+     * Constructor class for {@link com.hazelcast.management.ThreadMonitoringService.ThreadCpuInfo}
+     */
+    private static final class ThreadCpuInfoConstructor implements ConstructorFunction<Long, ThreadCpuInfo> {
 
         private Thread thread;
 
-        private ThreadCpuInfoConstructor(Thread thread){
+        private ThreadCpuInfoConstructor(Thread thread) {
             this.thread = thread;
         }
 

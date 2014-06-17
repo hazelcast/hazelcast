@@ -18,6 +18,9 @@ package com.hazelcast.management;
 
 import javax.script.ScriptEngineManager;
 
+/**
+ * Accessor for {@link javax.script.ScriptEngineManager}
+ */
 public final class ScriptEngineManagerContext {
 
     private static volatile ScriptEngineManager scriptEngineManager = new ScriptEngineManager();

@@ -11,7 +11,6 @@
 
     <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
 
-    <suppress checks="" files="com.hazelcast.management[\\/]"/>
     <suppress checks="" files="com.hazelcast.map[\\/]"/>
 
     <!-- <suppress checks="" files="com.hazelcast.client[\\/]"/> not completed --> 
@@ -700,6 +699,12 @@
     <suppress checks="ReturnCount" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>
     <suppress checks="ArrayTrailingComma" files="com.hazelcast.spring.HazelcastNamespaceHandler"/>
 
+
+
+    <!-- Management -->
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.management.ManagementCenterService"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.management.TimedMemberStateFactory"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.management.ManagementCenterService"/>
 
 </suppressions>
 

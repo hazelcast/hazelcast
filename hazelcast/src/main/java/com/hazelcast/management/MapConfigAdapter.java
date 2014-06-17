@@ -17,19 +17,21 @@
 package com.hazelcast.management;
 
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-
-import com.hazelcast.util.JsonUtil;
 import java.io.IOException;
 
-import static com.hazelcast.util.JsonUtil.*;
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getString;
 
+/**
+ *  Serializable adapter for {@link com.hazelcast.config.MapConfig}
+ */
 public class MapConfigAdapter implements JsonSerializable, DataSerializable {
 
     private MapConfig config;

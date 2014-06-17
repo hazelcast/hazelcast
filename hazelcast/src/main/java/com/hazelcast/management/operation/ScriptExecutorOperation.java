@@ -28,6 +28,9 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+/**
+ *  Operation to execute script on the node.
+ */
 public class ScriptExecutorOperation extends Operation {
 
     private String engineName;

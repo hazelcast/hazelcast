@@ -20,7 +20,9 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.management.ManagementCenterService;
 
 import static com.hazelcast.util.JsonUtil.getString;
-
+/**
+ * Request for shutting down the member.
+ */
 public class ShutdownMemberRequest implements ConsoleRequest {
 
     public ShutdownMemberRequest() {
