@@ -19,19 +19,11 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.operation.CacheReplicationOperation;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.DataAwareEntryEvent;
-import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.EventData;
-import com.hazelcast.map.QueryEventFilter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -43,13 +35,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.impl.EventServiceImpl;
 
-import javax.cache.Cache;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.event.CacheEntryEvent;
-import javax.cache.event.CacheEntryEventFilter;
-import javax.cache.event.CacheEntryListener;
 import javax.cache.event.EventType;
 import java.util.Collection;
 import java.util.HashSet;
@@ -269,5 +256,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     }
 
     //endregion
+
+
 
 }

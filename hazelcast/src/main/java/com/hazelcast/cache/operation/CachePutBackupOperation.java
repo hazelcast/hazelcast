@@ -53,10 +53,6 @@ public class CachePutBackupOperation extends AbstractCacheOperation implements B
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(expiryPolicy);

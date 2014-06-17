@@ -63,6 +63,7 @@ public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
 
     @Override
     public boolean hasNext() {
+        cacheProxy.ensureOpen();
         if(nextKey == null){
             advance();
         }
@@ -85,6 +86,7 @@ public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
 
     @Override
     public void remove() {
+        cacheProxy.ensureOpen();
         if (lastKey == null) {
             throw new IllegalStateException("Must progress to the next entry to remove");
         }
@@ -125,7 +127,6 @@ public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
                 }
             }
         }
-
     }
 
     private void fetch(){
@@ -141,13 +142,18 @@ public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
             keys = iteratorResult.getKeySet();
             keysIterator = keys.iterator();
             if(keysIterator.hasNext()){
-                lastKey = nextKey;
+                if(nextKey != null){
+                    lastKey = nextKey;
+                }
                 nextKey = this.keysIterator.next();
                 return;
             }
         }
         segmentIndex = -1;
         tableIndex = -1;
+        if(nextKey != null){
+            lastKey = nextKey;
+        }
         nextKey = null;
     }
 }

@@ -18,14 +18,14 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
+public class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
 
     private Object value;
 
-    ObjectRecord() {
+    public ObjectRecord() {
     }
 
-    ObjectRecord(Data key, Object value) {
+    public ObjectRecord(Data key, Object value) {
         super(key);
         this.value = value;
     }

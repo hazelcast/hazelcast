@@ -18,6 +18,7 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.operation.CacheContainsKeyOperation;
+import com.hazelcast.cache.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.operation.CacheGetAndRemoveOperation;
 import com.hazelcast.cache.operation.CacheGetAndReplaceOperation;
@@ -28,6 +29,8 @@ import com.hazelcast.cache.operation.CacheRemoveOperation;
 import com.hazelcast.cache.operation.CacheReplaceOperation;
 import com.hazelcast.cache.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -35,14 +38,17 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
@@ -58,7 +64,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 
 
 /**
@@ -120,7 +130,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         return new DelegatingFuture<V>(f, serializationService);
     }
 
-    private void ensureOpen() {
+    void ensureOpen() {
         if (isClosed()) {
             throw new IllegalStateException("Cache operations can not be performed. The cache closed");
         }
@@ -369,7 +379,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         final Iterator<? extends Map.Entry<? extends K, ? extends V>> iter = map.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry<? extends K, ? extends V> next = iter.next();
-            putAsync(next.getKey(), next.getValue(),expiryPolicy);
+            put(next.getKey(), next.getValue(), expiryPolicy);
         }
     }
 
@@ -437,7 +447,11 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         final Operation op = new CacheGetOperation(name, key,null);
         final InternalCompletableFuture<Object> f = engine.getOperationService()
                 .invokeOnPartition(getServiceName(), op, getPartitionId(engine, key));
-        return serializationService.toObject(f.getSafely());
+        Object result = f.getSafely();
+        if (result instanceof Data) {
+            result = serializationService.toObject((Data) result);
+        }
+        return (V) result;
     }
 
     void initCacheManager(HazelcastCacheManager cacheManager){
@@ -634,30 +648,72 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
     @Override
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
+        final NodeEngine nodeEngine = getNodeEngine();
         if(keys == null){
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
+        final SerializationService ss = nodeEngine.getSerializationService();
+        HashSet<Data> keysData= new HashSet<Data>();
         for (K key : keys) {
-            removeAsync(key);
+            keysData.add(ss.toData(key));
         }
+        removeAllInternal(keysData,true);
     }
 
     @Override
     public void removeAll() {
-        clear();
+        ensureOpen();
+        removeAllInternal(null, true);
     }
 
     @Override
     public void clear() {
         ensureOpen();
+        removeAllInternal(null,false);
+    }
+
+    private void removeAllInternal(Set<Data> keysData, boolean isRemoveAll){
         final NodeEngine nodeEngine = getNodeEngine();
+        final CacheClearOperationFactory operationFactory = new CacheClearOperationFactory(name, keysData, isRemoveAll);
         try {
-            nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(getServiceName(), new CacheClearOperationFactory(name));
+            final Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(getServiceName(), operationFactory);
+            for(Object result:results.values()){
+                if(result != null && result instanceof CacheClearResponse){
+                    final Object response = ((CacheClearResponse) result).getResponse();
+                    if(response instanceof Throwable){
+                        throw (Throwable) response;
+                    }
+                }
+            }
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t, CacheException.class);
+        }
+
+    }
+
+    //TODO MOVE THIS INTO ExceptionUtil
+    private static <T extends Throwable> RuntimeException rethrow(final Throwable t, Class<T> allowedType) throws T {
+        if (t instanceof Error) {
+            if (t instanceof OutOfMemoryError) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
+            }
+            throw (Error) t;
+        } else if (allowedType.isAssignableFrom(t.getClass())) {
+            throw (T) t;
+        } else if (t instanceof RuntimeException) {
+            throw (RuntimeException) t;
+        } else if (t instanceof ExecutionException) {
+            final Throwable cause = t.getCause();
+            if (cause != null) {
+                throw rethrow(cause, allowedType);
+            } else {
+                throw new HazelcastException(t);
+            }
+        } else {
+            throw new HazelcastException(t);
         }
     }
+
 
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
@@ -670,12 +726,50 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
-        throw new UnsupportedOperationException();
+        ensureOpen();
+        final NodeEngine engine = getNodeEngine();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (entryProcessor == null) {
+            throw new NullPointerException();
+        }
+        final SerializationService serializationService = engine.getSerializationService();
+        final Data k = serializationService.toData(key);
+        final Operation op = new CacheEntryProcessorOperation(name, k, entryProcessor, arguments);
+        try {
+            final InternalCompletableFuture<T> f = engine.getOperationService()
+                    .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
+            return f.getSafely();
+        } catch (CacheException ce) {
+            throw ce;
+        } catch (Exception e) {
+            throw new EntryProcessorException(e);
+        }
     }
 
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
-        throw new UnsupportedOperationException();
+        //TODO implement a Multiple invoke operation and its factory
+        ensureOpen();
+        if (keys == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (entryProcessor == null) {
+            throw new NullPointerException();
+        }
+        Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
+        for(K key:keys){
+            CacheEntryProcessorResult<T> ceResult;
+            try {
+                final T result = this.invoke(key, entryProcessor, arguments);
+                ceResult = new CacheEntryProcessorResult<T>(result);
+            } catch (Exception e) {
+                ceResult = new CacheEntryProcessorResult<T>(e);
+            }
+            allResult.put(key, ceResult);
+        }
+        return allResult;
     }
 
     @Override
@@ -685,6 +779,14 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public void close() {
+        //TODO CHECK this is valid
+/*
+        must close and release all resources being coordinated on behalf of the Cache by the
+        CacheManager. This includes calling the close method on configured CacheLoader,
+                CacheWriter, registered CacheEntryListeners and ExpiryPolicy instances that
+        implement the java.io.Closeable interface,
+*/
+
         destroy();
     }
 
@@ -715,6 +817,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public Iterator<Entry<K, V>> iterator() {
+        ensureOpen();
         return new ClusterWideIterator<K, V>(this);
     }
 

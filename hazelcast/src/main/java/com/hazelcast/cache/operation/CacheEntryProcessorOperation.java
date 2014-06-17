@@ -17,72 +17,77 @@
 package com.hazelcast.cache.operation;
 
 import com.hazelcast.cache.CacheDataSerializerHook;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
+import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
-/**
- * @author mdogan 05/02/14
- */
-public class CacheRemoveOperation extends AbstractCacheOperation implements BackupAwareOperation {
+public class CacheEntryProcessorOperation extends AbstractCacheOperation implements BackupAwareOperation {
 
-    private Data currentValue; // if same
 
-    public CacheRemoveOperation() {
+    private EntryProcessor entryProcessor;
+    private Object[] arguments;
+
+    public CacheEntryProcessorOperation() {
     }
 
-    public CacheRemoveOperation(String name, Data key) {
+    public CacheEntryProcessorOperation(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor, Object... arguments) {
         super(name, key);
-    }
-
-    public CacheRemoveOperation(String name, Data key, Data currentValue) {
-        super(name, key);
-        this.currentValue = currentValue;
-    }
-
-    @Override
-    public void run() throws Exception {
-        if (cache != null) {
-            if (currentValue == null) {
-                response = cache.remove(key, getCallerUuid());
-            } else {
-                response = cache.remove(key, currentValue, getCallerUuid());
-            }
-        } else {
-            response = Boolean.FALSE;
-        }
+        this.entryProcessor = entryProcessor;
+        this.arguments = arguments;
     }
 
     @Override
     public boolean shouldBackup() {
-        return response == Boolean.TRUE;
+        return true;
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new CacheRemoveBackupOperation(name, key);
+        //FIXME backup operation
+        return null;
     }
-
 
     @Override
     public int getId() {
-        return CacheDataSerializerHook.REMOVE;
+        return CacheDataSerializerHook.ENTRY_PROCESSOR;
+    }
+
+    @Override
+    public void run() throws Exception {
+        response = cache.invoke(key, entryProcessor, arguments);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableData(out, currentValue);
+        out.writeObject(entryProcessor);
+        out.writeBoolean(arguments != null);
+        if(arguments != null){
+            out.writeInt(arguments.length);
+            for(Object arg:arguments){
+                out.writeObject(arg);
+            }
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        currentValue = IOUtil.readNullableData(in);
+        entryProcessor = in.readObject();
+
+        final boolean hasArguments = in.readBoolean();
+        if(hasArguments){
+            final int size = in.readInt();
+            Object[] args= new Object[size];
+            for(int i=0;i < size; i++){
+                args[i] = in.readObject();
+            }
+        }
     }
+
 }

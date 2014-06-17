@@ -21,23 +21,32 @@ import com.hazelcast.cache.CachePortableHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class CacheClearRequest extends AllPartitionsClientRequest implements RetryableRequest {
 
     private String name;
+    private Set<Data> keys= null ;
+    private  boolean isRemoveAll=false;
 
     public CacheClearRequest() {
     }
 
-    public CacheClearRequest(String name) {
+    public CacheClearRequest(String name, Set<Data> keys, boolean isRemoveAll) {
         this.name = name;
+        this.keys = keys;
+        this.isRemoveAll = isRemoveAll;
     }
 
     public String getServiceName() {
@@ -55,15 +64,37 @@ public class CacheClearRequest extends AllPartitionsClientRequest implements Ret
 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        final ObjectDataOutput out = writer.getRawDataOutput();
+        out.writeBoolean(isRemoveAll);
+        out.writeBoolean(keys != null);
+        if(keys != null){
+            out.write(keys.size());
+            for(Data key:keys){
+                key.writeData(out);
+            }
+        }
+
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        final ObjectDataInput in = reader.getRawDataInput();
+        isRemoveAll = in.readBoolean();
+        boolean isKeysNotNull = in.readBoolean();
+        if(isKeysNotNull){
+            int size = in.readInt();
+            keys= new HashSet<Data>(size);
+            for(int i=0; i< size; i++){
+                Data key = new Data();
+                key.readData(in);
+                keys.add(key);
+            }
+        }
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new CacheClearOperationFactory(name);
+        return new CacheClearOperationFactory(name,keys, isRemoveAll);
     }
 
     @Override
