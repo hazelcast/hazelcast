@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.MemberSocketInterceptor;
 
 import java.io.IOException;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.Selector;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;

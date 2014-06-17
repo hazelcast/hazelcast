@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.CipherHelper;
+import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.crypto.Cipher;
@@ -45,6 +48,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
         }
     }
 
+    @Override
     public boolean write(Packet socketWritable, ByteBuffer socketBuffer) throws Exception {
         return packetWriter.writePacket(socketWritable, socketBuffer);
     }
@@ -54,6 +58,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
     }
 
     private static class DefaultPacketWriter implements PacketWriter {
+        @Override
         public boolean writePacket(Packet packet, ByteBuffer socketBB) {
             return packet.writeTo(socketBB);
         }
@@ -80,6 +85,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
             return c;
         }
 
+        @Override
         public boolean writePacket(Packet packet, ByteBuffer socketBuffer) throws Exception {
             if (!packetWritten) {
                 if (socketBuffer.remaining() < CONST_BUFFER_NO) {

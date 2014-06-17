@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -29,23 +29,17 @@ public interface SocketChannelWrapper extends Closeable {
 
     boolean isBlocking();
 
-    int validOps();
-
     Socket socket();
 
     boolean isConnected();
 
-    boolean isConnectionPending();
-
     boolean connect(java.net.SocketAddress socketAddress) throws IOException;
-
-    boolean finishConnect() throws IOException;
 
     SelectionKey keyFor(Selector selector);
 
     SelectionKey register(Selector selector, int ops, Object attachment) throws ClosedChannelException;
 
-    int read(ByteBuffer byteBuffer) throws java.io.IOException;
+    int read(ByteBuffer byteBuffer) throws IOException;
 
     int write(ByteBuffer byteBuffer) throws IOException;
 

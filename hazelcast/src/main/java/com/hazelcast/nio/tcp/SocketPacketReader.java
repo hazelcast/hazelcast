@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.CipherHelper;
+import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.crypto.Cipher;
@@ -47,6 +50,7 @@ class SocketPacketReader implements SocketReader {
         }
     }
 
+    @Override
     public void read(ByteBuffer inBuffer) throws Exception {
         packetReader.readPacket(inBuffer);
     }
@@ -61,6 +65,7 @@ class SocketPacketReader implements SocketReader {
     }
 
     private class DefaultPacketReader implements PacketReader {
+        @Override
         public void readPacket(ByteBuffer inBuffer) {
             while (inBuffer.hasRemaining()) {
                 if (packet == null) {
@@ -98,6 +103,7 @@ class SocketPacketReader implements SocketReader {
             return c;
         }
 
+        @Override
         public void readPacket(ByteBuffer inBuffer) throws Exception {
             while (inBuffer.hasRemaining()) {
                 try {

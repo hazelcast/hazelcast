@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.serialization.DataAdapter;
-
-import java.nio.ByteBuffer;
-
-class SocketClientDataWriter implements SocketWriter<DataAdapter> {
-
-    SocketClientDataWriter(TcpIpConnection connection) {
-    }
-
-    public boolean write(DataAdapter writer, ByteBuffer socketBuffer) throws Exception {
-        return writer.writeTo(socketBuffer);
-    }
+public interface SelectionHandler {
+    void handle();
 }

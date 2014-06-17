@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
+
+import com.hazelcast.nio.IOService;
 
 import java.nio.channels.SelectionKey;
 
-final class InSelectorImpl extends AbstractIOSelector {
+final class OutSelectorImpl extends AbstractIOSelector {
 
-    InSelectorImpl(IOService ioService, int id) {
-        super(ioService, ioService.getThreadPrefix() + "in-" + id);
+    OutSelectorImpl(IOService ioService, int id) {
+        super(ioService, ioService.getThreadPrefix() + "out-" + id);
     }
 
+    @Override
     protected void handleSelectionKey(SelectionKey sk) {
-        if (sk.isValid() && sk.isReadable()) {
-            final SelectionHandler handler = (SelectionHandler) sk.attachment();
+        if (sk.isValid() && sk.isWritable()) {
+            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
+            SelectionHandler handler = (SelectionHandler) sk.attachment();
             handler.handle();
         }
     }

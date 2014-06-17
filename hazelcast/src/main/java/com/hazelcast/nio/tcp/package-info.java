@@ -14,22 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
-
-import java.nio.channels.Selector;
-
-public interface IOSelector {
-
-    Selector getSelector();
-
-    void addTask(Runnable runnable);
-
-    void wakeup();
-
-    void start();
-
-    void shutdown();
-
-    void awaitShutdown();
-
-}
+/**
+ * <p>Contains functionality for the TCP/IP Networking between cluster members<br/>
+ */
+package com.hazelcast.nio.tcp;

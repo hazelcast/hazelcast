@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.ClientTypes;
+import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.IOService;
 
 import java.nio.ByteBuffer;
-
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 

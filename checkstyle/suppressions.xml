@@ -547,9 +547,9 @@
     <suppress checks="JavadocType" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.nio[\\/]"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.nio.AbstractIOSelector"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.AbstractIOSelector"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.AbstractIOSelector"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.nio.tcp.AbstractIOSelector"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.tcp.AbstractIOSelector"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.AbstractIOSelector"/>
     <suppress checks="IllegalType" files="com.hazelcast.nio.serialization.serializers.ArrayListSerializerHook"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.serialization.ByteArrayObjectDataInput"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataInput"/>
@@ -595,7 +595,7 @@
     <suppress checks="MagicNumber" files="com.hazelcast.nio.Packet"/>
     <suppress checks="Todo" files="com.hazelcast.nio.serialization.PortableFactory"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.nio.serialization.PortableSerializer"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.ReadHandler"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.ReadHandler"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.nio.ssl.SSLSocketChannelWrapper"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.ssl.SSLSocketChannelWrapper"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.nio.ssl.SSLSocketChannelWrapper"/>
@@ -612,19 +612,19 @@
     <suppress checks="ExecutableStatementCount" files="com.hazelcast.nio.serialization.SerializationServiceImpl"/>
     <suppress checks="ParameterNumber" files="com.hazelcast.nio.serialization.SerializationServiceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.serialization.SerializationServiceImpl"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.nio.SocketAcceptor"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.nio.SocketConnector"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.SocketConnector"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.SocketConnector"/>
-    <suppress checks="Todo" files="com.hazelcast.nio.SocketConnector"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.SocketPacketReader"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.SocketPacketWriter"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.TcpIpConnectionManager"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.nio.TcpIpConnectionManager"/>
-    <suppress checks="ExecutableStatement" files="com.hazelcast.nio.TcpIpConnectionManager"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.TcpIpConnectionManager"/>
-    <suppress checks="MethodCount" files="com.hazelcast.nio.TcpIpConnectionManager"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.TcpIpConnectionManager"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.nio.tcp.SocketAcceptor"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.nio.tcp.SocketConnector"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.SocketConnector"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.tcp.SocketConnector"/>
+    <suppress checks="Todo" files="com.hazelcast.nio.tcp.SocketConnector"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.SocketPacketReader"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.SocketPacketWriter"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
+    <suppress checks="ExecutableStatement" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
+    <suppress checks="MethodCount" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
@@ -638,12 +638,12 @@
     <suppress checks="EmptyBlock" files="com.hazelcast.nio.serialization.UnsafeInputOutputFactory"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.UnsafeObjectDataInput"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.UnsafeObjectDataOutput"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.WriteHandler"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.nio.WriteHandler"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.WriteHandler"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.WriteHandler"/>
-    <suppress checks="InnerAssignment" files="com.hazelcast.nio.WriteHandler"/>
-    <suppress checks="EmptyStatement" files="com.hazelcast.nio.WriteHandler"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.nio.tcp.WriteHandler"/>
+    <suppress checks="EmptyBlock" files="com.hazelcast.nio.tcp.WriteHandler"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.WriteHandler"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.tcp.WriteHandler"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.nio.tcp.WriteHandler"/>
+    <suppress checks="EmptyStatement" files="com.hazelcast.nio.tcp.WriteHandler"/>
 
     <!-- Jmx-->
     <suppress checks="JavadocMethod" files="com.hazelcast.jmx[\\/]"/>

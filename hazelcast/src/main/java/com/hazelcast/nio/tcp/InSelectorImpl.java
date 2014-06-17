@@ -14,11 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
-import java.nio.ByteBuffer;
+import com.hazelcast.nio.IOService;
 
-public interface SocketWriter<T extends SocketWritable> {
+import java.nio.channels.SelectionKey;
 
-    boolean write(T socketWritable, ByteBuffer socketBuffer) throws Exception;
+final class InSelectorImpl extends AbstractIOSelector {
+
+    InSelectorImpl(IOService ioService, int id) {
+        super(ioService, ioService.getThreadPrefix() + "in-" + id);
+    }
+
+    @Override
+    protected void handleSelectionKey(SelectionKey sk) {
+        if (sk.isValid() && sk.isReadable()) {
+            SelectionHandler handler = (SelectionHandler) sk.attachment();
+            handler.handle();
+        }
+    }
 }

@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOService;
 import com.hazelcast.util.Clock;
 
-public class ConnectionMonitor {
+public class TcpIpConnectionMonitor {
 
     final ILogger logger;
     final TcpIpConnectionManager connectionManager;
@@ -30,8 +32,7 @@ public class ConnectionMonitor {
     int faults;
     long lastFaultTime;
 
-    public ConnectionMonitor(TcpIpConnectionManager connectionManager, Address endPoint) {
-        super();
+    public TcpIpConnectionMonitor(TcpIpConnectionManager connectionManager, Address endPoint) {
         this.connectionManager = connectionManager;
         this.endPoint = endPoint;
         this.ioService = connectionManager.getIOHandler();
@@ -69,7 +70,7 @@ public class ConnectionMonitor {
         lastFaultTime = 0L;
     }
 
-    private /*synchronized*/ String getCauseDescription(Throwable t) {
+    private  String getCauseDescription(Throwable t) {
         StringBuilder s = new StringBuilder(" Cause => ");
         if (t != null) {
             s.append(t.getClass().getName()).append(" {").append(t.getMessage()).append("}");

@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.Protocols;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.Inet6Address;
-import java.net.SocketException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -45,6 +48,7 @@ public class SocketConnector implements Runnable {
         this.silent = silent;
     }
 
+    @Override
     public void run() {
         if (!connectionManager.isLive()) {
             if (logger.isFinestEnabled()) {
@@ -134,7 +138,8 @@ public class SocketConnector implements Runnable {
             MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor != null) {
                 if (logger.isFinestEnabled()) {
-                    log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor + " for " + socketChannel);
+                    log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor
+                            + " for " + socketChannel);
                 }
                 memberSocketInterceptor.onConnect(socketChannel.socket());
             }

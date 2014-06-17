@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
+import com.hazelcast.nio.Protocols;
+import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.util.Clock;
 
@@ -30,6 +32,9 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
+/**
+ * The writing side of the {@link TcpIpConnection}.
+ */
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
     private static final long TIMEOUT = 3;
@@ -81,7 +86,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 buffer.put(stringToBytes(Protocols.CLUSTER));
                 registerWrite();
             } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
-                socketWriter = new SocketClientDataWriter(connection);
+                socketWriter = new SocketClientDataWriter();
             } else {
                 socketWriter = new SocketTextWriter(connection);
             }
@@ -118,6 +123,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.live()) {
@@ -165,6 +171,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
     }
 
+    @Override
     public void run() {
         informSelector.set(true);
         if (ready) {
@@ -183,7 +190,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void shutdown() {
         while (poll() != null) {
         }
-        ;
     }
 
     long getLastHandle() {

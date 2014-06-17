@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.nio.tcp;
 
-import java.nio.ByteBuffer;
+import java.nio.channels.Selector;
 
-public interface SocketReader {
+public interface IOSelector {
 
-    void read(ByteBuffer bb) throws Exception;
+    Selector getSelector();
+
+    void addTask(Runnable runnable);
+
+    void wakeup();
+
+    void start();
+
+    void shutdown();
+
+    void awaitShutdown();
+
 }
