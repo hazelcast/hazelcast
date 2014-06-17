@@ -394,6 +394,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     public void reset() {
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         for (ClientEndpoint endpoint : endpoints.values()) {
             try {

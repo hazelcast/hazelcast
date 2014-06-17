@@ -58,6 +58,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
 public final class ExecutionServiceImpl implements ExecutionService {
 
     private static final int CORE_POOL_SIZE = 3;
@@ -66,6 +68,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private static final long PERIOD = 100;
     private static final int BEGIN_INDEX = 3;
     private static final long AWAIT_TIME = 3;
+    private static final int POOL_MULTIPLIER = 5;
+    private static final int QUEUE_MULTIPIER = 100000;
 
     private final NodeEngineImpl nodeEngine;
     private final ExecutorService cachedExecutorService;
@@ -113,7 +117,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         final int coreSize = Runtime.getRuntime().availableProcessors();
         // default executors
         register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
-        register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 100000, ExecutorType.CACHED);
+        register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPIER, ExecutorType.CACHED);
         defaultScheduledExecutorServiceDelegate = getScheduledExecutor(SCHEDULED_EXECUTOR);
 
         // Register CompletableFuture task
@@ -121,14 +125,16 @@ public final class ExecutionServiceImpl implements ExecutionService {
         scheduleWithFixedDelay(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
     }
 
-
     private void enableRemoveOnCancelIfAvailable() {
         try {
             final Method m = scheduledExecutorService.getClass().getMethod("setRemoveOnCancelPolicy", boolean.class);
             m.invoke(scheduledExecutorService, true);
         } catch (NoSuchMethodException ignored) {
+            ignore(ignored);
         } catch (InvocationTargetException ignored) {
+            ignore(ignored);
         } catch (IllegalAccessException ignored) {
+            ignore(ignored);
         }
     }
 
@@ -265,7 +271,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     }
 
     private <V> ICompletableFuture<V> registerCompletableFuture(Future<V> future) {
-        CompletableFutureEntry<V> entry = new CompletableFutureEntry<V>(future, nodeEngine, completableFutureTask);
+        CompletableFutureEntry<V> entry = new CompletableFutureEntry<V>(future, nodeEngine);
         completableFutureTask.registerCompletableFutureEntry(entry);
         return entry.completableFuture;
     }
@@ -322,11 +328,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
     static final class CompletableFutureEntry<V> {
         private final BasicCompletableFuture<V> completableFuture;
-        private final CompletableFutureTask completableFutureTask;
 
-        private CompletableFutureEntry(Future<V> future, NodeEngine nodeEngine,
-                                       CompletableFutureTask completableFutureTask) {
-            this.completableFutureTask = completableFutureTask;
+        private CompletableFutureEntry(Future<V> future, NodeEngine nodeEngine) {
             this.completableFuture = new BasicCompletableFuture<V>(future, nodeEngine);
         }
 

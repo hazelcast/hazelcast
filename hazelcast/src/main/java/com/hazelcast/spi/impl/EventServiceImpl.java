@@ -58,8 +58,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
 public class EventServiceImpl implements EventService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
+
+    private static final int REGISTRATION_TIMEOUT_SECONDS = 5;
+    private static final int EVENT_SYNC_FREQUENCY = 100000;
+    private static final int SEND_RETRY_COUNT = 50;
+    private static final int SEND_EVENT_TIMEOUT_SECONDS = 3;
+    private static final int DEREGISTER_TIMEOUT_SECONDS = 5;
 
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
@@ -190,9 +198,11 @@ public class EventServiceImpl implements EventService {
         }
         for (Future f : calls) {
             try {
-                f.get(5, TimeUnit.SECONDS);
+                f.get(REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
+                ignore(ignored);
             } catch (TimeoutException ignored) {
+                ignore(ignored);
             } catch (MemberLeftException e) {
                 logger.finest("Member left while registering listener...", e);
             } catch (ExecutionException e) {
@@ -213,9 +223,11 @@ public class EventServiceImpl implements EventService {
         }
         for (Future f : calls) {
             try {
-                f.get(5, TimeUnit.SECONDS);
+                f.get(DEREGISTER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
+                ignore(ignored);
             } catch (TimeoutException ignored) {
+                ignore(ignored);
             } catch (MemberLeftException e) {
                 logger.finest("Member left while de-registering listener...", e);
             } catch (ExecutionException e) {
@@ -229,9 +241,11 @@ public class EventServiceImpl implements EventService {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             final Collection<Registration> registrations = segment.getRegistrations(topic, false);
-            return registrations != null && !registrations.isEmpty()
-                    ? registrations.toArray(new Registration[registrations.size()])
-                    : EMPTY_REGISTRATIONS;
+            if (registrations == null || registrations.isEmpty()) {
+                return EMPTY_REGISTRATIONS;
+            } else {
+                return registrations.toArray(new Registration[registrations.size()]);
+            }
         }
         return EMPTY_REGISTRATIONS;
     }
@@ -241,9 +255,11 @@ public class EventServiceImpl implements EventService {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             final Collection<Registration> registrations = segment.getRegistrations(topic, false);
-            return registrations != null && !registrations.isEmpty()
-                    ? Collections.<EventRegistration>unmodifiableCollection(registrations)
-                    : Collections.<EventRegistration>emptySet();
+            if (registrations == null || registrations.isEmpty()) {
+                return Collections.<EventRegistration>emptySet();
+            } else {
+                return Collections.<EventRegistration>unmodifiableCollection(registrations);
+            }
         }
         return Collections.emptySet();
     }
@@ -305,13 +321,17 @@ public class EventServiceImpl implements EventService {
     private void sendEventPacket(Address subscriber, EventPacket eventPacket, int orderKey) {
         final String serviceName = eventPacket.serviceName;
         final EventServiceSegment segment = getSegment(serviceName, true);
-        boolean sync = segment.incrementPublish() % 100000 == 0;
+        boolean sync = segment.incrementPublish() % EVENT_SYNC_FREQUENCY == 0;
+
         if (sync) {
-            Future f = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                    new SendEventOperation(eventPacket, orderKey), subscriber).setTryCount(50).invoke();
+            SendEventOperation op = new SendEventOperation(eventPacket, orderKey);
+            Future f = nodeEngine.getOperationService()
+                    .createInvocationBuilder(serviceName, op, subscriber)
+                    .setTryCount(SEND_RETRY_COUNT).invoke();
             try {
-                f.get(3, TimeUnit.SECONDS);
+                f.get(SEND_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             } catch (Exception ignored) {
+                ignore(ignored);
             }
         } else {
             final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey, nodeEngine.getPortableContext());
@@ -323,11 +343,14 @@ public class EventServiceImpl implements EventService {
     private EventServiceSegment getSegment(String service, boolean forceCreate) {
         EventServiceSegment segment = segments.get(service);
         if (segment == null && forceCreate) {
-            return ConcurrencyUtil.getOrPutIfAbsent(segments, service, new ConstructorFunction<String, EventServiceSegment>() {
+            ConstructorFunction<String, EventServiceSegment> func
+                    = new ConstructorFunction<String, EventServiceSegment>() {
+                @Override
                 public EventServiceSegment createNew(String key) {
                     return new EventServiceSegment(key);
                 }
-            });
+            };
+            return ConcurrencyUtil.getOrPutIfAbsent(segments, service, func);
         }
         return segment;
     }
@@ -405,13 +428,16 @@ public class EventServiceImpl implements EventService {
 
         private Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
             Collection<Registration> listenerList = registrations.get(topic);
+
             if (listenerList == null && forceCreate) {
-                return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic
-                        , new ConstructorFunction<String, Collection<Registration>>() {
+                ConstructorFunction<String, Collection<Registration>> func
+                        = new ConstructorFunction<String, Collection<Registration>>() {
                     public Collection<Registration> createNew(String key) {
                         return Collections.newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
                     }
-                });
+                };
+
+                return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, func);
             }
             return listenerList;
         }
