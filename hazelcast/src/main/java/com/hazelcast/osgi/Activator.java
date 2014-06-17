@@ -39,6 +39,7 @@ public class Activator
 
     private HazelcastInstance hazelcastInstance;
 
+    @Override
     public void start(BundleContext context)
             throws Exception {
         // Try to start javax.scripting - JSR 223
@@ -49,6 +50,7 @@ public class Activator
         }
     }
 
+    @Override
     public void stop(BundleContext context)
             throws Exception {
         if (System.getProperty("hazelcast.osgi.start") != null) {
