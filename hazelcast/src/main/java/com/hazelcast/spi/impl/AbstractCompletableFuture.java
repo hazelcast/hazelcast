@@ -130,9 +130,9 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                     } else {
                         callback.onResponse((V) result);
                     }
-                } catch (Throwable t) {
-                    //todo: improved error message
-                    logger.severe("Failed to async for " + AbstractCompletableFuture.this, t);
+                } catch (Throwable cause) {
+                    logger.severe("Failed asynchronous execution of execution callback: " + callback
+                            + "for call " + AbstractCompletableFuture.this, cause);
                 }
             }
         });
@@ -153,5 +153,4 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
             this.next = next;
         }
     }
-
 }

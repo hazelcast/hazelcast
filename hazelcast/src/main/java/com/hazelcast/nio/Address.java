@@ -29,6 +29,9 @@ import java.net.UnknownHostException;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
+/**
+ * Represents an address of a member in the cluster.
+ */
 public final class Address implements IdentifiedDataSerializable {
 
     public static final int ID = 1;

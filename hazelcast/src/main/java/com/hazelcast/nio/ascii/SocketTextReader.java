@@ -34,8 +34,8 @@ import com.hazelcast.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.SocketReader;
-import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.util.StringUtil;
 
 import java.nio.ByteBuffer;

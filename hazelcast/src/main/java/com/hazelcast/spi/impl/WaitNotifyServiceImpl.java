@@ -50,6 +50,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
 class WaitNotifyServiceImpl implements WaitNotifyService {
 
     private static final long FIRST_WAIT_TIME = 1000;
@@ -65,6 +67,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
     private final ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>> waitQueueConstructor
             = new ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>>() {
+        @Override
         public Queue<WaitingOp> createNew(WaitNotifyKey key) {
             return new ConcurrentLinkedQueue<WaitingOp>();
         }
@@ -302,19 +305,25 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
         @Override
         public void run() throws Exception {
-            if (valid) {
-                boolean expired = isExpired();
-                boolean cancelled = isCancelled();
-                if (expired || cancelled) {
-                    if (queue.remove(this)) {
-                        valid = false;
-                        if (expired) {
-                            waitSupport.onWaitExpire();
-                        } else {
-                            op.getResponseHandler().sendResponse(error);
-                        }
-                    }
-                }
+            if (!valid) {
+                return;
+            }
+
+            boolean expired = isExpired();
+            boolean cancelled = isCancelled();
+            if (!expired && !cancelled) {
+                return;
+            }
+
+            if (!queue.remove(this)) {
+                return;
+            }
+
+            valid = false;
+            if (expired) {
+                waitSupport.onWaitExpire();
+            } else {
+                op.getResponseHandler().sendResponse(error);
             }
         }
 
@@ -342,6 +351,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 try {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 } catch (Throwable ignored) {
+                    ignore(ignored);
                 }
             } else {
                 logger.severe("Op: " + op + ", Error: " + e.getMessage(), e);
@@ -400,33 +410,10 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 if (Thread.interrupted()) {
                     return;
                 }
+
                 try {
-                    long waitTime = FIRST_WAIT_TIME;
-                    while (waitTime > 0) {
-                        long begin = System.currentTimeMillis();
-                        WaitingOp waitingOp = (WaitingOp) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
-                        if (waitingOp != null) {
-                            if (waitingOp.isValid()) {
-                                invalidate(waitingOp);
-                            }
-                        }
-                        long end = System.currentTimeMillis();
-                        waitTime -= (end - begin);
-                        if (waitTime > FIRST_WAIT_TIME) {
-                            waitTime = FIRST_WAIT_TIME;
-                        }
-                    }
-                    for (Queue<WaitingOp> q : mapWaitingOps.values()) {
-                        for (WaitingOp waitingOp : q) {
-                            if (Thread.interrupted()) {
-                                return;
-                            }
-                            if (waitingOp.isValid()) {
-                                if (waitingOp.needsInvalidation()) {
-                                    invalidate(waitingOp);
-                                }
-                            }
-                        }
+                    if (doRun()) {
+                        return;
                     }
                 } catch (InterruptedException e) {
                     return;
@@ -434,6 +421,36 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     logger.warning(t);
                 }
             }
+        }
+
+        private boolean doRun() throws Exception {
+            long waitTime = FIRST_WAIT_TIME;
+            while (waitTime > 0) {
+                long begin = System.currentTimeMillis();
+                WaitingOp waitingOp = (WaitingOp) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
+                if (waitingOp != null) {
+                    if (waitingOp.isValid()) {
+                        invalidate(waitingOp);
+                    }
+                }
+                long end = System.currentTimeMillis();
+                waitTime -= (end - begin);
+                if (waitTime > FIRST_WAIT_TIME) {
+                    waitTime = FIRST_WAIT_TIME;
+                }
+            }
+
+            for (Queue<WaitingOp> q : mapWaitingOps.values()) {
+                for (WaitingOp waitingOp : q) {
+                    if (Thread.interrupted()) {
+                        return true;
+                    }
+                    if (waitingOp.isValid() && waitingOp.needsInvalidation()) {
+                        invalidate(waitingOp);
+                    }
+                }
+            }
+            return false;
         }
     }
 }

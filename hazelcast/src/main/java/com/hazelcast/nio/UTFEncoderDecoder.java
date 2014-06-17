@@ -25,6 +25,9 @@ import java.io.UTFDataFormatException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+/**
+ * Utility class to encode/decode UTF-Strings to and from byte-arrays.
+ */
 public final class UTFEncoderDecoder {
 
     private static final int STRING_CHUNK_SIZE = 16 * 1024;

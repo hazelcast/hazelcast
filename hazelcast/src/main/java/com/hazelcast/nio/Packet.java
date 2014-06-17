@@ -38,7 +38,6 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     private static final int ST_HEADER = 12;
     private static final int ST_PARTITION = 13;
 
-
     private short header;
     private int partitionId;
 
