@@ -372,12 +372,6 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.transaction[\\/]"/>
 
-    <!-- OSGI -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.osgi[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.osgi[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.osgi[\\/]"/>
-
     <!-- Security -->
     <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.security[\\/]"/>
