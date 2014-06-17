@@ -30,6 +30,10 @@ import org.hibernate.cache.RegionFactory;
 
 import java.util.Properties;
 
+
+/**
+ * Simple RegionFactory implementation to return Hazelcast based Region implementations
+ */
 public class HazelcastCacheRegionFactory extends AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
     public HazelcastCacheRegionFactory() {

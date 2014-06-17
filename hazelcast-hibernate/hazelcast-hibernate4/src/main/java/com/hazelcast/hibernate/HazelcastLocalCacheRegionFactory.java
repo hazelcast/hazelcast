@@ -33,9 +33,13 @@ import org.hibernate.cfg.Settings;
 
 import java.util.Properties;
 
+
+/**
+ * Simple RegionFactory implementation to return Hazelcast based local Region implementations
+ */
 public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
-    public static final int serialVersionUID = 1;
+    private static final int serialVersionUID = 1;
 
     private transient CleanupService cleanupService;
 

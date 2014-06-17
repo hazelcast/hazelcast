@@ -19,15 +19,19 @@ package com.hazelcast.hibernate.region;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.spi.GeneralDataRegion;
 
 import java.util.Properties;
 
 /**
+ * Basic implementation of a IMap based cache without any special security checks
+ *
  * @author Leo Kim (lkim@limewire.com)
+ * @param <Cache> implementation type of RegionCache
  */
-public abstract class AbstractGeneralRegion<Cache extends RegionCache> extends AbstractHazelcastRegion<Cache>
+abstract class AbstractGeneralRegion<Cache extends RegionCache> extends AbstractHazelcastRegion<Cache>
         implements GeneralDataRegion {
 
     private final Cache cache;
@@ -42,6 +46,7 @@ public abstract class AbstractGeneralRegion<Cache extends RegionCache> extends A
         try {
             getCache().remove(key);
         } catch (OperationTimeoutException ignored) {
+            Logger.getLogger(AbstractGeneralRegion.class).finest(ignored);
         }
     }
 
@@ -49,6 +54,7 @@ public abstract class AbstractGeneralRegion<Cache extends RegionCache> extends A
         try {
             getCache().clear();
         } catch (OperationTimeoutException ignored) {
+            Logger.getLogger(AbstractGeneralRegion.class).finest(ignored);
         }
     }
 
@@ -64,6 +70,7 @@ public abstract class AbstractGeneralRegion<Cache extends RegionCache> extends A
         try {
             getCache().put(key, value, null);
         } catch (OperationTimeoutException ignored) {
+            Logger.getLogger(AbstractGeneralRegion.class).finest(ignored);
         }
     }
 

@@ -20,7 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.logging.Logger;
 
+/**
+ * Helper class to create timestamps and calculate timeouts based on either Hazelcast
+ * configuration of by requesting values on the cluster.
+ */
 public final class HazelcastTimestamper {
 
     private static final int SEC_TO_MS = 1000;
@@ -42,6 +47,7 @@ public final class HazelcastTimestamper {
             }
         } catch (UnsupportedOperationException ignored) {
             // HazelcastInstance is instance of HazelcastClient.
+            Logger.getLogger(HazelcastTimestamper.class).finest(ignored);
         }
         return CacheEnvironment.getDefaultCacheTimeoutInMillis();
     }
@@ -53,6 +59,7 @@ public final class HazelcastTimestamper {
             maxOpTimeoutProp = config.getProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS);
         } catch (UnsupportedOperationException ignored) {
             // HazelcastInstance is instance of HazelcastClient.
+            Logger.getLogger(HazelcastTimestamper.class).finest(ignored);
         }
         if (maxOpTimeoutProp != null) {
             return Long.parseLong(maxOpTimeoutProp);

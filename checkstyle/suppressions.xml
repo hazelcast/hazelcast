@@ -676,28 +676,11 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.aws[\\/]"/>
     <suppress checks="HideUtilityClassConstructor" files="com.hazelcast.aws.impl.Constants"/>
 
-
     <!-- Hibernate-->
-    <suppress checks="JavadocMethod" files="com.hazelcast.hibernate[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.hibernate[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.hibernate[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.hibernate[\\/]"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.region.AbstractGeneralRegion"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.CacheEnvironment"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.hibernate.instance.HazelcastClientLoader"/>
-    <suppress checks="InnerAssignment" files="com.hazelcast.hibernate.instance.HazelcastClientLoader"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.HazelcastTimestamper"/>
     <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate3CacheEntrySerializer"/>
     <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate41CacheEntrySerializer"/>
     <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate3CacheKeySerializer"/>
     <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate4CacheKeySerializer"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.hibernate.distributed.IMapRegionCache"/>
-    <suppress checks="NestedIfDepth" files="com.hazelcast.hibernate.distributed.IMapRegionCache"/>
-    <suppress checks="NestedIfDepth" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.hibernate.local.LocalRegionCache"/>
 
     <!-- Spring-->
     <suppress checks="JavadocMethod" files="com.hazelcast.spring[\\/]"/>
