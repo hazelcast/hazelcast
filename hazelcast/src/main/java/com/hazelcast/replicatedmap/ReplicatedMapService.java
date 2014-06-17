@@ -22,7 +22,6 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

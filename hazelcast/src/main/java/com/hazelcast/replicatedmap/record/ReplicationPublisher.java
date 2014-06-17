@@ -345,7 +345,8 @@ public class ReplicationPublisher<K, V>
                         V value = localEntry.getValue();
                         long ttlMillis = update.getTtlMillis();
                         int latestUpdateHash = localEntry.getLatestUpdateHash();
-                        ReplicationMessage message = new ReplicationMessage(name, key, value, newVectorClock, localMember, latestUpdateHash, ttlMillis);
+                        ReplicationMessage message = new ReplicationMessage(name, key, value, newVectorClock, localMember,
+                                latestUpdateHash, ttlMillis);
 
                         distributeReplicationMessage(message, true);
                     }

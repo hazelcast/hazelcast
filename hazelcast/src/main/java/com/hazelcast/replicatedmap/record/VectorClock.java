@@ -24,8 +24,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapDataSerializerHook;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * A vector clock implementation based on hashcodes of the Hazelcast members UUID to solve conflicts on
