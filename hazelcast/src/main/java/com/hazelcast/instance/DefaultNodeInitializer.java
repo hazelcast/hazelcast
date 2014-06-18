@@ -37,7 +37,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     public void printNodeInfo(Node node) {
-        systemLogger.info("Hazelcast (Apache License) " + version + " ("
+        systemLogger.info("Hazelcast " + version + " ("
                 + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Copyright (C) 2008-2014 Hazelcast.com");
     }
