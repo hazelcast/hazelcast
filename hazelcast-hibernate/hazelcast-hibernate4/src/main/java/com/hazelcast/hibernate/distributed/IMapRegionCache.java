@@ -157,28 +157,28 @@ public class IMapRegionCache implements RegionCache {
     private boolean compareVersion(Object key, Object value) {
         final CacheEntry currentEntry = (CacheEntry) value;
         try {
-            if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
-                return compareVersionUnderRowLock(key, value, currentEntry);
-            } else {
-                return false;
-            }
+            return compareVersionUnderRowLock(key, value, currentEntry);
         } catch (InterruptedException e) {
             return false;
         }
     }
 
-    private boolean compareVersionUnderRowLock(Object key, Object value, CacheEntry currentEntry) {
-        try {
-            final CacheEntry previousEntry = (CacheEntry) map.get(key);
-            if (previousEntry == null
-                    || versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                map.set(key, value);
-                return true;
-            } else {
-                return false;
+    private boolean compareVersionUnderRowLock(Object key, Object value, CacheEntry currentEntry) throws InterruptedException {
+        if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
+            try {
+                final CacheEntry previousEntry = (CacheEntry) map.get(key);
+                if (previousEntry == null
+                        || versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                    map.set(key, value);
+                    return true;
+                } else {
+                    return false;
+                }
+            } finally {
+                map.unlock(key);
             }
-        } finally {
-            map.unlock(key);
+        } else {
+            return false;
         }
     }
 }
