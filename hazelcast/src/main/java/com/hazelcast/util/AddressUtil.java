@@ -26,6 +26,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -221,42 +222,48 @@ public final class AddressUtil {
         return inetAddress;
     }
 
-    //CHECKSTYLE:OFF  Cyclomatic Complexity is 14 (max allowed is 12).
     public static Collection<Inet6Address> getPossibleInetAddressesFor(final Inet6Address inet6Address) {
-        if ((inet6Address.isSiteLocalAddress() || inet6Address.isLinkLocalAddress())
-                && inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
-            final LinkedList<Inet6Address> possibleAddresses = new LinkedList<Inet6Address>();
-            try {
-                final Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-                while (interfaces.hasMoreElements()) {
-                    NetworkInterface ni = interfaces.nextElement();
-                    Enumeration<InetAddress> addresses = ni.getInetAddresses();
-                    while (addresses.hasMoreElements()) {
-                        InetAddress address = addresses.nextElement();
-                        if (address instanceof Inet4Address) {
-                            continue;
-                        }
-                        if (inet6Address.isLinkLocalAddress() && address.isLinkLocalAddress()
-                                || inet6Address.isSiteLocalAddress() && address.isSiteLocalAddress()) {
-                            final Inet6Address newAddress = Inet6Address.getByAddress(null, inet6Address.getAddress(),
-                                    ((Inet6Address) address).getScopeId());
-                            possibleAddresses.addFirst(newAddress);
-                        }
-                    }
-                }
-            } catch (IOException ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-            if (possibleAddresses.isEmpty()) {
-                throw new IllegalArgumentException("Could not find a proper network interface"
-                        + " to connect to "
-                        + inet6Address);
-            }
-            return possibleAddresses;
+        if ((!inet6Address.isSiteLocalAddress() && !inet6Address.isLinkLocalAddress())
+                || inet6Address.getScopeId() > 0 || inet6Address.getScopedInterface() != null) {
+            return Collections.singleton(inet6Address);
         }
-        return Collections.singleton(inet6Address);
+
+        LinkedList<Inet6Address> possibleAddresses = new LinkedList<Inet6Address>();
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface ni = interfaces.nextElement();
+                addPossibleAddress(inet6Address, possibleAddresses, ni);
+            }
+        } catch (IOException ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+
+        if (possibleAddresses.isEmpty()) {
+            throw new IllegalArgumentException("Could not find a proper network interface"
+                    + " to connect to "
+                    + inet6Address);
+        }
+        return possibleAddresses;
     }
-    //CHECKSTYLE:ON
+
+    private static void addPossibleAddress(Inet6Address inet6Address, Deque<Inet6Address> possibleAddresses,
+                                           NetworkInterface ni) throws UnknownHostException {
+        Enumeration<InetAddress> addresses = ni.getInetAddresses();
+        while (addresses.hasMoreElements()) {
+            InetAddress address = addresses.nextElement();
+            if (address instanceof Inet4Address) {
+                continue;
+            }
+
+            if (inet6Address.isLinkLocalAddress() && address.isLinkLocalAddress()
+                    || inet6Address.isSiteLocalAddress() && address.isSiteLocalAddress()) {
+                final Inet6Address newAddress = Inet6Address.getByAddress(null, inet6Address.getAddress(),
+                        ((Inet6Address) address).getScopeId());
+                possibleAddresses.addFirst(newAddress);
+            }
+        }
+    }
 
 
     public static Collection<String> getMatchingIpv4Addresses(final AddressMatcher addressMatcher) {
@@ -376,7 +383,6 @@ public final class AddressUtil {
         return isValid;
     }
 
-    //CHECKSTYLE:OFF  Cyclomatic Complexity is 14 (max allowed is 12).
     private static void parseIpv6(AddressMatcher matcher, String addrs) {
         String address = addrs;
         if (address.indexOf('%') > -1) {
@@ -384,6 +390,16 @@ public final class AddressUtil {
             address = parts[0];
         }
         final String[] parts = address.split("((?<=:)|(?=:))");
+        final Collection<String> ipString = parseIPV6parts(parts, address);
+        if (ipString.size() != IPV6_LENGTH) {
+            throw new InvalidAddressException(address);
+        }
+        final String[] addressParts = ipString.toArray(new String[ipString.size()]);
+        checkIfAddressPartsAreValid(addressParts, address);
+        matcher.setAddress(addressParts);
+    }
+
+    private static Collection<String> parseIPV6parts(String[] parts, String address) {
         final LinkedList<String> ipString = new LinkedList<String>();
         int count = 0;
         int mark = -1;
@@ -392,8 +408,7 @@ public final class AddressUtil {
             String nextPart = i < parts.length - 1 ? parts[i + 1] : null;
             if ("".equals(part)) {
                 continue;
-            }
-            if (":".equals(part) && ":".equals(nextPart)) {
+            } else if (":".equals(part) && ":".equals(nextPart)) {
                 if (mark != -1) {
                     throw new InvalidAddressException(address);
                 }
@@ -409,18 +424,16 @@ public final class AddressUtil {
                 ipString.add((i + mark), "0");
             }
         }
-        if (ipString.size() != IPV6_LENGTH) {
-            throw new InvalidAddressException(address);
-        }
-        final String[] addressParts = ipString.toArray(new String[ipString.size()]);
+        return ipString;
+    }
+
+    private static void checkIfAddressPartsAreValid(String[] addressParts, String address) {
         for (String part : addressParts) {
             if (!isValidIpAddressPart(part, true)) {
                 throw new InvalidAddressException(address);
             }
         }
-        matcher.setAddress(addressParts);
     }
-    //CHECKSTYLE:ON
 
     // ----------------- UTILITY CLASSES ------------------
 

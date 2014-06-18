@@ -25,20 +25,22 @@ import java.util.Locale;
 public final class StringUtil {
 
     private static final Locale LOCALE_INTERNAL = Locale.ENGLISH;
+    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
     private StringUtil() {
     }
 
     public static String bytesToString(byte[] bytes, int offset, int length) {
-        return new String(bytes, offset, length, Charset.forName("UTF-8"));
+        return new String(bytes, offset, length, UTF8_CHARSET);
     }
 
     public static String bytesToString(byte[] bytes) {
-        return new String(bytes, Charset.forName("UTF-8"));
+
+        return new String(bytes, UTF8_CHARSET);
     }
 
     public static byte[] stringToBytes(String s) {
-        return s.getBytes(Charset.forName("UTF-8"));
+        return s.getBytes(UTF8_CHARSET);
     }
 
     public static boolean isNullOrEmpty(String s) {

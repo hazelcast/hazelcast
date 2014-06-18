@@ -64,9 +64,7 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         return entries.last();
     }
 
-    //CHECKSTYLE:OFF
     private class SortedIterator implements Iterator {
-    //CHECKSTYLE:ON
 
         final Iterator<Map.Entry> iter = entries.iterator();
 

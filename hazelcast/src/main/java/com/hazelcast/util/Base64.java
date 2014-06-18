@@ -56,7 +56,6 @@ public final class Base64 {
     private static byte[] lookUpBase64Alphabet = new byte[LOOKUPLENGTH];
 
     static {
-        //CHECKSTYLE:OFF
         for (int i = 0; i < BASELENGTH; i++) {
             base64Alphabet[i] = -1;
         }
@@ -82,7 +81,6 @@ public final class Base64 {
         }
         lookUpBase64Alphabet[62] = (byte) '+';
         lookUpBase64Alphabet[63] = (byte) '/';
-        //CHECKSTYLE:ON
     }
 
     private Base64() {

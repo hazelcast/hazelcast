@@ -145,7 +145,7 @@ public final class VersionCheck {
         }
         byte[] byteData = md.digest(str.getBytes(Charset.forName("UTF-8")));
 
-        //CHECKSTYLE:OFF
+        //CHECKSTYLE:OFF suppressed because of magic numbers.
         StringBuilder sb = new StringBuilder();
         for (byte aByteData : byteData) {
             sb.append(Integer.toString((aByteData & 0xff) + 0x100, 16).substring(1));

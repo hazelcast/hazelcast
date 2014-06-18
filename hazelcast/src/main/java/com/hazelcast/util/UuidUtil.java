@@ -68,7 +68,7 @@ public final class UuidUtil {
     }
 
     public static UUID buildRandomUUID() {
-        //CHECKSTYLE:OFF
+        //CHECKSTYLE:OFF  suppressed because of magic numbers
         byte[] data = new byte[16];
         RANDOMIZERS.get().nextBytes(data);
         /* clear version        */

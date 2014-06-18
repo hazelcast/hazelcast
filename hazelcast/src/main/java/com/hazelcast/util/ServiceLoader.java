@@ -227,11 +227,10 @@ public final class ServiceLoader {
                 classLoaders.add(clientClassLoader);
             }
 
-            //CHECKSTYLE:OFF
         } catch (ClassNotFoundException ignore) {
+            EmptyStatement.ignore(ignore);
             // ignore since we does not have HazelcastClient in classpath
         }
-        //CHECKSTYLE:ON
 
         return classLoaders;
     }
