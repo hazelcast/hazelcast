@@ -28,7 +28,6 @@ import java.util.Properties;
  * @author Leo Kim (lkim@limewire.com)
  * @param <T> implementation type of HazelcastRegion
  */
-
 public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrictReadWriteAccessDelegate<T> {
 
     public ReadOnlyAccessDelegate(T hazelcastRegion, final Properties props) {
