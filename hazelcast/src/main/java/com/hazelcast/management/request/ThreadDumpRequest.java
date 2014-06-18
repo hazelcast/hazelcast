@@ -23,6 +23,9 @@ import com.hazelcast.management.operation.ThreadDumpOperation;
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
 
+/**
+ * Request for generating thread dumps.
+ */
 public class ThreadDumpRequest implements ConsoleRequest {
 
     private boolean dumpDeadlocks;

@@ -22,6 +22,9 @@ import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.util.JsonUtil;
 
+/**
+ * Request for fetching member XML configuration.
+ */
 public class MemberConfigRequest implements ConsoleRequest {
 
     public MemberConfigRequest() {

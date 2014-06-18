@@ -25,6 +25,9 @@ import com.hazelcast.nio.Address;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Request for fetching system warnings.
+ */
 public class GetSystemWarningsRequest implements ConsoleRequest {
 
     public GetSystemWarningsRequest() {
