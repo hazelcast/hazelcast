@@ -179,6 +179,11 @@ public interface IMap<K, V>
      * <p>The map will not contain a mapping for the specified key once the
      * call returns.
      *
+     * <p><b>Warning:</b></p>
+     * This method breaks the contract of EntryListener.
+     * When an entry is removed by delete(), it fires an EntryEvent with a null oldValue.
+     * <p/>
+     *
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException   if the key is of an inappropriate type for
      *                              this map (optional)
@@ -213,17 +218,40 @@ public interface IMap<K, V>
      */
     Map<K, V> getAll(Set<K> keys);
 
+    /**
+     * todo  3.3 add this method
+     * Loads given keys. This is a batch load operation so that an implementation can
+     * optimize the multiple loads.
+     *
+     * @param keys keys of the values entries to load
+     * @param replaceExistingValues when true existing values in the Map will
+     *                              be replaced by those loaded from the MapLoader
+     * void loadAll(Set<K> keys, boolean replaceExistingValues);
+     */
 
     /**
-     * This method clears the map and deleteAll on MapStore which if connected to a database,
-     * will delete the records from that database.
+     * todo  3.3 add this method
+     * Loads all keys into the store.
+     * Loads given keys. This is a batch load operation so that an implementation can
+     * optimize the multiple loads.
+     *
+     * @param keys keys of the values entries to load
+     * @param replaceExistingValues when true existing values in the Map will
+     *                              be replaced by those loaded from the MapLoader
+     * void loadAll(boolean replaceExistingValues));
+     */
+
+
+    /**
+     * This method clears the map and invokes {@link MapStore#deleteAll}deleteAll on MapStore which,
+     * if connected to a database, will delete the records from that database.
      * <p/>
      * Clear does not notify listeners.
      * <p/>
+     * To clear a map without calling {@link MapStore#deleteAll} use {@link #evictAll}.
      * If you wish to clear the map only without calling deleteAll, use
      *
-     * @see #evictAll to evict entries without calling deletaAll().
-     * todo add clearMapOnly method to IMap.
+     * @see #evictAll
      */
     @Override
     void clear();
@@ -517,9 +545,14 @@ public interface IMap<K, V>
      * doesn't return the old value which is more efficient.
      * <p/>
      * <p><b>Warning:</b></p>
+     * This method breaks the contract of EntryListener.
+     * When an entry is updated by set(), it fires an EntryEvent with a null oldValue.
+     * <p/>
+     * <p><b>Warning-2:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     * <p/>
      *
      * @param key   key of the entry
      * @param value value of the entry
@@ -843,7 +876,7 @@ public interface IMap<K, V>
 
     /**
      * Evicts the specified key from this map. If
-     * a <tt>MapStore</tt> defined for this map, then the entry is not
+     * a <tt>MapStore</tt> is defined for this map, then the entry is not
      * deleted from the underlying <tt>MapStore</tt>, evict only removes
      * the entry from the memory.
      * <p/>
@@ -857,6 +890,19 @@ public interface IMap<K, V>
      * @throws NullPointerException if the specified key is null
      */
     boolean evict(K key);
+
+    /**
+     * Evicts all keys from this map except locked ones.
+     * <p/>
+     * If a <tt>MapStore</tt> is defined for this map, deleteAll is <strong>not</strong> called by this method.
+     * If you do want to deleteAll to be called use the {@link #clear()} method.
+     * <p/>
+     * The EVICT_ALL event is fired for any registered listeners.
+     *
+     * @see #clear()
+     */
+    void evictAll();
+
 
     /**
      * Returns a set clone of the keys contained in this map.
@@ -997,6 +1043,16 @@ public interface IMap<K, V>
      * Index attribute should either have a getter method or be public.
      * You should also make sure to add the indexes before adding
      * entries to this map.
+     * <p/>
+     * <h3>Time to Index</h3>
+     * Indexing time is executed in parallel on each partition by operation threads. The Map
+     * is not blocked during this operation.
+     *
+     * The time taken in proportional to the size of the Map and the number Members.
+     *
+     * <h3>Searches while indexes are being built</h3>
+     * Until the index finishes being created, any searches for the attribute will use a full Map scan,
+     * thus avoiding using a partially built index and returning incorrect results.
      *
      * @param attribute attribute of value
      * @param ordered   <tt>true</tt> if index should be ordered,

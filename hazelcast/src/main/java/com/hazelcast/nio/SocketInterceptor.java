@@ -20,6 +20,12 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Properties;
 
+/**
+ * An interface that provides the ability to intercept the creation of sockets.
+ *
+ * This class should belong in the {@link com.hazelcast.nio.tcp} package; unfortunately we can't move this
+ * interface since it is a public API.
+ */
 public interface SocketInterceptor {
 
     void init(Properties properties);

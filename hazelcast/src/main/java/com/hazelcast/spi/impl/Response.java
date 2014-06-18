@@ -34,7 +34,7 @@ import java.io.IOException;
  * </li>
  * </ol>
  */
-abstract public class Response implements IdentifiedDataSerializable {
+public abstract class Response implements IdentifiedDataSerializable {
 
     protected long callId;
     protected boolean urgent;

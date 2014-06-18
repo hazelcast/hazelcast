@@ -35,16 +35,12 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -97,12 +93,7 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
             map.putAsync(i, i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertEquals(count, map.size());
-            }
-        });
-
+        assertSizeEventually(count, map);
         assertNoLitterInOpService(hz);
     }
 
@@ -127,12 +118,8 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
             }
         }
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertEquals(count, map.size());
-                assertEquals(count, map2.size());
-            }
-        });
+        assertSizeEventually(count, map);
+        assertSizeEventually(count, map2);
 
         assertNoLitterInOpService(hz);
         assertNoLitterInOpService(hz2);

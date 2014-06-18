@@ -25,7 +25,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.SocketChannelWrapper;
+import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.*;

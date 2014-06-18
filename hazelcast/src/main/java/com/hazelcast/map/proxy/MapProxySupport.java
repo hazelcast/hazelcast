@@ -21,6 +21,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -49,6 +50,7 @@ import com.hazelcast.map.operation.ClearOperation;
 import com.hazelcast.map.operation.ContainsKeyOperation;
 import com.hazelcast.map.operation.ContainsValueOperationFactory;
 import com.hazelcast.map.operation.EntryOperation;
+import com.hazelcast.map.operation.EvictAllOperation;
 import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.map.operation.GetEntryViewOperation;
 import com.hazelcast.map.operation.GetOperation;
@@ -98,6 +100,7 @@ import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
@@ -388,6 +391,25 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final boolean evictSuccess = (Boolean) invokeOperation(key, operation);
         invalidateNearCache(key);
         return evictSuccess;
+    }
+
+    protected void evictAllInternal() {
+        try {
+            clearNearCache();
+            final Operation operation = new EvictAllOperation(name);
+            final NodeEngine nodeEngine = getNodeEngine();
+            final Map<Integer, Object> resultMap
+                    = nodeEngine.getOperationService().invokeOnAllPartitions(SERVICE_NAME,
+                    new BinaryOperationFactory(operation, nodeEngine));
+
+            int numberOfAffectedEntries = 0;
+            for (Object o : resultMap.values()) {
+                numberOfAffectedEntries += (Integer) o;
+            }
+            publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
     }
 
     protected Data removeInternal(Data key) {
@@ -1148,6 +1170,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
+
     public void addIndex(final String attribute, final boolean ordered) {
         final NodeEngine nodeEngine = getNodeEngine();
         if (attribute == null) throw new IllegalArgumentException("Attribute name cannot be null");
@@ -1188,6 +1211,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             return;
         }
         getService().invalidateNearCache(name, keys);
+    }
+
+    private void clearNearCache() {
+        getService().clearNearCache(name);
+    }
+
+    private void publishMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
+        getService().publishMapEvent(getNodeEngine().getThisAddress(),
+                name, eventType, numberOfAffectedEntries);
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {

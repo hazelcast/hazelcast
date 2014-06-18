@@ -26,14 +26,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class PartitionContainer {
-    private final MapService mapService;
-    private final int partitionId;
-    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
 
-    public PartitionContainer(final MapService mapService, final int partitionId) {
-        this.mapService = mapService;
-        this.partitionId = partitionId;
-    }
+    private final MapService mapService;
+
+    private final int partitionId;
+
+    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
 
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = new ConstructorFunction<String, RecordStore>() {
@@ -41,6 +39,18 @@ public class PartitionContainer {
             return new DefaultRecordStore(name, mapService, partitionId);
         }
     };
+    /**
+     * Flag to check if there is a {@link com.hazelcast.map.operation.ClearExpiredOperation}
+     * is running on this partition at this moment or not.
+     */
+    private volatile boolean hasRunningCleanup;
+
+    private volatile long lastCleanupTime;
+
+    public PartitionContainer(final MapService mapService, final int partitionId) {
+        this.mapService = mapService;
+        this.partitionId = partitionId;
+    }
 
     public ConcurrentMap<String, RecordStore> getMaps() {
         return maps;
@@ -87,5 +97,19 @@ public class PartitionContainer {
         maps.clear();
     }
 
+    public boolean hasRunningCleanup() {
+        return hasRunningCleanup;
+    }
 
+    public void setHasRunningCleanup(boolean hasRunningCleanup) {
+        this.hasRunningCleanup = hasRunningCleanup;
+    }
+
+    public long getLastCleanupTime() {
+        return lastCleanupTime;
+    }
+
+    public void setLastCleanupTime(long lastCleanupTime) {
+        this.lastCleanupTime = lastCleanupTime;
+    }
 }

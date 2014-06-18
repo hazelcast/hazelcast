@@ -17,13 +17,13 @@
 package com.hazelcast.map.writebehind;
 
 /**
- * @param <K>
+ * @param <K> the key type.
  */
 abstract class AbstractDelayedEntry<K> {
 
-    private final K key;
+    protected final K key;
 
-    private final long storeTime;
+    protected final long storeTime;
 
     // TODO really need this?
     private final int partitionId;
@@ -47,25 +47,10 @@ abstract class AbstractDelayedEntry<K> {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final AbstractDelayedEntry delayedEntry = (AbstractDelayedEntry) obj;
-        if (key == null) {
-            return false;
-        }
-        return key.equals(delayedEntry.getKey());
-    }
-
-    @Override
     public int hashCode() {
-        return key.hashCode();
+        int result = 1;
+        result = 31 * result + (key == null ? 0 : key.hashCode());
+        result = 31 * result + (int) (storeTime ^ (storeTime >>> 32));
+        return result;
     }
 }

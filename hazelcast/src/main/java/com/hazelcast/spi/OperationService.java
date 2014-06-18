@@ -25,8 +25,8 @@ import java.util.Map;
 /**
  * The OperationService is responsible for executing operations.
  * <p/>
- * A single operation can be executed locally using {@link #runOperationOnCallingThread(Operation)} and {@link #executeOperation(Operation)}.
- * Or it can executed remotely using the one of the send methods.
+ * A single operation can be executed locally using {@link #runOperationOnCallingThread(Operation)}
+ * and {@link #executeOperation(Operation)}. Or it can executed remotely using the one of the send methods.
  * <p/>
  * It also is possible to execute multiple operation one multiple partitions using one of the invoke methods.
  *
@@ -34,28 +34,20 @@ import java.util.Map;
  */
 public interface OperationService {
 
-    //todo: remove
     int getResponseQueueSize();
 
-    //todo: remove
     int getOperationExecutorQueueSize();
 
-    //todo: remove
     int getPriorityOperationExecutorQueueSize();
 
-    //todo: remove
     int getRunningOperationsCount();
 
-    //todo: remove
     int getRemoteOperationsCount();
 
-    //todo: remove
     int getPartitionOperationThreadCount();
 
-    //todo: remove
     int getGenericOperationThreadCount();
 
-    //todo: remove
     long getExecutedOperationCount();
 
     /**
@@ -82,8 +74,10 @@ public interface OperationService {
 
     /**
      * Invokes a set of operation on each partition.
+     * <p/>
+     * This method blocks until the operation completes.
      *
-     * @param serviceName
+     * @param serviceName the name of the service.
      * @param operationFactory the factory responsible creating operations
      * @return a Map with partitionId as key and outcome of the operation as value.
      * @throws Exception
@@ -93,8 +87,10 @@ public interface OperationService {
 
     /**
      * Invokes an set of operation on selected set of partitions
+     * * <p/>
+     * This method blocks until all operations complete.
      *
-     * @param serviceName
+     * @param serviceName the name of the service
      * @param operationFactory the factory responsible creating operations
      * @param partitions       the partitions the operation should be executed on.
      * @return a Map with partitionId as key and outcome of the operation as value.
@@ -110,9 +106,16 @@ public interface OperationService {
      *
      * @param op     the operation to send and execute.
      * @param target the address of that target member.
-     * @return
+     * @return true if send successfully, false otherwise.
      */
     boolean send(Operation op, Address target);
 
+    /**
+     * Sends a response to a remote machine.
+     *
+     * @param response the response to send.
+     * @param target the address of the target machine
+     * @return true if send successfully, false otherwise.
+     */
     boolean send(Response response, Address target);
 }

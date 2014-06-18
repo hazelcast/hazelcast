@@ -70,15 +70,9 @@ public interface IOService {
 
     void shouldConnectTo(Address address);
 
-    boolean isReuseSocketAddress();
-
-    int getSocketPort();
-
     boolean isSocketBind();
 
     boolean isSocketBindAny();
-
-    boolean isSocketPortAutoIncrement();
 
     int getSocketReceiveBufferSize();
 

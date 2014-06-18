@@ -59,4 +59,24 @@ public class QueryEventFilter extends EntryEventFilter  {
         super.readData(in);
         predicate = in.readObject();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        QueryEventFilter that = (QueryEventFilter) o;
+        if (!predicate.equals(that.predicate)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return predicate.hashCode();
+    }
 }

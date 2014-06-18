@@ -30,8 +30,6 @@ import static java.lang.String.format;
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class MembershipEvent extends EventObject {
 
-    private static final long serialVersionUID = -2010865371829087371L;
-
     /**
      * This event type is fired when a new member joins the cluster.
      */
@@ -50,6 +48,9 @@ public class MembershipEvent extends EventObject {
      */
     public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
 
+
+    private static final long serialVersionUID = -2010865371829087371L;
+
     private final Member member;
 
     private final int eventType;
@@ -67,11 +68,11 @@ public class MembershipEvent extends EventObject {
      * Returns a consistent view of the the members exactly after this MembershipEvent has been processed. So if a
      * member is removed, the returned set will not include this member. And if a member is added it will include
      * this member.
-     *
+     * <p/>
      * The problem with calling the {@link com.hazelcast.core.Cluster#getMembers()} is that the content could already
      * have changed while processing this event so it becomes very difficult to write a deterministic algorithm since
      * you can't get a deterministic view of the members. This method solves that problem.
-     *
+     * <p/>
      * The set is immutable and ordered. For more information see {@link com.hazelcast.core.Cluster#getMembers()}.
      *
      * @return the members at the moment after this event.
@@ -113,7 +114,7 @@ public class MembershipEvent extends EventObject {
     @Override
     public String toString() {
         String type;
-        switch (eventType){
+        switch (eventType) {
             case MEMBER_ADDED:
                 type = "added";
                 break;

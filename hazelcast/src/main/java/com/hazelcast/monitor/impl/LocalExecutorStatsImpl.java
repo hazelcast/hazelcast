@@ -16,16 +16,17 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public class LocalExecutorStatsImpl
-        implements LocalExecutorStats {
+import static com.hazelcast.util.JsonUtil.getLong;
+
+public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> PENDING_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "pending");
@@ -39,7 +40,6 @@ public class LocalExecutorStatsImpl
             .newUpdater(LocalExecutorStatsImpl.class, "totalStartLatency");
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_EXECUTION_TIME_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "totalExecutionTime");
-
     private long creationTime;
 
     // These fields are only accessed through the updaters
@@ -113,8 +113,29 @@ public class LocalExecutorStatsImpl
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("creationTime", creationTime);
+        root.add("pending", pending);
+        root.add("started", started);
+        root.add("totalStartLatency", totalStartLatency);
+        root.add("completed", completed);
+        root.add("totalExecutionTime", totalExecutionTime);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+        creationTime = getLong(json, "creationTime", -1L);
+        PENDING_UPDATER.set(this, getLong(json, "pending", -1L));
+        STARTED_UPDATER.set(this, getLong(json, "started", -1L));
+        TOTAL_START_LATENCY_UPDATER.set(this, getLong(json, "totalStartLatency", -1L));
+        COMPLETED_UPDATER.set(this, getLong(json, "completed", -1L));
+        TOTAL_EXECUTION_TIME_UPDATER.set(this, getLong(json, "totalExecutionTime", -1L));
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(pending);
         out.writeLong(started);

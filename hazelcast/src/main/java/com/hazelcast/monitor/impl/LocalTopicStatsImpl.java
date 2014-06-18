@@ -16,13 +16,15 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.JsonUtil.getLong;
 
 public class LocalTopicStatsImpl
         implements LocalTopicStats {
@@ -31,7 +33,6 @@ public class LocalTopicStatsImpl
             .newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
     private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_RECEIVED_MESSAGES_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalTopicStatsImpl.class, "totalReceivedMessages");
-
     private long creationTime;
 
     // These fields are only accessed through the updaters
@@ -61,6 +62,22 @@ public class LocalTopicStatsImpl
     @Override
     public long getCreationTime() {
         return creationTime;
+    }
+
+    @Override
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("creationTime", creationTime);
+        root.add("totalPublishes", totalPublishes);
+        root.add("totalReceivedMessages", totalReceivedMessages);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+        creationTime = getLong(json, "creationTime", -1L);
+        TOTAL_PUBLISHES_UPDATER.set(this, getLong(json, "totalPublishes", -1L));
+        TOTAL_RECEIVED_MESSAGES_UPDATER.set(this, getLong(json, "totalReceivedMessages", -1L));
     }
 
     @Override

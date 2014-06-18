@@ -20,12 +20,14 @@ import java.util.Arrays;
 
 public class SymmetricEncryptionConfig {
 
-    private boolean enabled = false;
+    private static final int ITERATION_COUNT = 19;
+
+    private boolean enabled;
     private String salt = "thesalt";
     private String password = "thepassword";
-    private int iterationCount = 19;
+    private int iterationCount = ITERATION_COUNT;
     private String algorithm = "PBEWithMD5AndDES";
-    private byte[] key = null;
+    private byte[] key;
 
     public boolean isEnabled() {
         return enabled;

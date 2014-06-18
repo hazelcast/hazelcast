@@ -56,8 +56,6 @@ public interface MapLoader<K, V> {
     /**
      * Loads all of the keys from the store.
      *
-     * It is
-     *
      * @return all the keys
      */
     Set<K> loadAllKeys();

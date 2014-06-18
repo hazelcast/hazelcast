@@ -30,6 +30,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -102,7 +103,8 @@ public class MapReplicationOperation extends AbstractOperation {
                 RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
-                    Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1);
+                    final Data value = recordReplicationInfo.getValue();
+                    Record newRecord = mapService.createRecord(mapName, key, value, -1L, Clock.currentTimeMillis());
                     mapService.applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putForReplication(key, newRecord);
                 }

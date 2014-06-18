@@ -27,7 +27,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class TopicConfig {
 
-    public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
+    public static final boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
 
     private String name;
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
@@ -47,14 +47,14 @@ public class TopicConfig {
      * @param config
      */
     public TopicConfig(TopicConfig config) {
-        isNotNull(config,"config");
+        isNotNull(config, "config");
         this.name = config.name;
         this.globalOrderingEnabled = config.globalOrderingEnabled;
         this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
     }
 
     public TopicConfigReadOnly getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new TopicConfigReadOnly(this);
         }
         return readOnly;
@@ -77,7 +77,7 @@ public class TopicConfig {
      * @throws IllegalArgumentException if name is null or an empty string.
      */
     public TopicConfig setName(String name) {
-        this.name = hasText(name,"name");
+        this.name = hasText(name, "name");
         return this;
     }
 
@@ -123,7 +123,6 @@ public class TopicConfig {
     }
 
     /**
-     *
      * @param statisticsEnabled
      * @return
      */
@@ -133,19 +132,21 @@ public class TopicConfig {
     }
 
     public int hashCode() {
-        return (globalOrderingEnabled ? 1231 : 1237) +
-                31 * (name != null ? name.hashCode() : 0);
+        return (globalOrderingEnabled ? 1231 : 1237)
+                + 31 * (name != null ? name.hashCode() : 0);
     }
 
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof TopicConfig))
+        }
+        if (!(obj instanceof TopicConfig)) {
             return false;
+        }
         TopicConfig other = (TopicConfig) obj;
         return
-                (this.name != null ? this.name.equals(other.name) : other.name == null) &&
-                        this.globalOrderingEnabled == other.globalOrderingEnabled;
+                (this.name != null ? this.name.equals(other.name) : other.name == null)
+                        && this.globalOrderingEnabled == other.globalOrderingEnabled;
     }
 
     public String toString() {

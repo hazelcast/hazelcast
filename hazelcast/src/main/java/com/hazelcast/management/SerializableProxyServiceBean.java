@@ -1,15 +1,14 @@
 package com.hazelcast.management;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.spi.ProxyService;
-import java.io.IOException;
+
+import static com.hazelcast.util.JsonUtil.getInt;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.ProxyServiceMBean}.
  */
-public class SerializableProxyServiceBean implements DataSerializable {
+public class SerializableProxyServiceBean implements JsonSerializable {
 
     private int proxyCount;
 
@@ -29,12 +28,14 @@ public class SerializableProxyServiceBean implements DataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(proxyCount);
+    public JsonObject toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("proxyCount", proxyCount);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        proxyCount = in.readInt();
+    public void fromJson(JsonObject json) {
+        proxyCount = getInt(json, "proxyCount", -1);
     }
 }

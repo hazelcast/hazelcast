@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -41,6 +42,8 @@ import java.util.List;
 
 public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
+    private static final int INITIAL_CAPACITY = 10;
+
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
         springXmlBuilder.handleClient(element);
@@ -53,8 +56,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private BeanDefinitionBuilder builder;
 
-
-        private ManagedMap nearCacheConfigMap;//= new HashMap<String, NearCacheConfig>();
+        //= new HashMap<String, NearCacheConfig>();
+        private ManagedMap nearCacheConfigMap;
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -116,7 +119,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleNetwork(Node node) {
             final BeanDefinitionBuilder clientNetworkConfig = createBeanBuilder(ClientNetworkConfig.class);
-            List<String> members = new ArrayList<String>(10);
+            List<String> members = new ArrayList<String>(INITIAL_CAPACITY);
             fillAttributeValues(node, clientNetworkConfig);
             for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(child);
@@ -128,11 +131,17 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSocketInterceptorConfig(child, clientNetworkConfig);
                 } else if ("ssl".equals(nodeName)) {
                     handleSSLConfig(child, clientNetworkConfig);
+                } else if ("aws".equals(nodeName)) {
+                    handleAws(child, clientNetworkConfig);
                 }
             }
             clientNetworkConfig.addPropertyValue("addresses", members);
 
             configBuilder.addPropertyValue("networkConfig", clientNetworkConfig.getBeanDefinition());
+        }
+
+        private void handleAws(Node node, BeanDefinitionBuilder clientNetworkConfig) {
+            createAndFillBeanBuilder(node, ClientAwsConfig.class, "awsConfig", clientNetworkConfig);
         }
 
         private void handleSSLConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {

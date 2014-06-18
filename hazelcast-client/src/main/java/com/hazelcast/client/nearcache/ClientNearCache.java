@@ -49,6 +49,9 @@ public class ClientNearCache<K> {
 
     public static final Object NULL_OBJECT = new Object();
     public static final int EVICTION_PERCENTAGE = 20;
+    public static final int HUNDREAD_PERCENTAGE = 100;
+    public static final int THREE_FACTOR = 3;
+    public static final int SEC_TO_MIL = 1000;
     public static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
     String registrationId;
     final ClientNearCacheType cacheType;
@@ -85,9 +88,9 @@ public class ClientNearCache<K> {
         this.cacheType = cacheType;
         this.context = context;
         maxSize = nearCacheConfig.getMaxSize();
-        maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * 1000;
+        maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * SEC_TO_MIL;
         inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * 1000;
+        timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * SEC_TO_MIL;
         invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
         cache = new ConcurrentHashMap<K, CacheRecord<K>>();
@@ -157,7 +160,7 @@ public class ClientNearCache<K> {
                         try {
                             TreeSet<CacheRecord<K>> records = new TreeSet<CacheRecord<K>>(comparator);
                             records.addAll(cache.values());
-                            int evictSize = cache.size() * EVICTION_PERCENTAGE / 100;
+                            int evictSize = cache.size() * EVICTION_PERCENTAGE / HUNDREAD_PERCENTAGE;
                             int i = 0;
                             for (CacheRecord<K> record : records) {
                                 cache.remove(record.key);
@@ -261,6 +264,9 @@ public class ClientNearCache<K> {
         cache.clear();
     }
 
+    public void clear() {
+        cache.clear();
+    }
 
     class CacheRecord<K> {
         final K key;
@@ -299,7 +305,7 @@ public class ClientNearCache<K> {
                     // sizeof atomic integer
                     + (Integer.SIZE / Byte.SIZE)
                     // object references (key, value, hit)
-                    + 3 * (Integer.SIZE / Byte.SIZE);
+                    + THREE_FACTOR * (Integer.SIZE / Byte.SIZE);
         }
 
         boolean expired() {

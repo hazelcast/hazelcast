@@ -19,6 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 
@@ -56,6 +57,11 @@ public class MapMBean extends HazelcastMBean<IMap> {
             public void entryEvicted(EntryEvent event) {
                 totalEvictedEntryCount.incrementAndGet();
             }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+                totalEvictedEntryCount.addAndGet(event.getNumberOfEntriesAffected());
+            }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);
     }
@@ -70,13 +76,13 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
     @ManagedAnnotation("localOwnedEntryCount")
     @ManagedDescription("number of entries owned on this member")
-    public long getLocalOwnedEntryCount(){
+    public long getLocalOwnedEntryCount() {
         return managedObject.getLocalMapStats().getOwnedEntryCount();
     }
 
-     @ManagedAnnotation("localBackupEntryCount")
+    @ManagedAnnotation("localBackupEntryCount")
     @ManagedDescription("the number of backup entries hold on this member")
-    public long getLocalBackupEntryCount(){
+    public long getLocalBackupEntryCount() {
         return managedObject.getLocalMapStats().getBackupEntryCount();
     }
 
@@ -88,151 +94,151 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
     @ManagedAnnotation("localOwnedEntryMemoryCost")
     @ManagedDescription("memory cost (number of bytes) of owned entries on this member")
-    public long getLocalOwnedEntryMemoryCost(){
+    public long getLocalOwnedEntryMemoryCost() {
         return managedObject.getLocalMapStats().getOwnedEntryMemoryCost();
     }
 
     @ManagedAnnotation("localBackupEntryMemoryCost")
     @ManagedDescription("memory cost (number of bytes) of backup entries on this member.")
-    public long getLocalBackupEntryMemoryCost(){
+    public long getLocalBackupEntryMemoryCost() {
         return managedObject.getLocalMapStats().getBackupEntryMemoryCost();
     }
 
     @ManagedAnnotation("localCreationTime")
     @ManagedDescription("the creation time of this map on this member.")
-    public long getLocalCreationTime(){
+    public long getLocalCreationTime() {
         return managedObject.getLocalMapStats().getCreationTime();
     }
 
     @ManagedAnnotation("localLastAccessTime")
     @ManagedDescription("the last access (read) time of the locally owned entries.")
-    public long getLocalLastAccessTime(){
+    public long getLocalLastAccessTime() {
         return managedObject.getLocalMapStats().getLastAccessTime();
     }
 
     @ManagedAnnotation("localLastUpdateTime")
     @ManagedDescription("the last update time of the locally owned entries.")
-    public long getLocalLastUpdateTime(){
+    public long getLocalLastUpdateTime() {
         return managedObject.getLocalMapStats().getLastUpdateTime();
     }
 
     @ManagedAnnotation("localHits")
     @ManagedDescription("the number of hits (reads) of the locally owned entries.")
-    public long getLocalHits(){
+    public long getLocalHits() {
         return managedObject.getLocalMapStats().getHits();
     }
 
     @ManagedAnnotation("localLockedEntryCount")
     @ManagedDescription("the number of currently locked locally owned keys.")
-    public long getLocalLockedEntryCount(){
+    public long getLocalLockedEntryCount() {
         return managedObject.getLocalMapStats().getLockedEntryCount();
     }
 
     @ManagedAnnotation("localDirtyEntryCount")
     @ManagedDescription("the number of entries that the member owns and are dirty on this member")
-    public long getLocalDirtyEntryCount(){
+    public long getLocalDirtyEntryCount() {
         return managedObject.getLocalMapStats().getDirtyEntryCount();
     }
 
     @ManagedAnnotation("localPutOperationCount")
     @ManagedDescription("the number of put operations on this member")
-    public long getLocalPutOperationCount(){
+    public long getLocalPutOperationCount() {
         return managedObject.getLocalMapStats().getPutOperationCount();
     }
 
     @ManagedAnnotation("localGetOperationCount")
     @ManagedDescription("number of get operations on this member")
-    public long getLocalGetOperationCount(){
+    public long getLocalGetOperationCount() {
         return managedObject.getLocalMapStats().getGetOperationCount();
     }
 
     @ManagedAnnotation("localRemoveOperationCount")
     @ManagedDescription("number of remove operations on this member")
-    public long getLocalRemoveOperationCount(){
+    public long getLocalRemoveOperationCount() {
         return managedObject.getLocalMapStats().getRemoveOperationCount();
     }
 
     @ManagedAnnotation("localTotalPutLatency")
     @ManagedDescription("the total latency of put operations. To get the average latency, divide to number of puts")
-    public long getLocalTotalPutLatency(){
+    public long getLocalTotalPutLatency() {
         return managedObject.getLocalMapStats().getTotalPutLatency();
     }
 
     @ManagedAnnotation("localTotalGetLatency")
     @ManagedDescription("the total latency of get operations. To get the average latency, divide to number of gets")
-    public long getLocalTotalGetLatency(){
+    public long getLocalTotalGetLatency() {
         return managedObject.getLocalMapStats().getTotalGetLatency();
     }
 
     @ManagedAnnotation("localTotalRemoveLatency")
     @ManagedDescription("the total latency of remove operations. To get the average latency, divide to number of gets")
-    public long getLocalTotalRemoveLatency(){
+    public long getLocalTotalRemoveLatency() {
         return managedObject.getLocalMapStats().getTotalRemoveLatency();
     }
 
     @ManagedAnnotation("localMaxPutLatency")
     @ManagedDescription("the maximum latency of put operations. To get the average latency, divide to number of puts")
-    public long getLocalMaxPutLatency(){
+    public long getLocalMaxPutLatency() {
         return managedObject.getLocalMapStats().getMaxPutLatency();
     }
 
     @ManagedAnnotation("localMaxGetLatency")
     @ManagedDescription("the maximum latency of get operations. To get the average latency, divide to number of gets")
-    public long getLocalMaxGetLatency(){
+    public long getLocalMaxGetLatency() {
         return managedObject.getLocalMapStats().getMaxGetLatency();
     }
 
     @ManagedAnnotation("localMaxRemoveLatency")
     @ManagedDescription("the maximum latency of remove operations. To get the average latency, divide to number of gets")
-    public long getMaxRemoveLatency(){
+    public long getMaxRemoveLatency() {
         return managedObject.getLocalMapStats().getMaxRemoveLatency();
     }
 
     @ManagedAnnotation("localEventOperationCount")
     @ManagedDescription("number of events received on this member")
-    public long getLocalEventOperationCount(){
+    public long getLocalEventOperationCount() {
         return managedObject.getLocalMapStats().getEventOperationCount();
     }
 
     @ManagedAnnotation("localOtherOperationCount")
     @ManagedDescription("the total number of other operations on this member")
-    public long getLocalOtherOperationCount(){
+    public long getLocalOtherOperationCount() {
         return managedObject.getLocalMapStats().getOtherOperationCount();
     }
 
     @ManagedAnnotation("localTotal")
     @ManagedDescription("the total number of operations on this member")
-    public long localTotal(){
+    public long localTotal() {
         return managedObject.getLocalMapStats().total();
     }
 
     @ManagedAnnotation("localHeapCost")
     @ManagedDescription("the total heap cost of map, near cache and heap cost")
-    public long localHeapCost(){
+    public long localHeapCost() {
         return managedObject.getLocalMapStats().getHeapCost();
     }
 
 
     @ManagedAnnotation("name")
     @ManagedDescription("name of the map")
-    public String getName(){
+    public String getName() {
         return managedObject.getName();
     }
 
     @ManagedAnnotation("size")
     @ManagedDescription("size of the map")
-    public int getSize(){
+    public int getSize() {
         return managedObject.size();
     }
 
     @ManagedAnnotation("config")
     @ManagedDescription("MapConfig")
-    public String getConfig(){
+    public String getConfig() {
         return service.instance.getConfig().findMapConfig(managedObject.getName()).toString();
     }
 
     @ManagedAnnotation("totalAddedEntryCount")
-    public long getTotalAddedEntryCount(){
+    public long getTotalAddedEntryCount() {
         return totalAddedEntryCount.get();
     }
 
@@ -253,60 +259,56 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
     @ManagedAnnotation(value = "clear", operation = true)
     @ManagedDescription("Clear Map")
-    public void clear(){
+    public void clear() {
         managedObject.clear();
     }
 
     @ManagedAnnotation(value = "values", operation = true)
-    public String values(String query){
+    public String values(String query) {
         Collection coll;
-        if (query != null && !query.isEmpty()){
+        if (query != null && !query.isEmpty()) {
             Predicate predicate = new SqlPredicate(query);
             coll = managedObject.values(predicate);
-        }
-        else {
+        } else {
             coll = managedObject.values();
         }
         StringBuilder buf = new StringBuilder();
-        if (coll.size() == 0){
+        if (coll.size() == 0) {
             buf.append("Empty");
-        }
-        else {
+        } else {
             buf.append("[");
-            for (Object obj: coll){
+            for (Object obj : coll) {
                 buf.append(obj);
                 buf.append(", ");
             }
-            buf.replace(buf.length()-1, buf.length(), "]");
+            buf.replace(buf.length() - 1, buf.length(), "]");
         }
         return buf.toString();
     }
 
     @ManagedAnnotation(value = "entrySet", operation = true)
-    public String entrySet(String query){
+    public String entrySet(String query) {
         Set<Map.Entry> entrySet;
-        if (query != null && !query.isEmpty()){
+        if (query != null && !query.isEmpty()) {
             Predicate predicate = new SqlPredicate(query);
             entrySet = managedObject.entrySet(predicate);
-        }
-        else {
+        } else {
             entrySet = managedObject.entrySet();
         }
 
         StringBuilder buf = new StringBuilder();
-        if (entrySet.size() == 0){
+        if (entrySet.size() == 0) {
             buf.append("Empty");
-        }
-        else {
+        } else {
             buf.append("[");
-            for (Map.Entry entry: entrySet){
+            for (Map.Entry entry : entrySet) {
                 buf.append("{key:");
                 buf.append(entry.getKey());
                 buf.append(", value:");
                 buf.append(entry.getValue());
                 buf.append("}, ");
             }
-            buf.replace(buf.length()-1, buf.length(), "]");
+            buf.replace(buf.length() - 1, buf.length(), "]");
         }
         return buf.toString();
     }

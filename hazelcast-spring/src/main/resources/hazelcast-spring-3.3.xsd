@@ -48,20 +48,23 @@
                                     <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence>
-                                                <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                                                <xs:element name="item-listener" type="item-listener" minOccurs="0"
+                                                            maxOccurs="unbounded"/>
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="queue-store" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence>
-                                                <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                                                <xs:element name="properties" type="properties" minOccurs="0"
+                                                            maxOccurs="1"/>
                                             </xs:sequence>
                                             <xs:attribute name="enabled" use="required" type="xs:string"/>
                                             <xs:attribute name="class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="store-implementation" use="optional" type="xs:string"/>
-                                            <xs:attribute name="factory-implementation" use="optional" type="xs:string"/>
+                                            <xs:attribute name="factory-implementation" use="optional"
+                                                          type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>
                                 </xs:sequence>
@@ -87,6 +90,7 @@
                                             <xs:attribute name="factory-implementation" use="optional"
                                                           type="xs:string"/>
                                             <xs:attribute name="write-delay-seconds" use="required" type="xs:string"/>
+                                            <xs:attribute name="write-batch-size" use="optional" type="xs:string"/>
                                             <xs:attribute name="initial-mode">
                                                 <xs:simpleType>
                                                     <xs:restriction base="non-space-string">
@@ -128,7 +132,8 @@
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY"/>
-                                <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean" default="true"/>
+                                <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean"
+                                              default="true"/>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
@@ -166,7 +171,8 @@
                                     <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence>
-                                                <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                                                <xs:element name="item-listener" type="item-listener" minOccurs="0"
+                                                            maxOccurs="unbounded"/>
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
@@ -183,7 +189,8 @@
                                     <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence>
-                                                <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                                                <xs:element name="item-listener" type="item-listener" minOccurs="0"
+                                                            maxOccurs="unbounded"/>
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
@@ -199,7 +206,8 @@
                                 <xs:sequence>
                                     <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
                                                 default="true"/>
-                                    <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                                    <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0"
+                                                maxOccurs="1"
                                                 default="false"/>
                                     <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
@@ -216,12 +224,17 @@
                         <xs:element name="jobtracker" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="max-thread-size" use="optional" type="xs:nonNegativeInteger" default="0"/>
-                                <xs:attribute name="queue-size" use="optional" type="xs:nonNegativeInteger" default="0"/>
-                                <xs:attribute name="retry-count" use="optional" type="xs:nonNegativeInteger" default="0"/>
-                                <xs:attribute name="chunk-size" use="optional" type="xs:nonNegativeInteger" default="1000"/>
+                                <xs:attribute name="max-thread-size" use="optional" type="xs:nonNegativeInteger"
+                                              default="0"/>
+                                <xs:attribute name="queue-size" use="optional" type="xs:nonNegativeInteger"
+                                              default="0"/>
+                                <xs:attribute name="retry-count" use="optional" type="xs:nonNegativeInteger"
+                                              default="0"/>
+                                <xs:attribute name="chunk-size" use="optional" type="xs:nonNegativeInteger"
+                                              default="1000"/>
                                 <xs:attribute name="communicate-stats" use="optional" type="xs:boolean" default="true"/>
-                                <xs:attribute name="topology-changed-strategy" use="optional" type="topology-changed-strategy" default="CANCEL_RUNNING_OPERATION"/>
+                                <xs:attribute name="topology-changed-strategy" use="optional"
+                                              type="topology-changed-strategy" default="CANCEL_RUNNING_OPERATION"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
@@ -233,15 +246,16 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="data-serializable-factories" >
+    <xs:element name="data-serializable-factories">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0"
+                            maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="portable-factories" >
+    <xs:element name="portable-factories">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="portable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
@@ -249,7 +263,7 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="serializers" >
+    <xs:element name="serializers">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1"/>
@@ -869,9 +883,9 @@
 
     <xs:complexType name="serialization">
         <xs:sequence>
-            <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1" />
-            <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1" />
-            <xs:element ref="serializers" minOccurs="0" maxOccurs="1" />
+            <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="use-native-byte-order" use="optional" type="xs:string" default="false"/>
         <xs:attribute name="byte-order" use="optional" default="BIG_ENDIAN">
@@ -891,10 +905,11 @@
 
     <xs:complexType name="network-client">
         <xs:sequence>
-            <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="aws" type="aws-client" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="smart-routing" use="optional" type="xs:boolean" default="false"/>
         <xs:attribute name="redo-operation" use="optional" type="xs:boolean" default="false"/>
@@ -925,7 +940,7 @@
 
     <xs:complexType name="listeners">
         <xs:sequence>
-            <xs:element name="listener" type="listener" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="listener" type="listener" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="client-security">
@@ -982,6 +997,14 @@
         </xs:complexContent>
     </xs:complexType>
 
+    <xs:complexType name="aws-client">
+        <xs:complexContent>
+            <xs:extension base="aws">
+                <xs:attribute name="inside-aws" use="optional" type="xs:boolean" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
     <xs:complexType name="near-cache">
         <xs:sequence/>
         <xs:attribute name="max-size" use="optional" type="xs:string" default="0"/>
@@ -1024,7 +1047,7 @@
 
     <xs:simpleType name="topology-changed-strategy">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="CANCEL_RUNNING_OPERATION" />
+            <xs:enumeration value="CANCEL_RUNNING_OPERATION"/>
             <xs:enumeration value="DISCARD_AND_RESTART"/>
         </xs:restriction>
     </xs:simpleType>

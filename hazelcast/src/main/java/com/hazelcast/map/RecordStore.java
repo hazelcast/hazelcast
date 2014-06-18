@@ -24,7 +24,6 @@ import com.hazelcast.map.writebehind.WriteBehindQueue;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -80,6 +79,16 @@ public interface RecordStore {
 
     Map<Data, Record> getReadonlyRecordMap();
 
+    /**
+     * Returns read only records map by waiting map store load.
+     * If an operation needs to wait a data source to load like querying
+     * in {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
+     * this method can be used to return a read-only view of key-value pairs.
+     *
+     * @return read only record map.
+     */
+    Map<Data, Record> getReadonlyRecordMapByWaitingMapStoreLoad();
+
     Set<Data> keySet();
 
     int size();
@@ -102,6 +111,18 @@ public interface RecordStore {
 
     Object evict(Data key);
 
+    /**
+     * Evicts all keys except locked ones.
+     *
+     * @return number of evicted entries.
+     */
+    int evictAll();
+
+    /**
+     * Evicts all keys except locked ones on backup.
+     */
+    void evictAllBackup();
+
     Collection<Data> valuesData();
 
     MapContainer getMapContainer();
@@ -122,8 +143,6 @@ public interface RecordStore {
 
     long getHeapCost();
 
-    SizeEstimator getSizeEstimator();
-
     boolean isLoaded();
 
     void checkIfLoaded();
@@ -136,7 +155,20 @@ public interface RecordStore {
 
     WriteBehindQueue<DelayedEntry> getWriteBehindQueue();
 
-    List findUnlockedExpiredRecords();
+    /**
+     * Do expiration operations.
+     *
+     * @param percentage of max expirables according to the record store size.
+     * @param owner      <code>true</code> if an owner partition, otherwise <code>false</code>.
+     */
+    void evictExpiredEntries(int percentage, boolean owner);
 
     void removeFromWriteBehindWaitingDeletions(Data key);
+
+    /**
+     * @return <code>true</code> if record store has at least one candidate entry
+     * for expiration else return <code>false</code>.
+     */
+    boolean isExpirable();
+
 }

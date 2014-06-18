@@ -27,7 +27,6 @@ public final class ServiceInfo {
     private final Object service;
 
     public ServiceInfo(String name, Object service) {
-        //todo: can we verify that name/service are not null?
         this.name = name;
         this.service = service;
     }

@@ -28,10 +28,10 @@ import java.util.Properties;
 
 abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements HazelcastRegion<Cache> {
 
+    protected final Properties props;
     private final HazelcastInstance instance;
     private final String regionName;
     private final int timeout;
-    protected final Properties props;
 
     protected AbstractHazelcastRegion(final HazelcastInstance instance, final String regionName, final Properties props) {
         super();
@@ -43,9 +43,9 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
 
 
     public void destroy() throws CacheException {
-//    	Destroy of the region should not propagate 
-//    	to other nodes of cluster.
-//    	Do nothing on destroy.
+//      Destroy of the region should not propagate
+//      to other nodes of cluster.
+//      Do nothing on destroy.
     }
 
     /**

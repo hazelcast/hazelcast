@@ -27,6 +27,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,6 +42,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -589,6 +591,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {
             }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
         }, true);
 
         map.executeOnKey(1, new ValueSetterEntryProcessor(5));
@@ -656,6 +663,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
             @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
             }
         }, true);
 
@@ -731,6 +743,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
             @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
             }
         }, true);
         int size = 100;

@@ -61,7 +61,6 @@ src/IntegratedClustering.md
 	src/WebSessionReplication.md
 		src/TomcatSessionReplication.md
 	src/SpringIntegration.md
-	src/SessionReplication.md
 src/Storage.md
 src/Clients.md
 #	src/ClientTypes.md
@@ -71,15 +70,17 @@ src/Clients.md
 	src/RESTClient.md
 	src/MemcacheClient.md
 src/Serialization.md
+	src/Serializable.md
 	src/DataSerialization.md
 	src/PortableSerialization.md
-	src/CustomSerialization.md
+	src/StreamSerializer.md
+	src/ByteArraySerializer.md
 src/Management.md
 	src/JMXAPIPerNode.md
 	src/MonitoringWithJMX.md
 	src/ClusterUtilities.md
 	src/ManagementCenter.md
-#	src/ClusteredJMX.md
+	src/ClusteredJMX.md
 #	src/ClusteredREST.md
 #src/ServerProtocols.md
 #	src/HazelcastNetworkProtocol.md
@@ -88,11 +89,11 @@ src/Management.md
 src/Security.md
 	src/Encryption.md
 	src/SSL.md
-	src/EnablingSecurityforHE.md
 	src/Credentials.md
 	src/ClusterLoginModule.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
+	src/EnablingSecurityforHE.md
 src/Performance.md
     src/ThreadingModel.md
 src/WAN.md
@@ -103,11 +104,10 @@ src/Config.md
 		src/EC2AutoDiscovery.md
 		src/Ports.md
 		src/IPv6.md
-	src/PartitionGroupConfig.md
+		src/PartitionGroupConfig.md
 	src/ListenerConfig.md
-	src/WildcardConfiguration.md
-	src/ConfigurationProperties.md
 	src/Logging.md
+	src/ConfigurationProperties.md
 	src/EnterpriseConfig.md
-	src/XMLWrapUp.md
+#	src/XMLWrapUp.md
 src/FAQ.md

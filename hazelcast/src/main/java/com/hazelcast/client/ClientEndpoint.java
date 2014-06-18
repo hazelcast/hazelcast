@@ -21,7 +21,7 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;

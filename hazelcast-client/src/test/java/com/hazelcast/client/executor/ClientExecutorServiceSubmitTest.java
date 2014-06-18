@@ -50,6 +50,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -440,11 +441,7 @@ public class ClientExecutorServiceSubmitTest {
 
         final IMap map = client.getMap(mapName);
 
-        assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                assertEquals(1, map.size());
-            }
-        });
+        assertSizeEventually(1, map);
     }
 
     @Test
