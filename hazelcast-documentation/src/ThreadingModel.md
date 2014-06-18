@@ -77,6 +77,10 @@ This means that:
  * each partition belongs to only 1 operation thread. All operations for partition some partition, will always 
  be handled by exactly the same operation-thread. 
 
+ * no concurrency control is needed to deal with partition-aware operations because once a partition-aware
+ operation is put on the work queue of a partition-aware operation thread, you get the guarantee that only 
+ 1 thread is able to touch that partition.
+
 Because of this threading strategy, there are 2 forms of false sharing you need to be aware of:
 
 * false sharing of the partition: 2 completely independent data-structure share the same partitions; e.g. if there
