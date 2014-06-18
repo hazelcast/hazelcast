@@ -109,6 +109,11 @@ threads are used. When the Hazelcast instance is started, an array of operation 
 also is by default two times the number of cores. It can be changed using the `hazelcast.operation.generic.thread.count` 
 property.
 
+This means that:
+
+* a non partition-aware operation-thread will never execute an operation for a specific partition. Only partition-aware
+  operation-threads execute partition-aware operations. 
+
 Unlike the partition-aware operation threads, all the generic operation threads share the same work queue: `genericWorkQueue`.
 
 If a non partition-aware operation needs to be executed, it is placed in that work queue and any generic operation 
