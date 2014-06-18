@@ -28,6 +28,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -251,6 +252,34 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             instance1.shutdown();
             instance2.shutdown();
         }
+    }
+    @Test
+    public void testIssue2754(){
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
+        
+        final IMap<Object, Object> map = instance2.getMap("map");
+        Set<Object> keys = new HashSet<Object>();
+
+        for(int i =0 ; i < 4; i++){
+            String key = generateKeyOwnedBy(instance1);
+            keys.add(key);
+        }
+
+        map.executeOnKeys(keys, new EntryCreate());
+
+        for(Object key : keys){
+            assertEquals(6, map.get(key));
+        }
+
+        instance1.shutdown();
+
+        for(Object key : keys){
+            assertEquals(6, map.get(key));
+        }
+
     }
 
     @Test
@@ -1008,6 +1037,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return true;
         }
 
+    }
+    public static class EntryCreate extends AbstractEntryProcessor<String, Integer> {
+
+        @Override
+        public Object process(final Map.Entry<String, Integer> entry) {
+            entry.setValue(6);
+            return null;
+        }
     }
 
     private static class MyObject implements DataSerializable {

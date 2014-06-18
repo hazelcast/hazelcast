@@ -554,7 +554,12 @@ final class BasicOperationService implements InternalOperationService {
                                                    Collection<Integer> partitions) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         for (int partition : partitions) {
-            Address owner = nodeEngine.getPartitionService().getPartitionOwner(partition);
+            InternalPartitionService partitionService = nodeEngine.getPartitionService();
+            Address owner = partitionService.getPartitionOwner(partition);
+            while (owner == null) {
+                Thread.sleep(10);
+                owner = partitionService.getPartitionOwner(partition);
+            }
             if (!memberPartitions.containsKey(owner)) {
                 memberPartitions.put(owner, new ArrayList<Integer>());
             }
