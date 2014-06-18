@@ -305,7 +305,50 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
     }
+    @Test
+    public void testEntryBackupOperationForNullValue(){
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
 
+        String key = generateKeyOwnedBy(instance1);
+        final IMap<Object, Object> map = instance2.getMap("map");
+
+        map.executeOnKey(key, new EntryCreate());
+        assertEquals(6, map.get(key));
+
+        instance1.shutdown();
+
+        assertEquals(6, map.get(key));
+
+
+    }
+    @Test
+    public void testMultipleEntryBackupOperationForNullValue(){
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        final IMap<Object, Object> map = instance2.getMap("map");
+        Set<Object> keys = new HashSet<Object>();
+
+        for(int i =0 ; i < 4; i++){
+            String key = generateKeyOwnedBy(instance1);
+            keys.add(key);
+        }
+
+        map.get("");
+        map.executeOnKeys(keys, new EntryCreate());
+
+        for(Object key : keys){
+            assertEquals(6, map.get(key));
+        }
+
+        instance1.shutdown();
+
+        for(Object key : keys){
+            assertEquals(6, map.get(key));
+        }
+
+    }
     @Test
     public void testEntryProcessorDelete() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -1067,6 +1110,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public Object process(final Map.Entry<String, SimpleValue> entry) {
             final SimpleValue value = entry.getValue();
             value.i++;
+            return null;
+        }
+    }
+    public static class EntryCreate extends AbstractEntryProcessor<String, Integer> {
+
+        @Override
+        public Object process(final Map.Entry<String, Integer> entry) {
+            entry.setValue(6);
             return null;
         }
     }
