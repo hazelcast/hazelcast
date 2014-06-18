@@ -534,8 +534,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
      *
      * @see #clear
      */
-    //TODO: Why is this not tested!
+    //TODO: Why is this not tested
     //TODO: how come the implementation is the same as clear? I think this code is broken.
+    //TODO: This method also isn't part of the IMap API.
     public void clearMapOnly() {
         //need a different method here that does not call deleteAll
         clearInternal();
@@ -669,6 +670,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             ICompletableFuture<Result> future = reducingJob.submit(collator);
             return future.get();
         } catch (Exception e) {
+            //todo: not what we want because it can lead to wrapping of even hazelcastexception
             throw new HazelcastException(e);
         }
     }

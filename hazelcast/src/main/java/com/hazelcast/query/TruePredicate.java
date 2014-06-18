@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class TruePredicate implements DataSerializable, Predicate {
 
-    public final static TruePredicate INSTANCE = new TruePredicate();
+    public static final TruePredicate INSTANCE = new TruePredicate();
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
