@@ -264,9 +264,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
     @Test
     public void testEntryProcessorwithKey() {
-
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
 
         String key = generateKeyOwnedBy(instance1);
         SimpleValue simpleValue = new SimpleValue(1);
@@ -284,8 +284,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
     public void testEntryProcessorwithKeys() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
 
         final IMap<Object, Object> map = instance2.getMap("map");
         Set<Object> keys = new HashSet<Object>();
