@@ -45,16 +45,16 @@ abstract class AbstractGeneralRegion<Cache extends RegionCache> extends Abstract
     public void evict(final Object key) throws CacheException {
         try {
             getCache().remove(key);
-        } catch (OperationTimeoutException ignored) {
-            Logger.getLogger(AbstractGeneralRegion.class).finest(ignored);
+        } catch (OperationTimeoutException e) {
+            Logger.getLogger(AbstractGeneralRegion.class).finest(e);
         }
     }
 
     public void evictAll() throws CacheException {
         try {
             getCache().clear();
-        } catch (OperationTimeoutException ignored) {
-            Logger.getLogger(AbstractGeneralRegion.class).finest(ignored);
+        } catch (OperationTimeoutException e) {
+            Logger.getLogger(AbstractGeneralRegion.class).finest(e);
         }
     }
 
@@ -69,8 +69,8 @@ abstract class AbstractGeneralRegion<Cache extends RegionCache> extends Abstract
     public void put(final Object key, final Object value) throws CacheException {
         try {
             getCache().put(key, value, null);
-        } catch (OperationTimeoutException ignored) {
-            Logger.getLogger(AbstractGeneralRegion.class).finest(ignored);
+        } catch (OperationTimeoutException e) {
+            Logger.getLogger(AbstractGeneralRegion.class).finest(e);
         }
     }
 

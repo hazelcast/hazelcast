@@ -45,9 +45,9 @@ public final class HazelcastTimestamper {
                 // TTL in ms
                 return cfg.getTimeToLiveSeconds() * SEC_TO_MS;
             }
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException e) {
             // HazelcastInstance is instance of HazelcastClient.
-            Logger.getLogger(HazelcastTimestamper.class).finest(ignored);
+            Logger.getLogger(HazelcastTimestamper.class).finest(e);
         }
         return CacheEnvironment.getDefaultCacheTimeoutInMillis();
     }
@@ -57,9 +57,9 @@ public final class HazelcastTimestamper {
         try {
             Config config = instance.getConfig();
             maxOpTimeoutProp = config.getProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS);
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException e) {
             // HazelcastInstance is instance of HazelcastClient.
-            Logger.getLogger(HazelcastTimestamper.class).finest(ignored);
+            Logger.getLogger(HazelcastTimestamper.class).finest(e);
         }
         if (maxOpTimeoutProp != null) {
             return Long.parseLong(maxOpTimeoutProp);

@@ -114,8 +114,8 @@ public final class CacheEnvironment {
         int timeout = -1;
         try {
             timeout = PropertiesHelper.getInt(LOCK_TIMEOUT, props, -1);
-        } catch (Exception ignored) {
-            Logger.getLogger(CacheEnvironment.class).finest(ignored);
+        } catch (Exception e) {
+            Logger.getLogger(CacheEnvironment.class).finest(e);
         }
         if (timeout < 0) {
             timeout = MAXIMUM_LOCK_TIMEOUT;

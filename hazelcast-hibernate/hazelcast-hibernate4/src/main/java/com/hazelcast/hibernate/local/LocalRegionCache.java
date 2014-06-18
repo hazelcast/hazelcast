@@ -71,8 +71,8 @@ public class LocalRegionCache implements RegionCache {
                             final CacheDataDescription metadata) {
         try {
             config = hazelcastInstance != null ? hazelcastInstance.getConfig().findMapConfig(name) : null;
-        } catch (UnsupportedOperationException ignored) {
-            Logger.getLogger(LocalRegionCache.class).finest(ignored);
+        } catch (UnsupportedOperationException e) {
+            Logger.getLogger(LocalRegionCache.class).finest(e);
         }
         versionComparator = metadata != null && metadata.isVersioned() ? metadata.getVersionComparator() : null;
         cache = new ConcurrentHashMap<Object, Value>();
