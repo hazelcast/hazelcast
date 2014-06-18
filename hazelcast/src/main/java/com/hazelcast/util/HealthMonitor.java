@@ -35,11 +35,30 @@ import java.util.logging.Level;
 
 import static java.lang.String.format;
 
-//http://blog.scoutapp.com/articles/2009/07/31/understanding-load-averages
-//http://docs.oracle.com/javase/7/docs/jre/api/management/extension/com/sun/management/OperatingSystemMXBean.html
+/**
+ * http://blog.scoutapp.com/articles/2009/07/31/understanding-load-averages
+ * http://docs.oracle.com/javase/7/docs/jre/api/management/extension/com/sun/management/OperatingSystemMXBean.html
+ * <p/>
+ * Health monitor periodically prints logs about related internal metrics under when hazelcast is under load.
+ * Under load means that memory usage is above threshold percentage or process/cpu load is above threshold.
+ * <p/>
+ * Health monitor can be configured with system properties
+ * <p/>
+ * "hazelcast.health.monitoring.level"
+ * This property can be one of the following
+ * NOISY           => does not check threshold , always prints.
+ * SILENT(default) => prints only if metrics are above threshold.
+ * OFF             => Does not print anything.
+ * <p/>
+ * "hazelcast.health.monitoring.delay.seconds"
+ * Time between printing two logs of health monitor. Default values is 30 seconds
+ */
+
 public class HealthMonitor extends Thread {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
+    private static final double PERCENTAGE_MULTIPLIER = 100d;
+    private static final double THRESHOLD = 70;
     private final ILogger logger;
     private final Node node;
     private final Runtime runtime;
@@ -53,7 +72,6 @@ public class HealthMonitor extends Thread {
     private final ConnectionManager connectionManager;
     private final ClientEngineImpl clientEngine;
     private final ThreadMXBean threadMxBean;
-    private double treshold = 70;
 
     public HealthMonitor(HazelcastInstanceImpl hazelcastInstance, HealthMonitorLevel logLevel, int delaySeconds) {
         super(hazelcastInstance.node.threadGroup, hazelcastInstance.node.getThreadNamePrefix("HealthMonitor"));
@@ -105,6 +123,9 @@ public class HealthMonitor extends Thread {
         }
     }
 
+    /**
+     * Health metrics to be logged under load.
+     */
     public class HealthMetrics {
         private final long memoryFree;
         private final long memoryTotal;
@@ -135,13 +156,14 @@ public class HealthMonitor extends Thread {
         private final int connectionCount;
         private final int ioExecutorQueueSize;
 
+        //CHECKSTYLE:OFF
         public HealthMetrics() {
             memoryFree = runtime.freeMemory();
             memoryTotal = runtime.totalMemory();
             memoryUsed = memoryTotal - memoryFree;
             memoryMax = runtime.maxMemory();
-            memoryUsedOfTotalPercentage = 100d * memoryUsed / memoryTotal;
-            memoryUsedOfMaxPercentage = 100d * memoryUsed / memoryMax;
+            memoryUsedOfTotalPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryTotal;
+            memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryMax;
             processCpuLoad = get(osMxBean, "getProcessCpuLoad", -1L);
             systemLoadAverage = get(osMxBean, "getSystemLoadAverage", -1L);
             systemCpuLoad = get(osMxBean, "getSystemCpuLoad", -1L);
@@ -164,21 +186,18 @@ public class HealthMonitor extends Thread {
             activeConnectionCount = connectionManager.getActiveConnectionCount();
             connectionCount = connectionManager.getConnectionCount();
         }
+        //CHECKSTYLE:ON
 
         public boolean exceedsThreshold() {
-            if (memoryUsedOfMaxPercentage > treshold) {
+            if (memoryUsedOfMaxPercentage > THRESHOLD) {
                 return true;
             }
 
-            if (processCpuLoad > treshold) {
+            if (processCpuLoad > THRESHOLD) {
                 return true;
             }
 
-            if (systemCpuLoad > treshold) {
-                return true;
-            }
-
-            if (systemCpuLoad > treshold) {
+            if (systemCpuLoad > THRESHOLD) {
                 return true;
             }
 
@@ -187,10 +206,10 @@ public class HealthMonitor extends Thread {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("memory.used=").append(bytesToString(memoryUsed)).append(", ");
-            sb.append("memory.free=").append(bytesToString(memoryFree)).append(", ");
-            sb.append("memory.total=").append(bytesToString(memoryTotal)).append(", ");
-            sb.append("memory.max=").append(bytesToString(memoryMax)).append(", ");
+            sb.append("memory.used=").append(numberToUnitRepresentation(memoryUsed)).append(", ");
+            sb.append("memory.free=").append(numberToUnitRepresentation(memoryFree)).append(", ");
+            sb.append("memory.total=").append(numberToUnitRepresentation(memoryTotal)).append(", ");
+            sb.append("memory.max=").append(numberToUnitRepresentation(memoryMax)).append(", ");
             sb.append("memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
             sb.append("memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
             sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
@@ -229,17 +248,9 @@ public class HealthMonitor extends Thread {
                 return defaultValue;
             }
 
-            if (value instanceof Integer) {
-                return (long) (Integer) value;
-            }
-
             if (value instanceof Double) {
                 double v = (Double) value;
-                return Math.round(v * 100);
-            }
-
-            if (value instanceof Long) {
-                return (Long) value;
+                return Math.round(v * PERCENTAGE_MULTIPLIER);
             }
 
             return defaultValue;
@@ -254,14 +265,16 @@ public class HealthMonitor extends Thread {
         return format("%.2f", p) + "%";
     }
 
-    public static String bytesToString(long bytes) {
+    public static String numberToUnitRepresentation(long number) {
+        //CHECKSTYLE:OFF
         for (int i = 6; i > 0; i--) {
-            double step = Math.pow(1024, i);
-            if (bytes > step) {
-                return format("%3.1f%s", bytes / step, UNITS[i]);
+            double step = Math.pow(1024, i); // 1024 is for 1024 kb is 1 MB etc
+            if (number > step) {
+                return format("%3.1f%s", number / step, UNITS[i]);
             }
         }
-        return Long.toString(bytes);
+        //CHECKSTYLE:ON
+        return Long.toString(number);
     }
 
 }

@@ -5,6 +5,9 @@ import com.hazelcast.query.PagingPredicate;
 import java.util.Comparator;
 import java.util.Map;
 
+/**
+ *  Utility class for generating Comparators to be used in sort methods specific to hazelcast classes.
+ */
 public final class SortingUtil {
 
     private SortingUtil() {

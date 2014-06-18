@@ -16,6 +16,9 @@
 
 package com.hazelcast.util;
 
+/**
+ * Utility class to manipulate and query thread id
+ */
 public final class ThreadUtil {
 
     private static final ThreadLocal<Long> THREAD_LOCAL = new ThreadLocal<Long>();

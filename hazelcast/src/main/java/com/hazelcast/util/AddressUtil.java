@@ -30,10 +30,18 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+/**
+ * AddressUtil contains Address helper methods
+ */
 public final class AddressUtil {
 
-    private static final int LASTPART_NO = 3;
     private static final int NUMBER_OF_ADDRESSES = 255;
+    private static final int IPV4_LENGTH = 4;
+    private static final int IPV6_LENGTH = 8;
+    private static final int IPV6_MAX_THRESHOLD = 65535;
+    private static final int IPV4_MAX_THRESHOLD = 255;
+    private static final int HEXADECIMAL_RADIX = 16;
+    private static final int DECIMAL_RADIX = 10;
 
     private AddressUtil() {
     }
@@ -141,31 +149,56 @@ public final class AddressUtil {
     }
 
     public static InetAddress fixScopeIdAndGetInetAddress(final InetAddress inetAddress) throws SocketException {
+
+        if (!(inetAddress instanceof Inet6Address)) {
+            return inetAddress;
+        }
+        if (!inetAddress.isLinkLocalAddress() && !inetAddress.isSiteLocalAddress()) {
+            return inetAddress;
+        }
+
+        final Inet6Address inet6Address = (Inet6Address) inetAddress;
+        if (inet6Address.getScopeId() > 0 || inet6Address.getScopedInterface() != null) {
+            return inetAddress;
+
+        }
+        final Inet6Address resultInetAddress = findRealInet6Address(inet6Address);
+        return resultInetAddress == null ? inetAddress : resultInetAddress;
+    }
+
+    private static Inet6Address findRealInet6Address(Inet6Address inet6Address) throws SocketException {
         Inet6Address resultInetAddress = null;
-        if (inetAddress instanceof Inet6Address
-                && (inetAddress.isLinkLocalAddress() || inetAddress.isSiteLocalAddress())) {
-            final Inet6Address inet6Address = (Inet6Address) inetAddress;
-            if (inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
-                Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-                while (interfaces.hasMoreElements()) {
-                    NetworkInterface ni = interfaces.nextElement();
-                    Enumeration<InetAddress> addresses = ni.getInetAddresses();
-                    while (addresses.hasMoreElements()) {
-                        InetAddress address = addresses.nextElement();
-                        if (address instanceof Inet6Address
-                                && Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
-                            if (resultInetAddress != null) {
-                                throw new IllegalArgumentException("This address "
-                                        + inet6Address
-                                        + " is bound to more than one network interface!");
-                            }
-                            resultInetAddress = (Inet6Address) address;
-                        }
-                    }
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface ni = interfaces.nextElement();
+            Enumeration<InetAddress> addresses = ni.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+                InetAddress address = addresses.nextElement();
+                if (!isInet6Compatible(address, inet6Address)) {
+                    continue;
                 }
+
+                if (resultInetAddress != null) {
+                    throw new IllegalArgumentException("This address "
+                            + inet6Address
+                            + " is bound to more than one network interface!");
+                }
+                resultInetAddress = (Inet6Address) address;
             }
         }
-        return resultInetAddress == null ? inetAddress : resultInetAddress;
+        return resultInetAddress;
+    }
+
+
+    private static boolean isInet6Compatible(InetAddress address, Inet6Address inet6Address) {
+        if (!(address instanceof Inet6Address)) {
+            return false;
+        }
+        if (!Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
+            return false;
+        }
+
+        return true;
     }
 
     public static Inet6Address getInetAddressFor(final Inet6Address inetAddress, String scope)
@@ -188,6 +221,7 @@ public final class AddressUtil {
         return inetAddress;
     }
 
+    //CHECKSTYLE:OFF  Cyclomatic Complexity is 14 (max allowed is 12).
     public static Collection<Inet6Address> getPossibleInetAddressesFor(final Inet6Address inet6Address) {
         if ((inet6Address.isSiteLocalAddress() || inet6Address.isLinkLocalAddress())
                 && inet6Address.getScopeId() <= 0 && inet6Address.getScopedInterface() == null) {
@@ -211,6 +245,7 @@ public final class AddressUtil {
                     }
                 }
             } catch (IOException ignored) {
+                EmptyStatement.ignore(ignored);
             }
             if (possibleAddresses.isEmpty()) {
                 throw new IllegalArgumentException("Could not find a proper network interface"
@@ -221,6 +256,8 @@ public final class AddressUtil {
         }
         return Collections.singleton(inet6Address);
     }
+    //CHECKSTYLE:ON
+
 
     public static Collection<String> getMatchingIpv4Addresses(final AddressMatcher addressMatcher) {
         if (addressMatcher.isIPv6()) {
@@ -232,13 +269,14 @@ public final class AddressUtil {
                 + addressMatcher.address[1]
                 + "."
                 + addressMatcher.address[2];
-        final String lastPart = addressMatcher.address[LASTPART_NO];
+        final String lastPart = addressMatcher.address[3];
         final int dashPos;
         if ("*".equals(lastPart)) {
             for (int j = 0; j <= NUMBER_OF_ADDRESSES; j++) {
                 addresses.add(first3 + "." + j);
             }
-        } else if ((dashPos = lastPart.indexOf('-')) > 0) {
+        } else if (lastPart.indexOf('-') > 0) {
+            dashPos = lastPart.indexOf('-');
             final int start = Integer.parseInt(lastPart.substring(0, dashPos));
             final int end = Integer.parseInt(lastPart.substring(dashPos + 1));
             for (int j = start; j <= end; j++) {
@@ -290,7 +328,7 @@ public final class AddressUtil {
 
     private static void parseIpv4(AddressMatcher matcher, String address) {
         final String[] parts = address.split("\\.");
-        if (parts.length != 4) {
+        if (parts.length != IPV4_LENGTH) {
             throw new InvalidAddressException(address);
         }
         for (String part : parts) {
@@ -302,13 +340,14 @@ public final class AddressUtil {
     }
 
     private static boolean isValidIpAddressPart(String part, boolean ipv6) {
+        boolean isValid = true;
         if (part.length() == 1 && "*".equals(part)) {
-            return true;
+            isValid = true;
         }
         final int rangeIndex = part.indexOf('-');
         if (rangeIndex > -1
                 && (rangeIndex != part.lastIndexOf('-') || rangeIndex == part.length() - 1)) {
-            return false;
+            isValid = false;
         }
         final String[] subParts;
         if (rangeIndex > -1) {
@@ -316,28 +355,30 @@ public final class AddressUtil {
         } else {
             subParts = new String[]{part};
         }
-        for (String subPart : subParts) {
-            try {
+        try {
+            for (String subPart : subParts) {
                 final int num;
                 if (ipv6) {
-                    num = Integer.parseInt(subPart, 16);
-                    if (num > 65535) {
-                        return false;
+                    num = Integer.parseInt(subPart, HEXADECIMAL_RADIX);
+                    if (num > IPV6_MAX_THRESHOLD) {
+                        isValid = false;
                     }
                 } else {
                     num = Integer.parseInt(subPart);
-                    if (num > 255) {
-                        return false;
+                    if (num > IPV4_MAX_THRESHOLD) {
+                        isValid = false;
                     }
                 }
-            } catch (NumberFormatException e) {
-                return false;
             }
+        } catch (NumberFormatException e) {
+            isValid = false;
         }
-        return true;
+        return isValid;
     }
 
-    private static void parseIpv6(AddressMatcher matcher, String address) {
+    //CHECKSTYLE:OFF  Cyclomatic Complexity is 14 (max allowed is 12).
+    private static void parseIpv6(AddressMatcher matcher, String addrs) {
+        String address = addrs;
         if (address.indexOf('%') > -1) {
             String[] parts = address.split("\\%");
             address = parts[0];
@@ -363,12 +404,12 @@ public final class AddressUtil {
             }
         }
         if (mark > -1) {
-            final int remaining = (8 - count);
+            final int remaining = (IPV6_LENGTH - count);
             for (int i = 0; i < remaining; i++) {
                 ipString.add((i + mark), "0");
             }
         }
-        if (ipString.size() != 8) {
+        if (ipString.size() != IPV6_LENGTH) {
             throw new InvalidAddressException(address);
         }
         final String[] addressParts = ipString.toArray(new String[ipString.size()]);
@@ -379,9 +420,13 @@ public final class AddressUtil {
         }
         matcher.setAddress(addressParts);
     }
+    //CHECKSTYLE:ON
 
     // ----------------- UTILITY CLASSES ------------------
 
+    /**
+     * Holds address
+     */
     public static class AddressHolder {
 
         private final String address;
@@ -419,7 +464,6 @@ public final class AddressUtil {
     /**
      * http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/index.html
      */
-
     public abstract static class AddressMatcher {
 
         protected final String[] address;
@@ -493,7 +537,7 @@ public final class AddressUtil {
 
         public Ip4AddressMatcher() {
             // d.d.d.d
-            super(new String[4]);
+            super(new String[IPV4_LENGTH]);
         }
 
         @Override
@@ -518,7 +562,7 @@ public final class AddressUtil {
             }
             final String[] mask = this.address;
             final String[] input = ((Ip4AddressMatcher) matcher).address;
-            return match(mask, input, 10);
+            return match(mask, input, DECIMAL_RADIX);
         }
 
         @Override
@@ -538,7 +582,7 @@ public final class AddressUtil {
 
         public Ip6AddressMatcher() {
             // x:x:x:x:x:x:x:x%s
-            super(new String[8]);
+            super(new String[IPV6_LENGTH]);
         }
 
         @Override
@@ -564,7 +608,7 @@ public final class AddressUtil {
             final Ip6AddressMatcher a = (Ip6AddressMatcher) matcher;
             final String[] mask = this.address;
             final String[] input = a.address;
-            return match(mask, input, 16);
+            return match(mask, input, HEXADECIMAL_RADIX);
         }
 
         @Override
@@ -580,6 +624,9 @@ public final class AddressUtil {
         }
     }
 
+    /**
+     * Thrown when given address is not valid.
+     */
     public static class InvalidAddressException extends IllegalArgumentException {
 
         public InvalidAddressException(final String s) {

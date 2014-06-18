@@ -18,6 +18,10 @@ package com.hazelcast.util;
 
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Utility methods to getOrPutSynchronized and getOrPutIfAbsent in thread safe way
+ * from ConcurrentMap with a ConstructorFunction .
+ */
 public final class ConcurrencyUtil {
 
     private ConcurrencyUtil() {

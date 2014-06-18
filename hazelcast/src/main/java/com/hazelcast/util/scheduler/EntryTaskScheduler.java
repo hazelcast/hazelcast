@@ -20,6 +20,9 @@ import java.util.Set;
 
 /**
  * Schedules (or reschedules) the execution of given entry.
+ *
+ * @param <K> key type of related entries
+ * @param <V> value type of related entries
  */
 public interface EntryTaskScheduler<K, V> {
     /**

@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import java.nio.charset.Charset;
 import java.util.Locale;
 
 /**
@@ -29,15 +30,15 @@ public final class StringUtil {
     }
 
     public static String bytesToString(byte[] bytes, int offset, int length) {
-        return new String(bytes, offset, length);
+        return new String(bytes, offset, length, Charset.forName("UTF-8"));
     }
 
     public static String bytesToString(byte[] bytes) {
-        return new String(bytes);
+        return new String(bytes, Charset.forName("UTF-8"));
     }
 
     public static byte[] stringToBytes(String s) {
-        return s.getBytes();
+        return s.getBytes(Charset.forName("UTF-8"));
     }
 
     public static boolean isNullOrEmpty(String s) {

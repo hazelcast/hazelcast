@@ -21,6 +21,9 @@ import com.hazelcast.instance.NodeInitializer;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Utility class to get hazelcast version , build number from properties file.
+ */
 public final class HazelcastUtil {
 
     private static final String VERSION;
@@ -28,6 +31,7 @@ public final class HazelcastUtil {
     private static final String BUILD;
     private static final int BUILD_NUMBER;
 
+    //CHECKSTYLE:OFF
     static {
         String version = System.getProperty("hazelcast.version", "unknown");
         String build = System.getProperty("hazelcast.build", "unknown");
@@ -44,6 +48,7 @@ public final class HazelcastUtil {
                     build = runtimeProperties.getProperty("hazelcast.build");
                 }
             } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
         try {
@@ -52,12 +57,14 @@ public final class HazelcastUtil {
                 buildNumber = Integer.parseInt(build);
             }
         } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
         }
         VERSION = version;
         BUILD = build;
         BUILD_NUMBER = buildNumber;
         ENTERPRISE = version.endsWith("-ee");
     }
+    //CHECKSTYLE:ON
 
     private HazelcastUtil() {
     }

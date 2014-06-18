@@ -25,6 +25,8 @@ import com.hazelcast.nio.IOUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,9 +115,10 @@ public final class ServiceLoader {
             Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
+                final URI uri = url.toURI();
 
                 ClassLoader highestClassLoader = findHighestReachableClassLoader(url, classLoader, resourceName);
-                urlDefinitions.add(new URLDefinition(url, highestClassLoader));
+                urlDefinitions.add(new URLDefinition(uri, highestClassLoader));
             }
             return urlDefinitions;
 
@@ -130,7 +133,7 @@ public final class ServiceLoader {
             final Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
             BufferedReader r = null;
             try {
-                URL url = urlDefinition.url;
+                URL url = urlDefinition.uri.toURL();
                 r = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
                 while (true) {
                     String line = r.readLine();
@@ -177,13 +180,15 @@ public final class ServiceLoader {
                 Enumeration<URL> enumeration = parent.getResources(resourceName);
                 while (enumeration.hasMoreElements()) {
                     URL testURL = enumeration.nextElement();
-                    if (url.equals(testURL)) {
+                    if (url.toURI().equals(testURL.toURI())) {
                         highestClassLoader = parent;
                     }
                 }
 
                 //CHECKSTYLE:OFF
             } catch (IOException ignore) {
+                // We want to ignore failures and keep searching
+            } catch (URISyntaxException e) {
                 // We want to ignore failures and keep searching
             }
             //CHECKSTYLE:ON
@@ -280,11 +285,11 @@ public final class ServiceLoader {
      * the corresponding classloaders
      */
     private static final class URLDefinition {
-        private final URL url;
+        private final URI uri;
         private final ClassLoader classLoader;
 
-        private URLDefinition(URL url, ClassLoader classLoader) {
-            this.url = url;
+        private URLDefinition(URI url, ClassLoader classLoader) {
+            this.uri = url;
             this.classLoader = classLoader;
         }
 
@@ -299,7 +304,7 @@ public final class ServiceLoader {
 
             URLDefinition that = (URLDefinition) o;
 
-            if (url != null ? !url.equals(that.url) : that.url != null) {
+            if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
                 return false;
             }
 
@@ -308,7 +313,7 @@ public final class ServiceLoader {
 
         @Override
         public int hashCode() {
-            int result = url != null ? url.hashCode() : 0;
+            int result = uri != null ? uri.hashCode() : 0;
             return result;
         }
     }

@@ -19,14 +19,17 @@ package com.hazelcast.util;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.IOUtil;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
@@ -34,6 +37,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+/**
+ * Checks version of hazelcast with central server.
+ */
 public final class VersionCheck {
 
     private static final int TIMEOUT = 1000;
@@ -53,6 +59,7 @@ public final class VersionCheck {
         try {
             md = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException ignored) {
+            EmptyStatement.ignore(ignored);
         }
     }
 
@@ -115,7 +122,7 @@ public final class VersionCheck {
                 }
             }
         } catch (IOException ignored) {
-
+             EmptyStatement.ignore(ignored);
         } finally {
             IOUtil.closeResource(is);
         }
@@ -136,12 +143,14 @@ public final class VersionCheck {
         if (md == null || str == null) {
             return "NULL";
         }
-        byte[] byteData = md.digest(str.getBytes());
+        byte[] byteData = md.digest(str.getBytes(Charset.forName("UTF-8")));
 
+        //CHECKSTYLE:OFF
         StringBuilder sb = new StringBuilder();
         for (byte aByteData : byteData) {
             sb.append(Integer.toString((aByteData & 0xff) + 0x100, 16).substring(1));
         }
+        //CHECKSTYLE:ON
         return sb.toString();
     }
 
@@ -155,10 +164,16 @@ public final class VersionCheck {
             in = new BufferedInputStream(conn.getInputStream());
             final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             return builder.parse(in);
-        } catch (Exception ignored) {
+        } catch (SAXException ignored) {
+            EmptyStatement.ignore(ignored);
+        } catch (IOException ignored) {
+            EmptyStatement.ignore(ignored);
+        } catch (ParserConfigurationException ignored) {
+            EmptyStatement.ignore(ignored);
         } finally {
             IOUtil.closeResource(in);
         }
+
         return null;
     }
 }
