@@ -39,7 +39,7 @@ Let's take a look at another example which is encapsulating a `DataSerializable`
 
 
 ```java
-public class Employee implements com.hazelcast.nio.serialization.DataSerializable {
+public class Employee implements DataSerializable {
     private String firstName;
     private String lastName;
     private int age;
@@ -71,6 +71,8 @@ public class Employee implements com.hazelcast.nio.serialization.DataSerializabl
 ```
 
 As you can see, since `address` field itself is `DataSerializable`, it is calling `address.writeData(out)` when writing and `address.readData(in)` when reading. Also note that, the order of writing and reading fields should be the same. While Hazelcast serializes a DataSerializable, it writes the `className` first and when de-serializes it, `className` is used to instantiate the object using reflection.
+
+<font color='red'>***Note***:</font> *Since Hazelcast needs to create an instance during deserialization,`DataSerializable` class has a no-arg constructor.*
 
 ### IdentifiedDataSerializable
 
