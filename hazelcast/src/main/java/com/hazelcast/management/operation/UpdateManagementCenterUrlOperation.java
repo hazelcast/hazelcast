@@ -23,9 +23,13 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 
+/**
+ * Operation to update Management Center URL configured on the node.
+ */
 public class UpdateManagementCenterUrlOperation extends Operation {
 
-    private int redoCount = 10;
+    private static final int REDO_COUNT = 10;
+    private static final int SLEEP_MILLIS = 1000;
     private String newUrl;
 
     public UpdateManagementCenterUrlOperation() {
@@ -43,8 +47,8 @@ public class UpdateManagementCenterUrlOperation extends Operation {
     public void run() throws Exception {
         ManagementCenterService service = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         int count = 0;
-        while (service == null && count < redoCount) {
-            Thread.sleep(1000);
+        while (service == null && count < REDO_COUNT) {
+            Thread.sleep(SLEEP_MILLIS);
             count++;
             service = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         }

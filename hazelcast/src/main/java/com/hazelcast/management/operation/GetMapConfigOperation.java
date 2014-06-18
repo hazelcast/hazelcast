@@ -23,6 +23,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
+/**
+ *  Operation to fetch Map configuration.
+ */
 public class GetMapConfigOperation extends Operation {
 
     private String mapName;

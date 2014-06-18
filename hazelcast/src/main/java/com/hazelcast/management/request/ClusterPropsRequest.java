@@ -25,6 +25,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ *  Request for cluster properties.
+ */
 public class ClusterPropsRequest implements ConsoleRequest {
 
     public ClusterPropsRequest() {

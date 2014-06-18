@@ -22,6 +22,10 @@ import com.hazelcast.management.ManagementCenterService;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
+/**
+ *  Request for sending console commands.
+ */
+
 public class ConsoleCommandRequest implements ConsoleRequest {
 
     private String command;

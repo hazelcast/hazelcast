@@ -51,7 +51,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -67,22 +66,25 @@ import java.net.URLConnection;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
 
+/**
+ * ManagementCenterService is responsible for sending statistics data to the Management Center.
+ */
 public class ManagementCenterService {
 
-    public static final int HTTP_SUCCESS = 200;
-    public static final int CONNECTION_TIMEOUT_MILLIS = 5000;
-    public static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
-    public static final long DEFAULT_UPDATE_INTERVAL = 5000;
+    static final int HTTP_SUCCESS = 200;
+    static final int CONNECTION_TIMEOUT_MILLIS = 5000;
+    static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
+    static final long DEFAULT_UPDATE_INTERVAL = 5000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -95,7 +97,7 @@ public class ManagementCenterService {
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
     private volatile String managementCenterUrl;
-    private volatile boolean urlChanged = false;
+    private volatile boolean urlChanged;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -173,6 +175,7 @@ public class ManagementCenterService {
             interruptThread(stateSendThread);
             interruptThread(taskPollThread);
         } catch (Throwable ignored) {
+            ignore(ignored);
         }
     }
 
@@ -210,8 +213,8 @@ public class ManagementCenterService {
         }
 
         urlChanged = true;
-        logger.info("Management Center URL has changed. " +
-                "Hazelcast will connect to Management Center on address: \n" + managementCenterUrl);
+        logger.info("Management Center URL has changed. "
+                + "Hazelcast will connect to Management Center on address: \n" + managementCenterUrl);
     }
 
     private void interruptThread(Thread t) {
@@ -266,7 +269,10 @@ public class ManagementCenterService {
         }
     }
 
-    private class StateSendThread extends Thread {
+    /**
+     * Thread for sending cluster state to the Management Center.
+     */
+    private final class StateSendThread extends Thread {
         private final TimedMemberStateFactory timedMemberStateFactory;
         private final long updateIntervalMs;
 
@@ -352,10 +358,12 @@ public class ManagementCenterService {
         }
     }
 
-    private class TaskPollThread extends Thread {
+    /**
+     * Thread for polling tasks/requests from  Management Center.
+     */
+    private final class TaskPollThread extends Thread {
         private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests =
                 new HashMap<Integer, Class<? extends ConsoleRequest>>();
-        private final Random rand = new Random();
 
         TaskPollThread() {
             super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.Task.Poller"));
@@ -496,8 +504,11 @@ public class ManagementCenterService {
     }
 
 
+    /**
+     * LifecycleListener for listening for LifecycleState.STARTED event to start
+     * {@link com.hazelcast.management.ManagementCenterService}.
+     */
     private class LifecycleListenerImpl implements LifecycleListener {
-
         @Override
         public void stateChanged(final LifecycleEvent event) {
             if (event.getState() == LifecycleState.STARTED) {
@@ -510,6 +521,9 @@ public class ManagementCenterService {
         }
     }
 
+    /**
+     * MembershipListener to send Management Center URL to the new members.
+     */
     public class MemberListenerImpl implements MembershipListener {
 
         @Override

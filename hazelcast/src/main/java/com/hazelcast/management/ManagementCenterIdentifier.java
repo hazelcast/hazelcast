@@ -17,7 +17,6 @@
 package com.hazelcast.management;
 
 import com.eclipsesource.json.JsonObject;
-import com.hazelcast.util.JsonUtil;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,8 +28,22 @@ import static java.lang.String.format;
  * Identifier for the ManagementCenter. This information is used when a member identifies itself to the
  * ManagementCenter. It contains information like version/clustername/address.
  */
-public class ManagementCenterIdentifier implements JsonSerializable{
+public class ManagementCenterIdentifier implements JsonSerializable {
 
+    private static final int VERSION_MULTIPLIER = 10;
+    private int version;
+    private String clusterName;
+    private String address;
+    private transient String versionString;
+
+    public ManagementCenterIdentifier() {
+    }
+
+    public ManagementCenterIdentifier(String version, String clusterName, String address) {
+        this.version = getVersionAsInt(version);
+        this.clusterName = clusterName;
+        this.address = address;
+    }
 
     public static int getVersionAsInt(String versionString) throws IllegalArgumentException {
         int version = 0;
@@ -38,7 +51,7 @@ public class ManagementCenterIdentifier implements JsonSerializable{
         final Matcher matcher = pattern.matcher(versionString);
         if (matcher.matches()) {
             for (int i = 1; i < matcher.groupCount() + 1; i++) {
-                version *= 10;
+                version *= VERSION_MULTIPLIER;
                 version += Integer.parseInt(matcher.group(i) == null ? "0" : matcher.group(i));
             }
             return version;
@@ -57,23 +70,8 @@ public class ManagementCenterIdentifier implements JsonSerializable{
         return builder.toString();
     }
 
-    private int version;
-    private String clusterName;
-    private String address;
-    public transient String versionString;
 
-    public ManagementCenterIdentifier() {
-
-    }
-
-    public ManagementCenterIdentifier(String version, String clusterName, String address) {
-        this.version = getVersionAsInt(version);
-        this.clusterName = clusterName;
-        this.address = address;
-    }
-
-
-    public JsonObject toJson(){
+    public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("version", version);
         root.add("clusterName", clusterName);
@@ -93,8 +91,9 @@ public class ManagementCenterIdentifier implements JsonSerializable{
     }
 
     public String getVersionString() {
-        if (versionString == null)
+        if (versionString == null) {
             versionString = convertVersionToString(version);
+        }
         return versionString;
     }
 

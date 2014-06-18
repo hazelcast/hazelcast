@@ -18,11 +18,13 @@ package com.hazelcast.management;
 
 import com.hazelcast.console.ConsoleApp;
 import com.hazelcast.core.HazelcastInstance;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Handler class for console commands that sent from Console application which located in Management Center.
+ */
 public class ConsoleCommandHandler {
 
     private final ConsoleHandlerApp app;
@@ -55,6 +57,9 @@ public class ConsoleCommandHandler {
         return output;
     }
 
+    /**
+     * Wrapper for {@link com.hazelcast.console.ConsoleApp}
+     */
     private class ConsoleHandlerApp extends ConsoleApp {
         public ConsoleHandlerApp(HazelcastInstance hazelcast) {
             super(hazelcast);

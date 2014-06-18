@@ -20,13 +20,15 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.util.JsonUtil;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.hazelcast.util.JsonUtil.*;
+import static com.hazelcast.util.JsonUtil.getString;
 
+/**
+ * Request for fetching map entries.
+ */
 public class GetMapEntryRequest implements ConsoleRequest {
 
     private String mapName;
