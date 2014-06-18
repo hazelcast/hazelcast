@@ -74,6 +74,9 @@ As you can see, since `address` field itself is `DataSerializable`, it is callin
 
 <font color='red'>***Note***:</font> *Since Hazelcast needs to create an instance during deserialization,`DataSerializable` class has a no-arg constructor.*
 
+<font color='red'>***Note***:</font> *`DataSerializable` is a good option if serialization is only needed for in-cluster communication.*
+
+
 ### IdentifiedDataSerializable
 
 For a faster serialization of objects, avoiding reflection and long class names, Hazelcast recommends to implement `com.hazelcast.nio.serialization.IdentifiedDataSerializable` which is slightly better version of `DataSerializable`.
