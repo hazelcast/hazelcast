@@ -4,11 +4,12 @@
 
 ## DataSerializable
 
+As mentioned in the previous section, Java serialization is an easy mechanism. However, we do not have a control on the way of serialization or deserialization of the fields. Moreover, this mechanism can lead to excessive CPU loads since it keep tracks of objects to handle the cycles and streams class descriptors. These are performance decreasing factors and thus, serializaed data may not have an optimal size.
 
-Here is an example of a class implementing `com.hazelcast.nio.serialization.DataSerializable` interface.
+DataSerializable interface of Hazelcast overcomes these issues. Here is an example of a class implementing `com.hazelcast.nio.serialization.DataSerializable` interface.
 
 ```java
-public class Address implements com.hazelcast.nio.serialization.DataSerializable {
+public class Address implements DataSerializable {
     private String street;
     private int zipCode;
     private String city;
@@ -73,9 +74,11 @@ As you can see, since `address` field itself is `DataSerializable`, it is callin
 
 ### IdentifiedDataSerializable
 
-For a faster serialization of objects, Hazelcast recommends to implement `com.hazelcast.nio.serialization.IdentifiedDataSerializable` which is slightly better version of `DataSerializable`.
+For a faster serialization of objects, avoiding reflection and long class names, Hazelcast recommends to implement `com.hazelcast.nio.serialization.IdentifiedDataSerializable` which is slightly better version of `DataSerializable`.
 
-To avoid the reflection and long class names, `IdentifiedDataSerializable` can be used instead of `DataSerializable`. Note that, `IdentifiedDataSerializable` extends `DataSerializable` and introduces two new methods.
+`DataSerializable` uses reflection to create a class instance, as mentioned in above section. But, `IdentifiedDataSerializable` uses a factory for this purpose and it is faster during deserialization which requires new instance creations.
+
+`IdentifiedDataSerializable` extends `DataSerializable` and introduces two new methods.
 
 -   `int getId();`
 -   `int getFactoryId();`
@@ -83,4 +86,76 @@ To avoid the reflection and long class names, `IdentifiedDataSerializable` can b
 
 `IdentifiedDataSerializable` uses `getId()` instead of class name and uses `getFactoryId()` to load the class given the Id. To complete the implementation, a `com.hazelcast.nio.serialization.DataSerializableFactory` should also be implemented and registered into `SerializationConfig` which can be accessed from `Config.getSerializationConfig()`. Factory's responsibility is to return an instance of the right `IdentifiedDataSerializable` object, given the Id. So far this is the most efficient way of Serialization that Hazelcast supports off the shelf.
 
+Let's take a look at the below example codes and configuration to see `IdentifiedDataSerializable` in action.
 
+```java
+public class Employee implements IdentifiedDataSerializable { 
+   private String surname;
+   public Employee(){}
+   public Employee(String surname) { 
+      this.surname = surname;
+   }
+   @Override
+   public void readData(ObjectDataInput in) 
+         throws IOException {
+      this.surname = in.readUTF();
+   }
+   @Override
+   public void writeData(ObjectDataOutput out)
+         throws IOException { 
+      out.writeUTF(surname);
+   }
+   @Override
+   public int getFactoryId() { 
+      return EmployeeDataSerializableFactory.FACTORY_ID;
+   }
+   @Override
+   public int getId () { 
+      return EmployeeDataSerializableFactory.EMPLOYEE_TYPE;
+   }
+   @Override
+   public String toString () {
+      return String.format("Employee(surname=%s)", surname); 
+   }
+}
+```
+ 
+Each of the methods `getId` and `getFactoryId` should return a unique positive number within the `EmployeeDataSerializableFactory`. Now, let's create an instance of this `EmployeeDataSerializableFactory`.
+
+```java
+public class EmployeeDataSerializableFactory 
+         implements DataSerializableFactory{
+   
+   public static final int FACTORY_ID = 1;
+   
+   public static final int EMPLOYEE_TYPE = 1;
+
+   @Override
+   public IdentifiedDataSerializable create(int typeId) {
+      if(typeId == EMPLOYEE_TYPE){ 
+         return new Employee();
+      }else{
+         return null; 
+      }
+   }
+}
+```
+
+Only method that should be implemented is `create`, as seen in the above sample. It is recommended to use `switch`-``case` statement instead of multiple `if`-`else` lines if you have a lot of subclasses. Hazelcast throws an exception if null is returned for `typeId`.
+
+Now, as the last step, you need to register `EmployeeDataSerializableFactory` declaratively (in the configuration file `hazelcast.xml`) as shown below. Note that, `factory-id` has the same value of `FACTORY_ID` in the above code. This is crucial to enable Hazelcast to find the correct factory.
+
+```xml
+<hazelcast> 
+   ...
+   <serialization>
+      <data-serializable-factories>
+         <data-serializable-factory
+            factory-id="1">EmployeeDataSerializableFactory
+               </data- serializable -factory>
+      </data-serializable-factories>
+   </serialization>
+   ...
+</hazelcast>
+```
+ 
