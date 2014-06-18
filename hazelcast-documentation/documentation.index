@@ -75,6 +75,7 @@ src/Serialization.md
 	src/PortableSerialization.md
 	src/StreamSerializer.md
 	src/ByteArraySerializer.md
+	src/HazelcastInstanceAware.md
 src/Management.md
 	src/JMXAPIPerNode.md
 	src/MonitoringWithJMX.md
