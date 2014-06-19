@@ -24,6 +24,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
+/**
+ * Operation to update map configuration from Management Center.
+ */
 public class UpdateMapConfigOperation extends Operation {
 
     private String mapName;

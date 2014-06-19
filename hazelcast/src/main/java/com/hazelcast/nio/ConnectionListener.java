@@ -16,7 +16,12 @@
 
 package com.hazelcast.nio;
 
+/**
+ * A listener for the {@link com.hazelcast.nio.ConnectionManager} to listen to connections
+ * being added or removed.
+ */
 public interface ConnectionListener {
+
     void connectionAdded(Connection connection);
 
     void connectionRemoved(Connection connection);

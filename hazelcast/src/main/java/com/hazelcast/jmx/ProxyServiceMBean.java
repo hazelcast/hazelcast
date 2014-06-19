@@ -18,11 +18,13 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.ProxyService;
-
 import java.util.Hashtable;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
+/**
+ * Management bean for {@link com.hazelcast.spi.ProxyService}
+ */
 @ManagedDescription("HazelcastInstance.ProxyService")
 public class ProxyServiceMBean extends HazelcastMBean<ProxyService> {
 

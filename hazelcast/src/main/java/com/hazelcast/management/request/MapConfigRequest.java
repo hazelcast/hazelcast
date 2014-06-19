@@ -29,6 +29,9 @@ import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 
+/**
+ * Request for updating map configuration from Management Center.
+ */
 public class MapConfigRequest implements ConsoleRequest {
 
     private String mapName;

@@ -19,9 +19,13 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Management bean for {@link com.hazelcast.core.IList}
+ */
 @ManagedDescription("IList")
 public class ListMBean extends HazelcastMBean<IList<?>> {
 
@@ -75,6 +79,7 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
         try {
             managedObject.removeItemListener(registrationId);
         } catch (Exception ignored) {
+            ignore(ignored);
         }
     }
 }

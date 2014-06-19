@@ -22,6 +22,10 @@ import org.hibernate.cache.CacheException;
 
 import java.util.Properties;
 
+/**
+ * A factory class to build up a {@link com.hazelcast.core.HazelcastInstance} depending
+ * on configuration either based on Hazelcast client or node implementation.
+ */
 public final class HazelcastInstanceFactory {
 
     private static final String HZ_CLIENT_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastClientLoader";

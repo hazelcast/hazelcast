@@ -29,8 +29,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.TcpIpConnection;
-import com.hazelcast.nio.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -395,6 +395,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     public void reset() {
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         for (ClientEndpoint endpoint : endpoints.values()) {
             try {

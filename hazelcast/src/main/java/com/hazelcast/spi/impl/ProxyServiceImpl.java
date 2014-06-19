@@ -38,6 +38,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedRunnable;
 
@@ -217,6 +218,7 @@ public class ProxyServiceImpl
                     // listeners will be called if proxy is created here.
                 }
             } catch (HazelcastInstanceNotActiveException ignored) {
+                EmptyStatement.ignore(ignored);
             }
         } else {
             final ProxyRegistry registry = registries.get(serviceName);

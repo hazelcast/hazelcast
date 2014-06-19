@@ -16,6 +16,11 @@
 
 package com.hazelcast.util;
 
+/**
+ *  Utility class to be able to simulate different time zones.
+ *  Time offset can be configured with following property
+ *  "com.hazelcast.clock.offset"
+ */
 public final class Clock {
     private static final ClockImpl CLOCK;
 
@@ -32,7 +37,8 @@ public final class Clock {
         if (clockOffset != null) {
             try {
                 offset = Long.parseLong(clockOffset);
-            } catch (NumberFormatException ignore) {
+            } catch (NumberFormatException ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
         if (offset == 0L) {

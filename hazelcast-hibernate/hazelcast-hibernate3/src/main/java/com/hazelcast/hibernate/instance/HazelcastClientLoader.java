@@ -30,6 +30,10 @@ import org.hibernate.util.PropertiesHelper;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * A factory implementation to build up a {@link com.hazelcast.core.HazelcastInstance}
+ * implementation using {@link com.hazelcast.client.HazelcastClient}.
+ */
 class HazelcastClientLoader implements IHazelcastInstanceLoader {
 
     private static final int CONNECTION_ATTEMPT_LIMIT = 10;
@@ -53,6 +57,35 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         String pass = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_PASSWORD, props, null);
         String configResourcePath = CacheEnvironment.getConfigFilePath(props);
 
+        ClientConfig clientConfig = buildClientConfig(configResourcePath);
+        if (group != null) {
+            clientConfig.getGroupConfig().setName(group);
+        }
+        if (pass != null) {
+            clientConfig.getGroupConfig().setPassword(pass);
+        }
+        if (address != null) {
+            clientConfig.getNetworkConfig().addAddress(address);
+        }
+        clientConfig.getNetworkConfig().setSmartRouting(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        client = HazelcastClient.newHazelcastClient(clientConfig);
+        return client;
+    }
+
+    public void unloadInstance() throws CacheException {
+        if (client == null) {
+            return;
+        }
+        try {
+            client.getLifecycleService().shutdown();
+            client = null;
+        } catch (Exception e) {
+            throw new CacheException(e);
+        }
+    }
+
+    private ClientConfig buildClientConfig(String configResourcePath) {
         ClientConfig clientConfig = null;
         if (configResourcePath != null) {
             try {
@@ -68,29 +101,6 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
             networkConfig.setRedoOperation(true);
             networkConfig.setConnectionAttemptLimit(CONNECTION_ATTEMPT_LIMIT);
         }
-        if (group != null) {
-            clientConfig.getGroupConfig().setName(group);
-        }
-        if (pass != null) {
-            clientConfig.getGroupConfig().setPassword(pass);
-        }
-        if (address != null) {
-            clientConfig.getNetworkConfig().addAddress(address);
-        }
-        clientConfig.getNetworkConfig().setSmartRouting(true);
-        clientConfig.getNetworkConfig().setRedoOperation(true);
-        return (client = HazelcastClient.newHazelcastClient(clientConfig));
-    }
-
-    public void unloadInstance() throws CacheException {
-        if (client == null) {
-            return;
-        }
-        try {
-            client.getLifecycleService().shutdown();
-            client = null;
-        } catch (Exception e) {
-            throw new CacheException(e);
-        }
+        return clientConfig;
     }
 }

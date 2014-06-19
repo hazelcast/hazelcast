@@ -27,6 +27,10 @@ import java.io.Reader;
 Imported from Apache Felix project.
 http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/felix/mishell/OSGiScriptEngine.java
 */
+
+/**
+ * This adapter class is used to create / bind ScriptEngine implementations in OSGi contexts.
+ */
 public class OSGiScriptEngine implements ScriptEngine {
     private ScriptEngine engine;
     private OSGiScriptEngineFactory factory;

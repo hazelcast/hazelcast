@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.SelectionHandler;
+import com.hazelcast.nio.tcp.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 

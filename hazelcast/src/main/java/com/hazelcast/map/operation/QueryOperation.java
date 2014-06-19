@@ -186,7 +186,7 @@ public class QueryOperation extends AbstractMapOperation {
             final PartitionContainer container = mapService.getPartitionContainer(partition);
             final RecordStore recordStore = container.getRecordStore(name);
             LinkedList<QueryableEntry> partitionResult = new LinkedList<QueryableEntry>();
-            for (Record record : recordStore.getReadonlyRecordMap().values()) {
+            for (Record record : recordStore.getReadonlyRecordMapByWaitingMapStoreLoad().values()) {
                 final Data key = record.getKey();
                 Object value = record.getCachedValue();
                 if (value == Record.NOT_CACHED) {

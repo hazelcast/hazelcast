@@ -23,6 +23,8 @@ import org.hibernate.cache.spi.access.CollectionRegionAccessStrategy;
 import org.hibernate.cache.spi.access.SoftLock;
 
 /**
+ * Simple adapter implementation for transactional / concurrent access control on collections
+ *
  * @author Leo Kim (lkim@limewire.com)
  */
 public final class CollectionRegionAccessStrategyAdapter implements CollectionRegionAccessStrategy {

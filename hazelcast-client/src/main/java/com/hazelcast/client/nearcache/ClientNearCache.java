@@ -264,6 +264,9 @@ public class ClientNearCache<K> {
         cache.clear();
     }
 
+    public void clear() {
+        cache.clear();
+    }
 
     class CacheRecord<K> {
         final K key;

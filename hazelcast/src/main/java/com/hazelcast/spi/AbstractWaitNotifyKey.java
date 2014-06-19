@@ -22,8 +22,7 @@ public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
     private final String objectName;
 
     protected AbstractWaitNotifyKey(String service, String objectName) {
-        //todo: can we verify here that service and objectName are not null?
-         this.service = service;
+        this.service = service;
         this.objectName = objectName;
     }
 

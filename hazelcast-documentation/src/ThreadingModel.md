@@ -1,13 +1,13 @@
 ## Threading Model
 
-Your application server has its own thread. Hazelcast does not use these - it manages its own threads.
+Your application server has its own threads. Hazelcast does not use these - it manages its own threads.
 
-### IO Threading
+### I/O Threading
 
-Hazelcast uses a pool of thread performng (n)IO; so there is not a single thread doing all the IO, but there are multiple.
-The number of IO threads can be configured using `hazelcast.io.thread.count` system property and defaults to 3. 
+Hazelcast uses a pool of threads for I/O; so there is not a single thread doing all the IO, but there are multiple.
+The number of IO threads can be configured using the `hazelcast.io.thread.count` system property and defaults to 3 per member. 
 
-IO threads wait for the `Selector.select` to complete. When sufficient bytes for a Packet have been received,
+IO threads wait for the `Selector.select` to complete. When sufficient bytes for a packet have been received,
 the Packet object is created. This Packet is then sent to the System where it is de-multiplexed. If the Packet header
 signals that it is an operation/response, it is handed over to the operation service (please see [Operation Threading](#operation-threading)). If the Packet 
 is an event, it is handed over to the event service (please see [Event Threading](#event-threading)). 
@@ -52,55 +52,80 @@ The IExecutor can be configured using the `ExecutorConfig` (programmatic configu
 
 There are 2 types of operations:
 
-* Operations that are aware of a certain partition, e.g. `map.get`
-* Operations that are not partition aware, e.g. `map.size`
+* Operations that are aware of a certain partition, e.g. `IMap.get(key)`
+* Operations that are not partition aware like the `IExecutorService.executeOnMember(command,member)` operation.
 
 Each of these types has a different threading model explained below.
 
 #### Partition-aware Operations
 
-To execute partition-aware operations, an array of operation threads is created. Size of this array is by default two times the number of cores. It can be changed using the `hazelcast.operation.thread.count` property.
+To execute partition-aware operations, an array of operation threads is created. The size of this array is by default two 
+times the number of cores. It can be changed using the `hazelcast.operation.thread.count` property.
 
-Each thread has its own work queue and it will consume messages from this work queue. If a partition-aware operation needs
-to be scheduled, the right thread is found using the below formula:
+Each operation-thread has its own work queue and it will consume messages from this work queue. If a partition-aware 
+operation needs to be scheduled, the right thread is found using the below formula:
 
 `threadIndex = partitionId % partition-thread-count`
 
-And then the operation is put in the work queue of that worker.
+After the threadIndex is determined, the operation is put in the work queue of that operation-thread.
 
-This means that a single operation thread can execute operations for multiple partitions; if there are 271 partitions and
-10 partition-threads, then roughly every operation thread will execute operations for 10 partitions.
+This means that:
 
-If one partition is slow, e.g. a map EntryProcessor running slow user code, it will block the execution of other partitions
-that map to the same operation thread. So it could be that partition 1 and partition 26 of the same map use the same operation
-thread because they map to the same partition. It can even be that partition 1 for map X and partition 26 of map Y, which
-are completely independent data structures, still contend for the same thread. So you need to be careful about starving
-a partition of threading resources.
+ * a single operation thread executes operations for multiple partitions; if there are 271 partitions and
+ 10 partition-threads, then roughly every operation-thread will execute operations for 27 partitions. 
 
-Currently, there is no support for work stealing; so different partitions, that map to
-the same thread may need to wait till one of the partitions is finished, even though there are other free partition-operation threads
-available.
+ * each partition belongs to only 1 operation thread. All operations for partition some partition, will always 
+ be handled by exactly the same operation-thread. 
+
+ * no concurrency control is needed to deal with partition-aware operations because once a partition-aware
+ operation is put on the work queue of a partition-aware operation thread, you get the guarantee that only 
+ 1 thread is able to touch that partition.
+
+Because of this threading strategy, there are two forms of false sharing you need to be aware of:
+
+* false sharing of the partition: two completely independent data structures share the same partitions; e.g. if there
+ is a map `employees` and a map `orders` it could be that an employees.get(peter) (running on e.g. partition 25) is blocked
+ by a map.get of orders.get(1234) (also running on partition 25). So if independent data structure share the same partition
+ a slow operation on one data structure can slow down the other data structures.
+ 
+* false sharing of the partition-aware operation-thread: each operation-thread is responsible for executing
+ operations of a number of partitions. For example thread-1 could be responsible for partitions 0,10,20.. thread-2 for partitions
+ 1,11,21,.. etc. So if an operation for partition 1 is taking a lot of time, it will block the execution of an operation of partition
+ 11 because both of them are mapped to exactly the same operation-thread.
+
+So you need to be careful with long running operations because it could be that you are starving operations of a thread. 
+The general rule is is that the partition thread should be released as soon as possible because operations are not designed
+to execute long running operations. That is why it for example is very dangerous to execute a long running operation 
+using e.g. AtomicReference.alter or a IMap.executeOnKey, because these operations will block others operations to be executed.
+
+Currently, there is no support for work stealing; so different partitions, that map to the same thread may need to wait 
+till one of the partitions is finished, even though there are other free partition-operation threads available.
 
 <font color='red'>**Example**</font>
 
 Take a 3 node cluster. Two members will have 90 primary partitions and one member will have 91 primary partitions. Let's
 say you have one CPU and 4 cores per CPU. By default, 8 operation threads will be allocated to serve 90 or 91 partitions.
 
-
 #### Non Partition-aware Operations
 
-To execute non partition-aware operations, e.g. `map.size`, generic operation threads are used. When the Hazelcast instance is started,
-an array of operation threads is created. Size of this array also is by default two times the number of cores. It can be changed using the
-`hazelcast.operation.generic.thread.count` property.
+To execute non partition-aware operations, e.g. `IExecutorService.executeOnMember(command,member)`, generic operation 
+threads are used. When the Hazelcast instance is started, an array of operation threads is created. Size of this array 
+also is by default two times the number of cores. It can be changed using the `hazelcast.operation.generic.thread.count` 
+property.
+
+This means that:
+
+* a non partition-aware operation-thread will never execute an operation for a specific partition. Only partition-aware
+  operation-threads execute partition-aware operations. 
 
 Unlike the partition-aware operation threads, all the generic operation threads share the same work queue: `genericWorkQueue`.
 
-If a non partition-aware operation needs to be executed, it is placed in that work queue and any generic operation thread can execute it.
-The big advantage is that you automatically have work balancing since any generic operation thread is allowed to pick up work from 
-this queue.
+If a non partition-aware operation needs to be executed, it is placed in that work queue and any generic operation 
+thread can execute it. The big advantage is that you automatically have work balancing since any generic operation 
+thread is allowed to pick up work from this queue.
 
-The disadvantage is that this shared queue can be a point of contention; however, practically we do not see this as in production
-as performance is dominated by I/O and the system is not executing that many non partition-aware operations.
+The disadvantage is that this shared queue can be a point of contention; however, practically we do not see this as in 
+production as performance is dominated by I/O and the system is not executing that many non partition-aware operations.
  
 #### Priority Operations
  
@@ -116,7 +141,7 @@ operations we do the following:
  
 Because a worker thread will block on the normal work queue (either partition specific or generic) it could be that a priority operation
 is not picked up because it will not be put on the queue it is blocking on. We always send a 'kick the worker' operation that does 
-nothing else than trigger the worker to wakeup and check the priority queue. 
+nothing else than trigger the worker to wake up and check the priority queue. 
 
 #### Operation-response and Invocation-future
 

@@ -50,6 +50,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -195,8 +196,32 @@ public class HazelcastXaTest {
         }
 
         assertEquals("value", instance1.getMap("map").get("key"));
-
     }
+
+    @Test
+    public void testIsSame() throws Exception {
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final XAResource resource1 = instance1.newTransactionContext().getXaResource();
+        final XAResource resource2 = instance2.newTransactionContext().getXaResource();
+        assertTrue(resource1.isSameRM(resource2));
+    }
+
+    @Test
+    public void testTimeoutSetting() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final XAResource resource = instance.newTransactionContext().getXaResource();
+        final int timeout = 100;
+        final boolean result = resource.setTransactionTimeout(timeout);
+        assertTrue(result);
+        assertEquals(timeout, resource.getTransactionTimeout());
+        final MyXid myXid = new MyXid();
+        resource.start(myXid,0);
+        assertFalse(resource.setTransactionTimeout(120));
+        assertEquals(timeout, resource.getTransactionTimeout());
+        resource.commit(myXid,true);
+    }
+
 
     public static class MyXid implements Xid {
 

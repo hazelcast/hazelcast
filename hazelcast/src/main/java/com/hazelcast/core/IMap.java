@@ -179,6 +179,11 @@ public interface IMap<K, V>
      * <p>The map will not contain a mapping for the specified key once the
      * call returns.
      *
+     * <p><b>Warning:</b></p>
+     * This method breaks the contract of EntryListener.
+     * When an entry is removed by delete(), it fires an EntryEvent with a null oldValue.
+     * <p/>
+     *
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException   if the key is of an inappropriate type for
      *                              this map (optional)
@@ -887,17 +892,16 @@ public interface IMap<K, V>
     boolean evict(K key);
 
     /**
-     * todo implement for 3.3
-     * Evicts all keys from this map.
+     * Evicts all keys from this map except locked ones.
      * <p/>
      * If a <tt>MapStore</tt> is defined for this map, deleteAll is <strong>not</strong> called by this method.
-     * If you do want to deletaAll to be called use the {@link #clear()} method.
+     * If you do want to deleteAll to be called use the {@link #clear()} method.
      * <p/>
      * The EVICT_ALL event is fired for any registered listeners.
      *
      * @see #clear()
-     * void evictAll();
      */
+    void evictAll();
 
 
     /**

@@ -18,7 +18,7 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.IOSelector;
+import com.hazelcast.nio.tcp.IOSelector;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;

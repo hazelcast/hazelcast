@@ -80,7 +80,6 @@ public final class BasicOperationScheduler {
 
     //The genericOperationRandom is used when a generic operation is scheduled, and a generic OperationThread
     //needs to be selected.
-    //todo:
     //We could have a look at the ThreadLocalRandom, but it requires java 7. So some kind of reflection
     //could to the trick to use something less painful.
     private final Random genericOperationRandom = new Random();

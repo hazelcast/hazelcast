@@ -78,6 +78,10 @@ locks can be available for live members immediately.
 - Locks are re-entrant, meaning same thread can lock multiple times on the same lock. Note that for other threads to be
  able to require this lock, owner of the lock should call unlock as many times as it called lock.
 
+- In split-brain scenario, cluster behaves as if there are wo different clusters. Since two separate clusters are not aware of each other,
+two nodes from different clusters can acquire the same lock.
+For more information on places where split brain can be handled, please see [Split Brain](#how-is-split-brain-syndrome-handled).
+
 ### ICondition
 
 ICondition is the distributed implementation of `notify`, `notifyAll` and `wait` operations on Java object . It can be used to synchronize

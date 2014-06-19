@@ -232,6 +232,11 @@ public class DefaultRecordStore implements RecordStore {
         return Collections.unmodifiableMap(records);
     }
 
+    public Map<Data, Record> getReadonlyRecordMapByWaitingMapStoreLoad() {
+        checkIfLoaded();
+        return getReadonlyRecordMap();
+    }
+
     public void clearPartition() {
         final NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
@@ -457,6 +462,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
 
+    // TODO Does it need to load from store on backup?
     public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
@@ -469,13 +475,13 @@ public class DefaultRecordStore implements RecordStore {
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
-    private Record getRecordInternal(Data dataKey, boolean enableIndex) {
+    private Record getRecordInternal(Data key, boolean enableIndex) {
         Record record = null;
         if (mapContainer.getStore() != null) {
-            final Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
+            final Object value = loadFromStoreOrStagingArea(key);
             if (value != null) {
-                record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL, getNow());
-                records.put(dataKey, record);
+                record = mapService.createRecord(name, key, value, DEFAULT_TTL, getNow());
+                records.put(key, record);
                 if (enableIndex) {
                     saveIndex(record);
                 }
@@ -570,7 +576,77 @@ public class DefaultRecordStore implements RecordStore {
             deleteRecord(key);
             removeIndex(key);
         }
+        removeFromWriteBehindWaitingDeletions(key);
         return value;
+    }
+
+    @Override
+    public int evictAll() {
+        checkIfLoaded();
+        final int size = size();
+        final Set<Data> keysToPreserve = evictAll0();
+        removeIndexByPreserving(keysToPreserve);
+        return size - keysToPreserve.size();
+    }
+
+    @Override
+    public void evictAllBackup() {
+        evictAll0();
+    }
+
+    /**
+     * Internal evict all provides common functionality to all {@link #evictAll()}
+     *
+     * @return preserved keys.
+     */
+    private Set<Data> evictAll0() {
+        resetSizeEstimator();
+        resetAccessSequenceNumber();
+
+        Set<Data> keysToPreserve = Collections.emptySet();
+        final Map<Data, Record> recordsToPreserve = getLockedRecords();
+        if (!recordsToPreserve.isEmpty()) {
+            keysToPreserve = recordsToPreserve.keySet();
+            updateSizeEstimator(calculateRecordSize(recordsToPreserve.values()));
+        }
+        clearRecordsMap(recordsToPreserve);
+        return keysToPreserve;
+    }
+
+    /**
+     * Removes indexes by excluding keysToPreserve.
+     *
+     * @param keysToPreserve should not be removed from index.
+     */
+    private void removeIndexByPreserving(Set<Data> keysToPreserve) {
+        final Set<Data> currentKeySet = records.keySet();
+        currentKeySet.removeAll(keysToPreserve);
+
+        removeIndex(currentKeySet);
+    }
+
+    /**
+     * Returns locked records.
+     *
+     * @return map of locked records.
+     */
+    private Map<Data, Record> getLockedRecords() {
+        if (lockStore == null) {
+            return Collections.emptyMap();
+        }
+        final Collection<Data> lockedKeys = lockStore.getLockedKeys();
+        if (lockedKeys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final Map<Data, Record> lockedRecords = new HashMap<Data, Record>(lockedKeys.size());
+        // Locked records should not be removed!
+        for (Data key : lockedKeys) {
+            Record record = records.get(key);
+            if (record != null) {
+                lockedRecords.put(key, record);
+            }
+        }
+        return lockedRecords;
     }
 
     @Override
@@ -599,7 +675,7 @@ public class DefaultRecordStore implements RecordStore {
         boolean removed = false;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = getFromStoreOrEvictionStagingArea(key);
+                oldValue = loadFromStoreOrStagingArea(key);
             }
             if (oldValue == null) {
                 return false;
@@ -629,7 +705,7 @@ public class DefaultRecordStore implements RecordStore {
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = getFromStoreOrEvictionStagingArea(key);
+                oldValue = loadFromStoreOrStagingArea(key);
                 if (oldValue != null) {
                     removeIndex(key);
                     mapStoreDelete(null, key, now);
@@ -652,17 +728,14 @@ public class DefaultRecordStore implements RecordStore {
     @Override
     public Object get(Data key) {
         checkIfLoaded();
-        if (hasWaitingWriteBehindDeleteOperation(key)) {
-            // not reachable record.
-            return null;
-        }
+
         long now = getNow();
         Record record = records.get(key);
         record = nullIfExpired(record);
         Object value = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                value = getFromStoreOrEvictionStagingArea(key);
+                value = loadFromStoreOrStagingArea(key);
                 if (value != null) {
                     record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
                     records.put(key, record);
@@ -679,7 +752,10 @@ public class DefaultRecordStore implements RecordStore {
         return value;
     }
 
-    public Object getFromStoreOrEvictionStagingArea(Data key) {
+    public Object loadFromStoreOrStagingArea(Data key) {
+        if (hasWaitingWriteBehindDeleteOperation(key)) {
+            return null;
+        }
         final Object fromStagingArea = getFromEvictionStagingArea(key);
         return fromStagingArea == null ? mapContainer.getStore().load(mapService.toObject(key)) :
                 fromStagingArea;
@@ -696,9 +772,6 @@ public class DefaultRecordStore implements RecordStore {
         }
         for (Data dataKey : keySet) {
             Record record = records.get(dataKey);
-            if (hasWaitingWriteBehindDeleteOperation(dataKey)) {
-                continue;
-            }
             if (record == null) {
                 if (mapContainer.getStore() != null) {
                     keyMapForLoader.put(mapService.toObject(dataKey), dataKey);
@@ -748,15 +821,11 @@ public class DefaultRecordStore implements RecordStore {
 
         final long now = getNow();
         Record record = records.get(key);
-        if (hasWaitingWriteBehindDeleteOperation(key)) {
-            // not reachable record.
-            return false;
-        }
         record = nullIfExpired(record);
 
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                Object value = getFromStoreOrEvictionStagingArea(key);
+                Object value = loadFromStoreOrStagingArea(key);
                 if (value != null) {
                     record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
                     records.put(key, record);
@@ -813,7 +882,7 @@ public class DefaultRecordStore implements RecordStore {
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(key));
+                oldValue = loadFromStoreOrStagingArea(key);
             }
             value = mapService.interceptPut(name, null, value);
             value = mapStoreWrite(key, value, null, now);
@@ -1046,7 +1115,7 @@ public class DefaultRecordStore implements RecordStore {
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(key));
+                oldValue = loadFromStoreOrStagingArea(key);
                 if (oldValue != null) {
                     record = mapService.createRecord(name, key, oldValue, DEFAULT_TTL, now);
                     records.put(key, record);
@@ -1490,6 +1559,20 @@ public class DefaultRecordStore implements RecordStore {
 
     private long calculateRecordSize(Record record) {
         return sizeEstimator.getCost(record);
+    }
+
+    /**
+     * Returns total size of collection.
+     *
+     * @param collection which's size to be calculated.
+     * @return total size of collection.
+     */
+    private long calculateRecordSize(Collection<Record> collection) {
+        long totalSize = 0L;
+        for (Record record : collection) {
+            totalSize += calculateRecordSize(record);
+        }
+        return totalSize;
     }
 
     private void resetSizeEstimator() {

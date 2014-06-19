@@ -22,6 +22,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
 
+/**
+ * Collection class for results of query operations
+ */
 public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
 
     private final TreeSet<Map.Entry> entries;
@@ -50,6 +53,10 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         return new SortedIterator();
     }
 
+    /**
+     *
+     * @return Map.Entry last entry in set
+     */
     public Map.Entry last() {
         if (entries.isEmpty()) {
             return null;

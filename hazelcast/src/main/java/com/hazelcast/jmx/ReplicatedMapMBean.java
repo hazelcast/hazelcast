@@ -18,13 +18,18 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.replicatedmap.ReplicatedMapProxy;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Management bean for {@link com.hazelcast.core.ReplicatedMap}
+ */
 @ManagedDescription("ReplicatedMap")
 public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
 
@@ -57,6 +62,11 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
             @Override
             public void entryEvicted(EntryEvent event) {
             }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);
     }
@@ -67,6 +77,7 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
         try {
             managedObject.removeEntryListener(listenerId);
         } catch (Exception ignored) {
+            ignore(ignored);
         }
     }
 

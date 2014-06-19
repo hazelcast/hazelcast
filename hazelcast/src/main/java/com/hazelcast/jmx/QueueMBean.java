@@ -21,9 +21,13 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Management bean for {@link Iqu}
+ */
 @ManagedDescription("IQueue")
 public class QueueMBean extends HazelcastMBean<IQueue> {
 
@@ -157,6 +161,7 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
         try {
             managedObject.removeItemListener(registrationId);
         } catch (Exception ignored) {
+            ignore(ignored);
         }
     }
 }

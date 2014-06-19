@@ -16,15 +16,18 @@
 
 package com.hazelcast.multimap;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MapEvent;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.util.Clock;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,9 +40,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 6/4/13
@@ -79,6 +83,11 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
                 assertEquals("2", event.getKey());
                 assertEquals("again", event.getValue());
                 latchRemoved.countDown();
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
             }
 
             public void entryUpdated(EntryEvent event) {

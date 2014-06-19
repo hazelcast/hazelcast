@@ -18,6 +18,7 @@ src/Distributed_Data_Structures.md
 		src/Map-Interceptors.md
 		src/Map-NearCache.md
 		src/Map-EntryStatistics.md
+		src/Map-EntryListener.md
 	src/Queue.md
 		src/Queue-Persistence.md
 	src/MultiMap.md
@@ -70,9 +71,12 @@ src/Clients.md
 	src/RESTClient.md
 	src/MemcacheClient.md
 src/Serialization.md
+	src/Serializable.md
 	src/DataSerialization.md
 	src/PortableSerialization.md
-	src/CustomSerialization.md
+	src/StreamSerializer.md
+	src/ByteArraySerializer.md
+	src/HazelcastInstanceAware.md
 src/Management.md
 	src/JMXAPIPerNode.md
 	src/MonitoringWithJMX.md
@@ -87,11 +91,11 @@ src/Management.md
 src/Security.md
 	src/Encryption.md
 	src/SSL.md
-	src/EnablingSecurityforHE.md
 	src/Credentials.md
 	src/ClusterLoginModule.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
+	src/EnablingSecurityforHE.md
 src/Performance.md
     src/ThreadingModel.md
 src/WAN.md
@@ -104,9 +108,8 @@ src/Config.md
 		src/IPv6.md
 		src/PartitionGroupConfig.md
 	src/ListenerConfig.md
-	src/WildcardConfiguration.md
-	src/ConfigurationProperties.md
 	src/Logging.md
+	src/ConfigurationProperties.md
 	src/EnterpriseConfig.md
 #	src/XMLWrapUp.md
 src/FAQ.md

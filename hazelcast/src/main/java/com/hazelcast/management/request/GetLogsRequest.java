@@ -28,6 +28,9 @@ import com.hazelcast.util.JsonUtil;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Request for fetching system log records.
+ */
 public class GetLogsRequest implements ConsoleRequest {
 
     public GetLogsRequest() {

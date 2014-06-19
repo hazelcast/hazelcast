@@ -25,6 +25,8 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.IMapEvent;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
@@ -727,6 +729,18 @@ public class MapService implements ManagedService, MigrationAwareService,
         mapContainer.getWanReplicationPublisher().publishReplicationEvent(SERVICE_NAME, replicationEvent);
     }
 
+
+    public void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected) {
+        final Collection<EventRegistration> registrations = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
+        if (registrations.isEmpty()) {
+            return;
+        }
+        final String source = nodeEngine.getThisAddress().toString();
+        final MapEventData mapEventData = new MapEventData(source, mapName, caller, eventType.getType(), numberOfEntriesAffected);
+        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrations, mapEventData, mapName.hashCode());
+
+    }
+
     public void publishEvent(Address caller, String mapName, EntryEventType eventType, Data dataKey, Data dataOldValue, Data dataValue) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
@@ -774,7 +788,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
             dataValue = dataValue != null ? dataValue : dataOldValue;
         }
-        EventData event = new EventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType.getType());
+        EntryEventData event = new EntryEventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType.getType());
         int orderKey = dataKey.hashCode();
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event, orderKey);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues(), orderKey);
@@ -871,35 +885,85 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public void dispatchEvent(EventData eventData, EntryListener listener) {
-        Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
-        EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getMapName(),
-                eventData.getDataKey(), eventData.getDataNewValue(), eventData.getDataOldValue(), getSerializationService());
+        if (eventData instanceof EntryEventData) {
+            dispatchEntryEventData(eventData, listener);
+        } else if (eventData instanceof MapEventData) {
+            dispatchMapEventData(eventData, listener);
+        } else {
+            throw new IllegalArgumentException("Unknown map event data");
+        }
+    }
+
+    private void dispatchMapEventData(EventData eventData, EntryListener listener) {
+        final MapEventData mapEventData = (MapEventData) eventData;
+        final Member member = getMemberOrNull(eventData);
         if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping event " + event + " from unknown address:" + eventData.getCaller());
-            }
             return;
         }
+        final MapEvent event = createMapEvent(mapEventData, member);
+        dispatch0(event, listener);
+        incrementEventStats(event);
+    }
+
+    private MapEvent createMapEvent(MapEventData mapEventData, Member member) {
+        return new MapEvent(mapEventData.getMapName(), member,
+                mapEventData.getEventType(), mapEventData.getNumberOfEntries());
+    }
+
+    private void dispatchEntryEventData(EventData eventData, EntryListener listener) {
+        final EntryEventData entryEventData = (EntryEventData) eventData;
+        final Member member = getMemberOrNull(eventData);
+
+        final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
+        dispatch0(event, listener);
+        incrementEventStats(event);
+    }
+
+    private Member getMemberOrNull(EventData eventData) {
+        final Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
+        if (member == null) {
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());
+            }
+        }
+        return member;
+    }
+
+    private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
+        return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
+                entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(), getSerializationService());
+    }
+
+    private void dispatch0(IMapEvent event, EntryListener listener) {
         switch (event.getEventType()) {
             case ADDED:
-                listener.entryAdded(event);
+                listener.entryAdded((EntryEvent) event);
                 break;
             case EVICTED:
-                listener.entryEvicted(event);
+                listener.entryEvicted((EntryEvent) event);
                 break;
             case UPDATED:
-                listener.entryUpdated(event);
+                listener.entryUpdated((EntryEvent) event);
                 break;
             case REMOVED:
-                listener.entryRemoved(event);
+                listener.entryRemoved((EntryEvent) event);
+                break;
+            case EVICT_ALL:
+                listener.mapEvicted((MapEvent) event);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
         }
-        MapContainer mapContainer = getMapContainer(eventData.getMapName());
+    }
+
+
+    private void incrementEventStats(IMapEvent event) {
+        final String mapName = event.getName();
+        MapContainer mapContainer = getMapContainer(mapName);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            getLocalMapStatsImpl(eventData.getMapName()).incrementReceivedEvents();
+            getLocalMapStatsImpl(mapName).incrementReceivedEvents();
         }
     }
 
@@ -912,7 +976,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         List<QueryEntry> list = new LinkedList<QueryEntry>();
         PartitionContainer container = getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(mapName);
-        Map<Data, Record> records = recordStore.getReadonlyRecordMap();
+        Map<Data, Record> records = recordStore.getReadonlyRecordMapByWaitingMapStoreLoad();
         SerializationService serializationService = nodeEngine.getSerializationService();
         final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);

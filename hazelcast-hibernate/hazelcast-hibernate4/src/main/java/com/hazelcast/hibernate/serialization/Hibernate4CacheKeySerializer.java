@@ -118,7 +118,7 @@ class Hibernate4CacheKeySerializer
 
     @Override
     public int getTypeId() {
-        return SerializationConstants.HIBERNATE3_TYPE_HIBERNATE_CACHE_KEY;
+        return SerializationConstants.HIBERNATE4_TYPE_HIBERNATE_CACHE_KEY;
     }
 
     @Override

@@ -16,26 +16,32 @@
 
 package com.hazelcast.jmx;
 
-import javax.management.Attribute;
-import javax.management.DynamicMBean;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import javax.management.AttributeNotFoundException;
-import javax.management.MBeanRegistration;
-import javax.management.MBeanException;
-import javax.management.ReflectionException;
-import javax.management.MalformedObjectNameException;
-import javax.management.MBeanInfo;
-import javax.management.AttributeList;
-import javax.management.InvalidAttributeValueException;
-import javax.management.MBeanAttributeInfo;
-import javax.management.IntrospectionException;
-import javax.management.MBeanOperationInfo;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
+import javax.management.Attribute;
+import javax.management.AttributeList;
+import javax.management.AttributeNotFoundException;
+import javax.management.DynamicMBean;
+import javax.management.IntrospectionException;
+import javax.management.InvalidAttributeValueException;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanRegistration;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
 
+/**
+ * Base class for beans registered to JMX by Hazelcast.
+ *
+ * @param <T> represents management bean to be registered.
+ */
 public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistration {
 
     protected HashMap<String, BeanInfo> attributeMap = new HashMap<String, BeanInfo>();
@@ -103,9 +109,9 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
         }
     }
 
-    public void setObjectName(Hashtable<String, String> properties) {
+    public void setObjectName(Map<String, String> properties) {
         try {
-            objectName = new ObjectName(ManagementService.DOMAIN, properties);
+            objectName = new ObjectName(ManagementService.DOMAIN, new Hashtable<String, String>(properties));
         } catch (MalformedObjectNameException e) {
             throw new IllegalArgumentException("Failed to create an ObjectName", e);
         }
