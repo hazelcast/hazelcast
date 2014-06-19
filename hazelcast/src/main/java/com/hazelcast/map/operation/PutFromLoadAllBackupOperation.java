@@ -34,15 +34,15 @@ import java.util.List;
  *
  * @see {@link PutFromLoadAllOperation}
  */
-public class PutFromLoadKeysBackupOperation extends AbstractMapOperation implements BackupOperation, DataSerializable {
+public class PutFromLoadAllBackupOperation extends AbstractMapOperation implements BackupOperation, DataSerializable {
 
     private List<Data> keyValueSequence;
 
-    public PutFromLoadKeysBackupOperation() {
+    public PutFromLoadAllBackupOperation() {
         keyValueSequence = Collections.emptyList();
     }
 
-    public PutFromLoadKeysBackupOperation(String name, List<Data> keyValueSequence) {
+    public PutFromLoadAllBackupOperation(String name, List<Data> keyValueSequence) {
         super(name);
         this.keyValueSequence = keyValueSequence;
     }
