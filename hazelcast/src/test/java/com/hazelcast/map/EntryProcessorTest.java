@@ -37,17 +37,21 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -58,12 +62,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.TempData.DeleteEntryProcessor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -959,6 +963,80 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(expectedDeserializationCount, serialized.intValue());
         instance.shutdown();
     }
+
+    @Test
+    public void executionOrderTest() {
+        String mapName = randomString();
+        Config cfg = new Config();
+        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+
+        final int maxTasks = 20;
+        final Object key = "key";
+        final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
+
+        processorMap.put(key, new ArrayList<Integer>());
+
+        for (int i = 0 ; i < maxTasks ; i++) {
+            processorMap.submitToKey(key, new SimpleEntryProcessor(i));
+        }
+
+        List<Integer> expectedOrder = new ArrayList<Integer>();
+        for (int i = 0 ; i < maxTasks ; i++) {
+            expectedOrder.add(i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                List<Integer> actualOrder = processorMap.get(key);
+                assertEquals("failed to execute all entry processor tasks",  maxTasks, actualOrder.size());
+            }
+        });
+        final List<Integer> actualOrder = processorMap.get(key);
+        assertEquals("entry processor tasks executed in unexpected order", expectedOrder, actualOrder);
+    }
+
+    private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
+        private Integer id;
+
+        public SimpleEntryProcessor() {}
+
+        public SimpleEntryProcessor(Integer id) {
+            this.id = id;
+        }
+
+        @Override
+        public Object process(Map.Entry<Object, List<Integer>> entry) {
+            List l = entry.getValue();
+            l.add(id);
+
+            return id;
+        }
+
+        @Override
+        public void processBackup(Map.Entry entry) {
+            process(entry);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(id);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            id = in.readObject();
+        }
+
+        @Override
+        public EntryBackupProcessor<Object, List<Integer>> getBackupProcessor() {
+            return this;
+        }
+    }
+
+
 
     public static class Issue1764Data implements DataSerializable {
 
