@@ -21,9 +21,13 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
 import java.io.IOException;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Checks whether vital node configurations are the same or not.
+ */
 public final class ConfigCheck implements IdentifiedDataSerializable {
 
     private String groupName;
@@ -42,21 +46,17 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     public boolean isCompatible(ConfigCheck other) {
         if (!groupName.equals(other.groupName)) {
             return false;
-        }
-        if (!groupPassword.equals(other.groupPassword)) {
+        } else if (!groupPassword.equals(other.groupPassword)) {
             throw new HazelcastException("Incompatible group password!");
-        }
-        if (!joinerType.equals(other.joinerType)) {
+        } else if (!joinerType.equals(other.joinerType)) {
             throw new HazelcastException("Incompatible joiners! " + joinerType + " -vs- " + other.joinerType);
-        }
-        if (!partitionGroupEnabled && other.partitionGroupEnabled
+        } else if (!partitionGroupEnabled && other.partitionGroupEnabled
                 || partitionGroupEnabled && !other.partitionGroupEnabled) {
             throw new HazelcastException("Incompatible partition groups! "
                     + "this: " + (partitionGroupEnabled ? "enabled" : "disabled") + " / " + memberGroupType
                     + ", other: " + (other.partitionGroupEnabled ? "enabled" : "disabled")
                     + " / " + other.memberGroupType);
-        }
-        if (partitionGroupEnabled && memberGroupType != other.memberGroupType) {
+        } else if (partitionGroupEnabled && memberGroupType != other.memberGroupType) {
             throw new HazelcastException("Incompatible partition groups! this: " + memberGroupType + ", other: "
                     + other.memberGroupType);
         }
@@ -120,6 +120,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             try {
                 memberGroupType = PartitionGroupConfig.MemberGroupType.valueOf(s);
             } catch (IllegalArgumentException ignored) {
+                ignore(ignored);
             }
         }
     }

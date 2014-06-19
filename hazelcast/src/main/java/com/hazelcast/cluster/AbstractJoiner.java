@@ -28,7 +28,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -38,14 +37,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.LoggingUtil.logIfFinestEnabled;
+
 public abstract class AbstractJoiner implements Joiner {
-    private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
-    private final AtomicInteger tryCount = new AtomicInteger(0);
+    private static final int JOIN_TRY_COUNT = 5;
+    private static final long BUSY_WAIT_MILLIS = 1000;
+    private static final long REBOOT_WAIT_MILLIS = 10000;
+
     protected final Config config;
     protected final Node node;
     protected final ILogger logger;
     protected final SystemLogService systemLogService;
-
+    private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
+    private final AtomicInteger tryCount = new AtomicInteger(0);
     private volatile Address targetAddress;
 
     public AbstractJoiner(Node node) {
@@ -68,47 +73,51 @@ public abstract class AbstractJoiner implements Joiner {
         if (!node.isActive()) {
             return;
         }
-        if (tryCount.incrementAndGet() == 5) {
+        if (tryCount.incrementAndGet() == JOIN_TRY_COUNT) {
             logger.warning("Join try count exceed limit, setting this node as master!");
             node.setAsMaster();
         }
         if (!node.isMaster()) {
             boolean allConnected = false;
             int checkCount = 0;
-            final long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+            final int maxJoinSeconds = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger();
+            final long maxJoinMillis = TimeUnit.SECONDS.toMillis(maxJoinSeconds);
             if (node.joined()) {
                 systemLogService.logJoin("Waiting for all connections");
                 while (checkCount++ < node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger() && !allConnected) {
                     try {
                         //noinspection BusyWait
-                        Thread.sleep(1000);
+                        Thread.sleep(BUSY_WAIT_MILLIS);
                     } catch (InterruptedException ignored) {
+                        ignore(ignored);
                     }
                     Set<Member> members = node.getClusterService().getMembers();
                     allConnected = true;
                     for (Member member : members) {
                         MemberImpl memberImpl = (MemberImpl) member;
-                        if (!memberImpl.localMember() && node.connectionManager.getOrConnect(memberImpl.getAddress()) == null) {
+                        final Address memberAddress = memberImpl.getAddress();
+                        if (!memberImpl.localMember() && node.connectionManager.getOrConnect(memberAddress) == null) {
                             allConnected = false;
-                            systemLogService.logJoin("Not-connected to " + memberImpl.getAddress());
+                            systemLogService.logJoin("Not-connected to " + memberAddress);
                         }
                     }
                 }
             }
             if (!node.joined() || !allConnected) {
                 if (Clock.currentTimeMillis() - getStartTime() < maxJoinMillis) {
-                    logger.warning("Failed to connect, node joined= " + node.joined() + ", allConnected= " +
-                            allConnected + " to all other members after " + checkCount + " seconds.");
+                    logger.warning("Failed to connect, node joined= " + node.joined() + ", allConnected= "
+                            + allConnected + " to all other members after " + checkCount + " seconds.");
                     logger.warning("Rebooting after 10 seconds.");
                     try {
-                        Thread.sleep(10000);
+                        Thread.sleep(REBOOT_WAIT_MILLIS);
                         node.rejoin();
                     } catch (InterruptedException e) {
                         logger.warning(e);
                         node.shutdown(false);
                     }
                 } else {
-                    throw new HazelcastException("Failed to join in " + (maxJoinMillis / 1000) + " seconds!");
+                    throw new HazelcastException("Failed to join in "
+                            + TimeUnit.MILLISECONDS.toSeconds(maxJoinMillis) + " seconds!");
                 }
                 return;
             }
@@ -151,44 +160,37 @@ public abstract class AbstractJoiner implements Joiner {
                     logger.finest(e.getMessage());
                     validJoinRequest = false;
                 }
-                if (validJoinRequest) {
-                    for (Member member : node.getClusterService().getMembers()) {
-                        MemberImpl memberImpl = (MemberImpl) member;
-                        if (memberImpl.getAddress().equals(joinRequest.getAddress())) {
-                            if (logger.isFinestEnabled()) {
-                                logger.finest("Should not merge to " + joinRequest.getAddress()
-                                        + ", because it is already member of this cluster.");
-                            }
-                            return false;
-                        }
+                if (!validJoinRequest) {
+                    return false;
+                }
+                for (Member member : node.getClusterService().getMembers()) {
+                    MemberImpl memberImpl = (MemberImpl) member;
+                    if (memberImpl.getAddress().equals(joinRequest.getAddress())) {
+                        logIfFinestEnabled(logger, "Should not merge to " + joinRequest.getAddress()
+                                + ", because it is already member of this cluster.");
+                        return false;
                     }
-                    int currentMemberCount = node.getClusterService().getMembers().size();
-                    if (joinRequest.getMemberCount() > currentMemberCount) {
-                        // I should join the other cluster
+                }
+                int currentMemberCount = node.getClusterService().getMembers().size();
+                if (joinRequest.getMemberCount() > currentMemberCount) {
+                    // I should join the other cluster
+                    logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
+                            + ", because : joinRequest.getMemberCount() > currentMemberCount ["
+                            + (joinRequest.getMemberCount() + " > " + currentMemberCount) + "]");
+                    logIfFinestEnabled(logger, joinRequest.toString());
+                    shouldMerge = true;
+                } else if (joinRequest.getMemberCount() == currentMemberCount) {
+                    // compare the hashes
+                    if (node.getThisAddress().hashCode() > joinRequest.getAddress().hashCode()) {
                         logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
-                                + ", because : joinRequest.getMemberCount() > currentMemberCount ["
-                                + (joinRequest.getMemberCount() + " > " + currentMemberCount) + "]");
-                        if (logger.isFinestEnabled()) {
-                            logger.finest(joinRequest.toString());
-                        }
+                                + ", because : node.getThisAddress().hashCode() > joinRequest.address.hashCode() "
+                                + ", this node member count: " + currentMemberCount);
+                        logIfFinestEnabled(logger, joinRequest.toString());
                         shouldMerge = true;
-                    } else if (joinRequest.getMemberCount() == currentMemberCount) {
-                        // compare the hashes
-                        if (node.getThisAddress().hashCode() > joinRequest.getAddress().hashCode()) {
-                            logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
-                                    + ", because : node.getThisAddress().hashCode() > joinRequest.address.hashCode() "
-                                    + ", this node member count: " + currentMemberCount);
-                            if (logger.isFinestEnabled()) {
-                                logger.finest(joinRequest.toString());
-                            }
-                            shouldMerge = true;
-                        } else {
-                            if (logger.isFinestEnabled()) {
-                                logger.finest(joinRequest.getAddress() + " should merge to this node "
-                                        + ", because : node.getThisAddress().hashCode() < joinRequest.address.hashCode() "
-                                        + ", this node member count: " + currentMemberCount);
-                            }
-                        }
+                    } else {
+                        logIfFinestEnabled(logger, joinRequest.getAddress() + " should merge to this node "
+                                + ", because : node.getThisAddress().hashCode() < joinRequest.address.hashCode() "
+                                + ", this node member count: " + currentMemberCount);
                     }
                 }
             } catch (Throwable e) {
@@ -203,9 +205,7 @@ public abstract class AbstractJoiner implements Joiner {
         for (Address possibleAddress : colPossibleAddresses) {
             final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
             if (conn != null) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("sending join request for " + possibleAddress);
-                }
+                logIfFinestEnabled(logger, "sending join request for " + possibleAddress);
                 node.clusterService.sendJoinRequest(possibleAddress, true);
             }
         }
