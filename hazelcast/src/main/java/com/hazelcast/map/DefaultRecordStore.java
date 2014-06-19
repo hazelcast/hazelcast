@@ -1685,11 +1685,7 @@ public class DefaultRecordStore implements RecordStore {
 
         @Override
         public void run() {
-            try {
-                loadKeys(keys, replaceExistingValues);
-            } catch (Throwable t) {
-                logger.warning("Can not load data from store.", t);
-            }
+            loadKeys(keys, replaceExistingValues);
         }
     }
 
@@ -1699,6 +1695,7 @@ public class DefaultRecordStore implements RecordStore {
         }
         if (keys.isEmpty()) {
             loaded.set(true);
+            return;
         }
         final List<Object> objectKeys = convertDataKeysToObject(keys);
         doBatchLoad(objectKeys);
@@ -1743,7 +1740,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private List<Data> getKeyValueSequence(Map<Object, Object> entries) {
-        if (entries.isEmpty()) {
+        if (entries == null || entries.isEmpty()) {
             return Collections.emptyList();
         }
         final List<Data> keyValueSequence = new ArrayList<Data>();
