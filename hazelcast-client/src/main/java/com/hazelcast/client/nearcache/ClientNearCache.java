@@ -216,6 +216,9 @@ public class ClientNearCache<K> {
     }
 
     public void invalidate(Collection<K> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
         for (K key : keys) {
             cache.remove(key);
         }

@@ -50,6 +50,7 @@ import com.hazelcast.util.executor.DelegatingFuture;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -713,6 +714,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     private <K> Collection<Data> convertKeysToData(Set<K> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyList();
+        }
         final MapService mapService = getService();
         final List<Data> dataKeys = new ArrayList<Data>(keys.size());
         for (K key : keys) {

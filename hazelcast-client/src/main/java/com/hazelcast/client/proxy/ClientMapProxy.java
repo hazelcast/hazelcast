@@ -538,6 +538,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (keys == null) {
             throw new NullPointerException("Parameter keys should not be null.");
         }
+        if (keys.isEmpty()) {
+            return;
+        }
         final Collection<Data> dataKeys = convertKeysToData(keys);
         if (replaceExistingValues) {
             invalidateNearCache(dataKeys);
@@ -548,6 +551,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     // todo duplicate code.
     private <K> Collection<Data> convertKeysToData(Set<K> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyList();
+        }
         final List<Data> dataKeys = new ArrayList<Data>(keys.size());
         for (K key : keys) {
             if (key == null) {
