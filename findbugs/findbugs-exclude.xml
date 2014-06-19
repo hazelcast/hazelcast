@@ -22,9 +22,6 @@
         <!--<Package name="com.hazelcast.util" />-->
     <!--</Match>-->
     <Match>
-        <Package name="com.hazelcast.nio.ssl" />
-    </Match>
-    <Match>
         <Package name="com.hazelcast.spi.impl" />
     </Match>
     <Match>
