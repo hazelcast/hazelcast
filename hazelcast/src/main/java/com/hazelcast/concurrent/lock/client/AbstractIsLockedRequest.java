@@ -81,4 +81,9 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
         key = new Data();
         key.readData(in);
     }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

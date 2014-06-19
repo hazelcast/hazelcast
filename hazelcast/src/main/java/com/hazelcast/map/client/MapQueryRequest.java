@@ -56,4 +56,21 @@ public final class MapQueryRequest extends AbstractMapQueryRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         predicate = in.readObject();
     }
+
+    @Override
+    public String getMethodName() {
+        if (iterationType == IterationType.KEY) {
+            return "keySet";
+        } else if (iterationType == IterationType.VALUE) {
+            return "values";
+        } else if (iterationType == IterationType.ENTRY) {
+            return "entrySet";
+        }
+        throw new IllegalArgumentException("IterationType["+iterationType + "] is unknown!!!");
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{predicate};
+    }
 }

@@ -139,7 +139,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
         if (principal == null) {
             principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
         }
-        endpoint.authenticated(principal, firstConnection);
+        endpoint.authenticated(principal, credentials, firstConnection);
         clientEngine.bind(endpoint);
         return new SerializableCollection(clientEngine.toData(clientEngine.getThisAddress()), clientEngine.toData(principal));
     }

@@ -21,6 +21,8 @@ import com.hazelcast.map.operation.SetOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
+import java.util.concurrent.TimeUnit;
+
 public class MapSetRequest extends MapPutRequest {
 
     public MapSetRequest() {
@@ -42,5 +44,18 @@ public class MapSetRequest extends MapPutRequest {
         SetOperation op = new SetOperation(name, key, value, ttl);
         op.setThreadId(threadId);
         return op;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "set";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (ttl == -1) {
+            return new Object[]{key, value};
+        }
+        return new Object[]{key, value, ttl, TimeUnit.MILLISECONDS};
     }
 }

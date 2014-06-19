@@ -116,4 +116,14 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
     public int getClassVersion() {
         return 1;
     }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
 }

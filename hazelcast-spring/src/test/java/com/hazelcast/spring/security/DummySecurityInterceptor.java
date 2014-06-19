@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.spring.security;
 
-import java.security.Permission;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.security.Parameters;
+import com.hazelcast.security.SecurityInterceptor;
 
-public interface SecureRequest {
+import java.security.AccessControlException;
 
-    Permission getRequiredPermission();
+public class DummySecurityInterceptor implements SecurityInterceptor {
 
-    String getMethodName();
+    @Override
+    public void before(final Credentials credentials, final String serviceName, final String methodName, final Parameters parameters) throws AccessControlException {
+    }
 
-    Object[] getParameters();
+    @Override
+    public void after(final Credentials credentials, final String serviceName, final String methodName, final Parameters parameters) {
+    }
 }

@@ -20,7 +20,6 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.EntryEventFilter;

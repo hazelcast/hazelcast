@@ -96,4 +96,13 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 
+    @Override
+    public String getMethodName() {
+        return "tryRemove";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, timeout};
+    }
 }

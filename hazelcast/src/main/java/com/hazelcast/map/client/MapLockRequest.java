@@ -74,4 +74,11 @@ public class MapLockRequest extends AbstractLockRequest implements SecureRequest
         return new MapPermission(name, ActionConstants.ACTION_LOCK);
     }
 
+    @Override
+    public String getMethodName() {
+        if (timeout == -1) {
+            return "lock";
+        }
+        return "tryLock";
+    }
 }

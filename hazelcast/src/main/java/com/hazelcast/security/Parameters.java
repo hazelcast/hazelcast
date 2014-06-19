@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.security;
 
-import java.security.Permission;
+/**
+ * This interface used to pass parameters of a method call to a {@link SecurityInterceptor}
+ */
+public interface Parameters extends Iterable {
 
-public interface SecureRequest {
+    int length();
 
-    Permission getRequiredPermission();
+    Object get(int index);
 
-    String getMethodName();
-
-    Object[] getParameters();
 }

@@ -35,6 +35,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
@@ -491,8 +492,27 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             request.setEndpoint(endpoint);
             initService(request);
             request.setClientEngine(ClientEngineImpl.this);
+            final Credentials credentials = endpoint.getCredentials();
+            interceptBefore(credentials, request);
             checkPermissions(endpoint, request);
             request.process();
+            interceptAfter(credentials, request);
+        }
+
+        private void interceptBefore(Credentials credentials, ClientRequest request) {
+            final SecurityContext securityContext = getSecurityContext();
+            final String methodName = request.getMethodName();
+            if (securityContext != null && methodName != null) {
+                securityContext.interceptBefore(credentials, request.getServiceName(), methodName, request.getParameters());
+            }
+        }
+
+        private void interceptAfter(Credentials credentials, ClientRequest request) {
+            final SecurityContext securityContext = getSecurityContext();
+            final String methodName = request.getMethodName();
+            if (securityContext != null && methodName != null) {
+                securityContext.interceptAfter(credentials, request.getServiceName(), methodName);
+            }
         }
 
         private void checkPermissions(ClientEndpoint endpoint, ClientRequest request) {

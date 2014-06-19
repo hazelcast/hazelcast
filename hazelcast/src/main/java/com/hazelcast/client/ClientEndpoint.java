@@ -23,6 +23,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -56,6 +57,7 @@ public final class ClientEndpoint implements Client {
     private LoginContext loginContext;
     private ClientPrincipal principal;
     private boolean firstConnection;
+    private Credentials credentials;
     private volatile boolean authenticated;
 
     ClientEndpoint(ClientEngineImpl clientEngine, Connection conn, String uuid) {
@@ -95,10 +97,11 @@ public final class ClientEndpoint implements Client {
         return firstConnection;
     }
 
-    void authenticated(ClientPrincipal principal, boolean firstConnection) {
+    void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection) {
         this.principal = principal;
         this.uuid = principal.getUuid();
         this.firstConnection = firstConnection;
+        this.credentials = credentials;
         this.authenticated = true;
     }
 
@@ -147,6 +150,10 @@ public final class ClientEndpoint implements Client {
             throw new TransactionException("No transaction context found for txnId:" + txnId);
         }
         return transactionContext;
+    }
+
+    public Credentials getCredentials() {
+        return credentials;
     }
 
     public void setTransactionContext(TransactionContext transactionContext) {
