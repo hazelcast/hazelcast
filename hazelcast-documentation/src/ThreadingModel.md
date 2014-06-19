@@ -1,13 +1,13 @@
 ## Threading Model
 
-Your application server has its own thread. Hazelcast does not use these - it manages its own threads.
+Your application server has its own threads. Hazelcast does not use these - it manages its own threads.
 
-### IO Threading
+### I/O Threading
 
-Hazelcast uses a pool of thread performng (n)IO; so there is not a single thread doing all the IO, but there are multiple.
-The number of IO threads can be configured using `hazelcast.io.thread.count` system property and defaults to 3. 
+Hazelcast uses a pool of threads for I/O; so there is not a single thread doing all the IO, but there are multiple.
+The number of IO threads can be configured using the `hazelcast.io.thread.count` system property and defaults to 3 per member. 
 
-IO threads wait for the `Selector.select` to complete. When sufficient bytes for a Packet have been received,
+IO threads wait for the `Selector.select` to complete. When sufficient bytes for a packet have been received,
 the Packet object is created. This Packet is then sent to the System where it is de-multiplexed. If the Packet header
 signals that it is an operation/response, it is handed over to the operation service (please see [Operation Threading](#operation-threading)). If the Packet 
 is an event, it is handed over to the event service (please see [Event Threading](#event-threading)). 
@@ -72,7 +72,7 @@ After the threadIndex is determined, the operation is put in the work queue of t
 This means that:
 
  * a single operation thread executes operations for multiple partitions; if there are 271 partitions and
- 10 partition-threads, then roughly every operation-thread will execute operations for 10 partitions. 
+ 10 partition-threads, then roughly every operation-thread will execute operations for 27 partitions. 
 
  * each partition belongs to only 1 operation thread. All operations for partition some partition, will always 
  be handled by exactly the same operation-thread. 
@@ -81,12 +81,12 @@ This means that:
  operation is put on the work queue of a partition-aware operation thread, you get the guarantee that only 
  1 thread is able to touch that partition.
 
-Because of this threading strategy, there are 2 forms of false sharing you need to be aware of:
+Because of this threading strategy, there are two forms of false sharing you need to be aware of:
 
-* false sharing of the partition: 2 completely independent data-structure share the same partitions; e.g. if there
+* false sharing of the partition: two completely independent data structures share the same partitions; e.g. if there
  is a map `employees` and a map `orders` it could be that an employees.get(peter) (running on e.g. partition 25) is blocked
- by a map.get of orders.get(1234) (also running on partition 25). So independent data-structure do share the same partitions
- and therefor a slow operation on 1 data-structure, can influence other data-structures.
+ by a map.get of orders.get(1234) (also running on partition 25). So if independent data structure share the same partition
+ a slow operation on one data structure can slow down the other data structures.
  
 * false sharing of the partition-aware operation-thread: each operation-thread is responsible for executing
  operations of a number of partitions. For example thread-1 could be responsible for partitions 0,10,20.. thread-2 for partitions
@@ -141,7 +141,7 @@ operations we do the following:
  
 Because a worker thread will block on the normal work queue (either partition specific or generic) it could be that a priority operation
 is not picked up because it will not be put on the queue it is blocking on. We always send a 'kick the worker' operation that does 
-nothing else than trigger the worker to wakeup and check the priority queue. 
+nothing else than trigger the worker to wake up and check the priority queue. 
 
 #### Operation-response and Invocation-future
 
