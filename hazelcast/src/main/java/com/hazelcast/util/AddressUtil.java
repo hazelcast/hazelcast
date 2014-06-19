@@ -349,12 +349,12 @@ public final class AddressUtil {
     private static boolean isValidIpAddressPart(String part, boolean ipv6) {
         boolean isValid = true;
         if (part.length() == 1 && "*".equals(part)) {
-            isValid = true;
+            return true;
         }
         final int rangeIndex = part.indexOf('-');
         if (rangeIndex > -1
                 && (rangeIndex != part.lastIndexOf('-') || rangeIndex == part.length() - 1)) {
-            isValid = false;
+            return false;
         }
         final String[] subParts;
         if (rangeIndex > -1) {
@@ -369,11 +369,13 @@ public final class AddressUtil {
                     num = Integer.parseInt(subPart, HEXADECIMAL_RADIX);
                     if (num > IPV6_MAX_THRESHOLD) {
                         isValid = false;
+                        break;
                     }
                 } else {
                     num = Integer.parseInt(subPart);
                     if (num > IPV4_MAX_THRESHOLD) {
                         isValid = false;
+                        break;
                     }
                 }
             }
