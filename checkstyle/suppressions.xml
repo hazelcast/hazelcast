@@ -680,9 +680,6 @@
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastTypeBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser"/>
     <suppress checks="ParameterAssignment" files="com.hazelcast.spring.context.SpringManagedContext"/>
-    <!--<suppress checks="ParameterAssignment" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>-->
-    <!--<suppress checks="ReturnCount" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>-->
-    <!--<suppress checks="ArrayTrailingComma" files="com.hazelcast.spring.HazelcastNamespaceHandler"/>-->
 
 
 
