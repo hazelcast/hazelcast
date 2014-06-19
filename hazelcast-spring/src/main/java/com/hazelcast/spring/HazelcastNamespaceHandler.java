@@ -40,7 +40,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 "atomicReference",
                 "countDownLatch",
                 "semaphore",
-                "lock"
+                "lock",
         };
         for (final String type : types) {
             registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
