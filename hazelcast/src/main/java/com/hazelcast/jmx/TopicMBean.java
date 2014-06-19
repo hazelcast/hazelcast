@@ -21,9 +21,13 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
-
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Management bean for {@link com.hazelcast.core.ITopic}
+ */
 @ManagedDescription("ITopic")
 public class TopicMBean extends HazelcastMBean<ITopic> {
 
@@ -85,6 +89,7 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
         try {
             managedObject.removeMessageListener(registrationId);
         } catch (Exception ignored) {
+            ignore(ignored);
         }
     }
 }
