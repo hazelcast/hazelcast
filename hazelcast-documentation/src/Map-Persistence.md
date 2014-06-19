@@ -18,7 +18,7 @@ If it is write-behind, when the `map.put(key,value)` call returns, you can be su
 
 -   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0)
 
--   The entry is marked as `dirty` so that after `write-delay-seconds`, it can be persisted.
+-   The entry is marked as dirty so that after `write-delay-seconds`, it can be persisted.
 
 Same behavior goes for the `remove(key)` and `MapStore.delete(key)` methods. If `MapStore` throws an exception, then the exception will be propagated back to the original `put` or `remove` call in the form of `RuntimeException`. When write-through is used, Hazelcast will call `MapStore.store(key,value)` and `MapStore.delete(key)` for each entry update. When write-behind is used, Hazelcast will call`MapStore.store(map)`, and `MapStore.delete(collection)` to do all writes in a single call. Also, note that your MapStore or MapLoader implementation should not use Hazelcast Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your data store. Otherwise, you may get into deadlock situations.
 

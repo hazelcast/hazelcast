@@ -18,6 +18,7 @@ package com.hazelcast.util.executor;
 
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
 import java.util.List;
@@ -139,6 +140,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                     }
                 }
             } catch (InterruptedException ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
     }
@@ -210,6 +212,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                 }
                 while (r != null);
             } catch (InterruptedException ignored) {
+                EmptyStatement.ignore(ignored);
             } finally {
                 exit();
             }

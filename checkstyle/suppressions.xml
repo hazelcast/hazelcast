@@ -476,44 +476,29 @@
     <suppress checks="ReturnCount" files="com.hazelcast.multimap.operations.MultiMapOperationFactory"/>
 
     <!-- Util -->
+    <!-- /*
+         * Written by Doug Lea with assistance from members of JCP JSR-166
+         * Expert Group and released to the public domain, as explained at
+         * http://creativecommons.org/licenses/publicdomain
+
+       I don't think we want to change this class.
+   -->
     <suppress checks="" files="com.hazelcast.util.ConcurrentReferenceHashMap"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.util[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.util[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.util[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.util[\\/]"/>
-    <suppress checks="NestedIfDepth" files="com.hazelcast.util.AddressUtil"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.util.AddressUtil"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.util.AddressUtil"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.util.AddressUtil"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.util.AddressUtil"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.util.AddressUtil"/>
-    <suppress checks="InnerAssignment" files="com.hazelcast.util.AddressUtil"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.util.AddressUtil"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.util.Base64"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.util.Base64"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.util.Base64"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.util.Base64"/>
-    <suppress checks="MethodLength" files="com.hazelcast.util.Base64"/>
-    <suppress checks="InnerAssignment" files="com.hazelcast.util.Base64"/>
+
+    <!-- Too complex to change, I am leaving it to implementer -->
+    <suppress checks="" files="com.hazelcast.util.Base64"/>
+
+    <!-- Util executor package javadocs, leaving javadocs to someone who can explain better -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.util.executor[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.util.executor[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.util.executor[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.util.executor[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler"/>
+    <suppress checks="" files="com.hazelcast.util.scheduler.ScheduleType"/>
+
+    <!-- This Class have lots of magic numbers, We can make an exception for this class  -->
     <suppress checks="MagicNumber" files="com.hazelcast.util.ByteUtil"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.util.Clock"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.util.executor.CachedExecutorServiceDelegate"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.util.executor.DelegatingFuture"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.util.HazelcastUtil"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.util.HealthMonitor"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.util.HealthMonitor"/>
-    <suppress checks="ExecutableStatementCount" files="com.hazelcast.util.HealthMonitor"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.util.executor.PoolExecutorThreadFactory"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.util.ResponseQueueFactory"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.util.scheduler.ScheduledEntry"/>
-    <suppress checks="NestedIfDepth" files="com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler"/>
-    <suppress checks="InnerAssignment" files="com.hazelcast.util.SortedHashMap"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.util.SortedHashMap"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.util.SortedHashMap"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.util.UuidUtil"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.util.VersionCheck"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.util.VersionCheck"/>
-    <suppress checks="HideUtilityClassConstructor" files="com.hazelcast.util.JsonUtil"/>
+
 
     <!-- ReplicatedMap -->
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.client.proxy.ClientReplicatedMapProxy"/>
@@ -704,6 +689,7 @@
     <!-- Management -->
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.management.ManagementCenterService"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.management.TimedMemberStateFactory"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.management.request.ConsoleRequestConstants"/>
 
 </suppressions>
 
