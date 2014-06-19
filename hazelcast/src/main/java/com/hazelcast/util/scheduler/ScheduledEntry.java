@@ -17,7 +17,15 @@
 package com.hazelcast.util.scheduler;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * Entry wrapper with schedule time information to be used in SecondsBasedEntryTaskScheduler.
+ * See SecondsBasedEntryTaskScheduler
+ *
+ * @param <K> key type of scheduled entry
+ * @param <V> value type of scheduled entry
+ */
 public final class ScheduledEntry<K, V> implements Map.Entry<K, V> {
 
     private final K key;
@@ -74,7 +82,7 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K, V> {
     }
 
     public long getActualDelayMillis() {
-        return actualDelaySeconds * 1000L;
+        return TimeUnit.SECONDS.toMillis(actualDelaySeconds);
     }
 
     @Override

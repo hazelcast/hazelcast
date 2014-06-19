@@ -16,6 +16,23 @@
 
 package com.hazelcast.util;
 
+/**
+ *  Health monitor can be configured with system properties
+ *
+ * "hazelcast.health.monitoring.level"
+ *
+ */
 public enum HealthMonitorLevel {
-    OFF, SILENT, NOISY
+    /**
+     * Does not print anything.
+     */
+    OFF,
+    /**
+     * (default) Prints only if metrics are above threshold.
+     */
+    SILENT,
+    /**
+     * Does not check threshold , always prints.
+     */
+    NOISY
 }

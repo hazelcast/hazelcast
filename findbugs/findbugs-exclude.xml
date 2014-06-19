@@ -18,9 +18,9 @@
     </Match>
 
     <!-- all these issues below need to be resolved in 3.3-->
-    <Match>
-        <Package name="com.hazelcast.util" />
-    </Match>
+    <!--<Match>-->
+        <!--<Package name="com.hazelcast.util" />-->
+    <!--</Match>-->
     <Match>
         <Package name="com.hazelcast.nio.ssl" />
     </Match>
