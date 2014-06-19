@@ -554,18 +554,23 @@ final class BasicOperationService implements InternalOperationService {
                                                    Collection<Integer> partitions) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         for (int partition : partitions) {
-            InternalPartitionService partitionService = nodeEngine.getPartitionService();
-            Address owner = partitionService.getPartitionOwner(partition);
-            while (owner == null) {
-                Thread.sleep(10);
-                owner = partitionService.getPartitionOwner(partition);
-            }
+            Address owner = waitUntilPartitionOwnerSet(partition);
             if (!memberPartitions.containsKey(owner)) {
                 memberPartitions.put(owner, new ArrayList<Integer>());
             }
             memberPartitions.get(owner).add(partition);
         }
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
+    }
+
+    private Address waitUntilPartitionOwnerSet(int partition) throws InterruptedException {
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        Address owner = partitionService.getPartitionOwner(partition);
+        while (owner == null) {
+            Thread.sleep(100);
+            owner = partitionService.getPartitionOwner(partition);
+        }
+        return owner;
     }
 
     private Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
