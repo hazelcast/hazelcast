@@ -167,8 +167,8 @@ public class IMapRegionCache implements RegionCache {
         if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
             try {
                 final CacheEntry previousEntry = (CacheEntry) map.get(key);
-                if (previousEntry == null ||
-                        versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                if (previousEntry == null
+                        || versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
                     map.set(key, value);
                     return true;
                 } else {
