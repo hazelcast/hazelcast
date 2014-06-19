@@ -611,28 +611,10 @@
     <suppress checks="EmptyStatement" files="com.hazelcast.nio.tcp.WriteHandler"/>
 
     <!-- Jmx-->
-    <suppress checks="JavadocMethod" files="com.hazelcast.jmx[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.jmx[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.jmx[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.jmx[\\/]"/>
-
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.jmx.ManagementService"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.jmx.ManagementService"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.jmx.ManagementService"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.jmx.ClientEngineMBean"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.jmx.ConnectionManagerMBean"/>
-    <suppress checks="IllegalType" files="com.hazelcast.jmx.HazelcastMBean"/>
-    <suppress checks="MethodLength" files="com.hazelcast.jmx.InstanceMBean"/>
-    <suppress checks="ExecutableStatement" files="com.hazelcast.jmx.InstanceMBean"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.jmx.ListMBean"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.jmx.ManagementService"/>
+    <!-- Since IMap interface has a lot of methods... -->
     <suppress checks="MethodCount" files="com.hazelcast.jmx.MapMBean"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.jmx.MapMBean"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.jmx.QueueMBean"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.jmx.ReplicatedMapMBean"/>
     <suppress checks="MethodCount" files="com.hazelcast.jmx.ReplicatedMapMBean"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.jmx.SetMBean"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.jmx.TopicMBean"/>
 
     <!-- Aws-->
     <suppress checks="JavadocMethod" files="com.hazelcast.aws[\\/]"/>
@@ -680,9 +662,6 @@
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastTypeBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser"/>
     <suppress checks="ParameterAssignment" files="com.hazelcast.spring.context.SpringManagedContext"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.spring.mongodb.SpringMongoDBConverter"/>
-    <suppress checks="ArrayTrailingComma" files="com.hazelcast.spring.HazelcastNamespaceHandler"/>
 
 
 

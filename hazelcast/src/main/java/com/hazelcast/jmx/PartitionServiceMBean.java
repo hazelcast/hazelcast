@@ -19,14 +19,16 @@ package com.hazelcast.jmx;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
-
 import java.net.InetSocketAddress;
 import java.util.Hashtable;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
+/**
+ * Management bean for {@link com.hazelcast.core.PartitionService}
+ */
 @ManagedDescription("HazelcastInstance.PartitionServiceMBean")
-public class PartitionServiceMBean  extends HazelcastMBean<InternalPartitionService> {
+public class PartitionServiceMBean extends HazelcastMBean<InternalPartitionService> {
 
     private static final int INITIAL_CAPACITY = 3;
     private final HazelcastInstanceImpl hazelcastInstance;

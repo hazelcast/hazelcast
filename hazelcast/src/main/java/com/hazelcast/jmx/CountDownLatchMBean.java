@@ -18,6 +18,9 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.ICountDownLatch;
 
+/**
+ * Management bean for {@link com.hazelcast.core.ICountDownLatch}
+ */
 @ManagedDescription("ICountDownLatch")
 public class CountDownLatchMBean extends HazelcastMBean<ICountDownLatch> {
 

@@ -18,6 +18,9 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.ISemaphore;
 
+/**
+ * Management bean for {@link com.hazelcast.core.ISemaphore}
+ */
 @ManagedDescription("ISemaphore")
 public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {
 
