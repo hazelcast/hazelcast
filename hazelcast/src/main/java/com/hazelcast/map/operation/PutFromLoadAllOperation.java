@@ -129,7 +129,7 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
 
     @Override
     public Operation getBackupOperation() {
-        return new PutFromLoadAllBackupOperation(name, keyValueSequence);
+        return new PutFromLoadKeysBackupOperation(name, keyValueSequence);
     }
 
     @Override
