@@ -1400,7 +1400,7 @@ public class DefaultRecordStore implements RecordStore {
         loaded.set(false);
         final NodeEngine nodeEngine = mapService.getNodeEngine();
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.submit("hz:map-loadAllKeys", new LoadAllKeysTask(keys, replaceExistingValues, loaded));
+        executionService.submit("hz:map-loadAllKeys", new LoadAllKeysTask(keys, replaceExistingValues));
     }
 
 
@@ -1675,14 +1675,12 @@ public class DefaultRecordStore implements RecordStore {
 
     private final class LoadAllKeysTask implements Runnable {
 
-        private Collection<Data> keys;
-        private boolean replaceExistingValues;
-        private AtomicBoolean loaded;
+        private final Collection<Data> keys;
+        private final boolean replaceExistingValues;
 
-        private LoadAllKeysTask(Collection<Data> keys, boolean replaceExistingValues, AtomicBoolean loaded) {
+        private LoadAllKeysTask(Collection<Data> keys, boolean replaceExistingValues) {
             this.keys = keys;
             this.replaceExistingValues = replaceExistingValues;
-            this.loaded = loaded;
         }
 
         @Override
