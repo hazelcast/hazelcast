@@ -178,11 +178,15 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream
     }
 
     public void readFully(final byte[] b) throws IOException {
-        read(b);
+        if (read(b) == -1) {
+            throw new EOFException("End of stream reached");
+        }
     }
 
     public void readFully(final byte[] b, final int off, final int len) throws IOException {
-        read(b, off, len);
+        if (read(b, off, len) == -1) {
+            throw new EOFException("End of stream reached");
+        }
     }
 
     /**

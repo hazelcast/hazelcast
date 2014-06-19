@@ -38,6 +38,7 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
@@ -68,6 +69,9 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     private static final AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
+
+    private static final AtomicIntegerFieldUpdater<BasicInvocation> INVOKE_COUNT_UPDATER = AtomicIntegerFieldUpdater
+            .newUpdater(BasicInvocation.class, "invokeCount");
 
     static final class InternalResponse {
 
@@ -104,6 +108,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
+
+    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
 
     private final String executorName;
@@ -227,7 +233,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
 
         invTarget = getTarget();
-        invokeCount++;
+        incrementInvokeCount();
         final Address thisAddress = nodeEngine.getThisAddress();
         if (invTarget == null) {
             remote = false;
@@ -400,7 +406,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                 waitTimeout -= callTimeout;
                 op.setWaitTimeout(waitTimeout);
             }
-            invokeCount--;
+            decrementInvokeCount();
             return RETRY_RESPONSE;
         }
 
@@ -458,6 +464,14 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                 invocationFuture.set(potentialResponse);
             }
         }
+    }
+
+    private void incrementInvokeCount() {
+        INVOKE_COUNT_UPDATER.getAndIncrement(this);
+    }
+
+    private void decrementInvokeCount() {
+        INVOKE_COUNT_UPDATER.getAndDecrement(this);
     }
 
     private void waitForBackups(int backupCount, long timeout, TimeUnit unit, NormalResponse response) {
