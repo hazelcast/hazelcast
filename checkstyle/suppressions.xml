@@ -689,6 +689,7 @@
     <!-- Management -->
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.management.ManagementCenterService"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.management.TimedMemberStateFactory"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.management.request.ConsoleRequestConstants"/>
 
 </suppressions>
 
