@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains Hazelcast MBean classes.
+ * Contains Hazelcast management bean classes.
  */
 package com.hazelcast.jmx;

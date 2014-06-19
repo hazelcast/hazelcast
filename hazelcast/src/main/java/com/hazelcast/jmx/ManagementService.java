@@ -18,36 +18,40 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.ISet;
-import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ITopic;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
-
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Service responsible for registering hazelcast management beans to the platform management bean server.
+ */
 public class ManagementService implements DistributedObjectListener {
 
-    public static final String DOMAIN = "com.hazelcast";
+    static final String DOMAIN = "com.hazelcast";
     private static final int INITIAL_CAPACITY = 3;
 
     final HazelcastInstanceImpl instance;
@@ -170,85 +174,67 @@ public class ManagementService implements DistributedObjectListener {
 
     private HazelcastMBean createHazelcastBean(DistributedObject distributedObject) {
         try {
+            HazelcastMBean bean = null;
             if (distributedObject instanceof IList) {
-                return new ListMBean((IList) distributedObject, this);
+                bean = new ListMBean((IList) distributedObject, this);
+            } else if (distributedObject instanceof IAtomicLong) {
+                bean = new AtomicLongMBean((IAtomicLong) distributedObject, this);
+            } else if (distributedObject instanceof IAtomicReference) {
+                bean = new AtomicReferenceMBean((IAtomicReference) distributedObject, this);
+            } else if (distributedObject instanceof ICountDownLatch) {
+                bean = new CountDownLatchMBean((ICountDownLatch) distributedObject, this);
+            } else if (distributedObject instanceof ILock) {
+                bean = new LockMBean((ILock) distributedObject, this);
+            } else if (distributedObject instanceof IMap) {
+                bean = new MapMBean((IMap) distributedObject, this);
+            } else if (distributedObject instanceof MultiMap) {
+                bean = new MultiMapMBean((MultiMap) distributedObject, this);
+            } else if (distributedObject instanceof IQueue) {
+                bean = new QueueMBean((IQueue) distributedObject, this);
+            } else if (distributedObject instanceof ISemaphore) {
+                bean = new SemaphoreMBean((ISemaphore) distributedObject, this);
+            } else if (distributedObject instanceof IExecutorService) {
+                bean = new ExecutorServiceMBean((IExecutorService) distributedObject, this);
+            } else if (distributedObject instanceof ISet) {
+                bean = new SetMBean((ISet) distributedObject, this);
+            } else if (distributedObject instanceof ITopic) {
+                bean = new TopicMBean((ITopic) distributedObject, this);
             }
-            if (distributedObject instanceof IAtomicLong) {
-                return new AtomicLongMBean((IAtomicLong) distributedObject, this);
-            }
-            if (distributedObject instanceof IAtomicReference) {
-                return new AtomicReferenceMBean((IAtomicReference) distributedObject, this);
-            }
-            if (distributedObject instanceof ICountDownLatch) {
-                return new CountDownLatchMBean((ICountDownLatch) distributedObject, this);
-            }
-            if (distributedObject instanceof ILock) {
-                return new LockMBean((ILock) distributedObject, this);
-            }
-            if (distributedObject instanceof IMap) {
-                return new MapMBean((IMap) distributedObject, this);
-            }
-            if (distributedObject instanceof MultiMap) {
-                return new MultiMapMBean((MultiMap) distributedObject, this);
-            }
-            if (distributedObject instanceof IQueue) {
-                return new QueueMBean((IQueue) distributedObject, this);
-            }
-            if (distributedObject instanceof ISemaphore) {
-                return new SemaphoreMBean((ISemaphore) distributedObject, this);
-            }
-            if (distributedObject instanceof IExecutorService) {
-                return new ExecutorServiceMBean((IExecutorService) distributedObject, this);
-            }
-            if (distributedObject instanceof ISet) {
-                return new SetMBean((ISet) distributedObject, this);
-            }
-            if (distributedObject instanceof ITopic) {
-                return new TopicMBean((ITopic) distributedObject, this);
-            }
+            return bean;
         } catch (HazelcastInstanceNotActiveException ignored) {
+            ignore(ignored);
         }
         return null;
     }
 
     private String getObjectType(DistributedObject distributedObject) {
+        String result = null;
         if (distributedObject instanceof IList) {
-            return "IList";
+            result = "IList";
+        } else if (distributedObject instanceof IAtomicLong) {
+            result = "IAtomicLong";
+        } else if (distributedObject instanceof IAtomicReference) {
+            result = "IAtomicReference";
+        } else if (distributedObject instanceof ICountDownLatch) {
+            result = "ICountDownLatch";
+        } else if (distributedObject instanceof ILock) {
+            result = "ILock";
+        } else if (distributedObject instanceof IMap) {
+            result = "IMap";
+        } else if (distributedObject instanceof MultiMap) {
+            result = "MultiMap";
+        } else if (distributedObject instanceof IQueue) {
+            result = "IQueue";
+        } else if (distributedObject instanceof ISemaphore) {
+            result = "ISemaphore";
+        } else if (distributedObject instanceof ISet) {
+            result = "ISet";
+        } else if (distributedObject instanceof ITopic) {
+            result = "ITopic";
+        } else if (distributedObject instanceof IExecutorService) {
+            result = "IExecutorService";
         }
-        if (distributedObject instanceof IAtomicLong) {
-            return "IAtomicLong";
-        }
-        if (distributedObject instanceof IAtomicReference) {
-            return "IAtomicReference";
-        }
-        if (distributedObject instanceof ICountDownLatch) {
-            return "ICountDownLatch";
-        }
-        if (distributedObject instanceof ILock) {
-            return "ILock";
-        }
-        if (distributedObject instanceof IMap) {
-            return "IMap";
-        }
-        if (distributedObject instanceof MultiMap) {
-            return "MultiMap";
-        }
-        if (distributedObject instanceof IQueue) {
-            return "IQueue";
-        }
-        if (distributedObject instanceof ISemaphore) {
-            return "ISemaphore";
-        }
-        if (distributedObject instanceof ISet) {
-            return "ISet";
-        }
-        if (distributedObject instanceof ITopic) {
-            return "ITopic";
-        }
-        if (distributedObject instanceof IExecutorService) {
-            return "IExecutorService";
-        }
-        return null;
+        return result;
     }
 
     protected ObjectName createObjectName(String type, String name) {

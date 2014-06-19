@@ -18,6 +18,9 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.ILock;
 
+/**
+ * Management bean for {@link com.hazelcast.core.ILock}
+ */
 @ManagedDescription("ILock")
 public class LockMBean extends HazelcastMBean<ILock> {
 

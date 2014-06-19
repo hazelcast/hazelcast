@@ -19,6 +19,9 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.IExecutorService;
 
 
+/**
+ * Management bean for {@link com.hazelcast.core.IExecutorService}
+ */
 public class ExecutorServiceMBean extends HazelcastMBean<IExecutorService> {
 
     protected ExecutorServiceMBean(IExecutorService managedObject, ManagementService service) {
