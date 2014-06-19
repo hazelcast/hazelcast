@@ -57,6 +57,8 @@ import com.hazelcast.map.client.MapGetEntryViewRequest;
 import com.hazelcast.map.client.MapGetRequest;
 import com.hazelcast.map.client.MapIsLockedRequest;
 import com.hazelcast.map.client.MapKeySetRequest;
+import com.hazelcast.map.client.MapLoadAllKeysRequest;
+import com.hazelcast.map.client.MapLoadGivenKeysRequest;
 import com.hazelcast.map.client.MapLockRequest;
 import com.hazelcast.map.client.MapPutAllRequest;
 import com.hazelcast.map.client.MapPutIfAbsentRequest;
@@ -523,6 +525,41 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    public void loadAll(boolean replaceExistingValues) {
+        if (replaceExistingValues) {
+            clearNearCache();
+        }
+        final MapLoadAllKeysRequest request = new MapLoadAllKeysRequest(name, replaceExistingValues);
+        invoke(request);
+    }
+
+    @Override
+    public void loadAll(Set<K> keys, boolean replaceExistingValues) {
+        if (keys == null) {
+            throw new NullPointerException("Parameter keys should not be null.");
+        }
+        final Collection<Data> dataKeys = convertKeysToData(keys);
+        if (replaceExistingValues) {
+            invalidateNearCache(dataKeys);
+        }
+        final MapLoadGivenKeysRequest request = new MapLoadGivenKeysRequest(name, dataKeys, replaceExistingValues);
+        invoke(request);
+    }
+
+    // todo duplicate code.
+    private <K> Collection<Data> convertKeysToData(Set<K> keys) {
+        final List<Data> dataKeys = new ArrayList<Data>(keys.size());
+        for (K key : keys) {
+            if (key == null) {
+                throw new NullPointerException("Null key is not allowed");
+            }
+            final Data dataKey = toData(key);
+            dataKeys.add(dataKey);
+        }
+        return dataKeys;
+    }
+
+    @Override
     public Set<K> keySet() {
         MapKeySetRequest request = new MapKeySetRequest(name);
         MapKeySet mapKeySet = invoke(request);
@@ -967,6 +1004,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     private void invalidateNearCache(Data key) {
         if (nearCache != null) {
             nearCache.invalidate(key);
+        }
+    }
+
+    private void invalidateNearCache(Collection<Data> keys) {
+        if (nearCache != null) {
+            nearCache.invalidate(keys);
         }
     }
 

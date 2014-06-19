@@ -522,7 +522,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         nearCache.invalidate(key);
     }
 
-    public void invalidateNearCache(String mapName, Set<Data> keys) {
+    public void invalidateNearCache(String mapName, Collection<Data> keys) {
         if (!isNearCacheEnabled(mapName)) {
             return;
         }

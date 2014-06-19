@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeSet;
@@ -212,6 +213,12 @@ public class ClientNearCache<K> {
 
     public void invalidate(K key) {
         cache.remove(key);
+    }
+
+    public void invalidate(Collection<K> keys) {
+        for (K key : keys) {
+            cache.remove(key);
+        }
     }
 
     public Object get(K key) {
