@@ -3,7 +3,7 @@
 
 ### Entry Listener
 
-Map entry events can be listened using predicates. Hazelcast distributed map offers the method `addEntryListener` to add an entry listener to the map and listen to the entry events. 
+Map entry events can be listened. Hazelcast distributed map offers the method `addEntryListener` to add an entry listener to the map and listen to the entry events. 
 
 Let's take a look at the below sample code.
 
