@@ -1714,6 +1714,9 @@ public class DefaultRecordStore implements RecordStore {
             final List<Object> chunk = batchChunks.poll();
             final List<Data> keyValueSequence = loadAndGet(chunk);
             if (keyValueSequence.isEmpty()) {
+                if (finishedBatchCounter.decrementAndGet() == 0) {
+                    loaded.set(true);
+                }
                 continue;
             }
             sendOperation(keyValueSequence, finishedBatchCounter);
@@ -1732,7 +1735,12 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private List<Data> loadAndGet(List<Object> keys) {
-        Map<Object, Object> entries = mapContainer.getStore().loadAll(keys);
+        Map<Object, Object> entries = Collections.emptyMap();
+        try {
+            entries = mapContainer.getStore().loadAll(keys);
+        } catch (Throwable t) {
+            logger.warning("Could not load keys from map store", t);
+        }
         return getKeyValueSequence(entries);
     }
 
