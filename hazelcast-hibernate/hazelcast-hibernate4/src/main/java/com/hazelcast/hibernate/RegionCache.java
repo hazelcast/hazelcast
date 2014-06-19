@@ -21,7 +21,8 @@ import org.hibernate.cache.spi.access.SoftLock;
 import java.util.Map;
 
 /**
- * @author mdogan 11/9/12
+ * This interface defines an internal cached region implementation as well as a mechanism
+ * to unmap the cache to an underlying Map data-structure
  */
 public interface RegionCache {
 

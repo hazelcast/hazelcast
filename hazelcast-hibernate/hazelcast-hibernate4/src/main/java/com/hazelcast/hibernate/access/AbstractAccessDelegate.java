@@ -28,9 +28,11 @@ import java.util.Comparator;
 import java.util.Properties;
 
 /**
+ * Base implementation for consistency guarantees
+ *
  * @author Leo Kim (lkim@limewire.com)
+ * @param <T> implementation type of HazelcastRegion
  */
-
 public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implements AccessDelegate<T> {
 
     protected final ILogger log;

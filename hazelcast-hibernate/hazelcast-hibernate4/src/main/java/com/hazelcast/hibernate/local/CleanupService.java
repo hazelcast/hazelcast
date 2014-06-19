@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author mdogan 11/14/12
+ * An internal service to clean cache regions
  */
 public final class CleanupService {
 
@@ -52,6 +52,9 @@ public final class CleanupService {
         executor.shutdownNow();
     }
 
+    /**
+     * Internal ThreadFactory to create cleanup threads
+     */
     private class CleanupThreadFactory implements ThreadFactory {
 
         public Thread newThread(final Runnable r) {
@@ -61,6 +64,9 @@ public final class CleanupService {
         }
     }
 
+    /**
+     * Runnable thread adapter to capture exceptions and notify Hazelcast about them
+     */
     private static final class CleanupThread extends Thread {
 
         private CleanupThread(final Runnable target, final String name) {

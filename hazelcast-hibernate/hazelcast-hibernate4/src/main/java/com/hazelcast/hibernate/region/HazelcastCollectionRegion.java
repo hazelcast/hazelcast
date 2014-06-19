@@ -30,7 +30,11 @@ import org.hibernate.cache.spi.access.CollectionRegionAccessStrategy;
 import java.util.Properties;
 
 /**
+ * An collection region implementation based upon Hazelcast IMap with basic concurrency / transactional support
+ * by supplying CollectionRegionAccessStrategy
+ *
  * @author mdogan 11/9/12
+ * @param <Cache> implementation type of RegionCache
  */
 public final class HazelcastCollectionRegion<Cache extends RegionCache> extends AbstractTransactionalDataRegion<Cache>
         implements CollectionRegion {

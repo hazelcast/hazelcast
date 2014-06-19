@@ -24,7 +24,10 @@ import org.hibernate.cache.TransactionalDataRegion;
 import java.util.Properties;
 
 /**
+ * Abstract base class of all regions
+ *
  * @author Leo Kim (lkim@limewire.com)
+ * @param <Cache> implementation type of RegionCache
  */
 public abstract class AbstractTransactionalDataRegion<Cache extends RegionCache> extends AbstractHazelcastRegion<Cache>
         implements

@@ -28,7 +28,10 @@ import java.util.Comparator;
 import java.util.Properties;
 
 /**
+ * Base implementation for consistency guarantees
+ *
  * @author Leo Kim (lkim@limewire.com)
+ * @param <T> implementation type of HazelcastRegion
  */
 public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implements AccessDelegate<T> {
 
@@ -38,7 +41,6 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     protected final Comparator<Object> versionComparator;
 
     protected AbstractAccessDelegate(final T hazelcastRegion, final Properties props) {
-        super();
         this.hazelcastRegion = hazelcastRegion;
         log = hazelcastRegion.getLogger();
         if (hazelcastRegion instanceof AbstractTransactionalDataRegion) {
