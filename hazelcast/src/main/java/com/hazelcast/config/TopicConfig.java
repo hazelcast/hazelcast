@@ -26,7 +26,9 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
  */
 public class TopicConfig {
-
+    /**
+     * Default global ordering configuration
+     */
     public static final boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
 
     private String name;

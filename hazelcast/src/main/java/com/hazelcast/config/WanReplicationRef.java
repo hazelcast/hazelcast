@@ -15,8 +15,9 @@
  */
 
 package com.hazelcast.config;
-
-
+/**
+ * Configuration for Wan target replication reference
+ */
 public class WanReplicationRef {
     private String name;
     private String mergePolicy;

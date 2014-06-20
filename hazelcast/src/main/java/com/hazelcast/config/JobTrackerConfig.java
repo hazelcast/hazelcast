@@ -17,14 +17,34 @@
 package com.hazelcast.config;
 
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
-
+/**
+ * Contains the configuration for an {@link com.hazelcast.mapreduce.JobTracker}.
+ */
 public class JobTrackerConfig {
 
+    /**
+     * Default size of thread.
+     */
     public static final int DEFAULT_MAX_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
+    /**
+     * Default value of retry counter.
+     */
     public static final int DEFAULT_RETRY_COUNT = 0;
+    /**
+     * Default value of chunk size.
+     */
     public static final int DEFAULT_CHUNK_SIZE = 1000;
+    /**
+     * Default value of Queue size.
+     */
     public static final int DEFAULT_QUEUE_SIZE = 0;
+    /**
+     * Default boolean value of communication statics.define how a map reduce job behaves
+     */
     public static final boolean DEFAULT_COMMUNICATE_STATS = true;
+    /**
+     * Define how a map reduce job behaves.
+     */
     public static final TopologyChangedStrategy DEFAULT_TOPOLOGY_CHANGED_STRATEGY
             = TopologyChangedStrategy.CANCEL_RUNNING_OPERATION;
 

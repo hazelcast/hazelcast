@@ -191,18 +191,18 @@ public class Config {
     }
 
     public MapConfig findMapConfig(String name) {
-        name = getBaseName(name);
-        MapConfig config;
-        if ((config = lookupByPattern(mapConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        MapConfig config = lookupByPattern(mapConfigs, baseName);
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getMapConfig("default").getAsReadOnly();
     }
 
     public MapConfig getMapConfig(String name) {
-        name = getBaseName(name);
-        MapConfig config;
-        if ((config = lookupByPattern(mapConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        MapConfig config = lookupByPattern(mapConfigs, baseName);
+        if (config != null) {
             return config;
         }
         MapConfig defConfig = mapConfigs.get("default");
@@ -242,18 +242,18 @@ public class Config {
     }
 
     public QueueConfig findQueueConfig(String name) {
-        name = getBaseName(name);
-        QueueConfig config;
-        if ((config = lookupByPattern(queueConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        QueueConfig config = lookupByPattern(queueConfigs, baseName);
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getQueueConfig("default").getAsReadOnly();
     }
 
     public QueueConfig getQueueConfig(String name) {
-        name = getBaseName(name);
-        QueueConfig config;
-        if ((config = lookupByPattern(queueConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        QueueConfig config = lookupByPattern(queueConfigs, baseName);
+        if (config != null) {
             return config;
         }
         QueueConfig defConfig = queueConfigs.get("default");
@@ -287,18 +287,18 @@ public class Config {
     }
 
     public ListConfig findListConfig(String name) {
-        name = getBaseName(name);
-        ListConfig config;
-        if ((config = lookupByPattern(listConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        ListConfig config = lookupByPattern(listConfigs, baseName);
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getListConfig("default").getAsReadOnly();
     }
 
     public ListConfig getListConfig(String name) {
-        name = getBaseName(name);
-        ListConfig config;
-        if ((config = lookupByPattern(listConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        ListConfig config = lookupByPattern(listConfigs, baseName);
+        if (config != null) {
             return config;
         }
         ListConfig defConfig = listConfigs.get("default");
@@ -332,18 +332,18 @@ public class Config {
     }
 
     public SetConfig findSetConfig(String name) {
-        name = getBaseName(name);
-        SetConfig config;
-        if ((config = lookupByPattern(setConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        SetConfig config = lookupByPattern(setConfigs, baseName);
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getSetConfig("default").getAsReadOnly();
     }
 
     public SetConfig getSetConfig(String name) {
-        name = getBaseName(name);
-        SetConfig config;
-        if ((config = lookupByPattern(setConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        SetConfig config = lookupByPattern(setConfigs, baseName);
+        if (config != null) {
             return config;
         }
         SetConfig defConfig = setConfigs.get("default");
@@ -377,18 +377,18 @@ public class Config {
     }
 
     public MultiMapConfig findMultiMapConfig(String name) {
-        name = getBaseName(name);
-        MultiMapConfig config;
-        if ((config = lookupByPattern(multiMapConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        MultiMapConfig config = lookupByPattern(multiMapConfigs, baseName);
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getMultiMapConfig("default").getAsReadOnly();
     }
 
     public MultiMapConfig getMultiMapConfig(String name) {
-        name = getBaseName(name);
-        MultiMapConfig config;
-        if ((config = lookupByPattern(multiMapConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        MultiMapConfig config = lookupByPattern(multiMapConfigs, baseName);
+        if (config != null) {
             return config;
         }
         MultiMapConfig defConfig = multiMapConfigs.get("default");
@@ -422,16 +422,16 @@ public class Config {
     }
 
     public ReplicatedMapConfig findReplicatedMapConfig(String name) {
-        ReplicatedMapConfig config;
-        if ((config = lookupByPattern(replicatedMapConfigs, name)) != null) {
+        ReplicatedMapConfig config = lookupByPattern(replicatedMapConfigs, name);
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getReplicatedMapConfig("default").getAsReadOnly();
     }
 
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
-        ReplicatedMapConfig config;
-        if ((config = lookupByPattern(replicatedMapConfigs, name)) != null) {
+        ReplicatedMapConfig config = lookupByPattern(replicatedMapConfigs, name);
+        if (config != null) {
             return config;
         }
         ReplicatedMapConfig defConfig = replicatedMapConfigs.get("default");
@@ -465,18 +465,18 @@ public class Config {
     }
 
     public TopicConfig findTopicConfig(String name) {
-        name = getBaseName(name);
-        TopicConfig config;
-        if ((config = lookupByPattern(topicConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        TopicConfig config = lookupByPattern(topicConfigs, baseName);
+        if (config  != null) {
             return config.getAsReadOnly();
         }
         return getTopicConfig("default").getAsReadOnly();
     }
 
     public TopicConfig getTopicConfig(String name) {
-        name = getBaseName(name);
-        TopicConfig config;
-        if ((config = lookupByPattern(topicConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        TopicConfig config = lookupByPattern(topicConfigs, baseName);
+        if (config != null) {
             return config;
         }
         TopicConfig defConfig = topicConfigs.get("default");
@@ -516,9 +516,9 @@ public class Config {
     }
 
     public ExecutorConfig findExecutorConfig(String name) {
-        name = getBaseName(name);
-        ExecutorConfig config;
-        if ((config = lookupByPattern(executorConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        ExecutorConfig config = lookupByPattern(executorConfigs, baseName);
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getExecutorConfig("default").getAsReadOnly();
@@ -531,9 +531,9 @@ public class Config {
      * @return ExecutorConfig
      */
     public ExecutorConfig getExecutorConfig(String name) {
-        name = getBaseName(name);
-        ExecutorConfig config;
-        if ((config = lookupByPattern(executorConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        ExecutorConfig config = lookupByPattern(executorConfigs, baseName);
+        if (config != null) {
             return config;
         }
         ExecutorConfig defConfig = executorConfigs.get("default");
@@ -573,9 +573,9 @@ public class Config {
     }
 
     public SemaphoreConfig findSemaphoreConfig(String name) {
-        name = getBaseName(name);
-        SemaphoreConfig config;
-        if ((config = lookupByPattern(semaphoreConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        SemaphoreConfig config = lookupByPattern(semaphoreConfigs, baseName);
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getSemaphoreConfig("default").getAsReadOnly();
@@ -588,9 +588,9 @@ public class Config {
      * @return SemaphoreConfig
      */
     public SemaphoreConfig getSemaphoreConfig(String name) {
-        name = getBaseName(name);
-        SemaphoreConfig config;
-        if ((config = lookupByPattern(semaphoreConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        SemaphoreConfig config = lookupByPattern(semaphoreConfigs, baseName);
+        if (config != null) {
             return config;
         }
         SemaphoreConfig defConfig = semaphoreConfigs.get("default");
@@ -655,18 +655,18 @@ public class Config {
     }
 
     public JobTrackerConfig findJobTrackerConfig(String name) {
-        name = getBaseName(name);
-        JobTrackerConfig config;
-        if ((config = lookupByPattern(jobTrackerConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        JobTrackerConfig config = lookupByPattern(jobTrackerConfigs, baseName);
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getJobTrackerConfig(name);
     }
 
     public JobTrackerConfig getJobTrackerConfig(String name) {
-        name = getBaseName(name);
-        JobTrackerConfig config;
-        if ((config = lookupByPattern(jobTrackerConfigs, name)) != null) {
+        String baseName = getBaseName(name);
+        JobTrackerConfig config = lookupByPattern(jobTrackerConfigs, baseName);
+        if (config != null) {
             return config;
         }
         JobTrackerConfig defConfig = jobTrackerConfigs.get("default");

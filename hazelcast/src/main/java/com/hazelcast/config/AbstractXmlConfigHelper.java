@@ -27,12 +27,18 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
+/**
+ * Contains Hazelcast Xml Configuration helper methods and variables.
+ */
 public abstract class AbstractXmlConfigHelper {
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
 
     protected boolean domLevel3 = true;
 
+    /**
+     * Iterator for NodeList
+     */
     public static class IterableNodeList implements Iterable<Node> {
 
         private final NodeList parent;
@@ -74,11 +80,9 @@ public abstract class AbstractXmlConfigHelper {
                     }
                     return false;
                 }
-
                 public boolean hasNext() {
                     return findNext();
                 }
-
                 public Node next() {
                     if (findNext()) {
                         index++;
@@ -86,7 +90,6 @@ public abstract class AbstractXmlConfigHelper {
                     }
                     throw new NoSuchElementException();
                 }
-
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }

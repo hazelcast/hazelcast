@@ -18,6 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.EntryListener;
 
+/**
+ * Configuration for EntryListener
+ */
 public class EntryListenerConfig extends ListenerConfig {
 
     private boolean local;

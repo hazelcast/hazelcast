@@ -304,8 +304,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         fillProperties(n, serviceConfig.getProperties());
                     } else if ("configuration".equals(value)) {
                         Node parserNode = n.getAttributes().getNamedItem("parser");
-                        String parserClass;
-                        if (parserNode == null || (parserClass = getTextContent(parserNode)) == null) {
+                        String parserClass = getTextContent(parserNode);
+                        if (parserNode == null || parserClass == null) {
                             throw new IllegalArgumentException("Parser is required!");
                         }
                         try {
@@ -821,25 +821,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 if (maxSizePolicy != null) {
                     msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                int size;
-                if (value.length() < 2) {
-                    size = Integer.parseInt(value);
-                } else {
-                    char last = value.charAt(value.length() - 1);
-                    int type = 0;
-                    if (last == 'g' || last == 'G') {
-                        type = 1;
-                    } else if (last == 'm' || last == 'M') {
-                        type = 2;
-                    }
-                    if (type == 0) {
-                        size = Integer.parseInt(value);
-                    } else if (type == 1) {
-                        size = Integer.parseInt(value.substring(0, value.length() - 1)) * THOUSAND_FACTOR;
-                    } else {
-                        size = Integer.parseInt(value.substring(0, value.length() - 1));
-                    }
-                }
+                int size = sizeParser(value);
                 msc.setSize(size);
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
@@ -862,41 +844,77 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("statistics-enabled".equals(nodeName)) {
                 mapConfig.setStatisticsEnabled(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
-                WanReplicationRef wanReplicationRef = new WanReplicationRef();
-                final String wanName = getAttribute(n, "name");
-                wanReplicationRef.setName(wanName);
-                for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
-                    final String wanChildName = cleanNodeName(wanChild.getNodeName());
-                    final String wanChildValue = getTextContent(n);
-                    if ("merge-policy".equals(wanChildName)) {
-                        wanReplicationRef.setMergePolicy(wanChildValue);
-                    }
-                }
-                mapConfig.setWanReplicationRef(wanReplicationRef);
+                mapWanReplicationRefHandle(n, mapConfig);
             } else if ("indexes".equals(nodeName)) {
-                for (org.w3c.dom.Node indexNode : new IterableNodeList(n.getChildNodes())) {
-                    if ("index".equals(cleanNodeName(indexNode))) {
-                        final NamedNodeMap attrs = indexNode.getAttributes();
-                        boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
-                        String attribute = getTextContent(indexNode);
-                        mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered));
-                    }
-                }
+                mapIndexesHandle(n, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
-                for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
-                    if ("entry-listener".equals(cleanNodeName(listenerNode))) {
-                        final NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
-                        boolean local = checkTrue(getTextContent(attrs.getNamedItem("local")));
-                        String listenerClass = getTextContent(listenerNode);
-                        mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
-                    }
-                }
+                mapEntryListenerHandle(n, mapConfig);
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
             }
         }
         this.config.addMapConfig(mapConfig);
+    }
+
+    private void mapWanReplicationRefHandle(Node n, MapConfig mapConfig) {
+        WanReplicationRef wanReplicationRef = new WanReplicationRef();
+        final String wanName = getAttribute(n, "name");
+        wanReplicationRef.setName(wanName);
+        for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
+            final String wanChildName = cleanNodeName(wanChild.getNodeName());
+            final String wanChildValue = getTextContent(n);
+            if ("merge-policy".equals(wanChildName)) {
+                wanReplicationRef.setMergePolicy(wanChildValue);
+            }
+        }
+        mapConfig.setWanReplicationRef(wanReplicationRef);
+    }
+
+    private void mapIndexesHandle(Node n, MapConfig mapConfig) {
+        for (org.w3c.dom.Node indexNode : new IterableNodeList(n.getChildNodes())) {
+            if ("index".equals(cleanNodeName(indexNode))) {
+                final NamedNodeMap attrs = indexNode.getAttributes();
+                boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
+                String attribute = getTextContent(indexNode);
+                mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered));
+            }
+        }
+    }
+
+    private void mapEntryListenerHandle(Node n, MapConfig mapConfig) {
+        for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+            if ("entry-listener".equals(cleanNodeName(listenerNode))) {
+                final NamedNodeMap attrs = listenerNode.getAttributes();
+                boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
+                boolean local = checkTrue(getTextContent(attrs.getNamedItem("local")));
+                String listenerClass = getTextContent(listenerNode);
+                mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
+            }
+        }
+    }
+
+
+    private int sizeParser(String value) {
+        int size;
+        if (value.length() < 2) {
+            size = Integer.parseInt(value);
+        } else {
+            char last = value.charAt(value.length() - 1);
+            int type = 0;
+            if (last == 'g' || last == 'G') {
+                type = 1;
+            } else if (last == 'm' || last == 'M') {
+                type = 2;
+            }
+            if (type == 0) {
+                size = Integer.parseInt(value);
+            } else if (type == 1) {
+                size = Integer.parseInt(value.substring(0, value.length() - 1)) * THOUSAND_FACTOR;
+            } else {
+                size = Integer.parseInt(value.substring(0, value.length() - 1));
+            }
+        }
+        return size;
     }
 
     private MapStoreConfig createMapStoreConfig(final org.w3c.dom.Node node) {

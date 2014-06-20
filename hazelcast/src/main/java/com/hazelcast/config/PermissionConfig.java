@@ -18,7 +18,9 @@ package com.hazelcast.config;
 
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * Contains the configuration for a permission.
+ */
 public class PermissionConfig {
 
     private PermissionType type;
@@ -38,6 +40,9 @@ public class PermissionConfig {
         this.principal = principal;
     }
 
+    /**
+     * Type of permission
+     */
     public enum PermissionType {
         MAP("map-permission"),
         QUEUE("queue-permission"),
