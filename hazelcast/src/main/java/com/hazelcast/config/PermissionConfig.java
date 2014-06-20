@@ -39,11 +39,20 @@ public class PermissionConfig {
     }
 
     public enum PermissionType {
-        MAP("map-permission"), QUEUE("queue-permission"), TOPIC("topic-permission"), MULTIMAP("multimap-permission"),
-        LIST("list-permission"), SET("set-permission"), ID_GENERATOR("id-generator-permission"),
-        LOCK("lock-permission"), ATOMIC_LONG("atomic-long-permission"), COUNTDOWN_LATCH("countdown-latch-permission"),
-        SEMAPHORE("semaphore-permission"), EXECUTOR_SERVICE("executor-service-permission"),
-        TRANSACTION("transaction-permission"), ALL("all-permissions");
+        MAP("map-permission"),
+        QUEUE("queue-permission"),
+        TOPIC("topic-permission"),
+        MULTIMAP("multimap-permission"),
+        LIST("list-permission"),
+        SET("set-permission"),
+        ID_GENERATOR("id-generator-permission"),
+        LOCK("lock-permission"),
+        ATOMIC_LONG("atomic-long-permission"),
+        COUNTDOWN_LATCH("countdown-latch-permission"),
+        SEMAPHORE("semaphore-permission"),
+        EXECUTOR_SERVICE("executor-service-permission"),
+        TRANSACTION("transaction-permission"),
+        ALL("all-permissions");
 
         private final String nodeName;
 
@@ -56,7 +65,6 @@ public class PermissionConfig {
                 if (nodeName.equals(type.getNodeName())) {
                     return type;
                 }
-
             }
             return null;
         }
@@ -64,7 +72,6 @@ public class PermissionConfig {
         public String getNodeName() {
             return nodeName;
         }
-
     }
 
     public PermissionConfig addEndpoint(String endpoint) {
