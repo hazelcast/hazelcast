@@ -639,12 +639,10 @@
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastClientBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastInstanceDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
-    <suppress checks="MethodCount" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
-    <suppress checks="ExecutableStatement" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastTypeBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.spring.context.SpringManagedContext"/>
+    <suppress checks="MethodCount" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
 
 
 
