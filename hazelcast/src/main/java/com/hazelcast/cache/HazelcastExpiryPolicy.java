@@ -18,7 +18,6 @@ package com.hazelcast.cache;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.cache.expiry.Duration;
@@ -35,17 +34,17 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     private Duration access;
     private Duration update;
 
-    public HazelcastExpiryPolicy(long createMillis, long accessMillis, long updateMillis){
-        this(new Duration(TimeUnit.MILLISECONDS,createMillis),new Duration(TimeUnit.MILLISECONDS,accessMillis),new Duration(TimeUnit.MILLISECONDS,updateMillis));
+    public HazelcastExpiryPolicy(long createMillis, long accessMillis, long updateMillis) {
+        this(new Duration(TimeUnit.MILLISECONDS, createMillis), new Duration(TimeUnit.MILLISECONDS, accessMillis), new Duration(TimeUnit.MILLISECONDS, updateMillis));
     }
 
 
-    public HazelcastExpiryPolicy(long createDurationAmount, long accessDurationAmount, long updateDurationAmount, TimeUnit timeUnit){
-        this(new Duration(timeUnit,createDurationAmount),new Duration(timeUnit,accessDurationAmount),new Duration(timeUnit,updateDurationAmount));
+    public HazelcastExpiryPolicy(long createDurationAmount, long accessDurationAmount, long updateDurationAmount, TimeUnit timeUnit) {
+        this(new Duration(timeUnit, createDurationAmount), new Duration(timeUnit, accessDurationAmount), new Duration(timeUnit, updateDurationAmount));
     }
 
-    public HazelcastExpiryPolicy(ExpiryPolicy expiryPolicy){
-        if(expiryPolicy != null){
+    public HazelcastExpiryPolicy(ExpiryPolicy expiryPolicy) {
+        if (expiryPolicy != null) {
             this.create = expiryPolicy.getExpiryForCreation();
             this.access = expiryPolicy.getExpiryForAccess();
             this.update = expiryPolicy.getExpiryForUpdate();
@@ -86,9 +85,9 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        writeDuration(out,create);
-        writeDuration(out,access);
-        writeDuration(out,update);
+        writeDuration(out, create);
+        writeDuration(out, access);
+        writeDuration(out, update);
     }
 
     @Override
@@ -98,18 +97,18 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
         update = readDuration(in);
     }
 
-    public static void writeDuration(ObjectDataOutput out,Duration duration) throws IOException {
-        if(duration!=null){
+    public static void writeDuration(ObjectDataOutput out, Duration duration) throws IOException {
+        if (duration != null) {
             out.writeLong(duration.getDurationAmount());
             out.writeInt(duration.getTimeUnit().ordinal());
         }
     }
 
     public static Duration readDuration(ObjectDataInput in) throws IOException {
-        long da=in.readLong();
-        if(da > -1){
+        long da = in.readLong();
+        if (da > -1) {
             TimeUnit tu = TimeUnit.values()[in.readInt()];
-            return new Duration(tu,da);
+            return new Duration(tu, da);
         }
         return null;
     }

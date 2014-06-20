@@ -24,10 +24,9 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 @Beta
-public interface ICache<K, V> extends DistributedObject, javax.cache.Cache<K, V>  {
+public interface ICache<K, V> extends DistributedObject, javax.cache.Cache<K, V> {
 
     //region async extentions
     Future<V> getAsync(K key);

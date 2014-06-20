@@ -19,6 +19,7 @@ package com.hazelcast.cache.operation;
 import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
+import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -40,6 +41,8 @@ abstract class AbstractCacheOperation extends AbstractNamedOperation
 
     transient ICacheRecordStore cache;
 
+    transient CacheRecord backupRecord;
+
     protected AbstractCacheOperation() {
     }
 
@@ -51,19 +54,11 @@ abstract class AbstractCacheOperation extends AbstractNamedOperation
     @Override
     public final void beforeRun() throws Exception {
         CacheService service = getService();
+//        cache.setRecordStoreMode(true);
         if (this instanceof BackupAwareOperation) {
             cache = service.getOrCreateCache(name, getPartitionId());
-            cache.setRecordStoreMode(false);
         } else {
             cache = service.getCache(name, getPartitionId());
-            cache.setRecordStoreMode(true);
-        }
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        if (this instanceof BackupAwareOperation) {
-            cache.setRecordStoreMode(true);//shutdown backup mode
         }
     }
 

@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CacheKeyIteratorResult implements IdentifiedDataSerializable{
+public class CacheKeyIteratorResult implements IdentifiedDataSerializable {
 
     private int segmentIndex;
     private int tableIndex;

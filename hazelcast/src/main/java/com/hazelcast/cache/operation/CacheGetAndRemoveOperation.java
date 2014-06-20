@@ -39,10 +39,6 @@ public class CacheGetAndRemoveOperation extends AbstractCacheOperation implement
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
     public boolean shouldBackup() {
         return response != null;
     }

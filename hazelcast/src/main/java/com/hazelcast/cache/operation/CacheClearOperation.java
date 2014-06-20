@@ -20,14 +20,16 @@ import com.hazelcast.cache.CacheClearResponse;
 import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
+import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NormalResponse;
 
 import javax.cache.CacheException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,6 +39,12 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
 
     private boolean isRemoveAll;
     private Set<Data> keys;
+
+    private boolean shouldBackup = false;
+
+    transient private Map<Data, CacheRecord> backupRecord;
+
+    transient private ICacheRecordStore cache;
 
     public CacheClearOperation() {
     }
@@ -52,11 +60,10 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
         CacheService service = getService();
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
 
-        ICacheRecordStore cache = service.getCache(name, getPartitionId());
+        cache = service.getCache(name, getPartitionId());
         if (cache != null) {
-            Set<Data> filteredKeys = null;
+            Set<Data> filteredKeys = new HashSet<Data>();
             if (keys != null) {
-                filteredKeys = new HashSet<Data>();
                 for (Data k : keys) {
                     if (partitionService.getPartitionId(k) == getPartitionId()) {
                         filteredKeys.add(k);
@@ -64,10 +71,20 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
                 }
             }
             try {
-                cache.clear(filteredKeys, isRemoveAll);
+                if (keys == null || !filteredKeys.isEmpty()){
+                    cache.clear(filteredKeys, isRemoveAll);
+                }
             } catch (CacheException e) {
                 response = new CacheClearResponse(e);
             }
+
+            if (shouldBackup = !filteredKeys.isEmpty()) {
+                backupRecord = new HashMap<Data, CacheRecord>();
+                for (Data key : filteredKeys) {
+                    backupRecord.put(key, cache.getRecord(key));
+                }
+            }
+
         }
     }
 
@@ -78,22 +95,20 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
 
     @Override
     public boolean shouldBackup() {
-        return false;
+        return shouldBackup;
     }
 
-    @Override
-    public int getSyncBackupCount() {
-        return 0;
+    public final int getSyncBackupCount() {
+        return cache != null ? cache.getConfig().getBackupCount() : 0;
     }
 
-    @Override
-    public int getAsyncBackupCount() {
-        return 0;
+    public final int getAsyncBackupCount() {
+        return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
     }
 
     @Override
     public Operation getBackupOperation() {
-        return null;
+        return new CacheClearBackupOperation(name, backupRecord);
     }
 
 }

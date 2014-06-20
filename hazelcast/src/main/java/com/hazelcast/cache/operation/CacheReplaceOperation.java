@@ -57,7 +57,10 @@ public class CacheReplaceOperation extends AbstractCacheOperation implements Bac
             if (currentValue == null) {
                 response = cache.replace(key, value, expiryPolicy, getCallerUuid());
             } else {
-                response = cache.replace(key, currentValue, value, expiryPolicy,getCallerUuid());
+                response = cache.replace(key, currentValue, value, expiryPolicy, getCallerUuid());
+            }
+            if (response == Boolean.TRUE) {
+                backupRecord = cache.getRecord(key);
             }
         } else {
             response = Boolean.FALSE;
@@ -76,7 +79,7 @@ public class CacheReplaceOperation extends AbstractCacheOperation implements Bac
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutBackupOperation(name, key, value, expiryPolicy);
+        return new CachePutBackupOperation(name, key, backupRecord);
     }
 
 

@@ -17,7 +17,6 @@
 package com.hazelcast.cache.operation;
 
 import com.hazelcast.cache.CacheDataSerializerHook;
-import com.hazelcast.map.operation.GetAllOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -40,7 +39,7 @@ public class CacheGetAllOperationFactory implements OperationFactory, Identified
     public CacheGetAllOperationFactory() {
     }
 
-    public CacheGetAllOperationFactory(String name, Set<Data> keys,ExpiryPolicy expiryPolicy) {
+    public CacheGetAllOperationFactory(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
         this.name = name;
         this.keys = keys;
         this.expiryPolicy = expiryPolicy;

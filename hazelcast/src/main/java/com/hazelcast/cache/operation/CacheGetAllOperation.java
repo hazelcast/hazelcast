@@ -19,20 +19,17 @@ package com.hazelcast.cache.operation;
 import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
-import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.operation.AbstractMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CacheGetAllOperation extends PartitionWideCacheOperation {
+public class CacheGetAllOperation extends PartitionWideCacheOperation implements ReadonlyOperation {
 
     private Set<Data> keys = new HashSet<Data>();
     private ExpiryPolicy expiryPolicy;
@@ -40,7 +37,7 @@ public class CacheGetAllOperation extends PartitionWideCacheOperation {
     public CacheGetAllOperation(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
         super(name);
         this.keys = keys;
-        this.expiryPolicy=expiryPolicy;
+        this.expiryPolicy = expiryPolicy;
     }
 
     public CacheGetAllOperation() {
@@ -57,7 +54,7 @@ public class CacheGetAllOperation extends PartitionWideCacheOperation {
                 partitionKeySet.add(key);
             }
         }
-        response = cache.getAll(partitionKeySet,expiryPolicy);
+        response = cache.getAll(partitionKeySet, expiryPolicy);
     }
 
     @Override
@@ -68,8 +65,8 @@ public class CacheGetAllOperation extends PartitionWideCacheOperation {
     @Override
     public String toString() {
         return "CacheGetAllOperation{" +
-                "keys:"+keys.toString()+
-                "expiryPolicy:"+expiryPolicy+
+                "keys:" + keys.toString() +
+                "expiryPolicy:" + expiryPolicy +
                 '}';
     }
 

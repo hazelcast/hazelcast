@@ -65,19 +65,19 @@ public class CacheStatsImpl implements DataSerializable, CacheStats {
     @Override
     public double getAveragePutLatency() {
         long puts = getPuts();
-        return puts <= 0 ? 0 : (double)totalPutLatency.get() / puts;
+        return puts <= 0 ? 0 : (double) totalPutLatency.get() / puts;
     }
 
     @Override
     public double getAverageGetLatency() {
         long gets = getGets();
-        return gets <= 0 ? 0 : (double)totalGetLatency.get() / gets;
+        return gets <= 0 ? 0 : (double) totalGetLatency.get() / gets;
     }
 
     @Override
     public double getAverageRemoveLatency() {
         long removes = getRemoves();
-        return removes <= 0 ? 0 : (double)totalRemoveLatency.get() / removes;
+        return removes <= 0 ? 0 : (double) totalRemoveLatency.get() / removes;
     }
 
     public long getCreationTime() {

@@ -42,14 +42,17 @@ public class CachePutIfAbsentOperation extends AbstractCacheOperation implements
     public CachePutIfAbsentOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
         super(name, key);
         this.value = value;
-        this.expiryPolicy=expiryPolicy;
+        this.expiryPolicy = expiryPolicy;
     }
 
     @Override
     public void run() throws Exception {
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
-        response = cache.putIfAbsent(key, value, expiryPolicy,getCallerUuid());
+        response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid());
+        if (response == Boolean.TRUE) {
+            backupRecord = cache.getRecord(key);
+        }
     }
 
     @Override
@@ -63,7 +66,7 @@ public class CachePutIfAbsentOperation extends AbstractCacheOperation implements
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutBackupOperation(name, key, value, null);
+        return new CachePutBackupOperation(name, key, backupRecord);
     }
 
 

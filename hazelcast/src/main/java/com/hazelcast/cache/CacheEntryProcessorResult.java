@@ -35,7 +35,7 @@ public class CacheEntryProcessorResult<T> implements EntryProcessorResult<T> {
 
     @Override
     public T get() throws EntryProcessorException {
-        if(result != null){
+        if (result != null) {
             return result;
         }
         throw new EntryProcessorException(exception);

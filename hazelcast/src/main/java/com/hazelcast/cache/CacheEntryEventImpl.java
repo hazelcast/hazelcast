@@ -19,7 +19,7 @@ package com.hazelcast.cache;
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.EventType;
 
-class CacheEntryEventImpl<K,V> extends CacheEntryEvent<K,V> {
+class CacheEntryEventImpl<K, V> extends CacheEntryEvent<K, V> {
     private final K key;
     private final V newValue;
     private final V oldValue;

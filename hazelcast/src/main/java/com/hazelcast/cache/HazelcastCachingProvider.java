@@ -30,7 +30,6 @@ import javax.cache.configuration.OptionalFeature;
 import javax.cache.spi.CachingProvider;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -98,20 +97,20 @@ public class HazelcastCachingProvider implements CachingProvider {
             try {
 
                 Config config = null;
-                if(managerURI.equals(getDefaultURI())){
+                if (managerURI.equals(getDefaultURI())) {
                     config = new Config();
-                }else{
+                } else {
                     try {
-                        URL url= new URL(managerURI.toString());
+                        URL url = new URL(managerURI.toString());
 
                         InputStream in = url.openStream();
                         if (in == null) {
-                            logger.warning("Having problem opening URL:"+url.toString());
+                            logger.warning("Having problem opening URL:" + url.toString());
                         }
 
                         config = new XmlConfigBuilder(in).build();
                     } catch (IOException e) {
-                        logger.warning("Error opening URI"+managerURI.toString()+". Caused by :"+e.getMessage());
+                        logger.warning("Error opening URI" + managerURI.toString() + ". Caused by :" + e.getMessage());
                         config = new Config();
                     }
 
@@ -120,12 +119,12 @@ public class HazelcastCachingProvider implements CachingProvider {
 
                 //FIXME HZ URI,  MANAGER ETC
                 HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
-                cacheManager = new HazelcastCacheManager(this, hazelcastInstance,managerURI, managerClassLoader, managerProperties);
+                cacheManager = new HazelcastCacheManager(this, hazelcastInstance, managerURI, managerClassLoader, managerProperties);
 
                 cacheManagersByURI.put(managerURI, cacheManager);
 
             } catch (Throwable t) {
-                logger.warning("Error opening URI"+managerURI.toString()+". Caused by :"+t.getMessage());
+                logger.warning("Error opening URI" + managerURI.toString() + ". Caused by :" + t.getMessage());
             }
         }
 
@@ -153,7 +152,7 @@ public class HazelcastCachingProvider implements CachingProvider {
         try {
             return new URI(this.getClass().getName());
         } catch (URISyntaxException e) {
-            throw new CacheException("Cannot create Default URI",e);
+            throw new CacheException("Cannot create Default URI", e);
         }
     }
 
@@ -186,8 +185,8 @@ public class HazelcastCachingProvider implements CachingProvider {
      */
     @Override
     public synchronized void close() {
-        final Set<ClassLoader> classLoaderSet= new HashSet<ClassLoader>(this.cacheManagers.keySet());
-        for(ClassLoader classLoader: classLoaderSet){
+        final Set<ClassLoader> classLoaderSet = new HashSet<ClassLoader>(this.cacheManagers.keySet());
+        for (ClassLoader classLoader : classLoaderSet) {
             close(classLoader);
         }
     }
@@ -198,8 +197,8 @@ public class HazelcastCachingProvider implements CachingProvider {
     @Override
     public synchronized void close(ClassLoader classLoader) {
         final HashMap<URI, CacheManager> uriCacheManagerHashMap = this.cacheManagers.get(classLoader);
-        if(uriCacheManagerHashMap != null){
-            for(CacheManager cacheManager:uriCacheManagerHashMap.values() ){
+        if (uriCacheManagerHashMap != null) {
+            for (CacheManager cacheManager : uriCacheManagerHashMap.values()) {
                 cacheManager.close();
             }
         }
@@ -211,9 +210,9 @@ public class HazelcastCachingProvider implements CachingProvider {
     @Override
     public synchronized void close(URI uri, ClassLoader classLoader) {
         final HashMap<URI, CacheManager> uriCacheManagerHashMap = this.cacheManagers.get(classLoader);
-        if(uriCacheManagerHashMap != null){
+        if (uriCacheManagerHashMap != null) {
             final CacheManager cacheManager = uriCacheManagerHashMap.get(uri);
-            if(cacheManager != null){
+            if (cacheManager != null) {
                 cacheManager.close();
             }
         }

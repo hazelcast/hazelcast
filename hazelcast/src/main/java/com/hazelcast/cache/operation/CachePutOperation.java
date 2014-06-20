@@ -60,11 +60,7 @@ public class CachePutOperation extends AbstractCacheOperation implements BackupA
             cache.put(key, value, expiryPolicy, getCallerUuid());
             response = null;
         }
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        //TODO FIRE EVENTS
+        backupRecord = cache.getRecord(key);
     }
 
     @Override
@@ -74,7 +70,7 @@ public class CachePutOperation extends AbstractCacheOperation implements BackupA
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutBackupOperation(name, key, value, null);
+        return new CachePutBackupOperation(name, key, backupRecord);
     }
 
     @Override

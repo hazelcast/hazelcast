@@ -28,66 +28,65 @@ import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
 import java.util.HashSet;
 
-public class CacheEventListenerAdaptor<K,V> {
+public class CacheEventListenerAdaptor<K, V> {
 
     private CacheEntryCreatedListener cacheEntryCreatedListener;
     private CacheEntryRemovedListener cacheEntryRemovedListener;
     private CacheEntryUpdatedListener cacheEntryUpdatedListener;
     private CacheEntryExpiredListener cacheEntryExpiredListener;
 
-    private transient ICache<K,V> source;
+    private transient ICache<K, V> source;
 
 
-    public CacheEventListenerAdaptor(ICache<K,V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    public CacheEventListenerAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         this.source = source;
         final CacheEntryListener<? super K, ? super V> cacheEntryListener = cacheEntryListenerConfiguration.getCacheEntryListenerFactory().create();
-        if(cacheEntryListener instanceof CacheEntryCreatedListener){
-            this.cacheEntryCreatedListener= (CacheEntryCreatedListener) cacheEntryListener;
-        }else{
-            this.cacheEntryCreatedListener=null;
+        if (cacheEntryListener instanceof CacheEntryCreatedListener) {
+            this.cacheEntryCreatedListener = (CacheEntryCreatedListener) cacheEntryListener;
+        } else {
+            this.cacheEntryCreatedListener = null;
         }
-        if(cacheEntryListener instanceof CacheEntryRemovedListener){
-            this.cacheEntryRemovedListener= (CacheEntryRemovedListener) cacheEntryListener;
-        }else{
-            this.cacheEntryRemovedListener=null;
+        if (cacheEntryListener instanceof CacheEntryRemovedListener) {
+            this.cacheEntryRemovedListener = (CacheEntryRemovedListener) cacheEntryListener;
+        } else {
+            this.cacheEntryRemovedListener = null;
         }
-        if(cacheEntryListener instanceof CacheEntryUpdatedListener){
-            this.cacheEntryUpdatedListener= (CacheEntryUpdatedListener) cacheEntryListener;
-        }else{
-            this.cacheEntryUpdatedListener=null;
+        if (cacheEntryListener instanceof CacheEntryUpdatedListener) {
+            this.cacheEntryUpdatedListener = (CacheEntryUpdatedListener) cacheEntryListener;
+        } else {
+            this.cacheEntryUpdatedListener = null;
         }
-        if(cacheEntryListener instanceof CacheEntryExpiredListener){
-            this.cacheEntryExpiredListener= (CacheEntryExpiredListener) cacheEntryListener;
-        }else{
-            this.cacheEntryExpiredListener=null;
+        if (cacheEntryListener instanceof CacheEntryExpiredListener) {
+            this.cacheEntryExpiredListener = (CacheEntryExpiredListener) cacheEntryListener;
+        } else {
+            this.cacheEntryExpiredListener = null;
         }
     }
 
 
-
-    public void handleEvent(NodeEngine nodeEngine, String cacheName, EventType eventType, K key, V newValue, V oldValue){
-        if(source == null){
-            this.source=nodeEngine.getHazelcastInstance().getDistributedObject(CacheService.SERVICE_NAME,cacheName);
+    public void handleEvent(NodeEngine nodeEngine, String cacheName, EventType eventType, K key, V newValue, V oldValue) {
+        if (source == null) {
+            this.source = nodeEngine.getHazelcastInstance().getDistributedObject(CacheService.SERVICE_NAME, cacheName);
         }
         final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
-        switch (eventType){
+        switch (eventType) {
             case CREATED:
-                if(this.cacheEntryCreatedListener != null){
+                if (this.cacheEntryCreatedListener != null) {
                     this.cacheEntryCreatedListener.onCreated(createEventWrapper(event));
                 }
                 break;
             case UPDATED:
-                if(this.cacheEntryUpdatedListener != null){
+                if (this.cacheEntryUpdatedListener != null) {
                     this.cacheEntryUpdatedListener.onUpdated(createEventWrapper(event));
                 }
                 break;
             case REMOVED:
-                if(this.cacheEntryRemovedListener != null){
+                if (this.cacheEntryRemovedListener != null) {
                     this.cacheEntryRemovedListener.onRemoved(createEventWrapper(event));
                 }
                 break;
             case EXPIRED:
-                if(this.cacheEntryExpiredListener != null){
+                if (this.cacheEntryExpiredListener != null) {
                     this.cacheEntryExpiredListener.onExpired(createEventWrapper(event));
                 }
                 break;
@@ -96,8 +95,8 @@ public class CacheEventListenerAdaptor<K,V> {
         }
     }
 
-    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createEventWrapper(CacheEntryEvent<K, V> event){
-        HashSet<CacheEntryEvent<? extends K, ? extends V>> evt=new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
+    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createEventWrapper(CacheEntryEvent<K, V> event) {
+        HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
         evt.add(event);
         return evt;
     }

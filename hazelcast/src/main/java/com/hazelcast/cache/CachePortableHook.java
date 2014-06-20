@@ -53,6 +53,7 @@ public class CachePortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[16];
+
             {
 //                constructors[GET] = new ConstructorFunction<Integer, Portable>() {
 //                    public Portable createNew(Integer arg) {
@@ -127,7 +128,7 @@ public class CachePortableHook implements PortableHook {
             }
 
             public Portable create(int classId) {
-                if(constructors[classId] == null) {
+                if (constructors[classId] == null) {
                     throw new IllegalArgumentException("No registered constructor with class id:" + classId);
                 }
                 return (classId > 0 && classId <= constructors.length) ? constructors[classId].createNew(classId) : null;
