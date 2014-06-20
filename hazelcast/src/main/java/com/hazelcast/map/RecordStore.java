@@ -72,23 +72,23 @@ public interface RecordStore {
      *
      * @param key   key to put.
      * @param value to put.
-     * @param ttl   time to live seconds.
      * @return the previous value associated with <tt>key</tt>, or
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * @see {@link com.hazelcast.map.operation.PutAllOperation}
+     * @see {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
      */
-    Object putFromLoad(Data key, Object value, long ttl);
+    Object putFromLoad(Data key, Object value);
 
     /**
      * Puts key-value pair to map which is the result of a load from map store operation.
      *
      * @param key   key to put.
      * @param value to put.
+     * @param ttl   time to live seconds.
      * @return the previous value associated with <tt>key</tt>, or
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * @see {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
+     * @see {@link com.hazelcast.map.operation.PutAllOperation}
      */
-    Object putFromLoad(Data key, Object value);
+    Object putFromLoad(Data key, Object value, long ttl);
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 

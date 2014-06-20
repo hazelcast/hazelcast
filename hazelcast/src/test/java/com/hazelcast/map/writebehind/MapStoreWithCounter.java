@@ -5,6 +5,7 @@ import com.hazelcast.core.MapStore;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,12 +61,19 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
     @Override
     public Map<K, V> loadAll(Collection<K> keys) {
-        return null;
+        Map result = new HashMap();
+        for (Object key : keys) {
+            final V v = store.get(key);
+            if (v != null) {
+                result.put(key, v);
+            }
+        }
+        return result;
     }
 
     @Override
     public Set<K> loadAllKeys() {
-        return null;
+        return store.keySet();
     }
 
     public int getStoreOpCount() {

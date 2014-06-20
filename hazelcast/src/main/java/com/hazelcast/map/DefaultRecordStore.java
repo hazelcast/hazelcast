@@ -1060,12 +1060,17 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     @Override
+    public Object putFromLoad(Data key, Object value) {
+        return putFromLoad(key, value, DEFAULT_TTL);
+    }
+
+    @Override
     public Object putFromLoad(Data key, Object value, long ttl) {
         final long now = getNow();
-        Record record = records.get(key);
         earlyWriteCleanup(now);
         markRecordStoreExpirable(ttl);
 
+        Record record = records.get(key);
         Object oldValue = null;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
@@ -1085,10 +1090,6 @@ public class DefaultRecordStore implements RecordStore {
         return oldValue;
     }
 
-    @Override
-    public Object putFromLoad(Data key, Object value) {
-        return putFromLoad(key, value, DEFAULT_TTL);
-    }
 
     public boolean tryPut(Data key, Object value, long ttl) {
         checkIfLoaded();
@@ -1296,6 +1297,12 @@ public class DefaultRecordStore implements RecordStore {
         writeBehindWaitingDeletions.remove(key);
     }
 
+    private boolean isInWriteBehindWaitingDeletions(Data key) {
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return false;
+        }
+        return writeBehindWaitingDeletions.contains(key);
+    }
 
     private void initStagingAreaIterator() {
         if (evictionStagingAreaIterator == null || !evictionStagingAreaIterator.hasNext()) {
@@ -1370,6 +1377,13 @@ public class DefaultRecordStore implements RecordStore {
         if (value == null) {
             return;
         }
+    }
+
+    private boolean isInEvictionStagingArea(Data key) {
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return false;
+        }
+        return evictionStagingArea.containsKey(key);
     }
 
     private Map<Object, Object> getFromEvictionStagingArea(Set<Data> keys) {
@@ -1693,6 +1707,8 @@ public class DefaultRecordStore implements RecordStore {
         if (!replaceExistingValues) {
             removeExistingKeys(keys);
         }
+        removeUnloadableKeys(keys);
+
         if (keys.isEmpty()) {
             loaded.set(true);
             return;
@@ -1817,6 +1833,9 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void removeExistingKeys(Collection<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
         final ConcurrentMap<Data, Record> records = DefaultRecordStore.this.records;
         final Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
@@ -1825,6 +1844,51 @@ public class DefaultRecordStore implements RecordStore {
                 iterator.remove();
             }
         }
+    }
+
+    private void removeUnloadableKeys(Collection<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        final long now = getNow();
+        final Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            final Data key = iterator.next();
+            if (!loadable(key, this, now)) {
+                iterator.remove();
+            }
+        }
+    }
+
+    /**
+     * Used in {@link com.hazelcast.core.IMap#loadAll} calls.
+     * If write-behind map-store feature enabled, some things may lead possible data inconsistencies.
+     * These are:
+     * - calling evict/evictAll.
+     * - calling remove.
+     * - not yet stored write behind queue operation.
+     * <p/>
+     * With this method we can be sure that a key can be loadable from map-store or not.
+     *
+     * @param key         to be checked.
+     * @param recordStore record store.
+     * @param now         current time.
+     * @return <code>true</code> if loadable, otherwise false.
+     */
+    private boolean loadable(Data key, RecordStore recordStore, long now) {
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return true;
+        }
+        if (isInWriteBehindWaitingDeletions(key) || isInEvictionStagingArea(key)) {
+            return false;
+        }
+        final Record record = recordStore.getRecord(key);
+        final long scheduledStoreTime = record.getLastUpdateTime() + mapContainer.getWriteDelayMillis();
+        if (now < scheduledStoreTime) {
+            return false;
+        }
+
+        return true;
     }
 
     private final class MapLoadAllTask implements Runnable {

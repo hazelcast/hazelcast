@@ -43,6 +43,7 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
             final Data key = keyValueSequence.get(i);
             final Data dataValue = keyValueSequence.get(i + 1);
+            // here object conversion is for interceptors.
             final Object objectValue = mapService.toObject(dataValue);
             final Object previousValue = recordStore.putFromLoad(key, objectValue);
 
