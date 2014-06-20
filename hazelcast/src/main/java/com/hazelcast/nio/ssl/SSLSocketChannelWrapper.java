@@ -56,6 +56,9 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         netInBuffer = ByteBuffer.allocate(netBufferMax);
     }
 
+    /**
+     * TODO sleep in sync block
+     */
     private void handshake() throws IOException {
         if (handshakeCompleted) {
             return;
