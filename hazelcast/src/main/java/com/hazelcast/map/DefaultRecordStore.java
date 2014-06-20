@@ -1379,11 +1379,16 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    private boolean isInEvictionStagingArea(Data key) {
+    private boolean isInEvictionStagingArea(Data key, long now) {
         if (!mapContainer.isWriteBehindMapStoreEnabled()) {
             return false;
         }
-        return evictionStagingArea.containsKey(key);
+        final DelayedEntry entry = evictionStagingArea.get(key);
+        if (entry == null) {
+            return false;
+        }
+        final long storeTime = entry.getStoreTime();
+        return now < storeTime;
     }
 
     private Map<Object, Object> getFromEvictionStagingArea(Set<Data> keys) {
@@ -1879,7 +1884,7 @@ public class DefaultRecordStore implements RecordStore {
         if (!mapContainer.isWriteBehindMapStoreEnabled()) {
             return true;
         }
-        if (isInWriteBehindWaitingDeletions(key) || isInEvictionStagingArea(key)) {
+        if (isInWriteBehindWaitingDeletions(key) || isInEvictionStagingArea(key, now)) {
             return false;
         }
         final Record record = recordStore.getRecord(key);
