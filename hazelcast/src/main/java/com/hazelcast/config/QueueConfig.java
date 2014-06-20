@@ -28,11 +28,11 @@ public class QueueConfig {
      */
     public static final int DEFAULT_MAX_SIZE = 0;
     /**
-     * Default value of sycronous backup counter
+     * Default value of sycronous backup count
      */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
     /**
-     * Default value of asynchronous backup counter
+     * Default value of asynchronous backup count
      */
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
     /**

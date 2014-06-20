@@ -34,7 +34,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 public class MulticastConfig {
 
     /**
-     * Default value of idle in seconds for eviction.
+     * Whether the multicast discovery mechanism has been enabled
      */
     public static final boolean DEFAULT_ENABLED = true;
     /**

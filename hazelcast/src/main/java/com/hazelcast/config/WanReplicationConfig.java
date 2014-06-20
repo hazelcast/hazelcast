@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 /**
- * Configuration for replication of wan
+ * Configuration for wan replication.
  */
 public class WanReplicationConfig {
     String name;
