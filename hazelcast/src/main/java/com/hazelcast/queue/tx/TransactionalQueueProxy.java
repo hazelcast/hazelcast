@@ -47,6 +47,11 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
     }
 
     @Override
+    public E take() throws InterruptedException {
+        return poll(-1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
     public E poll() {
         try {
             return poll(0, TimeUnit.MILLISECONDS);

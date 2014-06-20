@@ -16,8 +16,10 @@
 
 package com.hazelcast.jca;
 
-import java.io.FileNotFoundException;
-import java.io.Serializable;
+import com.hazelcast.config.ConfigBuilder;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 
 import javax.resource.ResourceException;
 import javax.resource.spi.ActivationSpec;
@@ -26,13 +28,9 @@ import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterInternalException;
 import javax.resource.spi.endpoint.MessageEndpointFactory;
 import javax.transaction.xa.XAResource;
+import java.io.FileNotFoundException;
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
-
-
-import com.hazelcast.config.ConfigBuilder;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 
 /**
  * This is the starting point of the whole resource adapter for hazelcast.
@@ -49,18 +47,19 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     /**
      * The hazelcast instance itself
      */
-    private HazelcastInstance hazelcast;
+    private transient HazelcastInstance hazelcast;
     /**
      * The configured hazelcast configuration location
      */
     private String configurationLocation;
+
     /**
      * Identity
      */
-    private final transient int id;
+    private transient int id;
 
     public ResourceAdapterImpl() {
-        id = ID_GEN.incrementAndGet();
+        setId(ID_GEN.incrementAndGet());
     }
 
     /* (non-Javadoc)
@@ -181,6 +180,10 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
             return false;
         }
         return true;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
 }

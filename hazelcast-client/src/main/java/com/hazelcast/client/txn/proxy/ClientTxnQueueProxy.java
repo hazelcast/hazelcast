@@ -52,6 +52,11 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         return result;
     }
 
+    @Override
+    public E take() throws InterruptedException {
+        return poll(-1, TimeUnit.MILLISECONDS);
+    }
+
     public E poll() {
         try {
             return poll(0, TimeUnit.MILLISECONDS);

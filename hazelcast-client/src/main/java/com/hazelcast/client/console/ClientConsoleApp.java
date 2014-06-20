@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -185,8 +186,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     static class DefaultLineReader implements LineReader {
 
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_DEFAULT_ENCODING")
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in, Charset.forName("UTF-8")));
 
         public String readLine() throws Exception {
             return in.readLine();
@@ -194,13 +194,14 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
 
-    //CECKSTYLE:OFF
+    //CHECKSTYLE:OFF
 
     /**
      * Handle a command
      *
      * @param commandInputted
      */
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_EXIT")
     protected void handleCommand(String commandInputted) {
 
         String command = commandInputted;
@@ -620,7 +621,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private void handleAtomicNumberSet(String[] args) {
         long v = 0;
         if (args.length > 1) {
-            v = Long.valueOf(args[1]);
+            v = Long.parseLong(args[1]);
         }
         getAtomicNumber().set(v);
         println(getAtomicNumber().get());
@@ -829,7 +830,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     protected void handleMapTryLock(String[] args) {
         String key = args[1];
-        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
+        long time = (args.length > 2) ? Long.parseLong(args[2]) : 0;
         boolean locked;
         if (time == 0) {
             locked = getMap().tryLock(key);
@@ -952,7 +953,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     protected void handleMultiMapTryLock(String[] args) {
         String key = args[1];
-        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
+        long time = (args.length > 2) ? Long.parseLong(args[2]) : 0;
         boolean locked;
         if (time == 0) {
             locked = getMultiMap().tryLock(key);
@@ -1000,7 +1001,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             if (timeout == null) {
                 println(lock.tryLock());
             } else {
-                long time = Long.valueOf(timeout);
+                long time = Long.parseLong(timeout);
                 try {
                     println(lock.tryLock(time, TimeUnit.SECONDS));
                 } catch (InterruptedException e) {
@@ -1213,7 +1214,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     protected void handleQOffer(String[] args) {
         long timeout = 0;
         if (args.length > 2) {
-            timeout = Long.valueOf(args[2]);
+            timeout = Long.parseLong(args[2]);
         }
         try {
             boolean offered = getQueue().offer(args[1], timeout, TimeUnit.SECONDS);
@@ -1234,7 +1235,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     protected void handleQPoll(String[] args) {
         long timeout = 0;
         if (args.length > 1) {
-            timeout = Long.valueOf(args[1]);
+            timeout = Long.parseLong(args[1]);
         }
         try {
             println(getQueue().poll(timeout, TimeUnit.SECONDS));

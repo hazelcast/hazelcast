@@ -33,6 +33,9 @@ import org.hibernate.cfg.Settings;
 
 import java.util.Properties;
 
+/**
+ * Simple RegionFactory implementation to return Hazelcast based local Region implementations
+ */
 public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
     private CleanupService cleanupService;

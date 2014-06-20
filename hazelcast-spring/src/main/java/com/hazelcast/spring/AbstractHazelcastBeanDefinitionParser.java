@@ -147,8 +147,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             for (Node listenerNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 final BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(listenerConfigClass);
                 fillAttributeValues(listenerNode, listenerConfBuilder, implementationAttr);
-                Node implementationNode = null;
-                if ((implementationNode = listenerNode.getAttributes().getNamedItem(implementationAttr)) != null) {
+                Node implementationNode = listenerNode.getAttributes().getNamedItem(implementationAttr);
+                if (implementationNode != null) {
                     listenerConfBuilder.addPropertyReference(implementationAttr, getTextContent(implementationNode));
                 }
                 listeners.add(listenerConfBuilder.getBeanDefinition());
@@ -200,17 +200,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             for (Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String name = cleanNodeName(child);
                 if ("global-serializer".equals(name)) {
-                    globalSerializerConfigBuilder = createBeanBuilder(GlobalSerializerConfig.class);
-                    final NamedNodeMap attrs = child.getAttributes();
-                    final Node implRef = attrs.getNamedItem(implementation);
-                    final Node classNode = attrs.getNamedItem(className);
-                    if (implRef != null) {
-                        globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation)
-                                , getTextContent(implRef));
-                    }
-                    if (classNode != null) {
-                        globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
-                    }
+                    globalSerializerConfigBuilder =
+                            createGSConfigBuilder(GlobalSerializerConfig.class, child, implementation, className);
                 }
                 if ("serializer".equals(name)) {
                     BeanDefinitionBuilder serializerConfigBuilder = createBeanBuilder(SerializerConfig.class);
@@ -239,6 +230,24 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                         , globalSerializerConfigBuilder.getBeanDefinition());
             }
             serializationConfigBuilder.addPropertyValue("serializerConfigs", serializers);
+        }
+
+        private BeanDefinitionBuilder createGSConfigBuilder(Class<GlobalSerializerConfig> globalSerializerConfigClass,
+                                                            Node child, String implementation, String className) {
+            BeanDefinitionBuilder globalSerializerConfigBuilder = createBeanBuilder(globalSerializerConfigClass);
+            final NamedNodeMap attrs = child.getAttributes();
+            final Node implRef = attrs.getNamedItem(implementation);
+            final Node classNode = attrs.getNamedItem(className);
+            if (implRef != null) {
+                globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation)
+                        , getTextContent(implRef));
+            }
+            if (classNode != null) {
+                globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
+            }
+
+            return globalSerializerConfigBuilder;
+
         }
 
         protected void handlePortableFactories(final Node node, final BeanDefinitionBuilder serializationConfigBuilder) {

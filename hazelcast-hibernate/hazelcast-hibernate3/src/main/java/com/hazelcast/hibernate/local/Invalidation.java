@@ -23,8 +23,9 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @author mdogan 11/12/12
+ * An invalidation messages
  */
+// TODO Make this IdentifiedDataSerializable
 public class Invalidation implements DataSerializable {
 
     private Object key;
