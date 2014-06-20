@@ -29,24 +29,24 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
+public class ClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
 
     private int partitionIndex;
-    private int segmentIndex=Integer.MAX_VALUE;
-    private int tableIndex=-1;
+    private int segmentIndex = Integer.MAX_VALUE;
+    private int tableIndex = -1;
 
     private int fetchSize;
 
-    private CacheProxy<K,V> cacheProxy;
+    private CacheProxy<K, V> cacheProxy;
 
-    private Set<Data> keys=null;
+    private Set<Data> keys = null;
 
-    private Iterator<Data> keysIterator=null;
+    private Iterator<Data> keysIterator = null;
     private Data nextKey;
 
     private Data lastKey;
 
-    private boolean hasNextKey=false;
+    private boolean hasNextKey = false;
     final SerializationService serializationService;
 
     public ClusterWideIterator(CacheProxy<K, V> cacheProxy) {
@@ -55,7 +55,7 @@ public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
         final NodeEngine engine = cacheProxy.getNodeEngine();
         serializationService = engine.getSerializationService();
 
-        this.partitionIndex = engine.getPartitionService().getPartitionCount()-1;
+        this.partitionIndex = engine.getPartitionService().getPartitionCount() - 1;
 
         //TODO can be made configurable
         this.fetchSize = 100;
@@ -64,7 +64,7 @@ public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
     @Override
     public boolean hasNext() {
         cacheProxy.ensureOpen();
-        if(nextKey == null){
+        if (nextKey == null) {
             advance();
         }
         return nextKey != null;
@@ -72,11 +72,11 @@ public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
 
     @Override
     public Cache.Entry<K, V> next() {
-        if(hasNext()){
+        if (hasNext()) {
             try {
                 final V value = cacheProxy.get(nextKey);
                 final K key = serializationService.toObject(nextKey);
-                return new CacheEntry<K, V>(key,value);
+                return new CacheEntry<K, V>(key, value);
             } finally {
                 advance();
             }
@@ -90,59 +90,59 @@ public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
         if (lastKey == null) {
             throw new IllegalStateException("Must progress to the next entry to remove");
         }
-        if(cacheProxy.remove(lastKey)){
-            lastKey=null;
+        if (cacheProxy.remove(lastKey)) {
+            lastKey = null;
         }
     }
 
-    private void advance(){
-        if(nextKey != null && keysIterator.hasNext()){
+    private void advance() {
+        if (nextKey != null && keysIterator.hasNext()) {
             lastKey = nextKey;
             nextKey = keysIterator.next();
             return;
         }
 
-        while((partitionIndex >= 0) && (tableIndex>=0 || segmentIndex >= 0)){
+        while ((partitionIndex >= 0) && (tableIndex >= 0 || segmentIndex >= 0)) {
             fetch();
-            if(nextKey != null){
+            if (nextKey != null) {
                 return;
             }
         }
 
         //partition content done, proceed to next one
-        if(partitionIndex <=0) {
+        if (partitionIndex <= 0) {
             lastKey = nextKey;
             nextKey = null;
         } else {
-            while(partitionIndex > 0){
-                if(segmentIndex < 0){
-                    segmentIndex=Integer.MAX_VALUE;
+            while (partitionIndex > 0) {
+                if (segmentIndex < 0) {
+                    segmentIndex = Integer.MAX_VALUE;
                 }
                 tableIndex = -1;
 //            segmentIndex=Integer.MAX_VALUE;
                 partitionIndex--;
                 fetch();
-                if(nextKey != null){
+                if (nextKey != null) {
                     return;
                 }
             }
         }
     }
 
-    private void fetch(){
+    private void fetch() {
         final NodeEngine nodeEngine = cacheProxy.getNodeEngine();
-        final Operation op = new CacheKeyIteratorOperation(cacheProxy.getName(),segmentIndex,tableIndex, fetchSize);
+        final Operation op = new CacheKeyIteratorOperation(cacheProxy.getName(), segmentIndex, tableIndex, fetchSize);
         final InternalCompletableFuture<Object> f = nodeEngine.getOperationService()
                 .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionIndex);
 
         final CacheKeyIteratorResult iteratorResult = (CacheKeyIteratorResult) f.getSafely();
-        if(iteratorResult != null){
+        if (iteratorResult != null) {
             segmentIndex = iteratorResult.getSegmentIndex();
             tableIndex = iteratorResult.getTableIndex();
             keys = iteratorResult.getKeySet();
             keysIterator = keys.iterator();
-            if(keysIterator.hasNext()){
-                if(nextKey != null){
+            if (keysIterator.hasNext()) {
+                if (nextKey != null) {
                     lastKey = nextKey;
                 }
                 nextKey = this.keysIterator.next();
@@ -151,7 +151,7 @@ public class ClusterWideIterator<K,V> implements Iterator<Cache.Entry<K, V>> {
         }
         segmentIndex = -1;
         tableIndex = -1;
-        if(nextKey != null){
+        if (nextKey != null) {
             lastKey = nextKey;
         }
         nextKey = null;

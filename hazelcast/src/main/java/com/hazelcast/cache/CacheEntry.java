@@ -19,7 +19,7 @@ package com.hazelcast.cache;
 import javax.cache.Cache;
 
 
-public class CacheEntry<K,V> implements Cache.Entry<K,V>{
+public class CacheEntry<K, V> implements Cache.Entry<K, V> {
     private final K key;
     private V value;
 

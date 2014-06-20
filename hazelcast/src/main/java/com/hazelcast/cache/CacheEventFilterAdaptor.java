@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -24,11 +23,10 @@ import com.hazelcast.spi.EventFilter;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryEventFilter;
-import javax.cache.event.CacheEntryListener;
 import javax.cache.event.EventType;
 import java.io.IOException;
 
-public class CacheEventFilterAdaptor<K,V> implements EventFilter, DataSerializable {
+public class CacheEventFilterAdaptor<K, V> implements EventFilter, DataSerializable {
 
     private transient ICache<K, V> source;
 
@@ -39,7 +37,7 @@ public class CacheEventFilterAdaptor<K,V> implements EventFilter, DataSerializab
 
     private String cacheName;
 
-    public CacheEventFilterAdaptor(ICache<K,V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    public CacheEventFilterAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
 
         this.source = source;
         this.cacheEntryEventFilter = cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory() == null
@@ -54,7 +52,7 @@ public class CacheEventFilterAdaptor<K,V> implements EventFilter, DataSerializab
         throw new UnsupportedOperationException();
     }
 
-    public boolean filterEventData(EventType eventType, K key, V newValue, V oldValue){
+    public boolean filterEventData(EventType eventType, K key, V newValue, V oldValue) {
         final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
         return /*(this.isSynchronous==isSynchronous) && */(cacheEntryEventFilter == null || cacheEntryEventFilter.evaluate(event));
     }

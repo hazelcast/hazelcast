@@ -17,14 +17,11 @@
 package com.hazelcast.cache.operation;
 
 import com.hazelcast.cache.CacheDataSerializerHook;
-import com.hazelcast.cache.CacheRecordStore;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class CacheSizeOperation extends PartitionWideCacheOperation {
+public class CacheSizeOperation extends PartitionWideCacheOperation implements ReadonlyOperation {
 
 
     public CacheSizeOperation() {

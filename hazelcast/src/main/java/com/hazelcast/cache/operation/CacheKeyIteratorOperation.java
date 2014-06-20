@@ -20,10 +20,11 @@ import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class CacheKeyIteratorOperation extends AbstractCacheOperation{
+public class CacheKeyIteratorOperation extends AbstractCacheOperation implements ReadonlyOperation {
 
     private int segmentIndex;
     private int tableIndex;
@@ -46,7 +47,7 @@ public class CacheKeyIteratorOperation extends AbstractCacheOperation{
 
     @Override
     public void run() throws Exception {
-        response = cache != null ? this.cache.iterator(segmentIndex, tableIndex, size): null;
+        response = cache != null ? this.cache.iterator(segmentIndex, tableIndex, size) : null;
     }
 
     @Override

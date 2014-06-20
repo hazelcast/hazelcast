@@ -19,12 +19,12 @@ package com.hazelcast.cache.operation;
 import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
+import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
@@ -32,39 +32,34 @@ import java.io.IOException;
  */
 public class CachePutBackupOperation extends AbstractCacheOperation implements BackupOperation {
 
-    private Data value;
-    private ExpiryPolicy expiryPolicy;
+    private CacheRecord cacheRecord;
 
     public CachePutBackupOperation() {
     }
 
-    public CachePutBackupOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
+    public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord) {
         super(name, key);
-        this.value = value;
-        this.expiryPolicy = expiryPolicy;
+        this.cacheRecord = cacheRecord;
     }
 
     @Override
     public void run() throws Exception {
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
-        cache.put(key, value,expiryPolicy,null);
+        cache.own(key, cacheRecord);
         response = Boolean.TRUE;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(expiryPolicy);
-        value.writeData(out);
+        out.writeObject(cacheRecord);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        expiryPolicy = in.readObject();
-        value = new Data();
-        value.readData(in);
+        cacheRecord = in.readObject();
     }
 
     @Override

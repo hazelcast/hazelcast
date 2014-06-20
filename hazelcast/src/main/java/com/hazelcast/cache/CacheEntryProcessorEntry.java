@@ -16,10 +16,9 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.map.record.Record;
+import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.nio.serialization.Data;
 
-import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
@@ -33,8 +32,8 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
     private State state = State.NONE;
 
     private final Data keyData;
-    private Record record;
-    private Record recordLoaded;
+    private CacheRecord record;
+    private CacheRecord recordLoaded;
 
     private final CacheRecordStore cacheRecordStore;
     private final long now;
@@ -42,7 +41,7 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
     private final ExpiryPolicy expiryPolicy;
 
 
-    public CacheEntryProcessorEntry(Data keyData, Record record, CacheRecordStore cacheRecordStore, long now) {
+    public CacheEntryProcessorEntry(Data keyData, CacheRecord record, CacheRecordStore cacheRecordStore, long now) {
         this.keyData = keyData;
         this.record = record;
         this.cacheRecordStore = cacheRecordStore;
@@ -108,7 +107,7 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
         return null;
     }
 
-    private V getRecordValue(Record theRecord) {
+    private V getRecordValue(CacheRecord theRecord) {
         final Object _value;
         switch (cacheRecordStore.cacheConfig.getInMemoryFormat()) {
             case BINARY:

@@ -34,8 +34,8 @@ import java.util.Set;
 public class CacheClearOperationFactory implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
-    private Set<Data> keys= null ;
-    private  boolean isRemoveAll=false;
+    private Set<Data> keys = null;
+    private boolean isRemoveAll = false;
 
     public CacheClearOperationFactory() {
     }
@@ -48,7 +48,7 @@ public class CacheClearOperationFactory implements OperationFactory, IdentifiedD
 
     @Override
     public Operation createOperation() {
-        return new CacheClearOperation(name,keys, isRemoveAll);
+        return new CacheClearOperation(name, keys, isRemoveAll);
     }
 
     @Override
@@ -66,9 +66,9 @@ public class CacheClearOperationFactory implements OperationFactory, IdentifiedD
         out.writeUTF(name);
         out.writeBoolean(isRemoveAll);
         out.writeBoolean(keys != null);
-        if(keys != null){
+        if (keys != null) {
             out.write(keys.size());
-            for(Data key:keys){
+            for (Data key : keys) {
                 key.writeData(out);
             }
         }
@@ -79,15 +79,14 @@ public class CacheClearOperationFactory implements OperationFactory, IdentifiedD
         name = in.readUTF();
         isRemoveAll = in.readBoolean();
         boolean isKeysNotNull = in.readBoolean();
-        if(isKeysNotNull){
+        if (isKeysNotNull) {
             int size = in.readInt();
-            keys= new HashSet<Data>(size);
-            for(int i=0; i< size; i++){
+            keys = new HashSet<Data>(size);
+            for (int i = 0; i < size; i++) {
                 Data key = new Data();
                 key.readData(in);
                 keys.add(key);
             }
         }
-
     }
 }

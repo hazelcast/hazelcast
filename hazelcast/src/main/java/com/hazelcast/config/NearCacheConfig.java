@@ -94,8 +94,9 @@ public class NearCacheConfig {
         return name;
     }
 
-    public void setName(String name) {
+    public NearCacheConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
     public int getTimeToLiveSeconds() {

@@ -36,17 +36,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -64,30 +59,27 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 
 
 /**
  * @author mdogan 05/02/14
  */
-final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> implements ICache<K,V>, InitializingObject {
+final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> implements ICache<K, V>, InitializingObject {
 
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
-    private final CacheConfig<K,V> cacheConfig;
+    private final CacheConfig<K, V> cacheConfig;
 
     private String name;
-    private boolean isClosed=false;
+    private boolean isClosed = false;
 
-    private HazelcastCacheManager cacheManager= null;
+    private HazelcastCacheManager cacheManager = null;
 
-    protected CacheProxy(String name,NodeEngine nodeEngine, CacheService service) {
+    protected CacheProxy(String name, NodeEngine nodeEngine, CacheService service) {
         super(nodeEngine, service);
-        this.name=name;
+        this.name = name;
         cacheConfig = nodeEngine.getConfig().findCacheConfig(name);
     }
 
@@ -95,7 +87,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
     @Override
     public void initialize() {
         //initializeListeners
-        for(CacheEntryListenerConfiguration<K, V> listenerConfiguration : cacheConfig.getCacheEntryListenerConfigurations()){
+        for (CacheEntryListenerConfiguration<K, V> listenerConfiguration : cacheConfig.getCacheEntryListenerConfigurations()) {
             registerCacheEntryListener(listenerConfiguration);
         }
     }
@@ -124,7 +116,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         final SerializationService serializationService = engine.getSerializationService();
 
         final Data k = serializationService.toData(key);
-        final Operation op = new CacheGetOperation(name, k,expiryPolicy);
+        final Operation op = new CacheGetOperation(name, k, expiryPolicy);
         final InternalCompletableFuture<Object> f = engine.getOperationService()
                 .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
         return new DelegatingFuture<V>(f, serializationService);
@@ -138,22 +130,22 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public Future<V> getAsync(K key) {
-        return getAsync(key,null);
+        return getAsync(key, null);
     }
 
     @Override
     public Future<Void> putAsync(K key, V value) {
-        return putAsyncInternal(key,value,null,false);
+        return putAsyncInternal(key, value, null, false);
     }
 
     @Override
     public void put(K key, V value, ExpiryPolicy expiryPolicy) {
-        putAsyncInternal(key,value,expiryPolicy,false).getSafely();
+        putAsyncInternal(key, value, expiryPolicy, false).getSafely();
     }
 
     @Override
     public Future<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return putAsyncInternal(key,value,expiryPolicy,false);
+        return putAsyncInternal(key, value, expiryPolicy, false);
     }
 
     @Override
@@ -166,13 +158,13 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         if (value == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        validateConfiguredTypes(true,key,value);
+        validateConfiguredTypes(true, key, value);
         final SerializationService serializationService = engine.getSerializationService();
 
         final Data k = serializationService.toData(key);
         final Data v = serializationService.toData(value);
 
-        final Operation op = new CachePutIfAbsentOperation(name, k, v,expiryPolicy);
+        final Operation op = new CachePutIfAbsentOperation(name, k, v, expiryPolicy);
         return engine.getOperationService().invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
     }
 
@@ -201,12 +193,12 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public InternalCompletableFuture<Boolean> removeAsync(K key) {
-        return removeAsync(key,null,false);
+        return removeAsync(key, null, false);
     }
 
     @Override
     public InternalCompletableFuture<Boolean> removeAsync(K key, V oldValue) {
-        return removeAsync(key,oldValue,true);
+        return removeAsync(key, oldValue, true);
     }
 
     private InternalCompletableFuture<Boolean> removeAsync(K key, V oldValue, boolean hasOldValue) {
@@ -218,7 +210,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         if (hasOldValue && oldValue == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        validateConfiguredTypes(hasOldValue,key,oldValue);
+        validateConfiguredTypes(hasOldValue, key, oldValue);
 
         final SerializationService serializationService = engine.getSerializationService();
         final Data keyData = serializationService.toData(key);
@@ -245,12 +237,12 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public Future<Boolean> replaceAsync(K key, V oldValue, V newValue) {
-        return replaceAsync(key,oldValue,newValue,null);
+        return replaceAsync(key, oldValue, newValue, null);
     }
 
     @Override
     public DelegatingFuture<V> getAndReplaceAsync(K key, V value) {
-        return getAndReplaceAsync(key,value,null);
+        return getAndReplaceAsync(key, value, null);
     }
 
     @Override
@@ -262,24 +254,24 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         if (value == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        validateConfiguredTypes(true,key,value);
+        validateConfiguredTypes(true, key, value);
         final NodeEngine engine = getNodeEngine();
         final SerializationService serializationService = engine.getSerializationService();
 
         final Data k = serializationService.toData(key);
         final Data v = serializationService.toData(value);
 
-        final Operation op = new CacheGetAndReplaceOperation(name, k, v,expiryPolicy);
+        final Operation op = new CacheGetAndReplaceOperation(name, k, v, expiryPolicy);
         final InternalCompletableFuture<Object> f = engine.getOperationService().invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
         return new DelegatingFuture<V>(f, serializationService);
     }
 
     @Override
-    public InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue,ExpiryPolicy expiryPolicy) {
-        return replaceAsync(key,oldValue,newValue,expiryPolicy,true);
+    public InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+        return replaceAsync(key, oldValue, newValue, expiryPolicy, true);
     }
 
-    private InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue,ExpiryPolicy expiryPolicy, boolean hasOldValue) {
+    private InternalCompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy, boolean hasOldValue) {
         ensureOpen();
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
@@ -290,10 +282,10 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         if (hasOldValue && oldValue == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        if(hasOldValue){
-            validateConfiguredTypes(true,key,oldValue,newValue);
+        if (hasOldValue) {
+            validateConfiguredTypes(true, key, oldValue, newValue);
         } else {
-            validateConfiguredTypes(true,key,newValue);
+            validateConfiguredTypes(true, key, newValue);
         }
 
         final NodeEngine engine = getNodeEngine();
@@ -309,7 +301,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public V get(K key, ExpiryPolicy expiryPolicy) {
-        final Future<V> f = getAsync(key,expiryPolicy);
+        final Future<V> f = getAsync(key, expiryPolicy);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -323,7 +315,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         final NodeEngine engine = getNodeEngine();
         final SerializationService serializationService = engine.getSerializationService();
 
-        if(keys == null || keys.contains(null)){
+        if (keys == null || keys.contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
 
@@ -366,13 +358,13 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
     @Override
     public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if(map == null){
+        if (map == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        if(map.keySet().contains(null)){
+        if (map.keySet().contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        if(map.values().contains(null)){
+        if (map.values().contains(null)) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
 
@@ -385,25 +377,25 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
-        final InternalCompletableFuture<Boolean> f = putIfAbsentAsync(key,value,expiryPolicy);
+        final InternalCompletableFuture<Boolean> f = putIfAbsentAsync(key, value, expiryPolicy);
         return f.getSafely();
     }
 
     @Override
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        final InternalCompletableFuture<Boolean> f = replaceAsync(key,oldValue,newValue,expiryPolicy);
+        final InternalCompletableFuture<Boolean> f = replaceAsync(key, oldValue, newValue, expiryPolicy);
         return f.getSafely();
     }
 
     @Override
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
-        final InternalCompletableFuture<Boolean> f = replaceAsync(key,null,value,expiryPolicy,false);
+        final InternalCompletableFuture<Boolean> f = replaceAsync(key, null, value, expiryPolicy, false);
         return f.getSafely();
     }
 
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
-        final Future<V> f = getAndReplaceAsync(key,value,expiryPolicy);
+        final Future<V> f = getAndReplaceAsync(key, value, expiryPolicy);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -436,7 +428,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         }
     }
 
-    public V get(Data key){
+    public V get(Data key) {
         ensureOpen();
         final NodeEngine engine = getNodeEngine();
         if (key == null) {
@@ -444,7 +436,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         }
         final SerializationService serializationService = engine.getSerializationService();
 
-        final Operation op = new CacheGetOperation(name, key,null);
+        final Operation op = new CacheGetOperation(name, key, null);
         final InternalCompletableFuture<Object> f = engine.getOperationService()
                 .invokeOnPartition(getServiceName(), op, getPartitionId(engine, key));
         Object result = f.getSafely();
@@ -454,8 +446,8 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         return (V) result;
     }
 
-    void initCacheManager(HazelcastCacheManager cacheManager){
-        if(this.cacheManager == null){
+    void initCacheManager(HazelcastCacheManager cacheManager) {
+        if (this.cacheManager == null) {
             this.cacheManager = cacheManager;
         }
     }
@@ -474,7 +466,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         if (value == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        validateConfiguredTypes(true,key,value);
+        validateConfiguredTypes(true, key, value);
 
         final NodeEngine engine = getNodeEngine();
         final SerializationService serializationService = engine.getSerializationService();
@@ -491,7 +483,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         return nodeEngine.getPartitionService().getPartitionId(key);
     }
 
-    private void validateConfiguredTypes(boolean validateValues, K key, V ...values) throws ClassCastException {
+    private void validateConfiguredTypes(boolean validateValues, K key, V... values) throws ClassCastException {
         final Class keyType = cacheConfig.getKeyType();
         final Class valueType = cacheConfig.getValueType();
         if (Object.class != keyType) {
@@ -500,8 +492,8 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
                 throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
             }
         }
-        if(validateValues){
-            for(V value:values){
+        if (validateValues) {
+            for (V value : values) {
                 if (Object.class != valueType) {
                     //means type checks required
                     if (!valueType.isAssignableFrom(value.getClass())) {
@@ -525,7 +517,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
         }
     }
 
-    public boolean remove(Data key){
+    public boolean remove(Data key) {
         ensureOpen();
         final NodeEngine engine = getNodeEngine();
         if (key == null) {
@@ -555,7 +547,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public Map<K, V> getAll(Set<? extends K> keys) {
-        return getAll(keys,null);
+        return getAll(keys, null);
     }
 
     @Override
@@ -587,17 +579,17 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public V getAndPut(K key, V value) {
-        return getAndPut(key,value,null);
+        return getAndPut(key, value, null);
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> map) {
-        putAll(map,null);
+        putAll(map, null);
     }
 
     @Override
     public boolean putIfAbsent(K key, V value) {
-        final InternalCompletableFuture<Boolean> f = putIfAbsentAsync(key,value,null);
+        final InternalCompletableFuture<Boolean> f = putIfAbsentAsync(key, value, null);
         return f.getSafely();
     }
 
@@ -609,7 +601,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public boolean remove(K key, V oldValue) {
-        final InternalCompletableFuture<Boolean> f = removeAsync(key,oldValue);
+        final InternalCompletableFuture<Boolean> f = removeAsync(key, oldValue);
         return f.getSafely();
     }
 
@@ -625,13 +617,13 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
     @Override
     public boolean replace(K key, V oldValue, V newValue) {
-        final InternalCompletableFuture<Boolean> f = replaceAsync(key,oldValue,newValue,null,true);
+        final InternalCompletableFuture<Boolean> f = replaceAsync(key, oldValue, newValue, null, true);
         return f.getSafely();
     }
 
     @Override
     public boolean replace(K key, V value) {
-        final InternalCompletableFuture<Boolean> f = replaceAsync(key,null,value,null,false);
+        final InternalCompletableFuture<Boolean> f = replaceAsync(key, null, value, null, false);
         return f.getSafely();
     }
 
@@ -649,15 +641,15 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
         final NodeEngine nodeEngine = getNodeEngine();
-        if(keys == null){
+        if (keys == null || keys.contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         final SerializationService ss = nodeEngine.getSerializationService();
-        HashSet<Data> keysData= new HashSet<Data>();
+        HashSet<Data> keysData = new HashSet<Data>();
         for (K key : keys) {
             keysData.add(ss.toData(key));
         }
-        removeAllInternal(keysData,true);
+        removeAllInternal(keysData, true);
     }
 
     @Override
@@ -669,18 +661,18 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
     @Override
     public void clear() {
         ensureOpen();
-        removeAllInternal(null,false);
+        removeAllInternal(null, false);
     }
 
-    private void removeAllInternal(Set<Data> keysData, boolean isRemoveAll){
+    private void removeAllInternal(Set<Data> keysData, boolean isRemoveAll) {
         final NodeEngine nodeEngine = getNodeEngine();
         final CacheClearOperationFactory operationFactory = new CacheClearOperationFactory(name, keysData, isRemoveAll);
         try {
             final Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(getServiceName(), operationFactory);
-            for(Object result:results.values()){
-                if(result != null && result instanceof CacheClearResponse){
+            for (Object result : results.values()) {
+                if (result != null && result instanceof CacheClearResponse) {
                     final Object response = ((CacheClearResponse) result).getResponse();
-                    if(response instanceof Throwable){
+                    if (response instanceof Throwable) {
                         throw (Throwable) response;
                     }
                 }
@@ -759,7 +751,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
             throw new NullPointerException();
         }
         Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
-        for(K key:keys){
+        for (K key : keys) {
             CacheEntryProcessorResult<T> ceResult;
             try {
                 final T result = this.invoke(key, entryProcessor, arguments);
@@ -806,7 +798,7 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         final CacheService service = getService();
-        service.registerCacheEntryListener(this,cacheEntryListenerConfiguration);
+        service.registerCacheEntryListener(this, cacheEntryListenerConfiguration);
     }
 
     @Override
@@ -823,7 +815,6 @@ final class CacheProxy<K,V> extends AbstractDistributedObject<CacheService> impl
 
 
     //endregion
-
 
 
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.operation.CacheClearBackupOperation;
 import com.hazelcast.cache.operation.CacheClearOperation;
 import com.hazelcast.cache.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.operation.CacheContainsKeyOperation;
@@ -43,32 +44,36 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_DS_FACTORY, -25);
 
-    public static final short GET = 0;
-    public static final short CONTAINS_KEY = 1;
-    public static final short PUT = 2;
-    public static final short PUT_IF_ABSENT = 3;
-    public static final short REMOVE = 4;
-    public static final short GET_AND_REMOVE = 5;
-    public static final short REPLACE = 6;
-    public static final short GET_AND_REPLACE = 7;
+    private static short i = 0;
 
-    public static final short PUT_BACKUP = 8;
-    public static final short REMOVE_BACKUP = 9;
+    public static final short GET = i++;
+    public static final short CONTAINS_KEY = i++;
+    public static final short PUT = i++;
+    public static final short PUT_IF_ABSENT = i++;
+    public static final short REMOVE = i++;
+    public static final short GET_AND_REMOVE = i++;
+    public static final short REPLACE = i++;
+    public static final short GET_AND_REPLACE = i++;
 
-    public static final short SIZE = 10;
-    public static final short SIZE_FACTORY = 11;
-    public static final short CLEAR = 12;
-    public static final short CLEAR_FACTORY = 13;
-    public static final short GET_STATS = 14;
-    public static final short GET_STATS_FACTORY = 15;
-    public static final short GET_ALL = 16;
-    public static final short GET_ALL_FACTORY = 17;
-    public static final short EXPIRY_POLICY = 18;
-    public static final short EVENT = 19;
-    public static final short KEY_ITERATOR = 20;
-    public static final short KEY_ITERATION_RESULT = 21;
-    public static final short ENTRY_PROCESSOR = 22;
-    public static final short CLEAR_RESPONSE = 23;
+    public static final short PUT_BACKUP = i++;
+    public static final short REMOVE_BACKUP = i++;
+    public static final short CLEAR_BACKUP = i++;
+
+    public static final short SIZE = i++;
+    public static final short SIZE_FACTORY = i++;
+    public static final short CLEAR = i++;
+    public static final short CLEAR_FACTORY = i++;
+    public static final short GET_STATS = i++;
+    public static final short GET_STATS_FACTORY = i++;
+    public static final short GET_ALL = i++;
+    public static final short GET_ALL_FACTORY = i++;
+
+    public static final short EXPIRY_POLICY = i++;
+    public static final short EVENT = i++;
+    public static final short KEY_ITERATOR = i++;
+    public static final short KEY_ITERATION_RESULT = i++;
+    public static final short ENTRY_PROCESSOR = i++;
+    public static final short CLEAR_RESPONSE = i++;
 
 
     public int getFactoryId() {
@@ -77,55 +82,55 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
         return new DataSerializableFactory() {
-
             public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case GET:
-                        return new CacheGetOperation();
-                    case CONTAINS_KEY:
-                        return new CacheContainsKeyOperation();
-                    case PUT:
-                        return new CachePutOperation();
-                    case PUT_IF_ABSENT:
-                        return new CachePutIfAbsentOperation();
-                    case REMOVE:
-                        return new CacheRemoveOperation();
-                    case GET_AND_REMOVE:
-                        return new CacheGetAndRemoveOperation();
-                    case REPLACE:
-                        return new CacheReplaceOperation();
-                    case GET_AND_REPLACE:
-                        return new CacheGetAndReplaceOperation();
-                    case PUT_BACKUP:
-                        return new CachePutBackupOperation();
-                    case REMOVE_BACKUP:
-                        return new CacheRemoveBackupOperation();
-                    case SIZE:
-                        return new CacheSizeOperation();
-                    case SIZE_FACTORY:
-                        return new CacheSizeOperationFactory();
-                    case CLEAR:
-                        return new CacheClearOperation();
-                    case CLEAR_FACTORY:
-                        return new CacheClearOperationFactory();
-                    case GET_STATS:
+                if (typeId == GET) {
+                    return new CacheGetOperation();
+                } else if (typeId == CONTAINS_KEY) {
+                    return new CacheContainsKeyOperation();
+                } else if (typeId == PUT) {
+                    return new CachePutOperation();
+                } else if (typeId == PUT_IF_ABSENT) {
+                    return new CachePutIfAbsentOperation();
+                } else if (typeId == REMOVE) {
+                    return new CacheRemoveOperation();
+                } else if (typeId == GET_AND_REMOVE) {
+                    return new CacheGetAndRemoveOperation();
+                } else if (typeId == REPLACE) {
+                    return new CacheReplaceOperation();
+                } else if (typeId == GET_AND_REPLACE) {
+                    return new CacheGetAndReplaceOperation();
+                } else if (typeId == PUT_BACKUP) {
+                    return new CachePutBackupOperation();
+                } else if (typeId == REMOVE_BACKUP) {
+                    return new CacheRemoveBackupOperation();
+                } else if (typeId == CLEAR_BACKUP) {
+                    return new CacheClearBackupOperation();
+                } else if (typeId == SIZE) {
+                    return new CacheSizeOperation();
+                } else if (typeId == SIZE_FACTORY) {
+                    return new CacheSizeOperationFactory();
+                } else if (typeId == CLEAR) {
+                    return new CacheClearOperation();
+                } else if (typeId == CLEAR_FACTORY) {
+                    return new CacheClearOperationFactory();
+                } else if (typeId == GET_STATS) {
 //                        return new CacheXXXXXOperation();
-                    case GET_STATS_FACTORY:
+                } else if (typeId == GET_STATS_FACTORY) {
 //                        return new CacheXXXXXOperation();
-                    case GET_ALL:
-                        return new CacheGetAllOperation();
-                    case GET_ALL_FACTORY:
-                        return new CacheGetAllOperationFactory();
-                    case EVENT:
+                } else if (typeId == GET_ALL) {
+                    return new CacheGetAllOperation();
+                } else if (typeId == GET_ALL_FACTORY) {
+                    return new CacheGetAllOperationFactory();
+                } else if (typeId == EVENT) {
 //                        return new CacheEntryEventImpl<>();
-                    case KEY_ITERATOR:
-                        return new CacheKeyIteratorOperation();
-                    case KEY_ITERATION_RESULT:
-                        return new CacheKeyIteratorResult();
-                    case ENTRY_PROCESSOR:
-                        return new CacheEntryProcessorOperation();
-                    case CLEAR_RESPONSE:
-                        return new CacheClearResponse();
+                } else if (typeId == KEY_ITERATOR) {
+                    return new CacheKeyIteratorOperation();
+                } else if (typeId == KEY_ITERATION_RESULT) {
+                    return new CacheKeyIteratorResult();
+                } else if (typeId == ENTRY_PROCESSOR) {
+                    return new CacheEntryProcessorOperation();
+                } else if (typeId == CLEAR_RESPONSE) {
+                    return new CacheClearResponse();
                 }
                 throw new IllegalArgumentException("Unknown type-id: " + typeId);
             }

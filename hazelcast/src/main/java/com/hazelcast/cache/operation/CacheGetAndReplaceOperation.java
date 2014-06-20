@@ -39,10 +39,10 @@ public class CacheGetAndReplaceOperation extends AbstractCacheOperation implemen
     public CacheGetAndReplaceOperation() {
     }
 
-    public CacheGetAndReplaceOperation(String name, Data key, Data value,ExpiryPolicy expiryPolicy) {
+    public CacheGetAndReplaceOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
         super(name, key);
         this.value = value;
-        this.expiryPolicy =expiryPolicy;
+        this.expiryPolicy = expiryPolicy;
     }
 
     @Override
@@ -50,10 +50,7 @@ public class CacheGetAndReplaceOperation extends AbstractCacheOperation implemen
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
         response = cache.getAndReplace(key, value, expiryPolicy, getCallerUuid());
-    }
-
-    @Override
-    public void afterRun() throws Exception {
+        backupRecord = cache.getRecord(key);
     }
 
     @Override
@@ -63,7 +60,7 @@ public class CacheGetAndReplaceOperation extends AbstractCacheOperation implemen
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutBackupOperation(name, key, value, expiryPolicy);
+        return new CachePutBackupOperation(name, key, backupRecord);
     }
 
 

@@ -20,8 +20,6 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.operation.CacheReplicationOperation;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.EventData;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventFilter;
@@ -50,7 +48,7 @@ import java.util.concurrent.ConcurrentMap;
  * @author mdogan 05/02/14
  */
 public class CacheService implements ManagedService, RemoteService, MigrationAwareService
-, EventPublishingService<EventData, CacheEventListenerAdaptor> {
+        , EventPublishingService<CacheEventData, CacheEventListenerAdaptor> {
 
     public final static String SERVICE_NAME = "hz:impl:cacheService";
     private ILogger logger;
@@ -87,7 +85,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
 
     @Override
     public void shutdown(boolean terminate) {
-        if(!terminate){
+        if (!terminate) {
             //flushWriteCacheBeforeShutdown();
             //destroyMapStores();
             this.reset();
@@ -177,7 +175,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         }
     }
 
-    public void publishEvent( String cacheName, EventType eventType, Data dataKey, Data dataOldValue, Data dataValue) {
+    public void publishEvent(String cacheName, EventType eventType, Data dataKey, Object oldValue, Object value) {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
 
@@ -188,24 +186,44 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         Set<EventRegistration> registrationsWithOldValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutOldValue = new HashSet<EventRegistration>();
 
+        Data dataValue;
+        Object objectValue;
+        if (!(value instanceof Data)) {
+            dataValue = toData(value);
+            objectValue = value;
+        } else {
+            dataValue = (Data) value;
+            objectValue = toData(value);
+            ;
+        }
+
+        Data dataOldValue;
+        Object objectOldValue;
+        if (!(value instanceof Data)) {
+            dataOldValue = toData(oldValue);
+            objectOldValue = oldValue;
+        } else {
+            dataOldValue = (Data) oldValue;
+            objectOldValue = toData(oldValue);
+            ;
+        }
+
         for (EventRegistration candidate : candidates) {
             EventFilter filter = candidate.getFilter();
 
             final Object key = toObject(dataKey);
-            final Object newValue = toObject(dataValue);
-            final Object oldValue = toObject(dataOldValue);
-            if(filter instanceof CacheEventFilterAdaptor){
-                final CacheEventFilterAdaptor<Object,Object> ceFilter = (CacheEventFilterAdaptor<Object, Object>) filter;
-                if(ceFilter.filterEventData(eventType,key,newValue, oldValue)){
-                    if(ceFilter.isOldValueRequired()){
+            if (filter instanceof CacheEventFilterAdaptor) {
+                final CacheEventFilterAdaptor<Object, Object> ceFilter = (CacheEventFilterAdaptor<Object, Object>) filter;
+                if (ceFilter.filterEventData(eventType, key, objectValue, objectOldValue)) {
+                    if (ceFilter.isOldValueRequired()) {
                         registrationsWithOldValue.add(candidate);
-                    }else{
+                    } else {
                         registrationsWithoutOldValue.add(candidate);
                     }
                 }
             }
         }
-        if (registrationsWithOldValue.isEmpty() && registrationsWithoutOldValue.isEmpty()){
+        if (registrationsWithOldValue.isEmpty() && registrationsWithoutOldValue.isEmpty()) {
             return;
         }
 
@@ -213,10 +231,10 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
             dataValue = dataValue != null ? dataValue : dataOldValue;
         }
 
-        final Address caller=null;
+//        final Address caller=null;
         int orderKey = dataKey.hashCode();
-        EventData eventWithOldValue = new EventData("", cacheName, caller, dataKey, dataValue, dataOldValue, eventType.ordinal());
-        EventData eventWithOutOldValue = new EventData("", cacheName, caller, dataKey, dataValue, null, eventType.ordinal());
+        CacheEventData eventWithOldValue = new CacheEventData(cacheName, dataKey, dataValue, dataOldValue, eventType);
+        CacheEventData eventWithOutOldValue = new CacheEventData(cacheName, dataKey, dataValue, null, eventType);
 
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithOldValue, eventWithOldValue, orderKey);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutOldValue, eventWithOutOldValue, orderKey);
@@ -227,36 +245,35 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     }
 
     @Override
-    public void dispatchEvent(EventData eventData, CacheEventListenerAdaptor listener) {
+    public void dispatchEvent(CacheEventData eventData, CacheEventListenerAdaptor listener) {
         //Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
 
-        final EventType eventType = EventType.values()[eventData.getEventType()];
+        final EventType eventType = eventData.getEventType();
         final Object key = toObject(eventData.getDataKey());
         final Object newValue = toObject(eventData.getDataNewValue());
         final Object oldValue = toObject(eventData.getDataOldValue());
-        listener.handleEvent(nodeEngine,eventData.getMapName(), eventType, key, newValue, oldValue);
+        listener.handleEvent(nodeEngine, eventData.getName(), eventType, key, newValue, oldValue);
     }
 
-    public <K, V> void registerCacheEntryListener(CacheProxy<K,V> cacheProxy, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        final CacheEventFilterAdaptor<K,V> eventFilter=new CacheEventFilterAdaptor<K,V>(cacheProxy, cacheEntryListenerConfiguration);
-        final CacheEventListenerAdaptor<K,V> entryListener=new CacheEventListenerAdaptor<K,V>(cacheProxy,cacheEntryListenerConfiguration);
+    public <K, V> void registerCacheEntryListener(CacheProxy<K, V> cacheProxy, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        final CacheEventFilterAdaptor<K, V> eventFilter = new CacheEventFilterAdaptor<K, V>(cacheProxy, cacheEntryListenerConfiguration);
+        final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(cacheProxy, cacheEntryListenerConfiguration);
 
         final EventService eventService = getNodeEngine().getEventService();
         final EventRegistration registration = eventService.registerListener(CacheService.SERVICE_NAME, cacheProxy.getName(), eventFilter, entryListener);
 
-        eventRegistrationMap.put(cacheEntryListenerConfiguration,registration);
+        eventRegistrationMap.put(cacheEntryListenerConfiguration, registration);
     }
 
-    public <K, V> void deregisterCacheEntryListener(CacheProxy<K,V> cacheProxy,CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    public <K, V> void deregisterCacheEntryListener(CacheProxy<K, V> cacheProxy, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         final EventRegistration eventRegistration = eventRegistrationMap.remove(cacheEntryListenerConfiguration);
-        if(eventRegistration != null){
+        if (eventRegistration != null) {
             final EventService eventService = getNodeEngine().getEventService();
             eventService.deregisterListener(SERVICE_NAME, cacheProxy.getName(), eventRegistration.getId());
         }
     }
 
     //endregion
-
 
 
 }

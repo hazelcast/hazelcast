@@ -17,6 +17,7 @@
 package com.hazelcast.cache.operation;
 
 import com.hazelcast.cache.CacheDataSerializerHook;
+import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,6 +32,8 @@ public class CacheEntryProcessorOperation extends AbstractCacheOperation impleme
 
     private EntryProcessor entryProcessor;
     private Object[] arguments;
+
+    transient private CacheRecord backupRecord;
 
     public CacheEntryProcessorOperation() {
     }
@@ -48,8 +51,7 @@ public class CacheEntryProcessorOperation extends AbstractCacheOperation impleme
 
     @Override
     public Operation getBackupOperation() {
-        //FIXME backup operation
-        return null;
+        return new CachePutBackupOperation(name, key, backupRecord);
     }
 
     @Override
@@ -60,6 +62,8 @@ public class CacheEntryProcessorOperation extends AbstractCacheOperation impleme
     @Override
     public void run() throws Exception {
         response = cache.invoke(key, entryProcessor, arguments);
+
+        backupRecord = cache.getRecord(key);
     }
 
     @Override
@@ -67,9 +71,9 @@ public class CacheEntryProcessorOperation extends AbstractCacheOperation impleme
         super.writeInternal(out);
         out.writeObject(entryProcessor);
         out.writeBoolean(arguments != null);
-        if(arguments != null){
+        if (arguments != null) {
             out.writeInt(arguments.length);
-            for(Object arg:arguments){
+            for (Object arg : arguments) {
                 out.writeObject(arg);
             }
         }
@@ -81,10 +85,10 @@ public class CacheEntryProcessorOperation extends AbstractCacheOperation impleme
         entryProcessor = in.readObject();
 
         final boolean hasArguments = in.readBoolean();
-        if(hasArguments){
+        if (hasArguments) {
             final int size = in.readInt();
-            Object[] args= new Object[size];
-            for(int i=0;i < size; i++){
+            Object[] args = new Object[size];
+            for (int i = 0; i < size; i++) {
                 args[i] = in.readObject();
             }
         }

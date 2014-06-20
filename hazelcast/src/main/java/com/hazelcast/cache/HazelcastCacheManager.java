@@ -3,24 +3,18 @@ package com.hazelcast.cache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.spi.ProxyService;
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
-import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class HazelcastCacheManager implements CacheManager {
 
@@ -32,7 +26,7 @@ public class HazelcastCacheManager implements CacheManager {
     private final Properties properties;
 
 
-    public HazelcastCacheManager(HazelcastCachingProvider cachingProvider,HazelcastInstance hazelcastInstance, URI uri, ClassLoader classLoader, Properties properties) {
+    public HazelcastCacheManager(HazelcastCachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri, ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
             throw new NullPointerException("CachingProvider missing");
         }
@@ -90,19 +84,19 @@ public class HazelcastCacheManager implements CacheManager {
             throw new NullPointerException("configuration must not be null");
         }
         //FIXME this check has race condition, can not detect proxies created but not emitted to other nodes yet.
-        for(String name:getCacheNames()){
-            if(cacheName.equals(name)){
+        for (String name : getCacheNames()) {
+            if (cacheName.equals(name)) {
                 throw new CacheException("A cache named " + cacheName + " already exists.");
             }
         }
 
-        final CacheConfig<K,V> cacheConfig;
-        if(configuration instanceof CompleteConfiguration){
-            cacheConfig = new CacheConfig<K, V>((CompleteConfiguration)configuration);
+        final CacheConfig<K, V> cacheConfig;
+        if (configuration instanceof CompleteConfiguration) {
+            cacheConfig = new CacheConfig<K, V>((CompleteConfiguration) configuration);
         } else {
             cacheConfig = new CacheConfig<K, V>();
             cacheConfig.setStoreByValue(configuration.isStoreByValue());
-            cacheConfig.setTypes(configuration.getKeyType(),configuration.getValueType());
+            cacheConfig.setTypes(configuration.getKeyType(), configuration.getValueType());
         }
         cacheConfig.setName(cacheName);
         hazelcastInstance.getConfig().addCacheConfig(cacheConfig);
@@ -137,8 +131,8 @@ public class HazelcastCacheManager implements CacheManager {
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName) {
         ICache<K, V> cache = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, cacheName);
-        if(cache != null && cache instanceof CacheProxy){
-            ((CacheProxy<K,V>)cache).initCacheManager(this);
+        if (cache != null && cache instanceof CacheProxy) {
+            ((CacheProxy<K, V>) cache).initCacheManager(this);
         }
         return cache;
     }

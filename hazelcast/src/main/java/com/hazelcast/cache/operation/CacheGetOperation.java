@@ -37,12 +37,12 @@ public class CacheGetOperation extends AbstractCacheOperation implements Readonl
 
     public CacheGetOperation(String name, Data key, ExpiryPolicy expiryPolicy) {
         super(name, key);
-        this.expiryPolicy=expiryPolicy;
+        this.expiryPolicy = expiryPolicy;
     }
 
     @Override
     public void run() throws Exception {
-        response = cache != null ? cache.get(key,expiryPolicy) : null;
+        response = cache != null ? cache.get(key, expiryPolicy) : null;
     }
 
 

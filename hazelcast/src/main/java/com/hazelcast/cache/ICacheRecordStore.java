@@ -16,17 +16,13 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.map.MapKeySet;
-import com.hazelcast.map.record.Record;
-import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Callback;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,7 +50,7 @@ public interface ICacheRecordStore {
 
     boolean contains(Data key);
 
-    MapEntrySet getAll(Set<Data> keySet,ExpiryPolicy expiryPolicy);
+    MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy);
 
     int size();
 
@@ -70,14 +66,18 @@ public interface ICacheRecordStore {
 
     String getName();
 
-    Map<Data,Record> getReadOnlyRecords();
+    Map<Data, CacheRecord> getReadOnlyRecords();
 
-    void own(Data key, Object value, RecordStatistics recordStatistics);
+    void own(Data key, CacheRecord record);
+
+    CacheRecord getRecord(Data key);
+
+    void setRecord(Data key, CacheRecord record);
 
     CacheKeyIteratorResult iterator(int segmentIndex, int tableIndex, int size);
 
     Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments);
 
-    void setRecordStoreMode(boolean storeOrBackup);
+//    void setRecordStoreMode(boolean storeOrBackup);
 
 }

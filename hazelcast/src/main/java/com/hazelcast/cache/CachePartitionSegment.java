@@ -16,10 +16,7 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 

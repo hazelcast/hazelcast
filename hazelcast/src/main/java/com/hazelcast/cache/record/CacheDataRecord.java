@@ -14,37 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.record;
+package com.hazelcast.cache.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
+class CacheDataRecord extends AbstractCacheRecord<Data> {
 
-    private Object value;
 
-    public ObjectRecord() {
-    }
-
-    public ObjectRecord(Data key, Object value) {
-        super(key);
-        this.value = value;
-    }
-
-    // as there is no easy way to calculate the size of Object cost is not implemented for ObjectRecord
-    @Override
-    public long getCost() {
-        return 0L;
-    }
-
-    public Object getValue() {
-        return value;
-    }
-
-    public void setValue(Object o) {
-        value = o;
-    }
-
-    public void invalidate() {
-        value = null;
+    CacheDataRecord(Data key, Data value, long expiryTime) {
+        super(key, value, expiryTime);
     }
 }
