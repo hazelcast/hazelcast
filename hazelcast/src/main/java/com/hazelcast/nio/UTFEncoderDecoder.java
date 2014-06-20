@@ -195,7 +195,7 @@ public final class UTFEncoderDecoder {
         int c2 = (char2 & 0x3F) << 6;
         int c3 = (char3 & 0x3F) << 0;
         data[charArrCount] = (char) (c1 | c2 | c3);
-        return count + 2;
+        return pos;
     }
 
     private int decodeTwoBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen,
@@ -210,7 +210,7 @@ public final class UTFEncoderDecoder {
             throw new UTFDataFormatException("malformed input around byte " + count);
         }
         data[charArrCount] = (char) (((char1 & 0x1F) << 6) | (char2 & 0x3F));
-        return count + 1;
+        return pos;
     }
 
     private void decodeOneByteChar(char[] data, int charArrCount, int c) {
