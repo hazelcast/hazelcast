@@ -38,7 +38,6 @@ public class AbstractAggregationTest
     public static void startup() {
         HAZELCAST_INSTANCE = Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
     }
 
     @AfterClass
