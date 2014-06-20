@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 public interface Record<V> {
 
     /**
-     *  If not a {@link com.hazelcast.map.record.CachedDataRecord)}.
+     * If not a {@link com.hazelcast.map.record.CachedDataRecord)}.
      */
     Object NOT_CACHED = new Object();
 

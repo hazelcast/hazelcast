@@ -40,8 +40,9 @@ public final class RemoveOperation extends BaseRemoveOperation implements Identi
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     public boolean shouldBackup() {

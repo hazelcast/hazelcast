@@ -34,7 +34,6 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.PortableEntryEvent;
-
 import java.security.Permission;
 
 /**
@@ -65,9 +64,14 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService();
 
+<<<<<<< HEAD
         EntryListener listener = new EntryAdapter() {
             @Override
             public void onEntryEvent(EntryEvent event) {
+=======
+        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+            private void handleEvent(EntryEvent<Object, Object> event) {
+>>>>>>> map package checkstyle compliance
                 if (endpoint.live()) {
                     Data key = serializationService.toData(event.getKey());
                     Data value = serializationService.toData(event.getValue());
@@ -77,6 +81,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }
+<<<<<<< HEAD
 
             @Override
             public void onMapEvent(MapEvent event) {
@@ -87,6 +92,23 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                             new PortableEntryEvent(type, uuid, event.getNumberOfEntriesAffected());
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
+=======
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                handleEvent(event);
+            }
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+                handleEvent(event);
+            }
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                handleEvent(event);
+            }
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+                handleEvent(event);
+            }
+            // TODO what should this method do?
+            @Override
+            public void mapEvicted(MapEvent event) {
+>>>>>>> map package checkstyle compliance
             }
         };
 

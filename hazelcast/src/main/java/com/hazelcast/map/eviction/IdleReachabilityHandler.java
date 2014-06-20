@@ -19,7 +19,7 @@ package com.hazelcast.map.eviction;
 import com.hazelcast.map.record.Record;
 
 /**
- *  IdleReachabilityHandler.
+ * IdleReachabilityHandler.
  */
 class IdleReachabilityHandler extends AbstractReachabilityHandler {
 

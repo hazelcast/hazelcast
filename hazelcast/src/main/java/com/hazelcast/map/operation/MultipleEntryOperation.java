@@ -19,7 +19,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashSet;
@@ -62,8 +61,9 @@ public class MultipleEntryOperation extends AbstractMapOperation
         MapEntrySimple entry;
 
         for (Data key : keys) {
-            if (partitionService.getPartitionId(key) != getPartitionId())
+            if (partitionService.getPartitionId(key) != getPartitionId()) {
                 continue;
+            }
             long start = System.currentTimeMillis();
             Object objectKey = mapService.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);

@@ -19,7 +19,6 @@ package com.hazelcast.map.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 
 public class TryRemoveOperation extends BaseRemoveOperation {
@@ -40,8 +39,9 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     public Object getResponse() {

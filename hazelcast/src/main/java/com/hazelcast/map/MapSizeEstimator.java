@@ -19,8 +19,9 @@ package com.hazelcast.map;
 import com.hazelcast.map.record.Record;
 
 /**
- *  Size estimator for map.
- *  @param <T> : An instance of {@link com.hazelcast.map.record.Record}.
+ * Size estimator for map.
+ *
+ * @param <T> : An instance of {@link com.hazelcast.map.record.Record}.
  */
 class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
 

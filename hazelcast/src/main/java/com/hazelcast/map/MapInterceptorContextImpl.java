@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.Map;
 
 public class MapInterceptorContextImpl implements MapInterceptorContext {
@@ -29,7 +28,8 @@ public class MapInterceptorContextImpl implements MapInterceptorContext {
     private Object newValue;
     private Map.Entry existingEntry;
 
-    public MapInterceptorContextImpl(String mapName, MapOperationType operationType, Data key, Object newValue, Map.Entry existingEntry) {
+    public MapInterceptorContextImpl(String mapName, MapOperationType operationType, Data key, Object newValue,
+                                     Map.Entry existingEntry) {
         this.mapName = mapName;
         this.operationType = operationType;
         this.key = key;

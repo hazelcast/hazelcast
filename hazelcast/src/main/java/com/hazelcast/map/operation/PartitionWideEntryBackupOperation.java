@@ -17,8 +17,8 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,7 +26,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
@@ -60,7 +59,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
             }
             entry = new AbstractMap.SimpleEntry(objectKey, valueBeforeProcess);
             entryProcessor.processBackup(entry);
-            if (entry.getValue() == null){
+            if (entry.getValue() == null) {
                 recordStore.removeBackup(dataKey);
             } else {
                 recordStore.putBackup(dataKey, entry.getValue());

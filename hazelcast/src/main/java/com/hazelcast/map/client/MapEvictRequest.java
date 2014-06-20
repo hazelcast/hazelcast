@@ -18,9 +18,9 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.SecureRequest;
-import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,7 +30,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.security.Permission;
 

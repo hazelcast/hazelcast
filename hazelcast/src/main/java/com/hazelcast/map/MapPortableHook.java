@@ -16,10 +16,57 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.map.client.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.map.client.MapAddEntryListenerRequest;
+import com.hazelcast.map.client.MapAddEntryListenerSqlRequest;
+import com.hazelcast.map.client.MapAddIndexRequest;
+import com.hazelcast.map.client.MapAddInterceptorRequest;
+import com.hazelcast.map.client.MapClearRequest;
+import com.hazelcast.map.client.MapContainsKeyRequest;
+import com.hazelcast.map.client.MapContainsValueRequest;
+import com.hazelcast.map.client.MapDeleteRequest;
+import com.hazelcast.map.client.MapEntrySetRequest;
+import com.hazelcast.map.client.MapEvictAllRequest;
+import com.hazelcast.map.client.MapEvictRequest;
+import com.hazelcast.map.client.MapExecuteOnAllKeysRequest;
+import com.hazelcast.map.client.MapExecuteOnKeyRequest;
+import com.hazelcast.map.client.MapExecuteOnKeysRequest;
+import com.hazelcast.map.client.MapExecuteWithPredicateRequest;
+import com.hazelcast.map.client.MapFlushRequest;
+import com.hazelcast.map.client.MapGetAllRequest;
+import com.hazelcast.map.client.MapGetEntryViewRequest;
+import com.hazelcast.map.client.MapGetRequest;
+import com.hazelcast.map.client.MapIsEmptyRequest;
+import com.hazelcast.map.client.MapIsLockedRequest;
+import com.hazelcast.map.client.MapKeySetRequest;
+import com.hazelcast.map.client.MapLoadAllKeysRequest;
+import com.hazelcast.map.client.MapLoadGivenKeysRequest;
+import com.hazelcast.map.client.MapLockRequest;
+import com.hazelcast.map.client.MapPutAllRequest;
+import com.hazelcast.map.client.MapPutIfAbsentRequest;
+import com.hazelcast.map.client.MapPutRequest;
+import com.hazelcast.map.client.MapPutTransientRequest;
+import com.hazelcast.map.client.MapQueryRequest;
+import com.hazelcast.map.client.MapRemoveEntryListenerRequest;
+import com.hazelcast.map.client.MapRemoveIfSameRequest;
+import com.hazelcast.map.client.MapRemoveInterceptorRequest;
+import com.hazelcast.map.client.MapRemoveRequest;
+import com.hazelcast.map.client.MapReplaceIfSameRequest;
+import com.hazelcast.map.client.MapReplaceRequest;
+import com.hazelcast.map.client.MapSQLQueryRequest;
+import com.hazelcast.map.client.MapSetRequest;
+import com.hazelcast.map.client.MapSizeRequest;
+import com.hazelcast.map.client.MapTryPutRequest;
+import com.hazelcast.map.client.MapTryRemoveRequest;
+import com.hazelcast.map.client.MapUnlockRequest;
+import com.hazelcast.map.client.MapValuesRequest;
+import com.hazelcast.map.client.TxnMapRequest;
+import com.hazelcast.map.client.TxnMapRequestWithSQLQuery;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.util.Collection;
 
 /**
@@ -81,7 +128,8 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[IS_EMPTY + 1];
+            final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[EVICT_ALL + 1];
+
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {

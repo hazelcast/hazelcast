@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
-
 import java.io.IOException;
 
 public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupAwareOperation {
@@ -43,7 +42,7 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     public void run() throws Exception {
         if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), 10000L)) {
             ILogger logger = getLogger();
-            logger.severe(recordStore.isLocked(getKey())+":"+getKey());
+            logger.severe(recordStore.isLocked(getKey()) + ":" + getKey());
             throw new TransactionException("Lock is not owned by the transaction! Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }
     }

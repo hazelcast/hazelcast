@@ -17,7 +17,6 @@
 package com.hazelcast.map.eviction;
 
 import com.hazelcast.map.record.Record;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;

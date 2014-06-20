@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.SecureRequest;
 import com.hazelcast.client.txn.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
@@ -33,7 +32,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
-
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
@@ -41,11 +39,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-/**
- * User: sancar
- * Date: 9/18/13
- * Time: 2:28 PM
- */
 public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
 
     String name;

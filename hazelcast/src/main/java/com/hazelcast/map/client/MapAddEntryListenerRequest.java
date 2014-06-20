@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
-
 import java.io.IOException;
 
 public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerRequest {

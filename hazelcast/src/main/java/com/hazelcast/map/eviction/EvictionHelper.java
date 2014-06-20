@@ -28,7 +28,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
-
 import java.util.Arrays;
 import java.util.Map;
 
@@ -120,16 +119,20 @@ public final class EvictionHelper {
                 if (evictIfNotLocked(tmpKey, recordStore)) {
                     evictedRecordCounter++;
                     final String mapName = mapConfig.getName();
-                    mapService.interceptAfterRemove(mapName, value);
-                    if (mapService.isNearCacheAndInvalidationEnabled(mapName)) {
-                        mapService.invalidateAllNearCaches(mapName, tmpKey);
-                    }
+                    interceptAndInvalidate(mapService, value, tmpKey, mapName);
                     fireEvent(tmpKey, tmpValue, mapName, mapService);
                 }
             }
             if (evictedRecordCounter >= evictableSize) {
                 break;
             }
+        }
+    }
+
+    private static void interceptAndInvalidate(MapService mapService, long value, Data tmpKey, String mapName) {
+        mapService.interceptAfterRemove(mapName, value);
+        if (mapService.isNearCacheAndInvalidationEnabled(mapName)) {
+            mapService.invalidateAllNearCaches(mapName, tmpKey);
         }
     }
 

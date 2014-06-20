@@ -19,7 +19,6 @@ package com.hazelcast.map.merge;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-
 import java.io.IOException;
 
 /**
@@ -37,8 +36,9 @@ import java.io.IOException;
 public class LatestUpdateMapMergePolicy implements MapMergePolicy {
 
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
-        if (mergingEntry.getLastUpdateTime() >= existingEntry.getLastUpdateTime())
+        if (mergingEntry.getLastUpdateTime() >= existingEntry.getLastUpdateTime()) {
             return mergingEntry.getValue();
+        }
         return existingEntry.getValue();
     }
 

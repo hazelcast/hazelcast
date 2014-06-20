@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.Map;
 
 public interface MapInterceptorContext {
