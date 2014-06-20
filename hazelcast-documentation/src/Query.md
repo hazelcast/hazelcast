@@ -1,6 +1,34 @@
 
 
 
+### Criteria API
+
+Criteria API is a programming interface offered by Hazelcast similar to Java Persistence Query Language (JPQL). Below is the code for the above sample query.
+
+```java
+import com.hazelcast.core.IMap;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.config.Config;
+
+
+Config cfg = new Config();
+HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+IMap map = hz.getMap("employee");
+
+EntryObject e = new PredicateBuilder().getEntryObject();
+Predicate predicate = e.is("active").and(e.get("age").lessThan(30));
+
+Set<Employee> employees = (Set<Employee>) map.values(predicate);
+```
+
+In the above sample, `predicate` verifies whether the entry is active and its `age` value is less than 30. This `predicate` is applied to the `employee` map using the `map.values(predicate)` method. This method sends the predicate to all cluster members and merges the results coming from them. As you can guess, since the predicate is communicated between the members, it needs to be serializable.
+
+<font color='red'>***Note***:</font> *Predicates can also be applied to `keySet`, `entrySet` and `localKeySet` of Hazelcast distributed map.*
+
+
+
 
 ### Distributed SQL Query
 
@@ -75,27 +103,6 @@ Examples:
 
 -   `age IN (20, 30, 40) AND salary BETWEEN (50000, 80000)`
 
-### Criteria API
-
-If SQL is not enough or programmable queries are preferred, then JPA criteria like API can be used. Here is an example:
-
-```java
-import com.hazelcast.core.IMap;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.EntryObject;
-import com.hazelcast.config.Config;
-
-
-Config cfg = new Config();
-HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-IMap map = hz.getMap("employee");
-
-EntryObject e = new PredicateBuilder().getEntryObject();
-Predicate predicate = e.is("active").and(e.get("age").lessThan(30));
-
-Set<Employee> employees = (Set<Employee>) map.values(predicate);
-```
 
 ### Paging Predicate (Order & Limit)
 
