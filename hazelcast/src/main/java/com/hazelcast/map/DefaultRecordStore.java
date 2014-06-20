@@ -757,7 +757,7 @@ public class DefaultRecordStore implements RecordStore {
         return value;
     }
 
-    public Object loadFromStoreOrStagingArea(Data key) {
+    private Object loadFromStoreOrStagingArea(Data key) {
         if (hasWaitingWriteBehindDeleteOperation(key)) {
             return null;
         }
