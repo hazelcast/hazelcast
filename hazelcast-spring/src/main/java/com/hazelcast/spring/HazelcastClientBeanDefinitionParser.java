@@ -79,19 +79,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         public void handleClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
-            final NamedNodeMap attrs = element.getAttributes();
-            if (attrs != null) {
-                for (int a = 0; a < attrs.getLength(); a++) {
-                    final org.w3c.dom.Node att = attrs.item(a);
-                    final String name = att.getNodeName();
-                    final String value = att.getNodeValue();
-                    if ("executor-pool-size".equals(name)) {
-                        configBuilder.addPropertyValue("executorPoolSize", value);
-                    } else if ("credentials-ref".equals(name)) {
-                        configBuilder.addPropertyReference("credentials", value);
-                    }
-                }
-            }
+            handleClientAttributes(element);
             for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
                 if ("group".equals(nodeName)) {
@@ -115,6 +103,22 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
+        }
+
+        private void handleClientAttributes(Element element) {
+            final NamedNodeMap attrs = element.getAttributes();
+            if (attrs != null) {
+                for (int a = 0; a < attrs.getLength(); a++) {
+                    final Node att = attrs.item(a);
+                    final String name = att.getNodeName();
+                    final String value = att.getNodeValue();
+                    if ("executor-pool-size".equals(name)) {
+                        configBuilder.addPropertyValue("executorPoolSize", value);
+                    } else if ("credentials-ref".equals(name)) {
+                        configBuilder.addPropertyReference("credentials", value);
+                    }
+                }
+            }
         }
 
         private void handleNetwork(Node node) {
