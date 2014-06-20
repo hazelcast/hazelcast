@@ -55,6 +55,7 @@ import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.map.operation.GetEntryViewOperation;
 import com.hazelcast.map.operation.GetOperation;
 import com.hazelcast.map.operation.KeyBasedMapOperation;
+import com.hazelcast.map.operation.LoadAllOperation;
 import com.hazelcast.map.operation.MapEntrySetOperation;
 import com.hazelcast.map.operation.MapFlushOperation;
 import com.hazelcast.map.operation.MapGetAllOperationFactory;
@@ -113,6 +114,7 @@ import com.hazelcast.util.executor.CompletedFuture;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -412,6 +414,30 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+
+    /**
+     * Maps keys to corresponding partitions and sends operations to them.
+     *
+     * @param keys
+     * @param replaceExistingValues
+     */
+    protected void loadAllInternal(Collection<Data> keys, boolean replaceExistingValues) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Map<Integer, Collection<Data>> partitionIdToKeys = getPartitionIdToKeysMap(keys);
+        final Set<Entry<Integer, Collection<Data>>> entries = partitionIdToKeys.entrySet();
+        for (final Entry<Integer, Collection<Data>> entry : entries) {
+            final Integer partitionId = entry.getKey();
+            final Collection<Data> correspondingKeys = entry.getValue();
+            final Operation operation = createLoadAllOperation(correspondingKeys, replaceExistingValues);
+            nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+        }
+        waitUntilLoaded();
+    }
+
+    private Operation createLoadAllOperation(final Collection<Data> keys, boolean replaceExistingValues) {
+        return new LoadAllOperation(name, keys, replaceExistingValues);
+    }
+
     protected Data removeInternal(Data key) {
         RemoveOperation operation = new RemoveOperation(name, key);
         Data previousValue = (Data) invokeOperation(key, operation);
@@ -619,6 +645,27 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             partitionIds.add(partitionService.getPartitionId(key));
         }
         return partitionIds;
+    }
+
+    private Map<Integer, Collection<Data>> getPartitionIdToKeysMap(Collection<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        final Map<Integer, Collection<Data>> idToKeys = new HashMap<Integer, Collection<Data>>();
+
+        final Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            final Data key = iterator.next();
+            final int partitionId = partitionService.getPartitionId(key);
+            Collection<Data> keyList = idToKeys.get(partitionId);
+            if (keyList == null) {
+                keyList = new ArrayList<Data>();
+                idToKeys.put(partitionId, keyList);
+            }
+            keyList.add(key);
+        }
+        return idToKeys;
     }
 
     protected void putAllInternal(final Map<? extends Object, ? extends Object> entries) {
@@ -1206,7 +1253,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         getService().invalidateNearCache(name, key);
     }
 
-    private void invalidateNearCache(Set<Data> keys) {
+    private void invalidateNearCache(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }

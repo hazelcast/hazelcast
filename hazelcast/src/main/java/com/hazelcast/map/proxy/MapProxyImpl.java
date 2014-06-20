@@ -50,7 +50,9 @@ import com.hazelcast.util.executor.DelegatingFuture;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -60,7 +62,10 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
 /**
- * @author enesakar 1/17/13
+ * Proxy implementation of {@link com.hazelcast.core.IMap} interface.
+ *
+ * @param <K> the key type of map.
+ * @param <V> the value type of map.
  */
 public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, InitializingObject {
 
@@ -496,10 +501,27 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return evictInternal(getService().toData(key, partitionStrategy));
     }
 
-
     @Override
     public void evictAll() {
         evictAllInternal();
+    }
+
+    @Override
+    public void loadAll(boolean replaceExistingValues) {
+        final Set keys = getService().getMapContainer(name).getStore().loadAllKeys();
+        loadAll(keys, replaceExistingValues);
+    }
+
+    @Override
+    public void loadAll(Set<K> keys, boolean replaceExistingValues) {
+        if (keys == null) {
+            throw new NullPointerException("Parameter keys should not be null.");
+        }
+        if (keys.isEmpty()) {
+            return;
+        }
+        final Collection<Data> dataKeys = convertKeysToData(keys);
+        loadAllInternal(dataKeys, replaceExistingValues);
     }
 
     /**
@@ -689,6 +711,22 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw (Throwable) returnObj;
         }
         return returnObj;
+    }
+
+    private <K> Collection<Data> convertKeysToData(Set<K> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final MapService mapService = getService();
+        final List<Data> dataKeys = new ArrayList<Data>(keys.size());
+        for (K key : keys) {
+            if (key == null) {
+                throw new NullPointerException("Null key is not allowed");
+            }
+            final Data dataKey = mapService.toData(key);
+            dataKeys.add(dataKey);
+        }
+        return dataKeys;
     }
 
     @Override

@@ -106,7 +106,7 @@ public class MapReplicationOperation extends AbstractOperation {
                     final Data value = recordReplicationInfo.getValue();
                     Record newRecord = mapService.createRecord(mapName, key, value, -1L, Clock.currentTimeMillis());
                     mapService.applyRecordInfo(newRecord, recordReplicationInfo);
-                    recordStore.putForReplication(key, newRecord);
+                    recordStore.putRecord(key, newRecord);
                 }
             }
         }
