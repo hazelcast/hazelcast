@@ -86,7 +86,7 @@ public class DefaultRecordStore implements RecordStore {
     private final SizeEstimator sizeEstimator;
     private final AtomicBoolean loaded = new AtomicBoolean(false);
     private final WriteBehindQueue<DelayedEntry> writeBehindQueue;
-    private LockStore lockStore;
+    private final LockStore lockStore;
     private long lastEvictionTime;
     /**
      * Flag for checking if this record store has at least one candidate entry
@@ -1897,8 +1897,8 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private final class MapLoadAllTask implements Runnable {
-        private Map<Data, Object> keys;
-        private AtomicInteger checkIfMapLoaded;
+        private final Map<Data, Object> keys;
+        private final AtomicInteger checkIfMapLoaded;
 
         private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger checkIfMapLoaded) {
             this.keys = keys;
