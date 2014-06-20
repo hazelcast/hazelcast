@@ -18,7 +18,9 @@ package com.hazelcast.config;
 
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * Contains the configuration for a permission.
+ */
 public class PermissionConfig {
 
     private PermissionType type;
@@ -38,10 +40,66 @@ public class PermissionConfig {
         this.principal = principal;
     }
 
+    /**
+     * Type of permission
+     */
     public enum PermissionType {
-        MAP, QUEUE, TOPIC, MULTIMAP, LIST, SET, ID_GENERATOR,
-        LOCK, ATOMIC_LONG, COUNTDOWN_LATCH, SEMAPHORE,
-        EXECUTOR_SERVICE, TRANSACTION, ALL
+        /**
+         * Map
+         */
+        MAP,
+        /**
+         * Queue
+         */
+        QUEUE,
+        /**
+         * Topic
+         */
+        TOPIC,
+        /**
+         * MultiMap
+         */
+        MULTIMAP,
+        /**
+         * List
+         */
+        LIST,
+        /**
+         * Set
+         */
+        SET,
+        /**
+         * ID generator
+         */
+        ID_GENERATOR,
+        /**
+         * Lock
+         */
+        LOCK,
+        /**
+         * Atomic long
+         */
+        ATOMIC_LONG,
+        /**
+         * Countdown latch
+         */
+        COUNTDOWN_LATCH,
+        /**
+         * Semaphore
+         */
+        SEMAPHORE
+        /**
+         * Executor Service
+         */,
+        EXECUTOR_SERVICE,
+        /**
+         * Transaction
+         */
+        TRANSACTION,
+        /**
+         * All
+         */
+        ALL
     }
 
     public PermissionConfig addEndpoint(String endpoint) {

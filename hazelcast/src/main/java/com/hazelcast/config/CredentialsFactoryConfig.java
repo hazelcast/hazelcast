@@ -20,6 +20,9 @@ import com.hazelcast.security.ICredentialsFactory;
 
 import java.util.Properties;
 
+/**
+ *
+ */
 public class CredentialsFactoryConfig {
 
     private String className;

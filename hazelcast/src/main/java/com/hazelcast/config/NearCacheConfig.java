@@ -16,11 +16,29 @@
 
 package com.hazelcast.config;
 
+/**
+ * Contains configuration for an NearCache.
+ */
 public class NearCacheConfig {
+    /**
+     * Default value of time to live in seconds.
+     */
     public static final int DEFAULT_TTL_SECONDS = 0;
+    /**
+     * Default value of idle in seconds for eviction.
+     */
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
+    /**
+     * Default value of maximum size
+     */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+    /**
+     * Default eviction policy
+     */
     public static final String DEFAULT_EVICTION_POLICY = "LRU";
+    /**
+     * Default memory format
+     */
     public static final InMemoryFormat DEFAULT_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;

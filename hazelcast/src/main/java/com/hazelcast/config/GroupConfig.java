@@ -26,7 +26,13 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public final class GroupConfig {
 
+    /**
+     * Default group password
+     */
     public static final String DEFAULT_GROUP_PASSWORD = "dev-pass";
+    /**
+     * Default group name
+     */
     public static final String DEFAULT_GROUP_NAME = "dev";
 
     private String name = DEFAULT_GROUP_NAME;

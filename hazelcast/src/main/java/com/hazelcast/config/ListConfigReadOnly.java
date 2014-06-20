@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @ali 08/11/13
+ * Contains the configuration for an {@link com.hazelcast.core.IList} (read-only).
  */
 public class ListConfigReadOnly extends ListConfig {
 

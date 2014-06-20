@@ -18,6 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.PartitioningStrategy;
 
+/**
+ * Contains the configuration for policy of permission
+ */
 public class PartitioningStrategyConfig {
 
     private String partitioningStrategyClass;

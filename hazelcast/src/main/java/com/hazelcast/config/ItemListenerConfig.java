@@ -18,6 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.ItemListener;
 
+/**
+ * Contains the configuration for an Item Listener.
+ */
 public class ItemListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;

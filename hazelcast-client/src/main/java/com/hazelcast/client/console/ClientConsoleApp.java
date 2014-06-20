@@ -78,6 +78,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private static final int ONE_HUNDRED = 100;
     private static final int ONE_HOUR = 3600;
 
+    private static final int MAX_THREAD_COUNT = 16;
+    private static final int HUNDRED_CONSTANT = 100;
+    private static final int BYTE_TO_BIT = 8;
+    private static final int LENGTH_BORDER = 4;
+
     private IQueue<Object> queue;
 
     private ITopic<Object> topic;
@@ -256,7 +261,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                         // TODO &t #4 m.putmany x k
                         if ("m.putmany".equals(threadArgs[0])
                                 || "m.removemany".equals(threadArgs[0])) {
-                            if (threadArgs.length < 4) {
+                            if (threadArgs.length < LENGTH_BORDER) {
                                 command += " " + Integer.parseInt(threadArgs[1]) * threadID;
                             }
                         }
@@ -444,7 +449,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private void handleExecutorSimulate(String[] args) {
         String first = args[0];
         int threadCount = Integer.parseInt(first.substring(1, first.indexOf(".")));
-        if (threadCount < 1 || threadCount > 16) {
+        if (threadCount < 1 || threadCount > MAX_THREAD_COUNT) {
             throw new RuntimeException("threadcount can't be smaller than 1 or larger than 16");
         }
 
@@ -581,7 +586,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 / ONE_KB
                 / ONE_KB
                 + "M "
-                + (int) (Runtime.getRuntime().freeMemory() * 100 / Runtime.getRuntime()
+                + (int) (Runtime.getRuntime().freeMemory() * HUNDRED_CONSTANT / Runtime.getRuntime()
                 .maxMemory()) + "%");
         long total = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
@@ -790,7 +795,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         long t1 = Clock.currentTimeMillis();
         if (t1 - t0 > 1) {
             println("size = " + getMap().size() + ", " + count * ONE_THOUSAND / (t1 - t0)
-                    + " evt/s, " + (count * ONE_THOUSAND / (t1 - t0)) * (b * 8) / ONE_KB + " Kbit/s, "
+                    + " evt/s, " + (count * ONE_THOUSAND / (t1 - t0)) * (b * BYTE_TO_BIT) / ONE_KB + " Kbit/s, "
                     + count * b / ONE_KB + " KB added");
         }
     }
@@ -1270,7 +1275,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             println("");
         } else {
             int b = Integer.parseInt(args[2]);
-            println(", " + (count * ONE_THOUSAND / (t1 - t0)) * (b * 8) / ONE_KB + " Kbit/s, "
+            println(", " + (count * ONE_THOUSAND / (t1 - t0)) * (b * BYTE_TO_BIT) / ONE_KB + " Kbit/s, "
                     + count * b / ONE_KB + " KB added");
         }
     }

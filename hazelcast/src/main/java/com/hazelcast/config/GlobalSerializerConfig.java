@@ -19,7 +19,9 @@ package com.hazelcast.config;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
-
+/**
+ * Contains the configuration for global serializer.
+ */
 public class GlobalSerializerConfig {
 
     private String className;
