@@ -54,7 +54,6 @@ import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -102,15 +101,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final long maxWaitSecondsBeforeJoin;
 
-    private final long maxNoHeartbeatMillis;
-
-    private final long maxNoMasterConfirmationMillis;
-
-    private final boolean icmpEnabled;
-
-    private final int icmpTtl;
-
-    private final int icmpTimeout;
 
     private final Lock lock = new ReentrantLock();
 
@@ -122,6 +112,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private final AtomicReference<Set<MemberImpl>> membersRef = new AtomicReference<Set<MemberImpl>>(Collections.EMPTY_SET);
 
     private final AtomicBoolean preparingToMerge = new AtomicBoolean(false);
+    private final HeartBeater heartBeater;
 
     private boolean joinInProgress = false;
 
@@ -142,12 +133,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         setMembers(thisMember);
         waitMillisBeforeJoin = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         maxWaitSecondsBeforeJoin = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger();
-        maxNoHeartbeatMillis = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
-        maxNoMasterConfirmationMillis = node.groupProperties.MAX_NO_MASTER_CONFIRMATION_SECONDS.getInteger() * 1000L;
-        icmpEnabled = node.groupProperties.ICMP_ENABLED.getBoolean();
-        icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
-        icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
         node.connectionManager.addConnectionListener(this);
+        heartBeater = new HeartBeater(this, node,  masterConfirmationTimes);
     }
 
     @Override
@@ -168,7 +155,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
         executionService.scheduleWithFixedDelay(executorName, new Runnable() {
             public void run() {
-                heartBeater();
+                heartBeater.heartbeat();
             }
         }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
 
@@ -225,137 +212,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return valid;
     }
 
-    private void logMissingConnection(Address address) {
-        String msg = node.getLocalMember() + " has no connection to " + address;
-        logger.warning(msg);
-    }
-
-    public final void heartBeater() {
-        if (!node.joined() || !node.isActive()) return;
-        long now = Clock.currentTimeMillis();
-        final Collection<MemberImpl> members = getMemberList();
-        if (node.isMaster()) {
-            List<Address> deadAddresses = null;
-            for (MemberImpl memberImpl : members) {
-                final Address address = memberImpl.getAddress();
-                if (!thisAddress.equals(address)) {
-                    try {
-                        Connection conn = node.connectionManager.getOrConnect(address);
-                        if (conn != null && conn.live()) {
-                            if ((now - memberImpl.getLastRead()) >= (maxNoHeartbeatMillis)) {
-                                if (deadAddresses == null) {
-                                    deadAddresses = new ArrayList<Address>();
-                                }
-                                logger.warning("Added " + address + " to list of dead addresses because of timeout since last read");
-                                deadAddresses.add(address);
-                            } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
-                                ping(memberImpl);
-                            }
-                            if ((now - memberImpl.getLastWrite()) > 500) {
-                                sendHeartbeat(address);
-                            }
-                            Long lastConfirmation = masterConfirmationTimes.get(memberImpl);
-                            if (lastConfirmation == null ||
-                                    (now - lastConfirmation > maxNoMasterConfirmationMillis)) {
-                                if (deadAddresses == null) {
-                                    deadAddresses = new ArrayList<Address>();
-                                }
-                                logger.warning("Added " + address +
-                                        " to list of dead addresses because it has not sent a master confirmation recently");
-                                deadAddresses.add(address);
-                            }
-                        } else if (conn == null && (now - memberImpl.getLastRead()) > 5000) {
-                            logMissingConnection(address);
-                            memberImpl.didRead();
-                        }
-                    } catch (Exception e) {
-                        logger.severe(e);
-                    }
-                }
-            }
-            if (deadAddresses != null) {
-                for (Address address : deadAddresses) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("No heartbeat should remove " + address);
-                    }
-                    removeAddress(address);
-                }
-            }
-        } else {
-            // send heartbeat to master
-            Address masterAddress = node.getMasterAddress();
-            if (masterAddress != null) {
-                node.connectionManager.getOrConnect(masterAddress);
-                MemberImpl masterMember = getMember(masterAddress);
-                boolean removed = false;
-                if (masterMember != null) {
-                    if ((now - masterMember.getLastRead()) >= (maxNoHeartbeatMillis)) {
-                        logger.warning("Master node has timed out its heartbeat and will be removed");
-                        removeAddress(masterAddress);
-                        removed = true;
-                    } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
-                        ping(masterMember);
-                    }
-                }
-                if (!removed) {
-                    sendHeartbeat(masterAddress);
-                }
-            }
-            for (MemberImpl member : members) {
-                if (!member.localMember()) {
-                    Address address = member.getAddress();
-                    Connection conn = node.connectionManager.getOrConnect(address);
-                    if (conn != null) {
-                        sendHeartbeat(address);
-                    } else {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Could not connect to " + address + " to send heartbeat");
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private void ping(final MemberImpl memberImpl) {
-        memberImpl.didPing();
-        if (!icmpEnabled) return;
-        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-            public void run() {
-                try {
-                    final Address address = memberImpl.getAddress();
-                    logger.warning(thisAddress + " will ping " + address);
-                    for (int i = 0; i < 5; i++) {
-                        try {
-                            if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeout)) {
-                                logger.info(thisAddress + " pings successfully. Target: " + address);
-                                return;
-                            }
-                        } catch (ConnectException ignored) {
-                            // no route to host
-                            // means we cannot connect anymore
-                        }
-                    }
-                    logger.warning(thisAddress + " couldn't ping " + address);
-                    // not reachable.
-                    removeAddress(address);
-                } catch (Throwable ignored) {
-                }
-            }
-        });
-    }
-
-    private void sendHeartbeat(Address target) {
-        if (target == null) return;
-        try {
-            node.nodeEngine.getOperationService().send(new HeartbeatOperation(), target);
-        } catch (Exception e) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Error while sending heartbeat -> "
-                        + e.getClass().getName() + "[" + e.getMessage() + "]");
-            }
-        }
-    }
 
     private void sendMasterConfirmation() {
         if (!node.joined() || !node.isActive() || isMaster()) {
@@ -807,7 +663,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 throw new HazelcastException("Member list doesn't contain local member!");
             }
             joinReset();
-            heartBeater();
+            heartBeater.heartbeat();
             node.setJoined();
             logger.info(membersString());
         } finally {
