@@ -45,6 +45,8 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 
 public final class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
 
+    private static final int DEFAULT_DATA_OUTPUT_BUFFER_SIZE = 1024 * 32;
+
     public ReplicaSyncRequest() {
     }
 
@@ -64,32 +66,8 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
-        InternalPartitionImpl partition = partitionService.getPartition(partitionId);
-        Address owner = partition.getOwnerOrNull();
-        long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
-        long currentVersion = replicaVersions[replicaIndex - 1];
-
-        ILogger logger = getLogger();
-
-        if (!nodeEngine.getThisAddress().equals(owner)) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
-            }
-            sendRetryResponse();
-            return;
-        }
-
-        if (currentVersion == 0) {
+        if (!preCheckReplicaSync(nodeEngine, partitionId, replicaIndex)) {
             sendEmptyResponse();
-            return;
-        }
-
-        if (!partitionService.incrementReplicaSyncProcessCount()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest(
-                        "Max parallel replication process limit exceeded! Could not run replica sync -> " + toString());
-            }
-            sendRetryResponse();
             return;
         }
 
@@ -105,6 +83,35 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         } finally {
             partitionService.decrementReplicaSyncProcessCount();
         }
+    }
+
+    private boolean preCheckReplicaSync(NodeEngineImpl nodeEngine, int partitionId, int replicaIndex) {
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
+        InternalPartitionImpl partition = partitionService.getPartition(partitionId);
+        Address owner = partition.getOwnerOrNull();
+        long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
+        long currentVersion = replicaVersions[replicaIndex - 1];
+
+        ILogger logger = getLogger();
+        if (!nodeEngine.getThisAddress().equals(owner)) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+            }
+            return false;
+        }
+
+        if (currentVersion == 0) {
+            return false;
+        }
+
+        if (!partitionService.incrementReplicaSyncProcessCount()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest(
+                        "Max parallel replication process limit exceeded! Could not run replica sync -> " + toString());
+            }
+            return false;
+        }
+        return true;
     }
 
     private void sendRetryResponse() {
@@ -123,7 +130,7 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         byte[] data;
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
-        BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
+        BufferObjectDataOutput out = serializationService.createObjectDataOutput(DEFAULT_DATA_OUTPUT_BUFFER_SIZE);
         try {
             out.writeInt(tasks.size());
             for (Operation task : tasks) {
@@ -163,8 +170,8 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         Address target = getCallerAddress();
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("Sending sync response to -> " + target + " for partition: "
-                    + getPartitionId() + ", replica: " + getReplicaIndex());
+            logger.finest("Sending sync response to -> " + target + " for partition: " + getPartitionId() + ", replica: "
+                    + getReplicaIndex());
         }
         OperationService operationService = nodeEngine.getOperationService();
         operationService.send(syncResponse, target);
@@ -176,12 +183,13 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
 
+        byte[] sendableData = data;
         boolean compress = nodeEngine.getGroupProperties().PARTITION_MIGRATION_ZIP_ENABLED.getBoolean();
-        if (data != null && data.length > 0 && compress) {
-            data = IOUtil.compress(data);
+        if (sendableData != null && sendableData.length > 0 && compress) {
+            sendableData = IOUtil.compress(sendableData);
         }
 
-        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions, compress);
+        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(sendableData, replicaVersions, compress);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(getReplicaIndex());
         return syncResponse;
     }
