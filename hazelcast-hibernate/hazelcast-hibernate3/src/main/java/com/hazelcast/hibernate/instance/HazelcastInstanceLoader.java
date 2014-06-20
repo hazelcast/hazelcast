@@ -31,6 +31,10 @@ import org.hibernate.cache.CacheException;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * A factory implementation to build up a {@link com.hazelcast.core.HazelcastInstance}
+ * implementation using {@link com.hazelcast.core.Hazelcast}.
+ */
 class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceFactory.class);

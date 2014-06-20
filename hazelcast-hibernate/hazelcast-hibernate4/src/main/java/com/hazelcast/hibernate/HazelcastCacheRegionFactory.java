@@ -30,6 +30,9 @@ import org.hibernate.cache.spi.TimestampsRegion;
 
 import java.util.Properties;
 
+/**
+ * Simple RegionFactory implementation to return Hazelcast based Region implementations
+ */
 public class HazelcastCacheRegionFactory extends AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
     public HazelcastCacheRegionFactory() {

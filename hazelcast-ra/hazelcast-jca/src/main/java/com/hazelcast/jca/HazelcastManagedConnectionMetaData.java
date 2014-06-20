@@ -17,28 +17,29 @@
 package com.hazelcast.jca;
 
 import javax.resource.ResourceException;
+import javax.resource.cci.ConnectionMetaData;
+import javax.resource.spi.ManagedConnectionMetaData;
 
 /**
  * Implements the meta data of this hazelcast connections based on the implementation details
  */
-final class ManagedConnectionMetaData implements
-        javax.resource.spi.ManagedConnectionMetaData,
-        javax.resource.cci.ConnectionMetaData {
-    public ManagedConnectionMetaData() {
+final class HazelcastManagedConnectionMetaData implements ManagedConnectionMetaData, ConnectionMetaData {
+
+    public HazelcastManagedConnectionMetaData() {
     }
 
     /* (non-Javadoc)
      * @see javax.resource.spi.ManagedConnectionMetaData#getEISProductName()
      */
     public String getEISProductName() throws ResourceException {
-        return ManagedConnectionMetaData.class.getPackage().getImplementationTitle();
+        return HazelcastManagedConnectionMetaData.class.getPackage().getImplementationTitle();
     }
 
     /* (non-Javadoc)
      * @see javax.resource.spi.ManagedConnectionMetaData#getEISProductVersion()
      */
     public String getEISProductVersion() throws ResourceException {
-        return ManagedConnectionMetaData.class.getPackage().getImplementationVersion();
+        return HazelcastManagedConnectionMetaData.class.getPackage().getImplementationVersion();
     }
 
     /* (non-Javadoc)

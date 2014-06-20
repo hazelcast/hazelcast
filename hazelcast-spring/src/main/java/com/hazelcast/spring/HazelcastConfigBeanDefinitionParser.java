@@ -97,27 +97,24 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(Config.class);
-            this.mapConfigManagedMap = new ManagedMap();
-            this.queueManagedMap = new ManagedMap();
-            this.listManagedMap = new ManagedMap();
-            this.setManagedMap = new ManagedMap();
-            this.topicManagedMap = new ManagedMap();
-            this.multiMapManagedMap = new ManagedMap();
-            this.executorManagedMap = new ManagedMap();
-            this.wanReplicationManagedMap = new ManagedMap();
-            this.jobTrackerManagedMap = new ManagedMap();
-            this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
-            this.configBuilder.addPropertyValue("queueConfigs", queueManagedMap);
-            this.configBuilder.addPropertyValue("listConfigs", listManagedMap);
-            this.configBuilder.addPropertyValue("setConfigs", setManagedMap);
-            this.configBuilder.addPropertyValue("topicConfigs", topicManagedMap);
-            this.configBuilder.addPropertyValue("multiMapConfigs", multiMapManagedMap);
-            this.configBuilder.addPropertyValue("executorConfigs", executorManagedMap);
-            this.configBuilder.addPropertyValue("wanReplicationConfigs", wanReplicationManagedMap);
-            this.configBuilder.addPropertyValue("jobTrackerConfigs", jobTrackerManagedMap);
+            this.mapConfigManagedMap = createManagedMap("mapConfigs");
+            this.queueManagedMap = createManagedMap("queueConfigs");
+            this.listManagedMap = createManagedMap("listConfigs");
+            this.setManagedMap = createManagedMap("setConfigs");
+            this.topicManagedMap = createManagedMap("topicConfigs");
+            this.multiMapManagedMap = createManagedMap("multiMapConfigs");
+            this.executorManagedMap = createManagedMap("executorConfigs");
+            this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
+            this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
 
             BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
             this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
+        }
+
+        private ManagedMap createManagedMap(String configName) {
+            ManagedMap managedMap = new ManagedMap();
+            this.configBuilder.addPropertyValue(configName, managedMap);
+            return managedMap;
         }
 
         public AbstractBeanDefinition getBeanDefinition() {
@@ -693,38 +690,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final Set permissions = new ManagedSet();
             for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());
-                PermissionType type;
-                if ("map-permission".equals(nodeName)) {
-                    type = PermissionType.MAP;
-                } else if ("queue-permission".equals(nodeName)) {
-                    type = PermissionType.QUEUE;
-                } else if ("multimap-permission".equals(nodeName)) {
-                    type = PermissionType.MULTIMAP;
-                } else if ("topic-permission".equals(nodeName)) {
-                    type = PermissionType.TOPIC;
-                } else if ("list-permission".equals(nodeName)) {
-                    type = PermissionType.LIST;
-                } else if ("set-permission".equals(nodeName)) {
-                    type = PermissionType.SET;
-                } else if ("lock-permission".equals(nodeName)) {
-                    type = PermissionType.LOCK;
-                } else if ("atomic-long-permission".equals(nodeName)) {
-                    type = PermissionType.ATOMIC_LONG;
-                } else if ("countdown-latch-permission".equals(nodeName)) {
-                    type = PermissionType.COUNTDOWN_LATCH;
-                } else if ("semaphore-permission".equals(nodeName)) {
-                    type = PermissionType.SEMAPHORE;
-                } else if ("id-generator-permission".equals(nodeName)) {
-                    type = PermissionType.ID_GENERATOR;
-                } else if ("executor-service-permission".equals(nodeName)) {
-                    type = PermissionType.EXECUTOR_SERVICE;
-                } else if ("transaction-permission".equals(nodeName)) {
-                    type = PermissionType.TRANSACTION;
-                } else if ("all-permissions".equals(nodeName)) {
-                    type = PermissionType.ALL;
-                } else {
+                PermissionType type = PermissionType.getType(nodeName);
+
+                if (type == null) {
                     continue;
                 }
+
                 handleSecurityPermission(child, permissions, type);
             }
             securityConfigBuilder.addPropertyValue("clientPermissionConfigs", permissions);
