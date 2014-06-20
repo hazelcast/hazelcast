@@ -5,7 +5,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,7 +34,6 @@ public class MemberGroupFactoryTest {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testConfigMemberGroupFactoryCreateMemberGroups() throws Exception {
         Collection<MemberGroupConfig> groupConfigs = createMemberGroupConfigs();
         MemberGroupFactory groupFactory = new ConfigMemberGroupFactory(groupConfigs);
