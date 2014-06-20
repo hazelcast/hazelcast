@@ -590,13 +590,6 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="MethodLength" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="ExecutableStatement" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="IllegalImport" files="com.hazelcast.nio.UnsafeHelper"/>
@@ -609,6 +602,7 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.tcp.WriteHandler"/>
     <suppress checks="InnerAssignment" files="com.hazelcast.nio.tcp.WriteHandler"/>
     <suppress checks="EmptyStatement" files="com.hazelcast.nio.tcp.WriteHandler"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.nio.UTFEncoderDecoder"/>
 
     <!-- Jmx-->
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.jmx.ManagementService"/>
