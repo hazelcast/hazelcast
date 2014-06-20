@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 /**
- * Maximum size of map configuration
+ * Configuration for map's capacity.
+ * You can set a limit for number of entries or total memory cost of entries.
  */
 public class MaxSizeConfig {
 
@@ -72,11 +73,11 @@ public class MaxSizeConfig {
     }
 
     public MaxSizeConfig setSize(int size) {
-        int sizeAssign = size;
-        if (sizeAssign <= 0) {
-            sizeAssign = Integer.MAX_VALUE;
+        int paramSize = size;
+        if (paramSize <= 0) {
+            paramSize = Integer.MAX_VALUE;
         }
-        this.size = sizeAssign;
+        this.size = paramSize;
         return this;
     }
 

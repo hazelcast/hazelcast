@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 /**
- * Configuration fot Multimap
+ * Configuration for Multimap.
  */
 public class MultiMapConfig {
 

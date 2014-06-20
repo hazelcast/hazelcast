@@ -49,11 +49,11 @@ public class MapStoreConfig {
      */
     public enum InitialLoadMode {
         /**
-         * wait loading
+         * Each partition is loaded when it is first touched.
          */
         LAZY,
         /**
-         * no waiting
+         * getMap() method does not return till the map is completely loaded.
          */
         EAGER
     }
