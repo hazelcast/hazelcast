@@ -1,8 +1,11 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.EntryViews;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -48,7 +51,8 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
             final Object previousValue = recordStore.putFromLoad(key, objectValue);
 
             callAfterPutInterceptors(objectValue);
-            publishEvent(key, mapService.toData(previousValue), dataValue);
+            publishEntryEvent(key, mapService.toData(previousValue), dataValue);
+            publishWanReplicationEvent(key, dataValue, recordStore.getRecord(key));
         }
     }
 
@@ -56,9 +60,16 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
         mapService.interceptAfterPut(name, value);
     }
 
-    private void publishEvent(Data key, Data previousValue, Data newValue) {
+    private void publishEntryEvent(Data key, Data previousValue, Data newValue) {
         final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         mapService.publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
+    }
+
+    private void publishWanReplicationEvent(Data key, Data value, Record record) {
+        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
+            final EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
+            mapService.publishWanReplicationUpdate(name, entryView);
+        }
     }
 
 
