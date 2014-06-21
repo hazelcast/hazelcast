@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * An entry's event data.
  */
-public class EntryEventData extends AbstractEventData {
+public class EntryEventData extends AbstractMapEventData {
 
     protected Data dataKey;
     protected Data dataNewValue;

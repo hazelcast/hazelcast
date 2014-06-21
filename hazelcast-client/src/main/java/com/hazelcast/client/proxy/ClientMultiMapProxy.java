@@ -23,6 +23,8 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IMapEvent;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.mapreduce.Collator;
@@ -55,8 +57,11 @@ import com.hazelcast.multimap.operations.client.RemoveRequest;
 import com.hazelcast.multimap.operations.client.SizeRequest;
 import com.hazelcast.multimap.operations.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.AbstractPortableEventData;
+import com.hazelcast.spi.impl.EventData;
 import com.hazelcast.spi.impl.PortableCollection;
-import com.hazelcast.spi.impl.PortableEntryEvent;
+import com.hazelcast.spi.impl.PortableEntryEventData;
+import com.hazelcast.spi.impl.PortableMapEventData;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.ValidationUtil;
 
@@ -189,7 +194,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         isNotNull(listener, "listener");
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, null, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        EventHandler<EventData> handler = createHandler(listener, includeValue);
         return listen(request, handler);
     }
 
@@ -201,7 +206,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         final Data keyData = toData(key);
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, keyData, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        EventHandler<EventData> handler = createHandler(listener, includeValue);
         return listen(request, keyData, handler);
     }
 
@@ -320,34 +325,56 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
-        return new EventHandler<PortableEntryEvent>() {
-            public void handle(PortableEntryEvent event) {
+    private EventHandler<EventData> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
+        return new EventHandler<EventData>() {
+            public void handle(EventData eventData) {
+                IMapEvent event = null;
+                if (eventData instanceof PortableEntryEventData) {
+                    event = handlePortableEntryEvent((PortableEntryEventData) eventData);
+                } else if (eventData instanceof PortableMapEventData) {
+                    event = handlePortableMapEvent((PortableMapEventData) eventData);
+                }
+                dispatchEvent(event, eventData);
+            }
+
+            private EntryEvent<K, V> handlePortableEntryEvent(PortableEntryEventData event) {
                 V value = null;
                 V oldValue = null;
                 if (includeValue) {
-                    value = (V) toObject(event.getValue());
-                    oldValue = (V) toObject(event.getOldValue());
+                    value = toObject(event.getValue());
+                    oldValue = toObject(event.getOldValue());
                 }
-                K key = (K) toObject(event.getKey());
+                K key = toObject(event.getKey());
                 Member member = getContext().getClusterService().getMember(event.getUuid());
-                EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(name, member,
+                return new EntryEvent<K, V>(name, member,
                         event.getEventType().getType(), key, oldValue, value);
-                switch (event.getEventType()) {
+            }
+
+            private MapEvent handlePortableMapEvent(PortableMapEventData event) {
+                final Member member = getContext().getClusterService().getMember(event.getUuid());
+                return new MapEvent(name, member, event.getEventType().getType(), event.getNumberOfEntriesAffected());
+            }
+
+            private void dispatchEvent(IMapEvent event, EventData eventData) {
+                final AbstractPortableEventData portableEvent = (AbstractPortableEventData) eventData;
+                switch (portableEvent.getEventType()) {
                     case ADDED:
-                        listener.entryAdded(entryEvent);
+                        listener.entryAdded((EntryEvent) event);
                         break;
                     case REMOVED:
-                        listener.entryRemoved(entryEvent);
+                        listener.entryRemoved((EntryEvent) event);
                         break;
                     case UPDATED:
-                        listener.entryUpdated(entryEvent);
+                        listener.entryUpdated((EntryEvent) event);
                         break;
                     case EVICTED:
-                        listener.entryEvicted(entryEvent);
+                        listener.entryEvicted((EntryEvent) event);
+                        break;
+                    case EVICT_ALL:
+                        listener.mapEvicted((MapEvent) event);
                         break;
                     default:
-                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+                        throw new IllegalArgumentException("Not a known event type " + portableEvent.getEventType());
                 }
             }
 

@@ -3,45 +3,43 @@ package com.hazelcast.map;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.impl.EventData;
 
 import java.io.IOException;
 
 /**
  * Abstract event data.
  */
-abstract class AbstractEventData implements EventData {
+abstract class AbstractMapEventData implements EventData, DataSerializable {
 
     private String source;
     private String mapName;
     private Address caller;
     private int eventType;
 
-    public AbstractEventData() {
+    public AbstractMapEventData() {
     }
 
-    public AbstractEventData(String source, String mapName, Address caller, int eventType) {
+    public AbstractMapEventData(String source, String mapName, Address caller, int eventType) {
         this.source = source;
         this.mapName = mapName;
         this.caller = caller;
         this.eventType = eventType;
     }
 
-    @Override
     public String getSource() {
         return source;
     }
 
-    @Override
     public String getMapName() {
         return mapName;
     }
 
-    @Override
     public Address getCaller() {
         return caller;
     }
 
-    @Override
     public int getEventType() {
         return eventType;
     }

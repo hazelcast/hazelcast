@@ -80,6 +80,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.impl.EventData;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.Clock;
@@ -921,7 +922,8 @@ public class MapService implements ManagedService, MigrationAwareService,
         incrementEventStats(event);
     }
 
-    private Member getMemberOrNull(EventData eventData) {
+    private Member getMemberOrNull(EventData data) {
+        final AbstractMapEventData eventData = (AbstractMapEventData) data;
         final Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         if (member == null) {
             if (logger.isLoggable(Level.INFO)) {

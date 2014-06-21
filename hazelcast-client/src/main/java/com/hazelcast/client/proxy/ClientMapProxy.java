@@ -30,6 +30,8 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.IMapEvent;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
@@ -94,7 +96,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.impl.PortableEntryEvent;
+import com.hazelcast.spi.impl.AbstractPortableEventData;
+import com.hazelcast.spi.impl.EventData;
+import com.hazelcast.spi.impl.PortableEntryEventData;
+import com.hazelcast.spi.impl.PortableMapEventData;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
@@ -461,7 +466,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        EventHandler<EventData> handler = createHandler(listener, includeValue);
         return listen(request, handler);
     }
 
@@ -475,7 +480,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         final Data keyData = toData(key);
         MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        EventHandler<EventData> handler = createHandler(listener, includeValue);
         return listen(request, keyData, handler);
     }
 
@@ -483,14 +488,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         final Data keyData = toData(key);
         MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue, predicate);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        EventHandler<EventData> handler = createHandler(listener, includeValue);
         return listen(request, keyData, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue) {
         MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, null, includeValue, predicate);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        EventHandler<EventData> handler = createHandler(listener, includeValue);
         return listen(request, null, handler);
     }
 
@@ -969,9 +974,19 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
-        return new EventHandler<PortableEntryEvent>() {
-            public void handle(PortableEntryEvent event) {
+    private EventHandler<EventData> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
+        return new EventHandler<EventData>() {
+            public void handle(EventData eventData) {
+                IMapEvent event = null;
+                if (eventData instanceof PortableEntryEventData) {
+                    event = handlePortableEntryEvent((PortableEntryEventData) eventData);
+                } else if (eventData instanceof PortableMapEventData) {
+                    event = handlePortableMapEvent((PortableMapEventData) eventData);
+                }
+                dispatchEvent(event, eventData);
+            }
+
+            private EntryEvent<K, V> handlePortableEntryEvent(PortableEntryEventData event) {
                 V value = null;
                 V oldValue = null;
                 if (includeValue) {
@@ -980,23 +995,35 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 }
                 K key = toObject(event.getKey());
                 Member member = getContext().getClusterService().getMember(event.getUuid());
-                EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(name, member,
+                return new EntryEvent<K, V>(name, member,
                         event.getEventType().getType(), key, oldValue, value);
-                switch (event.getEventType()) {
+            }
+
+            private MapEvent handlePortableMapEvent(PortableMapEventData event) {
+                final Member member = getContext().getClusterService().getMember(event.getUuid());
+                return new MapEvent(name, member, event.getEventType().getType(), event.getNumberOfEntriesAffected());
+            }
+
+            private void dispatchEvent(IMapEvent event, EventData eventData) {
+                final AbstractPortableEventData portableEvent = (AbstractPortableEventData) eventData;
+                switch (portableEvent.getEventType()) {
                     case ADDED:
-                        listener.entryAdded(entryEvent);
+                        listener.entryAdded((EntryEvent) event);
                         break;
                     case REMOVED:
-                        listener.entryRemoved(entryEvent);
+                        listener.entryRemoved((EntryEvent) event);
                         break;
                     case UPDATED:
-                        listener.entryUpdated(entryEvent);
+                        listener.entryUpdated((EntryEvent) event);
                         break;
                     case EVICTED:
-                        listener.entryEvicted(entryEvent);
+                        listener.entryEvicted((EntryEvent) event);
+                        break;
+                    case EVICT_ALL:
+                        listener.mapEvicted((MapEvent) event);
                         break;
                     default:
-                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+                        throw new IllegalArgumentException("Not a known event type " + portableEvent.getEventType());
                 }
             }
 
