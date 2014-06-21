@@ -34,6 +34,7 @@ public final class SpiPortableHook implements PortableHook {
     public static final int ITEM_EVENT = 3;
     public static final int ENTRY_EVENT = 4;
     public static final int DISTRIBUTED_OBJECT_EVENT = 5;
+    public static final int MAP_EVENT = 6;
 
     @Override
     public int getFactoryId() {
@@ -52,9 +53,11 @@ public final class SpiPortableHook implements PortableHook {
                     case ITEM_EVENT:
                         return new PortableItemEvent();
                     case ENTRY_EVENT:
-                        return new PortableEntryEvent();
+                        return new PortableEntryEventData();
                     case DISTRIBUTED_OBJECT_EVENT:
                         return new PortableDistributedObjectEvent();
+                    case MAP_EVENT:
+                        return new PortableMapEventData();
                     default:
                         return null;
                 }

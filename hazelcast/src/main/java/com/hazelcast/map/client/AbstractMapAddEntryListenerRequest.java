@@ -22,8 +22,8 @@ import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.QueryEventFilter;
@@ -32,7 +32,8 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.impl.PortableEntryEvent;
+import com.hazelcast.spi.impl.PortableEntryEventData;
+import com.hazelcast.spi.impl.PortableMapEventData;
 
 import java.security.Permission;
 
@@ -73,8 +74,19 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                     Data key = clientEngine.toData(event.getKey());
                     Data value = clientEngine.toData(event.getValue());
                     Data oldValue = clientEngine.toData(event.getOldValue());
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
+                    PortableEntryEventData portableEntryEvent
+                            = new PortableEntryEventData(key, value, oldValue,
+                            event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableEntryEvent, getCallId());
+                }
+            }
+
+            private void handleMapEvent(MapEvent event) {
+                if (endpoint.live()) {
+                    final PortableMapEventData portableMapEvent
+                            = new PortableMapEventData(event.getEventType(),
+                            event.getMember().getUuid(), event.getNumberOfEntriesAffected());
+                    endpoint.sendEvent(portableMapEvent, getCallId());
                 }
             }
 
@@ -94,10 +106,9 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                 handleEvent(event);
             }
 
-            // TODO what should this method do?
             @Override
             public void mapEvicted(MapEvent event) {
-
+                handleMapEvent(event);
             }
         };
 

@@ -34,7 +34,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-import com.hazelcast.spi.impl.PortableEntryEvent;
+import com.hazelcast.spi.impl.PortableEntryEventData;
 import java.io.IOException;
 import java.security.Permission;
 
@@ -70,7 +70,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                     Data oldValue = clientEngine.toData(event.getOldValue());
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, type, uuid);
+                    PortableEntryEventData portableEntryEvent = new PortableEntryEventData(key, value, oldValue, type, uuid);
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }

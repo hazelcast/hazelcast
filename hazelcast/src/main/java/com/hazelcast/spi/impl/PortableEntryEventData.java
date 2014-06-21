@@ -21,29 +21,26 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class PortableEntryEvent implements Portable {
+public class PortableEntryEventData extends AbstractPortableEventData {
 
     private Data key;
     private Data value;
     private Data oldValue;
-    private EntryEventType eventType;
-    private String uuid;
 
-    public PortableEntryEvent() {
+    public PortableEntryEventData() {
+        super();
     }
 
-    public PortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid) {
+    public PortableEntryEventData(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid) {
+        super(eventType, uuid);
         this.key = key;
         this.value = value;
         this.oldValue = oldValue;
-        this.eventType = eventType;
-        this.uuid = uuid;
     }
 
     public Data getKey() {
@@ -58,14 +55,6 @@ public class PortableEntryEvent implements Portable {
         return oldValue;
     }
 
-    public EntryEventType getEventType() {
-        return eventType;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
     @Override
     public int getFactoryId() {
         return SpiPortableHook.ID;
@@ -78,8 +67,7 @@ public class PortableEntryEvent implements Portable {
 
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeInt("e", eventType.getType());
-        writer.writeUTF("u", uuid);
+        super.writePortable(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         IOUtil.writeNullableData(out, value);
@@ -88,8 +76,7 @@ public class PortableEntryEvent implements Portable {
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
-        eventType = EntryEventType.getByType(reader.readInt("e"));
-        uuid = reader.readUTF("u");
+        super.readPortable(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

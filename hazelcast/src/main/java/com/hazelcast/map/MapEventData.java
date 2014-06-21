@@ -9,7 +9,7 @@ import java.io.IOException;
 /**
  * Map wide event's data.
  */
-public class MapEventData extends AbstractEventData {
+public class MapEventData extends AbstractMapEventData {
 
     protected int numberOfEntries;
 

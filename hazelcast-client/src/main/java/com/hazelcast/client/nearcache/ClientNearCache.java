@@ -28,7 +28,7 @@ import com.hazelcast.map.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.client.MapRemoveEntryListenerRequest;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.PortableEntryEvent;
+import com.hazelcast.spi.impl.PortableEntryEventData;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -110,8 +110,8 @@ public class ClientNearCache<K> {
             EventHandler handler;
             if (cacheType == ClientNearCacheType.Map) {
                 request = new MapAddEntryListenerRequest(mapName, false);
-                handler = new EventHandler<PortableEntryEvent>() {
-                    public void handle(PortableEntryEvent event) {
+                handler = new EventHandler<PortableEntryEventData>() {
+                    public void handle(PortableEntryEventData event) {
                         cache.remove(event.getKey());
                     }
 

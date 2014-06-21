@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.spi.impl.PortableCollection;
-import com.hazelcast.spi.impl.PortableEntryEvent;
+import com.hazelcast.spi.impl.PortableEntryEventData;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -484,7 +484,7 @@ public class MultiMapClientRequestTest extends ClientTestSupport {
 
         getMultiMap().put("key1", "value1");
 
-        PortableEntryEvent result = (PortableEntryEvent) client.receive();
+        PortableEntryEventData result = (PortableEntryEventData) client.receive();
         assertEquals("key1", ss.toObject(result.getKey()));
         assertEquals("value1", ss.toObject(result.getValue()));
     }
@@ -499,7 +499,7 @@ public class MultiMapClientRequestTest extends ClientTestSupport {
         multiMap.put("key1", "value1");
         multiMap.put("key2", "value8");
 
-        PortableEntryEvent result = (PortableEntryEvent) client.receive();
+        PortableEntryEventData result = (PortableEntryEventData) client.receive();
         assertEquals("key2", ss.toObject(result.getKey()));
         assertEquals("value8", ss.toObject(result.getValue()));
     }
