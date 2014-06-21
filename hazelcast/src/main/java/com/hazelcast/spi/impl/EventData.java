@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl;
 
 
 /**
- * Marker interface for events.
+ * Marker interface for event data..
  */
 public interface EventData {
 }
