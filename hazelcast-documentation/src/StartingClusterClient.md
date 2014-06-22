@@ -1,4 +1,5 @@
 
+
 ### Starting the Cluster and Client
 
 
@@ -86,6 +87,8 @@ Hazelcast also offers a tool, **Management Center**, that enables monitoring you
 <font color="red">
 ***Related Information***
 </font>
+
+By default Hazelcast uses Multicast to discover other nodes to form a cluster.  If you are working with other hazelcast developers on the same network you may find yourself joining their clusters using the default settings.  Hazelcast provides a way to segregate clusters within the same network when using Multicast.  Please read the following FAQ. [How do I create separate clusters](#how-do-i-create-separate-clusters).  Alternatively if you do not wish to use the default Multicast mechanism, you can provide a fixed list of IP address that are allowed to join, information on how to configure this is provided in this document, [Configuring TCP/IP Cluster](#network-configuration)
 
 *You can also check the video tutorials [here](http://hazelcast.org/getting-started/).*
 

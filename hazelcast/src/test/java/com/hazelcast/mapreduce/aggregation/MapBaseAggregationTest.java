@@ -88,6 +88,32 @@ public class MapBaseAggregationTest
     }
 
     @Test
+    public void testKeyPredicateAndExtractionAggregation()
+            throws Exception {
+
+        String mapName = randomMapName();
+        IMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+
+        Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
+            @Override
+            public Integer provideRandom(Random random) {
+                return random(1000, 2000);
+            }
+        }, Integer.class);
+
+        for (int i = 0; i < values.length; i++) {
+            map.put(i, values[i]);
+        }
+
+        KeyPredicate<Integer> keyPredicate = new SelectorKeyPredicate(values.length / 2);
+        Supplier<Integer, Integer, Object> extractorSupplier = Supplier.all(new Extractor());
+        Supplier<Integer, Integer, Object> supplier = Supplier.fromKeyPredicate(keyPredicate, extractorSupplier);
+        Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
+        long count = map.aggregate(supplier, aggregation);
+        assertEquals(values.length / 2, count);
+    }
+
+    @Test
     public void testPredicateAggregation()
             throws Exception {
 
@@ -107,6 +133,32 @@ public class MapBaseAggregationTest
 
         Predicate<Integer, Integer> predicate = new SelectorPredicate(values.length / 2);
         Supplier<Integer, Integer, Object> supplier = Supplier.fromPredicate(predicate);
+        Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
+        long count = map.aggregate(supplier, aggregation);
+        assertEquals(values.length / 2, count);
+    }
+
+    @Test
+    public void testPredicateAndExtractionAggregation()
+            throws Exception {
+
+        String mapName = randomMapName();
+        IMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+
+        Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
+            @Override
+            public Integer provideRandom(Random random) {
+                return random(1000, 2000);
+            }
+        }, Integer.class);
+
+        for (int i = 0; i < values.length; i++) {
+            map.put(i, values[i]);
+        }
+
+        Predicate<Integer, Integer> predicate = new SelectorPredicate(values.length / 2);
+        Supplier<Integer, Integer, Object> extractorSupplier = Supplier.all(new Extractor());
+        Supplier<Integer, Integer, Object> supplier = Supplier.fromPredicate(predicate, extractorSupplier);
         Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
         long count = map.aggregate(supplier, aggregation);
         assertEquals(values.length / 2, count);
@@ -173,6 +225,14 @@ public class MapBaseAggregationTest
         public boolean apply(Map.Entry<Integer, Integer> mapEntry) {
             Integer key = mapEntry.getKey();
             return key != null && key < maxKey;
+        }
+    }
+
+    public static class Extractor implements PropertyExtractor<Integer, Object> {
+
+        @Override
+        public Object extract(Integer value) {
+            return value;
         }
     }
 }

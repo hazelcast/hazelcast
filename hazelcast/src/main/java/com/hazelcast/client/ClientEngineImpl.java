@@ -81,7 +81,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     public static final int DESTROY_ENDPOINT_DELAY_MS = 1111;
     public static final int ENDPOINT_REMOVE_DELAY_MS = 10;
     public static final int THREADS_PER_CORE = 10;
-    public static final int RIDICULOUS_THREADS_PER_CORE = 100000;
+    public static final int QUEUE_CAPACITY_PER_CORE = 100000;
 
     static final Data NULL = new Data();
 
@@ -100,7 +100,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.nodeEngine = node.nodeEngine;
         int coreSize = Runtime.getRuntime().availableProcessors();
         this.executor = nodeEngine.getExecutionService().register(ExecutionService.CLIENT_EXECUTOR,
-                coreSize * THREADS_PER_CORE, coreSize * RIDICULOUS_THREADS_PER_CORE,
+                coreSize * THREADS_PER_CORE, coreSize * QUEUE_CAPACITY_PER_CORE,
                 ExecutorType.CONCRETE);
         this.logger = node.getLogger(ClientEngine.class);
     }

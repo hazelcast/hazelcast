@@ -456,9 +456,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         clearPartitionData(partitionId);
     }
 
-    public Record createRecord(String name, Data dataKey, Object value, long ttl, long now) {
+    public Record createRecord(String name, Data key, Object value, long ttl, long now) {
         MapContainer mapContainer = getMapContainer(name);
-        Record record = mapContainer.getRecordFactory().newRecord(dataKey, value);
+        Record record = mapContainer.getRecordFactory().newRecord(key, value);
         record.setLastAccessTime(now);
         record.setLastUpdateTime(now);
         record.setCreationTime(now);
@@ -522,7 +522,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         nearCache.invalidate(key);
     }
 
-    public void invalidateNearCache(String mapName, Set<Data> keys) {
+    public void invalidateNearCache(String mapName, Collection<Data> keys) {
         if (!isNearCacheEnabled(mapName)) {
             return;
         }

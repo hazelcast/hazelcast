@@ -71,7 +71,9 @@ public class MapPortableHook implements PortableHook {
     public static final int REMOVE_ENTRY_LISTENER = 44;
     public static final int EXECUTE_ON_KEYS = 45;
     public static final int EVICT_ALL = 46;
-    public static final int IS_EMPTY = 47;
+    public static final int LOAD_ALL_GIVEN_KEYS = 47;
+    public static final int LOAD_ALL_KEYS = 48;
+    public static final int IS_EMPTY = 49;
 
     public int getFactoryId() {
         return F_ID;
@@ -336,6 +338,17 @@ public class MapPortableHook implements PortableHook {
                 constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapIsEmptyRequest();
+                    }
+                };
+                
+                constructors[LOAD_ALL_GIVEN_KEYS] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapLoadGivenKeysRequest();
+                    }
+                };
+                constructors[LOAD_ALL_KEYS] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapLoadAllKeysRequest();
                     }
                 };
             }

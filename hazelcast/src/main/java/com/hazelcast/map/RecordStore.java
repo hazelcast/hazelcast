@@ -67,13 +67,42 @@ public interface RecordStore {
 
     void putTransient(Data dataKey, Object value, long ttl);
 
-    void putFromLoad(Data dataKey, Object value, long ttl);
+    /**
+     * Puts key-value pair to map which is the result of a load from map store operation.
+     *
+     * @param key   key to put.
+     * @param value to put.
+     * @return the previous value associated with <tt>key</tt>, or
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @see {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
+     */
+    Object putFromLoad(Data key, Object value);
+
+    /**
+     * Puts key-value pair to map which is the result of a load from map store operation.
+     *
+     * @param key   key to put.
+     * @param value to put.
+     * @param ttl   time to live seconds.
+     * @return the previous value associated with <tt>key</tt>, or
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @see {@link com.hazelcast.map.operation.PutAllOperation}
+     */
+    Object putFromLoad(Data key, Object value, long ttl);
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
     Record getRecord(Data key);
 
-    void putForReplication(Data key, Record record);
+    /**
+     * Puts a key-value to record store.
+     * Used in operations like replication and custom load from map store.
+     *
+     * @param key    the data key to put record store.
+     * @param record the value for record store.
+     * @see {@link com.hazelcast.map.operation.MapReplicationOperation} and {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
+     */
+    void putRecord(Data key, Record record);
 
     void deleteRecord(Data key);
 
@@ -170,5 +199,13 @@ public interface RecordStore {
      * for expiration else return <code>false</code>.
      */
     boolean isExpirable();
+
+    /**
+     * Loads all keys from defined map store.
+     *
+     * @param keys                  keys to be loaded.
+     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
+     */
+    void loadAllFromStore(Collection<Data> keys, boolean replaceExistingValues);
 
 }

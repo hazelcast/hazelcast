@@ -57,6 +57,15 @@ public interface BaseQueue<E> extends DistributedObject {
     boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
+     * Retrieves and removes the head of this queue, waiting if necessary
+     * until an element becomes available.
+     *
+     * @return the head of this queue
+     * @throws InterruptedException if interrupted while waiting
+     */
+    E take() throws InterruptedException;
+
+    /**
      * Retrieves and removes the head of this queue,
      * or returns <tt>null</tt> if this queue is empty.
      *
