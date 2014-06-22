@@ -121,4 +121,9 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
         }
         return "remove";
     }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

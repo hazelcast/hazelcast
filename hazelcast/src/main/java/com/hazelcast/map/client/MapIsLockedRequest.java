@@ -77,4 +77,8 @@ public class MapIsLockedRequest extends AbstractIsLockedRequest implements Retry
         return "isLocked";
     }
 
+    @Override
+    public String getDistributedObjectType() {
+        return MapService.SERVICE_NAME;
+    }
 }

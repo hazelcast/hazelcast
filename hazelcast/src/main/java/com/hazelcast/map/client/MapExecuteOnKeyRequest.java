@@ -74,6 +74,10 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
         return MapPortableHook.EXECUTE_ON_KEY;
     }
 
+    public void setAsSubmitToKey() {
+        this.submitToKey = true;
+    }
+
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeBoolean("s", submitToKey);

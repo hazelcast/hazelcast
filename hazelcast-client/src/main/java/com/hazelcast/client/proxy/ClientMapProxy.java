@@ -769,6 +769,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+        request.setAsSubmitToKey();
         try {
             final ClientCallFuture future = (ClientCallFuture) getContext().getInvocationService().
                     invokeOnKeyOwner(request, keyData);
@@ -781,6 +782,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+        request.setAsSubmitToKey();
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture(future, getContext().getSerializationService());

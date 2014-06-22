@@ -504,7 +504,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             final SecurityContext securityContext = getSecurityContext();
             final String methodName = request.getMethodName();
             if (securityContext != null && methodName != null) {
-                securityContext.interceptBefore(credentials, request.getServiceName(), methodName, request.getParameters());
+                final String distributedObjectType = request.getDistributedObjectType();
+                securityContext.interceptBefore(credentials, distributedObjectType, methodName, request.getParameters());
             }
         }
 
@@ -512,7 +513,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             final SecurityContext securityContext = getSecurityContext();
             final String methodName = request.getMethodName();
             if (securityContext != null && methodName != null) {
-                securityContext.interceptAfter(credentials, request.getServiceName(), methodName);
+                final String distributedObjectType = request.getDistributedObjectType();
+                securityContext.interceptAfter(credentials, distributedObjectType, methodName);
             }
         }
 

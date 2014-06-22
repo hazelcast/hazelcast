@@ -118,6 +118,11 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
     }
 
     @Override
+    public String getDistributedObjectType() {
+        return getServiceName();
+    }
+
+    @Override
     public String getMethodName() {
         return null;
     }

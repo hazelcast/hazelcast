@@ -22,6 +22,8 @@ public interface SecureRequest {
 
     Permission getRequiredPermission();
 
+    String getDistributedObjectType();
+
     String getMethodName();
 
     Object[] getParameters();
