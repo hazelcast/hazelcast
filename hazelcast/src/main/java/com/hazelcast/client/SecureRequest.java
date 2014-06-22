@@ -22,9 +22,27 @@ public interface SecureRequest {
 
     Permission getRequiredPermission();
 
+    /**
+     * Used for {@link com.hazelcast.security.SecurityInterceptor}
+     * @return
+     */
     String getDistributedObjectType();
 
+    /**
+     * Used for {@link com.hazelcast.security.SecurityInterceptor}
+     * Method name which called via a distributedObject
+     * for map.put, methodName will be 'put'
+     * For requests which do not produced via a distributedObject should return null, for example internal requests.
+     * @return
+     */
     String getMethodName();
 
+    /**
+     * Used for {@link com.hazelcast.security.SecurityInterceptor}
+     * Parameters passed to the method by a distributedObject
+     * for map.put(key, value) parameters should be 'key' and 'value'
+     * parameters can be in binary or object form, underlying implementation will de-serialize lazily
+     * @return
+     */
     Object[] getParameters();
 }

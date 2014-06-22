@@ -335,12 +335,6 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
-                constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
-                    public Portable createNew(Integer arg) {
-                        return new MapIsEmptyRequest();
-                    }
-                };
-                
                 constructors[LOAD_ALL_GIVEN_KEYS] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapLoadGivenKeysRequest();
@@ -349,6 +343,12 @@ public class MapPortableHook implements PortableHook {
                 constructors[LOAD_ALL_KEYS] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapLoadAllKeysRequest();
+                    }
+                };
+
+                constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapIsEmptyRequest();
                     }
                 };
             }

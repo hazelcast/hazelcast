@@ -74,4 +74,14 @@ public class MapLoadAllKeysRequest extends InvocationClientRequest {
         name = reader.readUTF("n");
         replaceExistingValues = reader.readBoolean("r");
     }
+
+    @Override
+    public String getMethodName() {
+        return "loadAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{replaceExistingValues};
+    }
 }
