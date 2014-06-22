@@ -24,8 +24,14 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.IMapEvent;
+import com.hazelcast.core.MapEvent;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.DataAwareEntryEvent;
+import com.hazelcast.map.EntryEventData;
+import com.hazelcast.map.EventData;
+import com.hazelcast.map.MapEventData;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.txn.TransactionalMultiMapProxy;
@@ -52,6 +58,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,8 +70,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
 public class MultiMapService
-        implements ManagedService, RemoteService, MigrationAwareService, EventPublishingService<MultiMapEvent, EventListener>,
-                   TransactionalService {
+        implements ManagedService, RemoteService, MigrationAwareService, EventPublishingService<EventData, EntryListener>,
+        TransactionalService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
@@ -77,10 +84,10 @@ public class MultiMapService
     private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction =
             new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
 
-        public LocalMultiMapStatsImpl createNew(String key) {
-            return new LocalMultiMapStatsImpl();
-        }
-    };
+                public LocalMultiMapStatsImpl createNew(String key) {
+                    return new LocalMultiMapStatsImpl();
+                }
+            };
     private final ILogger logger;
 
     public MultiMapService(NodeEngine nodeEngine) {
@@ -179,6 +186,37 @@ public class MultiMapService
         return nodeEngine;
     }
 
+    public void publishMultiMapEvent(Address caller, String mapName, EntryEventType eventType,
+                                     int numberOfEntriesAffected) {
+        final Collection<EventRegistration> registrations =
+                nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
+        if (registrations.isEmpty()) {
+            return;
+        }
+        final String source = nodeEngine.getThisAddress().toString();
+        final MapEventData mapEventData =
+                new MapEventData(source, mapName, caller, eventType.getType(), numberOfEntriesAffected);
+        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrations, mapEventData, mapName.hashCode());
+
+    }
+
+    public final void publishEntryEvent(String multiMapName, EntryEventType eventType, Data key, Object value) {
+        NodeEngine engine = getNodeEngine();
+        EventService eventService = engine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(MultiMapService.SERVICE_NAME, multiMapName);
+        for (EventRegistration registration : registrations) {
+            MultiMapEventFilter filter = (MultiMapEventFilter) registration.getFilter();
+            if (filter.getKey() == null || filter.getKey().equals(key)) {
+                Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
+                final Address caller = engine.getThisAddress();
+                final String source = caller.toString();
+                EntryEventData event =
+                        new EntryEventData(source, multiMapName, caller, key, dataValue, null, eventType.getType());
+                eventService.publishEvent(MultiMapService.SERVICE_NAME, registration, event, multiMapName.hashCode());
+            }
+        }
+    }
+
     public String addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
@@ -196,25 +234,25 @@ public class MultiMapService
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
 
-    public void dispatchEvent(MultiMapEvent event, EventListener listener) {
-        EntryListener entryListener = (EntryListener) listener;
-        final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
-        EntryEvent entryEvent = new EntryEvent(event.getName(), member, event.getEventType().getType(),
-                nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
-        if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping event " + entryEvent + " from unknown address:" + event.getCaller());
-            }
-            return;
-        }
-
-        if (event.getEventType().equals(EntryEventType.ADDED)) {
-            entryListener.entryAdded(entryEvent);
-        } else if (event.getEventType().equals(EntryEventType.REMOVED)) {
-            entryListener.entryRemoved(entryEvent);
-        }
-        getLocalMultiMapStatsImpl(event.getName()).incrementReceivedEvents();
-    }
+//    public void dispatchEvent(MultiMapEvent event, EventListener listener) {
+//        EntryListener entryListener = (EntryListener) listener;
+//        final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
+//        EntryEvent entryEvent = new EntryEvent(event.getName(), member, event.getEventType().getType(),
+//                nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
+//        if (member == null) {
+//            if (logger.isLoggable(Level.INFO)) {
+//                logger.info("Dropping event " + entryEvent + " from unknown address:" + event.getCaller());
+//            }
+//            return;
+//        }
+//
+//        if (event.getEventType().equals(EntryEventType.ADDED)) {
+//            entryListener.entryAdded(entryEvent);
+//        } else if (event.getEventType().equals(EntryEventType.REMOVED)) {
+//            entryListener.entryRemoved(entryEvent);
+//        }
+//        getLocalMultiMapStatsImpl(event.getName()).incrementReceivedEvents();
+//    }
 
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
@@ -337,5 +375,82 @@ public class MultiMapService
 
     public void rollbackTransaction(String transactionId) {
 
+    }
+
+    private void incrementEventStats(IMapEvent event) {
+        getLocalMultiMapStatsImpl(event.getName()).incrementReceivedEvents();
+    }
+
+    public void dispatchEvent(EventData eventData, EntryListener listener) {
+        if (eventData instanceof EntryEventData) {
+            dispatchEntryEventData(eventData, listener);
+        } else if (eventData instanceof MapEventData) {
+            dispatchMapEventData(eventData, listener);
+        } else {
+            throw new IllegalArgumentException("Unknown multimap event data");
+        }
+    }
+
+    private void dispatchMapEventData(EventData eventData, EntryListener listener) {
+        final MapEventData mapEventData = (MapEventData) eventData;
+        final Member member = getMemberOrNull(eventData);
+        if (member == null) {
+            return;
+        }
+        final MapEvent event = createMapEvent(mapEventData, member);
+        dispatch0(event, listener);
+        incrementEventStats(event);
+    }
+
+    private MapEvent createMapEvent(MapEventData mapEventData, Member member) {
+        return new MapEvent(mapEventData.getMapName(), member,
+                mapEventData.getEventType(), mapEventData.getNumberOfEntries());
+    }
+
+    private void dispatchEntryEventData(EventData eventData, EntryListener listener) {
+        final EntryEventData entryEventData = (EntryEventData) eventData;
+        final Member member = getMemberOrNull(eventData);
+
+        final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
+        dispatch0(event, listener);
+        incrementEventStats(event);
+    }
+
+    private Member getMemberOrNull(EventData eventData) {
+        final Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
+        if (member == null) {
+            if (logger.isLoggable(Level.INFO)) {
+                logger.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());
+            }
+        }
+        return member;
+    }
+
+    private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
+        return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
+                entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(), getSerializationService());
+    }
+
+    private void dispatch0(IMapEvent event, EntryListener listener) {
+        switch (event.getEventType()) {
+            case ADDED:
+                listener.entryAdded((EntryEvent) event);
+                break;
+            case EVICTED:
+                break;
+            case UPDATED:
+                break;
+            case REMOVED:
+                listener.entryRemoved((EntryEvent) event);
+                break;
+            case EVICT_ALL:
+                listener.mapEvicted((MapEvent) event);
+                break;
+            case CLEAR_ALL:
+                listener.mapCleared((MapEvent) event);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
+        }
     }
 }

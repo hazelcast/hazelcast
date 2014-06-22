@@ -197,17 +197,19 @@ public class MultiMapContainer {
         return size;
     }
 
-    public void clear() {
+    public int clear() {
         final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        Map<Data, MultiMapWrapper> temp = new HashMap<Data, MultiMapWrapper>(locks.size());
+        Map<Data, MultiMapWrapper> lockedKeys = new HashMap<Data, MultiMapWrapper>(locks.size());
         for (Data key : locks) {
             MultiMapWrapper wrapper = multiMapWrappers.get(key);
             if (wrapper != null) {
-                temp.put(key, wrapper);
+                lockedKeys.put(key, wrapper);
             }
         }
+        int numberOfAffectedEntries = multiMapWrappers.size() - lockedKeys.size();
         multiMapWrappers.clear();
-        multiMapWrappers.putAll(temp);
+        multiMapWrappers.putAll(lockedKeys);
+        return numberOfAffectedEntries;
     }
 
     public NodeEngine getNodeEngine() {

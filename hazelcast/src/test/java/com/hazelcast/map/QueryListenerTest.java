@@ -84,6 +84,11 @@ public class QueryListenerTest extends HazelcastTestSupport {
             public void mapEvicted(MapEvent event) {
 
             }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
         };
 
         map.addEntryListener(listener, new StartsWithPredicate("a"), null, true);

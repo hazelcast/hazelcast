@@ -789,7 +789,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             dataValue = dataValue != null ? dataValue : dataOldValue;
         }
         EntryEventData event = new EntryEventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType.getType());
-        int orderKey = dataKey.hashCode();
+        int orderKey = dataKey == null ? -1 : dataKey.hashCode();
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event, orderKey);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues(), orderKey);
     }
@@ -952,6 +952,9 @@ public class MapService implements ManagedService, MigrationAwareService,
                 break;
             case EVICT_ALL:
                 listener.mapEvicted((MapEvent) event);
+                break;
+            case CLEAR_ALL:
+                listener.mapCleared((MapEvent) event);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid event type: " + event.getEventType());

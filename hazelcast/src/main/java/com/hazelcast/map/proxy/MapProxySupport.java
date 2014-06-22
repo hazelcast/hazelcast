@@ -798,9 +798,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             ClearOperation clearOperation = new ClearOperation(mapName);
             clearOperation.setServiceName(SERVICE_NAME);
-            nodeEngine.getOperationService()
+            final Map<Integer, Object> resultMap = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(clearOperation, nodeEngine));
 
+            int numberOfAffectedEntries = 0;
+            for (Object o : resultMap.values()) {
+                numberOfAffectedEntries += (Integer) o;
+            }
+            publishMapEvent(numberOfAffectedEntries, EntryEventType.CLEAR_ALL);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

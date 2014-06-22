@@ -65,7 +65,12 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
 
             @Override
             public void mapEvicted(MapEvent event) {
+                //TODO should I add totalEvictedEntryCount
+            }
 
+            @Override
+            public void mapCleared(MapEvent event) {
+                //TODO should I add totalClearedEntryCount
             }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);

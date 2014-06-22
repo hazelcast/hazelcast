@@ -27,6 +27,8 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
 
     boolean shouldBackup = true;
 
+    private int numberOfClearedEntries;
+
     public ClearOperation() {
     }
 
@@ -45,7 +47,7 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
             shouldBackup = false;
             return;
         }
-        recordStore.clear();
+        numberOfClearedEntries = recordStore.clear();
     }
 
     public boolean shouldBackup() {
@@ -63,6 +65,11 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     @Override
     public boolean returnsResponse() {
         return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return numberOfClearedEntries;
     }
 
     public Operation getBackupOperation() {

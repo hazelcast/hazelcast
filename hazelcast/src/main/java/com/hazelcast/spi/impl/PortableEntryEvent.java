@@ -34,6 +34,7 @@ public class PortableEntryEvent implements Portable {
     private Data oldValue;
     private EntryEventType eventType;
     private String uuid;
+    private int numberOfAffectedEntries = 1;
 
     public PortableEntryEvent() {
     }
@@ -45,6 +46,13 @@ public class PortableEntryEvent implements Portable {
         this.eventType = eventType;
         this.uuid = uuid;
     }
+
+    public PortableEntryEvent(EntryEventType eventType, String uuid, int numberOfAffectedEntries) {
+        this.eventType = eventType;
+        this.uuid = uuid;
+        this.numberOfAffectedEntries = numberOfAffectedEntries;
+    }
+
 
     public Data getKey() {
         return key;
@@ -66,6 +74,10 @@ public class PortableEntryEvent implements Portable {
         return uuid;
     }
 
+    public int getNumberOfAffectedEntries() {
+        return numberOfAffectedEntries;
+    }
+
     @Override
     public int getFactoryId() {
         return SpiPortableHook.ID;
@@ -80,8 +92,9 @@ public class PortableEntryEvent implements Portable {
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
+        writer.writeInt("n", numberOfAffectedEntries);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
         IOUtil.writeNullableData(out, oldValue);
     }
@@ -90,9 +103,9 @@ public class PortableEntryEvent implements Portable {
     public void readPortable(PortableReader reader) throws IOException {
         eventType = EntryEventType.getByType(reader.readInt("e"));
         uuid = reader.readUTF("u");
+        numberOfAffectedEntries = reader.readInt("n");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
         oldValue = IOUtil.readNullableData(in);
     }

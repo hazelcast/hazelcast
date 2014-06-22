@@ -18,6 +18,7 @@ package com.hazelcast.multimap;
 
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.operations.CountOperation;
 import com.hazelcast.multimap.operations.GetAllOperation;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
@@ -33,6 +34,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -192,13 +194,25 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     public void clear() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            nodeEngine.getOperationService().invokeOnAllPartitions(
+            final Map<Integer, Object> resultMap
+                    = nodeEngine.getOperationService().invokeOnAllPartitions(
                     MultiMapService.SERVICE_NAME,
                     new MultiMapOperationFactory(name, OperationFactoryType.CLEAR)
             );
+
+            int numberOfAffectedEntries = 0;
+            for (Object o : resultMap.values()) {
+                numberOfAffectedEntries += (Integer) o;
+            }
+            publishMultiMapEvent(numberOfAffectedEntries, EntryEventType.CLEAR_ALL);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
+    }
+
+    private void publishMultiMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
+        getService().publishMultiMapEvent(getNodeEngine().getThisAddress(),
+                name, eventType, numberOfAffectedEntries);
     }
 
     protected Integer countInternal(Data dataKey) {

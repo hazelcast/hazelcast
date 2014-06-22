@@ -17,8 +17,11 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.MultiMapPortableHook;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
+import com.hazelcast.nio.Address;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
@@ -38,7 +41,15 @@ public class ClearRequest extends MultiMapAllPartitionRequest implements Retryab
         return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CLEAR);
     }
 
+    @Override
     protected Object reduce(Map<Integer, Object> map) {
+        int totalAffectedEntries = 0;
+        for (Object affectedEntries : map.values()) {
+            totalAffectedEntries += (Integer) affectedEntries;
+        }
+        final MultiMapService service = getService();
+        final Address thisAddress = service.getNodeEngine().getThisAddress();
+        service.publishMultiMapEvent(thisAddress, name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
         return null;
     }
 

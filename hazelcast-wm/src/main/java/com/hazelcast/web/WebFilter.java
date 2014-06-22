@@ -163,6 +163,12 @@ public class WebFilter implements Filter {
                 public void mapEvicted(MapEvent event) {
 
                 }
+
+                // TODO what should this method do?
+                @Override
+                public void mapCleared(MapEvent event) {
+
+                }
             }, false);
         }
 

@@ -23,6 +23,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.mapreduce.Collator;
@@ -323,32 +324,42 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
         return new EventHandler<PortableEntryEvent>() {
             public void handle(PortableEntryEvent event) {
-                V value = null;
-                V oldValue = null;
-                if (includeValue) {
-                    value = (V) toObject(event.getValue());
-                    oldValue = (V) toObject(event.getOldValue());
-                }
-                K key = (K) toObject(event.getKey());
                 Member member = getContext().getClusterService().getMember(event.getUuid());
-                EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(name, member,
-                        event.getEventType().getType(), key, oldValue, value);
                 switch (event.getEventType()) {
                     case ADDED:
-                        listener.entryAdded(entryEvent);
+                        listener.entryAdded(createEntryEvent(event, member));
                         break;
                     case REMOVED:
-                        listener.entryRemoved(entryEvent);
+                        listener.entryRemoved(createEntryEvent(event, member));
                         break;
                     case UPDATED:
-                        listener.entryUpdated(entryEvent);
                         break;
                     case EVICTED:
-                        listener.entryEvicted(entryEvent);
+                        break;
+                    case EVICT_ALL:
+                        break;
+                    case CLEAR_ALL:
+                        listener.mapCleared(createMapEvent(event, member));
                         break;
                     default:
                         throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                 }
+            }
+
+            private MapEvent createMapEvent(PortableEntryEvent event, Member member) {
+                return new MapEvent(name, member, event.getEventType().getType(), event.getNumberOfAffectedEntries());
+            }
+
+            private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
+                V value = null;
+                V oldValue = null;
+                if (includeValue) {
+                    value = toObject(event.getValue());
+                    oldValue = toObject(event.getOldValue());
+                }
+                K key = toObject(event.getKey());
+                return new EntryEvent<K, V>(name, member,
+                        event.getEventType().getType(), key, oldValue, value);
             }
 
             @Override

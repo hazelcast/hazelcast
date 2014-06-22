@@ -110,9 +110,13 @@ public class ClientReplicatedMapAddEntryListenerRequest
 
         @Override
         public void mapEvicted(MapEvent event) {
-            // TODO what should this method do?
+            // TODO will be handled by client team later
         }
 
+        @Override
+        public void mapCleared(MapEvent event) {
+            // TODO will be handled by client team later
+        }
     }
 
     @Override

@@ -60,13 +60,14 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         MultiMap<String, String> map = instance.getMultiMap("testMultiMapEntryListener");
         final CountDownLatch latchAdded = new CountDownLatch(3);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
+        final CountDownLatch latchCleared = new CountDownLatch(1);
         final Set<String> expectedValues = new CopyOnWriteArraySet<String>();
         expectedValues.add("hello");
         expectedValues.add("world");
         expectedValues.add("again");
         map.addEntryListener(new EntryListener<String, String>() {
 
-            public void entryAdded(EntryEvent<String,String> event) {
+            public void entryAdded(EntryEvent<String, String> event) {
                 String key = event.getKey();
                 String value = event.getValue();
                 if ("2".equals(key)) {
@@ -79,15 +80,10 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
                 latchAdded.countDown();
             }
 
-            public void entryRemoved(EntryEvent<String,String> event) {
+            public void entryRemoved(EntryEvent<String, String> event) {
                 assertEquals("2", event.getKey());
                 assertEquals("again", event.getValue());
                 latchRemoved.countDown();
-            }
-
-            @Override
-            public void mapEvicted(MapEvent event) {
-
             }
 
             public void entryUpdated(EntryEvent event) {
@@ -96,6 +92,15 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
             public void entryEvicted(EntryEvent event) {
                 entryRemoved(event);
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+                latchCleared.countDown();
             }
         }, true);
         map.put("1", "hello");
@@ -109,9 +114,11 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         assertEquals(3, map.size());
         map.remove("2");
         assertEquals(2, map.size());
+        map.clear();
         try {
             assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
             assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
+            assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
             assertFalse(e.getMessage(), true);
