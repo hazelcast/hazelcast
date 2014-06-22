@@ -99,7 +99,7 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
 
     @Override
     public Object[] getParameters() {
-        if ( (ttl == -1 && timeout == -1) || timeout == 0) {
+        if ((ttl == -1 && timeout == -1) || timeout == 0) {
             return new Object[]{key};
         } else if (timeout == -1) {
             return new Object[]{key, ttl, TimeUnit.MILLISECONDS};
