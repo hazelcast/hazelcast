@@ -35,6 +35,7 @@ import javax.cache.Cache;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -54,8 +55,26 @@ public class BasicCacheTest extends HazelcastTestSupport {
 
     @Before
     public void init() {
-//        System.setProperty("hazelcast.partition.count", "2");
-        System.setProperty("hazelcast.logging.type", "jdk");
+        //FIXME REMOVE HERE
+//        final String logging = "hazelcast.logging.type";
+//        if (System.getProperty(logging) == null) {
+//            System.setProperty(logging, "log4j");
+//        }
+
+        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.mancenter.enabled", "false");
+        System.setProperty("hazelcast.wait.seconds.before.join", "1");
+        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        System.setProperty("java.net.preferIPv4Stack", "true");
+//        System.setProperty("hazelcast.jmx", "true");
+        System.setProperty("hazelcast.partition.count", "2");
+
+        // randomize multicast group...
+        Random rand = new Random();
+        int g1 = rand.nextInt(255);
+        int g2 = rand.nextInt(255);
+        int g3 = rand.nextInt(255);
+        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         Config config = new Config();
