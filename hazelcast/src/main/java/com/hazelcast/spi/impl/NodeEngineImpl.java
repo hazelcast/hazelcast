@@ -55,8 +55,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
-public class NodeEngineImpl
-        implements NodeEngine {
+public class NodeEngineImpl implements NodeEngine {
 
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;

@@ -425,8 +425,8 @@ final class BasicOperationService implements InternalOperationService {
         RemoteCallKey callKey = null;
         if (op.getCallId() != 0 && op.returnsResponse()) {
             callKey = new RemoteCallKey(op);
-            RemoteCallKey current;
-            if ((current = executingCalls.put(callKey, callKey)) != null) {
+            RemoteCallKey current = executingCalls.put(callKey, callKey);
+            if (current != null) {
                 logger.warning("Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
             }
         }

@@ -322,17 +322,17 @@ public final class ExecutionServiceImpl implements ExecutionService {
         private List<CompletableFutureEntry> removableEntries() {
             CompletableFutureEntry[] entries = copyEntries();
 
-            List<CompletableFutureEntry> removes = Collections.EMPTY_LIST;
+            List<CompletableFutureEntry> removableEntries = Collections.EMPTY_LIST;
             for (CompletableFutureEntry entry : entries) {
                 if (entry.processState()) {
-                    if (removes.isEmpty()) {
-                        removes = new ArrayList<CompletableFutureEntry>(entries.length / 2);
+                    if (removableEntries.isEmpty()) {
+                        removableEntries = new ArrayList<CompletableFutureEntry>(entries.length / 2);
                     }
 
-                    removes.add(entry);
+                    removableEntries.add(entry);
                 }
             }
-            return removes;
+            return removableEntries;
         }
 
         private CompletableFutureEntry[] copyEntries() {
