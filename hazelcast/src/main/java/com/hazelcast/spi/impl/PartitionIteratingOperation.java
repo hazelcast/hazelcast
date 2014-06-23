@@ -50,7 +50,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     public PartitionIteratingOperation() {
     }
 
-    public final void run() throws Exception {
+    public void run() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         results = new HashMap<Integer, Object>(partitions.size());
         try {
@@ -93,12 +93,12 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     @Override
-    public final Object getResponse() {
+    public Object getResponse() {
         return new PartitionResponse(results);
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public boolean returnsResponse() {
         return true;
     }
 
@@ -121,7 +121,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     // To make serialization of HashMap faster.
-    public final static class PartitionResponse implements IdentifiedDataSerializable {
+    public static final class PartitionResponse implements IdentifiedDataSerializable {
 
         private Map<Integer, Object> results;
 

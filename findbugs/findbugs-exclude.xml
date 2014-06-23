@@ -3,24 +3,6 @@
 
     <!--comment out packages as they pass findbugs. e.g. examples now passes-->
 
-    <!--Examples Package is now turned on.-->
-    <!--<Match>-->
-    <!--<Package name="com.hazelcast.examples" />-->
-    <!--</Match>-->
-    <Match>
-        <Class name="com.hazelcast.examples.TestApp"/>
-        <!--System.exit()-->
-        <Bug code="Dm" />
-    </Match>
-
-    <Match>
-        <Package name="com.hazelcast.client.examples"/>
-    </Match>
-
-    <!-- all these issues below need to be resolved in 3.3-->
-    <Match>
-        <Package name="com.hazelcast.util" />
-    </Match>
     <Match>
         <Package name="com.hazelcast.nio.ssl" />
     </Match>
@@ -29,9 +11,6 @@
     </Match>
     <Match>
         <Package name="com.hazelcast.nio.serialization" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.jca" />
     </Match>
 
 </FindBugsFilter>

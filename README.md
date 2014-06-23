@@ -28,6 +28,10 @@ See [Getting Started Guide](http://hazelcast.org/docs/latest/manual/html/getting
 
 See documentation at [www.hazelcast.org](http://hazelcast.org/documentation/)
 
+### Code Samples
+
+See [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-samples)
+
 ### Releases
 
 Download from [www.hazelcast.org](http://hazelcast.org/download/)

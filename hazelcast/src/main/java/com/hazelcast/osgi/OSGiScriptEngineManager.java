@@ -36,6 +36,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/*
+Imported from Apache Felix project.
+http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/felix/mishell/OSGiScriptEngineManager.java
+*/
+
 /**
  * This class acts as a delegate for all the available ScriptEngineManagers. Unluckily, the standard did not
  * define it as an interface, so we need to extend it to allow polymorphism. However, no calls to super are used.
@@ -67,14 +72,8 @@ import java.util.Map;
  * </code>
  * might result in unexpected errors. Future versions may wrap the ScriptEngine with a OSGiScriptEngine to solve this
  * issue, but for the moment it is not needed.
- * </li>
+ * </li></ul>
  */
-
-/*
-Imported from Apache Felix project.
-http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/felix/mishell/OSGiScriptEngineManager.java
-*/
-
 public class OSGiScriptEngineManager extends ScriptEngineManager {
 
     private final ILogger logger = Logger.getLogger(getClass());

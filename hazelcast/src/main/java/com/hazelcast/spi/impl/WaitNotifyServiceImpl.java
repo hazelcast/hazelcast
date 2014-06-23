@@ -50,14 +50,28 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
 class WaitNotifyServiceImpl implements WaitNotifyService {
 
-    private final ConcurrentMap<WaitNotifyKey, Queue<WaitingOp>> mapWaitingOps = new ConcurrentHashMap<WaitNotifyKey, Queue<WaitingOp>>(100);
+    private static final long FIRST_WAIT_TIME = 1000;
+    private static final long TIMEOUT_UPPER_BOUND = 1500;
+
+    private final ConcurrentMap<WaitNotifyKey, Queue<WaitingOp>> mapWaitingOps =
+            new ConcurrentHashMap<WaitNotifyKey, Queue<WaitingOp>>(100);
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationService;
     private final Future expirationTask;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
+
+    private final ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>> waitQueueConstructor
+            = new ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>>() {
+        @Override
+        public Queue<WaitingOp> createNew(WaitNotifyKey key) {
+            return new ConcurrentLinkedQueue<WaitingOp>();
+        }
+    };
 
     public WaitNotifyServiceImpl(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -75,13 +89,6 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         nodeEngine.getOperationService().executeOperation(waitingOp);
     }
 
-    private final ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>> waitQueueConstructor
-            = new ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>>() {
-        public Queue<WaitingOp> createNew(WaitNotifyKey key) {
-            return new ConcurrentLinkedQueue<WaitingOp>();
-        }
-    };
-
     // runs after queue lock
     @Override
     public void await(WaitSupport waitSupport) {
@@ -91,7 +98,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         WaitingOp waitingOp = new WaitingOp(q, waitSupport);
         waitingOp.setNodeEngine(nodeEngine);
         q.offer(waitingOp);
-        if (timeout > -1 && timeout < 1500) {
+        if (timeout > -1 && timeout < TIMEOUT_UPPER_BOUND) {
             delayQueue.offer(waitingOp);
         }
     }
@@ -101,7 +108,9 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     public void notify(Notifier notifier) {
         WaitNotifyKey key = notifier.getNotifiedKey();
         Queue<WaitingOp> q = mapWaitingOps.get(key);
-        if (q == null) return;
+        if (q == null) {
+            return;
+        }
         WaitingOp waitingOp = q.peek();
         while (waitingOp != null) {
             final Operation op = waitingOp.getOperation();
@@ -120,7 +129,8 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 }
                 waitingOp.setValid(false);
             }
-            q.poll(); // consume
+            q.poll();
+            // consume
             waitingOp = q.peek();
         }
     }
@@ -218,7 +228,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         final WaitSupport waitSupport;
         final long expirationTime;
         volatile boolean valid = true;
-        volatile Throwable error = null;
+        volatile Throwable error;
 
         WaitingOp(Queue<WaitingOp> queue, WaitSupport waitSupport) {
             this.op = (Operation) waitSupport;
@@ -284,28 +294,36 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
         @Override
         public int compareTo(Delayed other) {
-            if (other == this) // compare zero ONLY if same object
+            // compare zero ONLY if same object
+            if (other == this) {
                 return 0;
-            long d = (getDelay(TimeUnit.NANOSECONDS) -
-                    other.getDelay(TimeUnit.NANOSECONDS));
+            }
+            long d = (getDelay(TimeUnit.NANOSECONDS)
+                    - other.getDelay(TimeUnit.NANOSECONDS));
             return (d == 0) ? 0 : ((d < 0) ? -1 : 1);
         }
 
         @Override
         public void run() throws Exception {
-            if (valid) {
-                boolean expired = isExpired();
-                boolean cancelled = isCancelled();
-                if (expired || cancelled) {
-                    if (queue.remove(this)) {
-                        valid = false;
-                        if (expired) {
-                            waitSupport.onWaitExpire();
-                        } else {
-                            op.getResponseHandler().sendResponse(error);
-                        }
-                    }
-                }
+            if (!valid) {
+                return;
+            }
+
+            boolean expired = isExpired();
+            boolean cancelled = isCancelled();
+            if (!expired && !cancelled) {
+                return;
+            }
+
+            if (!queue.remove(this)) {
+                return;
+            }
+
+            valid = false;
+            if (expired) {
+                waitSupport.onWaitExpire();
+            } else {
+                op.getResponseHandler().sendResponse(error);
             }
         }
 
@@ -314,7 +332,8 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         @Override
         public int hashCode() {
             assert false : "hashCode not designed";
-            return 42; // any arbitrary constant will do
+            return 42;
+            // any arbitrary constant will do
         }
 
         @Override
@@ -332,6 +351,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 try {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 } catch (Throwable ignored) {
+                    ignore(ignored);
                 }
             } else {
                 logger.severe("Op: " + op + ", Error: " + e.getMessage(), e);
@@ -371,11 +391,13 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("WaitNotifyService{");
-        sb.append("delayQueue=" + delayQueue.size());
+        sb.append("delayQueue=");
+        sb.append(delayQueue.size());
         sb.append(" \n[");
-        for (Queue<WaitingOp> ScheduledOps : mapWaitingOps.values()) {
+        for (Queue<WaitingOp> scheduledOps : mapWaitingOps.values()) {
             sb.append("\t");
-            sb.append(ScheduledOps.size() + ", ");
+            sb.append(scheduledOps.size());
+            sb.append(", ");
         }
         sb.append("]\n}");
         return sb.toString();
@@ -388,33 +410,10 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 if (Thread.interrupted()) {
                     return;
                 }
+
                 try {
-                    long waitTime = 1000;
-                    while (waitTime > 0) {
-                        long begin = System.currentTimeMillis();
-                        WaitingOp waitingOp = (WaitingOp) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
-                        if (waitingOp != null) {
-                            if (waitingOp.isValid()) {
-                                invalidate(waitingOp);
-                            }
-                        }
-                        long end = System.currentTimeMillis();
-                        waitTime -= (end - begin);
-                        if (waitTime > 1000) {
-                            waitTime = 1000;
-                        }
-                    }
-                    for (Queue<WaitingOp> q : mapWaitingOps.values()) {
-                        for (WaitingOp waitingOp : q) {
-                            if (Thread.interrupted()) {
-                                return;
-                            }
-                            if (waitingOp.isValid()) {
-                                if (waitingOp.needsInvalidation()) {
-                                    invalidate(waitingOp);
-                                }
-                            }
-                        }
+                    if (doRun()) {
+                        return;
                     }
                 } catch (InterruptedException e) {
                     return;
@@ -422,6 +421,36 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     logger.warning(t);
                 }
             }
+        }
+
+        private boolean doRun() throws Exception {
+            long waitTime = FIRST_WAIT_TIME;
+            while (waitTime > 0) {
+                long begin = System.currentTimeMillis();
+                WaitingOp waitingOp = (WaitingOp) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
+                if (waitingOp != null) {
+                    if (waitingOp.isValid()) {
+                        invalidate(waitingOp);
+                    }
+                }
+                long end = System.currentTimeMillis();
+                waitTime -= (end - begin);
+                if (waitTime > FIRST_WAIT_TIME) {
+                    waitTime = FIRST_WAIT_TIME;
+                }
+            }
+
+            for (Queue<WaitingOp> q : mapWaitingOps.values()) {
+                for (WaitingOp waitingOp : q) {
+                    if (Thread.interrupted()) {
+                        return true;
+                    }
+                    if (waitingOp.isValid() && waitingOp.needsInvalidation()) {
+                        invalidate(waitingOp);
+                    }
+                }
+            }
+            return false;
         }
     }
 }

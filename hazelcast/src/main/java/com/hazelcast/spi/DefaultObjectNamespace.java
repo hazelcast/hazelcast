@@ -31,7 +31,6 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
     }
 
     public DefaultObjectNamespace(String serviceName, String objectName) {
-        //todo: can we verify that serviceName and objectname != null?
         this.service = serviceName;
         this.objectName = objectName;
     }

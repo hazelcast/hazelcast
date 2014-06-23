@@ -19,7 +19,6 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractXmlConfigHelper;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -27,11 +26,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -42,7 +37,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -52,7 +46,7 @@ import java.net.URL;
  */
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
-    private static final ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class);
+    private static final int DEFAULT_VALUE = 5;
 
     private ClientConfig clientConfig;
     private InputStream in;
@@ -92,119 +86,11 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
      * <li>it checks if a hazelcast-client.xml is available on the classpath</li>
      * <li>it loads the hazelcast-client-default.xml</li>
      * </ol>
-      */
+     */
     public XmlClientConfigBuilder() {
-        try {
-            if (loadFromSystemProperty()) {
-                return;
-            }
-
-            if (loadFromWorkingDirectory()) {
-                return;
-            }
-
-            if (loadClientHazelcastXmlFromClasspath()) {
-                return;
-            }
-
-            loadDefaultConfigurationFromClasspath();
-        } catch (final RuntimeException e) {
-            throw new HazelcastException("Failed to load ClientConfig", e);
-        }
+        XmlClientConfigLocator locator = new XmlClientConfigLocator();
+        this.in = locator.getIn();
     }
-
-    private void loadDefaultConfigurationFromClasspath() {
-        logger.info("Loading 'hazelcast-client-default.xml' from classpath.");
-
-        in = Config.class.getClassLoader().getResourceAsStream("hazelcast-client-default.xml");
-        if (in == null) {
-            throw new HazelcastException("Could not load 'hazelcast-client-default.xml' from classpath");
-        }
-    }
-
-    private boolean loadClientHazelcastXmlFromClasspath() {
-        URL url = Config.class.getClassLoader().getResource("hazelcast-client.xml");
-        if (url == null) {
-            logger.finest("Could not find 'hazelcast-client.xml' in classpath.");
-            return false;
-        }
-
-        logger.info("Loading 'hazelcast-client.xml' from classpath.");
-
-        in = Config.class.getClassLoader().getResourceAsStream("hazelcast-client.xml");
-        if (in == null) {
-            throw new HazelcastException("Could not load 'hazelcast-client.xml' from classpath");
-        }
-        return true;
-    }
-
-    private boolean loadFromWorkingDirectory() {
-        File file = new File("hazelcast-client.xml");
-        if (!file.exists()) {
-            logger.finest("Could not find 'hazelcast-client.xml' in working directory.");
-            return false;
-        }
-
-        logger.info("Loading 'hazelcast-client.xml' from working directory.");
-        try {
-            in = new FileInputStream(file);
-        } catch (FileNotFoundException e) {
-            throw new HazelcastException("Failed to open file: " + file.getAbsolutePath(), e);
-        }
-        return true;
-    }
-
-    private boolean loadFromSystemProperty() {
-        String configSystemProperty = System.getProperty("hazelcast.client.config");
-
-        if (configSystemProperty == null) {
-            logger.finest("Could not 'hazelcast.client.config' System property");
-            return false;
-        }
-
-        logger.info("Loading configuration " + configSystemProperty + " from System property 'hazelcast.client.config'");
-
-        if (configSystemProperty.startsWith("classpath:")) {
-            loadSystemPropertyClassPathResource(configSystemProperty);
-        } else {
-            loadSystemPropertyFileResource(configSystemProperty);
-        }
-        return true;
-    }
-
-    private void loadSystemPropertyFileResource(String configSystemProperty) {
-        //it is a file.
-        File configurationFile = new File(configSystemProperty);
-        logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
-
-        if (!configurationFile.exists()) {
-            String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
-            throw new HazelcastException(msg);
-        }
-
-        try {
-            in = new FileInputStream(configurationFile);
-        } catch (FileNotFoundException e) {
-            throw new HazelcastException("Failed to open file: " + configurationFile.getAbsolutePath(), e);
-        }
-    }
-
-    private void loadSystemPropertyClassPathResource(String configSystemProperty) {
-        //it is a explicit configured classpath resource.
-        String resource = configSystemProperty.substring("classpath:".length());
-
-        logger.info("Using classpath resource at " + resource);
-
-        if (resource.isEmpty()) {
-            throw new HazelcastException("classpath resource can't be empty");
-        }
-
-        in = Config.class.getClassLoader().getResourceAsStream(resource);
-        if (in == null) {
-            throw new HazelcastException("Could not load classpath resource: " + resource);
-        }
-    }
-
 
     public ClientConfig build() {
         return build(Thread.currentThread().getContextClassLoader());
@@ -218,7 +104,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             return clientConfig;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
-        }finally {
+        } finally {
             IOUtil.closeResource(in);
         }
     }
@@ -321,12 +207,50 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             } else if ("socket-options".equals(nodeName)) {
                 handleSocketOptions(child, clientNetworkConfig);
             } else if ("socket-interceptor".equals(nodeName)) {
-                handleSocketInterceptorConfig(node, clientNetworkConfig);
+                handleSocketInterceptorConfig(child, clientNetworkConfig);
             } else if ("ssl".equals(nodeName)) {
-                handleSSLConfig(node, clientNetworkConfig);
+                handleSSLConfig(child, clientNetworkConfig);
+            } else if ("aws".equals(nodeName)) {
+                handleAWS(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
+    }
+
+    private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {
+        final NamedNodeMap atts = node.getAttributes();
+        final ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                clientAwsConfig.setEnabled(checkTrue(value));
+            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
+                int timeout = getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE);
+                clientAwsConfig.setConnectionTimeoutSeconds(timeout);
+            }
+        }
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
+            final String value = getTextContent(n).trim();
+            if ("secret-key".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setSecretKey(value);
+            } else if ("access-key".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setAccessKey(value);
+            } else if ("region".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setRegion(value);
+            } else if ("host-header".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setHostHeader(value);
+            } else if ("security-group-name".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setSecurityGroupName(value);
+            } else if ("tag-key".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setTagKey(value);
+            } else if ("tag-value".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setTagValue(value);
+            } else if ("inside-aws".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setInsideAws(checkTrue(value));
+            }
+        }
+        clientNetworkConfig.setAwsConfig(clientAwsConfig);
     }
 
     private void handleSSLConfig(final org.w3c.dom.Node node, ClientNetworkConfig clientNetworkConfig) {
@@ -424,25 +348,15 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     private void handleSecurity(Node node) throws Exception {
+        ClientSecurityConfig clientSecurityConfig = new ClientSecurityConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());
-            if ("login-credentials".equals(nodeName)) {
-                handleLoginCredentials(child);
+            if ("credentials".equals(nodeName)) {
+                String className = getTextContent(child);
+                clientSecurityConfig.setCredentialsClassname(className);
             }
         }
-    }
-
-    private void handleLoginCredentials(Node node) {
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials();
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(child.getNodeName());
-            if ("username".equals(nodeName)) {
-                credentials.setUsername(getTextContent(child));
-            } else if ("password".equals(nodeName)) {
-                credentials.setPassword(getTextContent(child));
-            }
-        }
-        clientConfig.setCredentials(credentials);
+        clientConfig.setSecurityConfig(clientSecurityConfig);
     }
 
 }

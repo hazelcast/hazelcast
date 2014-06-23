@@ -18,13 +18,27 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.IQueue}
+ */
 public class QueueConfig {
 
-    public final static int DEFAULT_MAX_SIZE = 0;
-    public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
-    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
-    public final static int DEFAULT_EMPTY_QUEUE_TTL = -1;
+    /**
+     * Default value of maximum size of Queue
+     */
+    public static final int DEFAULT_MAX_SIZE = 0;
+    /**
+     * Default value of sycronous backup count
+     */
+    public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    /**
+     * Default value of asynchronous backup count
+     */
+    public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
+    /**
+     * Default value of time to live for empty Queue
+     */
+    public static final int DEFAULT_EMPTY_QUEUE_TTL = -1;
 
     private String name;
     private List<ItemListenerConfig> listenerConfigs;
@@ -51,8 +65,8 @@ public class QueueConfig {
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
     }
 
-    public QueueConfigReadOnly getAsReadOnly(){
-        if (readOnly == null){
+    public QueueConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
             readOnly = new QueueConfigReadOnly(this);
         }
         return readOnly;

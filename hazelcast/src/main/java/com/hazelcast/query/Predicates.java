@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
  */
 public final class Predicates {
 
-    //we don't want instances.
+    //we don't want instances. private constructor.
     private Predicates() {
     }
 
@@ -61,16 +61,21 @@ public final class Predicates {
         return value;
     }
 
-    public static Predicate and(Predicate x, Predicate y) {
-        return new AndPredicate(x, y);
+    public static Predicate and(Predicate... predicates) {
+        return new AndPredicate(predicates);
     }
 
     public static Predicate not(Predicate predicate) {
         return new NotPredicate(predicate);
     }
 
-    public static Predicate or(Predicate x, Predicate y) {
-        return new OrPredicate(x, y);
+    /**
+     * Or predicate
+     * @param predicates
+     * @return
+     */
+    public static Predicate or(Predicate... predicates) {
+        return new OrPredicate(predicates);
     }
 
     public static Predicate notEqual(String attribute, Comparable y) {
@@ -126,6 +131,9 @@ public final class Predicates {
 
         public BetweenPredicate(String first, Comparable from, Comparable to) {
             super(first);
+            if (from == null || to == null) {
+                throw new NullPointerException("Arguments can't be null");
+            }
             this.from = from;
             this.to = to;
         }
@@ -210,6 +218,15 @@ public final class Predicates {
 
         public InPredicate(String attribute, Comparable... values) {
             super(attribute);
+
+            if (values == null) {
+                throw new NullPointerException("Array can't be null");
+            }
+            for (Comparable value : values) {
+                if (value == null) {
+                    throw new NullPointerException("Elements can't be null");
+                }
+            }
             this.values = values;
         }
 
@@ -386,7 +403,7 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            StringBuffer builder = new StringBuffer(attribute)
+            StringBuilder builder = new StringBuilder(attribute)
                     .append(" LIKE '")
                     .append(second)
                     .append("'");
@@ -405,7 +422,7 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            StringBuffer builder = new StringBuffer(attribute)
+            StringBuilder builder = new StringBuilder(attribute)
                     .append(" ILIKE '")
                     .append(second)
                     .append("'");
@@ -623,7 +640,13 @@ public final class Predicates {
         }
 
         public GreaterLessPredicate(String attribute, Comparable value, boolean equal, boolean less) {
-            super(attribute, value);
+            super(attribute);
+
+            if (value == null) {
+                throw new NullPointerException("Arguments can't be null");
+            }
+
+            this.value = value;
             this.equal = equal;
             this.less = less;
         }
@@ -711,6 +734,10 @@ public final class Predicates {
         protected Comparable value;
 
         public EqualPredicate() {
+        }
+
+        public EqualPredicate(String attribute) {
+            super(attribute);
         }
 
         public EqualPredicate(String attribute, Comparable value) {

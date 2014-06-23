@@ -21,9 +21,36 @@ import com.hazelcast.client.SimpleClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.map.client.*;
+import com.hazelcast.map.client.MapContainsKeyRequest;
+import com.hazelcast.map.client.MapContainsValueRequest;
+import com.hazelcast.map.client.MapDeleteRequest;
+import com.hazelcast.map.client.MapEvictAllRequest;
+import com.hazelcast.map.client.MapEvictRequest;
+import com.hazelcast.map.client.MapExecuteWithPredicateRequest;
+import com.hazelcast.map.client.MapGetRequest;
+import com.hazelcast.map.client.MapIsLockedRequest;
+import com.hazelcast.map.client.MapKeySetRequest;
+import com.hazelcast.map.client.MapLockRequest;
+import com.hazelcast.map.client.MapPutIfAbsentRequest;
+import com.hazelcast.map.client.MapPutRequest;
+import com.hazelcast.map.client.MapPutTransientRequest;
+import com.hazelcast.map.client.MapQueryRequest;
+import com.hazelcast.map.client.MapRemoveIfSameRequest;
+import com.hazelcast.map.client.MapRemoveRequest;
+import com.hazelcast.map.client.MapReplaceIfSameRequest;
+import com.hazelcast.map.client.MapReplaceRequest;
+import com.hazelcast.map.client.MapSetRequest;
+import com.hazelcast.map.client.MapSizeRequest;
+import com.hazelcast.map.client.MapTryPutRequest;
+import com.hazelcast.map.client.MapTryRemoveRequest;
+import com.hazelcast.map.client.MapUnlockRequest;
+import com.hazelcast.map.client.MapValuesRequest;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.*;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
@@ -40,8 +67,10 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.query.SampleObjects.Employee;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -69,7 +98,7 @@ public class MapClientRequestTest extends ClientTestSupport {
         client.send(new MapGetRequest(mapName, TestUtil.toData(7)));
         assertNull(client.receive());
         client.send(new MapSetRequest(mapName, TestUtil.toData(1), TestUtil.toData(7), ThreadUtil.getThreadId()));
-        assertFalse((Boolean)client.receive());
+        assertFalse((Boolean) client.receive());
         client.send(new MapGetRequest(mapName, TestUtil.toData(1)));
         assertEquals(7, client.receive());
         client.send(new MapPutTransientRequest(mapName, TestUtil.toData(1), TestUtil.toData(9), ThreadUtil.getThreadId()));
@@ -287,9 +316,9 @@ public class MapClientRequestTest extends ClientTestSupport {
         }
         assertEquals(0, testSet.size());
     }
+
     @Test
-    public void testEntryProcessorWithPredicate() throws IOException
-    {
+    public void testEntryProcessorWithPredicate() throws IOException {
 
         final IMap map = getMap();
         int size = 10;
@@ -309,24 +338,37 @@ public class MapClientRequestTest extends ClientTestSupport {
         for (Map.Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
             final Data keyData = dataEntry.getKey();
             final Data valueData = dataEntry.getValue();
-            Integer key = (Integer)TestUtil.toObject(keyData);
-            result.put(key, (Employee)TestUtil.toObject(valueData));
+            Integer key = (Integer) TestUtil.toObject(keyData);
+            result.put(key, (Employee) TestUtil.toObject(valueData));
         }
 
-        assertEquals(5,entrySet.getEntrySet().size());
+        assertEquals(5, entrySet.getEntrySet().size());
 
         for (int i = 0; i < 5; i++) {
             assertEquals(SampleObjects.State.STATE2, ((Employee) map.get(i)).getState());
         }
         for (int i = 5; i < size; i++) {
-            assertEquals(SampleObjects.State.STATE1, ((Employee)map.get(i)).getState());
+            assertEquals(SampleObjects.State.STATE1, ((Employee) map.get(i)).getState());
         }
         for (int i = 0; i < 5; i++) {
             assertEquals(result.get(i).getState(), SampleObjects.State.STATE2);
         }
-
-
     }
+
+    @Test
+    public void testMapEvictAll() throws IOException {
+        final IMap map = getMap();
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+        }
+        MapEvictAllRequest request = new MapEvictAllRequest(mapName);
+        final SimpleClient client = getClient();
+        client.send(request);
+        client.receive();
+
+        assertEquals(0, map.size());
+    }
+
     private static class ChangeStateEntryProcessor implements EntryProcessor, EntryBackupProcessor {
 
         ChangeStateEntryProcessor() {

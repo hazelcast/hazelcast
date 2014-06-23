@@ -24,6 +24,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.MapPutAllOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -34,6 +35,7 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MapPutAllRequest extends AllPartitionsClientRequest implements Portable, SecureRequest {
@@ -93,5 +95,19 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_PUT);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "putAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        final HashMap map = new HashMap();
+        for (Map.Entry<Data, Data> entry : entrySet.getEntrySet()) {
+            map.put(entry.getKey(), entry.getValue());
+        }
+        return new Object[]{map};
     }
 }

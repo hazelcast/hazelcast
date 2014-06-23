@@ -15,8 +15,9 @@
  */
 
 package com.hazelcast.config;
-
-
+/**
+ * Configuration for Wan target replication reference
+ */
 public class WanReplicationRef {
     private String name;
     private String mergePolicy;
@@ -37,7 +38,7 @@ public class WanReplicationRef {
     }
 
     public WanReplicationRefReadOnly getAsReadOnly() {
-        if (readOnly == null ) {
+        if (readOnly == null) {
             readOnly = new WanReplicationRefReadOnly(this);
         }
         return readOnly;
@@ -64,9 +65,10 @@ public class WanReplicationRef {
 
     @Override
     public String toString() {
-        return "WanReplicationRef{" +
-                "name='" + name + '\'' +
-                ", mergePolicy='" + mergePolicy + '\'' +
-                '}';
+        return "WanReplicationRef{"
+                + "name='" + name + '\''
+                + ", mergePolicy='" + mergePolicy
+                + '\''
+                + '}';
     }
 }

@@ -113,7 +113,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public boolean returnsResponse() {
         return false;
     }
 

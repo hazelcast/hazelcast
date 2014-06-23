@@ -16,17 +16,16 @@
 
 package com.hazelcast.jca;
 
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.resource.ResourceException;
-import javax.resource.cci.ResourceAdapterMetaData;
-import javax.resource.cci.ConnectionSpec;
-import javax.resource.cci.RecordFactory;
-import javax.resource.spi.ConnectionManager;
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.resource.ResourceException;
+import javax.resource.cci.ConnectionSpec;
+import javax.resource.cci.RecordFactory;
+import javax.resource.cci.ResourceAdapterMetaData;
+import javax.resource.spi.ConnectionManager;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -60,10 +59,10 @@ public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
      */
     private Reference ref;
 
-    private final transient int id;
+    private transient int id;
 
     public ConnectionFactoryImpl() {
-        id = ID_GEN.incrementAndGet();
+        setId(ID_GEN.incrementAndGet());
     }
 
     public ConnectionFactoryImpl(ManagedConnectionFactoryImpl mcf, ConnectionManager cm) {
@@ -148,5 +147,9 @@ public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
         }
         return true;
     }
+    public void setId(int id) {
+        this.id = id;
+    }
+
 
 }

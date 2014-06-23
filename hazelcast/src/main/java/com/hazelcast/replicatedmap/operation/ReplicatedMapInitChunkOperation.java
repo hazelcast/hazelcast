@@ -26,7 +26,7 @@ import com.hazelcast.replicatedmap.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.record.ReplicationPublisher;
-import com.hazelcast.replicatedmap.record.VectorClock;
+import com.hazelcast.replicatedmap.record.VectorClockTimestamp;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.io.IOException;
@@ -86,11 +86,11 @@ public class ReplicatedMapInitChunkOperation
 
                 Object key = record.getKey();
                 Object value = record.getValue();
-                VectorClock vectorClock = record.getVectorClock();
+                VectorClockTimestamp timestamp = record.getVectorClockTimestamp();
                 int updateHash = record.getLatestUpdateHash();
                 long ttlMillis = record.getTtlMillis();
 
-                ReplicationMessage update = new ReplicationMessage(name, key, value, vectorClock, origin, updateHash, ttlMillis);
+                ReplicationMessage update = new ReplicationMessage(name, key, value, timestamp, origin, updateHash, ttlMillis);
                 replicationPublisher.queueUpdateMessage(update);
             }
             if (finalChunk) {

@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
-public class AwsURLEncoder {
+public final class AwsURLEncoder {
     private AwsURLEncoder() {
     }
 

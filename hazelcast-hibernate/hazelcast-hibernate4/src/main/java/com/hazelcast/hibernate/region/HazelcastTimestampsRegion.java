@@ -22,6 +22,11 @@ import org.hibernate.cache.spi.TimestampsRegion;
 
 import java.util.Properties;
 
+/**
+ * Hazelcast based timestamp using region implementation
+ *
+ * @param <Cache> implementation type of RegionCache
+ */
 public class HazelcastTimestampsRegion<Cache extends RegionCache>
         extends AbstractGeneralRegion<Cache> implements TimestampsRegion {
 

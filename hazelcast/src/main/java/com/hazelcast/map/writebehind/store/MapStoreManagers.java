@@ -30,7 +30,8 @@ public final class MapStoreManagers {
     }
 
     public static MapStoreManager newMapStoreManager(MapService mapService,
-                                                     MapStore mapStore, List<StoreListener> storeListeners) {
+                                                     MapStore mapStore, List<StoreListener> storeListeners
+    ) {
         return new DefaultMapStoreManager(mapService, mapStore, storeListeners);
     }
 }

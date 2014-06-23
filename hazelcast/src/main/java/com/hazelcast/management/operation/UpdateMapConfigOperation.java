@@ -22,9 +22,11 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
+/**
+ * Operation to update map configuration from Management Center.
+ */
 public class UpdateMapConfigOperation extends Operation {
 
     private String mapName;
@@ -52,7 +54,7 @@ public class UpdateMapConfigOperation extends Operation {
         newConfig.setEvictionPolicy(mapConfig.getEvictionPolicy());
         newConfig.setEvictionPercentage(mapConfig.getEvictionPercentage());
         newConfig.setReadBackupData(mapConfig.isReadBackupData());
-        newConfig.setBackupCount(mapConfig.getTotalBackupCount());
+        newConfig.setBackupCount(mapConfig.getBackupCount());
         newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
         newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
         service.getMapContainer(mapName).setMapConfig(newConfig.getAsReadOnly());

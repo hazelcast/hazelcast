@@ -15,6 +15,10 @@
  */
 package com.hazelcast.spring.mongodb;
 
+/**
+ * Wrapper Class for non-defined data types.
+ * see for defined data types : {@link com.hazelcast.spring.mongodb.SpringMongoDBConverter}
+ */
 public class ValueWrapper {
     private Object value;
 

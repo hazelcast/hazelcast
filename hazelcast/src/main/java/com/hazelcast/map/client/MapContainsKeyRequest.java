@@ -87,4 +87,14 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest implements Port
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "containsKey";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

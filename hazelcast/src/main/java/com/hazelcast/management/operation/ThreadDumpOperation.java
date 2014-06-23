@@ -20,9 +20,11 @@ import com.hazelcast.management.ThreadDumpGenerator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
+/**
+ *  Operation for generating thread dumps.
+ */
 public class ThreadDumpOperation extends Operation {
 
     private boolean dumpDeadlocks;

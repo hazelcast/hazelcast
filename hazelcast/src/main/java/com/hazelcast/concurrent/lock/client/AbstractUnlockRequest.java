@@ -89,4 +89,17 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
         key = new Data();
         key.readData(in);
     }
+
+    @Override
+    public String getMethodName() {
+        if (force) {
+            return "forceUnlock";
+        }
+        return "unlock";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

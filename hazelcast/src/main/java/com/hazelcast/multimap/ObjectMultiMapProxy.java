@@ -18,8 +18,22 @@ package com.hazelcast.multimap;
 
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.MappingJob;
+import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.ReducingSubmittableJob;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.multimap.operations.EntrySetResponse;
 import com.hazelcast.multimap.operations.MultiMapResponse;
@@ -28,6 +42,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ValidationUtil;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -38,7 +54,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
-public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements MultiMap<K, V>, InitializingObject {
+public class ObjectMultiMapProxy<K, V>
+        extends MultiMapProxySupport
+        implements MultiMap<K, V>, InitializingObject {
 
     public ObjectMultiMapProxy(MultiMapService service, NodeEngine nodeEngine, String name) {
         super(service, nodeEngine, name);
@@ -214,7 +232,8 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements M
         }
     }
 
-    public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
+    public boolean tryLock(K key, long time, TimeUnit timeunit)
+            throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit);
@@ -234,6 +253,45 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements M
 
     public LocalMultiMapStats getLocalMultiMapStats() {
         return (LocalMultiMapStats) getService().createStats(name);
+    }
+
+    @Override
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
+
+
+        HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
+        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-multimap-" + getName());
+        return aggregate(supplier, aggregation, jobTracker);
+    }
+
+    @Override
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation,
+                                                    JobTracker jobTracker) {
+
+        try {
+            ValidationUtil.isNotNull(jobTracker, "jobTracker");
+            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMultiMap(this);
+            Job<K, V> job = jobTracker.newJob(keyValueSource);
+            Mapper mapper = aggregation.getMapper(supplier);
+            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
+            ReducerFactory reducerFactory = aggregation.getReducerFactory();
+            Collator collator = aggregation.getCollator();
+
+            MappingJob mappingJob = job.mapper(mapper);
+            ReducingSubmittableJob reducingJob;
+            if (combinerFactory != null) {
+                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
+            } else {
+                reducingJob = mappingJob.reducer(reducerFactory);
+            }
+
+            ICompletableFuture<Result> future = reducingJob.submit(collator);
+            return future.get();
+        } catch (Exception e) {
+            throw new HazelcastException(e);
+        }
     }
 
     private Set<K> toObjectSet(Set<Data> dataSet) {

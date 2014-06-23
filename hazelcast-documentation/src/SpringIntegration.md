@@ -6,7 +6,7 @@
 ### Spring Configuration
 
 ***Note***: *Hazelcast-Spring integration requires either *`hazelcast-spring-`*version*`.jar`* or *`hazelcast-all-`*version*`.jar`* in the classpath.*
-
+.
 You can declare Hazelcast beans for Spring context using *beans* namespace (default Spring *beans* namespace) as well to declare Hazelcast maps, queues and others. 
 
 ```xml

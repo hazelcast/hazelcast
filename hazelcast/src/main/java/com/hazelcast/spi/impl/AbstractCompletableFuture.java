@@ -35,15 +35,14 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 public abstract class AbstractCompletableFuture<V> implements ICompletableFuture<V> {
 
     protected static final Object NULL_VALUE = new Object();
-
-    private final AtomicReferenceFieldUpdater<AbstractCompletableFuture, ExecutionCallbackNode> callbackUpdater;
     protected final AtomicReferenceFieldUpdater<AbstractCompletableFuture, Object> resultUpdater;
-
-    private final ILogger logger;
     protected final NodeEngine nodeEngine;
     // This field is only assigned by the atomic updater
-    private volatile ExecutionCallbackNode<V> callbackHead;
     protected volatile Object result = NULL_VALUE;
+
+    private final AtomicReferenceFieldUpdater<AbstractCompletableFuture, ExecutionCallbackNode> callbackUpdater;
+    private final ILogger logger;
+    private volatile ExecutionCallbackNode<V> callbackHead;
 
     protected AbstractCompletableFuture(NodeEngine nodeEngine, ILogger logger) {
         this.nodeEngine = nodeEngine;
@@ -68,7 +67,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
             runAsynchronous(callback, executor);
             return;
         }
-        for (; ; ) {
+        for (;;) {
             ExecutionCallbackNode oldCallbackHead = callbackHead;
             ExecutionCallbackNode newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
             if (callbackUpdater.compareAndSet(this, oldCallbackHead, newCallbackHead)) {
@@ -108,7 +107,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
     protected void fireCallbacks() {
         ExecutionCallbackNode<V> callbackChain;
-        for (; ; ) {
+        for (;;) {
             callbackChain = callbackHead;
             if (callbackUpdater.compareAndSet(this, callbackChain, null)) {
                 break;
@@ -131,9 +130,9 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                     } else {
                         callback.onResponse((V) result);
                     }
-                } catch (Throwable t) {
-                    //todo: improved error message
-                    logger.severe("Failed to async for " + AbstractCompletableFuture.this, t);
+                } catch (Throwable cause) {
+                    logger.severe("Failed asynchronous execution of execution callback: " + callback
+                            + "for call " + AbstractCompletableFuture.this, cause);
                 }
             }
         });
@@ -143,7 +142,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
-    private static class ExecutionCallbackNode<E> {
+    private static final class ExecutionCallbackNode<E> {
         private final ExecutionCallback<E> callback;
         private final Executor executor;
         private final ExecutionCallbackNode<E> next;
@@ -154,5 +153,4 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
             this.next = next;
         }
     }
-
 }

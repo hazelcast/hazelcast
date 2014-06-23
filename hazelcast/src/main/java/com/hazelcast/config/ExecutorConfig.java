@@ -16,14 +16,20 @@
 
 package com.hazelcast.config;
 
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
+ */
 public class ExecutorConfig {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
      */
-    public final static int DEFAULT_POOL_SIZE = 8;
+    public static final int DEFAULT_POOL_SIZE = 8;
 
-    public final static int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
+    /**
+     * Capacity of Queue
+     */
+    public static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
     private String name = "default";
 
@@ -55,7 +61,7 @@ public class ExecutorConfig {
     }
 
     public ExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new ExecutorConfigReadOnly(this);
         }
         return readOnly;

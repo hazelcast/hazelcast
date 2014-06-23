@@ -143,6 +143,10 @@ public class ReplicationPublisher<K, V>
     }
 
     public void queueUpdateMessage(final ReplicationMessage update) {
+        Member origin = update.getOrigin();
+        if (localMember.equals(origin)) {
+            return;
+        }
         executorService.execute(new Runnable() {
             @Override
             public void run() {
@@ -308,11 +312,11 @@ public class ReplicationPublisher<K, V>
             if (localEntry == null) {
                 if (!update.isRemove()) {
                     V marshalledValue = (V) replicatedRecordStore.marshallValue(update.getValue());
-                    VectorClock vectorClock = update.getVectorClock();
+                    VectorClockTimestamp timestamp = update.getVectorClockTimestamp();
                     int updateHash = update.getUpdateHash();
                     long ttlMillis = update.getTtlMillis();
                     storage.put(marshalledKey,
-                            new ReplicatedRecord<K, V>(marshalledKey, marshalledValue, vectorClock, updateHash, ttlMillis));
+                            new ReplicatedRecord<K, V>(marshalledKey, marshalledValue, timestamp, updateHash, ttlMillis));
                     if (ttlMillis > 0) {
                         replicatedRecordStore.scheduleTtlEntry(ttlMillis, marshalledKey, null);
                     } else {
@@ -321,13 +325,13 @@ public class ReplicationPublisher<K, V>
                     replicatedRecordStore.fireEntryListenerEvent(update.getKey(), null, update.getValue());
                 }
             } else {
-                final VectorClock currentVectorClock = localEntry.getVectorClock();
-                final VectorClock updateVectorClock = update.getVectorClock();
-                if (VectorClock.happenedBefore(updateVectorClock, currentVectorClock)) {
+                final VectorClockTimestamp currentVectorClockTimestamp = localEntry.getVectorClockTimestamp();
+                final VectorClockTimestamp updateVectorClockTimestamp = update.getVectorClockTimestamp();
+                if (VectorClockTimestamp.happenedBefore(updateVectorClockTimestamp, currentVectorClockTimestamp)) {
                     // ignore the update. This is an old update
                     return;
 
-                } else if (VectorClock.happenedBefore(currentVectorClock, updateVectorClock)) {
+                } else if (VectorClockTimestamp.happenedBefore(currentVectorClockTimestamp, updateVectorClockTimestamp)) {
                     // A new update happened
                     applyTheUpdate(update, localEntry);
 
@@ -335,14 +339,14 @@ public class ReplicationPublisher<K, V>
                     if (localEntry.getLatestUpdateHash() >= update.getUpdateHash()) {
                         applyTheUpdate(update, localEntry);
                     } else {
-                        currentVectorClock.applyVector(updateVectorClock);
-                        currentVectorClock.incrementClock(localMember);
+                        VectorClockTimestamp newTimestamp = localEntry
+                                .applyAndIncrementVectorClock(updateVectorClockTimestamp, localMember);
 
                         Object key = update.getKey();
                         V value = localEntry.getValue();
                         long ttlMillis = update.getTtlMillis();
                         int latestUpdateHash = localEntry.getLatestUpdateHash();
-                        ReplicationMessage message = new ReplicationMessage(name, key, value, currentVectorClock, localMember,
+                        ReplicationMessage message = new ReplicationMessage(name, key, value, newTimestamp, localMember,
                                 latestUpdateHash, ttlMillis);
 
                         distributeReplicationMessage(message, true);
@@ -353,8 +357,7 @@ public class ReplicationPublisher<K, V>
     }
 
     private void applyTheUpdate(ReplicationMessage<K, V> update, ReplicatedRecord<K, V> localEntry) {
-        VectorClock localVectorClock = localEntry.getVectorClock();
-        VectorClock remoteVectorClock = update.getVectorClock();
+        VectorClockTimestamp remoteVectorClockTimestamp = update.getVectorClockTimestamp();
         K marshalledKey = (K) replicatedRecordStore.marshallKey(update.getKey());
         V marshalledValue = (V) replicatedRecordStore.marshallValue(update.getValue());
         long ttlMillis = update.getTtlMillis();
@@ -366,7 +369,7 @@ public class ReplicationPublisher<K, V>
             storage.remove(marshalledKey, localEntry);
         }
 
-        localVectorClock.applyVector(remoteVectorClock);
+        localEntry.applyVectorClock(remoteVectorClockTimestamp);
         if (ttlMillis > 0) {
             replicatedRecordStore.scheduleTtlEntry(ttlMillis, marshalledKey, null);
         } else {

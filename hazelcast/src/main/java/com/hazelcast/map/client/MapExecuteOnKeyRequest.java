@@ -40,6 +40,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
     private String name;
     private Data key;
     private EntryProcessor processor;
+    private boolean submitToKey;
 
     public MapExecuteOnKeyRequest() {
     }
@@ -73,8 +74,13 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
         return MapPortableHook.EXECUTE_ON_KEY;
     }
 
+    public void setAsSubmitToKey() {
+        this.submitToKey = true;
+    }
+
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeBoolean("s", submitToKey);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         out.writeObject(processor);
@@ -82,6 +88,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        submitToKey = reader.readBoolean("s");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
@@ -90,5 +97,18 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public String getMethodName() {
+        if (submitToKey) {
+            return "submitToKey";
+        }
+        return "executeOnKey";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, processor};
     }
 }

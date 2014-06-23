@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class MapTryPutRequest extends MapPutRequest {
 
@@ -58,5 +59,15 @@ public class MapTryPutRequest extends MapPutRequest {
     public void read(PortableReader reader) throws IOException {
         timeout = reader.readLong("timeout");
         super.read(reader);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "tryPut";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, value, timeout, TimeUnit.MILLISECONDS};
     }
 }

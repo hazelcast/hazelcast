@@ -95,4 +95,13 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Por
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 
+    @Override
+    public String getMethodName() {
+        return "remove";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, value};
+    }
 }

@@ -100,4 +100,14 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "executeOnEntries";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{processor};
+    }
 }

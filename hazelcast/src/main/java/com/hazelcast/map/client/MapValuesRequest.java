@@ -87,4 +87,9 @@ public class MapValuesRequest extends AllPartitionsClientRequest implements Port
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "values";
+    }
 }

@@ -496,6 +496,10 @@ public class Node {
         return configClassLoader;
     }
 
+    public NodeEngineImpl getNodeEngine() {
+        return nodeEngine;
+    }
+
     public class NodeShutdownHookThread extends Thread {
 
         NodeShutdownHookThread(String name) {

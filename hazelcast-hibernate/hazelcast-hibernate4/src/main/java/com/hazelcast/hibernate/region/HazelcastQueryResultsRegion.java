@@ -22,6 +22,9 @@ import org.hibernate.cache.spi.QueryResultsRegion;
 
 import java.util.Properties;
 
+/**
+ * Hazelcast based implementation of a storage region for query results
+ */
 public class HazelcastQueryResultsRegion extends AbstractGeneralRegion<LocalRegionCache> implements QueryResultsRegion {
 
     public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name, final Properties props) {

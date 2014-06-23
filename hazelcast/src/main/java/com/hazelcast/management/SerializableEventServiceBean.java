@@ -1,15 +1,14 @@
 package com.hazelcast.management;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.spi.EventService;
-import java.io.IOException;
+
+import static com.hazelcast.util.JsonUtil.getInt;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.EventServiceMBean}.
  */
-public class SerializableEventServiceBean implements DataSerializable {
+public class SerializableEventServiceBean implements JsonSerializable {
 
     private int eventThreadCount;
     private int eventQueueCapacity;
@@ -49,16 +48,19 @@ public class SerializableEventServiceBean implements DataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(eventThreadCount);
-        out.writeInt(eventQueueCapacity);
-        out.writeInt(eventQueueSize);
+    public JsonObject toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("eventThreadCount", eventThreadCount);
+        root.add("eventQueueCapacity", eventQueueCapacity);
+        root.add("eventQueueSize", eventQueueSize);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        eventThreadCount = in.readInt();
-        eventQueueCapacity = in.readInt();
-        eventQueueSize = in.readInt();
+    public void fromJson(JsonObject json) {
+        eventThreadCount = getInt(json, "eventThreadCount", -1);
+        eventQueueCapacity = getInt(json, "eventQueueCapacity", -1);
+        eventQueueSize = getInt(json, "eventQueueSize", -1);
+
     }
 }

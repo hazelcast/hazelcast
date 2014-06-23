@@ -29,12 +29,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.TcpIpConnection;
-import com.hazelcast.nio.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
@@ -80,7 +81,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     public static final int DESTROY_ENDPOINT_DELAY_MS = 1111;
     public static final int ENDPOINT_REMOVE_DELAY_MS = 10;
     public static final int THREADS_PER_CORE = 10;
-    public static final int RIDICULOUS_THREADS_PER_CORE = 100000;
+    public static final int QUEUE_CAPACITY_PER_CORE = 100000;
 
     static final Data NULL = new Data();
 
@@ -99,7 +100,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.nodeEngine = node.nodeEngine;
         int coreSize = Runtime.getRuntime().availableProcessors();
         this.executor = nodeEngine.getExecutionService().register(ExecutionService.CLIENT_EXECUTOR,
-                coreSize * THREADS_PER_CORE, coreSize * RIDICULOUS_THREADS_PER_CORE,
+                coreSize * THREADS_PER_CORE, coreSize * QUEUE_CAPACITY_PER_CORE,
                 ExecutorType.CONCRETE);
         this.logger = node.getLogger(ClientEngine.class);
     }
@@ -394,6 +395,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     public void reset() {
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         for (ClientEndpoint endpoint : endpoints.values()) {
             try {
@@ -491,8 +493,29 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             request.setEndpoint(endpoint);
             initService(request);
             request.setClientEngine(ClientEngineImpl.this);
+            final Credentials credentials = endpoint.getCredentials();
+            interceptBefore(credentials, request);
             checkPermissions(endpoint, request);
             request.process();
+            interceptAfter(credentials, request);
+        }
+
+        private void interceptBefore(Credentials credentials, ClientRequest request) {
+            final SecurityContext securityContext = getSecurityContext();
+            final String methodName = request.getMethodName();
+            if (securityContext != null && methodName != null) {
+                final String distributedObjectType = request.getDistributedObjectType();
+                securityContext.interceptBefore(credentials, distributedObjectType, methodName, request.getParameters());
+            }
+        }
+
+        private void interceptAfter(Credentials credentials, ClientRequest request) {
+            final SecurityContext securityContext = getSecurityContext();
+            final String methodName = request.getMethodName();
+            if (securityContext != null && methodName != null) {
+                final String distributedObjectType = request.getDistributedObjectType();
+                securityContext.interceptAfter(credentials, distributedObjectType, methodName);
+            }
         }
 
         private void checkPermissions(ClientEndpoint endpoint, ClientRequest request) {

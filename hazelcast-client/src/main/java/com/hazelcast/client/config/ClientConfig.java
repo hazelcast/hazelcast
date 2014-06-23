@@ -73,6 +73,8 @@ public class ClientConfig {
      */
     private int executorPoolSize = -1;
 
+    private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
+
     private SerializationConfig serializationConfig = new SerializationConfig();
 
     private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
@@ -95,8 +97,6 @@ public class ClientConfig {
         return properties;
     }
 
-    private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
-
     public ClientConfig setProperties(final Properties properties) {
         this.properties = properties;
         return this;
@@ -106,16 +106,18 @@ public class ClientConfig {
         return securityConfig;
     }
 
-    public void setSecurityConfig(ClientSecurityConfig securityConfig) {
+    public ClientConfig setSecurityConfig(ClientSecurityConfig securityConfig) {
         this.securityConfig = securityConfig;
+        return this;
     }
 
     public ClientNetworkConfig getNetworkConfig() {
         return networkConfig;
     }
 
-    public void setNetworkConfig(ClientNetworkConfig networkConfig) {
+    public ClientConfig setNetworkConfig(ClientNetworkConfig networkConfig) {
         this.networkConfig = networkConfig;
+        return this;
     }
 
     /**

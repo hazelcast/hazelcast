@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
@@ -59,38 +60,7 @@ public class ClientReplicatedMapAddEntryListenerRequest
             throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
-
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
-
-            private void handleEvent(EntryEvent<Object, Object> event) {
-                if (endpoint.live()) {
-                    Object key = event.getKey();
-                    Object value = event.getValue();
-                    Object oldValue = event.getOldValue();
-                    EntryEventType eventType = event.getEventType();
-                    String uuid = event.getMember().getUuid();
-                    Portable portableEntryEvent = new ReplicatedMapPortableEntryEvent(key, value, oldValue, eventType, uuid);
-                    endpoint.sendEvent(portableEntryEvent, getCallId());
-                }
-            }
-
-            public void entryAdded(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
-
-            public void entryRemoved(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
-
-            public void entryUpdated(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
-
-            public void entryEvicted(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
-        };
-
+        final EntryListener<Object, Object> listener = new ClientReplicatedMapEntryListener();
         String registrationId;
         if (predicate == null) {
             registrationId = replicatedRecordStore.addEntryListener(listener, key);
@@ -99,6 +69,50 @@ public class ClientReplicatedMapAddEntryListenerRequest
         }
         endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getMapName(), registrationId);
         return registrationId;
+    }
+
+    /**
+     * Client replicated map entry listener.
+     */
+    private class ClientReplicatedMapEntryListener implements EntryListener<Object, Object> {
+
+        private void handleEvent(EntryEvent<Object, Object> event) {
+            if (endpoint.live()) {
+                Object key = event.getKey();
+                Object value = event.getValue();
+                Object oldValue = event.getOldValue();
+                EntryEventType eventType = event.getEventType();
+                String uuid = event.getMember().getUuid();
+                Portable portableEntryEvent = new ReplicatedMapPortableEntryEvent(key, value, oldValue, eventType, uuid);
+                endpoint.sendEvent(portableEntryEvent, getCallId());
+            }
+        }
+
+        @Override
+        public void entryAdded(EntryEvent<Object, Object> event) {
+            handleEvent(event);
+        }
+
+        @Override
+        public void entryRemoved(EntryEvent<Object, Object> event) {
+            handleEvent(event);
+        }
+
+        @Override
+        public void entryUpdated(EntryEvent<Object, Object> event) {
+            handleEvent(event);
+        }
+
+        @Override
+        public void entryEvicted(EntryEvent<Object, Object> event) {
+            handleEvent(event);
+        }
+
+        @Override
+        public void mapEvicted(MapEvent event) {
+            // TODO what should this method do?
+        }
+
     }
 
     @Override

@@ -18,8 +18,10 @@ package com.hazelcast.nio;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Represents something where data can be read from.
+ */
 public interface SocketReadable {
 
     boolean readFrom(ByteBuffer source);
-
 }

@@ -51,6 +51,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.logging.ILogger;
@@ -85,7 +86,8 @@ public final class ProxyManager {
 
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
-    private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
+    private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies
+            = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
@@ -134,6 +136,10 @@ public final class ProxyManager {
                 LOGGER.severe(e);
             }
         }
+    }
+
+    public HazelcastInstance getHazelcastInstance() {
+        return client;
     }
 
     public void register(String serviceName, ClientProxyFactory factory) {
@@ -265,9 +271,9 @@ public final class ProxyManager {
                 }
             }
             if (proxy instanceof Throwable) {
-                throw ExceptionUtil.rethrow((Throwable)proxy);
+                throw ExceptionUtil.rethrow((Throwable) proxy);
             }
-            return (ClientProxy)proxy;
+            return (ClientProxy) proxy;
         }
 
         void set(Object o) {

@@ -24,7 +24,7 @@ import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
-public class EntryEventFilter implements EventFilter,DataSerializable {
+public class EntryEventFilter implements EventFilter, DataSerializable {
 
     boolean includeValue = false;
     Data key = null;
@@ -57,5 +57,32 @@ public class EntryEventFilter implements EventFilter,DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         includeValue = in.readBoolean();
         key = in.readObject();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        EntryEventFilter that = (EntryEventFilter) o;
+
+        if (includeValue != that.includeValue) {
+            return false;
+        }
+        if (key != null ? !key.equals(that.key) : that.key != null) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (includeValue ? 1 : 0);
+        result = 31 * result + (key != null ? key.hashCode() : 0);
+        return result;
     }
 }

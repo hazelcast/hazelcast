@@ -53,7 +53,7 @@ public class HazelcastCache implements Cache {
         final Object value = map.get(key);
         return value != null ? new SimpleValueWrapper(fromStoreValue(value)) : null;
     }
-    
+
     public <T> T get(Object key, Class<T> type) {
         Object value = fromStoreValue(this.map.get(key));
         if (type != null && value != null && !type.isInstance(value)) {
@@ -92,15 +92,18 @@ public class HazelcastCache implements Cache {
         map.clear();
     }
 
-    final static class NullDataSerializable implements DataSerializable {
+    static final class NullDataSerializable implements DataSerializable {
         public void writeData(final ObjectDataOutput out) throws IOException {
         }
+
         public void readData(final ObjectDataInput in) throws IOException {
         }
+
         @Override
         public boolean equals(Object obj) {
             return obj != null && obj.getClass() == getClass();
         }
+
         @Override
         public int hashCode() {
             return 0;

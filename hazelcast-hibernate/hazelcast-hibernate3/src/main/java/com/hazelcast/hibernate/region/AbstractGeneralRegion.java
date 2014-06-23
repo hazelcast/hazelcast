@@ -19,20 +19,25 @@ package com.hazelcast.hibernate.region;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.GeneralDataRegion;
 
 import java.util.Properties;
 
 /**
+ * Basic implementation of a IMap based cache without any special security checks
+ *
  * @author Leo Kim (lkim@limewire.com)
+ * @param <Cache> implementation type of RegionCache
  */
-public abstract class AbstractGeneralRegion<Cache extends RegionCache> extends AbstractHazelcastRegion<Cache>
+abstract class AbstractGeneralRegion<Cache extends RegionCache> extends AbstractHazelcastRegion<Cache>
         implements GeneralDataRegion {
 
     private final Cache cache;
 
-    protected AbstractGeneralRegion(final HazelcastInstance instance, final String name, final Properties props, final Cache cache) {
+    protected AbstractGeneralRegion(final HazelcastInstance instance, final String name
+            , final Properties props, final Cache cache) {
         super(instance, name, props);
         this.cache = cache;
     }
@@ -40,14 +45,16 @@ public abstract class AbstractGeneralRegion<Cache extends RegionCache> extends A
     public void evict(final Object key) throws CacheException {
         try {
             getCache().remove(key);
-        } catch (OperationTimeoutException ignored) {
+        } catch (OperationTimeoutException e) {
+            Logger.getLogger(AbstractGeneralRegion.class).finest(e);
         }
     }
 
     public void evictAll() throws CacheException {
         try {
             getCache().clear();
-        } catch (OperationTimeoutException ignored) {
+        } catch (OperationTimeoutException e) {
+            Logger.getLogger(AbstractGeneralRegion.class).finest(e);
         }
     }
 
@@ -62,7 +69,8 @@ public abstract class AbstractGeneralRegion<Cache extends RegionCache> extends A
     public void put(final Object key, final Object value) throws CacheException {
         try {
             getCache().put(key, value, null);
-        } catch (OperationTimeoutException ignored) {
+        } catch (OperationTimeoutException e) {
+            Logger.getLogger(AbstractGeneralRegion.class).finest(e);
         }
     }
 

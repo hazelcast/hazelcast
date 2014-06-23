@@ -21,6 +21,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -49,10 +50,13 @@ import com.hazelcast.map.operation.ClearOperation;
 import com.hazelcast.map.operation.ContainsKeyOperation;
 import com.hazelcast.map.operation.ContainsValueOperationFactory;
 import com.hazelcast.map.operation.EntryOperation;
+import com.hazelcast.map.operation.EvictAllOperation;
 import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.map.operation.GetEntryViewOperation;
 import com.hazelcast.map.operation.GetOperation;
+import com.hazelcast.map.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.operation.KeyBasedMapOperation;
+import com.hazelcast.map.operation.LoadAllOperation;
 import com.hazelcast.map.operation.MapEntrySetOperation;
 import com.hazelcast.map.operation.MapFlushOperation;
 import com.hazelcast.map.operation.MapGetAllOperationFactory;
@@ -98,6 +102,7 @@ import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
@@ -110,6 +115,7 @@ import com.hazelcast.util.executor.CompletedFuture;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -390,6 +396,49 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return evictSuccess;
     }
 
+    protected void evictAllInternal() {
+        try {
+            clearNearCache();
+            final Operation operation = new EvictAllOperation(name);
+            final NodeEngine nodeEngine = getNodeEngine();
+            final Map<Integer, Object> resultMap
+                    = nodeEngine.getOperationService().invokeOnAllPartitions(SERVICE_NAME,
+                    new BinaryOperationFactory(operation, nodeEngine));
+
+            int numberOfAffectedEntries = 0;
+            for (Object o : resultMap.values()) {
+                numberOfAffectedEntries += (Integer) o;
+            }
+            publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+
+    /**
+     * Maps keys to corresponding partitions and sends operations to them.
+     *
+     * @param keys
+     * @param replaceExistingValues
+     */
+    protected void loadAllInternal(Collection<Data> keys, boolean replaceExistingValues) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Map<Integer, Collection<Data>> partitionIdToKeys = getPartitionIdToKeysMap(keys);
+        final Set<Entry<Integer, Collection<Data>>> entries = partitionIdToKeys.entrySet();
+        for (final Entry<Integer, Collection<Data>> entry : entries) {
+            final Integer partitionId = entry.getKey();
+            final Collection<Data> correspondingKeys = entry.getValue();
+            final Operation operation = createLoadAllOperation(correspondingKeys, replaceExistingValues);
+            nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+        }
+        waitUntilLoaded();
+    }
+
+    private Operation createLoadAllOperation(final Collection<Data> keys, boolean replaceExistingValues) {
+        return new LoadAllOperation(name, keys, replaceExistingValues);
+    }
+
     protected Data removeInternal(Data key) {
         RemoveOperation operation = new RemoveOperation(name, key);
         Data previousValue = (Data) invokeOperation(key, operation);
@@ -528,7 +577,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME,
-                            new BinaryOperationFactory(new MapIsEmptyOperation(name), nodeEngine));
+                            new IsEmptyOperationFactory());
             for (Object result : results.values()) {
                 if (!(Boolean) getService().toObject(result))
                     return false;
@@ -597,6 +646,27 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             partitionIds.add(partitionService.getPartitionId(key));
         }
         return partitionIds;
+    }
+
+    private Map<Integer, Collection<Data>> getPartitionIdToKeysMap(Collection<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        final Map<Integer, Collection<Data>> idToKeys = new HashMap<Integer, Collection<Data>>();
+
+        final Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            final Data key = iterator.next();
+            final int partitionId = partitionService.getPartitionId(key);
+            Collection<Data> keyList = idToKeys.get(partitionId);
+            if (keyList == null) {
+                keyList = new ArrayList<Data>();
+                idToKeys.put(partitionId, keyList);
+            }
+            keyList.add(key);
+        }
+        return idToKeys;
     }
 
     protected void putAllInternal(final Map<? extends Object, ? extends Object> entries) {
@@ -1148,6 +1218,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
+
     public void addIndex(final String attribute, final boolean ordered) {
         final NodeEngine nodeEngine = getNodeEngine();
         if (attribute == null) throw new IllegalArgumentException("Attribute name cannot be null");
@@ -1183,11 +1254,20 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         getService().invalidateNearCache(name, key);
     }
 
-    private void invalidateNearCache(Set<Data> keys) {
+    private void invalidateNearCache(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }
         getService().invalidateNearCache(name, keys);
+    }
+
+    private void clearNearCache() {
+        getService().clearNearCache(name);
+    }
+
+    private void publishMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
+        getService().publishMapEvent(getNodeEngine().getThisAddress(),
+                name, eventType, numberOfAffectedEntries);
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {

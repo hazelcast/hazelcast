@@ -16,10 +16,7 @@
 
 package com.hazelcast.jca;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
+import com.hazelcast.core.HazelcastInstance;
 
 import javax.resource.ResourceException;
 import javax.resource.cci.Connection;
@@ -29,9 +26,14 @@ import javax.resource.spi.ConnectionRequestInfo;
 import javax.resource.spi.ManagedConnection;
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
-import com.hazelcast.core.HazelcastInstance;
-
+/**
+ * Implementation class of {@link javax.resource.spi.ManagedConnection}
+ */
 public class ManagedConnectionImpl extends JcaBase implements ManagedConnection {
     /**
      * Identity generator
@@ -145,8 +147,8 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
         //return tx;
     }
 
-    public ManagedConnectionMetaData getMetaData() {
-        return new ManagedConnectionMetaData();
+    public HazelcastManagedConnectionMetaData getMetaData() {
+        return new HazelcastManagedConnectionMetaData();
     }
 
     private ResourceAdapterImpl getResourceAdapter() {

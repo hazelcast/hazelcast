@@ -19,7 +19,6 @@ package com.hazelcast.map.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,8 +29,6 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author enesakar 7/23/13
@@ -65,24 +62,14 @@ public class TestWriteBehindException extends HazelcastTestSupport {
 
         assertOpenEventually(latch1);
         Thread.sleep(2000);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(29, mapStore.store.size());
-            }
-        });
+        assertSizeEventually(29, mapStore.store);
 
         for (int i = 0; i < 30; i++) {
             map.delete(i);
         }
         assertOpenEventually(latch2);
         Thread.sleep(2000);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, mapStore.store.size());
-            }
-        });
+        assertSizeEventually(1, mapStore.store);
 
     }
 

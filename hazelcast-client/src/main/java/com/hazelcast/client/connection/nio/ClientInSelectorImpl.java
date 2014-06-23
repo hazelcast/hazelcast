@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.SelectionHandler;
+import com.hazelcast.nio.tcp.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 
@@ -26,6 +26,7 @@ public class ClientInSelectorImpl extends ClientAbstractIOSelector {
         super(threadGroup, "InSelector");
     }
 
+    @Override
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isReadable()) {
             final SelectionHandler handler = (SelectionHandler) sk.attachment();

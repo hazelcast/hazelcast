@@ -78,4 +78,9 @@ public class MapClearRequest extends AllPartitionsClientRequest implements Porta
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "clear";
+    }
 }

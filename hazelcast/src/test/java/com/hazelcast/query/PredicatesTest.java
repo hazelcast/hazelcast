@@ -41,13 +41,14 @@ import static com.hazelcast.query.Predicates.lessEqual;
 import static com.hazelcast.query.Predicates.lessThan;
 import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.notEqual;
+import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Map.Entry;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -74,6 +75,16 @@ public class PredicatesTest {
         assertPredicateTrue(and1, 5);
         final Predicate and2 = and(greaterThan(null, 5), lessThan(null, 6));
         assertPredicateFalse(and2, 4);
+        final Predicate and3 = and(greaterThan(null,4), lessThan(null, 6), equal(null,5));
+        assertPredicateTrue(and3, 5);
+        final Predicate and4 = and(greaterThan(null,3), lessThan(null, 6), equal(null,4));
+        assertPredicateFalse(and4, 5);
+    }
+    @Test
+    public void testOr() {
+        final Predicate or1 = or(equal(null, 3), equal(null, 4), equal(null, 5));
+        assertPredicateTrue(or1, 4);
+        assertPredicateFalse(or1, 6);
     }
 
     @Test
@@ -185,6 +196,41 @@ public class PredicatesTest {
         assertTrue(e.get("id").equal(12).apply(createEntry("1", value)));
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testBetweenNull() {
+        Predicates.between("", null, null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testLessThanNull() {
+        Predicates.lessThan("", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testLessEqualNull() {
+        Predicates.lessEqual("", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testGreaterThanNull() {
+        Predicates.greaterThan("", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testGreaterEqualNull() {
+        Predicates.greaterEqual("", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testInNullWithNullArgument() {
+        Predicates.in("", null, 2, "value");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testInNullWithNullArray() {
+        Predicates.in("", null);
+    }
+
     private class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
@@ -256,6 +302,7 @@ public class PredicatesTest {
         public Data getIndexKey() {
             return null;
         }
+
     }
 
     private static Entry createEntry(final Object key, final Object value) {

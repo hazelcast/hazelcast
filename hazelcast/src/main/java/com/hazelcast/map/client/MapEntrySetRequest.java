@@ -89,4 +89,9 @@ public class MapEntrySetRequest extends AllPartitionsClientRequest implements Po
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "entrySet";
+    }
 }

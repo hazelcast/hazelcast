@@ -13,12 +13,15 @@ src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md
 		src/Map-Eviction.md
+		src/Map-InMemoryFormat.md
 		src/Map-Persistence.md
 		src/Map-Interceptors.md
 		src/Map-NearCache.md
 		src/Map-EntryStatistics.md
-		src/Map-InMemoryFormat.md
+		src/Map-EntryListener.md
 	src/Queue.md
+		src/SampleQueueCode.md
+		src/BoundedQueue.md
 		src/Queue-Persistence.md
 	src/MultiMap.md
 	src/Set.md
@@ -58,9 +61,9 @@ src/Transactions.md
 		src/SampleJBossConfiguration.md
 #	src/XATransactions.md
 src/IntegratedClustering.md
-	src/HTTPSessionClustering.md
+	src/WebSessionReplication.md
+		src/TomcatSessionReplication.md
 	src/SpringIntegration.md
-	src/SessionReplication.md
 src/Storage.md
 src/Clients.md
 #	src/ClientTypes.md
@@ -70,15 +73,18 @@ src/Clients.md
 	src/RESTClient.md
 	src/MemcacheClient.md
 src/Serialization.md
+	src/Serializable.md
 	src/DataSerialization.md
 	src/PortableSerialization.md
-	src/CustomSerialization.md
+	src/StreamSerializer.md
+	src/ByteArraySerializer.md
+	src/HazelcastInstanceAware.md
 src/Management.md
 	src/JMXAPIPerNode.md
 	src/MonitoringWithJMX.md
 	src/ClusterUtilities.md
 	src/ManagementCenter.md
-#	src/ClusteredJMX.md
+	src/ClusteredJMX.md
 #	src/ClusteredREST.md
 #src/ServerProtocols.md
 #	src/HazelcastNetworkProtocol.md
@@ -87,11 +93,11 @@ src/Management.md
 src/Security.md
 	src/Encryption.md
 	src/SSL.md
-	src/EnablingSecurityforHE.md
 	src/Credentials.md
 	src/ClusterLoginModule.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
+	src/EnablingSecurityforHE.md
 src/Performance.md
     src/ThreadingModel.md
 src/WAN.md
@@ -100,12 +106,12 @@ src/Config.md
 	src/NetworkConfig.md
 		src/ConfigSpecifyInterfaces.md
 		src/EC2AutoDiscovery.md
+		src/Ports.md
 		src/IPv6.md
-		src/OutboundPorts.md
-	src/PartitionGroupConfig.md
+		src/PartitionGroupConfig.md
 	src/ListenerConfig.md
-	src/WildcardConfiguration.md
-	src/ConfigurationProperties.md
 	src/Logging.md
+	src/ConfigurationProperties.md
 	src/EnterpriseConfig.md
+#	src/XMLWrapUp.md
 src/FAQ.md

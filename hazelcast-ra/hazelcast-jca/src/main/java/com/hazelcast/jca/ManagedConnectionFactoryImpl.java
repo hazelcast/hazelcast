@@ -16,15 +16,6 @@
 
 package com.hazelcast.jca;
 
-import static java.util.Collections.emptySet;
-
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionManager;
 import javax.resource.spi.ConnectionRequestInfo;
@@ -33,6 +24,14 @@ import javax.resource.spi.ManagedConnectionFactory;
 import javax.resource.spi.ResourceAdapter;
 import javax.resource.spi.ResourceAdapterAssociation;
 import javax.security.auth.Subject;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
+import static java.util.Collections.emptySet;
 
 /**
  * This managed connection factory is populated with all
@@ -48,10 +47,11 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
      * Identity generator
      */
     private static final AtomicInteger ID_GEN = new AtomicInteger();
+
     /**
      * Identity
      */
-    private final transient int id;
+    private transient int id;
 
     /**
      * Access to this resource adapter instance itself
@@ -72,7 +72,7 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
     private boolean connectionTracingDetail;
 
     public ManagedConnectionFactoryImpl() {
-        id = ID_GEN.incrementAndGet();
+        setId(ID_GEN.incrementAndGet());
     }
 
     /* (non-Javadoc)
@@ -260,5 +260,10 @@ public class ManagedConnectionFactoryImpl extends JcaBase implements ManagedConn
         }
         return true;
     }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
 
 }

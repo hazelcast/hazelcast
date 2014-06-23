@@ -22,7 +22,10 @@ import com.hazelcast.logging.ILogger;
 import org.hibernate.cache.Region;
 
 /**
+ * Hazelcast specific interface version of Hibernate's Region
+ *
  * @author Leo Kim (lkim@limewire.com)
+ * @param <Cache> implementation type of RegionCache
  */
 public interface HazelcastRegion<Cache extends RegionCache> extends Region {
 

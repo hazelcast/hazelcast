@@ -18,6 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.PartitioningStrategy;
 
+/**
+ * Contains the configuration for partitioning strategy.
+ */
 public class PartitioningStrategyConfig {
 
     private String partitioningStrategyClass;
@@ -43,7 +46,7 @@ public class PartitioningStrategyConfig {
     }
 
     public PartitioningStrategyConfigReadOnly getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new PartitioningStrategyConfigReadOnly(this);
         }
         return readOnly;

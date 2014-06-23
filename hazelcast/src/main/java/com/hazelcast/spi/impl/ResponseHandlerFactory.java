@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
@@ -30,6 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class ResponseHandlerFactory {
 
     private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
+
+    private ResponseHandlerFactory() {
+    }
 
     public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
         op.setResponseHandler(createRemoteResponseHandler(nodeEngine, op));
@@ -64,7 +66,7 @@ public final class ResponseHandlerFactory {
         return new ErrorLoggingResponseHandler(logger);
     }
 
-    private static class ErrorLoggingResponseHandler implements ResponseHandler {
+    private static final class ErrorLoggingResponseHandler implements ResponseHandler {
         private final ILogger logger;
 
         private ErrorLoggingResponseHandler(ILogger logger) {
@@ -85,7 +87,7 @@ public final class ResponseHandlerFactory {
         }
     }
 
-    private static class RemoteInvocationResponseHandler implements ResponseHandler {
+    private static final class RemoteInvocationResponseHandler implements ResponseHandler {
 
         private final NodeEngine nodeEngine;
         private final Operation op;
@@ -119,9 +121,5 @@ public final class ResponseHandlerFactory {
         public boolean isLocal() {
             return false;
         }
-    }
-
-
-    private ResponseHandlerFactory() {
     }
 }

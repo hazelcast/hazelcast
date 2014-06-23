@@ -21,11 +21,33 @@ import org.hibernate.cache.CacheException;
 
 import java.util.Properties;
 
+/**
+ * Factory interface to build Hazelcast instances and configure them depending
+ * on configuration.
+ */
 public interface IHazelcastInstanceLoader {
 
+    /**
+     * Applies a set of properties to the factory
+     *
+     * @param props properties to apply
+     */
     void configure(Properties props);
 
+    /**
+     * Create a new {@link com.hazelcast.core.HazelcastInstance} or loads an already
+     * existing instances by it's name.
+     *
+     * @return new or existing HazelcastInstance (either client or node mode)
+     * @throws CacheException all exceptions wrapped to CacheException
+     */
     HazelcastInstance loadInstance() throws CacheException;
 
+    /**
+     * Tries to shutdown a HazelcastInstance
+     *
+     * @throws CacheException all exceptions wrapped to CacheException
+     */
     void unloadInstance() throws CacheException;
 }
+

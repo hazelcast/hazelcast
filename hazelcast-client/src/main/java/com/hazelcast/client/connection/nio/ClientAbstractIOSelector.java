@@ -18,7 +18,7 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.IOSelector;
+import com.hazelcast.nio.tcp.IOSelector;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -33,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class ClientAbstractIOSelector extends Thread implements IOSelector {
 
     private static final int TIMEOUT = 3;
+
+    private static final int WAIT_TIME = 5000;
 
     protected final ILogger logger;
 
@@ -49,7 +51,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
     protected ClientAbstractIOSelector(ThreadGroup threadGroup, String threadName) {
         super(threadGroup, threadName);
         this.logger = Logger.getLogger(getClass().getName());
-        this.waitTime = 5000;
+        this.waitTime = WAIT_TIME;
         Selector selectorTemp = null;
         try {
             selectorTemp = Selector.open();
@@ -59,22 +61,27 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         this.selector = selectorTemp;
     }
 
+    @Override
     public Selector getSelector() {
         return selector;
     }
 
+    @Override
     public void addTask(Runnable runnable) {
         selectorQueue.add(runnable);
     }
 
+    @Override
     public void wakeup() {
         selector.wakeup();
     }
 
+    @Override
     public void shutdown() {
         selectorQueue.clear();
         try {
             addTask(new Runnable() {
+                @Override
                 public void run() {
                     live = false;
                     shutdownLatch.countDown();
@@ -85,6 +92,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         }
     }
 
+    @Override
     public void awaitShutdown() {
         try {
             shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
@@ -102,6 +110,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         }
     }
 
+    @Override
     public final void run() {
         try {
             //noinspection WhileLoopSpinsOnField

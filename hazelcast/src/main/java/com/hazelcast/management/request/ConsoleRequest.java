@@ -16,18 +16,20 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.io.IOException;
 
-public interface ConsoleRequest extends DataSerializable {
+/**
+ *  Represents requests sent from Management Center.
+ */
+public interface ConsoleRequest extends JsonSerializable {
 
     int getType();
 
-    Object readResponse(ObjectDataInput in) throws IOException;
+    Object readResponse(JsonObject in) throws IOException;
 
-    void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception;
+    void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception;
+
 }
