@@ -186,27 +186,9 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         Set<EventRegistration> registrationsWithOldValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutOldValue = new HashSet<EventRegistration>();
 
-        Data dataValue;
-        Object objectValue;
-        if (!(value instanceof Data)) {
-            dataValue = toData(value);
-            objectValue = value;
-        } else {
-            dataValue = (Data) value;
-            objectValue = toData(value);
-            ;
-        }
+        Object objectValue = toObject(value);
+        Object objectOldValue = toObject(oldValue);
 
-        Data dataOldValue;
-        Object objectOldValue;
-        if (!(value instanceof Data)) {
-            dataOldValue = toData(oldValue);
-            objectOldValue = oldValue;
-        } else {
-            dataOldValue = (Data) oldValue;
-            objectOldValue = toData(oldValue);
-            ;
-        }
 
         for (EventRegistration candidate : candidates) {
             EventFilter filter = candidate.getFilter();
@@ -227,6 +209,9 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
             return;
         }
 
+        Data dataValue = toData(value);
+        Data dataOldValue = toData(oldValue);
+        ;
         if (eventType == EventType.REMOVED || eventType == EventType.EXPIRED) {
             dataValue = dataValue != null ? dataValue : dataOldValue;
         }

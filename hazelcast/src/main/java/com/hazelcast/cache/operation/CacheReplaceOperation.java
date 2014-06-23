@@ -39,11 +39,6 @@ public class CacheReplaceOperation extends AbstractCacheOperation implements Bac
     public CacheReplaceOperation() {
     }
 
-    public CacheReplaceOperation(String name, Data key, Data value) {
-        super(name, key);
-        this.value = value;
-    }
-
     public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy) {
         super(name, key);
         this.value = newValue;
@@ -65,11 +60,6 @@ public class CacheReplaceOperation extends AbstractCacheOperation implements Bac
         } else {
             response = Boolean.FALSE;
         }
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        //TODO PUBLISH UPDATE EVENT
     }
 
     @Override

@@ -71,6 +71,7 @@ public final class SimpleCacheTest {
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
+        System.setProperty("hazelcast.jmx", "true");
 
         // randomize multicast group...
         Random rand = new Random();

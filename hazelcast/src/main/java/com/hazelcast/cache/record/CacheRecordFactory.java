@@ -43,7 +43,8 @@ public class CacheRecordFactory {
                 record = new CacheDataRecord(key, dataValue, expiryTime);
                 break;
             case OBJECT:
-                record = new CacheObjectRecord(key, value, expiryTime);
+                Object objectValue= serializationService.toObject(value);
+                record = new CacheObjectRecord(key, objectValue, expiryTime);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + inMemoryFormat);

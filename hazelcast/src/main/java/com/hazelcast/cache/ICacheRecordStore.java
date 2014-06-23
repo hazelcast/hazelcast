@@ -68,16 +68,20 @@ public interface ICacheRecordStore {
 
     Map<Data, CacheRecord> getReadOnlyRecords();
 
-    void own(Data key, CacheRecord record);
-
     CacheRecord getRecord(Data key);
 
     void setRecord(Data key, CacheRecord record);
+
+    CacheRecord removeRecord(Data key);
 
     CacheKeyIteratorResult iterator(int segmentIndex, int tableIndex, int size);
 
     Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments);
 
+    Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues);
+
 //    void setRecordStoreMode(boolean storeOrBackup);
+
+    CacheStatistics getCacheStats();
 
 }

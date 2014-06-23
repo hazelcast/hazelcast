@@ -27,6 +27,9 @@ import com.hazelcast.cache.operation.CacheGetAndRemoveOperation;
 import com.hazelcast.cache.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.operation.CacheGetOperation;
 import com.hazelcast.cache.operation.CacheKeyIteratorOperation;
+import com.hazelcast.cache.operation.CacheLoadAllOperation;
+import com.hazelcast.cache.operation.CacheLoadAllOperationFactory;
+import com.hazelcast.cache.operation.CachePutAllBackupOperation;
 import com.hazelcast.cache.operation.CachePutBackupOperation;
 import com.hazelcast.cache.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.operation.CachePutOperation;
@@ -43,11 +46,11 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 public final class CacheDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_DS_FACTORY, -25);
-
     private static short i = 0;
-
     public static final short GET = i++;
+
     public static final short CONTAINS_KEY = i++;
+
     public static final short PUT = i++;
     public static final short PUT_IF_ABSENT = i++;
     public static final short REMOVE = i++;
@@ -56,6 +59,7 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
     public static final short GET_AND_REPLACE = i++;
 
     public static final short PUT_BACKUP = i++;
+    public static final short PUT_ALL_BACKUP = i++;
     public static final short REMOVE_BACKUP = i++;
     public static final short CLEAR_BACKUP = i++;
 
@@ -67,6 +71,8 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
     public static final short GET_STATS_FACTORY = i++;
     public static final short GET_ALL = i++;
     public static final short GET_ALL_FACTORY = i++;
+    public static final short LOAD_ALL = i++;
+    public static final short LOAD_ALL_FACTORY = i++;
 
     public static final short EXPIRY_POLICY = i++;
     public static final short EVENT = i++;
@@ -101,6 +107,8 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
                     return new CacheGetAndReplaceOperation();
                 } else if (typeId == PUT_BACKUP) {
                     return new CachePutBackupOperation();
+                } else if (typeId == PUT_ALL_BACKUP) {
+                    return new CachePutAllBackupOperation();
                 } else if (typeId == REMOVE_BACKUP) {
                     return new CacheRemoveBackupOperation();
                 } else if (typeId == CLEAR_BACKUP) {
@@ -121,6 +129,10 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
                     return new CacheGetAllOperation();
                 } else if (typeId == GET_ALL_FACTORY) {
                     return new CacheGetAllOperationFactory();
+                } else if (typeId == LOAD_ALL) {
+                    return new CacheLoadAllOperation();
+                } else if (typeId == LOAD_ALL_FACTORY) {
+                    return new CacheLoadAllOperationFactory();
                 } else if (typeId == EVENT) {
 //                        return new CacheEntryEventImpl<>();
                 } else if (typeId == KEY_ITERATOR) {

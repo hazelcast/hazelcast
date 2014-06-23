@@ -21,6 +21,8 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.management.CacheMXBean;
+import javax.cache.management.CacheStatisticsMXBean;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -80,6 +82,12 @@ public interface ICache<K, V> extends DistributedObject, javax.cache.Cache<K, V>
     //endregion
 
     int size();
+
+    CacheMXBean getCacheMXBean();
+
+    CacheStatisticsMXBean getCacheStatisticsMXBean();
+
+    void setStatisticsEnabled(boolean enabled);
 
 //    CacheStats getStats();
 

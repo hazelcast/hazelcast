@@ -25,6 +25,8 @@ public class HazelcastCacheManager implements CacheManager {
     private final WeakReference<ClassLoader> classLoaderReference;
     private final Properties properties;
 
+    private boolean closeTriggered=false;
+
 
     public HazelcastCacheManager(HazelcastCachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri, ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
@@ -67,7 +69,7 @@ public class HazelcastCacheManager implements CacheManager {
 
     @Override
     public Properties getProperties() {
-        return cachingProvider.getDefaultProperties();
+        return properties;
     }
 
     @Override
@@ -100,7 +102,7 @@ public class HazelcastCacheManager implements CacheManager {
         }
         cacheConfig.setName(cacheName);
         hazelcastInstance.getConfig().addCacheConfig(cacheConfig);
-        return getCache(cacheName);
+        return getCacheObject(cacheName);
     }
 
     @Override
@@ -117,7 +119,7 @@ public class HazelcastCacheManager implements CacheManager {
         final CacheConfig<?, ?> configuration = hazelcastInstance.getConfig().getCacheConfig(cacheName);
         if (configuration.getKeyType() != null && configuration.getKeyType().equals(keyType)) {
             if (configuration.getValueType() != null && configuration.getValueType().equals(valueType)) {
-                return getCache(cacheName);
+                return getCacheObject(cacheName);
             } else {
                 throw new ClassCastException("Incompatible cache value types specified, expected " +
                         configuration.getValueType() + " but " + valueType + " was specified");
@@ -130,6 +132,22 @@ public class HazelcastCacheManager implements CacheManager {
 
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName) {
+        if (isClosed()) {
+            throw new IllegalStateException();
+        }
+        final CacheConfig<?, ?> configuration = hazelcastInstance.getConfig().getCacheConfig(cacheName);
+
+        if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())){
+            return getCacheObject(cacheName);
+        } else {
+            throw new IllegalArgumentException("Cache " + cacheName + " was " +
+                    "defined with specific types Cache<" +
+                    configuration.getKeyType() + ", " + configuration.getValueType() + "> " +
+                    "in which case CacheManager.getCache(String, Class, Class) must be used");
+        }
+    }
+
+    private <K, V> ICache<K, V> getCacheObject(String cacheName){
         ICache<K, V> cache = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, cacheName);
         if (cache != null && cache instanceof CacheProxy) {
             ((CacheProxy<K, V>) cache).initCacheManager(this);
@@ -139,6 +157,9 @@ public class HazelcastCacheManager implements CacheManager {
 
     @Override
     public Iterable<String> getCacheNames() {
+//        if (isClosed()) {
+//            throw new IllegalStateException();
+//        }
         final Collection<String> names = new LinkedList<String>();
         final HazelcastInstance hz = hazelcastInstance;
         Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
@@ -152,6 +173,9 @@ public class HazelcastCacheManager implements CacheManager {
 
     @Override
     public void destroyCache(String cacheName) {
+        if (isClosed()) {
+            throw new IllegalStateException();
+        }
         HazelcastInstance hz = hazelcastInstance;
         hazelcastInstance.getConfig().removeCacheConfig(cacheName);
         DistributedObject cache = hz.getDistributedObject(CacheService.SERVICE_NAME, cacheName);
@@ -165,11 +189,20 @@ public class HazelcastCacheManager implements CacheManager {
 
     @Override
     public void enableStatistics(String cacheName, boolean enabled) {
-        throw new UnsupportedOperationException();
+        if (isClosed()) {
+            throw new IllegalStateException();
+        }
+        if (cacheName == null) {
+            throw new NullPointerException();
+        }
+        final ICache<Object, Object> cache = getCache(cacheName);
+        cache.setStatisticsEnabled(enabled);
     }
 
     @Override
     public void close() {
+//        closeTriggered=true;
+
         HazelcastInstance hz = hazelcastInstance;
         Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
         for (DistributedObject distributedObject : distributedObjects) {
@@ -177,11 +210,12 @@ public class HazelcastCacheManager implements CacheManager {
                 distributedObject.destroy();
             }
         }
+//        hz.shutdown();
     }
 
     @Override
     public boolean isClosed() {
-        return !hazelcastInstance.getLifecycleService().isRunning();
+        return closeTriggered || !hazelcastInstance.getLifecycleService().isRunning();
     }
 
     @Override

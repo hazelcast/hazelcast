@@ -38,13 +38,7 @@ import java.util.Map;
 public final class CacheReplicationOperation extends AbstractOperation {
 
     final Map<String, Map<Data, CacheRecord>> source;
-
     final Map<String, Map<Data, CacheRecord>> destination;
-
-//    public CacheReplicationOperation() {
-//        source = null;
-//        destination = new HashMap<String, Map<Data, CacheRecord>>();
-//    }
 
     public CacheReplicationOperation(CachePartitionSegment segment, int replicaIndex) {
         source = new HashMap<String, Map<Data, CacheRecord>>();
@@ -78,7 +72,7 @@ public final class CacheReplicationOperation extends AbstractOperation {
                 Data key = next.getKey();
                 CacheRecord record = next.getValue();
                 iter.remove();
-                cache.own(key, record);
+                cache.setRecord(key, record);
             }
         }
         destination.clear();

@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
+import javax.cache.management.CacheStatisticsMXBean;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -29,27 +30,65 @@ public class CacheStatistics implements DataSerializable {
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
 
-    private final AtomicLong cacheRemovals = new AtomicLong();
-    private final AtomicLong cacheExpiries = new AtomicLong();
-    private final AtomicLong cachePuts = new AtomicLong();
-    private final AtomicLong cacheHits = new AtomicLong();
-    private final AtomicLong cacheMisses = new AtomicLong();
-    private final AtomicLong cacheEvictions = new AtomicLong();
-    private final AtomicLong cachePutTimeTakenNanos = new AtomicLong();
-    private final AtomicLong cacheGetTimeTakenNanos = new AtomicLong();
-    private final AtomicLong cacheRemoveTimeTakenNanos = new AtomicLong();
+    private final AtomicLong removals = new AtomicLong();
+    private final AtomicLong expiries = new AtomicLong();
+    private final AtomicLong puts = new AtomicLong();
+    private final AtomicLong hits = new AtomicLong();
+    private final AtomicLong misses = new AtomicLong();
+    private final AtomicLong evictions = new AtomicLong();
+    private final AtomicLong putTimeTakenNanos = new AtomicLong();
+    private final AtomicLong getTimeTakenNanos = new AtomicLong();
+    private final AtomicLong removeTimeTakenNanos = new AtomicLong();
 
+    public CacheStatistics() {
+    }
+
+    public long getRemovals() {
+        return removals.get();
+    }
+
+    public long getExpiries() {
+        return expiries.get();
+    }
+
+    public long getPuts() {
+        return puts.get();
+    }
+
+    public long getHits() {
+        return hits.get();
+    }
+
+    public long getMisses() {
+        return misses.get();
+    }
+
+    public long getEvictions() {
+        return evictions.get();
+    }
+
+    public long getPutTimeTakenNanos() {
+        return putTimeTakenNanos.get();
+    }
+
+    public long getGetTimeTakenNanos() {
+        return getTimeTakenNanos.get();
+    }
+
+    public long getRemoveTimeTakenNanos() {
+        return removeTimeTakenNanos.get();
+    }
 
     public void clear() {
-        cachePuts.set(0);
-        cacheMisses.set(0);
-        cacheRemovals.set(0);
-        cacheExpiries.set(0);
-        cacheHits.set(0);
-        cacheEvictions.set(0);
-        cacheGetTimeTakenNanos.set(0);
-        cachePutTimeTakenNanos.set(0);
-        cacheRemoveTimeTakenNanos.set(0);
+        puts.set(0);
+        misses.set(0);
+        removals.set(0);
+        expiries.set(0);
+        hits.set(0);
+        evictions.set(0);
+        getTimeTakenNanos.set(0);
+        putTimeTakenNanos.set(0);
+        removeTimeTakenNanos.set(0);
     }
 
     /**
@@ -58,7 +97,7 @@ public class CacheStatistics implements DataSerializable {
      * @param number the number to increase the counter by
      */
     public void increaseCacheRemovals(long number) {
-        cacheRemovals.getAndAdd(number);
+        removals.getAndAdd(number);
     }
 
     /**
@@ -67,7 +106,7 @@ public class CacheStatistics implements DataSerializable {
      * @param number the number to increase the counter by
      */
     public void increaseCacheExpiries(long number) {
-        cacheExpiries.getAndAdd(number);
+        expiries.getAndAdd(number);
     }
 
     /**
@@ -76,7 +115,7 @@ public class CacheStatistics implements DataSerializable {
      * @param number the number to increase the counter by
      */
     public void increaseCachePuts(long number) {
-        cachePuts.getAndAdd(number);
+        puts.getAndAdd(number);
     }
 
     /**
@@ -85,7 +124,7 @@ public class CacheStatistics implements DataSerializable {
      * @param number the number to increase the counter by
      */
     public void increaseCacheHits(long number) {
-        cacheHits.getAndAdd(number);
+        hits.getAndAdd(number);
     }
 
     /**
@@ -94,7 +133,7 @@ public class CacheStatistics implements DataSerializable {
      * @param number the number to increase the counter by
      */
     public void increaseCacheMisses(long number) {
-        cacheMisses.getAndAdd(number);
+        misses.getAndAdd(number);
     }
 
     /**
@@ -103,7 +142,7 @@ public class CacheStatistics implements DataSerializable {
      * @param number the number to increase the counter by
      */
     public void increaseCacheEvictions(long number) {
-        cacheEvictions.getAndAdd(number);
+        evictions.getAndAdd(number);
     }
 
     /**
@@ -112,12 +151,12 @@ public class CacheStatistics implements DataSerializable {
      * @param duration the time taken in nanoseconds
      */
     public void addGetTimeNano(long duration) {
-        if (cacheGetTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
-            cacheGetTimeTakenNanos.addAndGet(duration);
+        if (getTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
+            getTimeTakenNanos.addAndGet(duration);
         } else {
             //counter full. Just reset.
             clear();
-            cacheGetTimeTakenNanos.set(duration);
+            getTimeTakenNanos.set(duration);
         }
     }
 
@@ -128,12 +167,12 @@ public class CacheStatistics implements DataSerializable {
      * @param duration the time taken in nanoseconds
      */
     public void addPutTimeNano(long duration) {
-        if (cachePutTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
-            cachePutTimeTakenNanos.addAndGet(duration);
+        if (putTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
+            putTimeTakenNanos.addAndGet(duration);
         } else {
             //counter full. Just reset.
             clear();
-            cachePutTimeTakenNanos.set(duration);
+            putTimeTakenNanos.set(duration);
         }
     }
 
@@ -143,22 +182,57 @@ public class CacheStatistics implements DataSerializable {
      * @param duration the time taken in nanoseconds
      */
     public void addRemoveTimeNano(long duration) {
-        if (cacheRemoveTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
-            cacheRemoveTimeTakenNanos.addAndGet(duration);
+        if (removeTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
+            removeTimeTakenNanos.addAndGet(duration);
         } else {
             //counter full. Just reset.
             clear();
-            cacheRemoveTimeTakenNanos.set(duration);
+            removeTimeTakenNanos.set(duration);
         }
+    }
+
+    public CacheStatistics acumulate(CacheStatistics other){
+        puts.addAndGet(other.getPuts());
+        removals.set(other.getRemovals());
+        expiries.set(other.getExpiries());
+        evictions.set(other.getEvictions());
+
+        hits.set(other.getHits());
+        misses.set(other.getMisses());
+
+        putTimeTakenNanos.set(other.getPutTimeTakenNanos());
+        getTimeTakenNanos.set(other.getGetTimeTakenNanos());
+        removeTimeTakenNanos.set(other.getRemoveTimeTakenNanos());
+        return this;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(puts.get());
+        out.writeLong(removals.get());
+        out.writeLong(expiries.get());
+        out.writeLong(evictions.get());
 
+        out.writeLong(hits.get());
+        out.writeLong(misses.get());
+
+        out.writeLong(putTimeTakenNanos.get());
+        out.writeLong(getTimeTakenNanos.get());
+        out.writeLong(removeTimeTakenNanos.get());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        puts.set(in.readLong());
+        removals.set(in.readLong());
+        expiries.set(in.readLong());
+        evictions.set(in.readLong());
 
+        hits.set(in.readLong());
+        misses.set(in.readLong());
+
+        putTimeTakenNanos.set(in.readLong());
+        getTimeTakenNanos.set(in.readLong());
+        removeTimeTakenNanos.set(in.readLong());
     }
 }

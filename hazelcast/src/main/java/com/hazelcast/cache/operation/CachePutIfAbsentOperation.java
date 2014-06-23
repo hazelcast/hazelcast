@@ -56,10 +56,6 @@ public class CachePutIfAbsentOperation extends AbstractCacheOperation implements
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
     public boolean shouldBackup() {
         return response == Boolean.TRUE;
     }
