@@ -45,7 +45,7 @@ In order to define member attribute on a member you can either
 
 - Provide member attributes at runtime via attribute setter methods on `Member` interface.
 
-For example you can tag your members with their CPU characteristics and you can route CPU intensive tasks to those CPU-rich members.
+For example, you can tag your members with their CPU characteristics and you can route CPU intensive tasks to those CPU-rich members.
 
 ```java
 MemberAttributeConfig fourCore = new MemberAttributeConfig();
@@ -83,6 +83,4 @@ executorService.execute( new CPUIntensiveTask(), new MemberSelector(){
 
 HazelcastInstance member4 = Hazelcast.newHazelcastInstance();
 member4.setIntAttribute("CPU_CORE_COUNT", 2); // we can also set member attributes at runtime.
-
-
 ```
