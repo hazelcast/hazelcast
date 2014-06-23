@@ -18,6 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.cluster.BindOperation;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.instance.NodeInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.CipherHelper;
@@ -26,13 +27,13 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -117,10 +118,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private volatile Thread socketAcceptorThread;
     // accessed only in synchronized block
 
-    private final SecurityContext securityContext;
+    private final NodeInitializer initializer;
 
-    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel, SecurityContext context) {
-        this.securityContext = context;
+    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel, NodeInitializer initializer) {
+        this.initializer = initializer;
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
@@ -148,8 +149,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
-        if (securityContext != null) {
-            securityContext.interceptSocket(socket, onAccept);
+        final MemberSocketInterceptor memberSocketInterceptor = initializer.getMemberSocketInterceptor();
+        if (memberSocketInterceptor == null) {
+            return;
+        }
+        if (onAccept) {
+            memberSocketInterceptor.onAccept(socket);
+        } else {
+            memberSocketInterceptor.onConnect(socket);
         }
     }
 
