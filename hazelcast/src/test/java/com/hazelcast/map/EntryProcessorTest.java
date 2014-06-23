@@ -268,16 +268,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             keys.add(key);
         }
 
-        map.executeOnKeys(keys, new EntryCreate());
+        int expected = 6;
+        map.executeOnKeys(keys, new EntryCreate(expected));
 
         for(Object key : keys){
-            assertEquals(6, map.get(key));
-        }
-
-        instance1.shutdown();
-
-        for(Object key : keys){
-            assertEquals(6, map.get(key));
+            assertEquals(expected, map.get(key));
         }
 
     }
@@ -1040,9 +1035,18 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
     public static class EntryCreate extends AbstractEntryProcessor<String, Integer> {
 
+        int expected;
+
+        public EntryCreate(){
+        }
+
+        public EntryCreate(int expected){
+            this.expected = expected;
+        }
+
         @Override
         public Object process(final Map.Entry<String, Integer> entry) {
-            entry.setValue(6);
+            entry.setValue(expected);
             return null;
         }
     }
