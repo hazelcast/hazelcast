@@ -31,11 +31,27 @@ public class SecurityConfig {
 
     private List<LoginModuleConfig> memberLoginModuleConfigs = new ArrayList<LoginModuleConfig>();
 
+    private List<SecurityInterceptorConfig> securityInterceptorConfigs = new ArrayList<SecurityInterceptorConfig>();
+
     private List<LoginModuleConfig> clientLoginModuleConfigs = new ArrayList<LoginModuleConfig>();
 
     private PermissionPolicyConfig clientPolicyConfig = new PermissionPolicyConfig();
 
     private Set<PermissionConfig> clientPermissionConfigs = new HashSet<PermissionConfig>();
+
+
+    public SecurityConfig addSecurityInterceptorConfig(SecurityInterceptorConfig interceptorConfig) {
+        securityInterceptorConfigs.add(interceptorConfig);
+        return this;
+    }
+
+    public List<SecurityInterceptorConfig> getSecurityInterceptorConfigs() {
+        return securityInterceptorConfigs;
+    }
+
+    public void setSecurityInterceptorConfigs(final List<SecurityInterceptorConfig> securityInterceptorConfigs) {
+        this.securityInterceptorConfigs = securityInterceptorConfigs;
+    }
 
     public boolean isEnabled() {
         return enabled;

@@ -47,6 +47,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
+import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
@@ -72,6 +73,29 @@ import java.util.Set;
 
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
+/**
+ * BeanDefinitionParser for Hazelcast Config Configuration
+ * <p/>
+ *
+ * <b>Sample Spring XML for Hazelcast Config:</b>
+ * <pre>
+ * &lt;hz:config&gt;
+ *  &lt;hz:map name="map1"&gt;
+ *      &lt;hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
+ *          eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/&gt;
+ *
+ *  &lt;hz:map-store enabled="true" class-name="com.foo.DummyStore"
+ *          write-delay-seconds="0"/&gt;
+ *  &lt;/hz:map&gt;
+ *  &lt;hz:map name="map2"&gt;
+ *      &lt;hz:map-store enabled="true" implementation="dummyMapStore"
+ *          write-delay-seconds="0"/&gt;
+ *  &lt;/hz:map&gt;
+ *
+ *  &lt;bean id="dummyMapStore" class="com.foo.DummyStore" /&gt;
+ * &lt;/hz:config&gt;
+ * </pre>
+ */
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -604,9 +628,25 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handlePermissionPolicy(child, securityConfigBuilder);
                 } else if ("client-permissions".equals(nodeName)) {
                     handleSecurityPermissions(child, securityConfigBuilder);
+                } else if ("security-interceptors".equals(nodeName)) {
+                    handleSecurityInterceptors(child, securityConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);
+        }
+
+        private void handleSecurityInterceptors(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {
+            final List lms = new ManagedList();
+            for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("interceptor".equals(nodeName)) {
+                    final BeanDefinitionBuilder lmConfigBuilder = createBeanBuilder(SecurityInterceptorConfig.class);
+                    final AbstractBeanDefinition beanDefinition = lmConfigBuilder.getBeanDefinition();
+                    fillAttributeValues(child, lmConfigBuilder);
+                    lms.add(beanDefinition);
+                }
+            }
+            securityConfigBuilder.addPropertyValue("securityInterceptorConfigs", lms);
         }
 
         private void handleCredentialsFactory(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {

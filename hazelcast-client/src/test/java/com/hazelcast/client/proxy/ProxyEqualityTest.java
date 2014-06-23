@@ -9,12 +9,11 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -45,7 +44,7 @@ public class ProxyEqualityTest {
         server1GroupA = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig( new GroupConfig(config.getGroupConfig().getName()) );
+        clientConfig.setGroupConfig(new GroupConfig(config.getGroupConfig().getName()));
         client1GroupA = HazelcastClient.newHazelcastClient(clientConfig);
         client2GroupA = HazelcastClient.newHazelcastClient(clientConfig);
 
@@ -55,7 +54,7 @@ public class ProxyEqualityTest {
         server1GroupB = Hazelcast.newHazelcastInstance(config);
 
         clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig( new GroupConfig(config.getGroupConfig().getName()) );
+        clientConfig.setGroupConfig(new GroupConfig(config.getGroupConfig().getName()));
         client1GroupB = HazelcastClient.newHazelcastClient(clientConfig);
     }
 

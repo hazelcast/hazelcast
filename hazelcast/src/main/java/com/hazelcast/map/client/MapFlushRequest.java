@@ -77,4 +77,8 @@ public class MapFlushRequest extends AllPartitionsClientRequest implements Porta
         return new MapPermission(name, ActionConstants.ACTION_PUT);
     }
 
+    @Override
+    public String getMethodName() {
+        return "flush";
+    }
 }

@@ -17,22 +17,18 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.cluster.BindOperation;
-import com.hazelcast.config.SSLConfig;
+import com.hazelcast.instance.NodeInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.CipherHelper;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
-import com.hazelcast.nio.ssl.BasicSSLContextFactory;
-import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
-import com.hazelcast.security.SecurityContext;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -117,10 +113,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private volatile Thread socketAcceptorThread;
     // accessed only in synchronized block
 
-    private final SecurityContext securityContext;
+    private final NodeInitializer initializer;
 
-    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel, SecurityContext context) {
-        this.securityContext = context;
+    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel, NodeInitializer initializer) {
+        this.initializer = initializer;
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
@@ -137,20 +133,28 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (ports != null) {
             outboundPorts.addAll(ports);
         }
-        SSLConfig sslConfig = ioService.getSSLConfig();
-        if (sslConfig != null && sslConfig.isEnabled()) {
-            socketChannelWrapperFactory = new SSLSocketChannelWrapperFactory(sslConfig);
-            logger.info("SSL is enabled");
-        } else {
-            socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
-        }
+        socketChannelWrapperFactory = initializer.getSocketChannelWrapperFactory();
         portableContext = ioService.getSerializationContext();
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
-        if (securityContext != null) {
-            securityContext.interceptSocket(socket, onAccept);
+        final MemberSocketInterceptor memberSocketInterceptor = initializer.getMemberSocketInterceptor();
+        if (memberSocketInterceptor == null) {
+            return;
         }
+        if (onAccept) {
+            memberSocketInterceptor.onAccept(socket);
+        } else {
+            memberSocketInterceptor.onConnect(socket);
+        }
+    }
+
+    public PacketReader createPacketReader(TcpIpConnection connection) {
+        return initializer.createPacketReader(connection, ioService);
+    }
+
+    public PacketWriter createPacketWriter(TcpIpConnection connection) {
+        return initializer.createPacketWriter(connection, ioService);
     }
 
     @Override
@@ -168,7 +172,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     public boolean isSSLEnabled() {
-        return socketChannelWrapperFactory instanceof SSLSocketChannelWrapperFactory;
+        return socketChannelWrapperFactory.isSSlEnabled();
     }
 
     public void incrementTextConnections() {
@@ -177,46 +181,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     public PortableContext getPortableContext() {
         return portableContext;
-    }
-
-    interface SocketChannelWrapperFactory {
-        SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
-    }
-
-    static class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
-        @Override
-        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-            return new DefaultSocketChannelWrapper(socketChannel);
-        }
-    }
-
-    class SSLSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
-        final SSLContextFactory sslContextFactory;
-
-        SSLSocketChannelWrapperFactory(SSLConfig sslConfig) {
-            if (CipherHelper.isSymmetricEncryptionEnabled(ioService)) {
-                throw new RuntimeException("SSL and SymmetricEncryption cannot be both enabled!");
-            }
-            SSLContextFactory sslContextFactoryObject = (SSLContextFactory) sslConfig.getFactoryImplementation();
-            try {
-                String factoryClassName = sslConfig.getFactoryClassName();
-                if (sslContextFactoryObject == null && factoryClassName != null) {
-                    sslContextFactoryObject = (SSLContextFactory) Class.forName(factoryClassName).newInstance();
-                }
-                if (sslContextFactoryObject == null) {
-                    sslContextFactoryObject = new BasicSSLContextFactory();
-                }
-                sslContextFactoryObject.init(sslConfig.getProperties());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            sslContextFactory = sslContextFactoryObject;
-        }
-
-        @Override
-        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-            return new SSLSocketChannelWrapper(sslContextFactory.getSSLContext(), socketChannel, client);
-        }
     }
 
     public IOService getIOHandler() {

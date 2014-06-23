@@ -242,17 +242,6 @@
     <suppress checks="EmptyBlock" files="com.hazelcast.queue.tx.TransactionalQueueProxy"/>
 
     <!-- jca -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.jca[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.jca[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.jca[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.jca[\\/]"/>
-
-    <suppress checks="EmptyStatement" files="com.hazelcast.jca.ResourceAdapterImpl"/>
-    <suppress checks="FileTabCharacter" files="com.hazelcast.jca.HzConnectionEvent"/>
-    <suppress checks="FileTabCharacter" files="com.hazelcast.jca.HazelcastConnectionFactory"/>
-
-
-
 
     <!-- Query -->
     <suppress checks="JavadocMethod" files="com.hazelcast.query[\\/]"/>
@@ -610,18 +599,16 @@
     <suppress checks="IllegalImport" files="com.hazelcast.hibernate.serialization.Hibernate4CacheKeySerializer"/>
 
     <!-- Spring-->
-    <suppress checks="JavadocMethod" files="com.hazelcast.spring[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.spring[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.spring[\\/]"/>
-    <!-- Spring breaks the rule IllegalTypeCheck in its own implementation -->
+    <suppress checks="MethodCount" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+
+    <!-- Spring Framework breaks the rule IllegalTypeCheck in its own implementation -->
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastClientBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastInstanceDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastTypeBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser"/>
 
-    <suppress checks="MethodCount" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
 
 
 

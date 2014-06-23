@@ -92,4 +92,14 @@ public class MapContainsValueRequest extends AllPartitionsClientRequest implemen
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "containsValue";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{value};
+    }
 }

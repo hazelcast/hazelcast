@@ -36,10 +36,21 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * @author mdogan 4/10/12
+ * Base class of all Hazelcast BeanDefinitionParser implementations.
+ * <p/>
+ * <ul>
+ *     <li>{@link com.hazelcast.spring.HazelcastClientBeanDefinitionParser}</li>
+ *     <li>{@link com.hazelcast.spring.HazelcastConfigBeanDefinitionParser}</li>
+ *     <li>{@link com.hazelcast.spring.HazelcastInstanceDefinitionParser}</li>
+ *     <li>{@link com.hazelcast.spring.HazelcastTypeBeanDefinitionParser}</li>
+ * </ul>
+ *
  */
 public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
+    /**
+     * Base Helper class for Spring Xml Builder
+     */
     public abstract class SpringXmlBuilderHelper extends AbstractXmlConfigHelper {
 
         protected BeanDefinitionBuilder configBuilder;

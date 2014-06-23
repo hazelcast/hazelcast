@@ -20,6 +20,8 @@ src/Distributed_Data_Structures.md
 		src/Map-EntryStatistics.md
 		src/Map-EntryListener.md
 	src/Queue.md
+		src/SampleQueueCode.md
+		src/BoundedQueue.md
 		src/Queue-Persistence.md
 	src/MultiMap.md
 	src/Set.md

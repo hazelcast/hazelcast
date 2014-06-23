@@ -24,6 +24,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+/**
+ * BeanDefinitionParser for Type Configuration of Hazelcast Types like map,queue,topic etc.
+ *
+ */
 public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     private final String type;

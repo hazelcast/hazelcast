@@ -39,6 +39,7 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
 
     private String name;
     private Data key;
+    private boolean async;
     private transient long startTime;
 
     public MapGetRequest() {
@@ -73,6 +74,10 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
         }
     }
 
+    public void setAsAsync() {
+        this.async = true;
+    }
+
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
@@ -88,12 +93,14 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeBoolean("a", async);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        async = reader.readBoolean("a");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
@@ -101,5 +108,18 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
 
     public MapPermission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getMethodName() {
+        if (async) {
+            return "getAsync";
+        }
+        return "get";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
     }
 }

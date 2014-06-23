@@ -19,10 +19,10 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.MultiTargetClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.operation.AddInterceptorOperationFactory;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.operation.AddInterceptorOperationFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -83,8 +83,9 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
         Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
         Collection<Address> addresses = new HashSet<Address>();
         for (MemberImpl member : memberList) {
-            if(!member.localMember())
-            addresses.add(member.getAddress());
+            if (!member.localMember()) {
+                addresses.add(member.getAddress());
+            }
         }
         return addresses;
     }
@@ -103,5 +104,15 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_INTERCEPT);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "addInterceptor";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{mapInterceptor};
     }
 }

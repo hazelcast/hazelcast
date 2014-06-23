@@ -55,4 +55,9 @@ public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerReque
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_LISTEN);
     }
+
+    @Override
+    public String getMethodName() {
+        return "removeEntryListener";
+    }
 }
