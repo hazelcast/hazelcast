@@ -208,26 +208,6 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
 
-//    public void dispatchEvent(MultiMapEvent event, EventListener listener) {
-//        EntryListener entryListener = (EntryListener) listener;
-//        final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
-//        EntryEvent entryEvent = new EntryEvent(event.getName(), member, event.getEventType().getType(),
-//                nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
-//        if (member == null) {
-//            if (logger.isLoggable(Level.INFO)) {
-//                logger.info("Dropping event " + entryEvent + " from unknown address:" + event.getCaller());
-//            }
-//            return;
-//        }
-//
-//        if (event.getEventType().equals(EntryEventType.ADDED)) {
-//            entryListener.entryAdded(entryEvent);
-//        } else if (event.getEventType().equals(EntryEventType.REMOVED)) {
-//            entryListener.entryRemoved(entryEvent);
-//        }
-//        getLocalMultiMapStatsImpl(event.getName()).incrementReceivedEvents();
-//    }
-
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
