@@ -240,6 +240,17 @@
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="member-attributes" minOccurs="0" maxOccurs="1">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="attribute" type="attribute" maxOccurs="unbounded"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                            <xs:unique name="uniqueAttributeConstraint">
+                                <xs:selector xpath="./*"/>
+                                <xs:field xpath="@name"/>
+                            </xs:unique>
+                        </xs:element>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -572,6 +583,36 @@
     <xs:complexType name="properties">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="property" type="property"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="attributeName">
+        <xs:restriction base="non-space-string"/>
+    </xs:simpleType>
+    <xs:simpleType name="attributeTypeEnum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="boolean"/>
+            <xs:enumeration value="byte"/>
+            <xs:enumeration value="double"/>
+            <xs:enumeration value="float"/>
+            <xs:enumeration value="int"/>
+            <xs:enumeration value="long"/>
+            <xs:enumeration value="short"/>
+            <xs:enumeration value="string"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="attribute">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+        		<xs:attribute name="name" use="required" type="attributeName"/>
+        		<!--xs:attribute name="name" use="required" type="xs:ID"/-->
+        		<xs:attribute name="type" use="optional" default="string" type="attributeTypeEnum"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="attributes">
+        <xs:sequence>
+            <xs:element name="attribute" type="attribute" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 

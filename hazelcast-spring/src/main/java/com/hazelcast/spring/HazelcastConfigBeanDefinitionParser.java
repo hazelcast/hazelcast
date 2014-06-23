@@ -34,6 +34,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
@@ -41,6 +42,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PermissionConfig;
+import com.hazelcast.config.AbstractXmlConfigHelper.IterableNodeList;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
 import com.hazelcast.config.QueueConfig;
@@ -55,6 +57,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.spring.context.SpringManagedContext;
+
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -159,6 +162,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSerialization(node);
                 } else if ("security".equals(nodeName)) {
                     handleSecurity(node);
+                } else if ("member-attributes".equals(nodeName)) {
+                    handleMemberAttributes(node);
                 } else if ("instance-name".equals(nodeName)) {
                     configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
                 } else if ("listeners".equals(nodeName)) {
@@ -610,6 +615,44 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);
+        }
+        
+        private void handleMemberAttributes(final Node node) {
+            final BeanDefinitionBuilder memberAttributeConfigBuilder = createBeanBuilder(MemberAttributeConfig.class);
+            final AbstractBeanDefinition beanDefinition = memberAttributeConfigBuilder.getBeanDefinition();
+            ManagedMap<String, Object> attributes = new ManagedMap<String, Object>();
+            for (Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                final String name = cleanNodeName(n.getNodeName());
+                if (!"attribute".equals(name)) {
+                    continue;
+                }
+                final String attributeName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
+                final String attributeType = getTextContent(n.getAttributes().getNamedItem("type")).trim();
+                final String value = getTextContent(n);
+                final Object oValue;
+                if ("string".equals(attributeType)) {
+                	oValue = value;
+                } else if ("boolean".equals(attributeType)) {
+                	oValue = Boolean.parseBoolean(value);
+                } else if ("byte".equals(attributeType)) {
+                	oValue = Byte.parseByte(value);
+                } else if ("double".equals(attributeType)) {
+                	oValue = Double.parseDouble(value);
+                } else if ("float".equals(attributeType)) {
+                	oValue = Float.parseFloat(value);
+                } else if ("int".equals(attributeType)) {
+                	oValue = Integer.parseInt(value);
+                } else if ("long".equals(attributeType)) {
+                	oValue = Long.parseLong(value);
+                } else if ("short".equals(attributeType)) {
+                	oValue = Short.parseShort(value);
+                } else {
+                	oValue = value;
+                }
+                attributes.put(attributeName, oValue);
+            }
+            memberAttributeConfigBuilder.addPropertyValue("attributes", attributes);
+            configBuilder.addPropertyValue("memberAttributeConfig", beanDefinition);
         }
 
         private void handleCredentialsFactory(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {

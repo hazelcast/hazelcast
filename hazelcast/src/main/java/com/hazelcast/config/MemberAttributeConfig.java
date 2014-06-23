@@ -34,6 +34,13 @@ public class MemberAttributeConfig {
     public Map<String, Object> getAttributes() {
         return attributes;
     }
+    
+    public void setAttributes(Map<String, Object> attributes) {
+    	this.attributes.clear();
+    	if (attributes != null) {
+    		this.attributes.putAll(attributes);
+    	}
+    }
 
     public String getStringAttribute(String key) {
         return (String) getAttribute(key);

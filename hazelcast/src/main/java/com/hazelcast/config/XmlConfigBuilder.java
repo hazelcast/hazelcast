@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.AbstractXmlConfigHelper.IterableNodeList;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -27,6 +28,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -35,6 +37,7 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -270,6 +273,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleSerialization(node);
             } else if ("security".equals(nodeName)) {
                 handleSecurity(node);
+            } else if ("member-attributes".equals(nodeName)) {
+                handleMemberAttributes(node);
             } else if ("license-key".equals(nodeName)) {
                 config.setLicenseKey(getTextContent(node));
             } else if ("management-center".equals(nodeName)) {
@@ -1130,6 +1135,37 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("client-permissions".equals(nodeName)) {
                 //listener-permission
                 handleSecurityPermissions(child);
+            }
+        }
+    }
+
+    private void handleMemberAttributes(final Node node) {
+        for (Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+            final String name = cleanNodeName(n.getNodeName());
+            if (!"attribute".equals(name)) {
+                continue;
+            }
+            final String attributeName = getTextContent(n.getAttributes().getNamedItem("name"));
+            final String attributeType = getTextContent(n.getAttributes().getNamedItem("type"));
+            final String value = getTextContent(n);
+            if ("string".equals(attributeType)) {
+            	config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
+            } else if ("boolean".equals(attributeType)) {
+            	config.getMemberAttributeConfig().setBooleanAttribute(attributeName, Boolean.parseBoolean(value));
+            } else if ("byte".equals(attributeType)) {
+            	config.getMemberAttributeConfig().setByteAttribute(attributeName, Byte.parseByte(value));
+            } else if ("double".equals(attributeType)) {
+            	config.getMemberAttributeConfig().setDoubleAttribute(attributeName, Double.parseDouble(value));
+            } else if ("float".equals(attributeType)) {
+            	config.getMemberAttributeConfig().setFloatAttribute(attributeName, Float.parseFloat(value));
+            } else if ("int".equals(attributeType)) {
+            	config.getMemberAttributeConfig().setIntAttribute(attributeName, Integer.parseInt(value));
+            } else if ("long".equals(attributeType)) {
+            	config.getMemberAttributeConfig().setLongAttribute(attributeName, Long.parseLong(value));
+            } else if ("short".equals(attributeType)) {
+            	config.getMemberAttributeConfig().setShortAttribute(attributeName, Short.parseShort(value));
+            } else {
+            	config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
             }
         }
     }
