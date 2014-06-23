@@ -9,7 +9,7 @@
 ||[Map](#map)|Eviction section improved by adding the detailed policy and parameter explanations. A subsection on how to evict particular map entries added *([Evicting Specific Entries](#evicting-specific-entries))*. Also [Map Overview](#map-overview) and [Backups](#backups) sections enhanced with "how it works" information. Added [Entry Listener](#entry-listener) as a new section.|
 |[Chapter 6 - Distributed Query](#distributed-query)|[Continuous Query](#continuous-query)|Section re-written. Sample codes added.
 |[Chapter 8 - Integrated Clustering](#integrated-clustering)|[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Added as a new section (Enterprise Only).|
-|[Chapter 10 - Clients](#clients)|[Java Client](#java#client)|Client configuration related to AWS added.|
+|[Chapter 10 - Clients](#clients)|[Java Client](#java-client)|Client configuration related to AWS added.|
 |[Chapter 11 - Serialization](#serialization)||All sections under this chapter re-written and enhanced. Also added HazelcastInstanceAware, Stream & ByteArray Serializer, Serializable & Externalizable sections.|
 |[Chapter 12 - Management](#management)|[Clustered JMX](#clustered-jmx)|Added as a new section explaining how to monitor the statistics of distributed objects from a JMX interface (Enterprise Only).|
 |[Chapter 16 - Configuration](#configuration)|[Configuring TCP/IP Cluster](#configuring-tcp-ip-cluster)| Section improved by adding more detailed configuration options.|
