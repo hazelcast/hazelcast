@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.AbstractXmlConfigHelper.IterableNodeList;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -1149,23 +1148,23 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String attributeType = getTextContent(n.getAttributes().getNamedItem("type"));
             final String value = getTextContent(n);
             if ("string".equals(attributeType)) {
-            	config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
+                config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
             } else if ("boolean".equals(attributeType)) {
-            	config.getMemberAttributeConfig().setBooleanAttribute(attributeName, Boolean.parseBoolean(value));
+                config.getMemberAttributeConfig().setBooleanAttribute(attributeName, Boolean.parseBoolean(value));
             } else if ("byte".equals(attributeType)) {
-            	config.getMemberAttributeConfig().setByteAttribute(attributeName, Byte.parseByte(value));
+                config.getMemberAttributeConfig().setByteAttribute(attributeName, Byte.parseByte(value));
             } else if ("double".equals(attributeType)) {
-            	config.getMemberAttributeConfig().setDoubleAttribute(attributeName, Double.parseDouble(value));
+                config.getMemberAttributeConfig().setDoubleAttribute(attributeName, Double.parseDouble(value));
             } else if ("float".equals(attributeType)) {
-            	config.getMemberAttributeConfig().setFloatAttribute(attributeName, Float.parseFloat(value));
+                config.getMemberAttributeConfig().setFloatAttribute(attributeName, Float.parseFloat(value));
             } else if ("int".equals(attributeType)) {
-            	config.getMemberAttributeConfig().setIntAttribute(attributeName, Integer.parseInt(value));
+                config.getMemberAttributeConfig().setIntAttribute(attributeName, Integer.parseInt(value));
             } else if ("long".equals(attributeType)) {
-            	config.getMemberAttributeConfig().setLongAttribute(attributeName, Long.parseLong(value));
+                config.getMemberAttributeConfig().setLongAttribute(attributeName, Long.parseLong(value));
             } else if ("short".equals(attributeType)) {
-            	config.getMemberAttributeConfig().setShortAttribute(attributeName, Short.parseShort(value));
+                config.getMemberAttributeConfig().setShortAttribute(attributeName, Short.parseShort(value));
             } else {
-            	config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
+                config.getMemberAttributeConfig().setStringAttribute(attributeName, value);
             }
         }
     }
