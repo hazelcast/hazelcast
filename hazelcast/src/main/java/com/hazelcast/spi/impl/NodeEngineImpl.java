@@ -217,33 +217,33 @@ public class NodeEngineImpl
         return send(packet, target, null);
     }
 
-    private boolean send(Packet packet, Address target, FutureSend futureSend) {
-        final ConnectionManager connectionManager = node.getConnectionManager();
-        final Connection connection = connectionManager.getConnection(target);
+    private boolean send(Packet packet, Address target, SendTask sendTask) {
+        ConnectionManager connectionManager = node.getConnectionManager();
+        Connection connection = connectionManager.getConnection(target);
         if (connection != null) {
             return send(packet, connection);
-        } else {
-            if (futureSend == null) {
-                futureSend = new FutureSend(packet, target);
-            }
-            final int retries = futureSend.retries;
-            if (retries < RETRY_NUMBER && node.isActive()) {
-                connectionManager.getOrConnect(target, true);
-                // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
-                executionService.schedule(futureSend, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
-                return true;
-            }
-            return false;
         }
+
+        if (sendTask == null) {
+            sendTask = new SendTask(packet, target);
+        }
+
+        final int retries = sendTask.retries;
+        if (retries < RETRY_NUMBER && node.isActive()) {
+            connectionManager.getOrConnect(target, true);
+            // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
+            executionService.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+            return true;
+        }
+        return false;
     }
 
-    private final class FutureSend
-            implements Runnable {
+    private final class SendTask implements Runnable {
         private final Packet packet;
         private final Address target;
         private volatile int retries;
 
-        private FutureSend(Packet packet, Address target) {
+        private SendTask(Packet packet, Address target) {
             this.packet = packet;
             this.target = target;
         }

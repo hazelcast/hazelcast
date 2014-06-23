@@ -228,6 +228,8 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="MethodCount" files="com.hazelcast.spi.Operation"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiDataSerializerHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiPortableHook"/>
 
     <!-- spi.impl -->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
@@ -245,8 +247,6 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.EventServiceImpl"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.EventServiceImpl"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.EventServiceImpl"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.ExecutionServiceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
     <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
@@ -255,8 +255,6 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.ServiceManager"/>
     <suppress checks="NestedIfDepth" files="com.hazelcast.spi.impl.ServiceManager"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.ServiceManager"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiDataSerializerHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiPortableHook"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.WaitNotifyServiceImpl"/>
     <suppress checks="Todo" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="Todo" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
