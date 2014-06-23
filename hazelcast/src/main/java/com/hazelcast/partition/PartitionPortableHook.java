@@ -16,21 +16,16 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.map.client.CheckSafeToShutdownRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
 public final class PartitionPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.PARTITION_PORTABLE_FACTORY, -2);
-    public static final int CLUSTER_SAFE = nextIndex();
-    private static int index;
 
     @Override
     public int getFactoryId() {
@@ -39,30 +34,11 @@ public final class PartitionPortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[index];
-
-            {
-                constructors[CLUSTER_SAFE] = new ConstructorFunction<Integer, Portable>() {
-                    public Portable createNew(Integer arg) {
-                        return new CheckSafeToShutdownRequest();
-                    }
-                };
-            }
-
-            @Override
-            public Portable create(int classId) {
-                return (classId > 0 && classId <= constructors.length) ? constructors[classId].createNew(classId) : null;
-            }
-        };
+        return null;
     }
 
     @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
-    }
-
-    private static int nextIndex() {
-        return index++;
     }
 }
