@@ -47,29 +47,6 @@ import java.util.WeakHashMap;
  */
 public class HazelcastCachingProvider implements CachingProvider {
 
-    //FIXME REMOVE HERE
-    static {
-//        final String logging = "hazelcast.logging.type";
-//        if (System.getProperty(logging) == null) {
-//            System.setProperty(logging, "log4j");
-//        }
-
-        System.setProperty("hazelcast.version.check.enabled", "false");
-        System.setProperty("hazelcast.mancenter.enabled", "false");
-        System.setProperty("hazelcast.wait.seconds.before.join", "1");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-//        System.setProperty("hazelcast.jmx", "true");
-        System.setProperty("hazelcast.partition.count", "2");
-
-        // randomize multicast group...
-        Random rand = new Random();
-        int g1 = rand.nextInt(255);
-        int g2 = rand.nextInt(255);
-        int g3 = rand.nextInt(255);
-        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
-    }
-
     private final static ILogger logger = Logger.getLogger(HazelcastCachingProvider.class);
 
     private WeakHashMap<ClassLoader, HashMap<URI, CacheManager>> cacheManagers;
