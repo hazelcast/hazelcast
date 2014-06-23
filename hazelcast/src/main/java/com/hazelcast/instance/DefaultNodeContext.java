@@ -38,6 +38,6 @@ public class DefaultNodeContext implements NodeContext {
     @Override
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node);
-        return new TcpIpConnectionManager(ioService, serverSocketChannel);
+        return new TcpIpConnectionManager(ioService, serverSocketChannel, node.securityContext);
     }
 }

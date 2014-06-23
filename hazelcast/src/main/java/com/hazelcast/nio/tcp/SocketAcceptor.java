@@ -19,7 +19,6 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.MemberSocketInterceptor;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -122,26 +121,18 @@ public class SocketAcceptor implements Runnable {
         if (socketChannelWrapper != null) {
             final SocketChannelWrapper socketChannel = socketChannelWrapper;
             log(Level.INFO, "Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
-            final MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
-            if (memberSocketInterceptor == null) {
-                configureAndAssignSocket(socketChannel, null);
-            } else {
-                connectionManager.ioService.executeAsync(new Runnable() {
-                    public void run() {
-                        configureAndAssignSocket(socketChannel, memberSocketInterceptor);
-                    }
-                });
-            }
+            connectionManager.ioService.executeAsync(new Runnable() {
+                public void run() {
+                    configureAndAssignSocket(socketChannel);
+                }
+            });
         }
     }
 
-    private void configureAndAssignSocket(SocketChannelWrapper socketChannel, MemberSocketInterceptor memberSocketInterceptor) {
+    private void configureAndAssignSocket(SocketChannelWrapper socketChannel) {
         try {
             connectionManager.initSocket(socketChannel.socket());
-            if (memberSocketInterceptor != null) {
-                log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor + " for " + socketChannel);
-                memberSocketInterceptor.onAccept(socketChannel.socket());
-            }
+            connectionManager.interceptSocket(socketChannel.socket(), true);
             socketChannel.configureBlocking(false);
             connectionManager.assignSocketChannel(socketChannel);
         } catch (Exception e) {
