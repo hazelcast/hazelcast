@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.AbstractXmlConfigHelper.IterableNodeList;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
