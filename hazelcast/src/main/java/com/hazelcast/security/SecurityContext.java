@@ -19,6 +19,8 @@ package com.hazelcast.security;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.net.Socket;
 import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.concurrent.Callable;
@@ -77,4 +79,12 @@ public interface SecurityContext {
      * Destroys {@link SecurityContext} and all security elements.
      */
     void destroy();
+
+    /**
+     * Intercept given socket if a {@link com.hazelcast.nio.SocketInterceptor} is configured
+     * @param socket
+     * @param onAccept
+     * @throws IOException
+     */
+    void interceptSocket(Socket socket, boolean onAccept) throws IOException;
 }

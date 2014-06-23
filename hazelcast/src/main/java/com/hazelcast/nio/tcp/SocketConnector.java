@@ -18,7 +18,6 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.util.AddressUtil;
 
@@ -135,14 +134,7 @@ public class SocketConnector implements Runnable {
                 log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
             }
             final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
-            MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
-            if (memberSocketInterceptor != null) {
-                if (logger.isFinestEnabled()) {
-                    log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor
-                            + " for " + socketChannel);
-                }
-                memberSocketInterceptor.onConnect(socketChannel.socket());
-            }
+            connectionManager.interceptSocket(socketChannel.socket(), false);
 
             socketChannelWrapper.configureBlocking(false);
             TcpIpConnection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
