@@ -71,4 +71,10 @@ public class MapEvictAllRequest extends AllPartitionsClientRequest implements Po
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
+
+
+    @Override
+    public String getMethodName() {
+        return "evictAll";
+    }
 }

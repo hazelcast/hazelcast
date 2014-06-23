@@ -47,6 +47,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
+import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
@@ -604,9 +605,25 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handlePermissionPolicy(child, securityConfigBuilder);
                 } else if ("client-permissions".equals(nodeName)) {
                     handleSecurityPermissions(child, securityConfigBuilder);
+                } else if ("security-interceptors".equals(nodeName)) {
+                    handleSecurityInterceptors(child, securityConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);
+        }
+
+        private void handleSecurityInterceptors(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {
+            final List lms = new ManagedList();
+            for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("interceptor".equals(nodeName)) {
+                    final BeanDefinitionBuilder lmConfigBuilder = createBeanBuilder(SecurityInterceptorConfig.class);
+                    final AbstractBeanDefinition beanDefinition = lmConfigBuilder.getBeanDefinition();
+                    fillAttributeValues(child, lmConfigBuilder);
+                    lms.add(beanDefinition);
+                }
+            }
+            securityConfigBuilder.addPropertyValue("securityInterceptorConfigs", lms);
         }
 
         private void handleCredentialsFactory(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {

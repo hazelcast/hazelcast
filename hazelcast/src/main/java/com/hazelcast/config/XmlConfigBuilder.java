@@ -188,13 +188,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
             }
         }
-
         if (root.getNodeValue() != null) {
             replaceVariables(root);
         }
-
         final NodeList childNodes = root.getChildNodes();
-
         for (int k = 0; k < childNodes.getLength(); k++) {
             Node child = childNodes.item(k);
             preprocess(child);
@@ -212,7 +209,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 LOGGER.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
                 break;
             }
-
             String variable = value.substring(startIndex + 2, endIndex);
             String variableReplacement = properties.getProperty(variable);
             if (variableReplacement != null) {
@@ -758,8 +754,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 multiMapConfig.setStatisticsEnabled(checkTrue(value));
-//            } else if ("partition-strategy".equals(nodeName)) {
-//                multiMapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
             }
         }
         this.config.addMultiMapConfig(multiMapConfig);
@@ -1123,7 +1117,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 getTextContent(intervalNode), DEFAULT_VALUE) : FIVE;
 
         final String url = getTextContent(node);
-
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         managementCenterConfig.setEnabled(enabled);
         managementCenterConfig.setUpdateInterval(interval);
@@ -1146,8 +1139,22 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("client-permission-policy".equals(nodeName)) {
                 handlePermissionPolicy(child);
             } else if ("client-permissions".equals(nodeName)) {
-                //listener-permission
                 handleSecurityPermissions(child);
+            } else if ("security-interceptors".equals(nodeName)) {
+                handleSecurityInterceptors(child);
+            }
+        }
+    }
+
+    private void handleSecurityInterceptors(final org.w3c.dom.Node node) throws Exception {
+        final SecurityConfig cfg = config.getSecurityConfig();
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            if ("interceptor".equals(nodeName)) {
+                final NamedNodeMap attrs = child.getAttributes();
+                Node classNameNode = attrs.getNamedItem("class-name");
+                String className = getTextContent(classNameNode);
+                cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
             }
         }
     }

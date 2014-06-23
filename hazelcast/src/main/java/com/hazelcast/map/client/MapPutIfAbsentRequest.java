@@ -21,6 +21,8 @@ import com.hazelcast.map.operation.PutIfAbsentOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
+import java.util.concurrent.TimeUnit;
+
 public class MapPutIfAbsentRequest extends MapPutRequest {
 
     public MapPutIfAbsentRequest() {
@@ -44,4 +46,16 @@ public class MapPutIfAbsentRequest extends MapPutRequest {
         return op;
     }
 
+    @Override
+    public String getMethodName() {
+        return "putIfAbsent";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (ttl == -1) {
+            return new Object[]{key, value};
+        }
+        return new Object[]{key, value, ttl, TimeUnit.MILLISECONDS};
+    }
 }

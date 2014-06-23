@@ -16,45 +16,29 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
-import com.hazelcast.map.operation.GetEntryViewOperation;
+import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.map.operation.IsEmptyOperationFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.Map;
 
-public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Portable, RetryableRequest, SecureRequest {
+public class MapIsEmptyRequest extends AllPartitionsClientRequest {
 
     private String name;
-    private Data key;
 
-    public MapGetEntryViewRequest() {
+    public MapIsEmptyRequest() {
     }
 
-    public MapGetEntryViewRequest(String name, Data key) {
+    public MapIsEmptyRequest(String name) {
         this.name = name;
-        this.key = key;
-    }
-
-    public Object getKey() {
-        return key;
-    }
-
-    protected Operation prepareOperation() {
-        GetEntryViewOperation op = new GetEntryViewOperation(name, key);
-        return op;
     }
 
     public String getServiceName() {
@@ -66,24 +50,33 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
         return MapPortableHook.F_ID;
     }
 
-    @Override
     public int getClassId() {
-        return MapPortableHook.GET_ENTRY_VIEW;
+        return MapPortableHook.IS_EMPTY;
     }
 
-    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+    }
+
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
     }
 
     @Override
-    public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+    protected OperationFactory createOperationFactory() {
+        return new IsEmptyOperationFactory(name);
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        MapService mapService = getService();
+        for (Object result : map.values()) {
+            boolean isEmpty = (Boolean) mapService.toObject(result);
+            if (!isEmpty) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public Permission getRequiredPermission() {
@@ -92,11 +85,7 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
 
     @Override
     public String getMethodName() {
-        return "getEntryView";
+        return "isEmpty";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{key};
-    }
 }
