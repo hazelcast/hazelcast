@@ -90,6 +90,9 @@ public class PortableEntryEvent implements Portable {
 
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
+        // Map Event and Entry Event is merged to one event, because when cpp client get response
+        // from node, it first creates the class then fills the class what comes from wire. Currently
+        // it can not handle more than one type response.
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
         writer.writeInt("n", numberOfAffectedEntries);
