@@ -24,65 +24,78 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.operation.ReplicatedMapDataSerializerHook;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A vector clock implementation based on hashcodes of the Hazelcast members UUID to solve conflicts on
  * replication updates
  */
-public final class VectorClock
+public final class VectorClockTimestamp
         implements IdentifiedDataSerializable {
 
-    final Map<Member, AtomicInteger> clocks;
+    private Map<Member, Integer> clocks;
 
-    public VectorClock() {
-        clocks = new ConcurrentHashMap<Member, AtomicInteger>();
+    public VectorClockTimestamp() {
+        this.clocks = Collections.emptyMap();
     }
 
-    void incrementClock(Member localMember) {
-        final AtomicInteger clock = clocks.get(localMember);
-        if (clock != null) {
-            clock.incrementAndGet();
-        } else {
-            clocks.put(localMember, new AtomicInteger(1));
+    private VectorClockTimestamp(Map<Member, Integer> clocks) {
+        this.clocks = Collections.unmodifiableMap(clocks);
+    }
+
+    VectorClockTimestamp incrementClock0(Member localMember) {
+        Map<Member, Integer> copy = new HashMap<Member, Integer>(clocks);
+        Integer clock = copy.get(localMember);
+        if (clock == null) {
+            clock = 0;
         }
+
+        copy.put(localMember, ++clock);
+        return new VectorClockTimestamp(copy);
     }
 
-    void applyVector(VectorClock update) {
+    VectorClockTimestamp applyVector0(VectorClockTimestamp update) {
+        Map<Member, Integer> copy = new HashMap<Member, Integer>(clocks);
         for (Member m : update.clocks.keySet()) {
-            final AtomicInteger currentClock = clocks.get(m);
-            final AtomicInteger updateClock = update.clocks.get(m);
+            final Integer currentClock = copy.get(m);
+            final Integer updateClock = update.clocks.get(m);
             if (smaller(currentClock, updateClock)) {
-                clocks.put(m, new AtomicInteger(updateClock.get()));
+                copy.put(m, updateClock);
             }
         }
+        return new VectorClockTimestamp(copy);
     }
 
     @Override
     public void writeData(ObjectDataOutput dataOutput)
             throws IOException {
+
+        Map<Member, Integer> clocks = this.clocks;
         dataOutput.writeInt(clocks.size());
-        for (Entry<Member, AtomicInteger> entry : clocks.entrySet()) {
+        for (Entry<Member, Integer> entry : clocks.entrySet()) {
             entry.getKey().writeData(dataOutput);
-            dataOutput.writeInt(entry.getValue().get());
+            dataOutput.writeInt(entry.getValue());
         }
     }
 
     @Override
     public void readData(ObjectDataInput dataInput)
             throws IOException {
+
         int size = dataInput.readInt();
+        Map<Member, Integer> data = new HashMap<Member, Integer>();
         for (int i = 0; i < size; i++) {
             Member m = new MemberImpl();
             m.readData(dataInput);
             int clock = dataInput.readInt();
-            clocks.put(m, new AtomicInteger(clock));
+            data.put(m, clock);
         }
+        this.clocks = Collections.unmodifiableMap(data);
     }
 
     @Override
@@ -100,31 +113,30 @@ public final class VectorClock
         return "Vector{" + "clocks=" + clocks + '}';
     }
 
-    private boolean smaller(AtomicInteger int1, AtomicInteger int2) {
-        int i1 = int1 == null ? 0 : int1.get();
-        int i2 = int2 == null ? 0 : int2.get();
+    private boolean smaller(Integer int1, Integer int2) {
+        int i1 = int1 == null ? 0 : int1;
+        int i2 = int2 == null ? 0 : int2;
         return i1 < i2;
     }
 
-    static VectorClock copyVector(VectorClock vectorClock) {
-        VectorClock copy = new VectorClock();
-        Map<Member, AtomicInteger> clocks = copy.clocks;
-        for (Entry<Member, AtomicInteger> entry : vectorClock.clocks.entrySet()) {
+    static VectorClockTimestamp copyVector(VectorClockTimestamp vectorClockTimestamp) {
+        Map<Member, Integer> clocks = new HashMap<Member, Integer>();
+        for (Entry<Member, Integer> entry : vectorClockTimestamp.clocks.entrySet()) {
             MemberImpl member = new MemberImpl((MemberImpl) entry.getKey());
-            AtomicInteger value = new AtomicInteger(entry.getValue().intValue());
+            Integer value = entry.getValue();
             clocks.put(member, value);
         }
-        return copy;
+        return new VectorClockTimestamp(clocks);
     }
 
-    static boolean happenedBefore(VectorClock x, VectorClock y) {
+    static boolean happenedBefore(VectorClockTimestamp x, VectorClockTimestamp y) {
         Set<Member> members = new HashSet<Member>(x.clocks.keySet());
         members.addAll(y.clocks.keySet());
 
         boolean hasLesser = false;
         for (Member m : members) {
-            int xi = x.clocks.get(m) != null ? x.clocks.get(m).get() : 0;
-            int yi = y.clocks.get(m) != null ? y.clocks.get(m).get() : 0;
+            int xi = x.clocks.get(m) != null ? x.clocks.get(m) : 0;
+            int yi = y.clocks.get(m) != null ? y.clocks.get(m) : 0;
             if (xi > yi) {
                 return false;
             }
