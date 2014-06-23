@@ -244,6 +244,7 @@
 
     <!-- SPI unresolved -->
     <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
     <suppress checks="Todo" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocation"/>
@@ -251,10 +252,6 @@
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocation"/>
     <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="MethodLength" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="MagicNumber" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="Todo" files="com.hazelcast.spi.impl.BasicOperationService"/>
 

@@ -434,6 +434,9 @@ final class BasicOperationService implements InternalOperationService {
             this.partitionResults = new HashMap<Integer, Object>(nodeEngine.getPartitionService().getPartitionCount());
         }
 
+        /**
+         * Executes all the operations on the partitions.
+         */
         private Map<Integer, Object> invoke() throws Exception {
             ensureNotCallingFromOperationThread();
 
