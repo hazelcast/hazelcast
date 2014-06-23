@@ -83,6 +83,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
+                @Override
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
@@ -139,12 +140,21 @@ public final class ExecutionServiceImpl implements ExecutionService {
     }
 
     @Override
-    public ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type) {
+    public ManagedExecutorService register(String name, int defaultPoolSize, int defaultQueueCapacity,
+                                           ExecutorType type) {
         ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfigs().get(name);
+
+        int poolSize = defaultPoolSize;
+        int queueCapacity = defaultQueueCapacity;
         if (cfg != null) {
             poolSize = cfg.getPoolSize();
-            queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
+            if (cfg.getQueueCapacity() <= 0) {
+                queueCapacity = Integer.MAX_VALUE;
+            } else {
+                queueCapacity = cfg.getQueueCapacity();
+            }
         }
+
         ManagedExecutorService executor = createExecutor(name, poolSize, queueCapacity, type);
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
