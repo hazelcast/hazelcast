@@ -17,33 +17,30 @@
 package com.hazelcast.cache.operation;
 
 import com.hazelcast.cache.CacheDataSerializerHook;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.cache.CacheService;
+import com.hazelcast.cache.ICacheRecordStore;
+import com.hazelcast.spi.ReadonlyOperation;
 
-/**
- * @author mdogan 05/02/14
- */
-public class CacheRemoveBackupOperation extends AbstractCacheOperation implements BackupOperation {
+public class CacheStatisticsOperation extends PartitionWideCacheOperation implements ReadonlyOperation {
 
-    public CacheRemoveBackupOperation() {
+
+    public CacheStatisticsOperation() {
     }
 
-    public CacheRemoveBackupOperation(String name, Data key) {
-        super(name, key);
+    public CacheStatisticsOperation(String name) {
+        super(name);
     }
 
     @Override
     public void run() throws Exception {
-        if (cache != null) {
-            response = cache.remove(key, null);
-        } else {
-            response = Boolean.FALSE;
-        }
+        CacheService service = getService();
+        ICacheRecordStore cache = service.getCache(name, getPartitionId());
+        response = cache != null ? cache.getCacheStats() : null;
     }
 
     @Override
     public int getId() {
-        return CacheDataSerializerHook.REMOVE_BACKUP;
+        return CacheDataSerializerHook.GET_STATS;
     }
 
 }

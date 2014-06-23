@@ -54,12 +54,7 @@ abstract class AbstractCacheOperation extends AbstractNamedOperation
     @Override
     public final void beforeRun() throws Exception {
         CacheService service = getService();
-//        cache.setRecordStoreMode(true);
-        if (this instanceof BackupAwareOperation) {
-            cache = service.getOrCreateCache(name, getPartitionId());
-        } else {
-            cache = service.getCache(name, getPartitionId());
-        }
+        cache = service.getOrCreateCache(name, getPartitionId());
     }
 
     @Override

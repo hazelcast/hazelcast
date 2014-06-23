@@ -115,7 +115,7 @@ public class CacheRecordStore implements ICacheRecordStore {
             if (value == null) {
                 return null;
             }
-            createRecordWithExpiry(key, value, record, _expiryPolicy, now);
+            createRecordWithExpiry(key, value, record, _expiryPolicy, now, false);
 
             return value;
         } else {
@@ -168,7 +168,7 @@ public class CacheRecordStore implements ICacheRecordStore {
         // not be added to the cache or listeners called or writers called.
 
         if (record == null || isExpired) {
-            isPutSucceed = createRecordWithExpiry(key, value, record, _expiryPolicy, now);
+            isPutSucceed = createRecordWithExpiry(key, value, record, _expiryPolicy, now, true);
 
         } else {
             oldValue = record.getValue();
@@ -211,7 +211,7 @@ public class CacheRecordStore implements ICacheRecordStore {
             processExpiredEntry(key, record);
         }
         if (record == null || isExpired) {
-            result = createRecordWithExpiry(key, value, record, _expiryPolicy, now);
+            result = createRecordWithExpiry(key, value, record, _expiryPolicy, now, true);
 
         } else {
             result = false;
@@ -357,7 +357,7 @@ public class CacheRecordStore implements ICacheRecordStore {
             Object value = record.getValue();
 
             if (compare(value, oldValue)) {
-                result = updateRecordWithExpiry(key, value, record, _expiryPolicy, now);
+                result = updateRecordWithExpiry(key, newValue, record, _expiryPolicy, now);
             } else {
                 try {
                     Duration expiryDuration = _expiryPolicy.getExpiryForAccess();
@@ -458,13 +458,11 @@ public class CacheRecordStore implements ICacheRecordStore {
                 }
             } finally {
                 final Set<Data> _keysToClean = new HashSet<Data>(keys.isEmpty() ? records.keySet() : keys );
-                keys.clear();
                 for (Data key : _keysToClean) {
-                    if (_keys.contains(key) ) {
-                        if( records.containsKey(key) ){
-                            deleteRecord(key);
-                        }
-                        keys.add(key);
+                    if (_keys.contains(key) && records.containsKey(key) ){
+                        deleteRecord(key);
+                    } else {
+                        keys.remove(key);
                     }
                 }
             }
@@ -491,13 +489,17 @@ public class CacheRecordStore implements ICacheRecordStore {
     }
 
     public void setRecord(Data key, CacheRecord record) {
-        records.put(key, record);
-    }
-
-    public void own(Data key, CacheRecord record) {
         if (key != null && record != null) {
             records.put(key, record);
         }
+    }
+
+    @Override
+    public CacheRecord removeRecord(Data key) {
+        if (key != null) {
+            return records.remove(key);
+        }
+        return null;
     }
 
     @Override
@@ -530,6 +532,45 @@ public class CacheRecordStore implements ICacheRecordStore {
         final Object process = entryProcessor.process(entry, arguments);
         entry.applyChanges();
         return process;
+    }
+
+    @Override
+    public Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues) {
+        Set<Data> keysLoadad = new HashSet<Data>();
+        Map<Data,Object> loaded = loadAllCacheEntry(keys);
+        if(loaded != null && !loaded.isEmpty()){
+            if(replaceExistingValues){
+                for(Map.Entry<Data,Object> entry:loaded.entrySet()){
+                    final Data key = entry.getKey();
+                    final Object value = entry.getValue();
+                    if(value != null){
+                        this.isWriteThrough = false;
+                        put(key, value, null, null);
+                        this.isWriteThrough = cacheConfig.isWriteThrough();
+                        keysLoadad.add(key);
+                    }
+                }
+            } else {
+                for(Map.Entry<Data,Object> entry:loaded.entrySet()){
+                    final Data key = entry.getKey();
+                    final Object value = entry.getValue();
+                    if(value != null){
+                        this.isWriteThrough = false;
+                        final boolean hasPut = putIfAbsent(key, value, null, null);
+                        this.isWriteThrough = cacheConfig.isWriteThrough();
+                        if(hasPut){
+                            keysLoadad.add(key);
+                        }
+                    }
+                }
+            }
+        }
+        return keysLoadad;
+    }
+
+    @Override
+    public CacheStatistics getCacheStats() {
+        return statistics;
     }
 
 //    @Override
@@ -575,7 +616,7 @@ public class CacheRecordStore implements ICacheRecordStore {
 
     }
 
-    boolean createRecordWithExpiry(Data key, Object value, CacheRecord record, ExpiryPolicy _expiryPolicy, long now) {
+    boolean createRecordWithExpiry(Data key, Object value, CacheRecord record, ExpiryPolicy _expiryPolicy, long now, boolean isWriteThrough) {
         Duration expiryDuration;
         try {
             expiryDuration = _expiryPolicy.getExpiryForCreation();
@@ -587,7 +628,9 @@ public class CacheRecordStore implements ICacheRecordStore {
         if (isExpiredAt(et, now)) {
             processExpiredEntry(key, record);
         } else {
-            writeThroughCache(key, value);
+            if(isWriteThrough){
+                writeThroughCache(key, value);
+            }
             record = createRecord(key, value, et);
             records.put(key, record);
             return true;
@@ -600,6 +643,7 @@ public class CacheRecordStore implements ICacheRecordStore {
 
         if (isEventsEnabled) {
             final Object recordValue = record.getValue();
+
             Data dataValue;
             if (!(recordValue instanceof Data)) {
                 dataValue = cacheService.toData(recordValue);
@@ -721,7 +765,7 @@ public class CacheRecordStore implements ICacheRecordStore {
     }
 
     protected void writeThroughCache(Data key, Object value) throws CacheWriterException {
-        if (cacheConfig.isWriteThrough() && cacheWriter != null) {
+        if (isWriteThrough && cacheWriter != null) {
             try {
                 final Object _key = cacheService.toObject(key);
                 final Object _value;
@@ -768,7 +812,7 @@ public class CacheRecordStore implements ICacheRecordStore {
      * @param keys : keys to delete, after method returns it includes only deleted keys
      */
     void deleteAllCacheEntry(Set<Data> keys) {
-        if (isWriteThrough && cacheWriter != null) {
+        if (isWriteThrough && cacheWriter != null && keys != null && !keys.isEmpty()) {
             Map<Object, Data> keysToDelete = new HashMap<Object, Data>();
             for (Data key : keys) {
                 final Object _keyObj = cacheService.toObject(key);
@@ -790,6 +834,35 @@ public class CacheRecordStore implements ICacheRecordStore {
                 }
             }
         }
+    }
+
+    Map<Data, Object> loadAllCacheEntry(Set<Data> keys) {
+        if (cacheLoader != null) {
+            Map<Object, Data> keysToLoad = new HashMap<Object, Data>();
+            for (Data key : keys) {
+                final Object _keyObj = cacheService.toObject(key);
+                keysToLoad.put(_keyObj, key);
+            }
+
+            Map<Object, Object> loaded;
+            try {
+                loaded = cacheLoader.loadAll(keysToLoad.keySet());
+            } catch (Throwable e) {
+                if (!(e instanceof CacheLoaderException)) {
+                    throw new CacheLoaderException("Exception in CacheLoader during loadAll", e);
+                } else {
+                    throw (CacheLoaderException)e;
+                }
+            }
+            Map<Data,Object> result= new HashMap<Data, Object>();
+            for(Object keyObj:keysToLoad.keySet()){
+                final Object valueObject = loaded.get(keyObj);
+                final Data key = keysToLoad.get(keyObj);
+                result.put(key,valueObject);
+            }
+            return result;
+        }
+        return null;
     }
 
     void processExpiredEntry(Data key, CacheRecord record) {

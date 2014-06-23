@@ -17,35 +17,32 @@
 package com.hazelcast.cache.operation;
 
 import com.hazelcast.cache.CacheDataSerializerHook;
-import com.hazelcast.cache.CacheService;
-import com.hazelcast.cache.ICacheRecordStore;
-import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
-public class CacheClearBackupOperation extends AbstractNamedOperation implements BackupOperation, IdentifiedDataSerializable {
+public class CacheLoadAllOperationFactory implements OperationFactory, IdentifiedDataSerializable {
 
+    private String name;
     private Set<Data> keys;
+    private boolean replaceExistingValues;
 
-    private transient ICacheRecordStore cache;
 
-    public CacheClearBackupOperation() {
-    }
-
-    public CacheClearBackupOperation(String name, Set<Data> keys) {
-        super(name);
+    public CacheLoadAllOperationFactory(String name, Set<Data> keys, boolean replaceExistingValues) {
+        this.name = name;
         this.keys = keys;
+        this.replaceExistingValues = replaceExistingValues;
     }
+
+    public CacheLoadAllOperationFactory() { }
+
 
     @Override
     public int getFactoryId() {
@@ -54,27 +51,18 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
 
     @Override
     public int getId() {
-        return CacheDataSerializerHook.CLEAR_BACKUP;
+        return CacheDataSerializerHook.LOAD_ALL_FACTORY;
     }
 
     @Override
-    public void beforeRun() throws Exception {
-        CacheService service = getService();
-        cache = service.getOrCreateCache(name, getPartitionId());
+    public Operation createOperation() {
+        return new CacheLoadAllOperation(name,keys,replaceExistingValues);
     }
 
     @Override
-    public void run() throws Exception {
-        if (keys != null) {
-            for (Data key : keys) {
-                cache.removeRecord(key);
-            }
-        }
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeBoolean(replaceExistingValues);
         out.writeBoolean(keys != null);
         if (keys != null) {
             out.write(keys.size());
@@ -85,8 +73,9 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        replaceExistingValues = in.readBoolean();
         boolean isKeysNotNull = in.readBoolean();
         if (isKeysNotNull) {
             int size = in.readInt();
@@ -98,6 +87,4 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
             }
         }
     }
-
-
 }

@@ -29,32 +29,23 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
-public class CacheClearBackupOperation extends AbstractNamedOperation implements BackupOperation, IdentifiedDataSerializable {
+/**
+ * @author mdogan 05/02/14
+ */
+public class CachePutAllBackupOperation extends AbstractNamedOperation implements BackupOperation, IdentifiedDataSerializable {
 
-    private Set<Data> keys;
 
+    private Map<Data, CacheRecord> cacheRecords;
     private transient ICacheRecordStore cache;
 
-    public CacheClearBackupOperation() {
+    public CachePutAllBackupOperation() {
     }
 
-    public CacheClearBackupOperation(String name, Set<Data> keys) {
+    public CachePutAllBackupOperation(String name, Map<Data, CacheRecord> cacheRecords) {
         super(name);
-        this.keys = keys;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CacheDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return CacheDataSerializerHook.CLEAR_BACKUP;
+        this.cacheRecords = cacheRecords;
     }
 
     @Override
@@ -63,11 +54,12 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
         cache = service.getOrCreateCache(name, getPartitionId());
     }
 
+
     @Override
     public void run() throws Exception {
-        if (keys != null) {
-            for (Data key : keys) {
-                cache.removeRecord(key);
+        if (cacheRecords != null) {
+            for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
+                cache.setRecord(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -75,11 +67,14 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(keys != null);
-        if (keys != null) {
-            out.write(keys.size());
-            for (Data key : keys) {
+        out.writeBoolean(cacheRecords != null);
+        if (cacheRecords != null) {
+            out.write(cacheRecords.size());
+            for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
+                final Data key = entry.getKey();
+                final CacheRecord record = entry.getValue();
                 key.writeData(out);
+                out.writeObject(record);
             }
         }
     }
@@ -87,17 +82,27 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        boolean isKeysNotNull = in.readBoolean();
-        if (isKeysNotNull) {
+        final boolean recordNotNull = in.readBoolean();
+        if (recordNotNull) {
             int size = in.readInt();
-            keys = new HashSet<Data>(size);
+            cacheRecords = new HashMap<Data, CacheRecord>(size);
             for (int i = 0; i < size; i++) {
-                Data key = new Data();
+                final Data key = new Data();
                 key.readData(in);
-                keys.add(key);
+                final CacheRecord record = in.readObject();
+                cacheRecords.put(key, record);
             }
         }
     }
 
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.PUT_ALL_BACKUP;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
+    }
 
 }

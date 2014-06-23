@@ -23,11 +23,13 @@ import com.hazelcast.cache.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.operation.CacheGetAndRemoveOperation;
 import com.hazelcast.cache.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.operation.CacheGetOperation;
+import com.hazelcast.cache.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.cache.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.operation.CachePutOperation;
 import com.hazelcast.cache.operation.CacheRemoveOperation;
 import com.hazelcast.cache.operation.CacheReplaceOperation;
 import com.hazelcast.cache.operation.CacheSizeOperationFactory;
+import com.hazelcast.cache.operation.CacheStatisticsOperationFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -40,6 +42,8 @@ import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -48,7 +52,10 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
+import javax.cache.management.CacheMXBean;
+import javax.cache.management.CacheStatisticsMXBean;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
@@ -76,6 +83,7 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
     private boolean isClosed = false;
 
     private HazelcastCacheManager cacheManager = null;
+    private CacheLoader<K, V> cacheLoader;
 
     protected CacheProxy(String name, NodeEngine nodeEngine, CacheService service) {
         super(nodeEngine, service);
@@ -89,6 +97,10 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         //initializeListeners
         for (CacheEntryListenerConfiguration<K, V> listenerConfiguration : cacheConfig.getCacheEntryListenerConfigurations()) {
             registerCacheEntryListener(listenerConfiguration);
+        }
+
+        if (this.cacheConfig.getCacheLoaderFactory() != null) {
+            cacheLoader = this.cacheConfig.getCacheLoaderFactory().create();
         }
     }
     //endregion
@@ -305,7 +317,7 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         try {
             return f.get();
         } catch (Throwable e) {
-            return ExceptionUtil.sneakyThrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -331,11 +343,12 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
 
         final Collection<Integer> partitions = getPartitionsForKeys(ks);
         try {
-            final CacheGetAllOperationFactory operationFactory = new CacheGetAllOperationFactory(name, ks, expiryPolicy);
+            final CacheGetAllOperationFactory factory = new CacheGetAllOperationFactory(name, ks, expiryPolicy);
             final Map<Integer, Object> responses = engine.getOperationService()
-                    .invokeOnPartitions(getServiceName(), operationFactory, partitions);
+                    .invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {
-                final Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) serializationService.toObject(response)).getEntrySet();
+                final Object responseObject = serializationService.toObject(response);
+                final Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) responseObject).getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
                     final V value = serializationService.toObject(entry.getValue());
                     final K key = serializationService.toObject(entry.getKey());
@@ -428,6 +441,49 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         }
     }
 
+    @Override
+    public CacheMXBean getCacheMXBean() {
+        return null;
+    }
+
+    @Override
+    public CacheStatisticsMXBean getCacheStatisticsMXBean() {
+        ensureOpen();
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            final SerializationService serializationService = nodeEngine.getSerializationService();
+            final CacheStatisticsOperationFactory operationFactory = new CacheStatisticsOperationFactory(name);
+            final Map<Integer, Object> results =
+                    nodeEngine.getOperationService().invokeOnAllPartitions(getServiceName(), operationFactory);
+
+            CacheStatistics total = new CacheStatistics();
+            for (Object result : results.values()) {
+                CacheStatistics stat;
+                if (result instanceof Data) {
+                    stat = serializationService.toObject((Data) result);
+                } else {
+                    stat = (CacheStatistics) result;
+                }
+                if(stat != null){
+                    total = total.acumulate(stat);
+                }
+            }
+            return new CacheStatisticsMXBeanImpl(total);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    @Override
+    public void setStatisticsEnabled(boolean enabled) {
+        throw new UnsupportedOperationException();
+//        if (enabled) {
+//            MXBeanUtil.registerCacheObject(this, true);
+//        } else {
+//            MXBeanUtil.unregisterCacheObject(this, true);
+//        }
+    }
+
     public V get(Data key) {
         ensureOpen();
         final NodeEngine engine = getNodeEngine();
@@ -444,6 +500,12 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
             result = serializationService.toObject((Data) result);
         }
         return (V) result;
+    }
+
+    public void enableManagement(boolean enabled){
+//        if(enabled){
+//            getNodeEngine().
+//        }
     }
 
     void initCacheManager(HazelcastCacheManager cacheManager) {
@@ -513,7 +575,7 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         try {
             return f.get();
         } catch (Throwable e) {
-            return ExceptionUtil.sneakyThrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -569,7 +631,59 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
 
     @Override
     public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
-        throw new UnsupportedOperationException();
+        ensureOpen();
+
+        final NodeEngine nodeEngine = getNodeEngine();
+        final OperationService operationService = nodeEngine.getOperationService();
+
+        if (keys == null || keys.contains(null)) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+
+        for(K key:keys){
+            validateConfiguredTypes(false, key);
+        }
+
+        if (cacheLoader == null) {
+            if (completionListener != null) {
+                completionListener.onCompletion();
+            }
+            return;
+        }
+
+        final SerializationService ss = nodeEngine.getSerializationService();
+
+        HashSet<Data> keysData = new HashSet<Data>();
+        for (K key : keys) {
+            keysData.add(ss.toData(key));
+        }
+
+        OperationFactory operationFactory = new CacheLoadAllOperationFactory(name, keysData,replaceExistingValues);
+        try {
+            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
+
+            for (Object result : results.values()) {
+                if (result != null && result instanceof CacheClearResponse) {
+                    final Object response = ((CacheClearResponse) result).getResponse();
+                    if (response instanceof Exception) {
+                        if (completionListener != null) {
+                            completionListener.onException((Exception) response);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            if (completionListener != null) {
+                completionListener.onCompletion();
+            }
+        } catch (Exception e) {
+            if (completionListener != null) {
+                completionListener.onException(e);
+            }
+        }
+
+
     }
 
     @Override
@@ -665,10 +779,10 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
     }
 
     private void removeAllInternal(Set<Data> keysData, boolean isRemoveAll) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        final OperationService operationService = getNodeEngine().getOperationService();
         final CacheClearOperationFactory operationFactory = new CacheClearOperationFactory(name, keysData, isRemoveAll);
         try {
-            final Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(getServiceName(), operationFactory);
+            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
             for (Object result : results.values()) {
                 if (result != null && result instanceof CacheClearResponse) {
                     final Object response = ((CacheClearResponse) result).getResponse();
@@ -812,7 +926,6 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         ensureOpen();
         return new ClusterWideIterator<K, V>(this);
     }
-
 
     //endregion
 

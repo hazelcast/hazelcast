@@ -42,7 +42,7 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
 
     private boolean shouldBackup = false;
 
-    transient private Map<Data, CacheRecord> backupRecord;
+    transient private Set<Data> backupKeys;
 
     transient private ICacheRecordStore cache;
 
@@ -79,9 +79,9 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
             }
 
             if (shouldBackup = !filteredKeys.isEmpty()) {
-                backupRecord = new HashMap<Data, CacheRecord>();
+                backupKeys = new HashSet<Data>();
                 for (Data key : filteredKeys) {
-                    backupRecord.put(key, cache.getRecord(key));
+                    backupKeys.add(key);
                 }
             }
 
@@ -108,7 +108,7 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
 
     @Override
     public Operation getBackupOperation() {
-        return new CacheClearBackupOperation(name, backupRecord);
+        return new CacheClearBackupOperation(name, backupKeys);
     }
 
 }

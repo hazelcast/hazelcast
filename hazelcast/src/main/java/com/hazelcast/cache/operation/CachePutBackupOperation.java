@@ -46,7 +46,7 @@ public class CachePutBackupOperation extends AbstractCacheOperation implements B
     public void run() throws Exception {
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
-        cache.own(key, cacheRecord);
+        cache.setRecord(key, cacheRecord);
         response = Boolean.TRUE;
     }
 
