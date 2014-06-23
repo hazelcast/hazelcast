@@ -108,8 +108,22 @@ public class PartitionGroupConfig {
 
     private final List<MemberGroupConfig> memberGroupConfigs = new LinkedList<MemberGroupConfig>();
 
+    /**
+     * Type of member group
+     */
     public enum MemberGroupType {
-        HOST_AWARE, CUSTOM, PER_MEMBER
+        /**
+         * Host aware
+         */
+        HOST_AWARE,
+        /**
+         * Custom
+         */
+        CUSTOM,
+        /**
+         * Per member
+         */
+        PER_MEMBER
     }
 
     /**

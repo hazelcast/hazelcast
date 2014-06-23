@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 /**
- * @ali 09/11/13
+ * Configuration for Executor(Read Only)
  */
 public class ExecutorConfigReadOnly extends ExecutorConfig {
 

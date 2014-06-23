@@ -18,11 +18,26 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * Provides configuration service for Collection.
+ */
+/**
+ *
+ * @param <T> Type of Collection such as List, Set
+ */
 public abstract class CollectionConfig<T extends CollectionConfig> {
 
+    /**
+     * Maximum size Configuration
+     */
     public static final int DEFAULT_MAX_SIZE = 0;
+    /**
+     * Synchronous Backup Counter
+     */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    /**
+     * Asynchronous Backup Counter
+     */
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name;

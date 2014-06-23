@@ -19,12 +19,26 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
-
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.ReplicatedMap}
+ */
 public class ReplicatedMapConfig {
 
+    /**
+     * Default value of concurrency level
+     */
     public static final int DEFAULT_CONCURRENCY_LEVEL = 32;
+    /**
+     * Default value of delay of replication in millisecond
+     */
     public static final int DEFAULT_REPLICATION_DELAY_MILLIS = 100;
+    /**
+     * Default value of In-memory format
+     */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.OBJECT;
+    /**
+     * Default value of asynchronous fill up
+     */
     public static final boolean DEFAULT_ASNYC_FILLUP = true;
 
     private String name;

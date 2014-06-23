@@ -18,7 +18,9 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * Configuration for wan replication.
+ */
 public class WanReplicationConfig {
     String name;
     List<WanTargetClusterConfig> targetClusterConfigs;
