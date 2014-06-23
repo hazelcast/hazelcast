@@ -59,6 +59,7 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
 
         @Override
         public void distributedObjectDestroyed(DistributedObjectEvent event) {
+            send(event);
         }
 
         private void send(DistributedObjectEvent event) {
