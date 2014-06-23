@@ -21,10 +21,10 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
-import com.hazelcast.nio.Address;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
+
 import java.security.Permission;
 import java.util.Map;
 
@@ -48,8 +48,7 @@ public class ClearRequest extends MultiMapAllPartitionRequest implements Retryab
             totalAffectedEntries += (Integer) affectedEntries;
         }
         final MultiMapService service = getService();
-        final Address thisAddress = service.getNodeEngine().getThisAddress();
-        service.publishMultiMapEvent(thisAddress, name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+        service.publishMultiMapEvent(name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
         return null;
     }
 

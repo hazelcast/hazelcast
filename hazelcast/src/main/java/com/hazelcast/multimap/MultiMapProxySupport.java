@@ -211,8 +211,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
     }
 
     private void publishMultiMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
-        getService().publishMultiMapEvent(getNodeEngine().getThisAddress(),
-                name, eventType, numberOfAffectedEntries);
+        getService().publishMultiMapEvent(name, eventType, numberOfAffectedEntries);
     }
 
     protected Integer countInternal(Data dataKey) {
