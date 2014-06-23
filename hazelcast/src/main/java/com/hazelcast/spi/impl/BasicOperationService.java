@@ -123,9 +123,9 @@ final class BasicOperationService implements InternalOperationService {
 
     private final long defaultCallTimeout;
     private final ExecutionService executionService;
-    private final OperationProcessor operationProcessor;
-    private final OperationPacketProcessor operationPacketProcessor;
-    private final ResponsePacketProcessor responseProcessor;
+    private final OperationHandler operationHandler;
+    private final OperationPacketHandler operationPacketHandler;
+    private final ResponsePacketHandler responsePacketHandler;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -141,9 +141,9 @@ final class BasicOperationService implements InternalOperationService {
                 new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.scheduler = new BasicOperationScheduler(node, executionService, new BasicDispatcherImpl());
-        this.operationProcessor = new OperationProcessor();
-        this.operationPacketProcessor = new OperationPacketProcessor();
-        this.responseProcessor = new ResponsePacketProcessor();
+        this.operationHandler = new OperationHandler();
+        this.operationPacketHandler = new OperationPacketHandler();
+        this.responsePacketHandler = new ResponsePacketHandler();
     }
 
     @Override
@@ -217,7 +217,7 @@ final class BasicOperationService implements InternalOperationService {
     //todo: move to BasicOperationScheduler
     public void runOperationOnCallingThread(Operation op) {
         if (scheduler.isAllowedToRunInCurrentThread(op)) {
-            operationProcessor.process(op);
+            operationHandler.handle(op);
         } else {
             throw new IllegalThreadStateException("Operation: " + op + " cannot be run in current thread! -> "
                     + Thread.currentThread());
@@ -246,7 +246,6 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     // =============================== processing response  ===============================
-
 
     @Override
     public void notifyBackupCall(long callId) {
@@ -281,7 +280,6 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory) throws Exception {
         Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
-
         InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invoke();
     }
@@ -332,12 +330,12 @@ final class BasicOperationService implements InternalOperationService {
         return nodeEngine.send(packet, node.getConnectionManager().getOrConnect(target));
     }
 
-    private boolean send(final Operation op, final Connection connection) {
+    private boolean send(Operation op, Connection connection) {
         Data data = nodeEngine.toData(op);
 
         //enable this line to get some logging of sizes of operations.
         //System.out.println(op.getClass()+" "+data.bufferSize());
-        final int partitionId = scheduler.getPartitionIdForExecution(op);
+        int partitionId = scheduler.getPartitionIdForExecution(op);
         Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
         if (op instanceof UrgentSystemOperation) {
@@ -521,13 +519,13 @@ final class BasicOperationService implements InternalOperationService {
             }
 
             if (task instanceof Operation) {
-                operationProcessor.process((Operation) task);
+                operationHandler.handle((Operation) task);
             } else if (task instanceof Packet) {
                 Packet packet = (Packet) task;
                 if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                    responseProcessor.process(packet);
+                    responsePacketHandler.handle(packet);
                 } else {
-                    operationPacketProcessor.process(packet);
+                    operationPacketHandler.handle(packet);
                 }
             } else if (task instanceof Runnable) {
                 ((Runnable) task).run();
@@ -540,8 +538,8 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for handling responses.
      */
-    private class ResponsePacketProcessor {
-        private void process(Packet packet) {
+    private class ResponsePacketHandler {
+        private void handle(Packet packet) {
             try {
                 final Data data = packet.getData();
                 final Response response = (Response) nodeEngine.toObject(data);
@@ -572,9 +570,12 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for handling operation packets.
      */
-    private class OperationPacketProcessor {
+    private class OperationPacketHandler {
 
-        private void process(Packet packet) {
+        /**
+         * Handles this packet.
+         */
+        private void handle(Packet packet) {
             try {
                 Operation op = loadOperation(packet);
 
@@ -582,7 +583,7 @@ final class BasicOperationService implements InternalOperationService {
                     return;
                 }
 
-                process(op);
+                handle(op);
             } catch (Throwable e) {
                 logger.severe(e);
             }
@@ -605,22 +606,22 @@ final class BasicOperationService implements InternalOperationService {
             if (!isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
                 Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
                         op.getClass().getName(), op.getServiceName());
-                operationProcessor.handleOperationError(op, error);
+                operationHandler.handleOperationError(op, error);
                 return false;
             }
             return true;
         }
 
-        private void process(Operation op) {
+        private void handle(Operation op) {
             String executorName = op.getExecutorName();
             if (executorName == null) {
-                operationProcessor.process(op);
+                operationHandler.handle(op);
             } else {
-                offloadOperationProcessing(op);
+                offloadOperationHandling(op);
             }
         }
 
-        private void offloadOperationProcessing(final Operation op) {
+        private void offloadOperationHandling(final Operation op) {
             String executorName = op.getExecutorName();
 
             ExecutorService executor = executionService.getExecutor(executorName);
@@ -631,7 +632,7 @@ final class BasicOperationService implements InternalOperationService {
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    operationProcessor.process(op);
+                    operationHandler.handle(op);
                 }
             });
         }
@@ -640,12 +641,12 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for processing an Operation.
      */
-    private class OperationProcessor {
+    private class OperationHandler {
 
         /**
          * Runs operation in calling thread.
          */
-        private void process(final Operation op) {
+        private void handle(Operation op) {
             executedOperationsCount.incrementAndGet();
 
             RemoteCallKey callKey = null;
@@ -701,10 +702,10 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private void handleResponse(Operation op) throws Exception {
-            final boolean returnsResponse = op.returnsResponse();
+            boolean returnsResponse = op.returnsResponse();
             Object response = null;
             if (op instanceof BackupAwareOperation) {
-                final BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
+                BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
                 int syncBackupCount = 0;
                 if (backupAwareOp.shouldBackup()) {
                     syncBackupCount = new OperationBackupHandler(backupAwareOp).backup();
@@ -718,7 +719,7 @@ final class BasicOperationService implements InternalOperationService {
                 if (response == null) {
                     response = op.getResponse();
                 }
-                final ResponseHandler responseHandler = op.getResponseHandler();
+                ResponseHandler responseHandler = op.getResponseHandler();
                 if (responseHandler == null) {
                     throw new IllegalStateException("ResponseHandler should not be null!");
                 }
@@ -789,7 +790,6 @@ final class BasicOperationService implements InternalOperationService {
                 }
             }
         }
-
 
         private void handleOperationError(Operation op, Throwable e) {
             if (e instanceof OutOfMemoryError) {
