@@ -52,6 +52,10 @@ MemberAttributeConfig fourCore = new MemberAttributeConfig();
 memberAttributeConfig.setIntAttribute("CPU_CORE_COUNT", 4);
 MemberAttributeConfig twelveCore = new MemberAttributeConfig();
 memberAttributeConfig.setIntAttribute("CPU_CORE_COUNT", 12);
+MemberAttributeConfig twentyFourCore = new MemberAttributeConfig();
+memberAttributeConfig.setIntAttribute("CPU_CORE_COUNT", 24);
+
+
 
 Config member1Config = new Config();
 config.setMemberAttributeConfig(fourCore);
