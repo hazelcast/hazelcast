@@ -16,7 +16,11 @@
 
 package com.hazelcast.spi.impl;
 
-public interface BasicOperationProcessor {
+/**
+ * To keep the {@link com.hazelcast.spi.impl.BasicOperationScheduler} clean of operations/packets etc, the scheduler
+ * takes care of scheduling, but forwards the actual handling of the task to the {@link BasicDispatcher}.
+ */
+public interface BasicDispatcher {
 
-    void process(Object o);
+    void dispatch(Object task);
 }

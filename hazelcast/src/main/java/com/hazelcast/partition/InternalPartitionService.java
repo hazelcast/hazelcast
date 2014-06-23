@@ -43,6 +43,15 @@ public interface InternalPartitionService extends CoreService {
     Address getPartitionOwner(int partitionId);
 
     /**
+     * Gets the owner of the partition. If none is set, it will wait till the owner is set.
+     *
+     * @param partitionId
+     * @return
+     * @throws InterruptedException
+     */
+    Address getPartitionOwnerOrWait(int partitionId)throws InterruptedException;
+
+    /**
      * Returns the InternalPartition for a given partitionId.
      * <p/>
      * The InternalPartition for a given partitionId wil never change; so it can be cached safely.

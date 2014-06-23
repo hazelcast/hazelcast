@@ -188,6 +188,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return partitions[partitionId].getOwnerOrNull();
     }
 
+
+    public Address getPartitionOwnerOrWait(int partition) throws InterruptedException {
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        Address owner = partitionService.getPartitionOwner(partition);
+        while (owner == null) {
+            Thread.sleep(100);
+            owner = partitionService.getPartitionOwner(partition);
+        }
+        return owner;
+    }
+
     private void notifyMasterToAssignPartitions() {
         if (lock.tryLock()) {
             try {
