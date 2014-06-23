@@ -29,7 +29,9 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.security.Permission;
-
+/**
+ * Provides the request service for {@link com.hazelcast.queue.OfferOperation}
+ */
 public class OfferRequest extends QueueRequest {
 
     private Data data;

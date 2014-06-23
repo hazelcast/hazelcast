@@ -26,6 +26,9 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
+/**
+ * Reserve poll operation for the transactional queue.
+ */
 public class TxnReservePollOperation extends QueueOperation implements WaitSupport {
 
     private long reservedOfferId;

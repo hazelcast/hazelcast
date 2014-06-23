@@ -27,6 +27,9 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
+/**
+ * Remove operation for the Queue.
+ */
 public class RemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Data data;

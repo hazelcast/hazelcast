@@ -23,7 +23,9 @@ import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-
+/**
+ * Provides the request service for {@link com.hazelcast.queue.PollOperation}
+ */
 public class PollRequest extends QueueRequest {
 
     public PollRequest() {

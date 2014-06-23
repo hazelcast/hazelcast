@@ -25,6 +25,9 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
+/**
+ * Prepare operation for the transactional queue.
+ */
 public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
     private long itemId;

@@ -23,7 +23,9 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * This class stores items' id when DrainOperation run.
+ */
 public class DrainBackupOperation extends QueueOperation implements BackupOperation {
 
     //can be null

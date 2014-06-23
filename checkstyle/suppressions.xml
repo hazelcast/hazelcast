@@ -217,29 +217,10 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
 
     <!-- Queue -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.queue[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.queue[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.queue[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.queue[\\/]"/>
+    <suppress checks="" files="com.hazelcast.queue.QueuePortableHook"/>
+    <suppress checks="" files="com.hazelcast.queue.QueueDataSerializerHook"/>
     <suppress checks="MethodCount" files="com.hazelcast.queue.QueueContainer"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.queue.QueueContainer"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.queue.QueueContainer"/>
-    <suppress checks="IllegalType" files="com.hazelcast.queue.QueueContainer"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.queue.QueueContainer"/>
-    <suppress checks="MethodLength" files="com.hazelcast.queue.QueuePortableHook"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.queue.QueuePortableHook"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.queue.QueuePortableHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.queue.QueueDataSerializerHook"/>
-    <suppress checks="MethodCount" files="com.hazelcast.queue.QueueDataSerializerHook"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.queue.QueueDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.queue.QueueDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.queue.QueueStoreWrapper"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.queue.QueueStoreWrapper"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.queue.QueueStoreWrapper"/>
-    <suppress checks="Todo" files="com.hazelcast.queue.QueueStoreWrapper"/>
 
-    <suppress checks="ParameterAssignment" files="com.hazelcast.queue.proxy.QueueProxyImpl"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.queue.tx.TransactionalQueueProxy"/>
 
     <!-- jca -->
     <suppress checks="JavadocMethod" files="com.hazelcast.jca[\\/]"/>

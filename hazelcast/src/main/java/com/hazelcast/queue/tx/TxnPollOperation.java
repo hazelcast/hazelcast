@@ -30,6 +30,10 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
+/**
+ * Poll operation for the transactional queue.
+ */
+
 public class TxnPollOperation extends QueueBackupAwareOperation implements Notifier {
 
     private long itemId;

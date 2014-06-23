@@ -25,6 +25,9 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
+/**
+ * Provides backup operation during transactional rollback operation.
+ */
 public class TxnRollbackBackupOperation extends QueueOperation implements BackupOperation {
 
     private long itemId;
