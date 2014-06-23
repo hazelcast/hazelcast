@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.cluster.BindOperation;
 import com.hazelcast.config.SSLConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.instance.NodeInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.CipherHelper;
@@ -29,7 +29,6 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
@@ -107,8 +106,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final AtomicInteger nextSelectorIndex = new AtomicInteger();
 
-    private final MemberSocketInterceptor memberSocketInterceptor;
-
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
     private final int outboundPortCount;
@@ -121,7 +118,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private volatile Thread socketAcceptorThread;
     // accessed only in synchronized block
 
-    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
+    private final NodeInitializer initializer;
+
+    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel, NodeInitializer initializer) {
+        this.initializer = initializer;
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
@@ -145,32 +145,19 @@ public class TcpIpConnectionManager implements ConnectionManager {
         } else {
             socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
         }
-
-        SocketInterceptor implementation = null;
-        SocketInterceptorConfig sic = ioService.getSocketInterceptorConfig();
-        if (sic != null && sic.isEnabled()) {
-            implementation = (SocketInterceptor) sic.getImplementation();
-            if (implementation == null && sic.getClassName() != null) {
-                try {
-                    implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
-                } catch (Throwable e) {
-                    logger.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
-                }
-            }
-            if (implementation != null) {
-                if (!(implementation instanceof MemberSocketInterceptor)) {
-                    logger.severe("SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
-                    implementation = null;
-                }
-            }
-        }
-
-        memberSocketInterceptor = (MemberSocketInterceptor) implementation;
-        if (memberSocketInterceptor != null) {
-            logger.info("SocketInterceptor is enabled");
-            memberSocketInterceptor.init(sic.getProperties());
-        }
         portableContext = ioService.getSerializationContext();
+    }
+
+    public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+        final MemberSocketInterceptor memberSocketInterceptor = initializer.getMemberSocketInterceptor();
+        if (memberSocketInterceptor == null) {
+            return;
+        }
+        if (onAccept) {
+            memberSocketInterceptor.onAccept(socket);
+        } else {
+            memberSocketInterceptor.onConnect(socket);
+        }
     }
 
     @Override
@@ -241,10 +228,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     public IOService getIOHandler() {
         return ioService;
-    }
-
-    public MemberSocketInterceptor getMemberSocketInterceptor() {
-        return memberSocketInterceptor;
     }
 
     @Override

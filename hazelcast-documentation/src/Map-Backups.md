@@ -1,7 +1,7 @@
 
 
 
-### Backups
+### Map Backups
 
 
 Hazelcast will distribute map entries onto multiple JVMs (cluster members). Each JVM holds some portion of the data but you do not want to lose data when a member JVM crashes.

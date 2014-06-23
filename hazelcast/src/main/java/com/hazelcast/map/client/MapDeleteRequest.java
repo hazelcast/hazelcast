@@ -92,4 +92,13 @@ public class MapDeleteRequest extends KeyBasedClientRequest implements Portable,
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 
+    @Override
+    public String getMethodName() {
+        return "delete";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

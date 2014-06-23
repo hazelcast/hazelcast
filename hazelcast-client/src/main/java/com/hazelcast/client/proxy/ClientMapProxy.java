@@ -56,6 +56,7 @@ import com.hazelcast.map.client.MapFlushRequest;
 import com.hazelcast.map.client.MapGetAllRequest;
 import com.hazelcast.map.client.MapGetEntryViewRequest;
 import com.hazelcast.map.client.MapGetRequest;
+import com.hazelcast.map.client.MapIsEmptyRequest;
 import com.hazelcast.map.client.MapIsLockedRequest;
 import com.hazelcast.map.client.MapKeySetRequest;
 import com.hazelcast.map.client.MapLoadAllKeysRequest;
@@ -233,6 +234,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
 
         final MapGetRequest request = new MapGetRequest(name, keyData);
+        request.setAsAsync();
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
             final DelegatingFuture<V> delegatingFuture = new DelegatingFuture<V>(future, getContext().getSerializationService());
@@ -267,6 +269,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         invalidateNearCache(keyData);
         MapPutRequest request = new MapPutRequest(name, keyData, valueData,
                 ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
+        request.setAsAsync();
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture<V>(future, getContext().getSerializationService());
@@ -280,6 +283,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
         MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
+        request.setAsAsync();
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture<V>(future, getContext().getSerializationService());
@@ -809,6 +813,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+        request.setAsSubmitToKey();
         try {
             final ClientCallFuture future = (ClientCallFuture) getContext().getInvocationService().
                     invokeOnKeyOwner(request, keyData);
@@ -821,6 +826,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+        request.setAsSubmitToKey();
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture(future, getContext().getSerializationService());
@@ -929,7 +935,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean isEmpty() {
-        return size() == 0;
+        MapIsEmptyRequest request = new MapIsEmptyRequest(name);
+        Boolean result = invoke(request);
+        return result;
     }
 
     @Override

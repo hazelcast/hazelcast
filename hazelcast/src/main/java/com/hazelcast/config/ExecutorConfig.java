@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.IExecutorService}.
+ */
 public class ExecutorConfig {
 
     /**
@@ -23,6 +26,9 @@ public class ExecutorConfig {
      */
     public static final int DEFAULT_POOL_SIZE = 8;
 
+    /**
+     * Capacity of Queue
+     */
     public static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
     private String name = "default";

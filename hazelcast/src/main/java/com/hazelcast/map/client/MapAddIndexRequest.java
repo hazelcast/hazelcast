@@ -84,4 +84,14 @@ public class MapAddIndexRequest extends AllPartitionsClientRequest implements Po
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_INDEX);
     }
+
+    @Override
+    public String getMethodName() {
+        return "addIndex";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{attribute, ordered};
+    }
 }

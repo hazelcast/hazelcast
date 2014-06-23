@@ -106,4 +106,14 @@ public class MapLoadGivenKeysRequest extends AllPartitionsClientRequest implemen
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "loadAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{keys, replaceExistingValues};
+    }
 }

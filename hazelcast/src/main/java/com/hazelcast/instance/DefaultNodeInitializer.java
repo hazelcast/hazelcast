@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
@@ -57,18 +58,24 @@ public class DefaultNodeInitializer implements NodeInitializer {
 
     @Override
     public SecurityContext getSecurityContext() {
-        logger.warning("Security features are only available on Hazelcast Enterprise Edition!");
+        logger.warning("Security features are only available on Hazelcast Enterprise!");
         return null;
     }
 
     @Override
     public Storage<DataRef> getOffHeapStorage() {
-        throw new UnsupportedOperationException("Offheap feature is only available on Hazelcast Enterprise Edition!");
+        throw new UnsupportedOperationException("Offheap feature is only available on Hazelcast Enterprise!");
     }
 
     @Override
     public WanReplicationService geWanReplicationService() {
         return new WanReplicationServiceImpl(node);
+    }
+
+    @Override
+    public MemberSocketInterceptor getMemberSocketInterceptor() {
+        logger.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
+        return null;
     }
 
     @Override

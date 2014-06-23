@@ -23,21 +23,61 @@ import java.util.List;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.IMap}.
+ */
 public class MapConfig {
 
+    /**
+     * The number of minimum backup counter
+     */
     public static final int MIN_BACKUP_COUNT = 0;
+    /**
+     * The number of default backup counter
+     */
     public static final int DEFAULT_BACKUP_COUNT = 1;
+    /**
+     * The number of maximum backup counter
+     */
     public static final int MAX_BACKUP_COUNT = 6;
 
+    /**
+     * The number of minimum eviction percentage
+     */
     public static final int MIN_EVICTION_PERCENTAGE = 0;
+    /**
+     * The number of default eviction percentage
+     */
     public static final int DEFAULT_EVICTION_PERCENTAGE = 25;
+    /**
+     * The number of maximum eviction percentage
+     */
     public static final int MAX_EVICTION_PERCENTAGE = 100;
 
+    /**
+     * The number of default Time to Live seconds
+     */
     public static final int DEFAULT_TTL_SECONDS = 0;
+
+    /**
+     * The number of default time to wait eviction
+     */
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
+    /**
+     * Maximum size
+     */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+    /**
+     * Default policy for eviction
+     */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
+    /**
+     * Default policy for merging
+     */
     public static final String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
+    /**
+     * Default In-Memory format is binary
+     */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
     private String name;
@@ -80,8 +120,22 @@ public class MapConfig {
 
     private MapConfigReadOnly readOnly;
 
+    /**
+     * Eviction Policy enum
+     */
     public enum EvictionPolicy {
-        LRU, LFU, NONE
+        /**
+         * Least Recently Used
+         */
+        LRU,
+        /**
+         * Least Frequently Used
+         */
+        LFU,
+        /**
+         * None
+         */
+        NONE
     }
 
     public MapConfig(String name) {

@@ -18,7 +18,9 @@ package com.hazelcast.config;
 
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * Contains the configuration for a permission.
+ */
 public class PermissionConfig {
 
     private PermissionType type;
@@ -38,20 +40,65 @@ public class PermissionConfig {
         this.principal = principal;
     }
 
+    /**
+     * Type of permission
+     */
     public enum PermissionType {
+        /**
+         * Map
+         */
         MAP("map-permission"),
+        /**
+         * Queue
+         */
         QUEUE("queue-permission"),
+        /**
+         * Topic
+         */
         TOPIC("topic-permission"),
+        /**
+         * MultiMap
+         */
         MULTIMAP("multimap-permission"),
+        /**
+         * List
+         */
         LIST("list-permission"),
+        /**
+         * Set
+         */
         SET("set-permission"),
+        /**
+         * ID generator
+         */
         ID_GENERATOR("id-generator-permission"),
+        /**
+         * Lock
+         */
         LOCK("lock-permission"),
+        /**
+         * Atomic long
+         */
         ATOMIC_LONG("atomic-long-permission"),
+        /**
+         * Countdown Latch
+         */
         COUNTDOWN_LATCH("countdown-latch-permission"),
+        /**
+         * Semaphore
+         */
         SEMAPHORE("semaphore-permission"),
+        /**
+         * Executor Service
+         */
         EXECUTOR_SERVICE("executor-service-permission"),
+        /**
+         * Transaction
+         */
         TRANSACTION("transaction-permission"),
+        /**
+         * All
+         */
         ALL("all-permissions");
 
         private final String nodeName;

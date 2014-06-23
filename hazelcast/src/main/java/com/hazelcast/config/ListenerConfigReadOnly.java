@@ -17,9 +17,8 @@
 package com.hazelcast.config;
 
 import java.util.EventListener;
-
 /**
- * @ali 10/11/13
+ * Contains the configuration for a Listener.
  */
 public class ListenerConfigReadOnly extends ListenerConfig {
 

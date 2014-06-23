@@ -21,10 +21,16 @@ import com.hazelcast.util.ValidationUtil;
 import java.util.Properties;
 
 /**
- * MapStore configuration.
+ * Contains the configuration for a Map Store.
  */
 public class MapStoreConfig {
+    /**
+     * Default delay seconds for writing
+     */
     public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;
+    /**
+     * Default batch size for writing
+     */
     public static final int DEFAULT_WRITE_BATCH_SIZE = 1;
 
     private boolean enabled = true;
@@ -38,8 +44,18 @@ public class MapStoreConfig {
     private MapStoreConfigReadOnly readOnly;
     private InitialLoadMode initialLoadMode = InitialLoadMode.LAZY;
 
+    /**
+     * Initial load module
+     */
     public enum InitialLoadMode {
-        LAZY, EAGER
+        /**
+         * Each partition is loaded when it is first touched.
+         */
+        LAZY,
+        /**
+         * getMap() method does not return till the map is completely loaded.
+         */
+        EAGER
     }
 
 

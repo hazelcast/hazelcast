@@ -675,8 +675,17 @@
             <xs:element name="client-login-modules" type="login-modules" minOccurs="0" maxOccurs="1"/>
             <xs:element name="client-permission-policy" type="security-object" minOccurs="0" maxOccurs="1"/>
             <xs:element name="client-permissions" type="permissions" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="security-interceptors" type="interceptors" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" default="false"/>
+    </xs:complexType>
+    <xs:complexType name="interceptors">
+        <xs:sequence>
+            <xs:element name="interceptor" type="interceptor" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="interceptor">
+        <xs:attribute name="class-name" type="non-space-string" use="required"/>
     </xs:complexType>
     <xs:complexType name="login-modules">
         <xs:sequence>

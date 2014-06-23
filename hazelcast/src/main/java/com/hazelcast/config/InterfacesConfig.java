@@ -20,7 +20,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * Contains the configuration for an Interfaces.
+ */
 public class InterfacesConfig {
 
     private boolean enabled;

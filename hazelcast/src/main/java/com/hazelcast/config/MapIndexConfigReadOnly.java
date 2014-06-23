@@ -15,9 +15,8 @@
  */
 
 package com.hazelcast.config;
-
 /**
- * @ali 10/11/13
+ * Contains the configuration for a index of Map.
  */
 public class MapIndexConfigReadOnly extends MapIndexConfig {
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
@@ -35,5 +36,8 @@ public interface NodeInitializer {
 
     WanReplicationService geWanReplicationService();
 
+    MemberSocketInterceptor getMemberSocketInterceptor();
+
     void destroy();
+
 }

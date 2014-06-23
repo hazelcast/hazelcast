@@ -73,6 +73,7 @@ public class MapPortableHook implements PortableHook {
     public static final int EVICT_ALL = 46;
     public static final int LOAD_ALL_GIVEN_KEYS = 47;
     public static final int LOAD_ALL_KEYS = 48;
+    public static final int IS_EMPTY = 49;
 
     public int getFactoryId() {
         return F_ID;
@@ -80,7 +81,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[LOAD_ALL_KEYS + 1];
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[IS_EMPTY + 1];
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
@@ -342,6 +343,12 @@ public class MapPortableHook implements PortableHook {
                 constructors[LOAD_ALL_KEYS] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapLoadAllKeysRequest();
+                    }
+                };
+
+                constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapIsEmptyRequest();
                     }
                 };
             }

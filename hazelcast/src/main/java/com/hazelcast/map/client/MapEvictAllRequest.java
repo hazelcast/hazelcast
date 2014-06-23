@@ -78,4 +78,8 @@ public class MapEvictAllRequest extends AllPartitionsClientRequest implements Po
     }
 
 
+    @Override
+    public String getMethodName() {
+        return "evictAll";
+    }
 }

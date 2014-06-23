@@ -66,34 +66,20 @@
     <suppress checks="MethodCount" files="com.hazelcast.core.IMap"/>
 
     <!-- Config-->
-    <suppress checks="JavadocMethod" files="com.hazelcast.config[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.config[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.config[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.config[\\/]"/>
-    <suppress checks="AnonInnerLength" files="com.hazelcast.config.AbstractXmlConfigHelper"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.AbstractXmlConfigHelper"/>
-    <suppress checks="InnerAssignment" files="com.hazelcast.config.Config"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.Config"/>
     <suppress checks="MethodCount" files="com.hazelcast.config.Config"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.config.Config"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.config.ConfigLoader"/>
-    <suppress checks="MethodLength" files="com.hazelcast.config.ConfigXmlGenerator"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.config.ConfigXmlGenerator"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.ConfigXmlGenerator"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.config.LoginModuleConfig"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.Config"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.AbstractXmlConfigHelper"/>
+    <!--Couldn't change structure because of API -->
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.config.MapConfig"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.config.MapConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.config.MapConfig"/>
-    <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.config.MapConfig"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.config.MaxSizeConfig"/>
+    <!---->
     <suppress checks="MethodCount" files="com.hazelcast.config.SerializationConfig"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.config.TcpIpConfig"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.XmlConfigBuilder"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
-    <suppress checks="InnerAssignment" files="com.hazelcast.config.XmlConfigBuilder"/>
-    <suppress checks="MethodLength" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="MethodCount" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.XmlConfigBuilder"/>
 
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
@@ -590,13 +576,6 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="MethodLength" files="com.hazelcast.nio.UTFEncoderDecoder"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.nio.UTFEncoderDecoder"/>
     <suppress checks="ExecutableStatement" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="IllegalImport" files="com.hazelcast.nio.UnsafeHelper"/>
@@ -609,6 +588,7 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.tcp.WriteHandler"/>
     <suppress checks="InnerAssignment" files="com.hazelcast.nio.tcp.WriteHandler"/>
     <suppress checks="EmptyStatement" files="com.hazelcast.nio.tcp.WriteHandler"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.nio.UTFEncoderDecoder"/>
 
     <!-- Jmx-->
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.jmx.ManagementService"/>

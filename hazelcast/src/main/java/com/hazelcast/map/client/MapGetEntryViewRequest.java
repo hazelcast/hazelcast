@@ -89,4 +89,14 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "getEntryView";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

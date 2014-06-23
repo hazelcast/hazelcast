@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+/**
+ * Contains the configuration for a Management Center.
+ */
 public class ManagementCenterConfig {
 
     private static final int UPDATE_INTERVAL = 5;

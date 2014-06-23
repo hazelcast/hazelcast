@@ -54,6 +54,7 @@ import com.hazelcast.map.operation.EvictAllOperation;
 import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.map.operation.GetEntryViewOperation;
 import com.hazelcast.map.operation.GetOperation;
+import com.hazelcast.map.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.operation.KeyBasedMapOperation;
 import com.hazelcast.map.operation.LoadAllOperation;
 import com.hazelcast.map.operation.MapEntrySetOperation;
@@ -576,7 +577,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME,
-                            new BinaryOperationFactory(new MapIsEmptyOperation(name), nodeEngine));
+                            new IsEmptyOperationFactory());
             for (Object result : results.values()) {
                 if (!(Boolean) getService().toObject(result))
                     return false;
