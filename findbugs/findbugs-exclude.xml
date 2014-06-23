@@ -6,4 +6,9 @@
         <Package name="com.hazelcast.spi.impl" />
     </Match>
 
+    <Match>
+        <Class name="com.hazelcast.nio.ssl.SSLSocketChannelWrapper" />
+        <Bug pattern="SWL_SLEEP_WITH_LOCK_HELD" />
+    </Match>
+
 </FindBugsFilter>
