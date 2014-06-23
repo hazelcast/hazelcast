@@ -19,6 +19,9 @@ package com.hazelcast.spring;
 import com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser;
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
+/**
+ * Hazelcast Custom Namespace Definitions.
+ */
 public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
 
     public void init() {

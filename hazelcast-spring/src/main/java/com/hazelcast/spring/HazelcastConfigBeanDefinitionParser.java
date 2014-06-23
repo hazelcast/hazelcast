@@ -73,6 +73,29 @@ import java.util.Set;
 
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
+/**
+ * BeanDefinitionParser for Hazelcast Config Configuration
+ * <p/>
+ *
+ * <b>Sample Spring XML for Hazelcast Config:</b>
+ * <pre>
+ * &lt;hz:config&gt;
+ *  &lt;hz:map name="map1"&gt;
+ *      &lt;hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
+ *          eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/&gt;
+ *
+ *  &lt;hz:map-store enabled="true" class-name="com.foo.DummyStore"
+ *          write-delay-seconds="0"/&gt;
+ *  &lt;/hz:map&gt;
+ *  &lt;hz:map name="map2"&gt;
+ *      &lt;hz:map-store enabled="true" implementation="dummyMapStore"
+ *          write-delay-seconds="0"/&gt;
+ *  &lt;/hz:map&gt;
+ *
+ *  &lt;bean id="dummyMapStore" class="com.foo.DummyStore" /&gt;
+ * &lt;/hz:config&gt;
+ * </pre>
+ */
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {

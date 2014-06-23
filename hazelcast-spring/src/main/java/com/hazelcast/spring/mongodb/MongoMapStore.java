@@ -34,6 +34,9 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * MongoDB MapStore implementation.
+ */
 public class MongoMapStore implements MapStore, MapLoaderLifecycleSupport {
 
     protected static final Logger LOGGER = Logger.getLogger(MongoMapStore.class.getName());
