@@ -28,7 +28,9 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
-
+/**
+ * And Result set for Predicates.
+ */
 public class AndResultSet extends AbstractSet<QueryableEntry> {
     private final Set<QueryableEntry> setSmallest;
     private final List<Set<QueryableEntry>> otherIndexedResults;

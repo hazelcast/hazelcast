@@ -20,7 +20,9 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.Set;
-
+/**
+ * This interface using for create filterable Predicates.
+ */
 public interface IndexAwarePredicate extends Predicate {
 
     Set<QueryableEntry> filter(QueryContext queryContext);

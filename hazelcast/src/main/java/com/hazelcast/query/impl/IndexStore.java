@@ -20,7 +20,9 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-
+/**
+ * This interface stores indexes of Query.
+ */
 public interface IndexStore {
 
     void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to);

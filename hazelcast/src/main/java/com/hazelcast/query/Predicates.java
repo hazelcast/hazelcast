@@ -71,6 +71,7 @@ public final class Predicates {
 
     /**
      * Or predicate
+     *
      * @param predicates
      * @return
      */
@@ -122,6 +123,9 @@ public final class Predicates {
         return new InPredicate(attribute, values);
     }
 
+    /**
+     * Between Predicate
+     */
     public static class BetweenPredicate extends AbstractPredicate {
         private Comparable to;
         private Comparable from;
@@ -178,6 +182,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Not Predicate
+     */
     public static class NotPredicate implements Predicate, DataSerializable {
         private Predicate predicate;
 
@@ -209,6 +216,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * In Predicate
+     */
     public static class InPredicate extends AbstractPredicate {
         private Comparable[] values;
         private volatile Set<Comparable> convertedInValues;
@@ -292,6 +302,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Regex Predicate
+     */
     public static class RegexPredicate implements Predicate, DataSerializable {
         private String attribute;
         private String regex;
@@ -340,6 +353,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Like Predicate
+     */
     public static class LikePredicate implements Predicate, DataSerializable {
         protected String attribute;
         protected String second;
@@ -411,6 +427,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Ilike Predicate
+     */
     public static class ILikePredicate extends LikePredicate {
 
         public ILikePredicate() {
@@ -436,6 +455,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * And Predicate
+     */
     public static class AndPredicate implements IndexAwarePredicate, DataSerializable {
 
         protected Predicate[] predicates;
@@ -543,6 +565,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Or Predicate
+     */
     public static class OrPredicate implements IndexAwarePredicate, DataSerializable {
 
         private Predicate[] predicates;
@@ -632,6 +657,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Greater Less Predicate
+     */
     public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal;
         boolean less;
@@ -701,6 +729,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Not Equal Predicate
+     */
     public static class NotEqualPredicate extends EqualPredicate {
         public NotEqualPredicate() {
         }
@@ -730,6 +761,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Equal Predicate
+     */
     public static class EqualPredicate extends AbstractPredicate {
         protected Comparable value;
 
@@ -779,6 +813,10 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Provides some functionality for some predicates
+     * such as Between, In.
+     */
     public abstract static class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
 
         protected String attribute;

@@ -22,7 +22,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
+/**
+ * Or result set for Predicates.
+ */
 public class OrResultSet extends AbstractSet<QueryableEntry> {
 
     private final List<Set<QueryableEntry>> indexedResults;

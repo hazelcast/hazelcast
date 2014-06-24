@@ -27,10 +27,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+/**
+ * This class provides functionality to build predicate.
+ */
 public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
-    public String attribute;
+
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
+
+    private String attribute;
+
+    public String getAttribute() {
+        return attribute;
+    }
+
+    public void setAttribute(String attribute) {
+        this.attribute = attribute;
+    }
 
     @Override
     public boolean apply(Map.Entry mapEntry) {

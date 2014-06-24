@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ *  Multiple result set for Predicates.
+ */
 public class MultiResultSet extends AbstractSet<QueryableEntry> {
     private Set<Object> index;
     private final List<ConcurrentMap<Data, QueryableEntry>> resultSets

@@ -25,6 +25,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
+/**
+ *  Multiple result set for Predicates
+ */
+
 public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryResultEntry {
     private Data indexKey;
     private Data keyData;

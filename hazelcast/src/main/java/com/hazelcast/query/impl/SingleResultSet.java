@@ -23,6 +23,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ *  Multiple result set for Predicates.
+ */
 public class SingleResultSet extends AbstractSet<QueryableEntry> {
     private final ConcurrentMap<Data, QueryableEntry> records;
 

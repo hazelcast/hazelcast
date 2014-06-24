@@ -25,6 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * This class contains methods which manipulate and access index.
+ */
 public class IndexService {
     private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
     private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();

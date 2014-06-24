@@ -18,6 +18,9 @@ package com.hazelcast.query;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 
+/**
+ * This class provides functionality related to build predicate.
+ */
 public class EntryObject {
     PredicateBuilder qb;
 
@@ -26,16 +29,16 @@ public class EntryObject {
     }
 
     public EntryObject get(String attribute) {
-        if (KEY_ATTRIBUTE_NAME.equals(qb.attribute)) {
-            qb.attribute = KEY_ATTRIBUTE_NAME + "#" + attribute;
+        if (KEY_ATTRIBUTE_NAME.equals(qb.getAttribute())) {
+            qb.setAttribute(KEY_ATTRIBUTE_NAME + "#" + attribute);
         } else {
-            qb.attribute = attribute;
+            qb.setAttribute(attribute);
         }
         return this;
     }
 
     public EntryObject key() {
-        qb.attribute = KEY_ATTRIBUTE_NAME;
+        qb.setAttribute(KEY_ATTRIBUTE_NAME);
         return this;
     }
 
@@ -48,43 +51,43 @@ public class EntryObject {
     }
 
     public PredicateBuilder equal(Comparable value) {
-        return addPredicate(Predicates.equal(qb.attribute, value));
+        return addPredicate(Predicates.equal(qb.getAttribute(), value));
     }
 
     public PredicateBuilder notEqual(Comparable value) {
-        return addPredicate(Predicates.notEqual(qb.attribute, value));
+        return addPredicate(Predicates.notEqual(qb.getAttribute(), value));
     }
 
     public PredicateBuilder isNull() {
-        return addPredicate(Predicates.equal(qb.attribute, null));
+        return addPredicate(Predicates.equal(qb.getAttribute(), null));
     }
 
     public PredicateBuilder isNotNull() {
-        return addPredicate(Predicates.notEqual(qb.attribute, null));
+        return addPredicate(Predicates.notEqual(qb.getAttribute(), null));
     }
 
     public PredicateBuilder greaterThan(Comparable value) {
-        return addPredicate(Predicates.greaterThan(qb.attribute, value));
+        return addPredicate(Predicates.greaterThan(qb.getAttribute(), value));
     }
 
     public PredicateBuilder greaterEqual(Comparable value) {
-        return addPredicate(Predicates.greaterEqual(qb.attribute, value));
+        return addPredicate(Predicates.greaterEqual(qb.getAttribute(), value));
     }
 
     public PredicateBuilder lessThan(Comparable value) {
-        return addPredicate(Predicates.lessThan(qb.attribute, value));
+        return addPredicate(Predicates.lessThan(qb.getAttribute(), value));
     }
 
     public PredicateBuilder lessEqual(Comparable value) {
-        return addPredicate(Predicates.lessEqual(qb.attribute, value));
+        return addPredicate(Predicates.lessEqual(qb.getAttribute(), value));
     }
 
     public PredicateBuilder between(Comparable from, Comparable to) {
-        return addPredicate(Predicates.between(qb.attribute, from, to));
+        return addPredicate(Predicates.between(qb.getAttribute(), from, to));
     }
 
     public PredicateBuilder in(Comparable... values) {
-        return addPredicate(Predicates.in(qb.attribute, values));
+        return addPredicate(Predicates.in(qb.getAttribute(), values));
     }
 
     private PredicateBuilder addPredicate(Predicate predicate) {
