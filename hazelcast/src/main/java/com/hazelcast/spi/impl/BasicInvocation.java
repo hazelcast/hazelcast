@@ -35,10 +35,10 @@ import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.ExceptionUtil;
+import edu.umd.cs.findbugs.annotations.*;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
@@ -222,6 +222,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         doInvoke();
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
@@ -383,6 +385,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private Object resolveResponse(Object obj) {
         if (obj == null) {
             return NULL_RESPONSE;
