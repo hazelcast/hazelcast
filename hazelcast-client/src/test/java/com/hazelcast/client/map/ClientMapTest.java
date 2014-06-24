@@ -705,7 +705,7 @@ public class ClientMapTest {
      */
     @Test
     public void testEntryListener() throws InterruptedException {
-        final CountDownLatch gateAdd = new CountDownLatch(2);
+        final CountDownLatch gateAdd = new CountDownLatch(3);
         final CountDownLatch gateRemove = new CountDownLatch(1);
         final CountDownLatch gateEvict = new CountDownLatch(1);
         final CountDownLatch gateUpdate = new CountDownLatch(1);
@@ -732,6 +732,7 @@ public class ClientMapTest {
         clientMap.evict(2);
 
         clientMap.clear();
+        clientMap.put(2, new Deal(1));
         clientMap.evictAll();
 
         assertTrue(gateAdd.await(10, TimeUnit.SECONDS));

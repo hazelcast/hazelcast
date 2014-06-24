@@ -18,7 +18,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -371,14 +370,15 @@ public class ClientNearCacheTest {
             map.get(i);
         }
 
-        sleepSeconds(MAX_TTL_SECONDS / 1000);
+        sleepSeconds(MAX_TTL_SECONDS);
         map.get(0);
 
         final int expectedSize = 1;
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                assertEquals(expectedSize, stats.getOwnedEntryCount());
+                final long ownedEntryCount = stats.getOwnedEntryCount();
+                assertEquals(expectedSize, ownedEntryCount);
             }
         });
     }

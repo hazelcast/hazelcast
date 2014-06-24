@@ -47,6 +47,7 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -540,12 +541,13 @@ public class DefaultRecordStore implements RecordStore {
             store.deleteAll(keysObject);
         }
 
+        int numOfClearedEntries = keysToDelete.size();
         removeIndex(keysToDelete);
 
         clearRecordsMap(lockedRecords);
         resetAccessSequenceNumber();
         writeBehindQueue.clear();
-        return keysToDelete.size();
+        return numOfClearedEntries;
     }
 
     public void reset() {
