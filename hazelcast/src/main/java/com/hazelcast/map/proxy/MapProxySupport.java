@@ -60,7 +60,6 @@ import com.hazelcast.map.operation.LoadAllOperation;
 import com.hazelcast.map.operation.MapEntrySetOperation;
 import com.hazelcast.map.operation.MapFlushOperation;
 import com.hazelcast.map.operation.MapGetAllOperationFactory;
-import com.hazelcast.map.operation.MapIsEmptyOperation;
 import com.hazelcast.map.operation.MapKeySetOperation;
 import com.hazelcast.map.operation.MapValuesOperation;
 import com.hazelcast.map.operation.MultipleEntryOperationFactory;
@@ -577,7 +576,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME,
-                            new IsEmptyOperationFactory());
+                            new IsEmptyOperationFactory(name));
             for (Object result : results.values()) {
                 if (!(Boolean) getService().toObject(result))
                     return false;
