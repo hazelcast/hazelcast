@@ -30,7 +30,7 @@ Besides declarative configuration, you can configure your cluster programmatical
 
 #### Using Wildcard
 
-Hazelcast supports wildcard configuration of Maps, Queues and Topics. Using an asterisk (\*) character in the name, different instances of Maps, Queues and Topics can be configured by a single configuration.
+Hazelcast supports wildcard configuration for all distributed structures that can be conifigured using `Config` (i.e. for all except IAtomicLong, IAtomicReference). Using an asterisk (\*) character in the name, different instances of maps, queues, topics, semaphores, etc. can be configured by a single configuration.
 
 Note that, with a limitation of a single usage, asterisk (\*) can be placed anywhere inside the configuration name.
 

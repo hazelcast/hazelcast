@@ -4,6 +4,7 @@
 
 |Chapter|Section|Description|
 |-------|-------|-----------|
+|[Chapter 1 - Introduction](#introduction)|[Configuring Hazelcast](#configuring-hazelcast)|The section 'Wildcard Configuration' previously placed under 'Configuration` chapter moved to this section with the heading 'Using Wildcard', also the content improved.|
 |[Chapter 3 - Distributed Data Structures](#distributed-data-structures)|[IdGenerator](#idgenerator), [ICountDownLatch](#icountdownlatch)| Added as new sections.|
 ||[MultiMap](#multimap)| Section improved by adding information about how it is implemented and by providing configuration information.|
 ||[Map](#map)|Eviction section improved by adding the detailed policy and parameter explanations. A subsection on how to evict particular map entries added *([Evicting Specific Entries](#evicting-specific-entries))*. Also [Map Overview](#map-overview) and [Backups](#backups) sections enhanced with "how it works" information. Added [Entry Listener](#entry-listener) as a new section.|
