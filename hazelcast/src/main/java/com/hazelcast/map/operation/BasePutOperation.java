@@ -44,8 +44,9 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public void afterRun() {
         mapService.interceptAfterPut(name, dataValue);
-        if (eventType == null)
+        if (eventType == null) {
             eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
+        }
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {

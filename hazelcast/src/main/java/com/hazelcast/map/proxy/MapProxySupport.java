@@ -110,7 +110,6 @@ import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.SortedQueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.executor.CompletedFuture;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -336,12 +335,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                         .setResultDeserialized(false)
                         .invoke();
                 o = f.get();
-                if (operation instanceof BasePutOperation)
+                if (operation instanceof BasePutOperation) {
                     localMapStats.incrementPuts(System.currentTimeMillis() - time);
-                else if (operation instanceof BaseRemoveOperation)
+                } else if (operation instanceof BaseRemoveOperation) {
                     localMapStats.incrementRemoves(System.currentTimeMillis() - time);
-                else if (operation instanceof GetOperation)
+                } else if (operation instanceof GetOperation) {
                     localMapStats.incrementGets(System.currentTimeMillis() - time);
+                }
 
             } else {
                 f = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -564,8 +564,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     .invokeOnAllPartitions(SERVICE_NAME, new ContainsValueOperationFactory(name, dataValue));
             for (Object result : results.values()) {
                 Boolean contains = (Boolean) getService().toObject(result);
-                if (contains)
+                if (contains) {
                     return true;
+                }
             }
             return false;
         } catch (Throwable t) {
@@ -580,8 +581,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     .invokeOnAllPartitions(SERVICE_NAME,
                             new IsEmptyOperationFactory(name));
             for (Object result : results.values()) {
-                if (!(Boolean) getService().toObject(result))
+                if (!(Boolean) getService().toObject(result)) {
                     return false;
+                }
             }
             return true;
         } catch (Throwable t) {
@@ -825,8 +827,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
-                if (member.localMember())
+                if (member.localMember()) {
                     continue;
+                }
                 Future f = nodeEngine.getOperationService()
                         .invokeOnTarget(SERVICE_NAME, new AddInterceptorOperation(id, interceptor, name),
                                 member.getAddress());
@@ -845,8 +848,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (Member member : members) {
             try {
-                if (member.localMember())
+                if (member.localMember()) {
                     continue;
+                }
                 MemberImpl memberImpl = (MemberImpl) member;
                 Future f = nodeEngine.getOperationService()
                         .invokeOnTarget(SERVICE_NAME, new RemoveInterceptorOperation(name, id), memberImpl.getAddress());
@@ -910,8 +914,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Set<Entry<Data, Data>> entrySet = new HashSet<Entry<Data, Data>>();
             for (Object result : results.values()) {
                 Set entries = ((MapEntrySet) getService().toObject(result)).getEntrySet();
-                if (entries != null)
+                if (entries != null) {
                     entrySet.addAll(entries);
+                }
             }
             return entrySet;
         } catch (Throwable t) {
@@ -1088,8 +1093,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
             List<Integer> missingList = new ArrayList<Integer>();
             for (Integer partitionId : partitionIds) {
-                if (!returnedPartitionIds.contains(partitionId))
+                if (!returnedPartitionIds.contains(partitionId)) {
                     missingList.add(partitionId);
+                }
             }
             List<Future> futures = new ArrayList<Future>(missingList.size());
             for (Integer pid : missingList) {

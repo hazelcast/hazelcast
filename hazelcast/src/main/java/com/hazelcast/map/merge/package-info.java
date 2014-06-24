@@ -14,23 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.record;
-
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.nio.serialization.Data;
-
 /**
- * TODO need a better name than RecordFactory!
- *
- * @param <T> the type of object which is going to be created.
+ * Contains merge policies for {@link com.hazelcast.core.IMap}
  */
-public interface RecordFactory<T> {
-
-    Record<T> newRecord(Data key, Object value);
-
-    void setValue(Record<T> record, Object value);
-
-    boolean isEquals(Object value1, Object value2);
-
-    InMemoryFormat getStorageFormat();
-}
+package com.hazelcast.map.merge;

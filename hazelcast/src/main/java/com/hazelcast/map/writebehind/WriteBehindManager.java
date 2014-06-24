@@ -18,7 +18,6 @@ package com.hazelcast.map.writebehind;
 
 import com.hazelcast.map.writebehind.store.StoreListener;
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.Collection;
 import java.util.concurrent.ScheduledExecutorService;
 

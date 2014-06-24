@@ -22,7 +22,6 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.map.writebehind.DelayedEntry;
 import com.hazelcast.map.writebehind.WriteBehindQueue;
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -100,7 +99,8 @@ public interface RecordStore {
      *
      * @param key    the data key to put record store.
      * @param record the value for record store.
-     * @see {@link com.hazelcast.map.operation.MapReplicationOperation} and {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
+     * @see {@link com.hazelcast.map.operation.MapReplicationOperation} and
+     * {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
      */
     void putRecord(Data key, Record record);
 

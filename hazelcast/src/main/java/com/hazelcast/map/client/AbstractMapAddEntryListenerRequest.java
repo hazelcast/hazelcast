@@ -34,7 +34,6 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.PortableEntryEvent;
-
 import java.security.Permission;
 
 /**

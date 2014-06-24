@@ -27,7 +27,7 @@ class NearCacheSizeEstimator
     private static final AtomicLongFieldUpdater<NearCacheSizeEstimator> SIZE_UPDATER = AtomicLongFieldUpdater
             .newUpdater(NearCacheSizeEstimator.class, "size");
 
-    private volatile long size = 0L;
+    private volatile long size;
 
     protected NearCacheSizeEstimator() {
         super();

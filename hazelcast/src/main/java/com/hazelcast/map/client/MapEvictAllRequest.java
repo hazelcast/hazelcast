@@ -14,13 +14,12 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
 
 /**
- * Evict all request used by clients.
+ * Evict all entries request used by clients.
  */
 public class MapEvictAllRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 

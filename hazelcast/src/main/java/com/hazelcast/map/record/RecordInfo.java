@@ -19,11 +19,10 @@ package com.hazelcast.map.record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.io.IOException;
 
 /**
- *  Record info.
+ * Record info.
  */
 public class RecordInfo implements DataSerializable {
     protected RecordStatistics statistics;

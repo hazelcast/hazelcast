@@ -24,18 +24,12 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
-
 import java.io.IOException;
 
-/**
- * User: sancar
- * Date: 11/11/13
- * Time: 11:03
- */
 public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRequest {
 
     private String predicate;
-    transient private Predicate cachedPredicate;
+    private transient Predicate cachedPredicate;
 
     public MapAddEntryListenerSqlRequest() {
         super();

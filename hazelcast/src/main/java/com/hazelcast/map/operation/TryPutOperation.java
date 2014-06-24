@@ -35,8 +35,9 @@ public class TryPutOperation extends BasePutOperation {
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     public boolean shouldBackup() {

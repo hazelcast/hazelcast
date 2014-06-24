@@ -21,7 +21,6 @@ import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-
 import java.security.Permission;
 
 public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerRequest {

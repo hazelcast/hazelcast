@@ -6,7 +6,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
 
 /**

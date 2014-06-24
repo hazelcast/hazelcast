@@ -9,9 +9,6 @@
     <!-- Suppress duplicate checking of copyright notice -->
     <suppress checks="StrictDuplicateCode" files=".java" lines="1-15"/>
 
-    <!--To enable checking on a module, comment out its suppression. e.g. mapreduce is enabled.-->
-
-    <suppress checks="" files="com.hazelcast.map[\\/]"/>
 
     <!-- <suppress checks="" files="com.hazelcast.client[\\/]"/> not completed -->
 
@@ -559,6 +556,40 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.management.ManagementCenterService"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.management.TimedMemberStateFactory"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.management.request.ConsoleRequestConstants"/>
+
+
+
+    <!-- Map -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.map[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.map[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.map[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.map[\\/]"/>
+
+    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="MethodLengthCheck" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="MethodCountCheck" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.map.MapPortableHook"/>
+    <suppress checks="MethodLengthCheck" files="com.hazelcast.map.MapDataSerializerHook"/>
+
+
+    <suppress checks="MethodCountCheck" files="com.hazelcast.map.RecordStore"/>
+    <suppress checks="MethodCountCheck" files="com.hazelcast.map.MapContainer"/>
+    <suppress checks="NPathComplexityCheck" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
+
+    <suppress checks="" files="com.hazelcast.map.MapService"/>
+    <suppress checks="" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="" files="com.hazelcast.map.eviction.EvictionHelper"/>
+    <suppress checks="" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
+
+    <!-- map.operation-->
+    <suppress checks="" files="com.hazelcast.map.operation[\\/]"/>
+    <!-- map.proxy-->
+    <suppress checks="" files="com.hazelcast.map.proxy[\\/]"/>
+    <!-- map.tx-->
+    <suppress checks="" files="com.hazelcast.map.tx[\\/]"/>
 
 </suppressions>
 

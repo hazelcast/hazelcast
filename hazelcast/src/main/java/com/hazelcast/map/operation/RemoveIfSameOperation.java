@@ -20,7 +20,6 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 
 public class RemoveIfSameOperation extends BaseRemoveOperation {
@@ -37,12 +36,13 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-       successful = recordStore.remove(dataKey, testValue);
+        successful = recordStore.remove(dataKey, testValue);
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     @Override

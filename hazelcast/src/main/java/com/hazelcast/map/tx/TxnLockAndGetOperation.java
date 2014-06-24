@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.operation.LockAwareOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.transaction.TransactionException;
-
 import java.io.IOException;
 
 public class TxnLockAndGetOperation extends LockAwareOperation {

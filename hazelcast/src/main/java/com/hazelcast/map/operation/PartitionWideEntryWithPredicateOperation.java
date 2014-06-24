@@ -18,21 +18,11 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.Map;
 
 /**
  * date: 9/16/13
