@@ -68,7 +68,9 @@ public class MapEvictAllRequest extends AllPartitionsClientRequest implements Po
         }
         final MapService service = getService();
         final Address thisAddress = service.getNodeEngine().getThisAddress();
-        service.publishMapEvent(thisAddress, name, EntryEventType.EVICT_ALL, total);
+        if (total > 0) {
+            service.publishMapEvent(thisAddress, name, EntryEventType.EVICT_ALL, total);
+        }
         return total;
     }
 

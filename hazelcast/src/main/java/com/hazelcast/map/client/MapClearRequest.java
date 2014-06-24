@@ -79,7 +79,9 @@ public class MapClearRequest extends AllPartitionsClientRequest implements Porta
         }
         final MapService service = getService();
         final Address thisAddress = service.getNodeEngine().getThisAddress();
-        service.publishMapEvent(thisAddress, name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+        if (totalAffectedEntries > 0) {
+            service.publishMapEvent(thisAddress, name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+        }
         return null;
     }
 
