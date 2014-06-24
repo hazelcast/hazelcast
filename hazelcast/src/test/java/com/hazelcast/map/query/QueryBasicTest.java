@@ -13,7 +13,6 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
@@ -48,8 +47,7 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class QueryBasicTest extends HazelcastTestSupport {
 
-    @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
+    @Test(timeout = 1000 * 60)
     public void testInPredicateWithEmptyArray() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
