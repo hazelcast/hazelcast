@@ -232,11 +232,6 @@ public final class Predicates {
             if (values == null) {
                 throw new NullPointerException("Array can't be null");
             }
-            for (Comparable value : values) {
-                if (value == null) {
-                    throw new NullPointerException("Elements can't be null");
-                }
-            }
             this.values = values;
         }
 
