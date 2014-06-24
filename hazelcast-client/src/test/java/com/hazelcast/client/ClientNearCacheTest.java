@@ -361,7 +361,7 @@ public class ClientNearCacheTest {
     public void testNearCacheTTLCleanup() {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_TTL));
 
-        final int size = 133;
+        final int size = 100;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
@@ -370,15 +370,18 @@ public class ClientNearCacheTest {
             map.get(i);
         }
 
-        sleepSeconds(MAX_TTL_SECONDS);
-        map.get(0);
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getOwnedEntryCount());
 
-        final int expectedSize = 1;
+        sleepSeconds(MAX_TTL_SECONDS + 1);
+        // map.put() and map.get() triggers near cache eviction/expiration process
+        map.put(0, 0);
+
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
-                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                final long ownedEntryCount = stats.getOwnedEntryCount();
-                assertEquals(expectedSize, ownedEntryCount);
+                NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue(ownedEntryCount < size);
             }
         });
     }
