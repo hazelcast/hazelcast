@@ -6,6 +6,7 @@ You can perform almost all Hazelcast operations with Java Client. It already imp
 ```java
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 
 import java.util.Map;
 import java.util.Collection;
