@@ -70,9 +70,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     private static final AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
 
-    private static final AtomicIntegerFieldUpdater<BasicInvocation> INVOKE_COUNT_UPDATER = AtomicIntegerFieldUpdater
-            .newUpdater(BasicInvocation.class, "invokeCount");
-
     static final class InternalResponse {
 
         private String toString;
@@ -233,7 +230,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
 
         invTarget = getTarget();
-        incrementInvokeCount();
+        invokeCount++;
         final Address thisAddress = nodeEngine.getThisAddress();
         if (invTarget == null) {
             remote = false;
@@ -406,7 +403,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                 waitTimeout -= callTimeout;
                 op.setWaitTimeout(waitTimeout);
             }
-            decrementInvokeCount();
+            invokeCount--;
             return RETRY_RESPONSE;
         }
 
@@ -464,14 +461,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                 invocationFuture.set(potentialResponse);
             }
         }
-    }
-
-    private void incrementInvokeCount() {
-        INVOKE_COUNT_UPDATER.getAndIncrement(this);
-    }
-
-    private void decrementInvokeCount() {
-        INVOKE_COUNT_UPDATER.getAndDecrement(this);
     }
 
     private void waitForBackups(int backupCount, long timeout, TimeUnit unit, NormalResponse response) {
