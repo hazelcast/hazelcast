@@ -18,13 +18,13 @@ package com.hazelcast.topic.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.TopicPortableHook;
@@ -47,9 +47,8 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
     @Override
     public String call() throws Exception {
         TopicService service = getService();
-        ClientEngine clientEngine = getClientEngine();
         ClientEndpoint endpoint = getEndpoint();
-        MessageListener listener = new MessageListenerImpl(endpoint, clientEngine, getCallId());
+        MessageListener listener = new MessageListenerImpl(endpoint, serializationService, getCallId());
         String registrationId = service.addMessageListener(name, listener);
         endpoint.setListenerRegistration(TopicService.SERVICE_NAME, name, registrationId);
         return registrationId;
@@ -87,12 +86,12 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
 
     private static class MessageListenerImpl implements MessageListener {
         private final ClientEndpoint endpoint;
-        private final ClientEngine clientEngine;
+        private final SerializationService serializationService;
         private final int callId;
 
-        public MessageListenerImpl(ClientEndpoint endpoint, ClientEngine clientEngine, int callId) {
+        public MessageListenerImpl(ClientEndpoint endpoint, SerializationService serializationService, int callId) {
             this.endpoint = endpoint;
-            this.clientEngine = clientEngine;
+            this.serializationService = serializationService;
             this.callId = callId;
         }
 
@@ -102,7 +101,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
                 return;
             }
 
-            Data messageData = clientEngine.toData(message.getMessageObject());
+            Data messageData = serializationService.toData(message.getMessageObject());
             String publisherUuid = message.getPublishingMember().getUuid();
             PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), publisherUuid);
             endpoint.sendEvent(portableMessage, callId);

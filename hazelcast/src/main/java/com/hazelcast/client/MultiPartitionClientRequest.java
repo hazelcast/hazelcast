@@ -27,7 +27,7 @@ public abstract class MultiPartitionClientRequest extends ClientRequest {
     final void process() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        Map<Integer, Object> map = clientEngine.invokeOnPartitions(getServiceName(), operationFactory, getPartitions());
+        Map<Integer, Object> map = operationService.invokeOnPartitions(getServiceName(), operationFactory, getPartitions());
         Object result = reduce(map);
         endpoint.sendResponse(result, getCallId());
     }

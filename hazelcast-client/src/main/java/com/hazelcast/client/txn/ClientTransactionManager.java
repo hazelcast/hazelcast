@@ -29,11 +29,13 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.SerializableXID;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
+
+import javax.transaction.xa.Xid;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import javax.transaction.xa.Xid;
 
 /**
  * @author ali 14/02/14
@@ -120,6 +122,7 @@ public class ClientTransactionManager {
         try {
             return client.getConnectionManager().tryToConnect(null);
         } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
         }
         return null;
     }

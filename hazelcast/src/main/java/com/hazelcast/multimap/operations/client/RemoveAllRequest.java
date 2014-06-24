@@ -27,6 +27,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest {
             }
             Collection<Data> collection = new ArrayList<Data>(coll.size());
             for (MultiMapRecord record : coll) {
-                collection.add(getClientEngine().toData(record.getObject()));
+                collection.add(serializationService.toData(record.getObject()));
             }
             return new PortableCollection(collection);
         }

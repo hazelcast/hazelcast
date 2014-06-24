@@ -21,10 +21,19 @@ import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+/**
+ * Client DataSerializable Factory ID
+ */
 public final class ClientDataSerializerHook implements DataSerializerHook {
 
+    /**
+     * ClientDataSerializable Factory ID
+     */
     public static final int ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_DS_FACTORY, -3);
 
+    /**
+     * ClientResponse Class ID
+     */
     public static final int CLIENT_RESPONSE = 1;
 
     @Override

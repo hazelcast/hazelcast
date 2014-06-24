@@ -62,9 +62,9 @@ public class RecoverAllTransactionsRequest extends InvocationClientRequest {
             try {
                 SerializableCollection collectionWrapper = future.get(RECOVER_TIMEOUT, TimeUnit.MILLISECONDS);
                 for (Data data : collectionWrapper) {
-                    RecoveredTransaction rt = (RecoveredTransaction) clientEngine.toObject(data);
+                    RecoveredTransaction rt = serializationService.toObject(data);
                     service.addClientRecoveredTransaction(rt);
-                    xids.add(clientEngine.toData(rt.getXid()));
+                    xids.add(serializationService.toData(rt.getXid()));
                 }
             } catch (MemberLeftException e) {
                 ILogger logger = clientEngine.getLogger(RecoverAllTransactionsRequest.class);

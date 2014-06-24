@@ -42,25 +42,25 @@ public class AwsAddressTranslator implements AddressTranslator {
         }
         String privateAddress = getLookupTable().get(address.getHost());
         if (privateAddress != null) {
-            try {
-                return new Address(privateAddress, address.getPort());
-            } catch (UnknownHostException e) {
-                return null;
-            }
+            return constructPrivateAddress(privateAddress, address);
         }
 
         refresh();
 
         privateAddress = getLookupTable().get(address.getHost());
         if (privateAddress != null) {
-            try {
-                return new Address(privateAddress, address.getPort());
-            } catch (UnknownHostException e) {
-                return null;
-            }
+            return constructPrivateAddress(privateAddress, address);
         }
 
         return null;
+    }
+
+    private Address constructPrivateAddress(String privateAddress, Address address) {
+        try {
+            return new Address(privateAddress, address.getPort());
+        } catch (UnknownHostException e) {
+            return null;
+        }
     }
 
     private Map<String, String> getLookupTable() {

@@ -61,6 +61,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ClientExecutorServiceProxy extends ClientProxy implements IExecutorService {
 
+    private static final int MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS = 10;
+    private static final int MAX_CONSECUTIVE_SUBMITS = 100;
     private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
@@ -456,9 +458,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         boolean sync = false;
         final long last = lastSubmitTime;
         final long now = Clock.currentTimeMillis();
-        if (last + 10 < now) {
+        if (last + MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS < now) {
             consecutiveSubmits.set(0);
-        } else if (consecutiveSubmits.incrementAndGet() % 100 == 0) {
+        } else if (consecutiveSubmits.incrementAndGet() % MAX_CONSECUTIVE_SUBMITS == 0) {
             sync = true;
         }
         lastSubmitTime = now;

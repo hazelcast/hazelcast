@@ -42,10 +42,11 @@ public class ClientDisconnectionOperation extends AbstractOperation implements U
     @Override
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
-        Set<ClientEndpoint> endpoints = engine.getEndpoints(clientUuid);
+        final ClientEndpointManager endpointManager = engine.getEndpointManager();
+        Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
             Connection connection = endpoint.getConnection();
-            engine.removeEndpoint(connection, true);
+            endpointManager.removeEndpoint(connection, true);
         }
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
