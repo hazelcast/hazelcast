@@ -54,7 +54,7 @@ public class ClientNearCache<K> {
      * Used when caching nonexistent values.
      */
     public static final Object NULL_OBJECT = new Object();
-    private static final double EVICTION_PERCENTAGE = 0.02;
+    private static final double EVICTION_PERCENTAGE = 0.2;
     private final ClientNearCacheType cacheType;
     private final int maxSize;
     private volatile long lastCleanup;
