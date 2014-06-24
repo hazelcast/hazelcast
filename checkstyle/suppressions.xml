@@ -414,9 +414,7 @@
     <suppress checks="JavadocType" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.nio[\\/]"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.nio.tcp.AbstractIOSelector"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.nio.tcp.AbstractIOSelector"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.AbstractIOSelector"/>
+
     <suppress checks="IllegalType" files="com.hazelcast.nio.serialization.serializers.ArrayListSerializerHook"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.serialization.ByteArrayObjectDataInput"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataInput"/>
