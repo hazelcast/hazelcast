@@ -25,7 +25,9 @@ import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.util.Collection;
-
+/**
+ * Provides the request service for {@link com.hazelcast.queue.IteratorOperation}
+ */
 public class IteratorRequest extends QueueRequest implements RetryableRequest {
 
     public IteratorRequest() {

@@ -22,6 +22,9 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
+/**
+ * Transactional Queue Item.
+ */
 public class TxQueueItem extends QueueItem {
 
     private String transactionId;

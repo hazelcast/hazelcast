@@ -16,7 +16,9 @@
 
 package com.hazelcast.queue;
 
-
+/**
+ * Notify size of the queue.
+ */
 public class SizeOperation extends QueueOperation {
 
     public SizeOperation() {

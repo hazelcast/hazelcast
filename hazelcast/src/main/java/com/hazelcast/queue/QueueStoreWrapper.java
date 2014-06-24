@@ -26,6 +26,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -34,6 +35,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Wrapper for the Queue Store.
+ */
 @SuppressWarnings("unchecked")
 public class QueueStoreWrapper implements QueueStore<Data> {
 
@@ -70,23 +74,12 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             try {
                 store = ClassLoaderUtil.newInstance(serializationService.getClassLoader(), storeConfig.getClassName());
             } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
 
-        if (store == null) {
-            QueueStoreFactory factory = storeConfig.getFactoryImplementation();
-            if (factory == null) {
-                try {
-                    factory = ClassLoaderUtil.newInstance(serializationService.getClassLoader(),
-                            storeConfig.getFactoryClassName());
-                } catch (Exception ignored) {
-                }
-            }
-            if (factory == null) {
-                return;
-            }
-            store = factory.newQueueStore(name, storeConfig.getProperties());
-        }
+        factoryImpl(name);
+
         this.storeConfig = storeConfig;
         enabled = storeConfig.isEnabled();
         binary = Boolean.parseBoolean(storeConfig.getProperty("binary"));
@@ -94,6 +87,24 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         bulkLoad = parseInt("bulk-load", DEFAULT_BULK_LOAD);
         if (bulkLoad < 1) {
             bulkLoad = 1;
+        }
+    }
+
+    public void factoryImpl(String name) {
+        if (store == null) {
+            QueueStoreFactory factory = storeConfig.getFactoryImplementation();
+            if (factory == null) {
+                try {
+                    factory = ClassLoaderUtil.newInstance(serializationService.getClassLoader(),
+                            storeConfig.getFactoryClassName());
+                } catch (Exception ignored) {
+                    EmptyStatement.ignore(ignored);
+                }
+            }
+            if (factory == null) {
+                return;
+            }
+            store = factory.newQueueStore(name, storeConfig.getProperties());
         }
     }
 

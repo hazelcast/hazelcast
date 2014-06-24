@@ -23,7 +23,9 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * Store items' id as set when ClearOperation run.
+ */
 public class ClearBackupOperation extends QueueOperation implements BackupOperation {
 
     private Set<Long> itemIdSet;

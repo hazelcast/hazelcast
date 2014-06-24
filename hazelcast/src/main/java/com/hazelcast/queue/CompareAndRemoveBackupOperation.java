@@ -24,6 +24,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * This class triggers backup method for items' id.
+ */
 public class CompareAndRemoveBackupOperation extends QueueOperation implements BackupOperation {
 
     private Set<Long> keySet;

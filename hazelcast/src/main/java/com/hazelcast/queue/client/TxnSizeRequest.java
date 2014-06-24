@@ -31,7 +31,9 @@ import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
 import java.security.Permission;
-
+/**
+ * Request for size of the Transactional Queue.
+ */
 public class TxnSizeRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     String name;

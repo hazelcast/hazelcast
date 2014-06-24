@@ -19,6 +19,9 @@ package com.hazelcast.queue;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.spi.impl.SerializableCollection;
 
+/**
+ * Provides iterator functionality for Queue.
+ */
 public class IteratorOperation extends QueueOperation {
 
     public IteratorOperation() {

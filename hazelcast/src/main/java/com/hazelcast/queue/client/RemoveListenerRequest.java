@@ -24,6 +24,9 @@ import com.hazelcast.security.permission.QueuePermission;
 
 import java.security.Permission;
 
+/**
+ * Remove listener request belong to the Queue item.
+ */
 public class RemoveListenerRequest extends BaseClientRemoveListenerRequest {
 
     public RemoveListenerRequest() {

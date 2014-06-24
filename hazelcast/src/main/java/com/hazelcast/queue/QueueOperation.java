@@ -32,6 +32,10 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import java.io.IOException;
 import java.util.Collection;
 
+/**
+ * This class contains methods for Queue operations
+ * such as {@link com.hazelcast.queue.AddAllOperation}.
+ */
 public abstract class QueueOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 

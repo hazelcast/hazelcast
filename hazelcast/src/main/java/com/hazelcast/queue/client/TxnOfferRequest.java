@@ -34,6 +34,9 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Request for transactional offer operation.
+ */
 public class TxnOfferRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     String name;

@@ -28,7 +28,9 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
-
+/**
+ * Contains offer operation for the Queue.
+ */
 public final class OfferOperation extends QueueBackupAwareOperation
         implements WaitSupport, Notifier, IdentifiedDataSerializable {
 

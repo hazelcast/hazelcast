@@ -29,7 +29,9 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-
+/**
+ * Provides the request service for {@link com.hazelcast.queue.ContainsOperation}
+ */
 public class ContainsRequest extends QueueRequest implements RetryableRequest {
 
     Collection<Data> dataList;

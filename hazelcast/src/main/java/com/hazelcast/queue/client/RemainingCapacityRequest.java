@@ -29,6 +29,9 @@ import com.hazelcast.security.permission.QueuePermission;
 import java.io.IOException;
 import java.security.Permission;
 
+/**
+ * Request for remaining capacity of Queue.
+ */
 public class RemainingCapacityRequest extends CallableClientRequest implements RetryableRequest {
 
     protected String name;
