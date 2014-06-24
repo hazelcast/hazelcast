@@ -107,7 +107,7 @@ public final class ReflectionHelper {
         try {
             Getter parent = null;
             List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
-            for (final String name : attribute.split("\\.")) {
+            for (final String name : paramAttribute.split("\\.")) {
                 Getter localGetter = null;
                 possibleMethodNames.clear();
                 possibleMethodNames.add(name);
