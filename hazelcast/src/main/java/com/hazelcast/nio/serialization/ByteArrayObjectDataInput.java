@@ -278,10 +278,15 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
     }
 
     public long readLong(int position) throws IOException {
-        return (((long) buffer[position] << 56) + ((long) (buffer[position + 1] & 255) << 48)
-                + ((long) (buffer[position + 2] & 255) << 40) + ((long) (buffer[position + 3] & 255) << 32)
-                + ((long) (buffer[position + 4] & 255) << 24) + ((buffer[position + 5] & 255) << 16)
-                + ((buffer[position + 6] & 255) << 8) + ((buffer[position + 7] & 255) << 0));
+        long byte7 = (long) buffer[position] << 56;
+        long byte6 = (long) (buffer[position + 1] & 0xFF) << 48;
+        long byte5 = (long) (buffer[position + 2] & 0xFF) << 40;
+        long byte4 = (long) (buffer[position + 3] & 0xFF) << 32;
+        long byte3 = (long) (buffer[position + 4] & 0xFF) << 24;
+        long byte2 = (long) (buffer[position + 5] & 0xFF) << 16;
+        long byte1 = (long) (buffer[position + 6] & 0xFF) << 8;
+        long byte0 = (long) (buffer[position + 7] & 0xFF);
+        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
     }
 
     /**
