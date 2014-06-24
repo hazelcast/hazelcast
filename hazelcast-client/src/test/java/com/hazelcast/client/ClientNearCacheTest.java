@@ -18,7 +18,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -362,7 +361,7 @@ public class ClientNearCacheTest {
     public void testNearCacheTTLCleanup() {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_TTL));
 
-        final int size = 133;
+        final int size = 100;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
@@ -371,14 +370,18 @@ public class ClientNearCacheTest {
             map.get(i);
         }
 
-        sleepSeconds(MAX_TTL_SECONDS / 1000);
-        map.get(0);
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(size, stats.getOwnedEntryCount());
 
-        final int expectedSize = 1;
+        sleepSeconds(MAX_TTL_SECONDS + 1);
+        // map.put() and map.get() triggers near cache eviction/expiration process
+        map.put(0, 0);
+
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
-                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                assertEquals(expectedSize, stats.getOwnedEntryCount());
+                NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue(ownedEntryCount < size);
             }
         });
     }

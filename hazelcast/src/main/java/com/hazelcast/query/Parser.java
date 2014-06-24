@@ -41,8 +41,8 @@ class Parser {
     private static final int LIKE_PRECEDENCE = 10;
     private static final int ILIKE_PRECEDENCE = 10;
     private static final int REGEX_PRECEDENCE = 10;
-    private static final int AND_PRECEDENCE = 10;
-    private static final int OR_PRECEDENCE = 10;
+    private static final int AND_PRECEDENCE = 5;
+    private static final int OR_PRECEDENCE = 3;
 
     private static final Map<String, Integer> PRECEDENCE = new HashMap<String, Integer>();
 

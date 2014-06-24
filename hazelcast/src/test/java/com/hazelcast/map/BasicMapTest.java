@@ -270,8 +270,6 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         map.addEntryListener(new EntryListener<String, String>() {
             public void entryAdded(EntryEvent event) {
-                assertEquals("world", event.getValue());
-                assertEquals("hello", event.getKey());
                 latchAdded.countDown();
             }
 
@@ -305,14 +303,16 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
+        map.put("hi", "new world");
         map.evictAll();
+        map.put("hello", "world");
         map.clear();
         try {
             assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
             assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
             assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
-            assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
             assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
+            assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
             assertFalse(e.getMessage(), true);

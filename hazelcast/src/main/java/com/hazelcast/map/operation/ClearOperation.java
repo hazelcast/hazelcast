@@ -47,6 +47,7 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
             shouldBackup = false;
             return;
         }
+
         numberOfClearedEntries = recordStore.clear();
     }
 
