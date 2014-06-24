@@ -408,7 +408,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
             }
-            publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
+            if(numberOfAffectedEntries > 0 ){
+                publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
+            }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -805,7 +807,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
             }
-            publishMapEvent(numberOfAffectedEntries, EntryEventType.CLEAR_ALL);
+            if(numberOfAffectedEntries > 0 ){
+                publishMapEvent(numberOfAffectedEntries, EntryEventType.CLEAR_ALL);
+            }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
