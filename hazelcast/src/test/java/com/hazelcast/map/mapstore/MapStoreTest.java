@@ -1126,7 +1126,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
+    @Ignore // see https://github.com/hazelcast/hazelcast/issues/2409
     public void testIssue1019() throws InterruptedException {
         final String keyWithNullValue = "keyWithNullValue";
 
@@ -1161,7 +1161,6 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void testKeysWithPredicateShouldLoadMapStore() throws InterruptedException {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore()
                 .insert("key1",17)
