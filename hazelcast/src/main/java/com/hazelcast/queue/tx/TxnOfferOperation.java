@@ -30,6 +30,10 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
+/**
+ * Offer operation for the Transactional Queue.
+ */
+
 public class TxnOfferOperation extends QueueBackupAwareOperation implements Notifier {
 
     private long itemId;

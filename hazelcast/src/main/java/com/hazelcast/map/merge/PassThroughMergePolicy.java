@@ -19,7 +19,6 @@ package com.hazelcast.map.merge;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-
 import java.io.IOException;
 
 
@@ -28,14 +27,13 @@ import java.io.IOException;
  * <p/>
  * PassThroughMergePolicy causes the merging entry to be merged from source to destination map
  * unless merging entry is null.
- *
+ * <p/>
  * <p/>
  *
  * @see com.hazelcast.map.merge.MapMergePolicy
  * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
  * @see com.hazelcast.map.merge.HigherHitsMapMergePolicy
  * @see com.hazelcast.map.merge.LatestUpdateMapMergePolicy
- *
  */
 public class PassThroughMergePolicy implements MapMergePolicy {
 

@@ -31,10 +31,12 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Collections.synchronizedSet;
 
+/**
+ * Base class for client requests that will be send more than one member
+ */
 public abstract class MultiTargetClientRequest extends ClientRequest {
 
-    public static final int TRY_COUNT = 100;
-
+    private static final int TRY_COUNT = 100;
 
     @Override
     final void process() throws Exception {
@@ -50,7 +52,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
         for (Address target : targets) {
             Operation op = operationFactory.createOperation();
             op.setCallerUuid(endpoint.getUuid());
-            InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, target)
+            InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target)
                     .setTryCount(TRY_COUNT)
                     .setResultDeserialized(false)
                     .setCallback(new SingleTargetCallback(target, callback));

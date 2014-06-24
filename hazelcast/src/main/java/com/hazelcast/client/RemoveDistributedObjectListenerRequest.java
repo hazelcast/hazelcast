@@ -19,13 +19,9 @@ package com.hazelcast.client;
 import java.security.Permission;
 
 /**
- * When a connection does not respond to heart-beat we switch the listeners to another endpoint
- * If somehow connection starts to respond heart-beat we need to signal the endpoint to remove the listeners
- * This class is used for this purpose because of backward-compatibility
+ * Client request to add a distributed object listener to a remote node.
  */
 public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveListenerRequest {
-
-    public static final String CLEAR_LISTENERS_COMMAND = "clear-all-listeners";
 
     public RemoveDistributedObjectListenerRequest() {
     }
@@ -36,11 +32,6 @@ public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveList
 
     @Override
     public Object call() throws Exception {
-        //Please see above JavaDoc
-        if (CLEAR_LISTENERS_COMMAND.equals(name)) {
-            endpoint.clearAllListeners();
-            return true;
-        }
         return clientEngine.getProxyService().removeProxyListener(registrationId);
     }
 

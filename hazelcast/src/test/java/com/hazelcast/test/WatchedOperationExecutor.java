@@ -104,6 +104,11 @@ public class WatchedOperationExecutor {
 
         }
 
+        @Override
+        public void mapCleared(MapEvent event) {
+
+        }
+
         private void handleEvent(EntryEventType eventType) {
             if (this.eventType == eventType) {
                 latch.countDown();

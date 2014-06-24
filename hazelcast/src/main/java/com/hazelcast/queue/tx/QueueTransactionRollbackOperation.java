@@ -24,6 +24,9 @@ import com.hazelcast.queue.QueueOperation;
 
 import java.io.IOException;
 
+/**
+ * Transaction Rollback Operation for the Queue.
+ */
 public class QueueTransactionRollbackOperation extends QueueOperation {
 
     private String transactionId;

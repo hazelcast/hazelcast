@@ -21,9 +21,15 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Provides proxy for the Transactional Queue.
+ *
+ * @param <E>
+ */
 public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport implements TransactionalQueue<E> {
 
     public TransactionalQueueProxy(NodeEngine nodeEngine, QueueService service, String name, TransactionSupport tx) {
@@ -35,6 +41,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
         }
         return false;
     }
@@ -57,6 +64,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
             return poll(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
             //todo: interrupt status swallowed
+            EmptyStatement.ignore(ignored);
         }
         return null;
     }
@@ -74,6 +82,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
             return peek(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
             //todo: interrupt status swallowed
+            EmptyStatement.ignore(ignored);
         }
         return null;
     }

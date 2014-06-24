@@ -30,10 +30,10 @@ public abstract class InvocationClientRequest extends ClientRequest {
     protected abstract void invoke();
 
     protected final InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
-        return clientEngine.createInvocationBuilder(serviceName, op, partitionId);
+        return operationService.createInvocationBuilder(serviceName, op, partitionId);
     }
 
     protected final InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        return clientEngine.createInvocationBuilder(serviceName, op, target);
+        return operationService.createInvocationBuilder(serviceName, op, target);
     }
 }

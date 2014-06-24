@@ -51,7 +51,7 @@ public abstract class ModifyRequest extends PartitionClientRequest implements Po
     @Override
     protected int getPartition() {
         ClientEngine clientEngine = getClientEngine();
-        Data key = clientEngine.getSerializationService().toData(name);
+        Data key = serializationService.toData(name);
         return clientEngine.getPartitionService().getPartitionId(key);
     }
 

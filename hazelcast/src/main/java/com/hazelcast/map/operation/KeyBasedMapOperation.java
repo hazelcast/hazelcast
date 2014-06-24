@@ -26,7 +26,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
 
 public abstract class KeyBasedMapOperation extends Operation implements PartitionAwareOperation {

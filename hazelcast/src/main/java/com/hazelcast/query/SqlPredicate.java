@@ -43,6 +43,10 @@ import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
 
+/**
+ * This class contains methods related to conversion of sql query to predicate.
+ */
+
 public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
 
     private static final long serialVersionUID = 1;
@@ -107,36 +111,37 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     }
 
     private Predicate createPredicate(String sql) {
+        String paramSql = sql;
         Map<String, String> mapPhrases = new HashMap<String, String>(1);
-        int apoIndex = getApostropheIndex(sql, 0);
+        int apoIndex = getApostropheIndex(paramSql, 0);
         if (apoIndex != -1) {
             int phraseId = 0;
             StringBuilder newSql = new StringBuilder();
             while (apoIndex != -1) {
                 phraseId++;
                 int start = apoIndex + 1;
-                int end = getApostropheIndexIgnoringDoubles(sql, apoIndex + 1);
+                int end = getApostropheIndexIgnoringDoubles(paramSql, apoIndex + 1);
                 if (end == -1) {
                     throw new RuntimeException("Missing ' in sql");
                 }
-                String phrase = removeEscapes(sql.substring(start, end));
+                String phrase = removeEscapes(paramSql.substring(start, end));
 
                 String key = "$" + phraseId;
                 mapPhrases.put(key, phrase);
-                String before = sql.substring(0, apoIndex);
-                sql = sql.substring(end + 1);
+                String before = paramSql.substring(0, apoIndex);
+                paramSql = paramSql.substring(end + 1);
                 newSql.append(before);
                 newSql.append(key);
-                apoIndex = getApostropheIndex(sql, 0);
+                apoIndex = getApostropheIndex(paramSql, 0);
             }
-            newSql.append(sql);
-            sql = newSql.toString();
+            newSql.append(paramSql);
+            paramSql = newSql.toString();
         }
         Parser parser = new Parser();
-        List<String> sqlTokens = parser.toPrefix(sql);
+        List<String> sqlTokens = parser.toPrefix(paramSql);
         List<Object> tokens = new ArrayList<Object>(sqlTokens);
         if (tokens.size() == 0) {
-            throw new RuntimeException("Invalid SQL: [" + sql + "]");
+            throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
         }
         if (tokens.size() == 1) {
             return eval(tokens.get(0));
@@ -239,7 +244,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                 }
             }
             if (!foundOperand) {
-                throw new RuntimeException("Invalid SQL: [" + sql + "]");
+                throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
             }
         }
         return (Predicate) tokens.get(0);

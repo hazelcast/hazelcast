@@ -18,7 +18,7 @@ public final class EntryViews {
      * @param key the key object which will be wrapped in {@link com.hazelcast.core.EntryView}.
      * @param <K> the type of key.
      * @param <V> the type of value.
-     * @return  returns  null entry view.
+     * @return returns  null entry view.
      */
     public static <K, V> EntryView<K, V> createNullEntryView(K key) {
         return new NullEntryView<K, V>(key);

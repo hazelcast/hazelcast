@@ -61,9 +61,15 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 
+/**
+ * Provides important services via methods for the the Queue
+ * such as {@link com.hazelcast.queue.QueueEvictionProcessor }
+ */
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
         RemoteService, EventPublishingService<QueueEvent, ItemListener> {
-
+    /**
+     * Service name.
+     */
     public static final String SERVICE_NAME = "hz:impl:queueService";
     private final EntryTaskScheduler queueEvictionScheduler;
     private final NodeEngine nodeEngine;

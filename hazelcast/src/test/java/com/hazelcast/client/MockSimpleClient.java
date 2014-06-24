@@ -17,7 +17,11 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -39,10 +43,13 @@ public class MockSimpleClient implements SimpleClient {
     private static final AtomicInteger port = new AtomicInteger(9000);
 
     private final ClientEngineImpl clientEngine;
+    private final SerializationService serializationService;
     private final MockConnection connection;
 
-    public MockSimpleClient(ClientEngineImpl clientEngine) throws UnknownHostException {
+    public MockSimpleClient(ClientEngineImpl clientEngine,
+                            SerializationService serializationService) throws UnknownHostException {
         this.clientEngine = clientEngine;
+        this.serializationService = serializationService;
         this.connection = new MockConnection(port.incrementAndGet());
     }
 
@@ -56,30 +63,26 @@ public class MockSimpleClient implements SimpleClient {
     }
 
     public void send(Object o) throws IOException {
-        Data data = getSerializationService().toData(o);
+        Data data = serializationService.toData(o);
         ClientPacket packet = new ClientPacket(data);
         packet.setConn(connection);
         clientEngine.handlePacket(packet);
     }
 
     public Object receive() throws IOException {
-        DataAdapter adapter = null;
+        DataAdapter adapter;
         try {
-            adapter = (DataAdapter)connection.q.take();
+            adapter = (DataAdapter) connection.q.take();
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }
-        ClientResponse clientResponse = getSerializationService().toObject(adapter.getData());
-        return getSerializationService().toObject(clientResponse.getResponse());
+        ClientResponse clientResponse = serializationService.toObject(adapter.getData());
+        return serializationService.toObject(clientResponse.getResponse());
     }
 
     public void close() {
-        clientEngine.removeEndpoint(connection, true);
+        clientEngine.getEndpointManager().removeEndpoint(connection, true);
         connection.close();
-    }
-
-    public SerializationService getSerializationService() {
-        return clientEngine.getSerializationService();
     }
 
     class MockConnection implements Connection {

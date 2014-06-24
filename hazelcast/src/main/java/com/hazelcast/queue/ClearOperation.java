@@ -23,7 +23,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.util.Map;
-
+/**
+ * Clears items stored by Queue.
+ */
 public class ClearOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Map<Long, Data> dataMap;

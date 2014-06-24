@@ -43,7 +43,6 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +54,8 @@ import java.util.concurrent.TimeUnit;
  * Map container.
  */
 public class MapContainer {
+
+    private static final int INITIAL_KEYS_REMOVE_DELAY_MINUTES = 20;
 
     private volatile MapConfig mapConfig;
     private final String name;
@@ -253,7 +254,7 @@ public class MapContainer {
             public void run() {
                 initialKeys.clear();
             }
-        }, 20, TimeUnit.MINUTES);
+        }, INITIAL_KEYS_REMOVE_DELAY_MINUTES, TimeUnit.MINUTES);
     }
 
     public void shutDownMapStoreScheduledExecutor() {

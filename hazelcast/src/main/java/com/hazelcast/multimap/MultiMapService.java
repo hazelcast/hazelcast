@@ -21,11 +21,10 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.EventData;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.txn.TransactionalMultiMapProxy;
@@ -60,11 +59,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 
-public class MultiMapService
-        implements ManagedService, RemoteService, MigrationAwareService, EventPublishingService<MultiMapEvent, EventListener>,
-                   TransactionalService {
+public class MultiMapService implements ManagedService, RemoteService, MigrationAwareService,
+        EventPublishingService<EventData, EntryListener>, TransactionalService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
@@ -72,22 +69,26 @@ public class MultiMapService
     private static final int REPLICA_ADDRESS_SLEEP_WAIT_MILLIS = 1000;
     private final NodeEngine nodeEngine;
     private final MultiMapPartitionContainer[] partitionContainers;
-    private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMultiMapStatsImpl>(
-            STATS_MAP_INITIAL_CAPACITY);
+    private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap =
+            new ConcurrentHashMap<String, LocalMultiMapStatsImpl>(STATS_MAP_INITIAL_CAPACITY);
     private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction =
             new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
 
-        public LocalMultiMapStatsImpl createNew(String key) {
-            return new LocalMultiMapStatsImpl();
-        }
-    };
+                public LocalMultiMapStatsImpl createNew(String key) {
+                    return new LocalMultiMapStatsImpl();
+                }
+            };
     private final ILogger logger;
+    private final MultiMapEventsDispatcher dispatcher;
+    private final MultiMapEventsPublisher publisher;
 
     public MultiMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         partitionContainers = new MultiMapPartitionContainer[partitionCount];
         this.logger = nodeEngine.getLogger(MultiMapService.class);
+        dispatcher = new MultiMapEventsDispatcher(this, nodeEngine.getClusterService());
+        publisher = new MultiMapEventsPublisher(nodeEngine);
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -97,22 +98,23 @@ public class MultiMapService
         }
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
-                public LockStoreInfo createNew(final ObjectNamespace key) {
-                    String name = key.getObjectName();
-                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
+            lockService.registerLockStoreConstructor(SERVICE_NAME,
+                    new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
+                        public LockStoreInfo createNew(final ObjectNamespace key) {
+                            String name = key.getObjectName();
+                            final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
 
-                    return new LockStoreInfo() {
-                        public int getBackupCount() {
-                            return multiMapConfig.getSyncBackupCount();
-                        }
+                            return new LockStoreInfo() {
+                                public int getBackupCount() {
+                                    return multiMapConfig.getSyncBackupCount();
+                                }
 
-                        public int getAsyncBackupCount() {
-                            return multiMapConfig.getAsyncBackupCount();
+                                public int getAsyncBackupCount() {
+                                    return multiMapConfig.getAsyncBackupCount();
+                                }
+                            };
                         }
-                    };
-                }
-            });
+                    });
         }
     }
 
@@ -179,6 +181,16 @@ public class MultiMapService
         return nodeEngine;
     }
 
+    public void publishMultiMapEvent(String mapName, EntryEventType eventType,
+                                     int numberOfEntriesAffected) {
+        publisher.publishMultiMapEvent(mapName, eventType, numberOfEntriesAffected);
+
+    }
+
+    public final void publishEntryEvent(String multiMapName, EntryEventType eventType, Data key, Object value) {
+        publisher.publishEntryEvent(multiMapName, eventType, key, value);
+    }
+
     public String addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
@@ -194,26 +206,6 @@ public class MultiMapService
     public boolean removeListener(String name, String registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
-    }
-
-    public void dispatchEvent(MultiMapEvent event, EventListener listener) {
-        EntryListener entryListener = (EntryListener) listener;
-        final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
-        EntryEvent entryEvent = new EntryEvent(event.getName(), member, event.getEventType().getType(),
-                nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
-        if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping event " + entryEvent + " from unknown address:" + event.getCaller());
-            }
-            return;
-        }
-
-        if (event.getEventType().equals(EntryEventType.ADDED)) {
-            entryListener.entryAdded(entryEvent);
-        } else if (event.getEventType().equals(EntryEventType.REMOVED)) {
-            entryListener.entryRemoved(entryEvent);
-        }
-        getLocalMultiMapStatsImpl(event.getName()).incrementReceivedEvents();
     }
 
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
@@ -337,5 +329,10 @@ public class MultiMapService
 
     public void rollbackTransaction(String transactionId) {
 
+    }
+
+    @Override
+    public void dispatchEvent(EventData event, EntryListener listener) {
+        dispatcher.dispatchEvent(event, listener);
     }
 }

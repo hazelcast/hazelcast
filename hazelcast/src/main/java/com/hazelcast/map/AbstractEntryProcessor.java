@@ -27,12 +27,12 @@ import java.util.Map;
  */
 public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, V> {
 
-    private final EntryBackupProcessor<K,V> entryBackupProcessor;
+    private final EntryBackupProcessor<K, V> entryBackupProcessor;
 
     /**
      * Creates an AbstractEntryProcessor that applies the {@link #process(java.util.Map.Entry)} to primary and backups.
      */
-    public AbstractEntryProcessor(){
+    public AbstractEntryProcessor() {
         this(true);
     }
 
@@ -41,20 +41,20 @@ public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, 
      *
      * @param applyOnBackup if the {@link #process(java.util.Map.Entry)} should also be applied on the backup.
      */
-    public AbstractEntryProcessor(boolean applyOnBackup){
-       if(applyOnBackup){
-          entryBackupProcessor = new EntryBackupProcessorImpl();
-       }else{
-          entryBackupProcessor = null;
-       }
+    public AbstractEntryProcessor(boolean applyOnBackup) {
+        if (applyOnBackup) {
+            entryBackupProcessor = new EntryBackupProcessorImpl();
+        } else {
+            entryBackupProcessor = null;
+        }
     }
 
     @Override
     public final EntryBackupProcessor<K, V> getBackupProcessor() {
-         return entryBackupProcessor;
+        return entryBackupProcessor;
     }
 
-    private class EntryBackupProcessorImpl implements EntryBackupProcessor<K,V>{
+    private class EntryBackupProcessorImpl implements EntryBackupProcessor<K, V> {
         @Override
         public void processBackup(Map.Entry<K, V> entry) {
             process(entry);

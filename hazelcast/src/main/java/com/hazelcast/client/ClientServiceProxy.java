@@ -19,15 +19,21 @@ package com.hazelcast.client;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientService;
+import com.hazelcast.instance.Node;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 
-final class ClientServiceProxy implements ClientService {
+public final class ClientServiceProxy implements ClientService {
 
     private final ClientEngineImpl clientEngine;
+    private final NodeEngine nodeEngine;
 
-    ClientServiceProxy(ClientEngineImpl clientEngine) {
-        this.clientEngine = clientEngine;
+    public ClientServiceProxy(Node node) {
+        this.clientEngine = node.clientEngine;
+        this.nodeEngine = node.nodeEngine;
     }
 
     @Override
@@ -37,11 +43,17 @@ final class ClientServiceProxy implements ClientService {
 
     @Override
     public String addClientListener(ClientListener clientListener) {
-        return clientEngine.addClientListener(clientListener);
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration = eventService
+                .registerLocalListener(ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, clientListener);
+        return registration.getId();
     }
 
     @Override
     public boolean removeClientListener(String registrationId) {
-        return clientEngine.removeClientListener(registrationId);
+        final EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListener(ClientEngineImpl.SERVICE_NAME,
+                ClientEngineImpl.SERVICE_NAME, registrationId);
     }
+
 }

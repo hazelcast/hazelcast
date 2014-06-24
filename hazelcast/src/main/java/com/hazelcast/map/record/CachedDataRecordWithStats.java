@@ -19,7 +19,7 @@ package com.hazelcast.map.record;
 import com.hazelcast.nio.serialization.Data;
 
 /**
- *  CachedDataRecordWithStats.
+ * CachedDataRecordWithStats.
  */
 class CachedDataRecordWithStats extends DataRecordWithStats {
 

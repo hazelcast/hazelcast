@@ -16,21 +16,16 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.MultiMapContainer;
 import com.hazelcast.multimap.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import java.util.Collection;
-import java.util.Map;
 
 public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
-    Map<Data, Collection<MultiMapRecord>> objects;
+    boolean shouldBackup;
 
     public ClearOperation() {
     }
@@ -40,41 +35,21 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
     }
 
     public void beforeRun() throws Exception {
-        if (hasListener()) {
-            MultiMapContainer container = getOrCreateContainer();
-            objects = container.copyCollections();
-        }
+        MultiMapContainer container = getOrCreateContainer();
+        shouldBackup = container.size() > 0;
     }
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        container.clear();
-        response = true;
+        response = container.clear();
     }
 
     public void afterRun() throws Exception {
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
-
-        if (objects != null && !objects.isEmpty()) {
-            MultiMapContainer container = getOrCreateContainer();
-            for (Map.Entry<Data, Collection<MultiMapRecord>> entry : objects.entrySet()) {
-                Data key = entry.getKey();
-                if (container.isLocked(key)) {
-                    //key is locked so not removed
-                    continue;
-                }
-                Collection<MultiMapRecord> coll = entry.getValue();
-                for (MultiMapRecord record : coll) {
-                    publishEvent(EntryEventType.REMOVED, key, record.getObject());
-                }
-            }
-            objects.clear();
-        }
-        objects = null;
     }
 
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(objects != null && !objects.isEmpty());
+        return shouldBackup;
     }
 
     public Operation getBackupOperation() {

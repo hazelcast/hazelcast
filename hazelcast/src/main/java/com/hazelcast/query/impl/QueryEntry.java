@@ -26,7 +26,9 @@ import java.io.IOException;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
-
+/**
+ * Entry of the Query.
+ */
 public class QueryEntry implements QueryableEntry {
 
     private static final PortableExtractor EXTRACTOR = new PortableExtractor();

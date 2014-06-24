@@ -18,8 +18,18 @@ package com.hazelcast.map.tx;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.*;
-import com.hazelcast.map.operation.*;
+import com.hazelcast.map.MapKeySet;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapValueCollection;
+import com.hazelcast.map.NearCache;
+import com.hazelcast.map.QueryResult;
+import com.hazelcast.map.operation.ContainsKeyOperation;
+import com.hazelcast.map.operation.GetOperation;
+import com.hazelcast.map.operation.MapKeySetOperation;
+import com.hazelcast.map.operation.MapValuesOperation;
+import com.hazelcast.map.operation.QueryOperation;
+import com.hazelcast.map.operation.QueryPartitionOperation;
+import com.hazelcast.map.operation.SizeOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -35,8 +45,13 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -129,6 +144,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         tx.addTransactionLog(new MapTransactionLog(name, key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
+
     public Data putInternal(Data key, Data value, long ttl, TimeUnit timeUnit) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         final long timeInMillis = getTimeInMillis(ttl, timeUnit);
@@ -150,7 +166,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public Data replaceInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        if (versionedValue.value == null){
+        if (versionedValue.value == null) {
             return null;
         }
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
@@ -160,8 +176,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public boolean replaceIfSameInternal(Data key, Object oldValue, Data newValue) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        if (!getService().compare(name, oldValue, versionedValue.value))
+        if (!getService().compare(name, oldValue, versionedValue.value)) {
             return false;
+        }
         final TxnSetOperation op = new TxnSetOperation(name, key, newValue, versionedValue.version);
         tx.addTransactionLog(new MapTransactionLog(name, key, op, versionedValue.version, tx.getOwnerUuid()));
         return true;

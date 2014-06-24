@@ -146,6 +146,11 @@ class ClusterListenerThread extends Thread {
         }
         updateMembersRef();
         LOGGER.info(clusterService.membersString());
+        fireMembershipEvent(prevMembers);
+        latch.countDown();
+    }
+
+    private void fireMembershipEvent(Map<String, MemberImpl> prevMembers) {
         final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
         final Set<Member> eventMembers = Collections.unmodifiableSet(new LinkedHashSet<Member>(members));
         for (MemberImpl member : members) {
@@ -160,7 +165,6 @@ class ClusterListenerThread extends Thread {
         for (MembershipEvent event : events) {
             clusterService.fireMembershipEvent(event);
         }
-        latch.countDown();
     }
 
     private void listenMembershipEvents() throws IOException {

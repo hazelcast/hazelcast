@@ -17,7 +17,6 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
@@ -25,7 +24,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
 public class MergeOperation extends BasePutOperation {
@@ -47,8 +45,9 @@ public class MergeOperation extends BasePutOperation {
         merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
         if (merged) {
             Record record = recordStore.getRecord(dataKey);
-            if (record != null)
+            if (record != null) {
                 dataValue = mapService.toData(record.getValue());
+            }
         }
     }
 

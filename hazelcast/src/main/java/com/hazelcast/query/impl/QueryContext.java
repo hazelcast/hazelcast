@@ -16,6 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+/**
+ * Provides the context of Query.
+ */
 public class QueryContext {
     private final IndexService indexService;
 

@@ -6,7 +6,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
 
 /**
@@ -45,6 +44,16 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
     }
 
     @Override
+    public Object getResponse() {
+        return numberOfEvictedEntries;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
     public int getSyncBackupCount() {
         return mapService.getMapContainer(name).getBackupCount();
     }
@@ -58,12 +67,6 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
     public Operation getBackupOperation() {
         return new EvictAllBackupOperation(name);
     }
-
-    @Override
-    public Object getResponse() {
-        return numberOfEvictedEntries;
-    }
-
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {

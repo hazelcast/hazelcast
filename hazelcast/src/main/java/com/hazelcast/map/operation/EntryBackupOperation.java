@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
@@ -50,7 +49,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         if (mapEntry.getValue() != null) {
             Map.Entry<Object, Object> entry = new AbstractMap.SimpleEntry<Object, Object>(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
             entryProcessor.processBackup(entry);
-            if (entry.getValue() == null){
+            if (entry.getValue() == null) {
                 recordStore.removeBackup(dataKey);
             } else {
                 recordStore.putBackup(dataKey, entry.getValue());

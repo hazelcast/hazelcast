@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
 public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {

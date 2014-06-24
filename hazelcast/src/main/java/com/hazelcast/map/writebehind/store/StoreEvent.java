@@ -20,6 +20,7 @@ import java.util.EventObject;
 
 /**
  * For internal usage only.
+ *
  * @param <E>
  */
 public final class StoreEvent<E> extends EventObject {

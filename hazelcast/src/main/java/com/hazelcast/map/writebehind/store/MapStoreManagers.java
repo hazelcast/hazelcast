@@ -18,7 +18,6 @@ package com.hazelcast.map.writebehind.store;
 
 import com.hazelcast.core.MapStore;
 import com.hazelcast.map.MapService;
-
 import java.util.List;
 
 /**

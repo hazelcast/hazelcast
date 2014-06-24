@@ -30,6 +30,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
@@ -980,6 +981,36 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
         return new EventHandler<PortableEntryEvent>() {
             public void handle(PortableEntryEvent event) {
+                Member member = getContext().getClusterService().getMember(event.getUuid());
+                switch (event.getEventType()) {
+                    case ADDED:
+                        listener.entryAdded(createEntryEvent(event, member));
+                        break;
+                    case REMOVED:
+                        listener.entryRemoved(createEntryEvent(event, member));
+                        break;
+                    case UPDATED:
+                        listener.entryUpdated(createEntryEvent(event, member));
+                        break;
+                    case EVICTED:
+                        listener.entryEvicted(createEntryEvent(event, member));
+                        break;
+                    case EVICT_ALL:
+                        listener.mapEvicted(createMapEvent(event, member));
+                        break;
+                    case CLEAR_ALL:
+                        listener.mapCleared(createMapEvent(event, member));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+                }
+            }
+
+            private MapEvent createMapEvent(PortableEntryEvent event, Member member) {
+                return new MapEvent(name, member, event.getEventType().getType(), event.getNumberOfAffectedEntries());
+            }
+
+            private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
                 V value = null;
                 V oldValue = null;
                 if (includeValue) {
@@ -987,25 +1018,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                     oldValue = toObject(event.getOldValue());
                 }
                 K key = toObject(event.getKey());
-                Member member = getContext().getClusterService().getMember(event.getUuid());
-                EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(name, member,
+                return new EntryEvent<K, V>(name, member,
                         event.getEventType().getType(), key, oldValue, value);
-                switch (event.getEventType()) {
-                    case ADDED:
-                        listener.entryAdded(entryEvent);
-                        break;
-                    case REMOVED:
-                        listener.entryRemoved(entryEvent);
-                        break;
-                    case UPDATED:
-                        listener.entryUpdated(entryEvent);
-                        break;
-                    case EVICTED:
-                        listener.entryEvicted(entryEvent);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
-                }
             }
 
             @Override

@@ -24,6 +24,9 @@ import com.hazelcast.queue.QueueOperation;
 
 import java.io.IOException;
 
+/**
+ * Peek operation for the transactional queue.
+ */
 public class TxnPeekOperation extends QueueOperation {
 
     private long itemId;

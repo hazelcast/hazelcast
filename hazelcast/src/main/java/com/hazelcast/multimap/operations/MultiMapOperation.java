@@ -19,8 +19,6 @@ package com.hazelcast.multimap.operations;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.MultiMapContainer;
 import com.hazelcast.multimap.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.MultiMapEvent;
-import com.hazelcast.multimap.MultiMapEventFilter;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,9 +26,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.io.IOException;
 import java.util.Collection;
 
@@ -73,17 +71,8 @@ public abstract class MultiMapOperation extends Operation
     }
 
     public final void publishEvent(EntryEventType eventType, Data key, Object value) {
-        NodeEngine engine = getNodeEngine();
-        EventService eventService = engine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(MultiMapService.SERVICE_NAME, name);
-        for (EventRegistration registration : registrations) {
-            MultiMapEventFilter filter = (MultiMapEventFilter) registration.getFilter();
-            if (filter.getKey() == null || filter.getKey().equals(key)) {
-                Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
-                MultiMapEvent event = new MultiMapEvent(name, key, dataValue, eventType, engine.getThisAddress());
-                eventService.publishEvent(MultiMapService.SERVICE_NAME, registration, event, name.hashCode());
-            }
-        }
+        MultiMapService multiMapService = getService();
+        multiMapService.publishEntryEvent(name, eventType, key, value);
     }
 
     public final Object toObject(Object obj) {

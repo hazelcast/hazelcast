@@ -26,7 +26,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
-
+/**
+ * Rollback operation for the transactional queue.
+ */
 public class TxnRollbackOperation extends QueueBackupAwareOperation implements Notifier {
 
     private long itemId;

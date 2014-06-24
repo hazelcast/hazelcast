@@ -42,4 +42,9 @@ public class DummyEntryListener implements EntryListener {
     public void mapEvicted(MapEvent event) {
 
     }
+
+    @Override
+    public void mapCleared(MapEvent event) {
+
+    }
 }

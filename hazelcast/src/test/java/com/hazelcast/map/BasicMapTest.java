@@ -265,6 +265,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
+        final CountDownLatch latchCleared = new CountDownLatch(1);
+        final CountDownLatch latchEvicted = new CountDownLatch(1);
+
         map.addEntryListener(new EntryListener<String, String>() {
             public void entryAdded(EntryEvent event) {
                 assertEquals("world", event.getValue());
@@ -291,16 +294,25 @@ public class BasicMapTest extends HazelcastTestSupport {
 
             @Override
             public void mapEvicted(MapEvent event) {
+                latchEvicted.countDown();
+            }
 
+            @Override
+            public void mapCleared(MapEvent event) {
+                latchCleared.countDown();
             }
         }, true);
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
+        map.evictAll();
+        map.clear();
         try {
             assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
             assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
             assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
+            assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
+            assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
             assertFalse(e.getMessage(), true);
@@ -961,6 +973,11 @@ public class BasicMapTest extends HazelcastTestSupport {
             public void mapEvicted(MapEvent event) {
 
             }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
         };
         map.addEntryListener(listener, true);
         map.put("key", "value");
@@ -1011,6 +1028,11 @@ public class BasicMapTest extends HazelcastTestSupport {
 
             @Override
             public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
 
             }
         };
@@ -1083,6 +1105,11 @@ public class BasicMapTest extends HazelcastTestSupport {
             public void mapEvicted(MapEvent event) {
 
             }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
         };
         map.addEntryListener(listener, "key", true);
         map.put("keyx", "valuex");
@@ -1138,6 +1165,11 @@ public class BasicMapTest extends HazelcastTestSupport {
 
             @Override
             public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
 
             }
         };

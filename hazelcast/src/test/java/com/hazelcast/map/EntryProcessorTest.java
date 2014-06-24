@@ -596,6 +596,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             public void mapEvicted(MapEvent event) {
 
             }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
         }, true);
 
         map.executeOnKey(1, new ValueSetterEntryProcessor(5));
@@ -667,6 +672,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
             @Override
             public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
 
             }
         }, true);
@@ -747,6 +757,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
             @Override
             public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
 
             }
         }, true);

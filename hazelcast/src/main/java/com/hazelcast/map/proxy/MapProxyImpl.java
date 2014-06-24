@@ -46,7 +46,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;

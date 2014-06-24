@@ -41,10 +41,9 @@ class TTLReachabilityHandler extends AbstractReachabilityHandler {
 
         assert ttl > 0L : String.format("wrong ttl %d", ttl);
         assert creationTime > 0L : String.format("wrong creationTime %d", creationTime);
-        assert time > 0L : String.format("wrong time %d", time);;
+        assert time > 0L : String.format("wrong time %d", time);
         assert time >= creationTime : String.format("time >= lastUpdateTime (%d >= %d)",
                 time, creationTime);
-
         result = time - creationTime >= ttl;
         return result ? null : record;
     }

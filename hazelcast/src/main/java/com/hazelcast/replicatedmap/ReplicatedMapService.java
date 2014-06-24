@@ -151,6 +151,7 @@ public class ReplicatedMapService
                 case REMOVED:
                     entryListener.entryRemoved(entryEvent);
                     break;
+                // TODO handle evictAll and clearAll event
                 default:
                     throw new IllegalArgumentException("event type " + entryEvent.getEventType() + " not supported");
             }

@@ -62,4 +62,9 @@ public interface EntryListener<K, V> extends EventListener {
      * @param event map event
      */
     void mapEvicted(MapEvent event);
+
+    /**
+     * Invoked when all entries are removed by {@link IMap#clear()}.}
+     */
+    void mapCleared(MapEvent event);
 }

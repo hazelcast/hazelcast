@@ -34,6 +34,7 @@ public final class SpiPortableHook implements PortableHook {
     public static final int ITEM_EVENT = 3;
     public static final int ENTRY_EVENT = 4;
     public static final int DISTRIBUTED_OBJECT_EVENT = 5;
+    public static final int MAP_EVENT = 6;
 
     @Override
     public int getFactoryId() {

@@ -31,6 +31,9 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Request for transactional peek operation.
+ */
 public class TxnPeekRequest extends BaseTransactionRequest {
 
     private String name;

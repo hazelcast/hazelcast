@@ -34,12 +34,12 @@ import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
-import com.hazelcast.core.MapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -1388,6 +1388,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     @Override
     public void mapEvicted(MapEvent event) {
+        println(event);
+    }
+
+    @Override
+    public void mapCleared(MapEvent event) {
         println(event);
     }
 

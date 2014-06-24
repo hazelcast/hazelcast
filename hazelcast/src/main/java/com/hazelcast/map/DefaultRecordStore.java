@@ -47,7 +47,6 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -514,7 +513,7 @@ public class DefaultRecordStore implements RecordStore {
         return values;
     }
 
-    public void clear() {
+    public int clear() {
         checkIfLoaded();
         resetSizeEstimator();
         final Collection<Data> lockedKeys = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
@@ -546,6 +545,7 @@ public class DefaultRecordStore implements RecordStore {
         clearRecordsMap(lockedRecords);
         resetAccessSequenceNumber();
         writeBehindQueue.clear();
+        return keysToDelete.size();
     }
 
     public void reset() {

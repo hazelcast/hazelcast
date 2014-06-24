@@ -30,6 +30,9 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
+/**
+ * Remove Request for the Queue.
+ */
 public class RemoveRequest extends QueueRequest {
 
     private Data data;
