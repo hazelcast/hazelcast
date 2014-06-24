@@ -152,6 +152,7 @@
     <suppress checks="" files="com.hazelcast.client.config.ClientProperties"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.client.connection.nio.ClientAbstractIOSelector"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.connection.nio.ClientConnection"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.ClientEngineImpl"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.client[\\/]"/>

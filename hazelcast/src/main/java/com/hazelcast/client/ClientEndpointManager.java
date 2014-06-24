@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientEndpointManager {
 
-    private static final ILogger logger = Logger.getLogger(ClientEndpointManager.class);
+    private static final ILogger LOGGER = Logger.getLogger(ClientEndpointManager.class);
     private static final int DESTROY_ENDPOINT_DELAY_MS = 1111;
     private final ClientEngineImpl clientEngine;
     private final NodeEngine nodeEngine;
@@ -50,14 +50,14 @@ public class ClientEndpointManager {
 
     ClientEndpoint createEndpoint(Connection conn) {
         if (!conn.live()) {
-            logger.severe("Can't create and endpoint for a dead connection");
+            LOGGER.severe("Can't create and endpoint for a dead connection");
             return null;
         }
 
         String clientUuid = UuidUtil.createClientUuid(conn.getEndPoint());
         ClientEndpoint endpoint = new ClientEndpoint(clientEngine, conn, clientUuid);
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
-            logger.severe("An endpoint already exists for connection:" + conn);
+            LOGGER.severe("An endpoint already exists for connection:" + conn);
         }
         return endpoint;
     }
@@ -68,11 +68,11 @@ public class ClientEndpointManager {
 
     void removeEndpoint(final ClientEndpoint endpoint, boolean closeImmediately) {
         endpoints.remove(endpoint.getConnection());
-        logger.info("Destroying " + endpoint);
+        LOGGER.info("Destroying " + endpoint);
         try {
             endpoint.destroy();
         } catch (LoginException e) {
-            logger.warning(e);
+            LOGGER.warning(e);
         }
 
         final Connection connection = endpoint.getConnection();
@@ -80,7 +80,7 @@ public class ClientEndpointManager {
             try {
                 connection.close();
             } catch (Throwable e) {
-                logger.warning("While closing client connection: " + connection, e);
+                LOGGER.warning("While closing client connection: " + connection, e);
             }
         } else {
             nodeEngine.getExecutionService().schedule(new Runnable() {
@@ -89,7 +89,7 @@ public class ClientEndpointManager {
                         try {
                             connection.close();
                         } catch (Throwable e) {
-                            logger.warning("While closing client connection: " + e.toString());
+                            LOGGER.warning("While closing client connection: " + e.toString());
                         }
                     }
                 }
@@ -98,7 +98,7 @@ public class ClientEndpointManager {
         clientEngine.sendClientEvent(endpoint);
     }
 
-    void removeEndpoints(String memberUuid){
+    void removeEndpoints(String memberUuid) {
         Iterator<ClientEndpoint> iterator = endpoints.values().iterator();
         while (iterator.hasNext()) {
             ClientEndpoint endpoint = iterator.next();
