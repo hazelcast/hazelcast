@@ -548,8 +548,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 multicastConfig.setEnabled(checkTrue(value));
-            }
-            else if ("loopbackModeEnabled".equalsIgnoreCase(att.getNodeName())) {
+            } else if ("loopbackModeEnabled".equalsIgnoreCase(att.getNodeName())) {
                 multicastConfig.setLoopbackModeEnabled(checkTrue(value));
             }
         }

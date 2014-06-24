@@ -53,13 +53,13 @@ public class MulticastConfig {
      * Default value of time to live of multicast.
      */
     public static final int DEFAULT_MULTICAST_TTL = 32;
-
-    private static final int MULTICAST_TTL_UPPER_BOUND = 255;
     /**
      * Default flag that indicates if the loopback mode
      * is turned on or off.
      */
-    public final static boolean DEFAULT_LOOPBACK_MODE_ENABLED = false;
+    public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = false;
+
+    private static final int MULTICAST_TTL_UPPER_BOUND = 255;
 
     private boolean enabled = DEFAULT_ENABLED;
 
