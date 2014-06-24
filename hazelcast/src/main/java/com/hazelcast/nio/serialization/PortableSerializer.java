@@ -71,14 +71,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
             throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
         }
 
-        final PortableFactory portableFactory = factories.get(factoryId);
-        if (portableFactory == null) {
-            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId);
-        }
-        final Portable portable = portableFactory.create(classId);
-        if (portable == null) {
-            throw new HazelcastSerializationException("Could not create Portable for class-id: " + classId);
-        }
+        final Portable portable = createNewPortableInstance(factoryId, classId);
         final DefaultPortableReader reader;
         final ClassDefinition cd;
         final BufferObjectDataInput bufferedIn = (BufferObjectDataInput) in;
@@ -88,13 +81,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
             effectiveVersion = context.getVersion();
         }
 
-        int currentVersion = context.getClassVersion(factoryId, classId);
-        if (currentVersion < 0) {
-            currentVersion = PortableVersionHelper.getVersion(portable, context.getVersion());
-            if (currentVersion > 0) {
-                context.setClassVersion(factoryId, classId, currentVersion);
-            }
-        }
+        int currentVersion = findCurrentVersion(factoryId, classId, portable);
 
         cd = context.lookup(factoryId, classId, effectiveVersion);
         if (cd == null) {
@@ -109,6 +96,29 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         }
         portable.readPortable(reader);
         reader.end();
+        return portable;
+    }
+
+    private int findCurrentVersion(int factoryId, int classId, Portable portable) {
+        int currentVersion = context.getClassVersion(factoryId, classId);
+        if (currentVersion < 0) {
+            currentVersion = PortableVersionHelper.getVersion(portable, context.getVersion());
+            if (currentVersion > 0) {
+                context.setClassVersion(factoryId, classId, currentVersion);
+            }
+        }
+        return currentVersion;
+    }
+
+    private Portable createNewPortableInstance(int factoryId, int classId) {
+        final PortableFactory portableFactory = factories.get(factoryId);
+        if (portableFactory == null) {
+            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId);
+        }
+        final Portable portable = portableFactory.create(classId);
+        if (portable == null) {
+            throw new HazelcastSerializationException("Could not create Portable for class-id: " + classId);
+        }
         return portable;
     }
 

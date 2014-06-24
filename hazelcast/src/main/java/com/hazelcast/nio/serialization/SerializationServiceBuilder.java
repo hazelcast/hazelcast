@@ -176,26 +176,7 @@ public final class SerializationServiceBuilder {
                 portableFactories, classDefinitions, checkClassDefErrors, managedContext, partitioningStrategy,
                 initialOutputBufferSize, enableCompression, enableSharedObject);
 
-        SerializerHookLoader serializerHookLoader = new SerializerHookLoader(config, classLoader);
-        Map<Class, Object> serializers = serializerHookLoader.getSerializers();
-        for (Map.Entry<Class, Object> entry : serializers.entrySet()) {
-            Class serializationType = entry.getKey();
-            Object value = entry.getValue();
-            Serializer serializer;
-            if (value instanceof SerializerHook) {
-                serializer = ((SerializerHook) value).createSerializer();
-            } else {
-                serializer = (Serializer) value;
-            }
-            if (value instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) value).setHazelcastInstance(hazelcastInstance);
-            }
-            if (ClassLoaderUtil.isInternalType(value.getClass())) {
-                ss.safeRegister(serializationType, serializer);
-            } else {
-                ss.register(serializationType, serializer);
-            }
-        }
+        registerSerializerHooks(ss);
 
         if (config != null) {
             if (config.getGlobalSerializerConfig() != null) {
@@ -219,6 +200,29 @@ public final class SerializationServiceBuilder {
         return ss;
     }
 
+    private void registerSerializerHooks(SerializationServiceImpl ss) {
+        SerializerHookLoader serializerHookLoader = new SerializerHookLoader(config, classLoader);
+        Map<Class, Object> serializers = serializerHookLoader.getSerializers();
+        for (Map.Entry<Class, Object> entry : serializers.entrySet()) {
+            Class serializationType = entry.getKey();
+            Object value = entry.getValue();
+            Serializer serializer;
+            if (value instanceof SerializerHook) {
+                serializer = ((SerializerHook) value).createSerializer();
+            } else {
+                serializer = (Serializer) value;
+            }
+            if (value instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) value).setHazelcastInstance(hazelcastInstance);
+            }
+            if (ClassLoaderUtil.isInternalType(value.getClass())) {
+                ss.safeRegister(serializationType, serializer);
+            } else {
+                ss.register(serializationType, serializer);
+            }
+        }
+    }
+
     private InputOutputFactory createInputOutputFactory() {
         if (byteOrder == null) {
             byteOrder = ByteOrder.BIG_ENDIAN;
@@ -238,6 +242,18 @@ public final class SerializationServiceBuilder {
     private void addConfigDataSerializableFactories(final Map<Integer, DataSerializableFactory> dataSerializableFactories,
                                                     SerializationConfig config, ClassLoader cl) {
 
+        registerDataSerializableFactories(dataSerializableFactories, config);
+        buildDataSerializableFactories(dataSerializableFactories, config, cl);
+
+        for (DataSerializableFactory f : dataSerializableFactories.values()) {
+            if (f instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) f).setHazelcastInstance(hazelcastInstance);
+            }
+        }
+    }
+
+    private void registerDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories,
+                                                   SerializationConfig config) {
         for (Map.Entry<Integer, DataSerializableFactory> entry : config.getDataSerializableFactories().entrySet()) {
             Integer factoryId = entry.getKey();
             DataSerializableFactory factory = entry.getValue();
@@ -250,6 +266,10 @@ public final class SerializationServiceBuilder {
             }
             dataSerializableFactories.put(factoryId, factory);
         }
+    }
+
+    private void buildDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories,
+                                                SerializationConfig config, ClassLoader cl) {
 
         for (Map.Entry<Integer, String> entry : config.getDataSerializableFactoryClasses().entrySet()) {
             Integer factoryId = entry.getKey();
@@ -271,17 +291,22 @@ public final class SerializationServiceBuilder {
 
             dataSerializableFactories.put(factoryId, factory);
         }
+    }
 
-        for (DataSerializableFactory f : dataSerializableFactories.values()) {
+    private void addConfigPortableFactories(final Map<Integer, PortableFactory> portableFactories,
+                                            SerializationConfig config, ClassLoader cl) {
+
+        registerPortableFactories(portableFactories, config);
+        buildPortableFactories(portableFactories, config, cl);
+
+        for (PortableFactory f : portableFactories.values()) {
             if (f instanceof HazelcastInstanceAware) {
                 ((HazelcastInstanceAware) f).setHazelcastInstance(hazelcastInstance);
             }
         }
     }
 
-    private void addConfigPortableFactories(final Map<Integer, PortableFactory> portableFactories,
-                                            SerializationConfig config, ClassLoader cl) {
-
+    private void registerPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config) {
         for (Map.Entry<Integer, PortableFactory> entry : config.getPortableFactories().entrySet()) {
             Integer factoryId = entry.getKey();
             PortableFactory factory = entry.getValue();
@@ -293,6 +318,10 @@ public final class SerializationServiceBuilder {
             }
             portableFactories.put(factoryId, factory);
         }
+    }
+
+    private void buildPortableFactories(Map<Integer, PortableFactory> portableFactories, SerializationConfig config,
+                                        ClassLoader cl) {
 
         final Map<Integer, String> portableFactoryClasses = config.getPortableFactoryClasses();
         for (Map.Entry<Integer, String> entry : portableFactoryClasses.entrySet()) {
@@ -311,12 +340,6 @@ public final class SerializationServiceBuilder {
                 throw new HazelcastSerializationException(e);
             }
             portableFactories.put(factoryId, factory);
-        }
-
-        for (PortableFactory f : portableFactories.values()) {
-            if (f instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) f).setHazelcastInstance(hazelcastInstance);
-            }
         }
     }
 }

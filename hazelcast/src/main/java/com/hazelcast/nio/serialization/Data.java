@@ -195,7 +195,8 @@ public final class Data implements IdentifiedDataSerializable {
     public int getPartitionHash() {
         int ph = partitionHash;
         if (ph == 0 && bufferSize() > 0) {
-            ph = partitionHash = hashCode();
+            partitionHash = hashCode();
+            ph = partitionHash;
         }
         return ph;
     }
