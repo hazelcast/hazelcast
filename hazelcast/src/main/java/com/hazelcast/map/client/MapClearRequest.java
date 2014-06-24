@@ -50,7 +50,6 @@ public class MapClearRequest extends AllPartitionsClientRequest implements Porta
         return MapService.SERVICE_NAME;
     }
 
-    @Override
     public int getFactoryId() {
         return MapPortableHook.F_ID;
     }

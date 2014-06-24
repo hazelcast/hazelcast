@@ -18,10 +18,25 @@ package com.hazelcast.client;
 
 public final class ClientTypes {
 
+    /**
+     * Jvm clients protocol id
+     */
     public static final String JAVA = "JVM";
+    /**
+     * CSHARP client protocol id
+     */
     public static final String CSHARP = "CSP";
+    /**
+     * CPP client protocol id
+     */
     public static final String CPP = "CPP";
+    /**
+     * PYTHON client protocol id
+     */
     public static final String PYTHON = "PHY";
+    /**
+     * RUBY client protocol id
+     */
     public static final String RUBY = "RBY";
 
     private ClientTypes() {

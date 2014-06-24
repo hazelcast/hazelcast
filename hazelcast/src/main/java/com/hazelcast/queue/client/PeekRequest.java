@@ -21,6 +21,9 @@ import com.hazelcast.queue.PeekOperation;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.spi.Operation;
 
+/**
+ * Provides the request service for {@link com.hazelcast.queue.PeekOperation}
+ */
 public class PeekRequest extends QueueRequest implements RetryableRequest {
 
     public PeekRequest() {

@@ -29,6 +29,9 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
+/**
+ * This class contains Transaction log for the Queue.
+ */
 public class QueueTransactionLog implements KeyAwareTransactionLog {
 
     private long itemId;

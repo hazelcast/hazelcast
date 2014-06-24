@@ -19,6 +19,9 @@ package com.hazelcast.queue;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+/**
+ * Peek operation for Queue.
+ */
 public final class PeekOperation extends QueueOperation implements IdentifiedDataSerializable {
 
     public PeekOperation() {

@@ -53,7 +53,7 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
     }
 
     protected String getName() {
-        return (String) getClientEngine().toObject(key);
+        return serializationService.toObject(key);
     }
 
     @Override

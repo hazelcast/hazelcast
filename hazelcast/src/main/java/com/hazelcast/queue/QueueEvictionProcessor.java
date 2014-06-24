@@ -25,6 +25,10 @@ import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.Collection;
 
+/**
+ * Eviction Processor for the Queue.
+ */
+
 public class QueueEvictionProcessor implements ScheduledEntryProcessor<String, Void> {
 
     private final NodeEngine nodeEngine;

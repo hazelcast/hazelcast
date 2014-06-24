@@ -30,8 +30,9 @@ import com.hazelcast.spi.impl.SerializableCollection;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
-
-
+/**
+ * Provides the request service for {@link com.hazelcast.queue.DrainOperation}
+ */
 public class DrainRequest extends QueueRequest {
 
     private int maxSize;

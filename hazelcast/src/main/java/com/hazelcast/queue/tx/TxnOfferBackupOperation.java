@@ -25,7 +25,9 @@ import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-
+/**
+ * Provides backup operation during transactional offer operation.
+ */
 public class TxnOfferBackupOperation extends QueueOperation implements BackupOperation {
 
     private long itemId;

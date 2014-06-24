@@ -21,6 +21,10 @@ import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Iterator;
 
+/**
+ * Iterator for the Queue.
+ * @param <E>
+ */
 public class QueueIterator<E> implements Iterator<E> {
 
     private final Iterator<Data> iterator;

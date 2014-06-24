@@ -26,6 +26,9 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
+/**
+ * Reserve offer operation for the transactional queue.
+ */
 public class TxnReserveOfferOperation extends QueueOperation implements WaitSupport {
 
     private int txSize;

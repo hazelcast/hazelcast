@@ -93,7 +93,6 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
         // Gets/creates the hazelcast instance
         ConfigBuilder config = buildConfiguration();
         setHazelcast(Hazelcast.newHazelcastInstance(config.build()));
-        ;
     }
 
     /**

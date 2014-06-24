@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -89,6 +90,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
             });
             interrupt();
         } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
         }
     }
 
@@ -97,6 +99,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         try {
             shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
         }
     }
 
@@ -154,6 +157,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
                 }
                 selector.close();
             } catch (final Exception ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
     }

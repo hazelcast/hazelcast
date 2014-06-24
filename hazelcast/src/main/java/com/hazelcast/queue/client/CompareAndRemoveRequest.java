@@ -31,7 +31,9 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
-
+/**
+ * Provides the request service for {@link com.hazelcast.queue.CompareAndRemoveOperation}
+ */
 public class CompareAndRemoveRequest extends QueueRequest {
 
     private Collection<Data> dataList;

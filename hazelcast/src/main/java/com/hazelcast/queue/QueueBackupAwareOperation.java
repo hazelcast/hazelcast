@@ -18,6 +18,10 @@ package com.hazelcast.queue;
 
 import com.hazelcast.spi.BackupAwareOperation;
 
+/**
+ * This abstract class contains important methods for all Queue operations.
+ */
+
 public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation {
 
     protected QueueBackupAwareOperation() {

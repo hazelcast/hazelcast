@@ -26,6 +26,7 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
@@ -150,6 +151,7 @@ final class TransactionProxy {
             try {
                 invoke(new RollbackTransactionRequest());
             } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
             }
             state = ROLLED_BACK;
         } finally {

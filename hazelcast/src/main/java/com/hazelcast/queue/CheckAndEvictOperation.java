@@ -17,7 +17,9 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.spi.ProxyService;
-
+/**
+ * Provides eviction functionality for Operations of Queue.
+ */
 public class CheckAndEvictOperation extends QueueOperation {
 
     public CheckAndEvictOperation() {

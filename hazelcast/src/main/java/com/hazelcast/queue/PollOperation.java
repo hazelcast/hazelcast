@@ -22,7 +22,9 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
-
+/**
+ * Pool operation for Queue.
+ */
 public final class PollOperation extends QueueBackupAwareOperation
         implements WaitSupport, Notifier, IdentifiedDataSerializable {
 

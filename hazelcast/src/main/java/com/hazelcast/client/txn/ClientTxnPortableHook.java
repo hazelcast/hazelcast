@@ -24,6 +24,9 @@ import com.hazelcast.nio.serialization.PortableHook;
 
 import java.util.Collection;
 
+/**
+ * Factory class for client transaction related classes
+ */
 public class ClientTxnPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_TXN_PORTABLE_FACTORY, -19);

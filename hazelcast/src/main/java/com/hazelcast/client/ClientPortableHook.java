@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * @author mdogan 4/30/13
+ * Serialization factory id constants
  */
 public class ClientPortableHook implements PortableHook {
 
@@ -44,6 +44,7 @@ public class ClientPortableHook implements PortableHook {
     public static final int CLIENT_PING = 11;
     public static final int GET_PARTITIONS = 12;
     public static final int REMOVE_LISTENER = 13;
+    public static final int REMOVE_ALL_LISTENERS = 14;
 
     public int getFactoryId() {
         return ID;

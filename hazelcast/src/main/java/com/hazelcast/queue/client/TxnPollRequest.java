@@ -33,6 +33,9 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Request for transactional poll operation.
+ */
 public class TxnPollRequest extends BaseTransactionRequest implements Portable, SecureRequest {
 
     private String name;

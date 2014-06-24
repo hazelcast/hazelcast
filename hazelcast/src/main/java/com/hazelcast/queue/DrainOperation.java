@@ -30,6 +30,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * This class drain items according to drain condition.
+ */
 public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
 
     private int maxSize;

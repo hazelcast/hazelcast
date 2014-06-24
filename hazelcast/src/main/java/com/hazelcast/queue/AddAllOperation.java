@@ -31,6 +31,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Add collection items to the Queue.
+ */
 public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Collection<Data> dataList;

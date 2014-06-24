@@ -18,14 +18,13 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.QueryEventFilter;
@@ -62,22 +61,19 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
     protected abstract Predicate getPredicate();
 
-    @Override
     public Object call() {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
         final MapService mapService = getService();
 
         EntryListener listener = new EntryAdapter() {
             @Override
             public void onEntryEvent(EntryEvent event) {
                 if (endpoint.live()) {
-                    Data key = clientEngine.toData(event.getKey());
-                    Data value = clientEngine.toData(event.getValue());
-                    Data oldValue = clientEngine.toData(event.getOldValue());
-                    final EntryEventType type = event.getEventType();
-                    final String uuid = event.getMember().getUuid();
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, type, uuid);
+                    Data key = serializationService.toData(event.getKey());
+                    Data value = serializationService.toData(event.getValue());
+                    Data oldValue = serializationService.toData(event.getOldValue());
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue,
+                            event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }
@@ -109,7 +105,6 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         return MapService.SERVICE_NAME;
     }
 
-    @Override
     public int getFactoryId() {
         return MapPortableHook.F_ID;
     }
