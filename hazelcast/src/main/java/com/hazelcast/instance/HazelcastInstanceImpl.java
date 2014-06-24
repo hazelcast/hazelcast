@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.client.ClientServiceProxy;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -339,7 +340,7 @@ public final class HazelcastInstanceImpl
 
     @Override
     public ClientService getClientService() {
-        return node.clientEngine.getClientService();
+        return new ClientServiceProxy(node);
     }
 
     @Override

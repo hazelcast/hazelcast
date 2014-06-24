@@ -218,18 +218,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {
-        final NamedNodeMap atts = node.getAttributes();
-        final ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
-        for (int a = 0; a < atts.getLength(); a++) {
-            final Node att = atts.item(a);
-            final String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
-                clientAwsConfig.setEnabled(checkTrue(value));
-            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                int timeout = getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE);
-                clientAwsConfig.setConnectionTimeoutSeconds(timeout);
-            }
-        }
+        final ClientAwsConfig clientAwsConfig = handleAwsAttributes(node);
         for (Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             if ("secret-key".equals(cleanNodeName(n.getNodeName()))) {
@@ -251,6 +240,22 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             }
         }
         clientNetworkConfig.setAwsConfig(clientAwsConfig);
+    }
+
+    private ClientAwsConfig handleAwsAttributes(Node node) {
+        final NamedNodeMap atts = node.getAttributes();
+        final ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
+        for (int i = 0; i < atts.getLength(); i++) {
+            final Node att = atts.item(i);
+            final String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                clientAwsConfig.setEnabled(checkTrue(value));
+            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
+                int timeout = getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE);
+                clientAwsConfig.setConnectionTimeoutSeconds(timeout);
+            }
+        }
+        return clientAwsConfig;
     }
 
     private void handleSSLConfig(final org.w3c.dom.Node node, ClientNetworkConfig clientNetworkConfig) {

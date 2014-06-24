@@ -47,7 +47,7 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
 
     @Override
     protected int getPartition() {
-        Data key = getClientEngine().getSerializationService().toData(name);
+        Data key = serializationService.toData(name);
         return getClientEngine().getPartitionService().getPartitionId(key);
     }
 

@@ -39,37 +39,38 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @ali 7/18/13
+ * ClientNearCache
+ *
+ * @param <K> key type
  */
 public class ClientNearCache<K> {
 
-
+    /**
+     * Used when caching nonexistent values.
+     */
     public static final Object NULL_OBJECT = new Object();
-    public static final int EVICTION_PERCENTAGE = 20;
-    public static final int HUNDREAD_PERCENTAGE = 100;
-    public static final int THREE_FACTOR = 3;
-    public static final int SEC_TO_MIL = 1000;
-    public static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
-    String registrationId;
-    final ClientNearCacheType cacheType;
-    final int maxSize;
-    volatile long lastCleanup;
-    final long maxIdleMillis;
-    final long timeToLiveMillis;
-    final boolean invalidateOnChange;
-    final EvictionPolicy evictionPolicy;
-    final InMemoryFormat inMemoryFormat;
-    final String mapName;
-    final ClientContext context;
-    final AtomicBoolean canCleanUp;
-    final AtomicBoolean canEvict;
-    final ConcurrentMap<K, CacheRecord<K>> cache;
+    private static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
+    private static final double EVICTION_PERCENTAGE = 0.02;
+    private final ClientNearCacheType cacheType;
+    private final int maxSize;
+    private volatile long lastCleanup;
+    private final long maxIdleMillis;
+    private final long timeToLiveMillis;
+    private final EvictionPolicy evictionPolicy;
+    private final InMemoryFormat inMemoryFormat;
+    private final String mapName;
+    private final ClientContext context;
+    private final AtomicBoolean canCleanUp;
+    private final AtomicBoolean canEvict;
+    private final ConcurrentMap<K, CacheRecord<K>> cache;
+    private final NearCacheStatsImpl clientNearCacheStats;
+    private String registrationId;
 
-    final NearCacheStatsImpl clientNearCacheStats;
     private final Comparator<CacheRecord<K>> comparator = new Comparator<CacheRecord<K>>() {
         public int compare(CacheRecord<K> o1, CacheRecord<K> o2) {
             if (EvictionPolicy.LRU.equals(evictionPolicy)) {
@@ -89,10 +90,10 @@ public class ClientNearCache<K> {
         this.cacheType = cacheType;
         this.context = context;
         maxSize = nearCacheConfig.getMaxSize();
-        maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * SEC_TO_MIL;
+        maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
         inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * SEC_TO_MIL;
-        invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
+        timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
+        boolean invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
         cache = new ConcurrentHashMap<K, CacheRecord<K>>();
         canCleanUp = new AtomicBoolean(true);
@@ -161,7 +162,7 @@ public class ClientNearCache<K> {
                         try {
                             TreeSet<CacheRecord<K>> records = new TreeSet<CacheRecord<K>>(comparator);
                             records.addAll(cache.values());
-                            int evictSize = cache.size() * EVICTION_PERCENTAGE / HUNDREAD_PERCENTAGE;
+                            int evictSize = (int) (EVICTION_PERCENTAGE * cache.size());
                             int i = 0;
                             for (CacheRecord<K> record : records) {
                                 cache.remove(record.key);
@@ -315,7 +316,7 @@ public class ClientNearCache<K> {
                     // sizeof atomic integer
                     + (Integer.SIZE / Byte.SIZE)
                     // object references (key, value, hit)
-                    + THREE_FACTOR * (Integer.SIZE / Byte.SIZE);
+                    + 3 * (Integer.SIZE / Byte.SIZE);
         }
 
         boolean expired() {

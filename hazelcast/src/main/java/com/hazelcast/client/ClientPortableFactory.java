@@ -22,37 +22,54 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.partition.client.GetPartitionsRequest;
 
+/**
+ * Factory class for central client requests
+ */
 public class ClientPortableFactory implements PortableFactory {
 
     @Override
     public Portable create(int classId) {
+        Portable portable;
         switch (classId) {
             case ClientPortableHook.GENERIC_ERROR:
-                return new GenericError();
+                portable = new GenericError();
+                break;
             case ClientPortableHook.AUTH:
-                return new AuthenticationRequest();
+                portable = new AuthenticationRequest();
+                break;
             case ClientPortableHook.PRINCIPAL:
-                return new ClientPrincipal();
+                portable = new ClientPrincipal();
+                break;
             case ClientPortableHook.GET_DISTRIBUTED_OBJECT_INFO:
-                return new GetDistributedObjectsRequest();
+                portable = new GetDistributedObjectsRequest();
+                break;
             case ClientPortableHook.DISTRIBUTED_OBJECT_INFO:
-                return new DistributedObjectInfo();
+                portable = new DistributedObjectInfo();
+                break;
             case ClientPortableHook.CREATE_PROXY:
-                return new ClientCreateRequest();
+                portable = new ClientCreateRequest();
+                break;
             case ClientPortableHook.DESTROY_PROXY:
-                return new ClientDestroyRequest();
+                portable = new ClientDestroyRequest();
+                break;
             case ClientPortableHook.LISTENER:
-                return new DistributedObjectListenerRequest();
+                portable = new DistributedObjectListenerRequest();
+                break;
             case ClientPortableHook.MEMBERSHIP_LISTENER:
-                return new AddMembershipListenerRequest();
+                portable = new AddMembershipListenerRequest();
+                break;
             case ClientPortableHook.CLIENT_PING:
-                return new ClientPingRequest();
+                portable = new ClientPingRequest();
+                break;
             case ClientPortableHook.GET_PARTITIONS:
-                return new GetPartitionsRequest();
+                portable = new GetPartitionsRequest();
+                break;
             case ClientPortableHook.REMOVE_LISTENER:
-                return new RemoveDistributedObjectListenerRequest();
+                portable = new RemoveDistributedObjectListenerRequest();
+                break;
             default:
-                return null;
+                portable = null;
         }
+        return portable;
     }
 }

@@ -132,7 +132,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
     private MapKeySet getMapKeySet(Set keySet) {
         final HashSet<Data> dataKeySet = new HashSet<Data>();
         for (Object key : keySet) {
-            final Data dataKey = getClientEngine().toData(key);
+            final Data dataKey = serializationService.toData(key);
             dataKeySet.add(dataKey);
         }
         return new MapKeySet(dataKeySet);
@@ -141,7 +141,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
     private MapValueCollection getMapValueCollection(Collection coll) {
         final HashSet<Data> valuesCollection = new HashSet<Data>(coll.size());
         for (Object value : coll) {
-            final Data dataValue = getClientEngine().toData(value);
+            final Data dataValue = serializationService.toData(value);
             valuesCollection.add(dataValue);
         }
         return new MapValueCollection(valuesCollection);

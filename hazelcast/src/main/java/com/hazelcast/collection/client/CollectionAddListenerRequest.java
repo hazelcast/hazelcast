@@ -76,7 +76,7 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
 
             private void send(ItemEvent event) {
                 if (endpoint.live()) {
-                    Data item = clientEngine.toData(event.getItem());
+                    Data item = serializationService.toData(event.getItem());
                     final ItemEventType eventType = event.getEventType();
                     final String uuid = event.getMember().getUuid();
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, eventType, uuid);

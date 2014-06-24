@@ -48,7 +48,7 @@ public final class GetLockCountRequest extends KeyBasedClientRequest
 
     @Override
     protected Operation prepareOperation() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = serializationService.toObject(key);
         return new GetLockCountOperation(new InternalLockNamespace(name), key);
     }
 
@@ -85,7 +85,7 @@ public final class GetLockCountRequest extends KeyBasedClientRequest
 
     @Override
     public Permission getRequiredPermission() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = serializationService.toObject(key);
         return new LockPermission(name, ActionConstants.ACTION_READ);
     }
 }

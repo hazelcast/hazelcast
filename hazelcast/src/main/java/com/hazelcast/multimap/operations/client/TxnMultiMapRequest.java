@@ -58,7 +58,7 @@ public abstract class TxnMultiMapRequest extends BaseTransactionRequest implemen
     }
 
     public Data toData(Object obj) {
-        return getClientEngine().toData(obj);
+        return serializationService.toData(obj);
     }
 
     public Permission getRequiredPermission() {

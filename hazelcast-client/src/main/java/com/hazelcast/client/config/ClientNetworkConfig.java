@@ -50,12 +50,9 @@ public class ClientNetworkConfig {
     private boolean redoOperation;
 
     /**
-     * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
-     * passing between client and member within the {@link ClientNetworkConfig#connectionTimeout} milliseconds the connection
-     * will be closed.
+     * Timeout value for nodes to accept client connection requests.
      */
-    private int connectionTimeout = 60000;
-    //TODO heartbeat
+    private int connectionTimeout = 5000;
 
     /**
      * While client is trying to connect initially to one of the members in the {@link ClientNetworkConfig#addressList},

@@ -56,7 +56,7 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
     @Override
     protected int getPartition() {
         ClientEngine clientEngine = getClientEngine();
-        Data key = clientEngine.toData(name);
+        Data key = serializationService.toData(name);
         return clientEngine.getPartitionService().getPartitionId(key);
     }
 

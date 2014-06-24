@@ -18,7 +18,6 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
@@ -31,7 +30,6 @@ public class GetDistributedObjectsRequest extends ClientRequest {
     void process() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
         Collection<DistributedObject> distributedObjects = clientEngine.getProxyService().getAllDistributedObjects();
-        SerializationService serializationService = clientEngine.getSerializationService();
 
         List<Data> dataArrayList = new ArrayList<Data>(distributedObjects.size());
         for (DistributedObject distributedObject : distributedObjects) {

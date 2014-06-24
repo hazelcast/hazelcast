@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -45,7 +44,6 @@ public class ApplyRequest extends ReadRequest {
 
     @Override
     protected Operation prepareOperation() {
-        SerializationService serializationService = getClientEngine().getSerializationService();
         IFunction f = serializationService.toObject(function);
         //noinspection unchecked
         return new ApplyOperation(name, f);

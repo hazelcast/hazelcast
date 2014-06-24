@@ -18,7 +18,6 @@ package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -35,6 +34,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.PortableEntryEvent;
+
 import java.io.IOException;
 import java.security.Permission;
 
@@ -55,7 +55,6 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
 
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
         final MultiMapService service = getService();
         EntryListener listener = new EntryAdapter() {
             @Override
@@ -65,9 +64,9 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
 
             private void send(EntryEvent event) {
                 if (endpoint.live()) {
-                    Data key = clientEngine.toData(event.getKey());
-                    Data value = clientEngine.toData(event.getValue());
-                    Data oldValue = clientEngine.toData(event.getOldValue());
+                    Data key = serializationService.toData(event.getKey());
+                    Data value = serializationService.toData(event.getValue());
+                    Data oldValue = serializationService.toData(event.getOldValue());
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, type, uuid);

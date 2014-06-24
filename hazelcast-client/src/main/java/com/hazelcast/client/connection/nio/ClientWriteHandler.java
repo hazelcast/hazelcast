@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
@@ -60,7 +60,11 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
 //            registerWrite();
 //        }
 
-        if (lastWritable == null && (lastWritable = poll()) == null && buffer.position() == 0) {
+        if (lastWritable == null) {
+            lastWritable = poll();
+        }
+
+        if (lastWritable == null && buffer.position() == 0) {
             ready = true;
             return;
         }
@@ -130,8 +134,6 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
     @Override
     public void shutdown() {
         writeQueue.clear();
-        while (poll() != null) {
-        }
     }
 
     long getLastHandle() {

@@ -52,7 +52,7 @@ public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableR
             }
             Collection<Data> collection = new ArrayList<Data>(coll.size());
             for (MultiMapRecord record : coll) {
-                collection.add(getClientEngine().toData(record.getObject()));
+                collection.add(serializationService.toData(record.getObject()));
             }
             return new PortableCollection(collection);
         }

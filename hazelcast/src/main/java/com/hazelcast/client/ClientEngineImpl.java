@@ -20,7 +20,6 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
-import com.hazelcast.core.ClientService;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -29,11 +28,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -42,19 +41,15 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionManagerService;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
@@ -62,11 +57,7 @@ import java.security.Permission;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -74,23 +65,27 @@ import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
 
+/**
+ * Class that requests, listeners from client handled in node side.
+ */
 public class ClientEngineImpl implements ClientEngine, CoreService,
         ManagedService, MembershipAwareService, EventPublishingService<ClientEndpoint, ClientListener> {
 
+    /**
+     * Service Name of clientEngine to be used in requests
+     */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
-    public static final int DESTROY_ENDPOINT_DELAY_MS = 1111;
-    public static final int ENDPOINT_REMOVE_DELAY_MS = 10;
-    public static final int THREADS_PER_CORE = 10;
-    public static final int QUEUE_CAPACITY_PER_CORE = 100000;
-
-    static final Data NULL = new Data();
+    private static final int DESTROY_ENDPOINT_DELAY_MS = 1111;
+    private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
+    private static final int THREADS_PER_CORE = 10;
+    private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
     private final SerializationService serializationService;
-    private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
-            new ConcurrentHashMap<Connection, ClientEndpoint>();
+    private final ClientEndpointManager endpointManager;
+
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
@@ -98,9 +93,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.node = node;
         this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
+        this.endpointManager = new ClientEndpointManager(this);
         int coreSize = Runtime.getRuntime().availableProcessors();
         this.executor = nodeEngine.getExecutionService().register(ExecutionService.CLIENT_EXECUTOR,
-                coreSize * THREADS_PER_CORE, coreSize * QUEUE_CAPACITY_PER_CORE,
+                coreSize * THREADS_PER_CORE, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
                 ExecutorType.CONCRETE);
         this.logger = node.getLogger(ClientEngine.class);
     }
@@ -112,21 +108,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public int getClientEndpointCount() {
-        return endpoints.size();
+        return endpointManager.size();
     }
 
     public void handlePacket(ClientPacket packet) {
         executor.execute(new ClientPacketProcessor(packet));
-    }
-
-    @Override
-    public Object toObject(Data data) {
-        return serializationService.toObject(data);
-    }
-
-    @Override
-    public Data toData(Object obj) {
-        return serializationService.toData(obj);
     }
 
     @Override
@@ -140,11 +126,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     }
 
     @Override
-    public SerializationService getSerializationService() {
-        return serializationService;
-    }
-
-    @Override
     public EventService getEventService() {
         return nodeEngine.getEventService();
     }
@@ -154,33 +135,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         return nodeEngine.getProxyService();
     }
 
-    void sendOperation(Operation op, Address target) {
-        getOperationService().send(op, target);
+    void sendResponse(ClientEndpoint endpoint, Object response, int callId, boolean isError, boolean isEvent) {
+        Data data = serializationService.toData(response);
+        ClientResponse clientResponse = new ClientResponse(data, callId, isError, isEvent);
+        sendResponse(endpoint, clientResponse);
     }
 
-    InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
-        return getOperationService().createInvocationBuilder(serviceName, op, partitionId);
-    }
-
-    private OperationService getOperationService() {
-        return nodeEngine.getOperationService();
-    }
-
-    InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        return getOperationService().createInvocationBuilder(serviceName, op, target);
-    }
-
-    Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory)
-            throws Exception {
-        return getOperationService().invokeOnAllPartitions(serviceName, operationFactory);
-    }
-
-    Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
-                                            Collection<Integer> partitions) throws Exception {
-        return getOperationService().invokeOnPartitions(serviceName, operationFactory, partitions);
-    }
-
-    void sendResponse(ClientEndpoint endpoint, ClientResponse response) {
+    private void sendResponse(ClientEndpoint endpoint, ClientResponse response) {
         Data resultData = serializationService.toData(response);
         Connection conn = endpoint.getConnection();
         conn.write(new DataAdapter(resultData, serializationService.getPortableContext()));
@@ -216,50 +177,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         return node.getLogger(clazz);
     }
 
-    @Override
-    public ILogger getLogger(String className) {
-        return node.getLogger(className);
+    public ClientEndpointManager getEndpointManager() {
+        return endpointManager;
     }
 
-    Set<ClientEndpoint> getEndpoints(String uuid) {
-        Set<ClientEndpoint> endpointSet = new HashSet<ClientEndpoint>();
-        for (ClientEndpoint endpoint : endpoints.values()) {
-            if (uuid.equals(endpoint.getUuid())) {
-                endpointSet.add(endpoint);
-            }
-        }
-        return endpointSet;
-    }
-
-    ClientEndpoint getEndpoint(Connection conn) {
-        return endpoints.get(conn);
-    }
-
-    ClientEndpoint createEndpoint(Connection conn) {
-        if (!conn.live()) {
-            logger.severe("Can't create and endpoint for a dead connection");
-            return null;
-        }
-
-        String clientUuid = UuidUtil.createClientUuid(conn.getEndPoint());
-        ClientEndpoint endpoint = new ClientEndpoint(ClientEngineImpl.this, conn, clientUuid);
-        if (endpoints.putIfAbsent(conn, endpoint) != null) {
-            logger.severe("An endpoint already exists for connection:" + conn);
-        }
-        return endpoint;
-    }
-
-    ClientEndpoint removeEndpoint(final Connection connection) {
-        return removeEndpoint(connection, false);
-    }
-
-    ClientEndpoint removeEndpoint(final Connection connection, boolean closeImmediately) {
-        final ClientEndpoint endpoint = endpoints.remove(connection);
-        destroyEndpoint(endpoint, closeImmediately);
-        return endpoint;
-    }
-
-    private void destroyEndpoint(ClientEndpoint endpoint, boolean closeImmediately) {
+    void destroyEndpoint(ClientEndpoint endpoint, boolean closeImmediately) {
         if (endpoint != null) {
             logger.info("Destroying " + endpoint);
             try {
@@ -292,6 +214,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         }
     }
 
+
     @Override
     public SecurityContext getSecurityContext() {
         return node.securityContext;
@@ -307,7 +230,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         sendClientEvent(endpoint);
     }
 
-    private void sendClientEvent(ClientEndpoint endpoint) {
+    void sendClientEvent(ClientEndpoint endpoint) {
         if (!endpoint.isFirstConnection()) {
             final EventService eventService = nodeEngine.getEventService();
             final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
@@ -339,7 +262,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             nodeEngine.getExecutionService().schedule(new Runnable() {
                 @Override
                 public void run() {
-                    Iterator<ClientEndpoint> iterator = endpoints.values().iterator();
+                    Iterator<ClientEndpoint> iterator = endpointManager.values().iterator();
                     while (iterator.hasNext()) {
                         ClientEndpoint endpoint = iterator.next();
                         String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
@@ -361,24 +284,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    String addClientListener(ClientListener clientListener) {
-        EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = eventService
-                .registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
-        return registration.getId();
-    }
-
-    boolean removeClientListener(String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
-    }
-
-    public ClientService getClientService() {
-        return new ClientServiceProxy(this);
-    }
-
     public Collection<Client> getClients() {
         final HashSet<Client> clients = new HashSet<Client>();
-        for (ClientEndpoint endpoint : endpoints.values()) {
+        for (ClientEndpoint endpoint : endpointManager.values()) {
             if (!endpoint.isFirstConnection()) {
                 clients.add(endpoint);
             }
@@ -397,7 +305,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
     @Override
     public void shutdown(boolean terminate) {
-        for (ClientEndpoint endpoint : endpoints.values()) {
+        for (ClientEndpoint endpoint : endpointManager.values()) {
             try {
                 endpoint.destroy();
             } catch (LoginException e) {
@@ -412,7 +320,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 logger.finest(e);
             }
         }
-        endpoints.clear();
+        endpointManager.clear();
     }
 
     private final class ClientPacketProcessor implements Runnable {
@@ -425,14 +333,14 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         @Override
         public void run() {
             Connection conn = packet.getConn();
-            ClientEndpoint endpoint = getEndpoint(conn);
+            ClientEndpoint endpoint = endpointManager.getEndpoint(conn);
             ClientRequest request = null;
             try {
                 request = loadRequest();
                 if (request == null) {
                     handlePacketWithNullRequest();
                 } else if (request instanceof AuthenticationRequest) {
-                    endpoint = createEndpoint(conn);
+                    endpoint = endpointManager.createEndpoint(conn);
                     if (endpoint != null) {
                         processRequest(endpoint, request);
                     } else {
@@ -495,6 +403,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             request.setClientEngine(ClientEngineImpl.this);
             final Credentials credentials = endpoint.getCredentials();
             interceptBefore(credentials, request);
+            request.setSerializationService(serializationService);
+            request.setOperationService(nodeEngine.getOperationService());
             checkPermissions(endpoint, request);
             request.process();
             interceptAfter(credentials, request);
@@ -554,7 +464,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 exception = new HazelcastInstanceNotActiveException();
             }
             endpoint.sendResponse(exception, request.getCallId());
-            removeEndpoint(conn);
+            endpointManager.removeEndpoint(conn);
         }
     }
 
@@ -570,7 +480,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         @Override
         public void connectionRemoved(Connection connection) {
             if (connection.isClient() && connection instanceof TcpIpConnection && nodeEngine.isActive()) {
-                ClientEndpoint endpoint = endpoints.get(connection);
+                ClientEndpoint endpoint = endpointManager.getEndpoint(connection);
                 if (endpoint == null) {
                     return;
                 }
@@ -584,7 +494,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         }
 
         private void doRemoveEndpoint(Connection connection, ClientEndpoint endpoint) {
-            removeEndpoint(connection, true);
+            endpointManager.removeEndpoint(connection, true);
             if (!endpoint.isFirstConnection()) {
                 return;
             }
