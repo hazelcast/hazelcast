@@ -42,6 +42,7 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -714,7 +715,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 if (force) {
                     Address thisAddress = node.nodeEngine.getThisAddress();
                     throw new IllegalStateException("Replica target cannot be this node -> thisNode: "
-                            + thisAddress +" partitionId: " + partitionId
+                            + thisAddress + " partitionId: " + partitionId
                             + ", replicaIndex: " + replicaIndex + ", partition-info: " + partitionImpl);
                 } else {
                     if (logger.isFinestEnabled()) {
@@ -849,6 +850,19 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     @Override
+    public boolean isMemberStateSafe() {
+        if (hasOnGoingMigrationLocal()) {
+            return false;
+        }
+        if (!node.isMaster()) {
+            if (hasOnGoingMigrationMaster(Level.OFF)) {
+                return false;
+            }
+        }
+        return isReplicaInSyncState();
+    }
+
+    @Override
     public boolean hasOnGoingMigration() {
         return hasOnGoingMigrationLocal() || (!node.isMaster() && hasOnGoingMigrationMaster(Level.FINEST));
     }
@@ -871,6 +885,74 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 || !migrationActive.get()
                 || migrationThread.isMigrating()
                 || shouldWaitMigrationOrBackups(Level.OFF);
+    }
+
+    private boolean isReplicaInSyncState() {
+        if (!initialized || getMemberGroupsSize() < 2) {
+            return true;
+        }
+        final int replicaIndex = 1;
+        final List<Future> futures = new ArrayList<Future>();
+        final Address thisAddress = node.getThisAddress();
+        for (InternalPartitionImpl partition : partitions) {
+            final Address owner = partition.getOwnerOrNull();
+            if (thisAddress.equals(owner)) {
+                if (partition.getReplicaAddress(replicaIndex) != null) {
+                    final int partitionId = partition.getPartitionId();
+                    final long replicaVersion = getCurrentReplicaVersion(replicaIndex, partitionId);
+                    final Operation operation = createReplicaSyncStateOperation(replicaVersion, partitionId);
+                    final InternalCompletableFuture future = invoke(operation, replicaIndex, partitionId);
+                    futures.add(future);
+                }
+            }
+        }
+        if (futures.isEmpty()) {
+            return true;
+        }
+        for (int i = 0; i < futures.size(); i++) {
+            final Future future = futures.get(i);
+            final boolean sync = getFutureResult(future, 10, TimeUnit.SECONDS);
+            if (!sync) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private long getCurrentReplicaVersion(int replicaIndex, int partitionId) {
+        final long[] versions = getPartitionReplicaVersions(partitionId);
+        return versions[replicaIndex - 1];
+    }
+
+    private boolean getFutureResult(Future future, long seconds, TimeUnit unit) {
+        boolean sync;
+        try {
+            sync = (Boolean) future.get(seconds, unit);
+        } catch (Throwable t) {
+            sync = false;
+            logger.warning("Exception while getting future", t);
+        }
+        return sync;
+    }
+
+    private InternalCompletableFuture invoke(Operation operation, int replicaIndex, int partitionId) {
+        final OperationService operationService = nodeEngine.getOperationService();
+        return operationService.createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, partitionId)
+                .setTryCount(3)
+                .setTryPauseMillis(250)
+                .setReplicaIndex(replicaIndex)
+                .invoke();
+    }
+
+    private Operation createReplicaSyncStateOperation(long replicaVersion, int partitionId) {
+        final Operation op = new IsReplicaVersionSync(replicaVersion);
+        op.setService(this);
+        op.setNodeEngine(nodeEngine);
+        op.setResponseHandler(ResponseHandlerFactory
+                .createErrorLoggingResponseHandler(node.getLogger(IsReplicaVersionSync.class)));
+        op.setPartitionId(partitionId);
+
+        return op;
     }
 
     private boolean checkReplicaSyncState() {
@@ -1173,7 +1255,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 break;
             default:
                 throw new IllegalArgumentException("Not a known MigrationStatus: " + status);
-         }
+        }
     }
 
     @Override
@@ -1183,6 +1265,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         sb.append("migrationQ: ").append(migrationQueue.size());
         sb.append("\n}");
         return sb.toString();
+    }
+
+    public Node getNode() {
+        return node;
     }
 
     private class SendClusterStateTask implements Runnable {
@@ -1266,8 +1352,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                             MigrationInfo info = new MigrationInfo(partitionId, currentOwner, newOwner);
                             MigrateTask migrateTask = new MigrateTask(info, new BackupMigrationTask(partitionId, replicas));
                             boolean offered = migrationQueue.offer(migrateTask);
-                            if(!offered){
-                                logger.severe("Failed to offer: "+migrateTask);
+                            if (!offered) {
+                                logger.severe("Failed to offer: " + migrateTask);
                             }
                         } else {
                             currentPartition.setPartitionInfo(replicas);
@@ -1355,14 +1441,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 MigrationInfo info = migrationInfo;
                 InternalPartitionImpl partition = partitions[info.getPartitionId()];
                 Address owner = partition.getOwnerOrNull();
-                if(owner == null){
+                if (owner == null) {
                     logger.severe("ERROR: partition owner is not set! -> "
                             + partition + " -VS- " + info);
                     return;
                 }
                 if (!owner.equals(info.getSource())) {
                     logger.severe("ERROR: partition owner is not the source of migration! -> "
-                            + partition + " -VS- " + info +" found owner:"+owner);
+                            + partition + " -VS- " + info + " found owner:" + owner);
                     return;
                 }
                 sendMigrationEvent(migrationInfo, MigrationStatus.STARTED);
@@ -1385,7 +1471,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         result = (Boolean) nodeEngine.toObject(response);
                     } catch (Throwable e) {
                         final Level level = node.isActive() && migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
-                        logger.log(level, "Failed migrating from " + fromMember, e);
+                        logger.log(level, "Failed migration from " + fromMember, e);
                     }
                 }
                 if (Boolean.TRUE.equals(result)) {
@@ -1495,7 +1581,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (hasNoTasks) {
                 if (migrating) {
                     migrating = false;
-                    logger.info("All migration tasks has been completed, queues are empty.");
+                    logger.info("All migration tasks have been completed, queues are empty.");
                 }
                 evictCompletedMigrations();
                 Thread.sleep(sleepTime);

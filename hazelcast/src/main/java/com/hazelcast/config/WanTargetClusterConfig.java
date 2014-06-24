@@ -18,13 +18,16 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * Configuration for Wan target cluster
+ */
 public class WanTargetClusterConfig {
     String groupName = "dev";
     String groupPassword = "dev-pass";
     String replicationImpl;
     Object replicationImplObject;
-    List<String> endpoints; // ip:port
+    // ip:port
+    List<String> endpoints;
 
     public String getGroupName() {
         return groupName;

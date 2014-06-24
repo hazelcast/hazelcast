@@ -18,11 +18,10 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -63,16 +62,15 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
     @Override
     public Object call() {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
         final MapService mapService = getService();
 
         EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
 
             private void handleEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.live()) {
-                    Data key = clientEngine.toData(event.getKey());
-                    Data value = clientEngine.toData(event.getValue());
-                    Data oldValue = clientEngine.toData(event.getOldValue());
+                    Data key = serializationService.toData(event.getKey());
+                    Data value = serializationService.toData(event.getValue());
+                    Data oldValue = serializationService.toData(event.getOldValue());
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
@@ -92,6 +90,12 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
             public void entryEvicted(EntryEvent<Object, Object> event) {
                 handleEvent(event);
+            }
+
+            // TODO what should this method do?
+            @Override
+            public void mapEvicted(MapEvent event) {
+
             }
         };
 

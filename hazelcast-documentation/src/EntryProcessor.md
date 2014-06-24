@@ -151,38 +151,32 @@ public class EntryProcessorTest {
 Please see below sample code.
 
 ```java
-public abstract class AbstractEntryProcessor <K, V> implements EntryProcessor <K, V> {	private final EntryBackupProcessor <K,V> entryBackupProcessor;	public AbstractEntryProcessor(){ this(true);	}	public AbstractEntryProcessor(boolean applyOnBackup { if(applyOnBackup){		entryBackupProcessor = new EntryBackupProcessorImpl(); }else{		entryBackupProcessor = null; }} 
-@Overridepublic abstract Object process(Map.Entry<K, V> entry);@Overridepublic final EntryBackupProcessor <K, V> getBackupProcessor() {	return entryBackupProcessor; 
-	private class EntryBackupProcessorImplimplements EntryBackupProcessor <K,V>{	@Override	public void processBackup(Map.Entry<K, V> entry) {		process(entry); 
-		}	}	}```
+public abstract class AbstractEntryProcessor <K, V> implements EntryProcessor <K, V> {
+	private final EntryBackupProcessor <K,V> entryBackupProcessor;
+	public AbstractEntryProcessor(){ this(true);
+	}
+	public AbstractEntryProcessor(boolean applyOnBackup { if(applyOnBackup){
+		entryBackupProcessor = new EntryBackupProcessorImpl(); }else{
+		entryBackupProcessor = null; }
+} 
+
+@Override
+public abstract Object process(Map.Entry<K, V> entry);
+
+@Override
+public final EntryBackupProcessor <K, V> getBackupProcessor() {
+	return entryBackupProcessor; 
+
+	private class EntryBackupProcessorImpl
+implements EntryBackupProcessor <K,V>{
+
+	@Override
+	public void processBackup(Map.Entry<K, V> entry) {
+		process(entry); 
+		}
+	}	
+}```
 
 In the above sample, the method `getBackupProcessor` returns an `EntryBackupProcessor` instance. This means, the same processing will be applied to both primary and backup entries. If you want to apply the processing only on the primary entries, then `getBackupProcessor` method should return null. 
-
-
-### Threading
-
-Hazelcast allows a single thread for entry processing (partition thread). Meaning, no other operations can be performed on a map entry while entry processor is running on it. And, no operations can be performed on a partition different than the current one occupied by the partition thread. Yet, entry processor can call operations on the current partition (for example it can retrieve information from another map needed for processing).
-
-
-Entry processor runs on a batch of map entries at a time. During this time the partition thread is kept by it. After the batch is processed, it releases the thread and reschedules itself for the next batch. Other map operations run between each batch processing.
-
-Entry processor provides a property to configure batch size:
-
--	`hazelcast.entryprocessor.batch.max.size`: Specifies the  maximum number of map entries to be executed in a single batch. Its default value is 10.000.
-
-Hazelcast will end the processing and start to schedule for the next batch once this maximum size is reached.
-
-<br> </br>
-
-<font color="red">
-***Related Information***
-</font>
-
-*Please refer to [Configuration](#configuration) for information on how to set configuration properties.*
-
-<br> </br>
-
-
-
 
 <br> </br>

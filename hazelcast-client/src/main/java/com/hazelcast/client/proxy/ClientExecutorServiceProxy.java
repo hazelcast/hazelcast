@@ -51,6 +51,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,6 +61,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ClientExecutorServiceProxy extends ClientProxy implements IExecutorService {
 
+    private static final int MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS = 10;
+    private static final int MAX_CONSECUTIVE_SUBMITS = 100;
     private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
@@ -373,7 +376,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         throw new UnsupportedOperationException();
     }
 
-     private Object getTaskPartitionKey(Object task) {
+    private Object getTaskPartitionKey(Object task) {
         if (task instanceof PartitionAware) {
             return ((PartitionAware) task).getPartitionKey();
         }
@@ -455,9 +458,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         boolean sync = false;
         final long last = lastSubmitTime;
         final long now = Clock.currentTimeMillis();
-        if (last + 10 < now) {
+        if (last + MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS < now) {
             consecutiveSubmits.set(0);
-        } else if (consecutiveSubmits.incrementAndGet() % 100 == 0) {
+        } else if (consecutiveSubmits.incrementAndGet() % MAX_CONSECUTIVE_SUBMITS == 0) {
             sync = true;
         }
         lastSubmitTime = now;
@@ -490,7 +493,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             }
         }
         if (selected.isEmpty()) {
-            throw new IllegalStateException("No member selected with memberSelector[" + memberSelector + "]");
+            throw new RejectedExecutionException("No member selected with memberSelector[" + memberSelector + "]");
         }
         return selected;
     }

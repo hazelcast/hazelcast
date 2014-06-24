@@ -103,6 +103,9 @@
                     </hz:actions>
                 </hz:queue-permission>
             </hz:client-permissions>
+            <hz:security-interceptors>
+                <hz:interceptor class-name="com.hazelcast.spring.security.DummySecurityInterceptor"/>
+            </hz:security-interceptors>
         </hz:security>
     </hz:config>
 

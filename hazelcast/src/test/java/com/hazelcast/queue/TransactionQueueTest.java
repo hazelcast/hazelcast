@@ -298,6 +298,22 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         assertEquals(1, getQueue(instances, name).size());
     }
 
+    @Test
+    public void testTransactionalOfferAndPollWithTimeout() throws InterruptedException {
+        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
+        final String item = "offered";
+        final String queueName = "testTransactionalOfferAndPollWithTimeout";
+
+        final TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue<String> txnQueue = context.getQueue(queueName);
+        assertTrue(txnQueue.offer(item));
+        assertEquals(1, txnQueue.size());
+        assertEquals(item, txnQueue.poll(5, TimeUnit.SECONDS));
+        context.commitTransaction();
+    }
+
+
     private IQueue getQueue(HazelcastInstance[] instances, String name) {
         final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getQueue(name);

@@ -61,7 +61,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     private final Map<Object, TransactionLog> txLogMap = new HashMap<Object, TransactionLog>();
     private final String txnId;
     private Long threadId;
-    private final long timeoutMillis;
+    private long timeoutMillis;
     private final int durability;
     private final TransactionType transactionType;
     private final String txOwnerUuid;
@@ -167,7 +167,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
         //init caller thread
-        if(threadId == null){
+        if (threadId == null) {
             threadId = Thread.currentThread().getId();
             setThreadFlag(Boolean.TRUE);
         }
@@ -396,6 +396,14 @@ final class TransactionImpl implements Transaction, TransactionSupport {
 
     public long getTimeoutMillis() {
         return timeoutMillis;
+    }
+
+    public boolean setTimeoutMillis(long timeoutMillis) {
+        if (state == NO_TXN) {
+            this.timeoutMillis = timeoutMillis;
+            return true;
+        }
+        return false;
     }
 
     @Override

@@ -18,6 +18,9 @@ package com.hazelcast.core;
 
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 
@@ -65,7 +68,8 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
+public interface IMap<K, V>
+        extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * {@inheritDoc}
@@ -162,7 +166,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     boolean remove(Object key, Object value);
 
-
     /**
      * Removes the mapping for a key from this map if it is present
      * (optional operation).
@@ -175,6 +178,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * <p>The map will not contain a mapping for the specified key once the
      * call returns.
+     *
+     * <p><b>Warning:</b></p>
+     * This method breaks the contract of EntryListener.
+     * When an entry is removed by delete(), it fires an EntryEvent with a null oldValue.
+     * <p/>
      *
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException   if the key is of an inappropriate type for
@@ -190,7 +198,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     void flush();
 
     /**
-     * Returns the entries for the given keys.
+     * Returns the entries for the given keys. If any keys are not present in the Map, it will
+     * call {@link MapStore#loadAll(java.util.Collection)}.
      * <p/>
      * <p><b>Warning:</b></p>
      * The returned map is <b>NOT</b> backed by the original map,
@@ -200,12 +209,51 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>keys</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     * <p/>
      *
      * @param keys keys to get
      * @return map of entries
      * @throws NullPointerException if any of the specified keys are null
      */
     Map<K, V> getAll(Set<K> keys);
+
+    /**
+     * Loads all keys into the store. This is a batch load operation so that an implementation can
+     * optimize the multiple loads.
+     *
+     * @param replaceExistingValues when <code>true</code> existing values in the Map will
+     *                              be replaced by those loaded from the MapLoader
+     *                              void loadAll(boolean replaceExistingValues));
+     * @since 3.3
+     */
+    void loadAll(boolean replaceExistingValues);
+
+    /**
+     * Loads given keys. This is a batch load operation so that an implementation can
+     * optimize the multiple loads.
+     *
+     * @param keys                  keys of the values entries to load
+     * @param replaceExistingValues when <code>true</code> existing values in the Map will
+     *                              be replaced by those loaded from the MapLoader
+     * @since 3.3
+     */
+    void loadAll(Set<K> keys, boolean replaceExistingValues);
+
+
+    /**
+     * This method clears the map and invokes {@link MapStore#deleteAll}deleteAll on MapStore which,
+     * if connected to a database, will delete the records from that database.
+     * <p/>
+     * Clear does not notify listeners.
+     * <p/>
+     * To clear a map without calling {@link MapStore#deleteAll} use {@link #evictAll}.
+     * If you wish to clear the map only without calling deleteAll, use
+     *
+     * @see #evictAll
+     */
+    @Override
+    void clear();
+
 
     /**
      * Asynchronously gets the given key.
@@ -429,8 +477,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * previously put into the map.
      * </p>
      *
-     * @throws NullPointerException if the specified key or value is null
      * @return a clone of the previous value
+     * @throws NullPointerException if the specified key or value is null
      */
     V putIfAbsent(K key, V value);
 
@@ -495,9 +543,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * doesn't return the old value which is more efficient.
      * <p/>
      * <p><b>Warning:</b></p>
+     * This method breaks the contract of EntryListener.
+     * When an entry is updated by set(), it fires an EntryEvent with a null oldValue.
+     * <p/>
+     * <p><b>Warning-2:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     * <p/>
      *
      * @param key   key of the entry
      * @param value value of the entry
@@ -636,7 +689,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * if the waiting time elapsed before the lock was acquired.
      * @throws NullPointerException if the specified key is null
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException;
+    boolean tryLock(K key, long time, TimeUnit timeunit)
+            throws InterruptedException;
 
     /**
      * Releases the lock for the specified key. It never blocks and
@@ -820,7 +874,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * Evicts the specified key from this map. If
-     * a <tt>MapStore</tt> defined for this map, then the entry is not
+     * a <tt>MapStore</tt> is defined for this map, then the entry is not
      * deleted from the underlying <tt>MapStore</tt>, evict only removes
      * the entry from the memory.
      * <p/>
@@ -834,6 +888,19 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is null
      */
     boolean evict(K key);
+
+    /**
+     * Evicts all keys from this map except locked ones.
+     * <p/>
+     * If a <tt>MapStore</tt> is defined for this map, deleteAll is <strong>not</strong> called by this method.
+     * If you do want to deleteAll to be called use the {@link #clear()} method.
+     * <p/>
+     * The EVICT_ALL event is fired for any registered listeners.
+     *
+     * @see #clear()
+     * @since 3.3
+     */
+    void evictAll();
 
     /**
      * Returns a set clone of the keys contained in this map.
@@ -974,6 +1041,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Index attribute should either have a getter method or be public.
      * You should also make sure to add the indexes before adding
      * entries to this map.
+     * <p/>
+     * <h3>Time to Index</h3>
+     * Indexing time is executed in parallel on each partition by operation threads. The Map
+     * is not blocked during this operation.
+     * <p/>
+     * The time taken in proportional to the size of the Map and the number Members.
+     * <p/>
+     * <h3>Searches while indexes are being built</h3>
+     * Until the index finishes being created, any searches for the attribute will use a full Map scan,
+     * thus avoiding using a partially built index and returning incorrect results.
      *
      * @param attribute attribute of value
      * @param ordered   <tt>true</tt> if index should be ordered,
@@ -1015,7 +1092,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 
-
     /**
      * Applies the user defined EntryProcessor to the entry mapped by the key with
      * specified ExecutionCallback to listen event status and returns immediately.
@@ -1039,7 +1115,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Future submitToKey(K key, EntryProcessor entryProcessor);
 
-
     /**
      * Applies the user defined EntryProcessor to the all entries in the map.
      * Returns the results mapped by each key in the map.
@@ -1054,4 +1129,33 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 
+    /**
+     * Executes a predefined aggregation on the maps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
+     * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
+     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
+     *
+     * @param supplier        the supplier to select and / or extract a (sub-)value from the map
+     * @param aggregation     the aggregation that is being executed against the map
+     * @param <SuppliedValue> the final type emitted from the supplier
+     * @param <Result>        the resulting aggregation value type
+     * @return Returns the aggregated value
+     */
+    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, SuppliedValue, Result> aggregation);
+
+    /**
+     * Executes a predefined aggregation on the maps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
+     * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
+     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
+     *
+     * @param supplier        the supplier to select and / or extract a (sub-)value from the map
+     * @param aggregation     the aggregation that is being executed against the map
+     * @param jobTracker      the {@link com.hazelcast.mapreduce.JobTracker} instance to execute the aggregation
+     * @param <SuppliedValue> the final type emitted from the supplier
+     * @param <Result>        the resulting aggregation value type
+     * @return Returns the aggregated value
+     */
+    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, SuppliedValue, Result> aggregation,
+                                             JobTracker jobTracker);
 }

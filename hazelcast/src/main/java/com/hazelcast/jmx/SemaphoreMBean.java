@@ -18,6 +18,9 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.ISemaphore;
 
+/**
+ * Management bean for {@link com.hazelcast.core.ISemaphore}
+ */
 @ManagedDescription("ISemaphore")
 public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {
 
@@ -27,30 +30,30 @@ public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {
     }
 
     @ManagedAnnotation("name")
-    public String getName(){
+    public String getName() {
         return managedObject.getName();
     }
 
     @ManagedAnnotation("available")
-    public int getAvailable(){
+    public int getAvailable() {
         return managedObject.availablePermits();
     }
 
     @ManagedAnnotation(value = "drain", operation = true)
     @ManagedDescription("Acquire and return all permits that are immediately available")
-    public int drain(){
+    public int drain() {
         return managedObject.drainPermits();
     }
 
     @ManagedAnnotation(value = "reduce", operation = true)
     @ManagedDescription("Shrinks the number of available permits by the indicated reduction. Does not block")
-    public void reduce(int reduction){
+    public void reduce(int reduction) {
         managedObject.reducePermits(reduction);
     }
 
     @ManagedAnnotation(value = "release", operation = true)
     @ManagedDescription("Releases the given number of permits, increasing the number of available permits by that amount")
-    public void release(int permits){
+    public void release(int permits) {
         managedObject.release(permits);
     }
 

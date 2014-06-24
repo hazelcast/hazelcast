@@ -16,6 +16,9 @@
 
 package com.hazelcast.management;
 
+/**
+ * Holds monitoring information( CPU percentage etc.) for threads.
+ */
 public class MonitoredThread implements Comparable<MonitoredThread> {
 
     final String name;
@@ -30,11 +33,11 @@ public class MonitoredThread implements Comparable<MonitoredThread> {
 
     @Override
     public String toString() {
-        return "MonitoredThread{" +
-                "name='" + name + '\'' +
-                ", threadId=" + threadId +
-                ", cpuPercentage=" + cpuPercentage +
-                '}';
+        return "MonitoredThread{"
+                + "name='" + name + '\''
+                + ", threadId=" + threadId
+                + ", cpuPercentage=" + cpuPercentage
+                + '}';
     }
 
     public int compareTo(MonitoredThread o) {

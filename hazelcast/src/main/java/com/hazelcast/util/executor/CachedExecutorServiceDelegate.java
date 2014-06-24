@@ -18,6 +18,7 @@ package com.hazelcast.util.executor;
 
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +32,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -43,7 +43,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     private static final AtomicLongFieldUpdater<CachedExecutorServiceDelegate> EXECUTED_COUNT_UPDATER = AtomicLongFieldUpdater
             .newUpdater(CachedExecutorServiceDelegate.class, "executedCount");
 
-    private volatile long executedCount = 0L;
+    private volatile long executedCount;
     private final String name;
     private final int maxPoolSize;
     private final ExecutorService cachedExecutor;
@@ -140,6 +140,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                     }
                 }
             } catch (InterruptedException ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
     }
@@ -211,6 +212,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                 }
                 while (r != null);
             } catch (InterruptedException ignored) {
+                EmptyStatement.ignore(ignored);
             } finally {
                 exit();
             }

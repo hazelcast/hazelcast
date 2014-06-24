@@ -23,8 +23,14 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class SemaphoreConfig {
 
-    public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
-    public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
+    /**
+     * Default synchronous backup count
+     */
+    public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    /**
+     * Default asynchronous backup count
+     */
+    public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name;
     private int initialPermits;
@@ -41,11 +47,11 @@ public class SemaphoreConfig {
     /**
      * Creates a SemaphoreConfig by cloning another one.
      *
-     * @param config  the SemaphoreConfig to copy
+     * @param config the SemaphoreConfig to copy
      * @throws IllegalArgumentException if config is null.
      */
     public SemaphoreConfig(SemaphoreConfig config) {
-        isNotNull(config,"config");
+        isNotNull(config, "config");
         this.name = config.getName();
         this.initialPermits = config.getInitialPermits();
         this.backupCount = config.getBackupCount();
@@ -76,7 +82,7 @@ public class SemaphoreConfig {
      * @throws IllegalArgumentException if name is null or empty.
      */
     public SemaphoreConfig setName(String name) {
-        this.name = hasText(name,"name");
+        this.name = hasText(name, "name");
         return this;
     }
 
@@ -121,7 +127,7 @@ public class SemaphoreConfig {
      * @see #getBackupCount()
      */
     public SemaphoreConfig setBackupCount(int backupCount) {
-        if(backupCount<0){
+        if (backupCount < 0) {
             throw new IllegalArgumentException("backupCount can't be smaller than 0");
         }
         this.backupCount = backupCount;
@@ -148,7 +154,7 @@ public class SemaphoreConfig {
      * @see #getAsyncBackupCount()
      */
     public SemaphoreConfig setAsyncBackupCount(int asyncBackupCount) {
-        if(backupCount<0){
+        if (backupCount < 0) {
             throw new IllegalArgumentException("asyncBackupCount can't be smaller than 0");
         }
         this.asyncBackupCount = asyncBackupCount;
@@ -160,7 +166,7 @@ public class SemaphoreConfig {
      *
      * @return total number of backups.
      */
-    public int getTotalBackupCount(){
+    public int getTotalBackupCount() {
         return asyncBackupCount + backupCount;
     }
 

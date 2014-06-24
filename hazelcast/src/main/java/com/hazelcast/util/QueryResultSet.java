@@ -34,6 +34,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.newSetFromMap;
 
+/**
+ * Collection(Set) class for result of query operations
+ */
 public class QueryResultSet extends AbstractSet implements IdentifiedDataSerializable {
 
     private final SerializationService serializationService;
@@ -67,6 +70,9 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         return new QueryResultIterator(iterationType);
     }
 
+    /**
+     * Iterator for this set.
+     */
     private final class QueryResultIterator implements Iterator {
 
         final Iterator<QueryResultEntry> iter = entries.iterator();

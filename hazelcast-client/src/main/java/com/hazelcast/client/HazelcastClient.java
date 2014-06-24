@@ -16,9 +16,11 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.proxy.ClientClusterProxy;
@@ -28,10 +30,12 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ProxyManager;
+import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.txn.ClientTransactionManager;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
@@ -71,6 +75,8 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -90,6 +96,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -98,6 +105,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -113,7 +121,10 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
-    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS
+            = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
+    private final ClientProperties clientProperties;
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
     private final ClientConfig config;
@@ -129,7 +140,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
-    public final ClientProperties clientProperties;
+
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
@@ -138,6 +149,25 @@ public final class HazelcastClient implements HazelcastInstance {
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
+        serializationService = initSerializationService(config);
+        proxyManager = new ProxyManager(this);
+        executionService = new ClientExecutionServiceImpl(instanceName, threadGroup,
+                Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
+        transactionManager = new ClientTransactionManager(this);
+        LoadBalancer lb = config.getLoadBalancer();
+        if (lb == null) {
+            lb = new RoundRobinLB();
+        }
+        loadBalancer = lb;
+        connectionManager = createClientConnectionManager();
+        clusterService = new ClientClusterServiceImpl(this);
+        invocationService = new ClientInvocationServiceImpl(this);
+        userContext = new ConcurrentHashMap<String, Object>();
+        proxyManager.init(config);
+        partitionService = new ClientPartitionServiceImpl(this);
+    }
+
+    private SerializationServiceImpl initSerializationService(ClientConfig config) {
         SerializationService ss;
         try {
             String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
@@ -156,22 +186,7 @@ public final class HazelcastClient implements HazelcastInstance {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        serializationService = (SerializationServiceImpl) ss;
-        proxyManager = new ProxyManager(this);
-        executionService = new ClientExecutionServiceImpl(instanceName, threadGroup,
-                Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
-        transactionManager = new ClientTransactionManager(this);
-        LoadBalancer lb = config.getLoadBalancer();
-        if (lb == null) {
-            lb = new RoundRobinLB();
-        }
-        loadBalancer = lb;
-        connectionManager = new ClientConnectionManagerImpl(this, loadBalancer);
-        clusterService = new ClientClusterServiceImpl(this);
-        invocationService = new ClientInvocationServiceImpl(this);
-        userContext = new ConcurrentHashMap<String, Object>();
-        proxyManager.init(config);
-        partitionService = new ClientPartitionServiceImpl(this);
+        return (SerializationServiceImpl) ss;
     }
 
     public static HazelcastInstance newHazelcastClient() {
@@ -207,6 +222,7 @@ public final class HazelcastClient implements HazelcastInstance {
             try {
                 proxy.client.getLifecycleService().shutdown();
             } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
             }
             proxy.client = null;
         }
@@ -228,8 +244,28 @@ public final class HazelcastClient implements HazelcastInstance {
         partitionService.start();
     }
 
+    ClientConnectionManagerImpl createClientConnectionManager() {
+        final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
+        AddressTranslator addressTranslator;
+        if (awsConfig != null && awsConfig.isEnabled()) {
+            try {
+                addressTranslator = new AwsAddressTranslator(awsConfig);
+            } catch (NoClassDefFoundError e) {
+                LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                throw e;
+            }
+        } else {
+            addressTranslator = new DefaultAddressTranslator();
+        }
+        return new ClientConnectionManagerImpl(this, loadBalancer, addressTranslator);
+    }
+
     public Config getConfig() {
         throw new UnsupportedOperationException("Client cannot access cluster config!");
+    }
+
+    public ClientProperties getClientProperties() {
+        return clientProperties;
     }
 
     @Override

@@ -148,10 +148,6 @@ final class TestNodeRegistry {
             public void addConnectionListener(ConnectionListener connectionListener) {
             }
 
-            public Map<Address, Connection> getReadonlyConnectionMap() {
-                return null;
-            }
-
             public void destroyConnection(Connection conn) {
             }
 
@@ -174,11 +170,6 @@ final class TestNodeRegistry {
 
             public int getAllTextConnections() {
                 return 0;
-            }
-
-            @Override
-            public boolean isSSLEnabled() {
-                return false;
             }
 
             private class MockConnection implements Connection {

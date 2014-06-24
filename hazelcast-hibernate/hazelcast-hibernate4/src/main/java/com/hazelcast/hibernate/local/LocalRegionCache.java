@@ -23,19 +23,43 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
 import org.hibernate.cache.spi.CacheDataDescription;
 import org.hibernate.cache.spi.access.SoftLock;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @author mdogan 11/9/12
+ * Local only {@link com.hazelcast.hibernate.RegionCache} implementation
+ * based on a topic to distribute cache updates.
  */
 public class LocalRegionCache implements RegionCache {
+
+    private static final long SEC_TO_MS = 1000L;
+    private static final int MAX_SIZE = 100000;
+    private static final float BASE_EVICTION_RATE = 0.2F;
+
+    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
+        @Override
+        public String toString() {
+            return "Lock::Success";
+        }
+    };
+
+    private static final SoftLock LOCK_FAILURE = new SoftLock() {
+        @Override
+        public String toString() {
+            return "Lock::Failure";
+        }
+    };
 
     protected final ITopic<Object> topic;
     protected final MessageListener<Object> messageListener;
@@ -47,7 +71,8 @@ public class LocalRegionCache implements RegionCache {
                             final CacheDataDescription metadata) {
         try {
             config = hazelcastInstance != null ? hazelcastInstance.getConfig().findMapConfig(name) : null;
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException e) {
+            Logger.getLogger(LocalRegionCache.class).finest(e);
         }
         versionComparator = metadata != null && metadata.isVersioned() ? metadata.getVersionComparator() : null;
         cache = new ConcurrentHashMap<Object, Value>();
@@ -73,7 +98,7 @@ public class LocalRegionCache implements RegionCache {
     }
 
     public boolean update(final Object key, final Object value, final Object currentVersion,
-                       final Object previousVersion, final SoftLock lock) {
+                          final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
             return false;
         }
@@ -81,7 +106,7 @@ public class LocalRegionCache implements RegionCache {
         final Value currentValue = cache.get(key);
         if (lock == LOCK_SUCCESS) {
             if (currentValue != null && currentVersion != null
-                && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
+                    && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
                 return false;
             }
         }
@@ -183,48 +208,64 @@ public class LocalRegionCache implements RegionCache {
         final long timeToLive;
         if (config != null) {
             maxSize = config.getMaxSizeConfig().getSize();
-            timeToLive = config.getTimeToLiveSeconds() * 1000L;
+            timeToLive = config.getTimeToLiveSeconds() * SEC_TO_MS;
         } else {
-            maxSize = 100000;
+            maxSize = MAX_SIZE;
             timeToLive = CacheEnvironment.getDefaultCacheTimeoutInMillis();
         }
 
         if ((maxSize > 0 && maxSize != Integer.MAX_VALUE) || timeToLive > 0) {
-            final Iterator<Entry<Object, Value>> iter = cache.entrySet().iterator();
-            SortedSet<EvictionEntry> entries = null;
-            final long now = Clock.currentTimeMillis();
-            while (iter.hasNext()) {
-                final Entry<Object, Value> e = iter.next();
-                final Object k = e.getKey();
-                final Value v = e.getValue();
-                if (v.getLock() == LOCK_SUCCESS) {
-                    continue;
-                }
-                if (v.getCreationTime() + timeToLive < now) {
-                    iter.remove();
-                } else if (maxSize > 0 && maxSize != Integer.MAX_VALUE) {
-                    if (entries == null) {
-                        entries = new TreeSet<EvictionEntry>();
-                    }
-                    entries.add(new EvictionEntry(k, v));
-                }
-            }
+            SortedSet<EvictionEntry> entries = searchEvictableEntries(maxSize, timeToLive);
             final int diff = cache.size() - maxSize;
-            final int k = diff >= 0 ? (diff + maxSize * 20 / 100) : 0;
+            final int k = calculateEvictionRate(diff, maxSize);
             if (k > 0 && entries != null) {
-                int i = 0;
-                for (EvictionEntry entry : entries) {
-                    if (cache.remove(entry.key, entry.value)) {
-                        if (++i == k) {
-                            break;
-                        }
-                    }
+                evictEntries(entries, k);
+            }
+        }
+    }
+
+    private SortedSet<EvictionEntry> searchEvictableEntries(int maxSize, long timeToLive) {
+        final Iterator<Entry<Object, Value>> iter = cache.entrySet().iterator();
+        SortedSet<EvictionEntry> entries = null;
+        final long now = Clock.currentTimeMillis();
+        while (iter.hasNext()) {
+            final Entry<Object, Value> e = iter.next();
+            final Object k = e.getKey();
+            final Value v = e.getValue();
+            if (v.getLock() == LOCK_SUCCESS) {
+                continue;
+            }
+            if (v.getCreationTime() + timeToLive < now) {
+                iter.remove();
+            } else if (maxSize > 0 && maxSize != Integer.MAX_VALUE) {
+                if (entries == null) {
+                    entries = new TreeSet<EvictionEntry>();
+                }
+                entries.add(new EvictionEntry(k, v));
+            }
+        }
+        return entries;
+    }
+
+    private int calculateEvictionRate(int diff, int maxSize) {
+        return diff >= 0 ? (diff + (int) (maxSize * BASE_EVICTION_RATE)) : 0;
+    }
+
+    private void evictEntries(SortedSet<EvictionEntry> entries, int k) {
+        int i = 0;
+        for (EvictionEntry entry : entries) {
+            if (cache.remove(entry.key, entry.value)) {
+                if (++i == k) {
+                    break;
                 }
             }
         }
     }
 
-    static private class EvictionEntry implements Comparable<EvictionEntry> {
+    /**
+     * Inner class that instances represent an entry marked for eviction
+     */
+    private static final class EvictionEntry implements Comparable<EvictionEntry> {
         final Object key;
         final Value value;
 
@@ -241,13 +282,21 @@ public class LocalRegionCache implements RegionCache {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             EvictionEntry that = (EvictionEntry) o;
 
-            if (key != null ? !key.equals(that.key) : that.key != null) return false;
-            if (value != null ? !value.equals(that.value) : that.value != null) return false;
+            if (key != null ? !key.equals(that.key) : that.key != null) {
+                return false;
+            }
+            if (value != null ? !value.equals(that.value) : that.value != null) {
+                return false;
+            }
 
             return true;
         }
@@ -258,18 +307,5 @@ public class LocalRegionCache implements RegionCache {
         }
     }
 
-    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
-        @Override
-        public String toString() {
-            return "Lock::Success";
-        }
-    };
-
-    private static final SoftLock LOCK_FAILURE = new SoftLock() {
-        @Override
-        public String toString() {
-            return "Lock::Failure";
-        }
-    };
 
 }

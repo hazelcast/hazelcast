@@ -18,12 +18,15 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.IAtomicReference;
 
+/**
+ * Management bean for {@link com.hazelcast.core.IAtomicReference}
+ */
 @ManagedDescription("IAtomicReference")
 public class AtomicReferenceMBean extends HazelcastMBean<IAtomicReference> {
 
     public AtomicReferenceMBean(IAtomicReference managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = service.createObjectName("IAtomicReference",managedObject.getName());
+        objectName = service.createObjectName("IAtomicReference", managedObject.getName());
     }
 
     @ManagedAnnotation("name")

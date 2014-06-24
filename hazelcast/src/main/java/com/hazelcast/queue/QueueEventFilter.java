@@ -23,6 +23,10 @@ import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
+/**
+ * Provides the filtering functionality for Queue events.
+ */
+
 public class QueueEventFilter implements EventFilter, IdentifiedDataSerializable {
 
     private boolean includeValue;
@@ -61,5 +65,28 @@ public class QueueEventFilter implements EventFilter, IdentifiedDataSerializable
     @Override
     public int getId() {
         return QueueDataSerializerHook.QUEUE_EVENT_FILTER;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        QueueEventFilter that = (QueueEventFilter) o;
+
+        if (includeValue != that.includeValue) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return (includeValue ? 1 : 0);
     }
 }

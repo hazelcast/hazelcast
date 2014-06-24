@@ -59,6 +59,8 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
 @PrivateApi
 final class ServiceManager {
 
@@ -163,6 +165,7 @@ final class ServiceManager {
                 Constructor constructor = serviceClass.getConstructor(NodeEngine.class);
                 return constructor.newInstance(nodeEngine);
             } catch (NoSuchMethodException ignored) {
+                ignore(ignored);
             }
             return ClassLoaderUtil.newInstance(serviceClass, classLoader, className);
         } catch (Exception e) {

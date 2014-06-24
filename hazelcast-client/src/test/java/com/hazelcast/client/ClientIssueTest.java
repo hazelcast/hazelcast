@@ -43,7 +43,6 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ProblematicTest;
@@ -508,23 +507,10 @@ public class ClientIssueTest extends HazelcastTestSupport {
         };
         thread.start();
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                try {
-                    assertTrue(latch.await(10, TimeUnit.SECONDS));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
+        assertOpenEventually(latch, 10);
         thread.interrupt();
-
         assertTrue(m.removeEntryListener(id));
-
         assertFalse(m.removeEntryListener("foo"));
-
-
     }
 
     static class SamplePortable implements Portable {

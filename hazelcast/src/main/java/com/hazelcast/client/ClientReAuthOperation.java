@@ -38,7 +38,8 @@ public class ClientReAuthOperation extends AbstractOperation implements UrgentSy
     public void run() throws Exception {
         ClientEngineImpl service = getService();
         String memberUuid = getCallerUuid();
-        Set<ClientEndpoint> endpoints = service.getEndpoints(clientUuid);
+        ClientEngineImpl engine = getService();
+        Set<ClientEndpoint> endpoints = engine.getEndpointManager().getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
             ClientPrincipal principal = new ClientPrincipal(clientUuid, memberUuid);
             endpoint.authenticated(principal);

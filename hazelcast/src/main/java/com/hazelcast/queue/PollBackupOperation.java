@@ -23,6 +23,9 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
+/**
+ * Backup items during pool operation.
+ */
 public final class PollBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
 
     private long itemId;

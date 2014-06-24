@@ -45,7 +45,7 @@ public class AwaitRequest extends KeyBasedClientRequest implements Portable, Sec
 
     @Override
     protected Operation prepareOperation() {
-        final Data key = getClientEngine().toData(name);
+        final Data key = serializationService.toData(name);
         return new AwaitOperation(namespace, key, threadId, timeout, conditionId);
     }
 

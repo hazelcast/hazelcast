@@ -153,6 +153,7 @@ public class TestFullApplicationContext {
         assertEquals("com.hazelcast.spring.DummyStore", testMapStoreConfig.getClassName());
         assertTrue(testMapStoreConfig.isEnabled());
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
+        assertEquals(10, testMapStoreConfig.getWriteBatchSize());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER,testMapStoreConfig.getInitialLoadMode());
         // Test that the testMapConfig has a nearCacheConfig and it is correct
         NearCacheConfig testNearCacheConfig = testMapConfig.getNearCacheConfig();

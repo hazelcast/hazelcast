@@ -31,6 +31,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * This class triggers iterator and if find same item in the Queue, remove this item.
+ */
+
 public class CompareAndRemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Collection<Data> dataList;

@@ -30,14 +30,15 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractLockRequest extends KeyBasedClientRequest
         implements Portable, SecureRequest {
 
     protected Data key;
-    private long threadId;
-    private long ttl = -1;
-    private long timeout = -1;
+    protected long threadId;
+    protected long ttl = -1;
+    protected long timeout = -1;
 
     public AbstractLockRequest() {
     }
@@ -55,7 +56,7 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
     }
 
     protected String getName() {
-        return (String) getClientEngine().toObject(key);
+        return serializationService.toObject(key);
     }
 
     @Override
@@ -94,5 +95,15 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if ((ttl == -1 && timeout == -1) || timeout == 0) {
+            return new Object[]{key};
+        } else if (timeout == -1) {
+            return new Object[]{key, ttl, TimeUnit.MILLISECONDS};
+        }
+        return new Object[]{key, timeout, TimeUnit.MILLISECONDS};
     }
 }

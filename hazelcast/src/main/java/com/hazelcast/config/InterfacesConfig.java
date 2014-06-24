@@ -16,19 +16,16 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.util.ByteUtil;
-
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
+/**
+ * Contains the configuration for an Interfaces.
+ */
 public class InterfacesConfig {
 
-    private boolean enabled = false;
+    private boolean enabled;
 
     private final Set<String> interfaceSet = new HashSet<String>();
 

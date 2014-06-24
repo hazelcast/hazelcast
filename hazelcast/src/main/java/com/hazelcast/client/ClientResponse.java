@@ -33,15 +33,10 @@ public class ClientResponse implements IdentifiedDataSerializable {
     public ClientResponse() {
     }
 
-    public ClientResponse(Data response, boolean isError, int callId) {
+    public ClientResponse(Data response, int callId, boolean isError, boolean isEvent) {
         this.response = response;
+        this.callId = callId;
         this.isError = isError;
-        this.callId = callId;
-    }
-
-    public ClientResponse(Data response, int callId, boolean isEvent) {
-        this.response = response;
-        this.callId = callId;
         this.isEvent = isEvent;
     }
 

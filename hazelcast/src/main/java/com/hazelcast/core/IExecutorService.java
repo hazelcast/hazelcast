@@ -41,6 +41,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      *
      * @param command task
      * @param memberSelector memberSelector
+     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
      */
     void execute(Runnable command, MemberSelector memberSelector);
 
@@ -73,6 +74,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      *
      * @param command task
      * @param memberSelector memberSelector
+     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
      */
     void executeOnMembers(Runnable command, MemberSelector memberSelector);
 
@@ -90,6 +92,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param task task
      * @param memberSelector memberSelector
      * @return a Future representing pending completion of the task
+     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
      */
     <T> Future<T> submit(Callable<T> task, MemberSelector memberSelector);
 
@@ -130,6 +133,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param task task
      * @param memberSelector memberSelector
      * @return map of Member-Future pairs representing pending completion of the task on each member
+     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
      */
     <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, MemberSelector memberSelector);
 
@@ -158,6 +162,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param task task
      * @param memberSelector memberSelector
      * @param callback callback
+     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
      */
     void submit(Runnable task, MemberSelector memberSelector, ExecutionCallback callback);
 
@@ -198,6 +203,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param task task
      * @param memberSelector memberSelector
      * @param callback callback
+     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
      */
     void submitToMembers(Runnable task, MemberSelector memberSelector, MultiExecutionCallback callback);
 
@@ -227,6 +233,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param task task
      * @param memberSelector memberSelector
      * @param callback callback
+     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
      */
     <T> void submit(Callable<T> task, MemberSelector memberSelector, ExecutionCallback<T> callback);
 
@@ -267,6 +274,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param task task
      * @param memberSelector memberSelector
      * @param callback callback
+     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
      */
     <T> void submitToMembers(Callable<T> task, MemberSelector memberSelector, MultiExecutionCallback callback);
 

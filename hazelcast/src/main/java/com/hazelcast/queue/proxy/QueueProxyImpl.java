@@ -30,6 +30,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Proxy implementation for the Queue.
+ * @param <E>
+ */
 public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, InitializingObject {
 
     public QueueProxyImpl(String name, QueueService queueService, NodeEngine nodeEngine) {
@@ -182,16 +186,17 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     @Override
     public <T> T[] toArray(T[] ts) {
+        T[] tsParam = ts;
         final NodeEngine nodeEngine = getNodeEngine();
         List<Data> list = listInternal();
         int size = list.size();
-        if (ts.length < size) {
-            ts = (T[]) java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
+        if (tsParam.length < size) {
+            tsParam = (T[]) java.lang.reflect.Array.newInstance(tsParam.getClass().getComponentType(), size);
         }
         for (int i = 0; i < size; i++) {
-            ts[i] = nodeEngine.toObject(list.get(i));
+            tsParam[i] = nodeEngine.toObject(list.get(i));
         }
-        return ts;
+        return tsParam;
     }
 
     @Override

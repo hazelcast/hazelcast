@@ -26,6 +26,9 @@ import javax.transaction.xa.XAException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+/**
+ * Implementation class of {@link com.hazelcast.jca.HazelcastTransaction}
+ */
 public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransaction {
     /** List of former transaction used during transaction restore */
     //private static final ConcurrentMap<CallContext,CallContext> predecessors=new ConcurrentHashMap<CallContext,CallContext>();

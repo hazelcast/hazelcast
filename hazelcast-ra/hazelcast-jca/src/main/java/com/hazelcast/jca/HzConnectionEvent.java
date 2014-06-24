@@ -21,5 +21,5 @@ package com.hazelcast.jca;
  * Used for logging/debugging purposes only at the moment.
  */
 enum HzConnectionEvent {
-	FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP, DESTROY,
+    FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP, DESTROY,
 }

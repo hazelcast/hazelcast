@@ -18,7 +18,9 @@ package com.hazelcast.config;
 
 import java.util.Collections;
 import java.util.Map;
-
+/**
+ * Contains configuration for attribute of member (Read-Only).
+ */
 public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
 
     MemberAttributeConfigReadOnly(MemberAttributeConfig source) {

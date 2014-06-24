@@ -16,17 +16,19 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
+import static com.hazelcast.util.JsonUtil.getString;
+
+/**
+ * Request for fetching map entries.
+ */
 public class GetMapEntryRequest implements ConsoleRequest {
 
     private String mapName;
@@ -48,21 +50,20 @@ public class GetMapEntryRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(ObjectDataInput in) throws IOException {
+    public Object readResponse(JsonObject in) {
         Map<String, String> properties = new LinkedHashMap<String, String>();
-        int size = in.readInt();
-        String[] temp;
-        for (int i = 0; i < size; i++) {
-            temp = in.readUTF().split(":#");
-            properties.put(temp[0], temp.length == 1 ? "" : temp[1]);
+        final Iterator<JsonObject.Member> iterator = in.iterator();
+        while (iterator.hasNext()) {
+            final JsonObject.Member property = iterator.next();
+            properties.put(property.getName(), property.getValue().asString());
         }
         return properties;
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         IMap map = mcs.getHazelcastInstance().getMap(mapName);
-
+        JsonObject result = new JsonObject();
         EntryView entry = null;
         if (type.equals("string")) {
             entry = map.getEntryView(key);
@@ -71,42 +72,34 @@ public class GetMapEntryRequest implements ConsoleRequest {
         } else if (type.equals("integer")) {
             entry = map.getEntryView(Integer.valueOf(key));
         }
-
-        TreeMap<String, String> result = new TreeMap<String, String>();
-
-        if (entry == null) {
-            result.put("No Value Found!", " ");
-        } else {
+        if (entry != null) {
             Object value = entry.getValue();
-            result.put("browse_value", value != null ? value.toString() : "null");
-            result.put("browse_class", value != null ? value.getClass().getName() : "null");
-            result.put("memory_cost", Long.toString(entry.getCost()));
-            result.put("date_creation_time", Long.toString(entry.getCreationTime()));
-            result.put("date_expiration_time", Long.toString(entry.getExpirationTime()));
-            result.put("browse_hits", Long.toString(entry.getHits()));
-            result.put("date_access_time", Long.toString(entry.getLastAccessTime()));
-            result.put("date_update_time", Long.toString(entry.getLastUpdateTime()));
-            result.put("browse_version", Long.toString(entry.getVersion()));
+            result.add("browse_value", value != null ? value.toString() : "null");
+            result.add("browse_class", value != null ? value.getClass().getName() : "null");
+            result.add("memory_cost", Long.toString(entry.getCost()));
+            result.add("date_creation_time", Long.toString(entry.getCreationTime()));
+            result.add("date_expiration_time", Long.toString(entry.getExpirationTime()));
+            result.add("browse_hits", Long.toString(entry.getHits()));
+            result.add("date_access_time", Long.toString(entry.getLastAccessTime()));
+            result.add("date_update_time", Long.toString(entry.getLastUpdateTime()));
+            result.add("browse_version", Long.toString(entry.getVersion()));
         }
-
-        dos.writeInt(result.size());
-
-        for (Map.Entry<String,String> propertyEntry : result.entrySet()) {
-            dos.writeUTF(propertyEntry.getKey() + ":#" + propertyEntry.getValue());
-        }
+        root.add("result", result);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(type);
-        out.writeUTF(mapName);
-        out.writeUTF(key);
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("mapName", mapName);
+        root.add("type", type);
+        root.add("key", key);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        type = in.readUTF();
-        mapName = in.readUTF();
-        key = in.readUTF();
+    public void fromJson(JsonObject json) {
+        mapName = getString(json, "mapName");
+        type = getString(json, "type");
+        key = getString(json, "key");
     }
 }

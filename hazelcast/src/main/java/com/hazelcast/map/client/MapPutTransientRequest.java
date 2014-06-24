@@ -21,6 +21,8 @@ import com.hazelcast.map.operation.PutTransientOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
+import java.util.concurrent.TimeUnit;
+
 public class MapPutTransientRequest extends MapPutRequest {
 
     public MapPutTransientRequest() {
@@ -44,5 +46,13 @@ public class MapPutTransientRequest extends MapPutRequest {
         return op;
     }
 
+    @Override
+    public String getMethodName() {
+        return "putTransient";
+    }
 
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, value, ttl, TimeUnit.MILLISECONDS};
+    }
 }

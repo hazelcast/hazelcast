@@ -50,12 +50,9 @@ public class ClientNetworkConfig {
     private boolean redoOperation;
 
     /**
-     * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
-     * passing between client and member within the {@link ClientNetworkConfig#connectionTimeout} milliseconds the connection
-     * will be closed.
+     * Timeout value for nodes to accept client connection requests.
      */
-    private int connectionTimeout = 60000;
-    //TODO heartbeat
+    private int connectionTimeout = 5000;
 
     /**
      * While client is trying to connect initially to one of the members in the {@link ClientNetworkConfig#addressList},
@@ -86,6 +83,10 @@ public class ClientNetworkConfig {
      */
     private SSLConfig sslConfig;
 
+    /**
+     * Configuration to connect nodes in aws environment
+     */
+    private ClientAwsConfig clientAwsConfig;
 
 
     public boolean isSmartRouting() {
@@ -191,5 +192,27 @@ public class ClientNetworkConfig {
     public ClientNetworkConfig setSSLConfig(SSLConfig sslConfig) {
         this.sslConfig = sslConfig;
         return this;
+    }
+
+    /**
+     * Sets configuration to connect nodes in aws environment.
+     * null value indicates that no AwsConfig should be used.
+     *
+     * @param clientAwsConfig the ClientAwsConfig
+     * @see #getAwsConfig()
+     */
+    public ClientNetworkConfig setAwsConfig(ClientAwsConfig clientAwsConfig) {
+        this.clientAwsConfig = clientAwsConfig;
+        return this;
+    }
+
+    /**
+     * Returns the current {@link ClientAwsConfig}. It is possible that null is returned if no SSLConfig has been
+     *
+     * @return ClientAwsConfig
+     * @see #setAwsConfig(ClientAwsConfig)
+     */
+    public ClientAwsConfig getAwsConfig() {
+        return clientAwsConfig;
     }
 }

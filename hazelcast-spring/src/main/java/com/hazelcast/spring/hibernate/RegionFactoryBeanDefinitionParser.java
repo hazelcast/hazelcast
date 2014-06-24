@@ -26,6 +26,19 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+/**
+ * Parser for RegionFactory.
+ * <p/>
+ *
+ * Sample Spring XML for Hibernate RegionFactory
+ * <pre>
+ * <code>
+ *     &lt;hz:hibernate-region-factory id="regionFactory" instance-ref="instance"/&gt;
+ *     &lt;hz:hibernate-region-factory id="localRegionFactory" instance-ref="instance" mode="LOCAL" /&gt;
+ * </code>
+ * </pre>
+ *
+ */
 public class RegionFactoryBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {

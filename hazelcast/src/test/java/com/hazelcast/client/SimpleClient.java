@@ -16,8 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.serialization.SerializationService;
-
 import java.io.IOException;
 
 /**
@@ -33,5 +31,4 @@ public interface SimpleClient {
 
     void close() throws IOException;
 
-    SerializationService getSerializationService();
 }

@@ -30,10 +30,6 @@ public class MapReplaceRequest extends MapPutRequest {
         super(name, key, value, threadId);
     }
 
-    public MapReplaceRequest(String name, Data key, Data value, long threadId, long ttl) {
-        super(name, key, value, threadId, ttl);
-    }
-
     public int getClassId() {
         return MapPortableHook.REPLACE;
     }
@@ -42,5 +38,14 @@ public class MapReplaceRequest extends MapPutRequest {
         ReplaceOperation op = new ReplaceOperation(name, key, value);
         op.setThreadId(threadId);
         return op;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "replace";
+    }
+
+    public Object[] getParameters() {
+        return new Object[]{key, value};
     }
 }

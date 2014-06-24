@@ -16,27 +16,10 @@
 
 package com.hazelcast.nio;
 
-import java.util.Map;
-
+/**
+ * Responsible for managing {@link com.hazelcast.nio.Connection} objects.
+ */
 public interface ConnectionManager {
-
-    Connection getConnection(Address address);
-
-    Connection getOrConnect(Address address);
-
-    Connection getOrConnect(Address address, boolean silent);
-
-    void shutdown();
-
-    void start();
-
-    void addConnectionListener(ConnectionListener connectionListener);
-
-    Map<Address, Connection> getReadonlyConnectionMap();
-
-    void destroyConnection(Connection conn);
-
-    void restart();
 
     int getCurrentClientConnections();
 
@@ -46,5 +29,20 @@ public interface ConnectionManager {
 
     int getActiveConnectionCount();
 
-    boolean isSSLEnabled();
+    Connection getConnection(Address address);
+
+    Connection getOrConnect(Address address);
+
+    Connection getOrConnect(Address address, boolean silent);
+
+    void destroyConnection(Connection conn);
+
+    void shutdown();
+
+    void start();
+
+    void restart();
+
+    void addConnectionListener(ConnectionListener connectionListener);
+
 }

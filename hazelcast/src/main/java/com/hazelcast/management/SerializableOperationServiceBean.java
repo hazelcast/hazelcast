@@ -1,15 +1,15 @@
 package com.hazelcast.management;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.spi.OperationService;
-import java.io.IOException;
+
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getLong;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.OperationServiceMBean}.
  */
-public class SerializableOperationServiceBean implements DataSerializable {
+public class SerializableOperationServiceBean implements JsonSerializable {
 
 
     private int responseQueueSize;
@@ -80,22 +80,24 @@ public class SerializableOperationServiceBean implements DataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(responseQueueSize);
-        out.writeInt(operationExecutorQueueSize);
-        out.writeInt(runningOperationsCount);
-        out.writeInt(remoteOperationCount);
-        out.writeLong(executedOperationCount);
-        out.writeLong(operationThreadCount);
+    public JsonObject toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("responseQueueSize", responseQueueSize);
+        root.add("operationExecutorQueueSize", operationExecutorQueueSize);
+        root.add("runningOperationsCount", runningOperationsCount);
+        root.add("remoteOperationCount", remoteOperationCount);
+        root.add("executedOperationCount", executedOperationCount);
+        root.add("operationThreadCount", operationThreadCount);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        responseQueueSize = in.readInt();
-        operationExecutorQueueSize = in.readInt();
-        runningOperationsCount = in.readInt();
-        remoteOperationCount = in.readInt();
-        executedOperationCount = in.readLong();
-        operationThreadCount = in.readLong();
+    public void fromJson(JsonObject json) {
+        responseQueueSize = getInt(json, "responseQueueSize", -1);
+        operationExecutorQueueSize = getInt(json, "operationExecutorQueueSize", -1);
+        runningOperationsCount = getInt(json, "runningOperationsCount", -1);
+        remoteOperationCount = getInt(json, "remoteOperationCount", -1);
+        executedOperationCount = getLong(json, "executedOperationCount", -1L);
+        operationThreadCount = getLong(json, "operationThreadCount", -1L);
     }
 }

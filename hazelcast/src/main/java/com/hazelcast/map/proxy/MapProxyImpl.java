@@ -16,27 +16,57 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.SimpleEntryView;
+import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.CombinerFactory;
+import com.hazelcast.mapreduce.Job;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.MappingJob;
+import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.ReducingSubmittableJob;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
-/** @author enesakar 1/17/13 */
+/**
+ * Proxy implementation of {@link com.hazelcast.core.IMap} interface.
+ *
+ * @param <K> the key type of map.
+ * @param <V> the value type of map.
+ */
 public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, InitializingObject {
 
     public MapProxyImpl(final String name, final MapService mapService, final NodeEngine nodeEngine) {
@@ -300,7 +330,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Data k = service.toData(key, partitionStrategy);
         Data v = service.toData(value);
         return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit),
-                                       getNodeEngine().getSerializationService());
+                getNodeEngine().getSerializationService());
     }
 
     @Override
@@ -472,7 +502,48 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    public void evictAll() {
+        evictAllInternal();
+    }
+
+    @Override
+    public void loadAll(boolean replaceExistingValues) {
+        final Set keys = getService().getMapContainer(name).getStore().loadAllKeys();
+        loadAll(keys, replaceExistingValues);
+    }
+
+    @Override
+    public void loadAll(Set<K> keys, boolean replaceExistingValues) {
+        if (keys == null) {
+            throw new NullPointerException("Parameter keys should not be null.");
+        }
+        if (keys.isEmpty()) {
+            return;
+        }
+        final Collection<Data> dataKeys = convertKeysToData(keys);
+        loadAllInternal(dataKeys, replaceExistingValues);
+    }
+
+    /**
+     * This method clears the map and deletaAll on MapStore which if connected to a database,
+     * will delete the records from that database.
+     * <p/>
+     * If you wish to clear the map only without calling deleteAll, use
+     *
+     * @see #clearMapOnly
+     */
+    @Override
     public void clear() {
+        clearInternal();
+    }
+
+    /**
+     * This method clears the map.It does not invoke deleteAll on any associated MapStore.
+     *
+     * @see #clear
+     */
+    public void clearMapOnly() {
+        //need a different method here that does not call deleteAll
         clearInternal();
     }
 
@@ -502,7 +573,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
         for (Entry<Data, Data> entry : entries) {
             resultSet.add(new AbstractMap.SimpleImmutableEntry((K) getService().toObject(entry.getKey()),
-                                                               (V) getService().toObject(entry.getValue())));
+                    (V) getService().toObject(entry.getValue())));
         }
         return resultSet;
     }
@@ -565,8 +636,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         MapService service = getService();
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
-        for(K key : keys)
-        {
+        for (K key : keys) {
             dataKeys.add(service.toData(key, partitionStrategy));
         }
         return executeOnKeysInternal(dataKeys, entryProcessor);
@@ -579,8 +649,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         MapService service = getService();
         Data keyData = service.toData(key, partitionStrategy);
-        executeOnKeyInternal(keyData,entryProcessor,callback);
+        executeOnKeyInternal(keyData, entryProcessor, callback);
     }
+
     @Override
     public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
         if (key == null) {
@@ -588,8 +659,47 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         MapService service = getService();
         Data keyData = service.toData(key, partitionStrategy);
-        ICompletableFuture f = executeOnKeyInternal(keyData,entryProcessor,null);
-        return new DelegatingFuture(f,service.getSerializationService());
+        ICompletableFuture f = executeOnKeyInternal(keyData, entryProcessor, null);
+        return new DelegatingFuture(f, service.getSerializationService());
+    }
+
+
+    @Override
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation) {
+
+        HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
+        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
+        return aggregate(supplier, aggregation, jobTracker);
+    }
+
+    @Override
+    public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                                    Aggregation<K, SuppliedValue, Result> aggregation,
+                                                    JobTracker jobTracker) {
+
+        try {
+            ValidationUtil.isNotNull(jobTracker, "jobTracker");
+            KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
+            Job<K, V> job = jobTracker.newJob(keyValueSource);
+            Mapper mapper = aggregation.getMapper(supplier);
+            CombinerFactory combinerFactory = aggregation.getCombinerFactory();
+            ReducerFactory reducerFactory = aggregation.getReducerFactory();
+            Collator collator = aggregation.getCollator();
+
+            MappingJob mappingJob = job.mapper(mapper);
+            ReducingSubmittableJob reducingJob;
+            if (combinerFactory != null) {
+                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
+            } else {
+                reducingJob = mappingJob.reducer(reducerFactory);
+            }
+
+            ICompletableFuture<Result> future = reducingJob.submit(collator);
+            return future.get();
+        } catch (Exception e) {
+            throw new HazelcastException(e);
+        }
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
@@ -601,6 +711,22 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw (Throwable) returnObj;
         }
         return returnObj;
+    }
+
+    private <K> Collection<Data> convertKeysToData(Set<K> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final MapService mapService = getService();
+        final List<Data> dataKeys = new ArrayList<Data>(keys.size());
+        for (K key : keys) {
+            if (key == null) {
+                throw new NullPointerException("Null key is not allowed");
+            }
+            final Data dataKey = mapService.toData(key);
+            dataKeys.add(dataKey);
+        }
+        return dataKeys;
     }
 
     @Override

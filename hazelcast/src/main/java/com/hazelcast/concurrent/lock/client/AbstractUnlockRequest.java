@@ -53,7 +53,7 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
     }
 
     protected String getName() {
-        return (String) getClientEngine().toObject(key);
+        return serializationService.toObject(key);
     }
 
     @Override
@@ -88,5 +88,18 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
+    }
+
+    @Override
+    public String getMethodName() {
+        if (force) {
+            return "forceUnlock";
+        }
+        return "unlock";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
     }
 }

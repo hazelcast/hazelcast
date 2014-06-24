@@ -18,6 +18,7 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.SerializationService;
 
 /**
@@ -47,6 +48,10 @@ public final class ClientContext {
         this.executionService = client.getClientExecutionService();
         this.proxyManager = proxyManager;
         this.clientConfig = client.getClientConfig();
+    }
+
+    public HazelcastInstance getHazelcastInstance() {
+        return proxyManager.getHazelcastInstance();
     }
 
     public SerializationService getSerializationService() {

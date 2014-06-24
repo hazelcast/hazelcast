@@ -18,7 +18,6 @@ package com.hazelcast.queue.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.ItemEvent;
@@ -81,7 +80,6 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
     @Override
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
         final QueueService service = getService();
 
         ItemListener listener = new ItemListener() {
@@ -97,7 +95,7 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
 
             private void send(ItemEvent event) {
                 if (endpoint.live()) {
-                    Data item = clientEngine.toData(event.getItem());
+                    Data item = serializationService.toData(event.getItem());
                     PortableItemEvent portableItemEvent = new PortableItemEvent(
                             item, event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableItemEvent, getCallId());

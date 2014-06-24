@@ -26,6 +26,9 @@ import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
+/**
+ * Reserve poll operation for the transactional queue.
+ */
 public class TxnReservePollOperation extends QueueOperation implements WaitSupport {
 
     private long reservedOfferId;
@@ -54,7 +57,8 @@ public class TxnReservePollOperation extends QueueOperation implements WaitSuppo
 
     @Override
     public boolean shouldWait() {
-        return getWaitTimeout() != 0 && getOrCreateContainer().size() == 0;
+        final QueueContainer container = getOrCreateContainer();
+        return getWaitTimeout() != 0 && (container.size() + container.txMapSize()) == 0;
     }
 
     @Override

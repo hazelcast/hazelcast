@@ -16,8 +16,8 @@
   -->
 
 <hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.3.xsd"
-           xmlns="http://www.hazelcast.com/schema/client-config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                  xmlns="http://www.hazelcast.com/schema/client-config"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <group>
         <name>dev</name>
@@ -25,6 +25,7 @@
     </group>
     <properties>
         <property name="hazelcast.client.connection.timeout">10000</property>
+        <property name="hazelcast.client.retry.count">6</property>
     </properties>
 
     <network>
@@ -35,12 +36,23 @@
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
 
-        <socket-interceptor enabled="false">
+        <socket-interceptor enabled="true">
             <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
             <properties>
                 <property name="foo">bar</property>
             </properties>
         </socket-interceptor>
+
+        <aws enabled="true" connection-timeout-seconds="11">
+            <inside-aws>true</inside-aws>
+            <access-key>TEST_ACCESS_KEY</access-key>
+            <secret-key>TEST_SECRET_KEY</secret-key>
+            <region>us-east-1</region>
+            <host-header>ec2.amazonaws.com</host-header>
+            <security-group-name>hazelcast-sg</security-group-name>
+            <tag-key>type</tag-key>
+            <tag-value>hz-nodes</tag-value>
+        </aws>
 
     </network>
 
@@ -58,38 +70,44 @@
     </listeners>
 
     <serialization>
-        <portable-version>0</portable-version>
+        <portable-version>3</portable-version>
+        <use-native-byte-order>true</use-native-byte-order>
+        <byte-order>BIG_ENDIAN</byte-order>
+        <enable-compression>false</enable-compression>
+        <enable-shared-object>true</enable-shared-object>
+        <allow-unsafe>false</allow-unsafe>
         <data-serializable-factories>
-            <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory</data-serializable-factory>
+            <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
+            </data-serializable-factory>
         </data-serializable-factories>
         <portable-factories>
-            <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
+            <portable-factory factory-id="2">com.hazelcast.examples.PortableFactory</portable-factory>
         </portable-factories>
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
-            <serializer type-class="com.hazelcast.examples.DummyType">com.hazelcast.examples.SerializerFactory</serializer>
+            <serializer type-class="com.hazelcast.examples.DummyType">com.hazelcast.examples.SerializerFactory
+            </serializer>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
 
     <proxy-factories>
-        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ1" service="sampleService1" />
-        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ2" service="sampleService1" />
-        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ3" service="sampleService3" />
+        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ1" service="sampleService1"/>
+        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ2" service="sampleService1"/>
+        <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ3" service="sampleService3"/>
 
     </proxy-factories>
 
-    <load-balancer type="random" ></load-balancer>
+    <load-balancer type="random"/>
 
     <near-cache name="asd">
         <max-size>2000</max-size>
-        <time-to-live-seconds>100</time-to-live-seconds>
+        <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
     </near-cache>
-
 
 
 </hazelcast-client>

@@ -47,7 +47,7 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest
 
     @Override
     protected Operation prepareOperation() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = serializationService.toObject(key);
         return new GetRemainingLeaseTimeOperation(new InternalLockNamespace(name), key);
     }
 
@@ -83,7 +83,7 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest
     }
 
     public Permission getRequiredPermission() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = serializationService.toObject(key);
         return new LockPermission(name, ActionConstants.ACTION_READ);
     }
 }

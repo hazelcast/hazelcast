@@ -62,4 +62,8 @@ public abstract class BaseClientRemoveListenerRequest extends CallableClientRequ
         registrationId = reader.readUTF("r");
     }
 
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{registrationId};
+    }
 }

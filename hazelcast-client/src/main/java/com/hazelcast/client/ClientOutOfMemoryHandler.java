@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
+import com.hazelcast.util.EmptyStatement;
 
 /**
  * To clear resources of the client upon OutOfMemory
@@ -52,6 +53,7 @@ public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
                 try {
                     connectionManager.shutdown();
                 } catch (Throwable ignored) {
+                    EmptyStatement.ignore(ignored);
                 }
             }
         }
@@ -63,6 +65,7 @@ public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
             try {
                 client.doShutdown();
             } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
 
@@ -73,6 +76,7 @@ public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
             try {
                 client.getThreadGroup().interrupt();
             } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
 

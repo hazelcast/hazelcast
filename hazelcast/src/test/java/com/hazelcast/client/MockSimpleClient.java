@@ -43,10 +43,13 @@ public class MockSimpleClient implements SimpleClient {
     private static final AtomicInteger port = new AtomicInteger(9000);
 
     private final ClientEngineImpl clientEngine;
+    private final SerializationService serializationService;
     private final MockConnection connection;
 
-    public MockSimpleClient(ClientEngineImpl clientEngine) throws UnknownHostException {
+    public MockSimpleClient(ClientEngineImpl clientEngine,
+                            SerializationService serializationService) throws UnknownHostException {
         this.clientEngine = clientEngine;
+        this.serializationService = serializationService;
         this.connection = new MockConnection(port.incrementAndGet());
     }
 
@@ -60,31 +63,28 @@ public class MockSimpleClient implements SimpleClient {
     }
 
     public void send(Object o) throws IOException {
-        Data data = getSerializationService().toData(o);
+        Data data = serializationService.toData(o);
         ClientPacket packet = new ClientPacket(data);
         packet.setConn(connection);
         clientEngine.handlePacket(packet);
     }
 
     public Object receive() throws IOException {
-        DataAdapter adapter = null;
+        DataAdapter adapter;
         try {
-            adapter = (DataAdapter)connection.q.take();
+            adapter = (DataAdapter) connection.q.take();
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }
-        ClientResponse clientResponse = getSerializationService().toObject(adapter.getData());
-        return getSerializationService().toObject(clientResponse.getResponse());
+        ClientResponse clientResponse = serializationService.toObject(adapter.getData());
+        return serializationService.toObject(clientResponse.getResponse());
     }
 
     public void close() {
-        ClientEndpoint endpoint = clientEngine.getEndpoint(connection);
-        clientEngine.removeEndpoint(endpoint, true);
+        final ClientEndpointManager endpointManager = clientEngine.getEndpointManager();
+        final ClientEndpoint endpoint = endpointManager.getEndpoint(connection);
+        endpointManager.removeEndpoint(endpoint, true);
         connection.close();
-    }
-
-    public SerializationService getSerializationService() {
-        return clientEngine.getSerializationService();
     }
 
     class MockConnection implements Connection {

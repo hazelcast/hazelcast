@@ -22,10 +22,15 @@ import org.hibernate.cache.CacheException;
 
 import java.util.Properties;
 
+/**
+ * A factory class to build up implementations of {@link com.hazelcast.hibernate.instance.IHazelcastInstanceLoader}
+ * that returns a {@link com.hazelcast.core.HazelcastInstance} depending on configuration either backed by Hazelcast
+ * client or node implementation.
+ */
 public final class HazelcastInstanceFactory {
 
-    private final static String HZ_CLIENT_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastClientLoader";
-    private final static String HZ_INSTANCE_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastInstanceLoader";
+    private static final String HZ_CLIENT_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastClientLoader";
+    private static final String HZ_INSTANCE_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastInstanceLoader";
 
     private HazelcastInstanceFactory() {
     }

@@ -24,7 +24,9 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
+/**
+ * Provides backup functionality for {@link com.hazelcast.queue.AddAllOperation}
+ */
 public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
 
     private Map<Long, Data> dataMap;

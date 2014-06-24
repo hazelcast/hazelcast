@@ -19,6 +19,7 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
@@ -31,6 +32,7 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.LinkedList;
@@ -42,12 +44,17 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_RETRY_COUNT_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_RETRY_WAIT_TIME_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_REQUEST_RETRY_COUNT_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT;
 
 public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
-    static final ILogger logger = Logger.getLogger(ClientCallFuture.class);
+    static final ILogger LOGGER = Logger.getLogger(ClientCallFuture.class);
+
+    private final int heartBeatInterval;
+    private final int retryCount;
+    private final int retryWaitTime;
+
 
     private Object response;
 
@@ -61,10 +68,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private final EventHandler handler;
 
-    public final int heartBeatInterval;
-    public final int retryCount;
-    public final int retryWaitTime;
-
     private AtomicInteger reSendCount = new AtomicInteger();
 
     private volatile ClientConnection connection;
@@ -72,14 +75,15 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
 
     public ClientCallFuture(HazelcastClient client, ClientRequest request, EventHandler handler) {
-        int interval = client.clientProperties.HEARTBEAT_INTERVAL.getInteger();
+        final ClientProperties clientProperties = client.getClientProperties();
+        int interval = clientProperties.heartbeatInterval.getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
 
-        int retry = client.clientProperties.RETRY_COUNT.getInteger();
-        this.retryCount = retry > 0 ? retry : Integer.parseInt(PROP_RETRY_COUNT_DEFAULT);
+        int retry = clientProperties.retryCount.getInteger();
+        this.retryCount = retry > 0 ? retry : Integer.parseInt(PROP_REQUEST_RETRY_COUNT_DEFAULT);
 
-        int waitTime = client.clientProperties.RETRY_WAIT_TIME.getInteger();
-        this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_RETRY_WAIT_TIME_DEFAULT);
+        int waitTime = clientProperties.retryWaitTime.getInteger();
+        this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
 
 
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
@@ -104,8 +108,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     public V get() throws InterruptedException, ExecutionException {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException ignored) {
-            return null;
+        } catch (TimeoutException exception) {
+            throw ExceptionUtil.rethrow(exception);
         }
     }
 
@@ -120,7 +124,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                         long elapsed = Clock.currentTimeMillis() - start;
                         waitMillis -= elapsed;
                         if (!isConnectionHealthy(elapsed)) {
-                            break;
+                            notify(new TargetDisconnectedException());
                         }
                     }
                 }
@@ -158,7 +162,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private void setResponse(Object response) {
         synchronized (this) {
             if (this.response != null && handler == null) {
-                logger.warning("The Future.set() method can only be called once. Request: " + request
+                LOGGER.warning("The Future.set() method can only be called once. Request: " + request
                         + ", current response: " + this.response + ", new response: " + response);
                 return;
             }
@@ -238,6 +242,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         if (handler == null && reSendCount.incrementAndGet() > retryCount) {
             return false;
         }
+        sleep();
         executionService.execute(new ReSendTask());
         return true;
     }
@@ -258,10 +263,17 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         this.connection = connection;
     }
 
+    private void sleep() {
+        try {
+            Thread.sleep(retryWaitTime);
+        } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+    }
+
     class ReSendTask implements Runnable {
         public void run() {
             try {
-                sleep();
                 invocationService.reSend(ClientCallFuture.this);
             } catch (Exception e) {
                 if (handler != null) {
@@ -272,12 +284,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             }
         }
 
-        private void sleep() {
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException ignored) {
-            }
-        }
     }
 
     class ExecutionCallbackNode {

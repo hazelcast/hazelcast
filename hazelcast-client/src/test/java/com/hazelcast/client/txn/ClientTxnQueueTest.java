@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.*;
@@ -85,6 +84,20 @@ public class ClientTxnQueueTest {
         context.commitTransaction();
 
         assertEquals(0, queue.size());
+    }
+
+    @Test
+    public void testTransactionalOfferTake() throws InterruptedException {
+        final String item = "offered";
+        final String queueName = randomString();
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue<String> txnQueue = context.getQueue(queueName);
+        assertTrue(txnQueue.offer(item));
+        assertEquals(1, txnQueue.size());
+        assertEquals(item, txnQueue.take());
+        context.commitTransaction();
     }
 
     @Test
@@ -167,5 +180,19 @@ public class ClientTxnQueueTest {
         assertEquals(2, txnQueue.size());
 
         context.rollbackTransaction();
+    }
+
+
+    @Test
+    public void testTransactionalOfferAndPollWithTimeout() throws InterruptedException {
+        final String item = "offered";
+        final String name = randomString();
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue<String> txnQueue = context.getQueue(name);
+        assertTrue(txnQueue.offer(item));
+        assertEquals(1, txnQueue.size());
+        assertEquals(item, txnQueue.poll(5, TimeUnit.SECONDS));
+        context.commitTransaction();
     }
 }

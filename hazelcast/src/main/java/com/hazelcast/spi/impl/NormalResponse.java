@@ -40,7 +40,6 @@ public class NormalResponse extends Response {
 
     private Object value;
 
-    //todo: no need to have a int, byte will do fine.
     //the number of synchronous backups; 0 if no backups are needed.
     private int backupCount;
 

@@ -127,7 +127,7 @@ public final class ByteUtil {
     }
 
     public static short extractShort(int value, boolean lowerBits) {
-        return (short) ((lowerBits) ? value :(value >> 16));
+        return (short) ((lowerBits) ? value : (value >> 16));
     }
 
     public static long combineToLong(int x, int y) {

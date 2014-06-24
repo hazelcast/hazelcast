@@ -63,4 +63,14 @@ public class MapReplaceIfSameRequest extends MapPutRequest {
         testValue = new Data();
         testValue.readData(in);
     }
+
+    @Override
+    public String getMethodName() {
+        return "replace";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, testValue, value};
+    }
 }

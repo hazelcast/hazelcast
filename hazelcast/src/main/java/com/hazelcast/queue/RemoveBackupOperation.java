@@ -22,6 +22,10 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
+/**
+ * Remove backup of the Queue item.
+ */
+
 public class RemoveBackupOperation extends QueueOperation implements BackupOperation {
 
     private long itemId;

@@ -43,7 +43,7 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     private String name;
-    private IterationType iterationType;
+    protected IterationType iterationType;
 
     public AbstractMapQueryRequest() {
     }

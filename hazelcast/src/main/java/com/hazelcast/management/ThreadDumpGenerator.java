@@ -23,19 +23,25 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
+/**
+ * Generates thread dumps.
+ */
 public final class ThreadDumpGenerator {
 
-    private static final ILogger logger = Logger.getLogger(ThreadDumpGenerator.class);
+    private static final ILogger LOGGER = Logger.getLogger(ThreadDumpGenerator.class);
+
+    private ThreadDumpGenerator() {
+    }
 
     public static String dumpAllThreads() {
-        logger.finest("Generating full thread dump...");
+        LOGGER.finest("Generating full thread dump...");
         StringBuilder s = new StringBuilder();
         s.append("Full thread dump ");
         return dump(getAllThreads(), s);
     }
 
     public static String dumpDeadlocks() {
-        logger.finest("Generating dead-locked threads dump...");
+        LOGGER.finest("Generating dead-locked threads dump...");
         StringBuilder s = new StringBuilder();
         s.append("Deadlocked thread dump ");
         return dump(findDeadlockedThreads(), s);
@@ -44,8 +50,8 @@ public final class ThreadDumpGenerator {
     private static String dump(ThreadInfo[] infos, StringBuilder s) {
         header(s);
         appendThreadInfos(infos, s);
-        if (logger.isFinestEnabled()) {
-            logger.finest("\n" + s.toString());
+        if (LOGGER.isFinestEnabled()) {
+            LOGGER.finest("\n" + s.toString());
         }
         return s.toString();
     }
@@ -92,7 +98,9 @@ public final class ThreadDumpGenerator {
     }
 
     private static void appendThreadInfos(ThreadInfo[] infos, StringBuilder s) {
-        if (infos == null || infos.length == 0) return;
+        if (infos == null || infos.length == 0) {
+            return;
+        }
         for (ThreadInfo info : infos) {
             s.append(info);
         }

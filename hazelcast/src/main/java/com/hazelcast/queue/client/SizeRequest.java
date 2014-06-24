@@ -21,6 +21,9 @@ import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.SizeOperation;
 import com.hazelcast.spi.Operation;
 
+/**
+ * Request for size of the Queue.
+ */
 public class SizeRequest extends QueueRequest implements RetryableRequest {
 
     public SizeRequest() {

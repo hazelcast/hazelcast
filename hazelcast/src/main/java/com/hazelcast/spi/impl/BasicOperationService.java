@@ -94,6 +94,8 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  */
 final class BasicOperationService implements InternalOperationService {
 
+    final ConcurrentMap<Long, BasicInvocation> invocations;
+    final BasicOperationScheduler scheduler;
     private final AtomicLong executedOperationsCount = new AtomicLong();
 
     private final NodeEngineImpl nodeEngine;
@@ -102,11 +104,9 @@ final class BasicOperationService implements InternalOperationService {
     private final AtomicLong callIdGen = new AtomicLong(1);
 
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-    final ConcurrentMap<Long, BasicInvocation> invocations;
 
     private final long defaultCallTimeout;
     private final ExecutionService executionService;
-    final BasicOperationScheduler scheduler;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -196,8 +196,8 @@ final class BasicOperationService implements InternalOperationService {
         if (scheduler.isAllowedToRunInCurrentThread(op)) {
             processOperation(op);
         } else {
-            throw new IllegalThreadStateException("Operation: " + op + " cannot be run in current thread! -> " +
-                    Thread.currentThread());
+            throw new IllegalThreadStateException("Operation: " + op + " cannot be run in current thread! -> "
+                    + Thread.currentThread());
         }
     }
 
@@ -472,8 +472,8 @@ final class BasicOperationService implements InternalOperationService {
             Address target = partition.getReplicaAddress(replicaIndex);
             if (target != null) {
                 if (target.equals(node.getThisAddress())) {
-                    throw new IllegalStateException("Normally shouldn't happen! Owner node and backup node " +
-                            "are the same! " + partition);
+                    throw new IllegalStateException("Normally shouldn't happen! Owner node and backup node "
+                            + "are the same! " + partition);
                 } else {
                     Operation backupOp = backupAwareOp.getBackupOperation();
                     if (backupOp == null) {
@@ -536,13 +536,23 @@ final class BasicOperationService implements InternalOperationService {
                                                    Collection<Integer> partitions) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         for (int partition : partitions) {
-            Address owner = nodeEngine.getPartitionService().getPartitionOwner(partition);
+            Address owner = waitUntilPartitionOwnerSet(partition);
             if (!memberPartitions.containsKey(owner)) {
                 memberPartitions.put(owner, new ArrayList<Integer>());
             }
             memberPartitions.get(owner).add(partition);
         }
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
+    }
+
+    private Address waitUntilPartitionOwnerSet(int partition) throws InterruptedException {
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        Address owner = partitionService.getPartitionOwner(partition);
+        while (owner == null) {
+            Thread.sleep(100);
+            owner = partitionService.getPartitionOwner(partition);
+        }
+        return owner;
     }
 
     private Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
@@ -741,7 +751,7 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Process the operation that has been send locally to this OperationService.
      */
-    private class LocalOperationProcessor implements Runnable {
+    private final class LocalOperationProcessor implements Runnable {
         private final Operation op;
 
         private LocalOperationProcessor(Operation op) {
@@ -754,9 +764,10 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    private static class RemoteCallKey {
+    private static final class RemoteCallKey {
         private final long time = Clock.currentTimeMillis();
-        private final Address callerAddress; // human readable caller
+        // human readable caller
+        private final Address callerAddress;
         private final String callerUuid;
         private final long callId;
 
@@ -786,11 +797,19 @@ final class BasicOperationService implements InternalOperationService {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             RemoteCallKey callKey = (RemoteCallKey) o;
-            if (callId != callKey.callId) return false;
-            if (!callerUuid.equals(callKey.callerUuid)) return false;
+            if (callId != callKey.callId) {
+                return false;
+            }
+            if (!callerUuid.equals(callKey.callerUuid)) {
+                return false;
+            }
             return true;
         }
 

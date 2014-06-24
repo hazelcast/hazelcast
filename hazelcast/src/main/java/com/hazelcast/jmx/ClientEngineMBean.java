@@ -18,11 +18,13 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.HazelcastInstance;
-
 import java.util.Hashtable;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
+/**
+ * Management bean for {@link com.hazelcast.client.ClientEngine}
+ */
 @ManagedDescription("HazelcastInstance.ClientEngine")
 public class ClientEngineMBean extends HazelcastMBean<ClientEngine> {
 
@@ -39,7 +41,7 @@ public class ClientEngineMBean extends HazelcastMBean<ClientEngine> {
 
     @ManagedAnnotation("clientEndpointCount")
     @ManagedDescription("The number of client endpoints")
-     public int getClientEndpointCount() {
+    public int getClientEndpointCount() {
         return managedObject.getClientEndpointCount();
     }
 }

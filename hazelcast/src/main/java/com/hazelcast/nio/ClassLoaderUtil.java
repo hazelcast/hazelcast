@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-
+/**
+ * Utility class to deal with classloaders.
+ */
 public final class ClassLoaderUtil {
 
     public static final String HAZELCAST_BASE_PACKAGE = "com.hazelcast.";
@@ -55,8 +57,7 @@ public final class ClassLoaderUtil {
     private ClassLoaderUtil() {
     }
 
-    public static <T> T newInstance(ClassLoader classLoader, final String className)
-            throws Exception {
+    public static <T> T newInstance(ClassLoader classLoader, final String className) throws Exception {
         classLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
         Constructor<T> constructor = CONSTRUCTOR_CACHE.get(classLoader, className);
         if (constructor != null) {
@@ -66,8 +67,7 @@ public final class ClassLoaderUtil {
         return (T) newInstance(klass, classLoader, className);
     }
 
-    public static <T> T newInstance(Class<T> klass, ClassLoader classLoader, String className)
-            throws Exception {
+    public static <T> T newInstance(Class<T> klass, ClassLoader classLoader, String className) throws Exception {
         final Constructor<T> constructor = klass.getDeclaredConstructor();
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);

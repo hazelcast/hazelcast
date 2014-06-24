@@ -18,7 +18,7 @@ If it is write-behind, when the `map.put(key,value)` call returns, you can be su
 
 -   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0)
 
--   The entry is marked as `dirty` so that after `write-delay-seconds`, it can be persisted.
+-   The entry is marked as dirty so that after `write-delay-seconds`, it can be persisted.
 
 Same behavior goes for the `remove(key)` and `MapStore.delete(key)` methods. If `MapStore` throws an exception, then the exception will be propagated back to the original `put` or `remove` call in the form of `RuntimeException`. When write-through is used, Hazelcast will call `MapStore.store(key,value)` and `MapStore.delete(key)` for each entry update. When write-behind is used, Hazelcast will call`MapStore.store(map)`, and `MapStore.delete(collection)` to do all writes in a single call. Also, note that your MapStore or MapLoader implementation should not use Hazelcast Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your data store. Otherwise, you may get into deadlock situations.
 
@@ -55,22 +55,22 @@ Using this factory, `MapStore`s for each map can be created, when a wildcard con
 
 ```java
 final Config config = new Config();
-        final MapConfig mapConfig = config.getMapConfig("*");
-        final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        mapStoreConfig.setFactoryImplementation(new MapStoreFactory<Object, Object>() {
-            @Override
-            public MapLoader<Object, Object> newMapStore(String mapName, Properties properties) {
-                return null;
-            }
-        };
-        ```   
+final MapConfig mapConfig = config.getMapConfig("*");
+final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+mapStoreConfig.setFactoryImplementation(new MapStoreFactory<Object, Object>() {
+    @Override
+    public MapLoader<Object, Object> newMapStore(String mapName, Properties properties) {
+        return null;
+    }
+};
+```
 
 Moreover, if the configuration implements `MapLoaderLifecycleSupport` interface, then the user will have the control to initialize the `MapLoader` implementation with the given map name, configuration properties and the Hazelcast instance. See the below code portion.
 
 ```java
 
 public interface MapLoaderLifecycleSupport {
-    
+
    /**
      * Initializes this MapLoader implementation. Hazelcast will call
      * this method when the map is first used on the
@@ -97,11 +97,11 @@ public interface MapLoaderLifecycleSupport {
 
 `MapLoader.loadAllKeys` API is used for pre-populating the in-memory map when the map is first touched/used. If `MapLoader.loadAllKeys` returns NULL then nothing will be loaded. Your `MapLoader.loadAllKeys` implementation can return all or some of the keys. You may select and return only the `hot` keys, for instance. Also note that this is the fastest way of pre-populating the map as Hazelcast will optimize the loading process by having each node loading owned portion of the entries.
 
-Moreover, there is InitialLoadMode configuration parameter in the class [`MapStoreConfig`](https://github.com/hazelcast/hazelcast/blob/5f4f6a876e572f91431ad22f01ad5af9f5837f72/hazelcast/src/main/java/com/hazelcast/config/MapStoreConfig.java) class. This parameter has two values: LAZY and EAGER. If InitialLoadMode is set as LAZY, data is not loaded during the map creation. If it is set as EAGER, whole data is loaded while the map is being created and everything becomes ready to use. Also, if you add indices to your map by [`MapIndexConfig`](https://github.com/hazelcast/hazelcast/blob/da5cceee74e471e33f65f43f31d891c9741e31e3/hazelcast/src/main/java/com/hazelcast/config/MapIndexConfig.java) class or [`addIndex`](#indexing) method, then InitialLoadMode is overridden and MapStoreConfig behaves as if EAGER mode is on. 
+Moreover, there is InitialLoadMode configuration parameter in the class [`MapStoreConfig`](https://github.com/hazelcast/hazelcast/blob/5f4f6a876e572f91431ad22f01ad5af9f5837f72/hazelcast/src/main/java/com/hazelcast/config/MapStoreConfig.java) class. This parameter has two values: LAZY and EAGER. If InitialLoadMode is set as LAZY, data is not loaded during the map creation. If it is set as EAGER, whole data is loaded while the map is being created and everything becomes ready to use. Also, if you add indices to your map by [`MapIndexConfig`](https://github.com/hazelcast/hazelcast/blob/da5cceee74e471e33f65f43f31d891c9741e31e3/hazelcast/src/main/java/com/hazelcast/config/MapIndexConfig.java) class or [`addIndex`](#indexing) method, then InitialLoadMode is overridden and MapStoreConfig behaves as if EAGER mode is on.
 
 Here is MapLoader initialization flow;
 
-1.  When `getMap()` is first called from any node, initialization will start depending on the the value of InitialLoadMode. If it is set as EAGER, initialization starts.  If it is set as LAZY, initialization actually does not start but data is loaded at each time a partition loading is completed. 
+1.  When `getMap()` is first called from any node, initialization will start depending on the the value of InitialLoadMode. If it is set as EAGER, initialization starts.  If it is set as LAZY, initialization actually does not start but data is loaded at each time a partition loading is completed.
 
 2.  Hazelcast will call `MapLoader.loadAllKeys()` to get all your keys on each node
 
@@ -131,6 +131,3 @@ class ProcessingStore extends MapStore<Integer, Employee> implements PostProcess
 	employee.setId(id.getId());
 }
 ```
-
-
-

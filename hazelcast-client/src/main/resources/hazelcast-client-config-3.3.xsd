@@ -39,6 +39,20 @@
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
     </xs:element>
+    <xs:complexType name="aws">
+        <xs:sequence>
+            <xs:element name="inside-aws" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="access-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="secret-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="host-header" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="security-group-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="tag-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="tag-value" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
+    </xs:complexType>
     <!--NETWORK-->
     <xs:complexType name="network">
         <xs:sequence>
@@ -51,6 +65,7 @@
             <xs:element ref="socket-options" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
 

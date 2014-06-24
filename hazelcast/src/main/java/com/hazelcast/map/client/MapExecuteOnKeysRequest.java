@@ -122,4 +122,14 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "executeOnKeys";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{keys, processor};
+    }
 }

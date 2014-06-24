@@ -26,81 +26,104 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 /**
  * With PartitionGroupConfig you can control how primary and backup partitions are mapped to physical Members.
  * <p/>
- * By default, Hazelcast will place the backup partitions on a different member to the primary partition,
- * to prevent data loss.
+ * Hazelcast will always place partitions on different partition groups so as to provide redundancy.
+ * There are three partition group schemes defined in {@link MemberGroupType}: PER_MEMBER, HOST_AWARE
+ * and CUSTOM.
  * <p/>
- * But in some cases this is not good enough; say you have a 4 member cluster. Member 1 and member 2 run
- * in data center 1 and member 3 and member 4 in data center 2. If you want high availability, you want
- * all backups of the primary partitions in data center 1 stored in members in data center 2. And vice versa.
+ * In all cases a partition will never be created on the same "group". If there are more partitions defined than
+ * there are partition groups, then only those partitions up to the number of partition groups will be created.
+ * For example, if you define 2 backups then with the primary that makes 3. If you have only two partition groups
+ * only two will get created.
+ * <h1>PER_MEMBER Partition Groups</h1>
+ * This is the default partition scheme and is used if no other scheme is defined.
+ * Each Member is in a group of its own.
  * <p/>
- * With PartitionGroupConfig this behavior can be achieved.
+ * Partitions (primaries and backups) will be distributed randomly but not on the same Member.
  * <p/>
- * <h1>Custom Partition Groups</h1>
+ * <code>
+ * &lt;partition-group enabled="true" group-type="PER_MEMBER"/&gt;
+ * </code>
+ * <p/>
+ * This provides good redundancy when Members are on separate hosts but not if multiple instances are being
+ * run from the same host.
+ * <h1>HOST_AWARE Partition Groups</h1>
+ * In this scheme, a group corresponds to a host, based on its IP address. Partitions will not be written to
+ * any other members on the same host.
+ * <p/>
+ * This scheme provides good redundancy when multiple instances are being run on the same host.
+ * <code>
+ *     <pre>
+ * &lt;partition-group enabled="true" group-type="HOST_AWARE"/&gt;
+ * </pre>
+ * </code>
+ * <h1>CUSTOM Partition Groups</h1>
+ * In this scheme, IP addresses, or IP address ranges are allocated to groups. Partitions are not written to the same
+ * group. This is very useful for ensuring partitions are written to different racks or even availability zones.
+ * <p/>
  * Say that members in data center 1 have IP addresses in the range 10.10.1.* and for data center 2 they have
- * the IP address range 10.10.2.*. You would achieve HA vy configuring a <code>CUSTOM</code> partition group as follows:
+ * the IP address range 10.10.2.*. You would achieve HA by configuring a <code>CUSTOM</code> partition group as follows:
  * <p/>
  * <pre>
  * <code>
- * <partition-group enabled="true" group-type="CUSTOM">
- *      <member-group>
- *          <interface>10.10.1.*</interface>
- *      </member-group>
- *      <member-group>
- *          <interface>10.10.2.*</interface>
- *      </member-group>
- * </partition-group>
+ * &lt;partition-group enabled="true" group-type="CUSTOM"&gt;
+ *      &lt;member-group&gt;
+ *          &lt;interface&gt;10.10.1.*&lt;/interface&gt;
+ *      &lt;/member-group&gt;
+ *      &lt;member-group&gt;
+ *          &lt;interface&gt;10.10.2.*&lt;/interface&gt;
+ *      &lt;/member-group&gt;
+ * &lt;/partition-group&gt;
  * </code>
  * </pre>
  * <p/>
  * The interfaces can be configured with wildcards ('*') and also with address ranges e.g. '10-20'. Each member-group
  * can have an unlimited number of interfaces.
  * <p/>
- * You can define as many <cdoe>member-group</cdoe>s as you want. Hazelcast will always store backups in a different
+ * You can define as many <code>member-group</code> s as you want. Hazelcast will always store backups in a different
  * member-group to the primary partition.
  * <p/>
  * <h2>Overlapping Groups</h2>
  * Care should be taken when selecting overlapping groups, e.g.
  * <code>
- * <partition-group enabled="true" group-type="CUSTOM">
- *      <member-group>
- *          <interface>10.10.1.1</interface>
- *          <interface>10.10.1.2</interface>
- *      </member-group>
- *      <member-group>
- *          <interface>10.10.1.1</interface>
- *          <interface>10.10.1.3</interface>
- *      </member-group>
- * </partition-group>
+ * &lt;partition-group enabled="true" group-type="CUSTOM"&gt;
+ *      &lt;member-group&gt;
+ *          &lt;interface&gt;10.10.1.1&lt;/interface&gt;
+ *          &lt;interface&gt;10.10.1.2&lt;/interface&gt;
+ *      &lt;/member-group&gt;
+ *      &lt;member-group&gt;
+ *          &lt;interface&gt;10.10.1.1&lt;/interface&gt;
+ *          &lt;interface&gt;10.10.1.3&lt;/interface&gt;
+ *      &lt;/member-group&gt;
+ * &lt;/partition-group&gt;
  * </code>
  * In this example there are 2 groups, but because interface 10.10.1.1 is shared between the 2 groups, this  member
  * may store store primary and backups.
  * <p/>
- * <h1>Host-Aware Partition Groups</h1>
- * In the previous example we made use of custom groups.
- *
- * If you simply want prevent primary and backup partitions being on the same member host, there is a simpler way:
- * Host-Aware Partition Groups.
- *
- * <p/>
- * <code>
- * <partition-group enabled="true" group-type="HOST_AWARE"/>
- * </code>
- *
- * <h1>Per Member Partition Groups</h1>
- * The default partition scheme. This means each Member is in a group of its own.
- * <p/>
- * Partitions (primaries and backups) will be distributed randomly but not on the same physical Member.
  */
 public class PartitionGroupConfig {
 
-    private boolean enabled = false;
+    private boolean enabled;
 
     private MemberGroupType groupType = MemberGroupType.PER_MEMBER;
 
     private final List<MemberGroupConfig> memberGroupConfigs = new LinkedList<MemberGroupConfig>();
 
+    /**
+     * Type of member group
+     */
     public enum MemberGroupType {
-        HOST_AWARE, CUSTOM, PER_MEMBER
+        /**
+         * Host aware
+         */
+        HOST_AWARE,
+        /**
+         * Custom
+         */
+        CUSTOM,
+        /**
+         * Per member
+         */
+        PER_MEMBER
     }
 
     /**

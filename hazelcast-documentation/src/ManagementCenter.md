@@ -300,7 +300,7 @@ Besides the aforementioned monitoring charts and windows, there are also operati
 
 Scripting feature of this tool is used to execute codes on the cluster. You can open this feature as a tab by selecting **Scripting** located at the toolbar on top. Once selected, it is opened as shown below.
 
-![](images/Scripting.jpg)
+![](images/scripting.jpg)
 
 In this window, **Scripting** part is the actual coding editor. You can select the members on which the code will be executed from the **Members** list shown at the right side of the window. Below the members list there is a combo box enabling you to select a scripting language. Currently, Javascript, Ruby, Groovy and Python languages are supported. After you write your script and press **Execute** button, you can see the execution result in the **Result** part of the window. 
 
@@ -314,7 +314,7 @@ Management Center has also a console feature that enables you to execute command
 
 Console window can be opened by clicking on the **Console** button located at the toolbar. A sample view with some commands executed can ben seen below.
 
-![](images/Console.jpg)
+![](images/console.jpg)
 
 
 

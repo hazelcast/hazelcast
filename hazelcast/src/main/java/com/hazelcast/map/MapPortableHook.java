@@ -70,6 +70,10 @@ public class MapPortableHook implements PortableHook {
     public static final int EXECUTE_WITH_PREDICATE = 43;
     public static final int REMOVE_ENTRY_LISTENER = 44;
     public static final int EXECUTE_ON_KEYS = 45;
+    public static final int EVICT_ALL = 46;
+    public static final int LOAD_ALL_GIVEN_KEYS = 47;
+    public static final int LOAD_ALL_KEYS = 48;
+    public static final int IS_EMPTY = 49;
 
     public int getFactoryId() {
         return F_ID;
@@ -77,7 +81,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[EXECUTE_ON_KEYS + 1];
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[IS_EMPTY + 1];
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
@@ -325,7 +329,28 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
+                constructors[EVICT_ALL] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapEvictAllRequest();
+                    }
+                };
 
+                constructors[LOAD_ALL_GIVEN_KEYS] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapLoadGivenKeysRequest();
+                    }
+                };
+                constructors[LOAD_ALL_KEYS] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapLoadAllKeysRequest();
+                    }
+                };
+
+                constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapIsEmptyRequest();
+                    }
+                };
             }
 
             public Portable create(int classId) {
