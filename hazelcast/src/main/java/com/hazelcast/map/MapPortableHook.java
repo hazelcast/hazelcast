@@ -128,7 +128,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[EVICT_ALL + 1];
+            final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[IS_EMPTY + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
