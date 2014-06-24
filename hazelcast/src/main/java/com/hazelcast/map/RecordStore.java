@@ -178,7 +178,7 @@ public interface RecordStore {
 
     void setLoaded(boolean loaded);
 
-    void clear();
+    int clear();
 
     boolean isEmpty();
 

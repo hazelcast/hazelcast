@@ -19,9 +19,11 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.client.SecureRequest;
-import com.hazelcast.map.operation.ClearOperationFactory;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.operation.ClearOperationFactory;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -48,7 +50,6 @@ public class MapClearRequest extends AllPartitionsClientRequest implements Porta
         return MapService.SERVICE_NAME;
     }
 
-    @Override
     public int getFactoryId() {
         return MapPortableHook.F_ID;
     }
@@ -72,6 +73,15 @@ public class MapClearRequest extends AllPartitionsClientRequest implements Porta
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
+        int totalAffectedEntries = 0;
+        for (Object affectedEntries : map.values()) {
+            totalAffectedEntries += (Integer) affectedEntries;
+        }
+        final MapService service = getService();
+        final Address thisAddress = service.getNodeEngine().getThisAddress();
+        if (totalAffectedEntries > 0) {
+            service.publishMapEvent(thisAddress, name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+        }
         return null;
     }
 

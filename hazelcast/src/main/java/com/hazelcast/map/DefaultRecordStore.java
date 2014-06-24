@@ -514,7 +514,7 @@ public class DefaultRecordStore implements RecordStore {
         return values;
     }
 
-    public void clear() {
+    public int clear() {
         checkIfLoaded();
         resetSizeEstimator();
         final Collection<Data> lockedKeys = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
@@ -546,6 +546,7 @@ public class DefaultRecordStore implements RecordStore {
         clearRecordsMap(lockedRecords);
         resetAccessSequenceNumber();
         writeBehindQueue.clear();
+        return keysToDelete.size();
     }
 
     public void reset() {

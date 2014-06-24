@@ -47,7 +47,12 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
 
     @Override
     public void mapEvicted(MapEvent event) {
+        onMapEvent(event);
+    }
 
+    @Override
+    public void mapCleared(MapEvent event) {
+        onMapEvent(event);
     }
 
     /**
@@ -57,5 +62,8 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
      * @param event the EntryEvent.
      */
     public void onEntryEvent(EntryEvent<K, V> event) {
+    }
+
+    public void onMapEvent(MapEvent event) {
     }
 }

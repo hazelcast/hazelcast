@@ -87,6 +87,11 @@ public class ClientMapIssueTest {
             public void mapEvicted(MapEvent event) {
 
             }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
         }, true);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
         instance1.getLifecycleService().terminate();

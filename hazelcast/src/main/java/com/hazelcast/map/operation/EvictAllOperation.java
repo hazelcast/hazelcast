@@ -45,6 +45,16 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
     }
 
     @Override
+    public Object getResponse() {
+        return numberOfEvictedEntries;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
     public int getSyncBackupCount() {
         return mapService.getMapContainer(name).getBackupCount();
     }
@@ -58,12 +68,6 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
     public Operation getBackupOperation() {
         return new EvictAllBackupOperation(name);
     }
-
-    @Override
-    public Object getResponse() {
-        return numberOfEvictedEntries;
-    }
-
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {

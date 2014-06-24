@@ -20,14 +20,10 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -106,7 +102,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 /**
  * The SPI Service for the Map.
@@ -126,6 +121,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     private final AtomicReference<List<Integer>> ownedPartitions;
     private final Map<String, MapMergePolicy> mergePolicyMap;
     private final ExpirationManager expirationManager;
+    private final MapEventsDispatcher dispatcher;
     /**
      * Holds per node total item count in all write behind queues.
      */
@@ -142,6 +138,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         mergePolicyMap.put(PassThroughMergePolicy.class.getName(), new PassThroughMergePolicy());
         mergePolicyMap.put(LatestUpdateMapMergePolicy.class.getName(), new LatestUpdateMapMergePolicy());
         expirationManager = new ExpirationManager(this);
+        dispatcher = new MapEventsDispatcher(this, nodeEngine.getClusterService());
         writeBehindQueueItemCounter = new AtomicInteger(0);
     }
 
@@ -789,7 +786,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             dataValue = dataValue != null ? dataValue : dataOldValue;
         }
         EntryEventData event = new EntryEventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType.getType());
-        int orderKey = dataKey.hashCode();
+        int orderKey = dataKey == null ? -1 : dataKey.hashCode();
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event, orderKey);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues(), orderKey);
     }
@@ -887,84 +884,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     @SuppressWarnings("unchecked")
     @Override
     public void dispatchEvent(EventData eventData, EntryListener listener) {
-        if (eventData instanceof EntryEventData) {
-            dispatchEntryEventData(eventData, listener);
-        } else if (eventData instanceof MapEventData) {
-            dispatchMapEventData(eventData, listener);
-        } else {
-            throw new IllegalArgumentException("Unknown map event data");
-        }
-    }
-
-    private void dispatchMapEventData(EventData eventData, EntryListener listener) {
-        final MapEventData mapEventData = (MapEventData) eventData;
-        final Member member = getMemberOrNull(eventData);
-        if (member == null) {
-            return;
-        }
-        final MapEvent event = createMapEvent(mapEventData, member);
-        dispatch0(event, listener);
-        incrementEventStats(event);
-    }
-
-    private MapEvent createMapEvent(MapEventData mapEventData, Member member) {
-        return new MapEvent(mapEventData.getMapName(), member,
-                mapEventData.getEventType(), mapEventData.getNumberOfEntries());
-    }
-
-    private void dispatchEntryEventData(EventData eventData, EntryListener listener) {
-        final EntryEventData entryEventData = (EntryEventData) eventData;
-        final Member member = getMemberOrNull(eventData);
-
-        final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
-        dispatch0(event, listener);
-        incrementEventStats(event);
-    }
-
-    private Member getMemberOrNull(EventData eventData) {
-        final Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
-        if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());
-            }
-        }
-        return member;
-    }
-
-    private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
-        return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
-                entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(), getSerializationService());
-    }
-
-    private void dispatch0(IMapEvent event, EntryListener listener) {
-        switch (event.getEventType()) {
-            case ADDED:
-                listener.entryAdded((EntryEvent) event);
-                break;
-            case EVICTED:
-                listener.entryEvicted((EntryEvent) event);
-                break;
-            case UPDATED:
-                listener.entryUpdated((EntryEvent) event);
-                break;
-            case REMOVED:
-                listener.entryRemoved((EntryEvent) event);
-                break;
-            case EVICT_ALL:
-                listener.mapEvicted((MapEvent) event);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
-        }
-    }
-
-
-    private void incrementEventStats(IMapEvent event) {
-        final String mapName = event.getName();
-        MapContainer mapContainer = getMapContainer(mapName);
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            getLocalMapStatsImpl(mapName).incrementReceivedEvents();
-        }
+        dispatcher.dispatchEvent(eventData, listener);
     }
 
     public SerializationService getSerializationService() {

@@ -1147,10 +1147,9 @@ public class ClientMapBasicTest {
         }
         public void entryEvicted(EntryEvent event) {
         }
-
-        @Override
         public void mapEvicted(MapEvent event) {
-            // TODO what to do here?
+        }
+        public void mapCleared(MapEvent event) {
         }
     }
 

@@ -23,6 +23,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.IOUtil;
@@ -59,10 +60,6 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
         EntryListener listener = new EntryAdapter() {
             @Override
             public void onEntryEvent(EntryEvent event) {
-                send(event);
-            }
-
-            private void send(EntryEvent event) {
                 if (endpoint.live()) {
                     Data key = serializationService.toData(event.getKey());
                     Data value = serializationService.toData(event.getValue());
@@ -70,6 +67,17 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, type, uuid);
+                    endpoint.sendEvent(portableEntryEvent, getCallId());
+                }
+            }
+
+            @Override
+            public void onMapEvent(MapEvent event) {
+                if (endpoint.live()) {
+                    final EntryEventType type = event.getEventType();
+                    final String uuid = event.getMember().getUuid();
+                    PortableEntryEvent portableEntryEvent =
+                            new PortableEntryEvent(type, uuid, event.getNumberOfEntriesAffected());
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }

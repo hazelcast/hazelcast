@@ -21,8 +21,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -103,8 +103,8 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNotNullListener(maxKeys * maxItems);
         mm.addEntryListener(listener, true);
 
-        for(int i=0; i<maxKeys; i++){
-            for(int j=0; j<maxKeys; j++){
+        for (int i = 0; i < maxKeys; i++) {
+            for (int j = 0; j < maxKeys; j++) {
                 mm.put(i, j);
             }
         }
@@ -120,8 +120,8 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNullListener(maxKeys * maxItems);
         mm.addEntryListener(listener, false);
 
-        for(int i=0; i<maxKeys; i++){
-            for(int j=0; j<maxKeys; j++){
+        for (int i = 0; i < maxKeys; i++) {
+            for (int j = 0; j < maxKeys; j++) {
                 mm.put(i, j);
             }
         }
@@ -137,8 +137,8 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNotNullListener(maxKeys * maxItems);
         mm.addEntryListener(listener, true);
 
-        for(int i=0; i<maxKeys; i++){
-            for(int j=0; j<maxKeys; j++){
+        for (int i = 0; i < maxKeys; i++) {
+            for (int j = 0; j < maxKeys; j++) {
                 mm.put(i, j);
                 mm.remove(i);
             }
@@ -155,8 +155,8 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNullListener(maxKeys * maxItems);
         mm.addEntryListener(listener, false);
 
-        for(int i=0; i<maxKeys; i++){
-            for(int j=0; j<maxKeys; j++){
+        for (int i = 0; i < maxKeys; i++) {
+            for (int j = 0; j < maxKeys; j++) {
                 mm.put(i, j);
                 mm.remove(i);
             }
@@ -173,7 +173,7 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNotNullListener(maxItems);
         mm.addEntryListener(listener, key, true);
 
-        for(int i=0; i<maxItems; i++){
+        for (int i = 0; i < maxItems; i++) {
             mm.put(key, i);
         }
 
@@ -189,7 +189,7 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNullListener(maxItems);
         mm.addEntryListener(listener, key, false);
 
-        for(int i=0; i<maxItems; i++){
+        for (int i = 0; i < maxItems; i++) {
             mm.put(key, i);
         }
 
@@ -205,7 +205,7 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNotNullListener(maxItems);
         mm.addEntryListener(listener, key, true);
 
-        for(int i=0; i<maxItems; i++){
+        for (int i = 0; i < maxItems; i++) {
             mm.put(key, i);
             mm.remove(key, i);
         }
@@ -222,7 +222,7 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNullListener(maxItems);
         mm.addEntryListener(listener, key, false);
 
-        for(int i=0; i<maxItems; i++){
+        for (int i = 0; i < maxItems; i++) {
             mm.put(key, i);
             mm.remove(key, i);
         }
@@ -239,7 +239,7 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNotNullListener(maxItems, 1);
         final String id = mm.addEntryListener(listener, key, true);
 
-        for(int i=0; i<maxItems; i++){
+        for (int i = 0; i < maxItems; i++) {
             mm.put(key, i);
         }
         mm.remove(key);
@@ -256,7 +256,7 @@ public class ClientMultiMapListenersTest {
         MyEntryListener listener = new CountDownValueNullListener(maxItems, 1);
         final String id = mm.addEntryListener(listener, key, false);
 
-        for(int i=0; i<maxItems; i++){
+        for (int i = 0; i < maxItems; i++) {
             mm.put(key, i);
         }
         mm.remove(key);
@@ -264,6 +264,28 @@ public class ClientMultiMapListenersTest {
         assertOpenEventually(listener.removeLatch);
     }
 
+    @Test
+    public void testListeners_clearAll() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        MyEntryListener listener = new CountDownValueNullListener(1);
+        mm.addEntryListener(listener, false);
+        mm.put("key", "value");
+        mm.clear();
+        assertOpenEventually(listener.addLatch);
+        assertOpenEventually(listener.clearLatch);
+    }
+
+    @Test
+    public void testListeners_clearAllFromNode() {
+        final String name = randomString();
+        final MultiMap mm = client.getMultiMap(name);
+        MyEntryListener listener = new CountDownValueNullListener(1);
+        mm.addEntryListener(listener, false);
+        mm.put("key", "value");
+        server.getMultiMap(name).clear();
+        assertOpenEventually(listener.addLatch);
+        assertOpenEventually(listener.clearLatch);
+    }
 
     static abstract class MyEntryListener implements EntryListener {
 
@@ -271,99 +293,111 @@ public class ClientMultiMapListenersTest {
         final public CountDownLatch removeLatch;
         final public CountDownLatch updateLatch;
         final public CountDownLatch evictLatch;
+        final public CountDownLatch clearLatch;
 
-        public MyEntryListener(int latchCount){
+        public MyEntryListener(int latchCount) {
             addLatch = new CountDownLatch(latchCount);
             removeLatch = new CountDownLatch(latchCount);
             updateLatch = new CountDownLatch(1);
             evictLatch = new CountDownLatch(1);
+            clearLatch = new CountDownLatch(1);
         }
 
-        public MyEntryListener(int addlatchCount, int removeLatchCount){
+        public MyEntryListener(int addlatchCount, int removeLatchCount) {
             addLatch = new CountDownLatch(addlatchCount);
             removeLatch = new CountDownLatch(removeLatchCount);
             updateLatch = new CountDownLatch(1);
             evictLatch = new CountDownLatch(1);
+            clearLatch = new CountDownLatch(1);
         }
-    };
+    }
 
-    static class CountDownValueNotNullListener extends MyEntryListener{
+    static class CountDownValueNotNullListener extends MyEntryListener {
 
-        public CountDownValueNotNullListener(int latchCount){
+        public CountDownValueNotNullListener(int latchCount) {
             super(latchCount);
         }
 
-        public CountDownValueNotNullListener(int addlatchCount, int removeLatchCount){
+        public CountDownValueNotNullListener(int addlatchCount, int removeLatchCount) {
             super(addlatchCount, removeLatchCount);
         }
 
         public void entryAdded(EntryEvent event) {
-            if(event.getValue() != null){
+            if (event.getValue() != null) {
                 addLatch.countDown();
             }
         }
 
         public void entryRemoved(EntryEvent event) {
-            if(event.getValue() != null){
+            if (event.getValue() != null) {
                 removeLatch.countDown();
             }
         }
 
         public void entryUpdated(EntryEvent event) {
-            if(event.getValue() != null){
+            if (event.getValue() != null) {
                 updateLatch.countDown();
             }
         }
 
         public void entryEvicted(EntryEvent event) {
-            if(event.getValue() != null){
+            if (event.getValue() != null) {
                 evictLatch.countDown();
             }
         }
 
         @Override
         public void mapEvicted(MapEvent event) {
-            // TODO what to do here?
+        }
+
+        @Override
+        public void mapCleared(MapEvent event) {
+            clearLatch.countDown();
         }
     }
 
     static class CountDownValueNullListener extends MyEntryListener {
 
-        public CountDownValueNullListener(int latchCount){
+        public CountDownValueNullListener(int latchCount) {
             super(latchCount);
         }
 
-        public CountDownValueNullListener(int addlatchCount, int removeLatchCount){
+        public CountDownValueNullListener(int addlatchCount, int removeLatchCount) {
             super(addlatchCount, removeLatchCount);
         }
 
         public void entryAdded(EntryEvent event) {
-            if(event.getValue() == null){
+            if (event.getValue() == null) {
                 addLatch.countDown();
             }
         }
 
         public void entryRemoved(EntryEvent event) {
-            if(event.getValue() == null){
+            if (event.getValue() == null) {
                 removeLatch.countDown();
             }
         }
 
         public void entryUpdated(EntryEvent event) {
-            if(event.getValue() == null){
+            if (event.getValue() == null) {
                 updateLatch.countDown();
             }
         }
 
         public void entryEvicted(EntryEvent event) {
-            if(event.getValue() == null){
+            if (event.getValue() == null) {
                 evictLatch.countDown();
             }
         }
 
         @Override
         public void mapEvicted(MapEvent event) {
-            // TODO what to do here?
         }
-    };
+
+        @Override
+        public void mapCleared(MapEvent event) {
+            clearLatch.countDown();
+        }
+    }
+
 }

@@ -66,6 +66,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
             public void mapEvicted(MapEvent event) {
                 totalEvictedEntryCount.addAndGet(event.getNumberOfEntriesAffected());
             }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+                //TODO should I add totalClearedEntryCount?
+                totalRemovedEntryCount.addAndGet(event.getNumberOfEntriesAffected());
+            }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);
     }
