@@ -332,12 +332,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                     case REMOVED:
                         listener.entryRemoved(createEntryEvent(event, member));
                         break;
-                    case UPDATED:
-                        break;
-                    case EVICTED:
-                        break;
-                    case EVICT_ALL:
-                        break;
                     case CLEAR_ALL:
                         listener.mapCleared(createMapEvent(event, member));
                         break;

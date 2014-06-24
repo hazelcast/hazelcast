@@ -90,15 +90,8 @@ class MultiMapEventsDispatcher {
             case ADDED:
                 listener.entryAdded((EntryEvent) event);
                 break;
-            case EVICTED:
-                break;
-            case UPDATED:
-                break;
             case REMOVED:
                 listener.entryRemoved((EntryEvent) event);
-                break;
-            case EVICT_ALL:
-                listener.mapEvicted((MapEvent) event);
                 break;
             case CLEAR_ALL:
                 listener.mapCleared((MapEvent) event);
