@@ -65,7 +65,7 @@ public final class MapQueryRequest extends AbstractMapQueryRequest {
         } else if (iterationType == IterationType.ENTRY) {
             return "entrySet";
         }
-        throw new IllegalArgumentException("IterationType["+iterationType + "] is unknown!!!");
+        throw new IllegalArgumentException("IterationType[" + iterationType + "] is unknown!!!");
     }
 
     @Override

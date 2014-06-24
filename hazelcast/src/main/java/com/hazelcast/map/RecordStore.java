@@ -99,7 +99,8 @@ public interface RecordStore {
      *
      * @param key    the data key to put record store.
      * @param record the value for record store.
-     * @see {@link com.hazelcast.map.operation.MapReplicationOperation} and {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
+     * @see {@link com.hazelcast.map.operation.MapReplicationOperation} and
+     * {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
      */
     void putRecord(Data key, Record record);
 

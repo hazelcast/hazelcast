@@ -46,10 +46,11 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest, SecureRequest {
+abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable,
+        RetryableRequest, SecureRequest {
 
-    private String name;
     protected IterationType iterationType;
+    private String name;
 
     public AbstractMapQueryRequest() {
     }

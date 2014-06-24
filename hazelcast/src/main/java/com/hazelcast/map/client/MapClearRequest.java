@@ -19,17 +19,11 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.client.SecureRequest;
-<<<<<<< HEAD
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.ClearOperationFactory;
 import com.hazelcast.nio.Address;
-=======
-import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.operation.ClearOperationFactory;
->>>>>>> map package checkstyle compliance
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
