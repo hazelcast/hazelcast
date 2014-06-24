@@ -16,28 +16,34 @@ With IExecutorService, you can execute tasks asynchronously and perform other us
 Below is a sample Callable.
 
 ```java
-import java.util.concurrent.Callable;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IMap;
+
 import java.io.Serializable;
+import java.util.concurrent.Callable;
 
-public class Echo implements Callable<String>, Serializable {
-    String input = null;
+public class SumTask implements
+        Callable<Integer>, Serializable, HazelcastInstanceAware {
+    private transient HazelcastInstance hz;
 
-    public Echo() {
+    public void setHazelcastInstance(HazelcastInstance hz) {
+        this.hz = hz;
     }
 
-    public Echo(String input) {
-        this.input = input;
-    }
-
-    public String call() {
-        Config cfg = new Config();
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
-        return instance.getCluster().getLocalMember().toString() + ":" + input;
+    public Integer call() throws Exception {
+        IMap<String, Integer> map = hz.getMap("map");
+        int result = 0;
+        for (String key : map.localKeySet()) {
+            System.out.println("Calculating for key: " + key);
+            result += map.get(key);
+        }
+        System.out.println("Local Result: " + result);
+        return result;
     }
 }
 ```
 
-Echo callable above, for instance, in its `call()` method, is returning the local member and the input passed in. Remember that `instance.getCluster().getLocalMember()` returns the local member and `toString()` returns the member's address `(IP + port)` in String form, just to see which member actually executed the code for our example. Of course, `call()` method can do and return anything you like.
 
 Executing a task by using executor framework is very straight forward. Simply obtain an `ExecutorService` instance, generally via `Executors` and submit the task which returns a `Future`. After executing task, you do not have to wait for execution to complete, you can process other things and when ready use the `future` object to retrieve the result as shown in code below.
 
