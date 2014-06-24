@@ -24,6 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+/**
+ * Store indexes rankly.
+ */
 public class SortedIndexStore implements IndexStore {
     private static final float LOAD_FACTOR = 0.75f;
     private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords

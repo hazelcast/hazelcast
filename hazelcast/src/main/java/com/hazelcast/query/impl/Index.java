@@ -19,7 +19,9 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
-
+/**
+ * This interface contains the methods related to index of Query.
+ */
 public interface Index {
 
     void saveEntryIndex(QueryableEntry e) throws QueryException;
