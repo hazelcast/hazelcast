@@ -31,6 +31,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+/**
+ * Implementation class of {@link javax.resource.spi.ManagedConnection}
+ */
 public class ManagedConnectionImpl extends JcaBase implements ManagedConnection {
     /**
      * Identity generator

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jca;
+package com.hazelcast.nio.tcp;
 
-/**
- * Connection events caused by the resource adapter.
- * Used for logging/debugging purposes only at the moment.
- */
-enum HzConnectionEvent {
-    FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP, DESTROY,
+import com.hazelcast.nio.Packet;
+
+import java.nio.ByteBuffer;
+
+public interface PacketWriter {
+    boolean writePacket(Packet packet, ByteBuffer socketBB) throws Exception;
 }

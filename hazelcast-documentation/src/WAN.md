@@ -74,18 +74,18 @@ Note that, you will also need to define a `merge policy` for merging replica ent
 <br> </br>
 
 ### WAN Replication Queue Size
-For huge clusters or high data mutation rates it might be necessary to higher the replication queue size. The default queue size for replication queues is `100000` which means if
-you have heavy put / update / remove rates you might exceed the queue size so that oldest, not yet replicated, updates might get lost.
+For huge clusters or high data mutation rates, it might be necessary to increase the replication queue size. The default queue size for replication queues is `100000`. This means, if
+you have heavy put/update/remove rates, you might exceed the queue size so that oldest, not yet replicated, updates might get lost.
  
-To higher the queue size Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.queuesize` configuration property to change the size of the replication queue:
+To increase the replication queue size, Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.queuesize` configuration property.
 
-This can either be achieved using a commandline property (where xxx is the queue size):
+This can either be achieved using a command line property (where xxx is the queue size):
 
 ```xml
   -Dhazelcast.enterprise.wanrep.queuesize=xxx
 ```
 
-or using properties inside the hazelcast.xml (also here change xxx to the requested queue size):
+or using properties inside the `hazelcast.xml` (also here change xxx to the requested queue size):
 
 ```xml
 <hazelcast>

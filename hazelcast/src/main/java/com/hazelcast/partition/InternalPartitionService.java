@@ -107,6 +107,14 @@ public interface InternalPartitionService extends CoreService {
 
     boolean prepareToSafeShutdown(long timeout, TimeUnit seconds);
 
+    /**
+     * Query and return if this member in a safe state or not.
+     * This method just checks for a safe state, it doesn't force this member to be in a safe state.
+     *
+     * @return <code>true</code> if this member in a safe state, otherwise <code>false</code>
+     */
+    boolean isMemberStateSafe();
+
     InternalPartition[] getPartitions();
 
     Collection<MigrationInfo> getActiveMigrations();

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jca;
+package com.hazelcast.nio.tcp;
 
-/**
- * Connection events caused by the resource adapter.
- * Used for logging/debugging purposes only at the moment.
- */
-enum HzConnectionEvent {
-    FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP, DESTROY,
+import java.nio.channels.SocketChannel;
+
+public interface SocketChannelWrapperFactory {
+
+    SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
+
+    boolean isSSlEnabled();
 }

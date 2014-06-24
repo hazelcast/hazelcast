@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.Set;
 
 
+/**
+ * JPA MapStore implementation.
+ */
 public class JPAMapStore implements MapStore<Serializable, Object> {
     private CrudRepository crudRepository;
 

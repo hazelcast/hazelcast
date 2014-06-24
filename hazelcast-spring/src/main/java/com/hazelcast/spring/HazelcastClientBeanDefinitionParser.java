@@ -40,6 +40,25 @@ import org.w3c.dom.Node;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * BeanDefinitionParser for Hazelcast Client Configuration
+ * <p/>
+ *
+ * <b>Sample Spring XML for Hazelcast Client:</b>
+ * <pre>
+ * &lt;hz:client id="client"&gt;
+ *  &lt;hz:group name="${cluster.group.name}" password="${cluster.group.password}" /&gt;
+ *  &lt;hz:network connection-attempt-limit="3"
+ *      connection-attempt-period="3000"
+ *      connection-timeout="1000"
+ *      redo-operation="true"
+ *      smart-routing="true"&gt;
+ *          &lt;hz:member&gt;10.10.1.2:5701&lt;/hz:member&gt;
+ *          &lt;hz:member&gt;10.10.1.3:5701&lt;/hz:member&gt;
+ *  &lt;/hz:network&gt;
+ * &lt;/hz:client&gt;
+ * </pre>
+ */
 public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     private static final int INITIAL_CAPACITY = 10;

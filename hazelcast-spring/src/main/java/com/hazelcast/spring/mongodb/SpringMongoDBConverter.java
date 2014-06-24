@@ -26,7 +26,9 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-
+/**
+ * MongoDB Object Converter for predefined objects.
+ */
 public class SpringMongoDBConverter implements MongoDBConverter {
 
     private static Class[] acceptedClazzArray = new Class[]{Date.class, Number.class, String.class, ObjectId.class,
