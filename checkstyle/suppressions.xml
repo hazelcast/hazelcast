@@ -419,9 +419,8 @@
     <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataOutput"/>
     <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteBufferObjectDataInput"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.serialization.ByteBufferObjectDataOutput"/>
-
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.CipherHelper"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.CipherHelper"/>
+
     <suppress checks="NPathComplexity" files="com.hazelcast.nio.ClassLoaderUtil"/>
     <suppress checks="ParameterAssignment" files="com.hazelcast.nio.ClassLoaderUtil"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.ClassLoaderUtil"/>
