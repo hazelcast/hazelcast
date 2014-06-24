@@ -54,7 +54,6 @@ public class ClientNearCache<K> {
      * Used when caching nonexistent values.
      */
     public static final Object NULL_OBJECT = new Object();
-    private static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
     private static final double EVICTION_PERCENTAGE = 0.02;
     private final ClientNearCacheType cacheType;
     private final int maxSize;
@@ -184,7 +183,7 @@ public class ClientNearCache<K> {
     }
 
     private void fireTtlCleanup() {
-        if (Clock.currentTimeMillis() < (lastCleanup + TTL_CLEANUP_INTERVAL_MILLS)) {
+        if (Clock.currentTimeMillis() < (lastCleanup + timeToLiveMillis)) {
             return;
         }
 
