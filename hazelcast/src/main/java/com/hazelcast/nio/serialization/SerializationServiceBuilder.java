@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.UnsafeHelper;
 
 import java.nio.ByteOrder;
 import java.util.Map;
@@ -229,7 +230,7 @@ public final class SerializationServiceBuilder {
         }
         if (useNativeByteOrder || byteOrder == ByteOrder.nativeOrder()) {
             byteOrder = ByteOrder.nativeOrder();
-            if (allowUnsafe && UnsafeInputOutputFactory.unsafeAvailable()) {
+            if (allowUnsafe && UnsafeHelper.UNSAFE_AVAILABLE) {
                 return new UnsafeInputOutputFactory();
             }
         }

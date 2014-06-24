@@ -50,6 +50,7 @@ import com.hazelcast.nio.serialization.DefaultSerializers.Externalizer;
 import com.hazelcast.nio.serialization.DefaultSerializers.ObjectSerializer;
 
 import java.io.Externalizable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -125,6 +126,22 @@ public final class SerializationServiceImpl implements SerializationService {
         portableSerializer = new PortableSerializer(serializationContext, loader.getFactories());
         portableSerializerAdapter = new StreamSerializerAdapter(this, portableSerializer);
 
+        registerConstantSerializers();
+        registerJvmTypeSerializers(enableCompression, enableSharedObject);
+        registerClassDefinitions(classDefinitions, checkClassDefErrors);
+    }
+
+    private void registerJvmTypeSerializers(boolean enableCompression, boolean enableSharedObject) {
+        safeRegister(Date.class, new DateSerializer());
+        safeRegister(BigInteger.class, new BigIntegerSerializer());
+        safeRegister(BigDecimal.class, new BigDecimalSerializer());
+        safeRegister(Externalizable.class, new Externalizer(enableCompression));
+        safeRegister(Serializable.class, new ObjectSerializer(enableSharedObject, enableCompression));
+        safeRegister(Class.class, new ClassSerializer());
+        safeRegister(Enum.class, new EnumSerializer());
+    }
+
+    private void registerConstantSerializers() {
         registerConstant(DataSerializable.class, dataSerializerAdapter);
         registerConstant(Portable.class, portableSerializerAdapter);
         registerConstant(Byte.class, new ByteSerializer());
@@ -143,16 +160,6 @@ public final class SerializationServiceImpl implements SerializationService {
         registerConstant(float[].class, new FloatArraySerializer());
         registerConstant(double[].class, new DoubleArraySerializer());
         registerConstant(String.class, new StringSerializer());
-
-        safeRegister(Date.class, new DateSerializer());
-        safeRegister(BigInteger.class, new BigIntegerSerializer());
-        safeRegister(BigDecimal.class, new BigDecimalSerializer());
-        safeRegister(Externalizable.class, new Externalizer(enableCompression));
-        safeRegister(Serializable.class, new ObjectSerializer(enableSharedObject, enableCompression));
-        safeRegister(Class.class, new ClassSerializer());
-        safeRegister(Enum.class, new EnumSerializer());
-
-        registerClassDefinitions(classDefinitions, checkClassDefErrors);
     }
 
     private void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
@@ -215,21 +222,25 @@ public final class SerializationServiceImpl implements SerializationService {
                 final Portable portable = (Portable) obj;
                 data.classDefinition = lookupClassDefinition(portable);
             }
-            if (strategy == null) {
-                strategy = globalPartitioningStrategy;
-            }
-            if (strategy != null) {
-                Object pk = strategy.getPartitionKey(obj);
-                if (pk != null && pk != obj) {
-                    final Data partitionKey = toData(pk, EMPTY_PARTITIONING_STRATEGY);
-                    data.partitionHash = (partitionKey == null) ? -1 : partitionKey.getPartitionHash();
-                }
-            }
+            applyPartitionStrategy(obj, strategy, data);
             return data;
         } catch (Throwable e) {
             handleException(e);
         }
         return null;
+    }
+
+    private void applyPartitionStrategy(Object obj, PartitioningStrategy strategy, Data data) {
+        if (strategy == null) {
+            strategy = globalPartitioningStrategy;
+        }
+        if (strategy != null) {
+            Object pk = strategy.getPartitionKey(obj);
+            if (pk != null && pk != obj) {
+                final Data partitionKey = toData(pk, EMPTY_PARTITIONING_STRATEGY);
+                data.partitionHash = (partitionKey == null) ? -1 : partitionKey.getPartitionHash();
+            }
+        }
     }
 
     private ClassDefinition lookupClassDefinition(Portable portable) {
@@ -248,17 +259,7 @@ public final class SerializationServiceImpl implements SerializationService {
         }
         try {
             final int typeId = data.type;
-            final SerializerAdapter serializer = serializerFor(typeId);
-            if (serializer == null) {
-                if (active) {
-                    throw new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId);
-                }
-                throw new HazelcastInstanceNotActiveException();
-            }
-            if (typeId == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
-                serializationContext.registerClassDefinition(data.classDefinition);
-            }
-            Object obj = serializer.read(data);
+            Object obj = readObject(data, typeId);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
             }
@@ -267,6 +268,21 @@ public final class SerializationServiceImpl implements SerializationService {
             handleException(e);
         }
         return null;
+    }
+
+    private Object readObject(Data data, int typeId)
+            throws IOException {
+        final SerializerAdapter serializer = serializerFor(typeId);
+        if (serializer == null) {
+            if (active) {
+                throw new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId);
+            }
+            throw new HazelcastInstanceNotActiveException();
+        }
+        if (typeId == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
+            serializationContext.registerClassDefinition(data.classDefinition);
+        }
+        return serializer.read(data);
     }
 
     public void writeObject(final ObjectDataOutput out, final Object obj) {
@@ -423,11 +439,16 @@ public final class SerializationServiceImpl implements SerializationService {
         } else if (Portable.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
         } else {
-            final SerializerAdapter serializer;
-            if ((serializer = constantTypesMap.get(type)) != null) {
+            final SerializerAdapter serializer = constantTypesMap.get(type);
+            if (serializer != null) {
                 return serializer;
             }
         }
+        SerializerAdapter serializer = lookupSerializer(type);
+        return serializer;
+    }
+
+    private SerializerAdapter lookupSerializer(Class type) {
         SerializerAdapter serializer = typeMap.get(type);
         if (serializer == null) {
             // look for super classes
@@ -435,7 +456,8 @@ public final class SerializationServiceImpl implements SerializationService {
             final Set<Class> interfaces = new LinkedHashSet<Class>(5);
             getInterfaces(type, interfaces);
             while (typeSuperclass != null) {
-                if ((serializer = registerFromSuperType(type, typeSuperclass)) != null) {
+                serializer = registerFromSuperType(type, typeSuperclass);
+                if (serializer != null) {
                     break;
                 }
                 getInterfaces(typeSuperclass, interfaces);
@@ -444,13 +466,18 @@ public final class SerializationServiceImpl implements SerializationService {
             if (serializer == null) {
                 // look for interfaces
                 for (Class typeInterface : interfaces) {
-                    if ((serializer = registerFromSuperType(type, typeInterface)) != null) {
+                    serializer = registerFromSuperType(type, typeInterface);
+                    if (serializer != null) {
                         break;
                     }
                 }
             }
-            if (serializer == null && (serializer = global.get()) != null) {
-                safeRegister(type, serializer);
+
+            if (serializer == null) {
+                serializer = global.get();
+                if (serializer != null) {
+                    safeRegister(type, serializer);
+                }
             }
         }
         return serializer;
