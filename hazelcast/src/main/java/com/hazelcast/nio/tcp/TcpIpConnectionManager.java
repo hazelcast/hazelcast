@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.cluster.BindOperation;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.NodeInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -138,6 +139,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+        if (!isSocketInterceptorEnabled()) {
+            return;
+        }
         final MemberSocketInterceptor memberSocketInterceptor = initializer.getMemberSocketInterceptor();
         if (memberSocketInterceptor == null) {
             return;
@@ -147,6 +151,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
         } else {
             memberSocketInterceptor.onConnect(socket);
         }
+    }
+
+    public boolean isSocketInterceptorEnabled() {
+        final SocketInterceptorConfig socketInterceptorConfig = ioService.getSocketInterceptorConfig();
+        if (socketInterceptorConfig != null && socketInterceptorConfig.isEnabled()) {
+            return true;
+        }
+        return false;
     }
 
     public PacketReader createPacketReader(TcpIpConnection connection) {
