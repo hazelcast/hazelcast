@@ -121,11 +121,15 @@ public class SocketAcceptor implements Runnable {
         if (socketChannelWrapper != null) {
             final SocketChannelWrapper socketChannel = socketChannelWrapper;
             log(Level.INFO, "Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
-            connectionManager.ioService.executeAsync(new Runnable() {
-                public void run() {
-                    configureAndAssignSocket(socketChannel);
-                }
-            });
+            if (connectionManager.isSocketInterceptorEnabled()) {
+                configureAndAssignSocket(socketChannel);
+            } else {
+                connectionManager.ioService.executeAsync(new Runnable() {
+                    public void run() {
+                        configureAndAssignSocket(socketChannel);
+                    }
+                });
+            }
         }
     }
 
