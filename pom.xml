@@ -651,7 +651,7 @@
                         <version>${findbugs.maven.plugin.version}</version>
                         <executions>
                             <execution>
-                                <phase>validate</phase>
+                                <phase>compile</phase>
                                 <goals>
                                     <goal>check</goal>
                                 </goals>
