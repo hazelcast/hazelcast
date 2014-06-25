@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
 
-    <!-- all these issues below need to be resolved in 3.3-->
-    <Match>
-        <Package name="com.hazelcast.spi.impl" />
-    </Match>
-
     <Match>
         <Class name="com.hazelcast.nio.ssl.SSLSocketChannelWrapper" />
         <Bug pattern="SWL_SLEEP_WITH_LOCK_HELD" />
