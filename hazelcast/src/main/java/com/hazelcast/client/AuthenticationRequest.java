@@ -43,7 +43,6 @@ public final class AuthenticationRequest extends CallableClientRequest {
 
     private Credentials credentials;
     private ClientPrincipal principal;
-    private boolean reAuth;
     private boolean firstConnection;
 
     public AuthenticationRequest() {
@@ -121,20 +120,21 @@ public final class AuthenticationRequest extends CallableClientRequest {
 
     private Object handleUnauthenticated() {
         ClientEngineImpl clientEngine = getService();
-        clientEngine.getEndpointManager().removeEndpoint(endpoint.getConnection());
+        clientEngine.getEndpointManager().removeEndpoint(endpoint);
         return new AuthenticationException("Invalid credentials!");
     }
 
     private Object handleAuthenticated() {
         ClientEngineImpl clientEngine = getService();
 
-        if (principal != null && reAuth) {
-            principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
+        if (firstConnection) {
+            principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
             reAuthLocal();
             Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
             for (MemberImpl member : members) {
                 if (!member.localMember()) {
-                    ClientReAuthOperation op = new ClientReAuthOperation(principal.getUuid(), firstConnection);
+                    ClientReAuthOperation op = new ClientReAuthOperation(endpoint.getUuid());
+                    op.setCallerUuid(clientEngine.getLocalMember().getUuid());
                     operationService.send(op, member.getAddress());
                 }
             }
@@ -169,10 +169,6 @@ public final class AuthenticationRequest extends CallableClientRequest {
         return ClientPortableHook.AUTH;
     }
 
-    public void setReAuth(boolean reAuth) {
-        this.reAuth = reAuth;
-    }
-
     public boolean isFirstConnection() {
         return firstConnection;
     }
@@ -189,7 +185,6 @@ public final class AuthenticationRequest extends CallableClientRequest {
         } else {
             writer.writeNullPortable("principal", ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
         }
-        writer.writeBoolean("reAuth", reAuth);
         writer.writeBoolean("firstConnection", firstConnection);
     }
 
@@ -197,7 +192,6 @@ public final class AuthenticationRequest extends CallableClientRequest {
     public void read(PortableReader reader) throws IOException {
         credentials = (Credentials) reader.readPortable("credentials");
         principal = reader.readPortable("principal");
-        reAuth = reader.readBoolean("reAuth");
         firstConnection = reader.readBoolean("firstConnection");
     }
 

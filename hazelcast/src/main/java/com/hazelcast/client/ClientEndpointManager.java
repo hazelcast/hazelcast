@@ -3,26 +3,33 @@ package com.hazelcast.client;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.UuidUtil;
 
+import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ClientEndpoints are stored and managed thorough this class.
  */
 public class ClientEndpointManager {
 
-    ILogger logger = Logger.getLogger(ClientEndpointManager.class);
+    private static final ILogger LOGGER = Logger.getLogger(ClientEndpointManager.class);
+    private static final int DESTROY_ENDPOINT_DELAY_MS = 1111;
     private final ClientEngineImpl clientEngine;
+    private final NodeEngine nodeEngine;
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<Connection, ClientEndpoint>();
 
-    public ClientEndpointManager(ClientEngineImpl clientEngine) {
+    public ClientEndpointManager(ClientEngineImpl clientEngine, NodeEngine nodeEngine) {
         this.clientEngine = clientEngine;
+        this.nodeEngine = nodeEngine;
     }
 
 
@@ -43,26 +50,64 @@ public class ClientEndpointManager {
 
     ClientEndpoint createEndpoint(Connection conn) {
         if (!conn.live()) {
-            logger.severe("Can't create and endpoint for a dead connection");
+            LOGGER.severe("Can't create and endpoint for a dead connection");
             return null;
         }
 
         String clientUuid = UuidUtil.createClientUuid(conn.getEndPoint());
         ClientEndpoint endpoint = new ClientEndpoint(clientEngine, conn, clientUuid);
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
-            logger.severe("An endpoint already exists for connection:" + conn);
+            LOGGER.severe("An endpoint already exists for connection:" + conn);
         }
         return endpoint;
     }
 
-    ClientEndpoint removeEndpoint(final Connection connection) {
-        return removeEndpoint(connection, false);
+    void removeEndpoint(final ClientEndpoint endpoint) {
+        removeEndpoint(endpoint, false);
     }
 
-    ClientEndpoint removeEndpoint(final Connection connection, boolean closeImmediately) {
-        final ClientEndpoint endpoint = endpoints.remove(connection);
-        clientEngine.destroyEndpoint(endpoint, closeImmediately);
-        return endpoint;
+    void removeEndpoint(final ClientEndpoint endpoint, boolean closeImmediately) {
+        endpoints.remove(endpoint.getConnection());
+        LOGGER.info("Destroying " + endpoint);
+        try {
+            endpoint.destroy();
+        } catch (LoginException e) {
+            LOGGER.warning(e);
+        }
+
+        final Connection connection = endpoint.getConnection();
+        if (closeImmediately) {
+            try {
+                connection.close();
+            } catch (Throwable e) {
+                LOGGER.warning("While closing client connection: " + connection, e);
+            }
+        } else {
+            nodeEngine.getExecutionService().schedule(new Runnable() {
+                public void run() {
+                    if (connection.live()) {
+                        try {
+                            connection.close();
+                        } catch (Throwable e) {
+                            LOGGER.warning("While closing client connection: " + e.toString());
+                        }
+                    }
+                }
+            }, DESTROY_ENDPOINT_DELAY_MS, TimeUnit.MILLISECONDS);
+        }
+        clientEngine.sendClientEvent(endpoint);
+    }
+
+    void removeEndpoints(String memberUuid) {
+        Iterator<ClientEndpoint> iterator = endpoints.values().iterator();
+        while (iterator.hasNext()) {
+            ClientEndpoint endpoint = iterator.next();
+            String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
+            if (memberUuid.equals(ownerUuid)) {
+                iterator.remove();
+                removeEndpoint(endpoint, true);
+            }
+        }
     }
 
     void clear() {

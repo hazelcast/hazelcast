@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.concurrent.lock.operations.LocalLockCleanupOperation;
 import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.core.DistributedObject;
@@ -200,13 +201,14 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     }
 
     private void sendUnlockOperation(LockStoreContainer container, LockStoreImpl lockStore, Data key) {
-        UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
+        UnlockOperation op = new LocalLockCleanupOperation(lockStore.getNamespace(), key, -1);
         op.setAsyncBackup(true);
         op.setNodeEngine(nodeEngine);
         op.setServiceName(SERVICE_NAME);
         op.setService(LockServiceImpl.this);
         op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
         op.setPartitionId(container.getPartitionId());
+        op.setValidateTarget(false);
         nodeEngine.getOperationService().executeOperation(op);
     }
 
