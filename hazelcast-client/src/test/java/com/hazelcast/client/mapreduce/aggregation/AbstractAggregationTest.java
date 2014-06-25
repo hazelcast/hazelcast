@@ -17,10 +17,13 @@
 package com.hazelcast.client.mapreduce.aggregation;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.mapreduce.aggregation.PropertyExtractor;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -48,6 +51,15 @@ public class AbstractAggregationTest
     public static void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+    }
+
+    @After
+    public void cleanup() {
+        for (DistributedObject object : HAZELCAST_INSTANCE.getDistributedObjects()) {
+            if (object instanceof IMap) {
+                ((IMap) object).destroy();
+            }
+        }
     }
 
     protected static int random(int min, int max) {
