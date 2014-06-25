@@ -56,14 +56,34 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     public static final long TIMEOUT = 5;
 
+
+    
+    /**
+     * A response indicating the 'null' value.
+     */
     static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
+    /**
+     * A response indicating that the operation should be executed again. E.g. because an operation
+     * was send to the wrong machine.
+     */
     static final Object RETRY_RESPONSE = new InternalResponse("Invocation::RETRY_RESPONSE");
 
+    /**
+     * Indicating that there currently is no 'result' available. An example is some kind of blocking
+     * operation like ILock.lock. If this lock isn't available at the moment, the wait response
+     * is returned.
+     */
     static final Object WAIT_RESPONSE = new InternalResponse("Invocation::WAIT_RESPONSE");
 
+    /**
+     * A response indicating that a timeout has happened.
+     */
     static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
 
+    /**
+     * A response indicating that the operation execution was interrupted
+     */
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
     private static final int TEN_FACTOR = 10;
@@ -88,6 +108,10 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     private static final long MIN_TIMEOUT = 10000;
+    private static final int MAX_FAST_INVOCATION_COUNT = 5;
+    //some constants for logging purposes
+    private static final int LOG_MAX_INVOCATION_COUNT = 99;
+    private static final int LOG_INVOCATION_COUNT_MOD = 10;
 
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
@@ -380,7 +404,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             invocationFuture.set(WAIT_RESPONSE);
             final ExecutionService ex = nodeEngine.getExecutionService();
             // fast retry for the first few invocations
-            if (invokeCount < INVOKE_COUNT_FIVE) {
+            if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                 getAsyncExecutor().execute(this);
             } else {
                 ex.schedule(ExecutionService.ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
@@ -401,23 +425,13 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
 
         if (error instanceof CallTimeoutException) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
-            }
-            if (op instanceof WaitSupport) {
-                // decrement wait-timeout by call-timeout
-                long waitTimeout = op.getWaitTimeout();
-                waitTimeout -= callTimeout;
-                op.setWaitTimeout(waitTimeout);
-            }
-            invokeCount--;
-            return RETRY_RESPONSE;
+            return resolveCallTimeout();
         }
 
-        final ExceptionAction action = onException(error);
-        final int localInvokeCount = invokeCount;
+        ExceptionAction action = onException(error);
+        int localInvokeCount = invokeCount;
         if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
-            if (localInvokeCount > NINETY_NINE_COUNT && localInvokeCount % TEN_FACTOR == 0) {
+            if (localInvokeCount > LOG_MAX_INVOCATION_COUNT && localInvokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
                 logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
             }
             return RETRY_RESPONSE;
@@ -428,6 +442,20 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
 
         return error;
+    }
+
+    private Object resolveCallTimeout() {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+        }
+        if (op instanceof WaitSupport) {
+            // decrement wait-timeout by call-timeout
+            long waitTimeout = op.getWaitTimeout();
+            waitTimeout -= callTimeout;
+            op.setWaitTimeout(waitTimeout);
+        }
+        invokeCount--;
+        return RETRY_RESPONSE;
     }
 
     protected abstract Address getTarget();
