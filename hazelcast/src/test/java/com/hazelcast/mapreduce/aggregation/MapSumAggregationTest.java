@@ -17,7 +17,7 @@
 package com.hazelcast.mapreduce.aggregation;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,7 +29,7 @@ import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MapSumAggregationTest
         extends AbstractAggregationTest {
