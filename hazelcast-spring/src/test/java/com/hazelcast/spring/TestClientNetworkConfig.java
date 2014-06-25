@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.nio.ssl.TestKeyStoreUtil;
 import com.hazelcast.test.annotation.QuickTest;
@@ -74,8 +75,9 @@ public class TestClientNetworkConfig {
     @Test
     public void smokeSocketInterceptor() throws IOException {
         ClientConfig config = client.getClientConfig();
-        assertEquals(true
-                , config.getNetworkConfig().getSocketInterceptorConfig().isEnabled());
+        final SocketInterceptorConfig socketInterceptorConfig = config.getNetworkConfig().getSocketInterceptorConfig();
+        assertEquals(false, socketInterceptorConfig.isEnabled());
+        assertEquals(DummySocketInterceptor.class.getName(), socketInterceptorConfig.getClassName());
     }
 
     @Test
