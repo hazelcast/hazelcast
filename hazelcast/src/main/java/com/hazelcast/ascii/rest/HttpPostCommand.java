@@ -26,11 +26,14 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
+    private static final int RADIX = 16;
+    private static final int CAPACITY = 500;
+
     boolean nextLine;
     boolean readyToReadData;
 
     private ByteBuffer data;
-    private ByteBuffer line = ByteBuffer.allocate(500);
+    private ByteBuffer line = ByteBuffer.allocate(CAPACITY);
     private String contentType;
     private final SocketTextReader socketTextRequestReader;
     private boolean chunked;
@@ -92,7 +95,7 @@ public class HttpPostCommand extends HttpCommand {
                 }
                 if (hasLine) {
                     // hex string
-                    int dataSize = lineStr.length() == 0 ? 0 : Integer.parseInt(lineStr, 16);
+                    int dataSize = lineStr.length() == 0 ? 0 : Integer.parseInt(lineStr, RADIX);
                     if (dataSize == 0) {
                         return true;
                     }

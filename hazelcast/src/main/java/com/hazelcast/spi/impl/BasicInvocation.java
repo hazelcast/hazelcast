@@ -66,6 +66,10 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
+    private static final int TEN_FACTOR = 10;
+    private static final int NINETY_NINE_COUNT = 99;
+    private static final int INVOKE_COUNT_FIVE = 5;
+
     private static final AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
 
@@ -372,7 +376,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             invocationFuture.set(WAIT_RESPONSE);
             final ExecutionService ex = nodeEngine.getExecutionService();
             // fast retry for the first few invocations
-            if (invokeCount < 5) {
+            if (invokeCount < INVOKE_COUNT_FIVE) {
                 getAsyncExecutor().execute(this);
             } else {
                 ex.schedule(ExecutionService.ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
@@ -407,7 +411,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         final ExceptionAction action = onException(error);
         final int localInvokeCount = invokeCount;
         if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
-            if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
+            if (localInvokeCount > NINETY_NINE_COUNT && localInvokeCount % TEN_FACTOR == 0) {
                 logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
             }
             return RETRY_RESPONSE;
