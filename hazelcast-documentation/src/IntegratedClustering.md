@@ -5,8 +5,6 @@
 Hazelcast provides distributed second level cache for your Hibernate entities, collections and queries. 
 
 
-## Configuration
-
 ### Supported Hibernate Versions
 
 - 	hibernate 3.3.x+
@@ -14,58 +12,55 @@ Hazelcast provides distributed second level cache for your Hibernate entities, c
 
 ### Hibernate Configuration
 
-add these properties into your Hibernate configuration file (e.g. `hibernate.cfg.xml`)
+First of all, add `hazelcast-hibernate3-<`*hazelcastversion*`>.jar` or `hazelcast-hibernate4-<`*hazelcastversion*`>.jar`  into your classpath depending on your Hibernate version.
 
--   To enable use of second level cache
+Then add below properties into your Hibernate configuration file (e.g. `hibernate.cfg.xml`).
+
+**Enabling the use of second level cache**
 
 ```xml
 <property name="hibernate.cache.use_second_level_cache">true</property>
 ```
-**Classpath Configuration**
-
-add hazelcast-hibernate3-*hazelcastversion*.jar or hazelcast-hibernate4-*hazelcastversion*.jar  into your classpath depending on your Hibernate version.
-
 
 **Hibernate RegionFactory**
 
--   HazelcastCacheRegionFactory
+-   *HazelcastCacheRegionFactory*
 
-`HazelcastCacheRegionFactory` uses Hazelcast Distributed Map to cache the data so all cache operations go through the wire.
+	`HazelcastCacheRegionFactory` uses Hazelcast Distributed Map to cache the data, so all cache operations go through the wire.
 
-`
-``xml    
-<property name="hibernate.cache.region.factory_class">
-     com.hazelcast.hibernate.HazelcastCacheRegionFactory
-</property>
-```
+	```xml    
+	<property name="hibernate.cache.region.factory_class">
+	     com.hazelcast.hibernate.HazelcastCacheRegionFactory
+	</property>
+	```
 
--   HazelcastLocalCacheRegionFactory
+-   *HazelcastLocalCacheRegionFactory*
 
-You can use `HazelcastLocalCacheRegionFactory` which stores data in local node and sends invalidation messages when an entry is updated/deleted on local.
+	You can use `HazelcastLocalCacheRegionFactory` which stores data in local node and sends invalidation messages when an entry is updated/deleted on local.
 
-```xml
-<property name="hibernate.cache.region.factory_class">
-     com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory
-</property>
-```
+	```xml
+	<property name="hibernate.cache.region.factory_class">
+	     com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory
+	</property>
+	```
 
 **Optional Settings**
 
--   To enable use of query cache
+-   To enable use of query cache:
 
-```xml
-<property name="hibernate.cache.use_query_cache">true</property>
-```
+	```xml
+	<property name="hibernate.cache.use_query_cache">true</property>
+	```
 
--   And to force minimal puts into cache
+-   And to force minimal puts into cache:
 
-```xml
-<property name="hibernate.cache.use_minimal_puts">true</property>
-```
+	```xml
+	<property name="hibernate.cache.use_minimal_puts">true</property>
+	```
 
 ### Hazelcast Configuration
 
--   To configure Hazelcast for Hibernate, it is enough to put configuration file named `hazelcast.xml` into root of your classpath. If Hazelcast cannot find `hazelcast.xml`, then it will use default configuration from `hazelcast.jar`.
+-   To configure Hazelcast for Hibernate, it is enough to put configuration file named `hazelcast.xml` into root of your classpath. If Hazelcast cannot find `hazelcast.xml`, then it will use the default configuration from `hazelcast.jar`.
 
 -   You can define custom named Hazelcast configuration XML file with one of these Hibernate configuration properties.
 
@@ -85,18 +80,18 @@ You can use `HazelcastLocalCacheRegionFactory` which stores data in local node a
 
 Hazelcast creates a separate distributed map for each Hibernate cache region. So, these regions can be configured easily via Hazelcast map configuration. You can define **backup**, **eviction**, **TTL** and **Near Cache** properties.
 
--   [Backup Configuration](#backups)
+-   [Backup Configuration](#map-backups)
 
 -   [Eviction And TTL Configuration](#eviction)
 
 -   [Near Cache Configuration](#near-cache)
 
 
-### Hazelcast Architecture
+### Hazelcast Modes for Hibernate Usage
 
-Hibernate 2nd Level Cache can use Hazelcast in two modes : P2P,Client/Server
+Hibernate 2nd Level Cache can use Hazelcast in two modes: P2P and Client/Server
 
-## P2P (Peer-to-Peer)
+##### P2P (Peer-to-Peer)
 
 With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. You can also configure Hibernate to use an existing instance so instead of creating a new `HazelcastInstance` for each `SessionFactory`, an existing instance can be used by setting `hibernate.cache.hazelcast.instance_name` Hibernate property to `HazelcastInstance`'s name. For more information see [Named HazelcastInstance](#named-hazelcastinstance).
 
@@ -105,15 +100,15 @@ With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. Yo
 Shutting down `HazelcastInstance` can be disabled during `SessionFactory.close()` by setting `hibernate.cache.hazelcast.shutdown_on_session_factory_close` Hibernate property to false. *(In this case Hazelcast property `hazelcast.shutdownhook.enabled` should not be set to false.)* Default value is `true`.
 
 
-## CLIENT/SERVER
+##### CLIENT/SERVER
 
--   You can set up Hazelcast to connect cluster as Native Client. Native client is not a member; it connects to one of the cluster members and delegates all cluster wide operations to it. When the relied cluster member dies, client will transparently switch to another live member.
+-   You can set up Hazelcast to connect to the cluster as Native Client. Native client is not a member; it connects to one of the cluster members and delegates all cluster wide operations to it. When the relied cluster member dies, client will transparently switch to another live member.
 
 ```xml   
 <property name="hibernate.cache.hazelcast.use_native_client">true</property>
 ```
 
-To setup Native Client properly, you should add Hazelcast **group-name**, **group-password** and **cluster member address** properties. Native Client will connect to defined member and will get addresses of all members in the cluster. If the connected member will die or leave the cluster, client will automatically switch to another member in the cluster.
+To setup Native Client properly, you should add Hazelcast **group-name**, **group-password** and **cluster member address** properties. Native Client will connect to defined member and will get addresses of all members in the cluster. If the connected member dies or leaves the cluster, client will automatically switch to another member in the cluster.
 
 ```xml  
 <property name="hibernate.cache.hazelcast.native_client_address">10.34.22.15</property>
@@ -121,14 +116,14 @@ To setup Native Client properly, you should add Hazelcast **group-name**, **grou
 <property name="hibernate.cache.hazelcast.native_client_password">dev-pass</property>
 ```
 
-***Note***: *To use Native Client you should add `hazelcast-client-<version>.jar` into your classpath. Refer to [Native Clients](#native-client) for more information.*
+***Note***: *To use Native Client, you should add `hazelcast-client-<version>.jar` into your classpath. Refer to [Native Clients](#native-client) for more information.*
 
-## Hibernate Concurrency Strategies
+### Hibernate Concurrency Strategies
 
 Hibernate has four cache concurrency strategies: *read-only*, *read-write*, *nonstrict-read-write* and *transactional*. But, Hibernate does not force cache providers to support all strategies. Hazelcast supports first three (**read-only**, **read-write**, **nonstrict-read-write**) of these strategies. It has no support for *transactional* strategy yet.
 
 -   If you are using XML based class configurations, you should add a *cache* element into your configuration with *usage* attribute with one of *read-only*, *read-write*, *nonstrict-read-write*.
-
+   
 ```xml
 <class name="eg.Immutable" mutable="false">
     <cache usage="read-only"/>
@@ -163,7 +158,7 @@ public class Cat implements Serializable {
 }
 ```
 
-## Advanced Settings
+### Advanced Settings
 
 **Accessing underlying HazelcastInstance**
 
