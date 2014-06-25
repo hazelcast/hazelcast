@@ -25,7 +25,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-
+/**
+ * Used for queue-wide events.
+ */
 public class QueueEvent implements IdentifiedDataSerializable {
 
     String name;

@@ -33,17 +33,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This class contains methods be notable for the Queue.
+ * such as pool,peek,clear..
+ */
 public class QueueContainer implements IdentifiedDataSerializable {
 
     private LinkedList<QueueItem> itemQueue;
@@ -359,10 +363,32 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     public Map<Long, Data> drain(int maxSize) {
-        if (maxSize < 0 || maxSize > getItemQueue().size()) {
-            maxSize = getItemQueue().size();
+        int maxSizeParam = maxSize;
+        if (maxSizeParam < 0 || maxSizeParam > getItemQueue().size()) {
+            maxSizeParam = getItemQueue().size();
         }
-        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(maxSize);
+        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(maxSizeParam);
+        mapDrainIterator(maxSizeParam, map);
+        if (store.isEnabled() && maxSizeParam != 0) {
+            try {
+                store.deleteAll(map.keySet());
+            } catch (Exception e) {
+                throw new HazelcastException(e);
+            }
+        }
+        long current = Clock.currentTimeMillis();
+        for (int i = 0; i < maxSizeParam; i++) {
+            QueueItem item = getItemQueue().poll();
+            //For Stats
+            age(item, current);
+        }
+        if (maxSizeParam != 0) {
+            scheduleEvictionIfEmpty();
+        }
+        return map;
+    }
+
+    public void mapDrainIterator(int maxSize, Map map) {
         Iterator<QueueItem> iter = getItemQueue().iterator();
         for (int i = 0; i < maxSize; i++) {
             QueueItem item = iter.next();
@@ -375,23 +401,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
             }
             map.put(item.getItemId(), item.getData());
         }
-        if (store.isEnabled() && maxSize != 0) {
-            try {
-                store.deleteAll(map.keySet());
-            } catch (Exception e) {
-                throw new HazelcastException(e);
-            }
-        }
-        long current = Clock.currentTimeMillis();
-        for (int i = 0; i < maxSize; i++) {
-            QueueItem item = getItemQueue().poll();
-            //For Stats
-            age(item, current);
-        }
-        if (maxSize != 0) {
-            scheduleEvictionIfEmpty();
-        }
-        return map;
     }
 
     public void drainFromBackup(Set<Long> itemIdSet) {
@@ -523,6 +532,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 map.put(item.getItemId(), item.getData());
             }
         }
+
+        mapIterateAndRemove(map);
+
+        return map;
+    }
+
+    public void mapIterateAndRemove(Map map) {
         if (map.size() > 0) {
             if (store.isEnabled()) {
                 try {
@@ -542,7 +558,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
             }
             scheduleEvictionIfEmpty();
         }
-        return map;
     }
 
     public void compareAndRemoveBackup(Set<Long> itemIdSet) {
@@ -555,7 +570,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (bulkLoad == 1) {
             item.setData(store.load(item.getItemId()));
         } else if (bulkLoad > 1) {
-            ListIterator<QueueItem> iter = getItemQueue().listIterator();
+            Iterator<QueueItem> iter = getItemQueue().iterator();
             HashSet<Long> keySet = new HashSet<Long>(bulkLoad);
             for (int i = 0; i < bulkLoad; i++) {
                 keySet.add(iter.next().getItemId());
@@ -574,7 +589,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return (getItemQueue().size() + delta) <= config.getMaxSize();
     }
 
-    LinkedList<QueueItem> getItemQueue() {
+    Deque<QueueItem> getItemQueue() {
         if (itemQueue == null) {
             itemQueue = new LinkedList<QueueItem>();
             if (backupMap != null && !backupMap.isEmpty()) {

@@ -47,7 +47,7 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
     }
 
     protected String getName() {
-        return (String) getClientEngine().toObject(key);
+        return serializationService.toObject(key);
     }
 
     @Override
@@ -80,5 +80,10 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
     }
 }

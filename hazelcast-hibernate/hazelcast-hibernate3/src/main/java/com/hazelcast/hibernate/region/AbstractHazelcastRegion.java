@@ -26,6 +26,11 @@ import org.hibernate.cache.CacheException;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Abstract superclass of Hazelcast region of Hibernate caches
+ *
+ * @param <Cache> implementation type of RegionCache
+ */
 abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements HazelcastRegion<Cache> {
 
     protected final Properties props;

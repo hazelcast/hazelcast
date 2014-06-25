@@ -22,6 +22,9 @@ import org.hibernate.cache.spi.NaturalIdRegion;
 import org.hibernate.cache.spi.access.NaturalIdRegionAccessStrategy;
 import org.hibernate.cache.spi.access.SoftLock;
 
+/**
+ * Simple adapter implementation for transactional / concurrent access control on natural ids
+ */
 public final class NaturalIdRegionAccessStrategyAdapter implements NaturalIdRegionAccessStrategy {
 
     private final AccessDelegate<? extends HazelcastNaturalIdRegion> delegate;

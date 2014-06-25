@@ -36,6 +36,9 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.logging.Level;
 
+/**
+ * Client Authentication Request that holds credentials
+ */
 public final class AuthenticationRequest extends CallableClientRequest {
 
     private Credentials credentials;
@@ -118,7 +121,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
 
     private Object handleUnauthenticated() {
         ClientEngineImpl clientEngine = getService();
-        clientEngine.removeEndpoint(endpoint.getConnection());
+        clientEngine.getEndpointManager().removeEndpoint(endpoint.getConnection());
         return new AuthenticationException("Invalid credentials!");
     }
 
@@ -132,20 +135,21 @@ public final class AuthenticationRequest extends CallableClientRequest {
             for (MemberImpl member : members) {
                 if (!member.localMember()) {
                     ClientReAuthOperation op = new ClientReAuthOperation(principal.getUuid(), firstConnection);
-                    clientEngine.sendOperation(op, member.getAddress());
+                    operationService.send(op, member.getAddress());
                 }
             }
         }
         if (principal == null) {
             principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
         }
-        endpoint.authenticated(principal, firstConnection);
+        endpoint.authenticated(principal, credentials, firstConnection);
         clientEngine.bind(endpoint);
-        return new SerializableCollection(clientEngine.toData(clientEngine.getThisAddress()), clientEngine.toData(principal));
+        return new SerializableCollection(serializationService.toData(clientEngine.getThisAddress())
+                , serializationService.toData(principal));
     }
 
     private void reAuthLocal() {
-        final Set<ClientEndpoint> endpoints = clientEngine.getEndpoints(principal.getUuid());
+        final Set<ClientEndpoint> endpoints = clientEngine.getEndpointManager().getEndpoints(principal.getUuid());
         for (ClientEndpoint endpoint : endpoints) {
             endpoint.authenticated(principal);
         }

@@ -25,6 +25,9 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
+/**
+ * Queue Item.
+ */
 public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem> {
 
     protected long itemId;

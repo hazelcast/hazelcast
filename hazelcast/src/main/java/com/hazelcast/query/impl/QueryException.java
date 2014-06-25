@@ -18,6 +18,9 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.HazelcastException;
 
+/**
+ * Exception class for the Query.
+ */
 public class QueryException extends HazelcastException {
     public QueryException(Throwable cause) {
         super(cause);

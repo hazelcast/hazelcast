@@ -18,6 +18,9 @@ package com.hazelcast.queue;
 
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 
+/**
+ * Wait thread till notify the key.
+ */
 public class QueueWaitNotifyKey extends AbstractWaitNotifyKey {
 
     private final String type;

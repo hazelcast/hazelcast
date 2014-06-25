@@ -101,7 +101,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
             return defaultValue;
         }
         if (object instanceof Data) {
-            object = serializationService.toObject((Data) object);
+            return serializationService.toObject((Data) object);
         }
         return (V) object;
     }

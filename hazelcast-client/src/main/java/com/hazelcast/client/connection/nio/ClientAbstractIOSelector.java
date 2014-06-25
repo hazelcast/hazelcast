@@ -18,7 +18,8 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.IOSelector;
+import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -61,22 +62,27 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         this.selector = selectorTemp;
     }
 
+    @Override
     public Selector getSelector() {
         return selector;
     }
 
+    @Override
     public void addTask(Runnable runnable) {
         selectorQueue.add(runnable);
     }
 
+    @Override
     public void wakeup() {
         selector.wakeup();
     }
 
+    @Override
     public void shutdown() {
         selectorQueue.clear();
         try {
             addTask(new Runnable() {
+                @Override
                 public void run() {
                     live = false;
                     shutdownLatch.countDown();
@@ -84,13 +90,16 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
             });
             interrupt();
         } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
         }
     }
 
+    @Override
     public void awaitShutdown() {
         try {
             shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
         }
     }
 
@@ -104,6 +113,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         }
     }
 
+    @Override
     public final void run() {
         try {
             //noinspection WhileLoopSpinsOnField
@@ -147,6 +157,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
                 }
                 selector.close();
             } catch (final Exception ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
     }

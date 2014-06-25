@@ -33,10 +33,25 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class MulticastConfig {
 
+    /**
+     * Whether the multicast discovery mechanism has been enabled
+     */
     public static final boolean DEFAULT_ENABLED = true;
+    /**
+     * Default group of multicast.
+     */
     public static final String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
+    /**
+     * Default value of port.
+     */
     public static final int DEFAULT_MULTICAST_PORT = 54327;
+    /**
+     * Default timeout of multicast in seconds.
+     */
     public static final int DEFAULT_MULTICAST_TIMEOUT_SECONDS = 2;
+    /**
+     * Default value of time to live of multicast.
+     */
     public static final int DEFAULT_MULTICAST_TTL = 32;
 
     private static final int MULTICAST_TTL_UPPER_BOUND = 255;

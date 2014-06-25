@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
@@ -77,7 +76,7 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
         Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
         Collection<Address> addresses = new HashSet<Address>();
         for (MemberImpl member : memberList) {
-                addresses.add(member.getAddress());
+            addresses.add(member.getAddress());
         }
         return addresses;
     }
@@ -94,5 +93,15 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_INTERCEPT);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "removeInterceptor";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{id};
     }
 }

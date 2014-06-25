@@ -15,7 +15,10 @@
  */
 
 package com.hazelcast.config;
-
+/**
+ * Configuration for map's capacity.
+ * You can set a limit for number of entries or total memory cost of entries.
+ */
 public class MaxSizeConfig {
 
     private MaxSizeConfigReadOnly readOnly;
@@ -36,8 +39,26 @@ public class MaxSizeConfig {
         this.maxSizePolicy = config.maxSizePolicy;
     }
 
+    /**
+     * Maximum Size Policy
+     */
     public enum MaxSizePolicy {
-        PER_NODE, PER_PARTITION, USED_HEAP_PERCENTAGE, USED_HEAP_SIZE
+        /**
+         * Decide maximum size of map according to node
+         */
+        PER_NODE,
+        /**
+         * Decide maximum size of map according to partition
+         */
+        PER_PARTITION,
+        /**
+         * Decide maximum size of map with use heap percentage
+         */
+        USED_HEAP_PERCENTAGE,
+        /**
+         * Decide maximum size of map with use heap size
+         */
+        USED_HEAP_SIZE
     }
 
     public MaxSizeConfigReadOnly getAsReadOnly() {
@@ -52,10 +73,11 @@ public class MaxSizeConfig {
     }
 
     public MaxSizeConfig setSize(int size) {
-        if (size <= 0) {
-            size = Integer.MAX_VALUE;
+        int paramSize = size;
+        if (paramSize <= 0) {
+            paramSize = Integer.MAX_VALUE;
         }
-        this.size = size;
+        this.size = paramSize;
         return this;
     }
 

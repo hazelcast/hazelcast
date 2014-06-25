@@ -53,7 +53,7 @@ public class ValuesRequest extends MultiMapAllPartitionRequest implements Retrya
                 continue;
             }
             for (MultiMapRecord record : coll) {
-                list.add(getClientEngine().toData(record.getObject()));
+                list.add(serializationService.toData(record.getObject()));
             }
         }
         return new PortableCollection(list);

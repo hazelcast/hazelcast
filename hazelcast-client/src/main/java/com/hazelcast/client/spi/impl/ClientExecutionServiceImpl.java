@@ -47,8 +47,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ScheduledExecutorService scheduledExecutor;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
-        if (poolSize <= 0) {
-            poolSize = Runtime.getRuntime().availableProcessors();
+        int executorPoolSize = poolSize;
+        if (executorPoolSize <= 0) {
+            executorPoolSize = Runtime.getRuntime().availableProcessors();
         }
         internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
@@ -60,7 +61,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                         throw new RejectedExecutionException(message);
                     }
                 });
-        executor = new ThreadPoolExecutor(poolSize, poolSize, 0L, TimeUnit.MILLISECONDS,
+        executor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader),
                 new RejectedExecutionHandler() {

@@ -179,6 +179,11 @@ public interface IMap<K, V>
      * <p>The map will not contain a mapping for the specified key once the
      * call returns.
      *
+     * <p><b>Warning:</b></p>
+     * This method breaks the contract of EntryListener.
+     * When an entry is removed by delete(), it fires an EntryEvent with a null oldValue.
+     * <p/>
+     *
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException   if the key is of an inappropriate type for
      *                              this map (optional)
@@ -206,7 +211,6 @@ public interface IMap<K, V>
      * defined in <tt>key</tt>'s class.
      * <p/>
      *
-     *
      * @param keys keys to get
      * @return map of entries
      * @throws NullPointerException if any of the specified keys are null
@@ -214,27 +218,26 @@ public interface IMap<K, V>
     Map<K, V> getAll(Set<K> keys);
 
     /**
-     * todo  3.3 add this method
-     * Loads given keys. This is a batch load operation so that an implementation can
+     * Loads all keys into the store. This is a batch load operation so that an implementation can
      * optimize the multiple loads.
      *
-     * @param keys keys of the values entries to load
-     * @param replaceExistingValues when true existing values in the Map will
+     * @param replaceExistingValues when <code>true</code> existing values in the Map will
      *                              be replaced by those loaded from the MapLoader
-     * void loadAll(Set<K> keys, boolean replaceExistingValues);
+     *                              void loadAll(boolean replaceExistingValues));
+     * @since 3.3
      */
+    void loadAll(boolean replaceExistingValues);
 
     /**
-     * todo  3.3 add this method
-     * Loads all keys into the store.
      * Loads given keys. This is a batch load operation so that an implementation can
      * optimize the multiple loads.
      *
-     * @param keys keys of the values entries to load
-     * @param replaceExistingValues when true existing values in the Map will
+     * @param keys                  keys of the values entries to load
+     * @param replaceExistingValues when <code>true</code> existing values in the Map will
      *                              be replaced by those loaded from the MapLoader
-     * void loadAll(boolean replaceExistingValues));
+     * @since 3.3
      */
+    void loadAll(Set<K> keys, boolean replaceExistingValues);
 
 
     /**
@@ -887,18 +890,17 @@ public interface IMap<K, V>
     boolean evict(K key);
 
     /**
-     * todo implement for 3.3
-     * Evicts all keys from this map.
+     * Evicts all keys from this map except locked ones.
      * <p/>
      * If a <tt>MapStore</tt> is defined for this map, deleteAll is <strong>not</strong> called by this method.
-     * If you do want to deletaAll to be called use the {@link #clear()} method.
+     * If you do want to deleteAll to be called use the {@link #clear()} method.
      * <p/>
      * The EVICT_ALL event is fired for any registered listeners.
      *
      * @see #clear()
-     * void evictAll();
+     * @since 3.3
      */
-
+    void evictAll();
 
     /**
      * Returns a set clone of the keys contained in this map.
@@ -1043,9 +1045,9 @@ public interface IMap<K, V>
      * <h3>Time to Index</h3>
      * Indexing time is executed in parallel on each partition by operation threads. The Map
      * is not blocked during this operation.
-     *
+     * <p/>
      * The time taken in proportional to the size of the Map and the number Members.
-     *
+     * <p/>
      * <h3>Searches while indexes are being built</h3>
      * Until the index finishes being created, any searches for the attribute will use a full Map scan,
      * thus avoiding using a partially built index and returning incorrect results.

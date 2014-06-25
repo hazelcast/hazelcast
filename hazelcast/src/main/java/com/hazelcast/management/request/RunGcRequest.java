@@ -19,6 +19,9 @@ package com.hazelcast.management.request;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.management.ManagementCenterService;
 
+/**
+ * Request for invoking Garbage Collection on the node.
+ */
 //We want to be able to force a gc.
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_GC")
 public class RunGcRequest implements ConsoleRequest {

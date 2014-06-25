@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 
 public class RemoveInterceptorOperationFactory implements OperationFactory {

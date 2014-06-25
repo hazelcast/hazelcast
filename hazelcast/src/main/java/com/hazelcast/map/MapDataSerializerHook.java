@@ -31,9 +31,6 @@ import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.QueryResultSet;
 
-/**
- * @author mdogan 8/24/12
- */
 public final class MapDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_DS_FACTORY, -10);
@@ -61,7 +58,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     }
 
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[LEN];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
         constructors[PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {

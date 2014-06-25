@@ -19,6 +19,7 @@ package com.hazelcast.client.console;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.console.LineReader;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -33,12 +34,12 @@ import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
-import com.hazelcast.console.LineReader;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -51,6 +52,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -76,6 +78,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private static final int ONE_THOUSAND = 1000;
     private static final int ONE_HUNDRED = 100;
     private static final int ONE_HOUR = 3600;
+
+    private static final int MAX_THREAD_COUNT = 16;
+    private static final int HUNDRED_CONSTANT = 100;
+    private static final int BYTE_TO_BIT = 8;
+    private static final int LENGTH_BORDER = 4;
 
     private IQueue<Object> queue;
 
@@ -184,8 +191,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     static class DefaultLineReader implements LineReader {
 
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_DEFAULT_ENCODING")
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in, Charset.forName("UTF-8")));
 
         public String readLine() throws Exception {
             return in.readLine();
@@ -193,13 +199,14 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
 
-    //CECKSTYLE:OFF
+    //CHECKSTYLE:OFF
 
     /**
      * Handle a command
      *
      * @param commandInputted
      */
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_EXIT")
     protected void handleCommand(String commandInputted) {
 
         String command = commandInputted;
@@ -255,7 +262,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                         // TODO &t #4 m.putmany x k
                         if ("m.putmany".equals(threadArgs[0])
                                 || "m.removemany".equals(threadArgs[0])) {
-                            if (threadArgs.length < 4) {
+                            if (threadArgs.length < LENGTH_BORDER) {
                                 command += " " + Integer.parseInt(threadArgs[1]) * threadID;
                             }
                         }
@@ -443,7 +450,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private void handleExecutorSimulate(String[] args) {
         String first = args[0];
         int threadCount = Integer.parseInt(first.substring(1, first.indexOf(".")));
-        if (threadCount < 1 || threadCount > 16) {
+        if (threadCount < 1 || threadCount > MAX_THREAD_COUNT) {
             throw new RuntimeException("threadcount can't be smaller than 1 or larger than 16");
         }
 
@@ -580,7 +587,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 / ONE_KB
                 / ONE_KB
                 + "M "
-                + (int) (Runtime.getRuntime().freeMemory() * 100 / Runtime.getRuntime()
+                + (int) (Runtime.getRuntime().freeMemory() * HUNDRED_CONSTANT / Runtime.getRuntime()
                 .maxMemory()) + "%");
         long total = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
@@ -619,7 +626,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private void handleAtomicNumberSet(String[] args) {
         long v = 0;
         if (args.length > 1) {
-            v = Long.valueOf(args[1]);
+            v = Long.parseLong(args[1]);
         }
         getAtomicNumber().set(v);
         println(getAtomicNumber().get());
@@ -789,7 +796,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         long t1 = Clock.currentTimeMillis();
         if (t1 - t0 > 1) {
             println("size = " + getMap().size() + ", " + count * ONE_THOUSAND / (t1 - t0)
-                    + " evt/s, " + (count * ONE_THOUSAND / (t1 - t0)) * (b * 8) / ONE_KB + " Kbit/s, "
+                    + " evt/s, " + (count * ONE_THOUSAND / (t1 - t0)) * (b * BYTE_TO_BIT) / ONE_KB + " Kbit/s, "
                     + count * b / ONE_KB + " KB added");
         }
     }
@@ -828,7 +835,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     protected void handleMapTryLock(String[] args) {
         String key = args[1];
-        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
+        long time = (args.length > 2) ? Long.parseLong(args[2]) : 0;
         boolean locked;
         if (time == 0) {
             locked = getMap().tryLock(key);
@@ -951,7 +958,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     protected void handleMultiMapTryLock(String[] args) {
         String key = args[1];
-        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
+        long time = (args.length > 2) ? Long.parseLong(args[2]) : 0;
         boolean locked;
         if (time == 0) {
             locked = getMultiMap().tryLock(key);
@@ -999,7 +1006,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             if (timeout == null) {
                 println(lock.tryLock());
             } else {
-                long time = Long.valueOf(timeout);
+                long time = Long.parseLong(timeout);
                 try {
                     println(lock.tryLock(time, TimeUnit.SECONDS));
                 } catch (InterruptedException e) {
@@ -1212,7 +1219,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     protected void handleQOffer(String[] args) {
         long timeout = 0;
         if (args.length > 2) {
-            timeout = Long.valueOf(args[2]);
+            timeout = Long.parseLong(args[2]);
         }
         try {
             boolean offered = getQueue().offer(args[1], timeout, TimeUnit.SECONDS);
@@ -1233,7 +1240,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     protected void handleQPoll(String[] args) {
         long timeout = 0;
         if (args.length > 1) {
-            timeout = Long.valueOf(args[1]);
+            timeout = Long.parseLong(args[1]);
         }
         try {
             println(getQueue().poll(timeout, TimeUnit.SECONDS));
@@ -1269,7 +1276,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             println("");
         } else {
             int b = Integer.parseInt(args[2]);
-            println(", " + (count * ONE_THOUSAND / (t1 - t0)) * (b * 8) / ONE_KB + " Kbit/s, "
+            println(", " + (count * ONE_THOUSAND / (t1 - t0)) * (b * BYTE_TO_BIT) / ONE_KB + " Kbit/s, "
                     + count * b / ONE_KB + " KB added");
         }
     }
@@ -1376,6 +1383,16 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     @Override
     public void entryEvicted(EntryEvent event) {
+        println(event);
+    }
+
+    @Override
+    public void mapEvicted(MapEvent event) {
+        println(event);
+    }
+
+    @Override
+    public void mapCleared(MapEvent event) {
         println(event);
     }
 

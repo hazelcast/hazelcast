@@ -649,6 +649,7 @@ public class EvictionTest extends HazelcastTestSupport {
     @Category(NightlyTest.class)
     public void testMapRecordIdleEvictionOnMigration() {
         Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
         final String name = "testMapRecordIdleEvictionOnMigration";
         MapConfig mc = cfg.getMapConfig(name);
         int maxIdleSeconds = 30;
@@ -683,7 +684,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
         //wait until eviction is complete
-        assertOpenEventually(latch);
+        assertOpenEventually(latch, 240);
 
         assertSizeEventually(nsize, map);
     }

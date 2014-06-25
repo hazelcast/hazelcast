@@ -30,7 +30,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.security.Permission;
 
@@ -95,4 +94,13 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Por
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 
+    @Override
+    public String getMethodName() {
+        return "remove";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, value};
+    }
 }

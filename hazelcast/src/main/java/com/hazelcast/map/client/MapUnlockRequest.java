@@ -27,7 +27,6 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-
 import java.io.IOException;
 import java.security.Permission;
 
@@ -74,4 +73,8 @@ public class MapUnlockRequest extends AbstractUnlockRequest implements SecureReq
         return new MapPermission(name, ActionConstants.ACTION_LOCK);
     }
 
+    @Override
+    public String getDistributedObjectType() {
+        return MapService.SERVICE_NAME;
+    }
 }

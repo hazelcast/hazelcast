@@ -23,9 +23,11 @@ import org.hibernate.cache.access.SoftLock;
 import java.util.Properties;
 
 /**
+ * Guarantees that view is read-only and no updates can be made
+ *
  * @author Leo Kim (lkim@limewire.com)
+ * @param <T> implementation type of HazelcastRegion
  */
-
 public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrictReadWriteAccessDelegate<T> {
 
     public ReadOnlyAccessDelegate(T hazelcastRegion, final Properties props) {

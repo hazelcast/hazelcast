@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @ali 09/11/13
+ * Contains configuration for Set(read only)
  */
 public class SetConfigReadOnly extends SetConfig {
 

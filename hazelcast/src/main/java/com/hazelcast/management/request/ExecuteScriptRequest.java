@@ -36,12 +36,15 @@ import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
 
+/**
+ * Request for executing scripts on the nodes from Management Center.
+ */
 public class ExecuteScriptRequest implements ConsoleRequest {
 
     private String script;
     private String engine;
     private Set<String> targets;
-    private boolean targetAllMembers = false;
+    private boolean targetAllMembers;
     private Map<String, Object> bindings;
 
     public ExecuteScriptRequest() {

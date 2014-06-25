@@ -31,8 +31,8 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
     }
 
     /**
-    * Get record size in bytes.
-    * */
+     * Get record size in bytes.
+     */
     @Override
     public long getCost() {
         long cost = super.getCost();

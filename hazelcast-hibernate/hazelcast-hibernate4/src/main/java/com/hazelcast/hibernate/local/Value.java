@@ -19,7 +19,7 @@ package com.hazelcast.hibernate.local;
 import org.hibernate.cache.spi.access.SoftLock;
 
 /**
- * @author mdogan 11/12/12
+ * A value wrapper with version, lock support and creationTime
  */
 public class Value {
 

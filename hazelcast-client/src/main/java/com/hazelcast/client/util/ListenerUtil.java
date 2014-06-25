@@ -53,11 +53,11 @@ public final class ListenerUtil {
                                         BaseClientRemoveListenerRequest request, String registrationId) {
         try {
             ClientInvocationServiceImpl invocationService = getClientInvocationService(context);
-            registrationId = invocationService.deRegisterListener(registrationId);
-            if (registrationId == null) {
+            String realRegistrationId = invocationService.deRegisterListener(registrationId);
+            if (realRegistrationId == null) {
                 return false;
             }
-            request.setRegistrationId(registrationId);
+            request.setRegistrationId(realRegistrationId);
             final Future<Boolean> future = invocationService.invokeOnRandomTarget(request);
             return (Boolean) context.getSerializationService().toObject(future.get());
         } catch (Exception e) {

@@ -19,7 +19,9 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.client.SecureRequest;
-import com.hazelcast.map.*;
+import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.MapGetAllOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,7 +32,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 import java.security.Permission;
 import java.util.HashSet;
@@ -84,7 +85,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("size", keys.size());
-        if( !keys.isEmpty()) {
+        if (!keys.isEmpty()) {
             ObjectDataOutput output = writer.getRawDataOutput();
             for (Data key : keys) {
                 key.writeData(output);
@@ -95,7 +96,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         int size = reader.readInt("size");
-        if(size > 0) {
+        if (size > 0) {
             ObjectDataInput input = reader.getRawDataInput();
             for (int i = 0; i < size; i++) {
                 Data key = new Data();
@@ -108,5 +109,15 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "getAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{keys};
     }
 }

@@ -23,6 +23,8 @@ import org.hibernate.cache.access.EntityRegionAccessStrategy;
 import org.hibernate.cache.access.SoftLock;
 
 /**
+ * Simple adapter implementation for transactional / concurrent access control on entities
+ *
  * @author Leo Kim (lkim@limewire.com)
  */
 public final class EntityRegionAccessStrategyAdapter implements EntityRegionAccessStrategy {

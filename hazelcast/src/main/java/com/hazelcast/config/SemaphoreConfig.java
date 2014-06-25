@@ -23,7 +23,13 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class SemaphoreConfig {
 
+    /**
+     * Default synchronous backup count
+     */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    /**
+     * Default asynchronous backup count
+     */
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name;

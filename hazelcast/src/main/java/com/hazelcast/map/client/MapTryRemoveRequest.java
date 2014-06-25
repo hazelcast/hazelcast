@@ -30,9 +30,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
@@ -96,4 +96,13 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 
+    @Override
+    public String getMethodName() {
+        return "tryRemove";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, timeout, TimeUnit.MILLISECONDS};
+    }
 }

@@ -33,6 +33,9 @@ import org.hibernate.cfg.Settings;
 
 import java.util.Properties;
 
+/**
+ * Abstract superclass of Hazelcast based {@link org.hibernate.cache.RegionFactory} implementations
+ */
 public abstract class AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
     protected HazelcastInstance instance;

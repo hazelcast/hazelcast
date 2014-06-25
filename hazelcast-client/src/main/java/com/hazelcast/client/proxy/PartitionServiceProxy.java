@@ -17,6 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
@@ -24,6 +25,7 @@ import com.hazelcast.core.PartitionService;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author mdogan 5/16/13
@@ -66,6 +68,26 @@ public final class PartitionServiceProxy implements PartitionService {
 
     @Override
     public boolean removeMigrationListener(String registrationId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isClusterSafe() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isMemberSafe(Member member) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isLocalMemberSafe() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit) {
         throw new UnsupportedOperationException();
     }
 }

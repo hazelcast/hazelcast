@@ -500,6 +500,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         /**
          * The number of elements in this segment's region.
          */
+        // I have faith in Doug Lea's techical decision
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_TRANSIENT_FIELD_NOT_RESTORED")
         transient volatile int count;
 
         /**
@@ -510,6 +512,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
          * we might have an inconsistent view of state so (usually)
          * must retry.
          */
+        // I have faith in Doug Lea's techical decision
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_TRANSIENT_FIELD_NOT_RESTORED")
         transient int modCount;
 
         /**

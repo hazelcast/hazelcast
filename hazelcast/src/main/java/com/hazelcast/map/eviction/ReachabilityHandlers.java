@@ -18,7 +18,7 @@ package com.hazelcast.map.eviction;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.MapContainer;
-
+import com.hazelcast.map.MapService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,7 +38,8 @@ public final class ReachabilityHandlers {
         final ReachabilityHandlerChain reachabilityHandlerChain = new ReachabilityHandlerChain();
         // zero max idle means eternal.
         if (config.getMaxIdleSeconds() > 0L) {
-            reachabilityHandlerChain.addHandler(new IdleReachabilityHandler(TimeUnit.SECONDS.toNanos(config.getMaxIdleSeconds())));
+            reachabilityHandlerChain.addHandler(new IdleReachabilityHandler(
+                    MapService.convertTime(config.getMaxIdleSeconds(), TimeUnit.SECONDS)));
         }
         // one can give ttl whn putting key&value pairs.
         reachabilityHandlerChain.addHandler(new TTLReachabilityHandler());

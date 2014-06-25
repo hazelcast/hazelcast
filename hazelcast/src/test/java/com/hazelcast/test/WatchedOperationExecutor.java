@@ -3,30 +3,30 @@ package com.hazelcast.test;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.ReplicatedMap;
 
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class WatchedOperationExecutor {
 
-    public void execute(Runnable runnable, int seconds, EntryEventType eventType, ReplicatedMap... replicatedMaps) {
+    public void execute(Runnable runnable, int seconds, EntryEventType eventType, ReplicatedMap... replicatedMaps) throws TimeoutException {
         int[] latches = new int[replicatedMaps.length];
         Arrays.fill(latches, 1);
         execute(runnable, seconds, latches, eventType, replicatedMaps);
     }
 
-    public void execute(Runnable runnable, int seconds, EntryEventType eventType, int operations,
-                        ReplicatedMap... replicatedMaps) {
-
+    public void execute(Runnable runnable, int seconds, EntryEventType eventType, int operations, ReplicatedMap... replicatedMaps) throws TimeoutException {
         int[] latches = new int[replicatedMaps.length];
         Arrays.fill(latches, operations);
         execute(runnable, seconds, latches, eventType, replicatedMaps);
     }
 
-    public void execute(Runnable runnable, int seconds, EntryEventType eventType, int operations, double minimalExpectation,
-                        ReplicatedMap... replicatedMaps) {
+    public void execute(Runnable runnable, int seconds, EntryEventType eventType, int operations, double minimalExpectation, ReplicatedMap... replicatedMaps)
+            throws TimeoutException {
 
         if (minimalExpectation < 0. || minimalExpectation > 1.) {
             throw new IllegalArgumentException("minimalExpectation range > 0.0, < 1.0");
@@ -37,8 +37,7 @@ public class WatchedOperationExecutor {
         execute(runnable, seconds, latches, eventType, replicatedMaps);
     }
 
-    public void execute(Runnable runnable, int seconds, int[] latches, EntryEventType eventType,
-                        ReplicatedMap... replicatedMaps) {
+    public void execute(Runnable runnable, int seconds, int[] latches, EntryEventType eventType, ReplicatedMap... replicatedMaps) throws TimeoutException {
         final String[] registrationIds = new String[latches.length];
         final WatcherDefinition[] watcherDefinitions = new WatcherDefinition[latches.length];
         for (int i = 0; i < replicatedMaps.length; i++) {
@@ -56,7 +55,7 @@ public class WatchedOperationExecutor {
                 definition.await(deadline, TimeUnit.NANOSECONDS);
                 deadline -= System.nanoTime() - start;
                 if (deadline <= 0) {
-                    return;
+                    throw new TimeoutException("Deadline reached");
                 }
             }
         } catch (InterruptedException e) {
@@ -98,6 +97,16 @@ public class WatchedOperationExecutor {
         @Override
         public void entryEvicted(EntryEvent event) {
             handleEvent(event.getEventType());
+        }
+
+        @Override
+        public void mapEvicted(MapEvent event) {
+
+        }
+
+        @Override
+        public void mapCleared(MapEvent event) {
+
         }
 
         private void handleEvent(EntryEventType eventType) {

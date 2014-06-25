@@ -31,16 +31,11 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * date: 9/16/13
- * author: eminn
- */
 public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest {
     private String name;
     private EntryProcessor processor;
@@ -66,8 +61,8 @@ public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest {
         MapService mapService = getService();
         for (Object o : map.values()) {
             if (o != null) {
-                MapEntrySet entrySet = (MapEntrySet)mapService.toObject(o);
-                Set<Map.Entry<Data,Data>> entries = entrySet.getEntrySet();
+                MapEntrySet entrySet = (MapEntrySet) mapService.toObject(o);
+                Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
                     result.add(entry);
                 }
@@ -105,5 +100,15 @@ public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest {
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "executeOnEntries";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{processor, predicate};
     }
 }

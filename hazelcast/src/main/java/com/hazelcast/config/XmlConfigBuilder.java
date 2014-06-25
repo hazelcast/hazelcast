@@ -93,126 +93,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
      * Constructs a XmlConfigBuilder that tries to find a usable XML configuration file.
      */
     public XmlConfigBuilder() {
-        try {
-            if (loadFromSystemProperty()) {
-                return;
-            }
-
-            if (loadFromWorkingDirectory()) {
-                return;
-            }
-
-            if (loadHazelcastXmlFromClasspath()) {
-                return;
-            }
-
-            loadDefaultConfigurationFromClasspath();
-        } catch (RuntimeException e) {
-            throw new HazelcastException(e);
-        }
-    }
-
-    private void loadDefaultConfigurationFromClasspath() {
-        LOGGER.info("Loading 'hazelcast-default.xml' from classpath.");
-
-        configurationUrl = Config.class.getClassLoader().getResource("hazelcast-default.xml");
-
-        if (configurationUrl == null) {
-            throw new HazelcastException("Could not find 'hazelcast-default.xml' in the classpath!"
-                    + "This may be due to a wrong-packaged or corrupted jar file.");
-        }
-
-        in = Config.class.getClassLoader().getResourceAsStream("hazelcast-default.xml");
-        if (in == null) {
-            throw new HazelcastException("Could not load 'hazelcast-default.xml' from classpath");
-        }
-    }
-
-    private boolean loadHazelcastXmlFromClasspath() {
-        URL url = Config.class.getClassLoader().getResource("hazelcast.xml");
-        if (url == null) {
-            LOGGER.finest("Could not find 'hazelcast.xml' in classpath.");
-            return false;
-        }
-
-        LOGGER.info("Loading 'hazelcast.xml' from classpath.");
-
-        configurationUrl = url;
-        in = Config.class.getClassLoader().getResourceAsStream("hazelcast.xml");
-        if (in == null) {
-            throw new HazelcastException("Could not load 'hazelcast.xml' from classpath");
-        }
-        return true;
-    }
-
-    private boolean loadFromWorkingDirectory() {
-        File file = new File("hazelcast.xml");
-        if (!file.exists()) {
-            LOGGER.finest("Could not find 'hazelcast.xml' in working directory.");
-            return false;
-        }
-
-        LOGGER.info("Loading 'hazelcast.xml' from working directory.");
-
-        configurationFile = file;
-        try {
-            in = new FileInputStream(file);
-        } catch (FileNotFoundException e) {
-            throw new HazelcastException("Failed to open file: " + file.getAbsolutePath(), e);
-        }
-        return true;
-    }
-
-    private boolean loadFromSystemProperty() {
-        String configSystemProperty = System.getProperty("hazelcast.config");
-
-        if (configSystemProperty == null) {
-            LOGGER.finest("Could not 'hazelcast.config' System property");
-            return false;
-        }
-
-        LOGGER.info("Loading configuration " + configSystemProperty + " from System property 'hazelcast.config'");
-
-        if (configSystemProperty.startsWith("classpath:")) {
-            loadSystemPropertyClassPathResource(configSystemProperty);
-        } else {
-            loadSystemPropertyFileResource(configSystemProperty);
-        }
-        return true;
-    }
-
-    private void loadSystemPropertyFileResource(String configSystemProperty) {
-        //it is a file.
-        configurationFile = new File(configSystemProperty);
-        LOGGER.info("Using configuration file at " + configurationFile.getAbsolutePath());
-
-        if (!configurationFile.exists()) {
-            String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
-            throw new HazelcastException(msg);
-        }
-
-        try {
-            in = new FileInputStream(configurationFile);
-        } catch (FileNotFoundException e) {
-            throw new HazelcastException("Failed to open file: " + configurationFile.getAbsolutePath(), e);
-        }
-    }
-
-    private void loadSystemPropertyClassPathResource(String configSystemProperty) {
-        //it is a explicit configured classpath resource.
-        String resource = configSystemProperty.substring("classpath:".length());
-
-        LOGGER.info("Using classpath resource at " + resource);
-
-        if (resource.isEmpty()) {
-            throw new HazelcastException("classpath resource can't be empty");
-        }
-
-        in = Config.class.getClassLoader().getResourceAsStream(resource);
-        if (in == null) {
-            throw new HazelcastException("Could not load classpath resource: " + resource);
-        }
-        configurationUrl = Config.class.getResource(resource);
+        XmlConfigLocator locator = new XmlConfigLocator();
+        this.in = locator.getIn();
+        this.configurationFile = locator.getConfigurationFile();
+        this.configurationUrl = locator.getConfigurationUrl();
     }
 
     /**
@@ -304,13 +188,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
             }
         }
-
         if (root.getNodeValue() != null) {
             replaceVariables(root);
         }
-
         final NodeList childNodes = root.getChildNodes();
-
         for (int k = 0; k < childNodes.getLength(); k++) {
             Node child = childNodes.item(k);
             preprocess(child);
@@ -328,7 +209,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 LOGGER.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
                 break;
             }
-
             String variable = value.substring(startIndex + 2, endIndex);
             String variableReplacement = properties.getProperty(variable);
             if (variableReplacement != null) {
@@ -420,8 +300,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         fillProperties(n, serviceConfig.getProperties());
                     } else if ("configuration".equals(value)) {
                         Node parserNode = n.getAttributes().getNamedItem("parser");
-                        String parserClass;
-                        if (parserNode == null || (parserClass = getTextContent(parserNode)) == null) {
+                        String parserClass = getTextContent(parserNode);
+                        if (parserNode == null || parserClass == null) {
                             throw new IllegalArgumentException("Parser is required!");
                         }
                         try {
@@ -886,8 +766,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 multiMapConfig.setStatisticsEnabled(checkTrue(value));
-//            } else if ("partition-strategy".equals(nodeName)) {
-//                multiMapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
             }
         }
         this.config.addMultiMapConfig(multiMapConfig);
@@ -949,25 +827,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 if (maxSizePolicy != null) {
                     msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                int size;
-                if (value.length() < 2) {
-                    size = Integer.parseInt(value);
-                } else {
-                    char last = value.charAt(value.length() - 1);
-                    int type = 0;
-                    if (last == 'g' || last == 'G') {
-                        type = 1;
-                    } else if (last == 'm' || last == 'M') {
-                        type = 2;
-                    }
-                    if (type == 0) {
-                        size = Integer.parseInt(value);
-                    } else if (type == 1) {
-                        size = Integer.parseInt(value.substring(0, value.length() - 1)) * THOUSAND_FACTOR;
-                    } else {
-                        size = Integer.parseInt(value.substring(0, value.length() - 1));
-                    }
-                }
+                int size = sizeParser(value);
                 msc.setSize(size);
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
@@ -990,41 +850,77 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("statistics-enabled".equals(nodeName)) {
                 mapConfig.setStatisticsEnabled(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
-                WanReplicationRef wanReplicationRef = new WanReplicationRef();
-                final String wanName = getAttribute(n, "name");
-                wanReplicationRef.setName(wanName);
-                for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
-                    final String wanChildName = cleanNodeName(wanChild.getNodeName());
-                    final String wanChildValue = getTextContent(n);
-                    if ("merge-policy".equals(wanChildName)) {
-                        wanReplicationRef.setMergePolicy(wanChildValue);
-                    }
-                }
-                mapConfig.setWanReplicationRef(wanReplicationRef);
+                mapWanReplicationRefHandle(n, mapConfig);
             } else if ("indexes".equals(nodeName)) {
-                for (org.w3c.dom.Node indexNode : new IterableNodeList(n.getChildNodes())) {
-                    if ("index".equals(cleanNodeName(indexNode))) {
-                        final NamedNodeMap attrs = indexNode.getAttributes();
-                        boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
-                        String attribute = getTextContent(indexNode);
-                        mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered));
-                    }
-                }
+                mapIndexesHandle(n, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
-                for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
-                    if ("entry-listener".equals(cleanNodeName(listenerNode))) {
-                        final NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
-                        boolean local = checkTrue(getTextContent(attrs.getNamedItem("local")));
-                        String listenerClass = getTextContent(listenerNode);
-                        mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
-                    }
-                }
+                mapEntryListenerHandle(n, mapConfig);
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
             }
         }
         this.config.addMapConfig(mapConfig);
+    }
+
+    private void mapWanReplicationRefHandle(Node n, MapConfig mapConfig) {
+        WanReplicationRef wanReplicationRef = new WanReplicationRef();
+        final String wanName = getAttribute(n, "name");
+        wanReplicationRef.setName(wanName);
+        for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
+            final String wanChildName = cleanNodeName(wanChild.getNodeName());
+            final String wanChildValue = getTextContent(n);
+            if ("merge-policy".equals(wanChildName)) {
+                wanReplicationRef.setMergePolicy(wanChildValue);
+            }
+        }
+        mapConfig.setWanReplicationRef(wanReplicationRef);
+    }
+
+    private void mapIndexesHandle(Node n, MapConfig mapConfig) {
+        for (org.w3c.dom.Node indexNode : new IterableNodeList(n.getChildNodes())) {
+            if ("index".equals(cleanNodeName(indexNode))) {
+                final NamedNodeMap attrs = indexNode.getAttributes();
+                boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
+                String attribute = getTextContent(indexNode);
+                mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered));
+            }
+        }
+    }
+
+    private void mapEntryListenerHandle(Node n, MapConfig mapConfig) {
+        for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+            if ("entry-listener".equals(cleanNodeName(listenerNode))) {
+                final NamedNodeMap attrs = listenerNode.getAttributes();
+                boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
+                boolean local = checkTrue(getTextContent(attrs.getNamedItem("local")));
+                String listenerClass = getTextContent(listenerNode);
+                mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
+            }
+        }
+    }
+
+
+    private int sizeParser(String value) {
+        int size;
+        if (value.length() < 2) {
+            size = Integer.parseInt(value);
+        } else {
+            char last = value.charAt(value.length() - 1);
+            int type = 0;
+            if (last == 'g' || last == 'G') {
+                type = 1;
+            } else if (last == 'm' || last == 'M') {
+                type = 2;
+            }
+            if (type == 0) {
+                size = Integer.parseInt(value);
+            } else if (type == 1) {
+                size = Integer.parseInt(value.substring(0, value.length() - 1)) * THOUSAND_FACTOR;
+            } else {
+                size = Integer.parseInt(value.substring(0, value.length() - 1));
+            }
+        }
+        return size;
     }
 
     private MapStoreConfig createMapStoreConfig(final org.w3c.dom.Node node) {
@@ -1049,6 +945,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("write-delay-seconds".equals(nodeName)) {
                 mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", getTextContent(n).trim(),
                         MapStoreConfig.DEFAULT_WRITE_DELAY_SECONDS));
+            } else if ("write-batch-size".equals(nodeName)) {
+                mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n).trim(),
+                        MapStoreConfig.DEFAULT_WRITE_BATCH_SIZE));
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, mapStoreConfig.getProperties());
             }
@@ -1230,7 +1129,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 getTextContent(intervalNode), DEFAULT_VALUE) : FIVE;
 
         final String url = getTextContent(node);
-
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();
         managementCenterConfig.setEnabled(enabled);
         managementCenterConfig.setUpdateInterval(interval);
@@ -1253,8 +1151,22 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("client-permission-policy".equals(nodeName)) {
                 handlePermissionPolicy(child);
             } else if ("client-permissions".equals(nodeName)) {
-                //listener-permission
                 handleSecurityPermissions(child);
+            } else if ("security-interceptors".equals(nodeName)) {
+                handleSecurityInterceptors(child);
+            }
+        }
+    }
+
+    private void handleSecurityInterceptors(final org.w3c.dom.Node node) throws Exception {
+        final SecurityConfig cfg = config.getSecurityConfig();
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child.getNodeName());
+            if ("interceptor".equals(nodeName)) {
+                final NamedNodeMap attrs = child.getAttributes();
+                Node classNameNode = attrs.getNamedItem("class-name");
+                String className = getTextContent(classNameNode);
+                cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
             }
         }
     }

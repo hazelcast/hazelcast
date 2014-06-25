@@ -19,7 +19,7 @@ package com.hazelcast.map.record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-
+import com.hazelcast.util.Clock;
 import java.io.IOException;
 
 /**
@@ -31,11 +31,10 @@ public class RecordStatistics implements DataSerializable {
     // TODO is volatile needed? if yes then hits should be atomicnumber
     protected int hits;
     protected long lastStoredTime;
-    protected long creationTime;
     protected long expirationTime;
 
     public RecordStatistics() {
-        creationTime = System.nanoTime();
+
     }
 
     public int getHits() {
@@ -44,14 +43,6 @@ public class RecordStatistics implements DataSerializable {
 
     public void setHits(int hits) {
         this.hits = hits;
-    }
-
-    public long getCreationTime() {
-        return creationTime;
-    }
-
-    public void setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
     }
 
     public long getExpirationTime() {
@@ -67,7 +58,7 @@ public class RecordStatistics implements DataSerializable {
     }
 
     public void store() {
-        lastStoredTime = System.nanoTime();
+        lastStoredTime = Clock.currentTimeMillis();
     }
 
     public long getLastStoredTime() {
@@ -87,14 +78,12 @@ public class RecordStatistics implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(hits);
         out.writeLong(lastStoredTime);
-        out.writeLong(creationTime);
         out.writeLong(expirationTime);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         hits = in.readInt();
         lastStoredTime = in.readLong();
-        creationTime = in.readLong();
         expirationTime = in.readLong();
     }
 

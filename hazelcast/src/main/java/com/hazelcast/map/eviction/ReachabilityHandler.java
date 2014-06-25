@@ -18,6 +18,7 @@ package com.hazelcast.map.eviction;
 
 /**
  * Main contract for handler which checks if an entry is reachable or not.
+ *
  * @param <T> Type of object which will be checked for reachable.
  */
 public interface ReachabilityHandler<T> {

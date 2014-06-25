@@ -20,7 +20,6 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 
 //todo: unused class?
@@ -41,9 +40,8 @@ public class MergeRemoveOperation extends BaseRemoveOperation {
         Record record = recordStore.getRecord(dataKey);
         // todo what if statistics is disabled. currently it accepts the remove
         // check if there is newer update or insert. If so then cancel the remove
-        if (record.getStatistics() != null
-                && (record.getStatistics().getCreationTime() > removeTime
-                || record.getLastUpdateTime() > removeTime)) {
+        if (record.getCreationTime() > removeTime
+                || record.getLastUpdateTime() > removeTime) {
             return;
         }
         recordStore.deleteRecord(dataKey);

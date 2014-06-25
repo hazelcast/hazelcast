@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
-import com.hazelcast.client.RemoveDistributedObjectListenerRequest;
+import com.hazelcast.client.RemoveAllListeners;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
@@ -30,13 +30,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.IOSelector;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.SocketChannelWrapper;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -59,7 +59,8 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class ClientConnection implements Connection, Closeable {
 
-    private static final int SLEEP_TIME = 10;
+    private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
+    private static final int HEART_ATTACK_CLEANUP_TIMEOUT = 1500;
 
     private volatile boolean live = true;
 
@@ -90,8 +91,9 @@ public class ClientConnection implements Connection, Closeable {
     private volatile int failedHeartBeat;
 
     public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
-                int connectionId, SocketChannelWrapper socketChannelWrapper, ClientExecutionService executionService,
-                ClientInvocationServiceImpl invocationService) throws IOException {
+                            int connectionId, SocketChannelWrapper socketChannelWrapper,
+                            ClientExecutionService executionService,
+                            ClientInvocationServiceImpl invocationService) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
         this.serializationService = connectionManager.getSerializationService();
@@ -317,13 +319,13 @@ public class ClientConnection implements Connection, Closeable {
             int count = packetCount.get();
             while (count != 0) {
                 try {
-                    Thread.sleep(SLEEP_TIME);
+                    Thread.sleep(WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED);
                 } catch (InterruptedException e) {
                     logger.warning(e);
                     break;
                 }
                 long elapsed = System.currentTimeMillis() - begin;
-                if (elapsed > 5000) {
+                if (elapsed > WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED / 2) {
                     logger.warning("There are packets which are not processed " + count);
                     break;
                 }
@@ -391,10 +393,9 @@ public class ClientConnection implements Connection, Closeable {
         if (failedHeartBeat != 0) {
             if (failedHeartBeat >= connectionManager.maxFailedHeartbeatCount) {
                 try {
-                    final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest();
-                    request.setName(RemoveDistributedObjectListenerRequest.CLEAR_LISTENERS_COMMAND);
+                    final RemoveAllListeners request = new RemoveAllListeners();
                     final ICompletableFuture future = invocationService.send(request, ClientConnection.this);
-                    future.get(1500, TimeUnit.MILLISECONDS);
+                    future.get(HEART_ATTACK_CLEANUP_TIMEOUT, TimeUnit.MILLISECONDS);
                 } catch (Exception e) {
                     logger.warning("Clearing listeners upon recovering from heart-attack failed", e);
                 }

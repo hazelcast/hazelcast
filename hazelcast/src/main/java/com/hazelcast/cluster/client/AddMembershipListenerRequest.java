@@ -27,7 +27,6 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
@@ -79,7 +78,6 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
 
         final Collection<MemberImpl> memberList = service.getMemberList();
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
-        final SerializationService serializationService = getClientEngine().getSerializationService();
         for (MemberImpl member : memberList) {
             response.add(serializationService.toData(member));
         }

@@ -11,6 +11,7 @@ There are cases where you would need to synchronize multiple clusters. Synchroni
 
 Imagine having different clusters in New York, London and Tokyo. Each cluster would be operating at very high speed in their LAN (Local Area Network) settings but you would want some or all parts of the data in these clusters replicating to each other. So, updates in Tokyo cluster goes to London and NY, in the meantime updates in New York cluster is synchronized to Tokyo and London.
 
+### WAN Replication Configuration
 You can setup active-passive WAN Replication where only one active node replicating its updates on the passive one. You can also setup active-active replication where each cluster is actively updating and replication to the other cluster(s).
 
 In the active-active replication setup, there might be cases where each node is updating the same entry in the same named distributed map. Thus, conflicts will occur when merging. For those cases, a conflict resolution will be needed. Below is how you can setup WAN Replication for London cluster for instance.
@@ -72,6 +73,29 @@ Note that, you will also need to define a `merge policy` for merging replica ent
 
 <br> </br>
 
+### WAN Replication Queue Size
+For huge clusters or high data mutation rates, it might be necessary to increase the replication queue size. The default queue size for replication queues is `100000`. This means, if
+you have heavy put/update/remove rates, you might exceed the queue size so that oldest, not yet replicated, updates might get lost.
+ 
+To increase the replication queue size, Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.queuesize` configuration property.
+
+This can either be achieved using a command line property (where xxx is the queue size):
+
+```xml
+  -Dhazelcast.enterprise.wanrep.queuesize=xxx
+```
+
+or using properties inside the `hazelcast.xml` (also here change xxx to the requested queue size):
+
+```xml
+<hazelcast>
+  <properties>
+    <property name="hazelcast.enterprise.wanrep.queuesize">xxx</property>
+  </properties>
+</hazelcast>
+```
+
+### WAN Replication Additional Information
 <font color="red">
 ***Related Information***
 </font>

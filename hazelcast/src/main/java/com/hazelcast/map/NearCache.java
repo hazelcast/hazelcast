@@ -24,10 +24,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -225,7 +224,7 @@ public class NearCache {
         }
     }
 
-    public void invalidate(Set<Data> keys) {
+    public void invalidate(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }

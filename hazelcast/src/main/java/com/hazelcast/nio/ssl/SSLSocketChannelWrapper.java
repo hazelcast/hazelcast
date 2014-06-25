@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.ssl;
 
-import com.hazelcast.nio.DefaultSocketChannelWrapper;
+import com.hazelcast.nio.tcp.DefaultSocketChannelWrapper;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -56,6 +56,9 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         netInBuffer = ByteBuffer.allocate(netBufferMax);
     }
 
+    /**
+     * TODO sleep in sync block
+     */
     private void handshake() throws IOException {
         if (handshakeCompleted) {
             return;
@@ -169,6 +172,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         return in;
     }
 
+    @Override
     public int write(ByteBuffer input) throws IOException {
         if (!handshakeCompleted) {
             handshake();
@@ -237,6 +241,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         return readBytesCount;
     }
 
+    @Override
     public void close() throws IOException {
         sslEngine.closeOutbound();
         try {

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
  * Provides access interfaces/classes for Hibernate.
- * such as AccessDelegate , ReadWriteAccessDelegate.
+ * such as AccessDelegate, ReadWriteAccessDelegate.
  */
 package com.hazelcast.hibernate.access;

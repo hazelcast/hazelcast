@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.util.EmptyStatement;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -30,10 +32,13 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
+/**
+ * Scans your classpath, indexes the metadata, allows you to query it on runtime.
+ */
 public final class ReflectionHelper {
 
-    private static final  ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
-    private static final  ConcurrentMap<String, Getter> GETTER_CACHE = new ConcurrentHashMap<String, Getter>(1000);
+    private static final ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
+    private static final ConcurrentMap<String, Getter> GETTER_CACHE = new ConcurrentHashMap<String, Getter>(1000);
     private static final int INITIAL_CAPACITY = 3;
 
     private ReflectionHelper() {
@@ -81,18 +86,19 @@ public final class ReflectionHelper {
     }
 
     private static Getter createGetter(QueryableEntry entry, String attribute) {
+        String paramAttribute = attribute;
         Object obj;
-        if (attribute.startsWith(KEY_ATTRIBUTE_NAME)) {
+        if (paramAttribute.startsWith(KEY_ATTRIBUTE_NAME)) {
             obj = entry.getKey();
-            if (attribute.length() > KEY_ATTRIBUTE_NAME.length()) {
-                attribute = attribute.substring(KEY_ATTRIBUTE_NAME.length() + 1);
+            if (paramAttribute.length() > KEY_ATTRIBUTE_NAME.length()) {
+                paramAttribute = paramAttribute.substring(KEY_ATTRIBUTE_NAME.length() + 1);
             }
         } else {
             obj = entry.getValue();
         }
 
         Class clazz = obj.getClass();
-        final String cacheKey = clazz.getName() + ":" + attribute;
+        final String cacheKey = clazz.getName() + ":" + paramAttribute;
         Getter getter = GETTER_CACHE.get(cacheKey);
         if (getter != null) {
             return getter;
@@ -101,7 +107,7 @@ public final class ReflectionHelper {
         try {
             Getter parent = null;
             List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
-            for (final String name : attribute.split("\\.")) {
+            for (final String name : paramAttribute.split("\\.")) {
                 Getter localGetter = null;
                 possibleMethodNames.clear();
                 possibleMethodNames.add(name);
@@ -119,6 +125,7 @@ public final class ReflectionHelper {
                             clazz = method.getReturnType();
                             break;
                         } catch (NoSuchMethodException ignored) {
+                            EmptyStatement.ignore(ignored);
                         }
                     }
                     if (localGetter == null) {
@@ -127,6 +134,7 @@ public final class ReflectionHelper {
                             localGetter = new FieldGetter(parent, field);
                             clazz = field.getType();
                         } catch (NoSuchFieldException ignored) {
+                            EmptyStatement.ignore(ignored);
                         }
                     }
                     if (localGetter == null) {
@@ -190,8 +198,9 @@ public final class ReflectionHelper {
         }
 
         Object getValue(Object obj) throws Exception {
-            obj = parent != null ? parent.getValue(obj) : obj;
-            return obj != null ? method.invoke(obj) : null;
+            Object paramObj = obj;
+            paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
+            return paramObj != null ? method.invoke(paramObj) : null;
         }
 
         Class getReturnType() {
@@ -219,8 +228,9 @@ public final class ReflectionHelper {
 
         @Override
         Object getValue(Object obj) throws Exception {
-            obj = parent != null ? parent.getValue(obj) : obj;
-            return obj != null ? field.get(obj) : null;
+            Object paramObj = obj;
+            paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
+            return paramObj != null ? field.get(paramObj) : null;
         }
 
         @Override

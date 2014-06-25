@@ -16,7 +16,10 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.InvocationClientRequest;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -32,18 +35,22 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
-
 import java.io.IOException;
 import java.security.Permission;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest, SecureRequest {
+abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable,
+        RetryableRequest, SecureRequest {
 
+    protected IterationType iterationType;
     private String name;
-    private IterationType iterationType;
 
     public AbstractMapQueryRequest() {
     }
@@ -61,49 +68,78 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         final ClientEndpoint endpoint = getEndpoint();
         QueryResultSet result = new QueryResultSet(null, iterationType, true);
         try {
-            List<Future> flist = new ArrayList<Future>();
+            List<Future> futures = new ArrayList<Future>();
             final Predicate predicate = getPredicate();
-            for (MemberImpl member : members) {
-                Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).invoke();
-                flist.add(future);
-            }
-            for (Future future : flist) {
-                QueryResult queryResult = (QueryResult) future.get();
-                if (queryResult != null) {
-                    final List<Integer> partitionIds = queryResult.getPartitionIds();
-                    if (partitionIds != null) {
-                        plist.addAll(partitionIds);
-                        result.addAll(queryResult.getResult());
-                    }
-                }
-            }
-            if (plist.size() != partitionCount) {
-                List<Integer> missingList = new ArrayList<Integer>();
-                for (int i = 0; i < partitionCount; i++) {
-                    if (!plist.contains(i)) {
-                        missingList.add(i);
-                    }
-                }
-                List<Future> futures = new ArrayList<Future>(missingList.size());
-                for (Integer pid : missingList) {
-                    QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-                    queryPartitionOperation.setPartitionId(pid);
-                    try {
-                        Future f = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).invoke();
-                        futures.add(f);
-                    } catch (Throwable t) {
-                        throw ExceptionUtil.rethrow(t);
-                    }
-                }
-                for (Future future : futures) {
-                    QueryResult queryResult = (QueryResult) future.get();
-                    result.addAll(queryResult.getResult());
-                }
+            createInvocations(members, futures, predicate);
+            collectResults(plist, result, futures);
+            if (hasMissingPartitions(partitionCount, plist)) {
+                List<Integer> missingList = findMissingPartitions(partitionCount, plist);
+                List<Future> missingFutures = new ArrayList<Future>(missingList.size());
+                createInvocationsForMissingPartitions(predicate, missingList, missingFutures);
+                collectResultsFromMissingPartitions(result, missingFutures);
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
         endpoint.sendResponse(result, getCallId());
+    }
+
+    private boolean hasMissingPartitions(int partitionCount, Set<Integer> plist) {
+        return plist.size() != partitionCount;
+    }
+
+    private void collectResultsFromMissingPartitions(QueryResultSet result, List<Future> futures)
+            throws InterruptedException, java.util.concurrent.ExecutionException {
+        for (Future future : futures) {
+            QueryResult queryResult = (QueryResult) future.get();
+            result.addAll(queryResult.getResult());
+        }
+    }
+
+    private void createInvocationsForMissingPartitions(Predicate predicate, List<Integer> missingList,
+                                                       List<Future> futures) {
+        for (Integer pid : missingList) {
+            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+            queryPartitionOperation.setPartitionId(pid);
+            try {
+                Future f = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).invoke();
+                futures.add(f);
+            } catch (Throwable t) {
+                throw ExceptionUtil.rethrow(t);
+            }
+        }
+    }
+
+    private List<Integer> findMissingPartitions(int partitionCount, Set<Integer> plist) {
+        List<Integer> missingList = new ArrayList<Integer>();
+        for (int i = 0; i < partitionCount; i++) {
+            if (!plist.contains(i)) {
+                missingList.add(i);
+            }
+        }
+        return missingList;
+    }
+
+    private void collectResults(Set<Integer> plist, QueryResultSet result, List<Future> flist)
+            throws InterruptedException, java.util.concurrent.ExecutionException {
+        for (Future future : flist) {
+            QueryResult queryResult = (QueryResult) future.get();
+            if (queryResult != null) {
+                final List<Integer> partitionIds = queryResult.getPartitionIds();
+                if (partitionIds != null) {
+                    plist.addAll(partitionIds);
+                    result.addAll(queryResult.getResult());
+                }
+            }
+        }
+    }
+
+    private void createInvocations(Collection<MemberImpl> members, List<Future> flist, Predicate predicate) {
+        for (MemberImpl member : members) {
+            Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate),
+                    member.getAddress()).invoke();
+            flist.add(future);
+        }
     }
 
     protected abstract Predicate getPredicate();

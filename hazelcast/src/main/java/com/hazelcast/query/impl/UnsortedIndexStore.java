@@ -22,28 +22,33 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Store indexes out of turn.
+ */
 public class UnsortedIndexStore implements IndexStore {
     private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords
             = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
 
     @Override
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
-        int trend = from.compareTo(to);
+        Comparable paramFrom = from;
+        Comparable paramTo = to;
+        int trend = paramFrom.compareTo(paramTo);
         if (trend == 0) {
-            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(from);
+            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(paramFrom);
             if (records != null) {
                 results.addResultSet(records);
             }
             return;
         }
         if (trend < 0) {
-            Comparable oldFrom = from;
-            from = to;
-            to = oldFrom;
+            Comparable oldFrom = paramFrom;
+            paramFrom = to;
+            paramTo = oldFrom;
         }
         Set<Comparable> values = mapRecords.keySet();
         for (Comparable value : values) {
-            if (value.compareTo(from) <= 0 && value.compareTo(to) >= 0) {
+            if (value.compareTo(paramFrom) <= 0 && value.compareTo(paramTo) >= 0) {
                 ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
                 if (records != null) {
                     results.addResultSet(records);

@@ -21,8 +21,9 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -56,6 +57,7 @@ public final class ClientEndpoint implements Client {
     private LoginContext loginContext;
     private ClientPrincipal principal;
     private boolean firstConnection;
+    private Credentials credentials;
     private volatile boolean authenticated;
 
     ClientEndpoint(ClientEngineImpl clientEngine, Connection conn, String uuid) {
@@ -95,10 +97,11 @@ public final class ClientEndpoint implements Client {
         return firstConnection;
     }
 
-    void authenticated(ClientPrincipal principal, boolean firstConnection) {
+    void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection) {
         this.principal = principal;
         this.uuid = principal.getUuid();
         this.firstConnection = firstConnection;
+        this.credentials = credentials;
         this.authenticated = true;
     }
 
@@ -123,22 +126,30 @@ public final class ClientEndpoint implements Client {
 
     @Override
     public ClientType getClientType() {
+        ClientType type;
         switch (conn.getType()) {
             case JAVA_CLIENT:
-                return ClientType.JAVA;
+                type = ClientType.JAVA;
+                break;
             case CSHARP_CLIENT:
-                return ClientType.CSHARP;
+                type = ClientType.CSHARP;
+                break;
             case CPP_CLIENT:
-                return ClientType.CPP;
+                type = ClientType.CPP;
+                break;
             case PYTHON_CLIENT:
-                return ClientType.PYTHON;
+                type = ClientType.PYTHON;
+                break;
             case RUBY_CLIENT:
-                return ClientType.RUBY;
+                type = ClientType.RUBY;
+                break;
             case BINARY_CLIENT:
-                return ClientType.OTHER;
+                type = ClientType.OTHER;
+                break;
             default:
                 throw new IllegalArgumentException("Invalid connection type: " + conn.getType());
         }
+        return type;
     }
 
     public TransactionContext getTransactionContext(String txnId) {
@@ -147,6 +158,10 @@ public final class ClientEndpoint implements Client {
             throw new TransactionException("No transaction context found for txnId:" + txnId);
         }
         return transactionContext;
+    }
+
+    public Credentials getCredentials() {
+        return credentials;
     }
 
     public void setTransactionContext(TransactionContext transactionContext) {
@@ -227,7 +242,7 @@ public final class ClientEndpoint implements Client {
         boolean isError = false;
         Object clientResponseObject;
         if (response == null) {
-            clientResponseObject = ClientEngineImpl.NULL;
+            clientResponseObject = new Data();
         } else if (response instanceof Throwable) {
             isError = true;
             ClientExceptionConverter converter = ClientExceptionConverters.get(getClientType());
@@ -235,13 +250,11 @@ public final class ClientEndpoint implements Client {
         } else {
             clientResponseObject = response;
         }
-        ClientResponse clientResponse = new ClientResponse(clientEngine.toData(clientResponseObject), isError, callId);
-        clientEngine.sendResponse(this, clientResponse);
+        clientEngine.sendResponse(this, clientResponseObject, callId, isError, false);
     }
 
     public void sendEvent(Object event, int callId) {
-        Data data = clientEngine.toData(event);
-        clientEngine.sendResponse(this, new ClientResponse(data, callId, true));
+        clientEngine.sendResponse(this, event, callId, false, true);
     }
 
     @Override

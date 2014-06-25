@@ -17,13 +17,18 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * Implementation for {@link com.hazelcast.query.impl.Index}
+ */
 public class IndexImpl implements Index {
+    /**
+     * Creates instance from NullObject is a inner class.
+     */
     public static final NullObject NULL = new NullObject();
 
     // indexKey -- indexValue
@@ -65,11 +70,10 @@ public class IndexImpl implements Index {
         Comparable newValue = e.getAttribute(attribute);
         if (newValue == null) {
             newValue = NULL;
-        }
-        recordValues.put(key, newValue);
-        if (newValue.getClass().isEnum()) {
+        } else if (newValue.getClass().isEnum()) {
             newValue = TypeConverters.ENUM_CONVERTER.convert(newValue);
         }
+        recordValues.put(key, newValue);
         if (oldValue == null) {
             // new
             indexStore.newIndex(newValue, e);
@@ -138,6 +142,9 @@ public class IndexImpl implements Index {
         return ordered;
     }
 
+    /**
+     * Provides comparable null object.
+     */
     public static final class NullObject implements Comparable {
         @Override
         public int compareTo(Object o) {

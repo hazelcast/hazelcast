@@ -7,6 +7,9 @@ import java.util.Map;
 
 import static com.hazelcast.util.JsonUtil.getObject;
 
+/**
+ * Holder class for serializable service beans.
+ */
 public class SerializableMXBeans implements JsonSerializable {
 
     private SerializableEventServiceBean eventServiceBean;

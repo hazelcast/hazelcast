@@ -38,8 +38,9 @@ public class DeleteOperation extends BaseRemoveOperation {
     }
 
     public void afterRun() {
-        if (success)
+        if (success) {
             super.afterRun();
+        }
     }
 
     public boolean shouldBackup() {

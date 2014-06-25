@@ -19,6 +19,7 @@ package com.hazelcast.map.writebehind;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A class providing static factory methods that create write behind queues.
@@ -28,18 +29,12 @@ public final class WriteBehindQueues {
     private WriteBehindQueues() {
     }
 
-    public static <T> WriteBehindQueue<T> createArrayWriteBehindQueue() {
-        return new ArrayWriteBehindQueue<T>();
+    public static <T> WriteBehindQueue<T> createBoundedArrayWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
+        return new BoundedArrayWriteBehindQueue<T>(maxSizePerNode, counter);
     }
 
-    public static <T> WriteBehindQueue<T> createBoundedArrayWriteBehindQueue() {
-        return new BoundedArrayWriteBehindQueue<T>();
-    }
-
-    public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue(boolean isWriteBehindEnabled) {
-        return isWriteBehindEnabled
-                ? (WriteBehindQueue<T>) createSafeWriteBehindQueue(createBoundedArrayWriteBehindQueue())
-                : (WriteBehindQueue<T>) emptyWriteBehindQueue();
+    public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
+        return (WriteBehindQueue<T>) createSafeWriteBehindQueue(createBoundedArrayWriteBehindQueue(maxSizePerNode, counter));
     }
 
     public static <T> WriteBehindQueue<T> emptyWriteBehindQueue() {
@@ -63,10 +58,10 @@ public final class WriteBehindQueues {
     /**
      * Empty write behind queue provides neutral null behaviour.
      */
-    private static final class EmptyWriteBehindQueue implements WriteBehindQueue {
+    private static final class EmptyWriteBehindQueue<T> implements WriteBehindQueue<T> {
 
         @Override
-        public boolean offer(Object o) {
+        public boolean offer(T t) {
             return false;
         }
 
@@ -75,13 +70,13 @@ public final class WriteBehindQueues {
         }
 
         @Override
-        public Object get(int index) {
+        public T get(int index) {
             throw new IndexOutOfBoundsException("Index: " + index);
         }
 
         @Override
-        public boolean contains(Object o) {
-            return false;
+        public T remove(int index) {
+            return null;
         }
 
         @Override
@@ -95,7 +90,7 @@ public final class WriteBehindQueues {
         }
 
         @Override
-        public WriteBehindQueue getSnapShot() {
+        public WriteBehindQueue<T> getSnapShot() {
             return WriteBehindQueues.emptyWriteBehindQueue();
         }
 
@@ -110,7 +105,7 @@ public final class WriteBehindQueues {
         }
 
         @Override
-        public List fetchAndRemoveAll() {
+        public List removeAll() {
             return Collections.emptyList();
         }
 

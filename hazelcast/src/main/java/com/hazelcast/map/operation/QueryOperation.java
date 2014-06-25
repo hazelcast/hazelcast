@@ -36,7 +36,6 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.SortingUtil;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -186,7 +185,7 @@ public class QueryOperation extends AbstractMapOperation {
             final PartitionContainer container = mapService.getPartitionContainer(partition);
             final RecordStore recordStore = container.getRecordStore(name);
             LinkedList<QueryableEntry> partitionResult = new LinkedList<QueryableEntry>();
-            for (Record record : recordStore.getReadonlyRecordMap().values()) {
+            for (Record record : recordStore.getReadonlyRecordMapByWaitingMapStoreLoad().values()) {
                 final Data key = record.getKey();
                 Object value = record.getCachedValue();
                 if (value == Record.NOT_CACHED) {

@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @ali 09/11/13
+ * Contains the configuration for an {@link com.hazelcast.core.MultiMap}.
  */
 public class MultiMapConfigReadOnly extends MultiMapConfig {
 

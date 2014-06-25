@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
 public class MapReplaceIfSameRequest extends MapPutRequest {
@@ -62,5 +61,15 @@ public class MapReplaceIfSameRequest extends MapPutRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         testValue = new Data();
         testValue.readData(in);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "replace";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, testValue, value};
     }
 }

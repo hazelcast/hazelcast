@@ -23,6 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Request for fetching member system properties.
+ */
 public class GetMemberSystemPropertiesRequest implements ConsoleRequest {
 
     public GetMemberSystemPropertiesRequest() {

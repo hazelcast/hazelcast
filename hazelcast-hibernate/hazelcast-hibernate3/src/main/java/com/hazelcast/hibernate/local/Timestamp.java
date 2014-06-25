@@ -23,8 +23,9 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @author mdogan 11/19/12
+ * Hazelcast compatible implementation of a timestamp for internal eviction
  */
+// TODO Make IdentifiedDataSerializable
 public class Timestamp implements DataSerializable {
 
     private Object key;

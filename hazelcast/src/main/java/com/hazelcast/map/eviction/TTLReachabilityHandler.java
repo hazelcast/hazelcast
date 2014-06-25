@@ -27,7 +27,7 @@ class TTLReachabilityHandler extends AbstractReachabilityHandler {
     }
 
     @Override
-    public Record handle(Record record, long criteria, long timeInNanos) {
+    public Record handle(Record record, long criteria, long time) {
         if (record == null) {
             return null;
         }
@@ -37,16 +37,14 @@ class TTLReachabilityHandler extends AbstractReachabilityHandler {
         if (ttl < 1L) {
             return record;
         }
-        // expect lastUpdateTime set when creating.
-        final long lastUpdatedTime = record.getLastUpdateTime();
+        final long creationTime = record.getCreationTime();
 
-        assert ttl > 0L : log("wrong ttl %d", ttl);
-        assert lastUpdatedTime > 0L;
-        assert timeInNanos > 0L;
-        assert timeInNanos >= lastUpdatedTime : log("time >= lastUpdateTime (%d >= %d)",
-                timeInNanos, lastUpdatedTime);;
-
-        result = timeInNanos - lastUpdatedTime >= ttl;
+        assert ttl > 0L : String.format("wrong ttl %d", ttl);
+        assert creationTime > 0L : String.format("wrong creationTime %d", creationTime);
+        assert time > 0L : String.format("wrong time %d", time);
+        assert time >= creationTime : String.format("time >= lastUpdateTime (%d >= %d)",
+                time, creationTime);
+        result = time - creationTime >= ttl;
         return result ? null : record;
     }
 

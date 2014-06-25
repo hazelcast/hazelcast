@@ -18,6 +18,11 @@ package com.hazelcast.util.scheduler;
 
 import java.util.Collection;
 
+/**
+ *
+ * @param <K> key type of related entries
+ * @param <V> value type  of related entries
+ */
 public interface ScheduledEntryProcessor<K, V> {
 
     /**

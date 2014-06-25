@@ -28,7 +28,6 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-
 import java.io.IOException;
 import java.security.Permission;
 
@@ -72,4 +71,13 @@ public class MapIsLockedRequest extends AbstractIsLockedRequest implements Retry
         return new MapPermission(name, ActionConstants.ACTION_LOCK);
     }
 
+    @Override
+    public String getMethodName() {
+        return "isLocked";
+    }
+
+    @Override
+    public String getDistributedObjectType() {
+        return MapService.SERVICE_NAME;
+    }
 }

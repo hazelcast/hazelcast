@@ -17,9 +17,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.PartitioningStrategy;
-
 /**
- * @ali 10/11/13
+ * Contains the configuration for strategy of partitioning
  */
 public class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConfig {
 

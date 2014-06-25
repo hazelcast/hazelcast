@@ -18,7 +18,11 @@ package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -26,10 +30,17 @@ import com.hazelcast.test.annotation.QuickTest;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,6 +53,23 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     private static final Random RANDOM = new Random();
     private static final int BENCHMARK_ROUNDS = 10; // 100;
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testReadUTF_bufferSizeMustAlwaysBePowerOfTwo() throws IOException {
+        byte[] buffer = new byte[1023];
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(new byte[0]);
+        DataInputStream dis = new DataInputStream(bais);
+        UTFEncoderDecoder.readUTF(dis, buffer);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testWriteUTF_bufferSizeMustAlwaysBePowerOfTwo() throws IOException {
+        byte[] buffer = new byte[1023];
+
+        DataOutput dataOutput = new DataOutputStream(new ByteArrayOutputStream());
+        UTFEncoderDecoder.writeUTF(dataOutput, "foo", buffer);
+    }
 
     @Test
     public void testEmptyText_Default() throws Exception {
@@ -135,30 +163,26 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         }
     }
 
-// TODO: This test does assume TimedMemberState has UTF strings inside,
-// since TimedMemberState is not DataSerializable anymore,
-// this test needs to be rewritten with a dummy complex object.
-//    @Test
-//    public void testComplexObject() throws Exception {
-//        HazelcastInstance hz = createHazelcastInstance();
-//        Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
-//        original.setAccessible(true);
-//
-//        HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(hz);
-//        TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(impl);
-//        TimedMemberState memberState = timedMemberStateFactory.createTimedMemberState();
-//
-//        SerializationService ss = impl.node.getSerializationService();
-//
-//        ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
-//        ObjectDataOutput out = ss.createObjectDataOutputStream(baos);
-//        out.writeObject(memberState);
-//
-//        ObjectDataInput in = ss.createObjectDataInput(baos.toByteArray());
-//        TimedMemberState result = in.readObject();
-//
-//        assertEquals(memberState, result);
-//    }
+    @Test
+    public void testComplexObject() throws Exception {
+        HazelcastInstance hz = createHazelcastInstance();
+        Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
+        original.setAccessible(true);
+
+        HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(hz);
+        ComplexUtf8Object complexUtf8Object = buildComplexUtf8Object();
+
+        SerializationService ss = impl.node.getSerializationService();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
+        ObjectDataOutput out = ss.createObjectDataOutputStream(baos);
+        out.writeObject(complexUtf8Object);
+
+        ObjectDataInput in = ss.createObjectDataInput(baos.toByteArray());
+        ComplexUtf8Object result = in.readObject();
+
+        assertEquals(complexUtf8Object, result);
+    }
 
     @Test
     public void testShortSizedText_1Chunk_Default() throws Exception {
@@ -312,6 +336,30 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals("demirci", user.getSurname());
     }
 
+    @Test
+    public void testIssue2674_multibyte_char_at_position_that_even_multiple_of_buffer_size() throws Exception {
+        SerializationService serializationService = new SerializationServiceBuilder().build();
+
+        for (int i : new int[]{50240, 100240, 80240}) {
+            String originalString = createString(i);
+            BufferObjectDataOutput dataOutput = serializationService.createObjectDataOutput(100000);
+            dataOutput.writeUTF(originalString);
+            BufferObjectDataInput dataInput = serializationService.createObjectDataInput(dataOutput.toByteArray());
+
+            assertEquals(originalString, dataInput.readUTF());
+        }
+    }
+
+
+    private String createString(int length) {
+        char[] c = new char[length];
+        for (int i = 0; i < c.length; i++) {
+            c[i] = 'a';
+        }
+        c[10240] = 'å';
+        return new String(c);
+    }
+
     private static void assertContains(String className, String classType) {
         if (className.contains(classType)) {
             return;
@@ -331,6 +379,29 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static ComplexUtf8Object buildComplexUtf8Object() {
+        ComplexUtf8Object object = new ComplexUtf8Object();
+
+        object.clusterName = random(20);
+        object.instanceNames = new HashSet<String>();
+        for (int i = 0; i < 20; i++) {
+            object.instanceNames.add(randomString());
+        }
+        object.master = RANDOM.nextBoolean();
+        object.memberList = new ArrayList<String>();
+        for (int i = 0; i < 200; i++) {
+            object.memberList.add(randomString());
+        }
+        object.time = RANDOM.nextLong();
+        object.innerObject = new InnerComplexUtf8Object();
+        object.innerObject.memberList = new ArrayList<String>();
+        for (int i = 0; i < 200; i++) {
+            object.innerObject.memberList.add(random(200));
+        }
+
+        return object;
     }
 
     /*
@@ -439,4 +510,146 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         }
     }
 
+    public static class ComplexUtf8Object implements DataSerializable {
+        private long time;
+        private InnerComplexUtf8Object innerObject = null;
+        private Set<String> instanceNames = null;
+        private List<String> memberList;
+        private Boolean master;
+        private String clusterName;
+
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+            out.writeLong(time);
+            out.writeBoolean(master);
+            innerObject.writeData(out);
+            out.writeUTF(clusterName);
+            int nameCount = (instanceNames == null) ? 0 : instanceNames.size();
+            out.writeInt(nameCount);
+            if (instanceNames != null) {
+                for (String name : instanceNames) {
+                    out.writeUTF(name);
+                }
+            }
+            int memberCount = (memberList == null) ? 0 : memberList.size();
+            out.writeInt(memberCount);
+            if (memberList != null) {
+                for (String address : memberList) {
+                    out.writeUTF(address);
+                }
+            }
+        }
+
+        public void readData(ObjectDataInput in)
+                throws IOException {
+            time = in.readLong();
+            master = in.readBoolean();
+            innerObject = new InnerComplexUtf8Object();
+            innerObject.readData(in);
+            clusterName = in.readUTF();
+            int nameCount = in.readInt();
+            instanceNames = new HashSet<String>(nameCount);
+            for (int i = 0; i < nameCount; i++) {
+                instanceNames.add(in.readUTF());
+            }
+            int memberCount = in.readInt();
+            memberList = new ArrayList<String>();
+            for (int i = 0; i < memberCount; i++) {
+                memberList.add(in.readUTF());
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ComplexUtf8Object that = (ComplexUtf8Object) o;
+
+            if (time != that.time) {
+                return false;
+            }
+            if (clusterName != null ? !clusterName.equals(that.clusterName) : that.clusterName != null) {
+                return false;
+            }
+            if (innerObject != null ? !innerObject.equals(that.innerObject) : that.innerObject != null) {
+                return false;
+            }
+            if (instanceNames != null ? !instanceNames.equals(that.instanceNames) : that.instanceNames != null) {
+                return false;
+            }
+            if (master != null ? !master.equals(that.master) : that.master != null) {
+                return false;
+            }
+            if (memberList != null ? !memberList.equals(that.memberList) : that.memberList != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (time ^ (time >>> 32));
+            result = 31 * result + (innerObject != null ? innerObject.hashCode() : 0);
+            result = 31 * result + (instanceNames != null ? instanceNames.hashCode() : 0);
+            result = 31 * result + (memberList != null ? memberList.hashCode() : 0);
+            result = 31 * result + (master != null ? master.hashCode() : 0);
+            result = 31 * result + (clusterName != null ? clusterName.hashCode() : 0);
+            return result;
+        }
+    }
+
+    public static class InnerComplexUtf8Object implements DataSerializable {
+        private List<String> memberList;
+
+        @Override
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+            int memberCount = (memberList == null) ? 0 : memberList.size();
+            out.writeInt(memberCount);
+            if (memberList != null) {
+                for (String address : memberList) {
+                    out.writeUTF(address);
+                }
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in)
+                throws IOException {
+            int memberCount = in.readInt();
+            memberList = new ArrayList<String>();
+            for (int i = 0; i < memberCount; i++) {
+                memberList.add(in.readUTF());
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            InnerComplexUtf8Object that = (InnerComplexUtf8Object) o;
+
+            if (memberList != null ? !memberList.equals(that.memberList) : that.memberList != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return memberList != null ? memberList.hashCode() : 0;
+        }
+    }
 }

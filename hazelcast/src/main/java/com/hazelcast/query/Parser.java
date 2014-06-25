@@ -27,26 +27,43 @@ import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 class Parser {
     private static final String SPLIT_EXPRESSION = " ";
 
+    private static final int PARENTHESIS_PRECEDENCE = 15;
+    private static final int NOT_PRECEDENCE = 8;
+    private static final int EQUAL_PRECEDENCE = 10;
+    private static final int GREATER_PRECEDENCE = 10;
+    private static final int LESS_PRECEDENCE = 10;
+    private static final int GREATER_EQUAL_PRECEDENCE = 10;
+    private static final int LESS_EQUAL_PRECEDENCE = 10;
+    private static final int ASSIGN_PRECEDENCE = 10;
+    private static final int NOT_EQUAL_PRECEDENCE = 10;
+    private static final int BETWEEN_PRECEDENCE = 10;
+    private static final int IN_PRECEDENCE = 10;
+    private static final int LIKE_PRECEDENCE = 10;
+    private static final int ILIKE_PRECEDENCE = 10;
+    private static final int REGEX_PRECEDENCE = 10;
+    private static final int AND_PRECEDENCE = 5;
+    private static final int OR_PRECEDENCE = 3;
+
     private static final Map<String, Integer> PRECEDENCE = new HashMap<String, Integer>();
 
     static {
-        PRECEDENCE.put("(", 15);
-        PRECEDENCE.put(")", 15);
-        PRECEDENCE.put("not", 8);
-        PRECEDENCE.put("=", 10);
-        PRECEDENCE.put(">", 10);
-        PRECEDENCE.put("<", 10);
-        PRECEDENCE.put(">=", 10);
-        PRECEDENCE.put("<=", 10);
-        PRECEDENCE.put("==", 10);
-        PRECEDENCE.put("!=", 10);
-        PRECEDENCE.put("between", 10);
-        PRECEDENCE.put("in", 10);
-        PRECEDENCE.put("like", 10);
-        PRECEDENCE.put("ilike", 10);
-        PRECEDENCE.put("regex", 10);
-        PRECEDENCE.put("and", 5);
-        PRECEDENCE.put("or", 3);
+        PRECEDENCE.put("(", PARENTHESIS_PRECEDENCE);
+        PRECEDENCE.put(")", PARENTHESIS_PRECEDENCE);
+        PRECEDENCE.put("not", NOT_PRECEDENCE);
+        PRECEDENCE.put("=", EQUAL_PRECEDENCE);
+        PRECEDENCE.put(">", GREATER_PRECEDENCE);
+        PRECEDENCE.put("<", LESS_PRECEDENCE);
+        PRECEDENCE.put(">=", GREATER_EQUAL_PRECEDENCE);
+        PRECEDENCE.put("<=", LESS_EQUAL_PRECEDENCE);
+        PRECEDENCE.put("==", ASSIGN_PRECEDENCE);
+        PRECEDENCE.put("!=", NOT_EQUAL_PRECEDENCE);
+        PRECEDENCE.put("between", BETWEEN_PRECEDENCE);
+        PRECEDENCE.put("in", IN_PRECEDENCE);
+        PRECEDENCE.put("like", LIKE_PRECEDENCE);
+        PRECEDENCE.put("ilike", ILIKE_PRECEDENCE);
+        PRECEDENCE.put("regex", REGEX_PRECEDENCE);
+        PRECEDENCE.put("and", AND_PRECEDENCE);
+        PRECEDENCE.put("or", OR_PRECEDENCE);
     }
 
     private static final List<String> CHAR_OPERATORS
@@ -166,10 +183,11 @@ class Parser {
     *
     * */
     private String alignINClause(String in) {
-        final int indexLowerIn = in.indexOf(IN_LOWER);
-        final int indexLowerInWithParentheses = in.indexOf(IN_LOWER_P);
-        final int indexUpperIn = in.indexOf(IN_UPPER);
-        final int indexUpperInWithParentheses = in.indexOf(IN_UPPER_P);
+        String paramIn = in;
+        final int indexLowerIn = paramIn.indexOf(IN_LOWER);
+        final int indexLowerInWithParentheses = paramIn.indexOf(IN_LOWER_P);
+        final int indexUpperIn = paramIn.indexOf(IN_UPPER);
+        final int indexUpperInWithParentheses = paramIn.indexOf(IN_UPPER_P);
         // find first occurrence of in clause.
         final int indexIn = findMinIfNot(indexUpperInWithParentheses,
                 findMinIfNot(indexUpperIn,
@@ -179,16 +197,16 @@ class Parser {
         if (indexIn > NO_INDEX && (indexIn == indexLowerInWithParentheses || indexIn == indexUpperInWithParentheses)) {
             // 3 is the size of param in ending with a parentheses.
             // add SPLIT_EXPRESSION
-            in = in.substring(0, indexIn + 3) + SPLIT_EXPRESSION + in.substring(indexIn + 3);
+            paramIn = paramIn.substring(0, indexIn + 3) + SPLIT_EXPRESSION + paramIn.substring(indexIn + 3);
         }
-        String sql = in;
+        String sql = paramIn;
         if (indexIn != NO_INDEX) {
-            final int indexOpen = in.indexOf('(', indexIn);
-            final int indexClose = in.indexOf(')', indexOpen);
-            String sub = in.substring(indexOpen, indexClose + 1);
+            final int indexOpen = paramIn.indexOf('(', indexIn);
+            final int indexClose = paramIn.indexOf(')', indexOpen);
+            String sub = paramIn.substring(indexOpen, indexClose + 1);
             sub = sub.replaceAll(" ", "");
-            sql = in.substring(0, indexOpen) + sub
-                    + alignINClause(in.substring(indexClose + 1));
+            sql = paramIn.substring(0, indexOpen) + sub
+                    + alignINClause(paramIn.substring(indexClose + 1));
 
         }
         return sql;

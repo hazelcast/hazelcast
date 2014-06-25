@@ -34,7 +34,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author mdogan 11/9/12
+ * A {@link RegionCache} implementation based on the underlying IMap
  */
 public class IMapRegionCache implements RegionCache {
 
@@ -84,27 +84,7 @@ public class IMapRegionCache implements RegionCache {
         }
         if (versionComparator != null && currentVersion != null) {
             if (explicitVersionCheckEnabled && value instanceof CacheEntry) {
-                final CacheEntry currentEntry = (CacheEntry) value;
-                try {
-                    if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
-                        try {
-                            final CacheEntry previousEntry = (CacheEntry) map.get(key);
-                            if (previousEntry == null
-                                    || versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                                map.set(key, value);
-                                return true;
-                            } else {
-                                return false;
-                            }
-                        } finally {
-                            map.unlock(key);
-                        }
-                    } else {
-                        return false;
-                    }
-                } catch (InterruptedException e) {
-                    return false;
-                }
+                return compareVersion(key, value);
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
                 map.set(key, value);
                 return true;
@@ -174,4 +154,31 @@ public class IMapRegionCache implements RegionCache {
         }
     }
 
+    private boolean compareVersion(Object key, Object value) {
+        final CacheEntry currentEntry = (CacheEntry) value;
+        try {
+            return compareVersionUnderRowLock(key, value, currentEntry);
+        } catch (InterruptedException e) {
+            return false;
+        }
+    }
+
+    private boolean compareVersionUnderRowLock(Object key, Object value, CacheEntry currentEntry) throws InterruptedException {
+        if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
+            try {
+                final CacheEntry previousEntry = (CacheEntry) map.get(key);
+                if (previousEntry == null
+                        || versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                    map.set(key, value);
+                    return true;
+                } else {
+                    return false;
+                }
+            } finally {
+                map.unlock(key);
+            }
+        } else {
+            return false;
+        }
+    }
 }

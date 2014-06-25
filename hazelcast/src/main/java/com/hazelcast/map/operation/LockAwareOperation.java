@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.map.MapService;
-import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 

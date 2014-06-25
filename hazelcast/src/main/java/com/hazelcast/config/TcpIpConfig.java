@@ -143,9 +143,9 @@ public class TcpIpConfig {
      * @see #getMembers()
      */
     public TcpIpConfig addMember(String member) {
-        member = hasText(member, "member");
+        String memberText = hasText(member, "member");
 
-        StringTokenizer tokenizer = new StringTokenizer(member, ",");
+        StringTokenizer tokenizer = new StringTokenizer(memberText, ",");
         while (tokenizer.hasMoreTokens()) {
             String s = tokenizer.nextToken();
             this.members.add(s.trim());

@@ -40,7 +40,7 @@ public class LongMaxAggregation<Key, Value>
         return new Collator<Map.Entry<Key, Long>, Long>() {
             @Override
             public Long collate(Iterable<Map.Entry<Key, Long>> values) {
-                long max = Integer.MIN_VALUE;
+                long max = Long.MIN_VALUE;
                 for (Map.Entry<Key, Long> entry : values) {
                     long value = entry.getValue();
                     if (value > max) {

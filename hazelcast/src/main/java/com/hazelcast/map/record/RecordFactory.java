@@ -16,15 +16,13 @@
 
 package com.hazelcast.map.record;
 
-import com.hazelcast.nio.serialization.Data;
-
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.nio.serialization.Data;
 
 /**
  * TODO need a better name than RecordFactory!
  *
  * @param <T> the type of object which is going to be created.
- *
  */
 public interface RecordFactory<T> {
 

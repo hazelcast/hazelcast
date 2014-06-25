@@ -26,6 +26,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Replication operation for the Queue.
+ */
+
 public class QueueReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     private Map<String, QueueContainer> migrationData;

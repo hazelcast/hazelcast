@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
  */
 public final class Predicates {
 
-    //we don't want instances.
+    //we don't want instances. private constructor.
     private Predicates() {
     }
 
@@ -61,16 +61,22 @@ public final class Predicates {
         return value;
     }
 
-    public static Predicate and(Predicate x, Predicate y) {
-        return new AndPredicate(x, y);
+    public static Predicate and(Predicate... predicates) {
+        return new AndPredicate(predicates);
     }
 
     public static Predicate not(Predicate predicate) {
         return new NotPredicate(predicate);
     }
 
-    public static Predicate or(Predicate x, Predicate y) {
-        return new OrPredicate(x, y);
+    /**
+     * Or predicate
+     *
+     * @param predicates
+     * @return
+     */
+    public static Predicate or(Predicate... predicates) {
+        return new OrPredicate(predicates);
     }
 
     public static Predicate notEqual(String attribute, Comparable y) {
@@ -117,6 +123,9 @@ public final class Predicates {
         return new InPredicate(attribute, values);
     }
 
+    /**
+     * Between Predicate
+     */
     public static class BetweenPredicate extends AbstractPredicate {
         private Comparable to;
         private Comparable from;
@@ -126,6 +135,9 @@ public final class Predicates {
 
         public BetweenPredicate(String first, Comparable from, Comparable to) {
             super(first);
+            if (from == null || to == null) {
+                throw new NullPointerException("Arguments can't be null");
+            }
             this.from = from;
             this.to = to;
         }
@@ -170,6 +182,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Not Predicate
+     */
     public static class NotPredicate implements Predicate, DataSerializable {
         private Predicate predicate;
 
@@ -201,6 +216,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * In Predicate
+     */
     public static class InPredicate extends AbstractPredicate {
         private Comparable[] values;
         private volatile Set<Comparable> convertedInValues;
@@ -210,6 +228,10 @@ public final class Predicates {
 
         public InPredicate(String attribute, Comparable... values) {
             super(attribute);
+
+            if (values == null) {
+                throw new NullPointerException("Array can't be null");
+            }
             this.values = values;
         }
 
@@ -275,6 +297,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Regex Predicate
+     */
     public static class RegexPredicate implements Predicate, DataSerializable {
         private String attribute;
         private String regex;
@@ -323,6 +348,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Like Predicate
+     */
     public static class LikePredicate implements Predicate, DataSerializable {
         protected String attribute;
         protected String second;
@@ -394,6 +422,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Ilike Predicate
+     */
     public static class ILikePredicate extends LikePredicate {
 
         public ILikePredicate() {
@@ -419,6 +450,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * And Predicate
+     */
     public static class AndPredicate implements IndexAwarePredicate, DataSerializable {
 
         protected Predicate[] predicates;
@@ -526,6 +560,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Or Predicate
+     */
     public static class OrPredicate implements IndexAwarePredicate, DataSerializable {
 
         private Predicate[] predicates;
@@ -615,6 +652,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Greater Less Predicate
+     */
     public static class GreaterLessPredicate extends EqualPredicate {
         boolean equal;
         boolean less;
@@ -623,7 +663,13 @@ public final class Predicates {
         }
 
         public GreaterLessPredicate(String attribute, Comparable value, boolean equal, boolean less) {
-            super(attribute, value);
+            super(attribute);
+
+            if (value == null) {
+                throw new NullPointerException("Arguments can't be null");
+            }
+
+            this.value = value;
             this.equal = equal;
             this.less = less;
         }
@@ -678,6 +724,9 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Not Equal Predicate
+     */
     public static class NotEqualPredicate extends EqualPredicate {
         public NotEqualPredicate() {
         }
@@ -707,10 +756,17 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Equal Predicate
+     */
     public static class EqualPredicate extends AbstractPredicate {
         protected Comparable value;
 
         public EqualPredicate() {
+        }
+
+        public EqualPredicate(String attribute) {
+            super(attribute);
         }
 
         public EqualPredicate(String attribute, Comparable value) {
@@ -752,6 +808,10 @@ public final class Predicates {
         }
     }
 
+    /**
+     * Provides some functionality for some predicates
+     * such as Between, In.
+     */
     public abstract static class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
 
         protected String attribute;

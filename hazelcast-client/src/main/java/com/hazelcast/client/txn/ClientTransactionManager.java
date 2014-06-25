@@ -19,6 +19,7 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -28,6 +29,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.SerializableXID;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.transaction.xa.Xid;
@@ -53,6 +55,14 @@ public class ClientTransactionManager {
 
     public HazelcastClient getClient() {
         return client;
+    }
+
+    public String getGroupName() {
+        final GroupConfig groupConfig = client.getClientConfig().getGroupConfig();
+        if (groupConfig == null) {
+            throw new RuntimeException("GroupConfig cannot be null client is participate in XA Transaction");
+        }
+        return groupConfig.getName();
     }
 
     public TransactionContext newTransactionContext() {
@@ -112,6 +122,7 @@ public class ClientTransactionManager {
         try {
             return client.getConnectionManager().tryToConnect(null);
         } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
         }
         return null;
     }

@@ -18,6 +18,9 @@ package com.hazelcast.query.impl;
 
 import java.util.Map;
 
+/**
+ *  This interface contains methods related to Queryable Entry which means searched an indexed by sql query or predicate .
+ */
 public interface QueryableEntry extends Map.Entry, QueryResultEntry {
 
     Object getValue();

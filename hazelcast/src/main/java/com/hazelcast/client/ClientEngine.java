@@ -21,8 +21,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
@@ -37,8 +35,6 @@ public interface ClientEngine {
 
     ClusterService getClusterService();
 
-    SerializationService getSerializationService();
-
     EventService getEventService();
 
     TransactionManagerService getTransactionManagerService();
@@ -48,12 +44,6 @@ public interface ClientEngine {
     Config getConfig();
 
     ILogger getLogger(Class clazz);
-
-    ILogger getLogger(String className);
-
-    Object toObject(Data data);
-
-    Data toData(Object obj);
 
     Address getMasterAddress();
 

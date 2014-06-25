@@ -18,7 +18,9 @@ package com.hazelcast.client;
 
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.VersionedPortable;
+import com.hazelcast.spi.OperationService;
 
 import java.io.IOException;
 
@@ -26,6 +28,8 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
 
     protected int callId = -1;
     protected transient ClientEngineImpl clientEngine;
+    protected transient OperationService operationService;
+    protected transient SerializationService serializationService;
     protected transient Object service;
     protected transient ClientEndpoint endpoint;
 
@@ -48,6 +52,14 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
      */
     public boolean isSingleConnection() {
         return singleConnection;
+    }
+
+    public void setOperationService(OperationService operationService) {
+        this.operationService = operationService;
+    }
+
+    public void setSerializationService(SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 
     abstract void process() throws Exception;
@@ -104,10 +116,10 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
     public void read(PortableReader reader) throws IOException {
     }
 
-    /***
+    /**
      * Version for internal requests.
      * This version can be configured per class by overriding this method.
-     *
+     * <p/>
      * <p>
      * This should be updated/incremented when serialization of a request changes.
      * </p>
@@ -115,5 +127,20 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
     @Override
     public int getClassVersion() {
         return 1;
+    }
+
+    @Override
+    public String getDistributedObjectType() {
+        return getServiceName();
+    }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
     }
 }

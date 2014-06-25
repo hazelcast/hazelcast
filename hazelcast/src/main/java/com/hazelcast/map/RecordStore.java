@@ -22,9 +22,7 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.map.writebehind.DelayedEntry;
 import com.hazelcast.map.writebehind.WriteBehindQueue;
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -68,17 +66,57 @@ public interface RecordStore {
 
     void putTransient(Data dataKey, Object value, long ttl);
 
-    void putFromLoad(Data dataKey, Object value, long ttl);
+    /**
+     * Puts key-value pair to map which is the result of a load from map store operation.
+     *
+     * @param key   key to put.
+     * @param value to put.
+     * @return the previous value associated with <tt>key</tt>, or
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @see {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
+     */
+    Object putFromLoad(Data key, Object value);
+
+    /**
+     * Puts key-value pair to map which is the result of a load from map store operation.
+     *
+     * @param key   key to put.
+     * @param value to put.
+     * @param ttl   time to live seconds.
+     * @return the previous value associated with <tt>key</tt>, or
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @see {@link com.hazelcast.map.operation.PutAllOperation}
+     */
+    Object putFromLoad(Data key, Object value, long ttl);
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
     Record getRecord(Data key);
 
-    void putForReplication(Data key, Record record);
+    /**
+     * Puts a key-value to record store.
+     * Used in operations like replication and custom load from map store.
+     *
+     * @param key    the data key to put record store.
+     * @param record the value for record store.
+     * @see {@link com.hazelcast.map.operation.MapReplicationOperation} and
+     * {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
+     */
+    void putRecord(Data key, Record record);
 
     void deleteRecord(Data key);
 
     Map<Data, Record> getReadonlyRecordMap();
+
+    /**
+     * Returns read only records map by waiting map store load.
+     * If an operation needs to wait a data source to load like querying
+     * in {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
+     * this method can be used to return a read-only view of key-value pairs.
+     *
+     * @return read only record map.
+     */
+    Map<Data, Record> getReadonlyRecordMapByWaitingMapStoreLoad();
 
     Set<Data> keySet();
 
@@ -102,6 +140,18 @@ public interface RecordStore {
 
     Object evict(Data key);
 
+    /**
+     * Evicts all keys except locked ones.
+     *
+     * @return number of evicted entries.
+     */
+    int evictAll();
+
+    /**
+     * Evicts all keys except locked ones on backup.
+     */
+    void evictAllBackup();
+
     Collection<Data> valuesData();
 
     MapContainer getMapContainer();
@@ -122,21 +172,40 @@ public interface RecordStore {
 
     long getHeapCost();
 
-    SizeEstimator getSizeEstimator();
-
     boolean isLoaded();
 
     void checkIfLoaded();
 
     void setLoaded(boolean loaded);
 
-    void clear();
+    int clear();
 
     boolean isEmpty();
 
     WriteBehindQueue<DelayedEntry> getWriteBehindQueue();
 
-    List findUnlockedExpiredRecords();
+    /**
+     * Do expiration operations.
+     *
+     * @param percentage of max expirables according to the record store size.
+     * @param owner      <code>true</code> if an owner partition, otherwise <code>false</code>.
+     */
+    void evictExpiredEntries(int percentage, boolean owner);
 
     void removeFromWriteBehindWaitingDeletions(Data key);
+
+    /**
+     * @return <code>true</code> if record store has at least one candidate entry
+     * for expiration else return <code>false</code>.
+     */
+    boolean isExpirable();
+
+    /**
+     * Loads all keys from defined map store.
+     *
+     * @param keys                  keys to be loaded.
+     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
+     */
+    void loadAllFromStore(Collection<Data> keys, boolean replaceExistingValues);
+
 }

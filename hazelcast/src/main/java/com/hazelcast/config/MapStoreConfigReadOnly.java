@@ -17,9 +17,8 @@
 package com.hazelcast.config;
 
 import java.util.Properties;
-
 /**
- * @ali 10/11/13
+ * Contains the configuration for a Map Store (read-only).
  */
 public class MapStoreConfigReadOnly extends MapStoreConfig {
 

@@ -18,9 +18,14 @@ package com.hazelcast.config;
 
 import java.util.Collection;
 import java.util.HashSet;
-
+/**
+ * Contains configuration for Network.
+ */
 public class NetworkConfig {
 
+    /**
+     * Default value of port number
+     */
     public static final int DEFAULT_PORT = 5701;
 
     private static final int PORT_AUTO_INCREMENT = 100;

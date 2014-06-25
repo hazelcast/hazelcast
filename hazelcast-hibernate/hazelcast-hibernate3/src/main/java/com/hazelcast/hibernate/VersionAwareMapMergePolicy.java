@@ -24,6 +24,10 @@ import org.hibernate.cache.entry.CacheEntry;
 
 import java.io.IOException;
 
+/**
+ *  A merge policy implementation to handle split brain remerges based on the timestamps stored in
+ *  the values.
+ */
 public class VersionAwareMapMergePolicy implements MapMergePolicy {
 
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {

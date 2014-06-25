@@ -18,11 +18,13 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ConnectionManager;
-
 import java.util.Hashtable;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
+/**
+ * Management bean for {@link com.hazelcast.nio.ConnectionManager}
+ */
 @ManagedDescription("HazelcastInstance.ConnectionManager")
 public class ConnectionManagerMBean extends HazelcastMBean<ConnectionManager> {
 

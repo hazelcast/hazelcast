@@ -25,6 +25,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.AddressTranslator;
@@ -53,21 +54,21 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ClientPacket;
-import com.hazelcast.nio.DefaultSocketChannelWrapper;
-import com.hazelcast.nio.IOSelector;
-import com.hazelcast.nio.SocketChannelWrapper;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
+import com.hazelcast.nio.tcp.DefaultSocketChannelWrapper;
+import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -84,13 +85,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.config.ClientProperties.PROP_CONNECTION_TIMEOUT_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOUT_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT;
 
 public class ClientConnectionManagerImpl extends MembershipAdapter implements ClientConnectionManager, MembershipListener {
 
-    public static final int BUFFER_SIZE = 16 << 10;
+    static final int BUFFER_SIZE = 16 << 10;
     // 32k
 
     static final int KILO_BYTE = 1024;
@@ -101,6 +102,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
     final int connectionTimeout;
     final int heartBeatInterval;
+    final int heartBeatTimeout;
     final int maxFailedHeartbeatCount;
 
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
@@ -108,7 +110,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private final AtomicInteger connectionIdGen = new AtomicInteger();
     private final HazelcastClient client;
     private final Router router;
-    private final SocketInterceptor socketInterceptor;
+    private SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
     private final IOSelector inSelector;
     private final IOSelector outSelector;
@@ -136,6 +138,49 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         this.addressTranslator = addressTranslator;
         final ClientConfig config = client.getClientConfig();
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
+
+        connectionTimeout = networkConfig.getConnectionTimeout();
+
+        final ClientProperties clientProperties = client.getClientProperties();
+        int timeout = clientProperties.heartbeatTimeout.getInteger();
+        this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_HEARTBEAT_TIMEOUT_DEFAULT);
+
+        int interval = clientProperties.heartbeatInterval.getInteger();
+        heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+
+        int failedHeartbeat = clientProperties.maxFailedHeartbeatCount.getInteger();
+        maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat
+                : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
+
+        smartRouting = networkConfig.isSmartRouting();
+        executionService = client.getClientExecutionService();
+        credentials = getCredentials(config);
+        router = new Router(loadBalancer);
+        inSelector = new ClientInSelectorImpl(client.getThreadGroup());
+        outSelector = new ClientOutSelectorImpl(client.getThreadGroup());
+
+        SocketInterceptorConfig sic = networkConfig.getSocketInterceptorConfig();
+        socketInterceptor = initSocketInterceptor(sic);
+
+        socketOptions = networkConfig.getSocketOptions();
+
+
+        socketChannelWrapperFactory = initSocketChannel(networkConfig);
+    }
+
+    private SocketChannelWrapperFactory initSocketChannel(ClientNetworkConfig networkConfig) {
+        //ioService.getSSLConfig(); TODO
+        SSLConfig sslConfig = networkConfig.getSSLConfig();
+
+        if (sslConfig != null && sslConfig.isEnabled()) {
+            LOGGER.info("SSL is enabled");
+            return new SSLSocketChannelWrapperFactory(sslConfig);
+        } else {
+            return new DefaultSocketChannelWrapperFactory();
+        }
+    }
+
+    private Credentials getCredentials(ClientConfig config) {
         final GroupConfig groupConfig = config.getGroupConfig();
         final ClientSecurityConfig securityConfig = config.getSecurityConfig();
         Credentials c = securityConfig.getCredentials();
@@ -153,25 +198,10 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         if (c == null) {
             c = new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
         }
+        return c;
+    }
 
-        int timeout = client.clientProperties.clientProperty.getInteger();
-        this.connectionTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_CONNECTION_TIMEOUT_DEFAULT);
-
-        int interval = client.clientProperties.heartbeatInterval.getInteger();
-        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
-
-        int failedHeartbeat = client.clientProperties.maxFailedHeartbeatCount.getInteger();
-        this.maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat
-                : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
-
-        this.smartRouting = networkConfig.isSmartRouting();
-        this.executionService = client.getClientExecutionService();
-        this.credentials = c;
-        router = new Router(loadBalancer);
-        inSelector = new ClientInSelectorImpl(client.getThreadGroup());
-        outSelector = new ClientOutSelectorImpl(client.getThreadGroup());
-        //init socketInterceptor
-        SocketInterceptorConfig sic = networkConfig.getSocketInterceptorConfig();
+    private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
         SocketInterceptor implementation = null;
         if (sic != null && sic.isEnabled()) {
             implementation = (SocketInterceptor) sic.getImplementation();
@@ -184,32 +214,14 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             }
         }
 
-        socketInterceptor = implementation;
-        if (socketInterceptor != null) {
-            LOGGER.info("SocketInterceptor is enabled");
-            socketInterceptor.init(sic.getProperties());
+        if (implementation != null) {
+            implementation.init(sic.getProperties());
         }
-
-        socketOptions = networkConfig.getSocketOptions();
-
-        //ioService.getSSLConfig(); TODO
-        SSLConfig sslConfig = networkConfig.getSSLConfig();
-
-        if (sslConfig != null && sslConfig.isEnabled()) {
-            socketChannelWrapperFactory = new SSLSocketChannelWrapperFactory(sslConfig);
-            LOGGER.info("SSL is enabled");
-        } else {
-            socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
-        }
-
+        return implementation;
     }
 
     public boolean isLive() {
         return live;
-    }
-
-    public PortableContext getPortableContext() {
-        return client.getSerializationService().getPortableContext();
     }
 
     public SerializationService getSerializationService() {
@@ -629,7 +641,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     class HeartBeat implements Runnable {
 
         long begin;
-        final int heartBeatTimeout = heartBeatInterval / 2;
 
         @Override
         public void run() {
@@ -686,10 +697,12 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         try {
             ownerConnection.close();
         } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
         }
         try {
             connection.close();
         } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
         }
     }
 }

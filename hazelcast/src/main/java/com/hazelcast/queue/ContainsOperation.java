@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/**
+ * Checks whether contain or not item in the Queue.
+ */
 public class ContainsOperation extends QueueOperation {
 
     private Collection<Data> dataList;

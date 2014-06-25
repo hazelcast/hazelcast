@@ -44,7 +44,7 @@ public abstract class ReadRequest extends PartitionClientRequest implements Port
     @Override
     protected int getPartition() {
         ClientEngine clientEngine = getClientEngine();
-        Data key = clientEngine.getSerializationService().toData(name);
+        Data key = serializationService.toData(name);
         return clientEngine.getPartitionService().getPartitionId(key);
     }
 

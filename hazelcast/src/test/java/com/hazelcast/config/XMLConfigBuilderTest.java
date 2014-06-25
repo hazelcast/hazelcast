@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -53,7 +54,7 @@ public class XMLConfigBuilderTest {
 
     @After
     @Before
-    public void after(){
+    public void after() {
         System.clearProperty("hazelcast.config");
     }
 
@@ -64,6 +65,29 @@ public class XMLConfigBuilderTest {
         System.setProperty("hazelcast.config", file.getAbsolutePath());
 
         new XmlConfigBuilder();
+    }
+
+    @Test
+    public void testSecurityInterceptorConfig() {
+        String xml =
+                "<hazelcast>" +
+                    "<security enabled=\"true\">" +
+                        "<security-interceptors>" +
+                            "<interceptor class-name=\"foo\"/>" +
+                            "<interceptor class-name=\"bar\"/>" +
+                        "</security-interceptors>" +
+                    "</security>" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+
+        final Config config = configBuilder.build();
+        final SecurityConfig securityConfig = config.getSecurityConfig();
+        final List<SecurityInterceptorConfig> interceptorConfigs = securityConfig.getSecurityInterceptorConfigs();
+        assertEquals(2, interceptorConfigs.size());
+        assertEquals("foo", interceptorConfigs.get(0).className);
+        assertEquals("bar", interceptorConfigs.get(1).className);
     }
 
     @Test
@@ -86,7 +110,7 @@ public class XMLConfigBuilderTest {
 
         XmlConfigBuilder configBuilder = new XmlConfigBuilder();
         Config config = configBuilder.build();
-        assertEquals("foobar",config.getGroupConfig().getName());
+        assertEquals("foobar", config.getGroupConfig().getName());
     }
 
     @Test(expected = HazelcastException.class)
@@ -101,7 +125,7 @@ public class XMLConfigBuilderTest {
 
         XmlConfigBuilder configBuilder = new XmlConfigBuilder();
         Config config = configBuilder.build();
-        assertEquals("foobar",config.getGroupConfig().getName());
+        assertEquals("foobar", config.getGroupConfig().getName());
     }
 
     @Test
@@ -379,6 +403,22 @@ public class XMLConfigBuilderTest {
         final MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
         assertTrue(mapStoreConfig.isEnabled());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, mapStoreConfig.getInitialLoadMode());
+    }
+
+    @Test
+    public void testMapStoreWriteBatchSize() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<map name=\"mymap\">" +
+                        "<map-store >" +
+                        "<write-batch-size>23</write-batch-size>" +
+                        "</map-store>" +
+                        "</map>" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        System.out.println("config = " + config);
+        final MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
+        assertEquals(23, mapStoreConfig.getWriteBatchSize());
     }
 
     @Test(expected = HazelcastException.class)

@@ -19,14 +19,19 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Management bean for {@link com.hazelcast.core.IMap}
+ */
 @ManagedDescription("IMap")
 public class MapMBean extends HazelcastMBean<IMap> {
 
@@ -56,6 +61,17 @@ public class MapMBean extends HazelcastMBean<IMap> {
             public void entryEvicted(EntryEvent event) {
                 totalEvictedEntryCount.incrementAndGet();
             }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+                totalEvictedEntryCount.addAndGet(event.getNumberOfEntriesAffected());
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+                //TODO should I add totalClearedEntryCount?
+                totalRemovedEntryCount.addAndGet(event.getNumberOfEntriesAffected());
+            }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);
     }
@@ -65,6 +81,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
         try {
             managedObject.removeEntryListener(listenerId);
         } catch (Exception ignored) {
+            ignore(ignored);
         }
     }
 

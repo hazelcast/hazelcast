@@ -23,6 +23,9 @@ import com.hazelcast.queue.QueueOperation;
 
 import java.io.IOException;
 
+/**
+ * Provides backup operation during transactional poll operation.
+ */
 public class TxnPollBackupOperation extends QueueOperation {
 
     long itemId;

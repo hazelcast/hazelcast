@@ -18,6 +18,9 @@ package com.hazelcast.config;
 
 import java.util.Properties;
 
+/**
+ * Contains the configuration for interceptor socket
+ */
 public class SocketInterceptorConfig {
     private boolean enabled;
     private String className;

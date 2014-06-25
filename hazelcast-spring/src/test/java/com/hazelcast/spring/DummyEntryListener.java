@@ -18,6 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 
 public class DummyEntryListener implements EntryListener {
 
@@ -35,5 +36,15 @@ public class DummyEntryListener implements EntryListener {
 
     public void entryEvicted(EntryEvent event) {
 //        System.err.println("Evicted: " + event);
+    }
+
+    @Override
+    public void mapEvicted(MapEvent event) {
+
+    }
+
+    @Override
+    public void mapCleared(MapEvent event) {
+
     }
 }

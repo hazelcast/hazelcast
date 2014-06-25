@@ -18,6 +18,9 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
+/**
+ * This interfaces provides methods related to entry of the query result.
+ */
 public interface QueryResultEntry {
 
     Data getKeyData();

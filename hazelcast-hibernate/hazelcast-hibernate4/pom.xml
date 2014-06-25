@@ -25,12 +25,12 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-hibernate</artifactId>
-        <version>3.3-RC1-SNAPSHOT</version>
+        <version>3.3-RC2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
-        <hibernate.core.version>4.1.0.Final</hibernate.core.version>
+        <hibernate.core.version>4.2.13.Final</hibernate.core.version>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>

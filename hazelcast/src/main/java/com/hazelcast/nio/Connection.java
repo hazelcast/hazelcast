@@ -21,7 +21,7 @@ import java.net.InetSocketAddress;
 
 /**
  * Represents a 'connection' between two machines. The most important implementation is the
- * {@link com.hazelcast.nio.TcpIpConnection}.
+ * {@link com.hazelcast.nio.tcp.TcpIpConnection}.
  */
 public interface Connection {
 

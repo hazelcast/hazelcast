@@ -15,9 +15,8 @@
  */
 
 package com.hazelcast.config;
-
 /**
- * @ali 10/11/13
+ * Configuration for Wan target replication reference(read only)
  */
 public class WanReplicationRefReadOnly extends WanReplicationRef {
 

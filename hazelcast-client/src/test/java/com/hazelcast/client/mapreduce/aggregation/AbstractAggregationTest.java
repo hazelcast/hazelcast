@@ -40,7 +40,6 @@ public class AbstractAggregationTest
     public static void startup() {
         Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
 
         HAZELCAST_INSTANCE = HazelcastClient.newHazelcastClient();
     }

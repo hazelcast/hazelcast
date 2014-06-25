@@ -1,12 +1,16 @@
 package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MapEvent;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -15,7 +19,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.test.HazelcastTestSupport.*;
+import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static junit.framework.Assert.assertEquals;
 
@@ -46,33 +51,33 @@ public class ClientMultiMapListenerStressTest {
     public void listenerAddStressTest() throws InterruptedException {
         final PutItemsThread[] putThreads = new PutItemsThread[NUMBER_OF_CLIENTS * THREADS_PER_CLIENT];
 
-        int idx=0;
-        for(int i=0; i<NUMBER_OF_CLIENTS; i++){
+        int idx = 0;
+        for (int i = 0; i < NUMBER_OF_CLIENTS; i++) {
             HazelcastInstance client = HazelcastClient.newHazelcastClient();
-            for(int j=0; j<THREADS_PER_CLIENT; j++){
+            for (int j = 0; j < THREADS_PER_CLIENT; j++) {
                 PutItemsThread t = new PutItemsThread(client);
-                putThreads[idx++]=t;
+                putThreads[idx++] = t;
             }
         }
 
-        for(int i=0; i<putThreads.length; i++){
+        for (int i = 0; i < putThreads.length; i++) {
             putThreads[i].start();
         }
         MultiMap mm = server.getMultiMap(MAP_NAME);
 
-        assertJoinable(MAX_SECONDS, putThreads );
+        assertJoinable(MAX_SECONDS, putThreads);
         assertEquals(PutItemsThread.MAX_ITEMS * putThreads.length, mm.size());
         assertTrueEventually(new AssertTask() {
 
             public void run() throws Exception {
-                for(int i=0; i<putThreads.length; i++){
+                for (int i = 0; i < putThreads.length; i++) {
                     putThreads[i].assertResult(PutItemsThread.MAX_ITEMS * putThreads.length);
                 }
             }
         });
     }
 
-    public class PutItemsThread extends Thread{
+    public class PutItemsThread extends Thread {
         public static final int MAX_ITEMS = 1000;
 
         public final MyEntryListener listener = new MyEntryListener();
@@ -80,21 +85,21 @@ public class ClientMultiMapListenerStressTest {
         public MultiMap mm;
         public String id;
 
-        public PutItemsThread(HazelcastInstance hzInstance){
+        public PutItemsThread(HazelcastInstance hzInstance) {
             this.id = randomString();
             this.hzInstance = hzInstance;
             this.mm = hzInstance.getMultiMap(MAP_NAME);
             mm.addEntryListener(listener, true);
         }
 
-        public void run(){
-            for(int i=0; i< MAX_ITEMS; i++){
-                mm.put(id+i, id+i);
+        public void run() {
+            for (int i = 0; i < MAX_ITEMS; i++) {
+                mm.put(id + i, id + i);
             }
         }
 
-        public void assertResult(int target){
-            System.out.println("listener "+id+" add events received "+listener.add.get());
+        public void assertResult(int target) {
+            System.out.println("listener " + id + " add events received " + listener.add.get());
             assertEquals(target, listener.add.get());
         }
     }
@@ -116,5 +121,19 @@ public class ClientMultiMapListenerStressTest {
         public void entryEvicted(EntryEvent event) {
 
         }
-    };
+
+        @Override
+        public void mapEvicted(MapEvent event) {
+
+        }
+
+        @Override
+        public void mapCleared(MapEvent event) {
+
+        }
+
+
+    }
+
+    ;
 }

@@ -30,7 +30,7 @@ import org.hibernate.cache.spi.access.NaturalIdRegionAccessStrategy;
 import java.util.Properties;
 
 /**
- * @author mdogan 11/16/12
+ * Hazelcast based implementation used to store NaturalIds
  */
 public class HazelcastNaturalIdRegion extends AbstractTransactionalDataRegion<IMapRegionCache>
         implements NaturalIdRegion {

@@ -66,16 +66,12 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
-    public boolean contains(T entry) {
-        if (list.isEmpty() || entry == null) {
-            return false;
+    public T remove(int index) {
+        final int size = list.size();
+        if (index >= size || index < 0) {
+            return null;
         }
-        for (T t : list) {
-            if (entry.equals(t)) {
-                return true;
-            }
-        }
-        return false;
+        return list.remove(index);
     }
 
     @Override
@@ -118,9 +114,9 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
-    public List<T> fetchAndRemoveAll() {
+    public List<T> removeAll() {
         final List<T> list = asList();
-        clear();
+        this.list.clear();
         return list;
     }
 

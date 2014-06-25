@@ -26,7 +26,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.eviction.ReachabilityHandlerChain;
 import com.hazelcast.map.eviction.ReachabilityHandlers;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.operation.ClearExpiredOperation;
 import com.hazelcast.map.record.DataRecordFactory;
 import com.hazelcast.map.record.ObjectRecordFactory;
 import com.hazelcast.map.record.OffHeapRecordFactory;
@@ -38,16 +37,12 @@ import com.hazelcast.map.writebehind.store.StoreEvent;
 import com.hazelcast.map.writebehind.store.StoreListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +54,8 @@ import java.util.concurrent.TimeUnit;
  * Map container.
  */
 public class MapContainer {
+
+    private static final int INITIAL_KEYS_REMOVE_DELAY_MINUTES = 20;
 
     private volatile MapConfig mapConfig;
     private final String name;
@@ -93,49 +90,6 @@ public class MapContainer {
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
         nearCacheSizeEstimator = SizeEstimators.createNearCacheSizeEstimator();
         evictionEnabled = !MapConfig.EvictionPolicy.NONE.equals(mapConfig.getEvictionPolicy());
-        mapService.getNodeEngine().getExecutionService()
-                .scheduleAtFixedRate(new ClearExpiredRecordsTask(), 5, 5, TimeUnit.SECONDS);
-    }
-
-    /**
-     * Periodically clears expired entries.(ttl & idle)
-     */
-    private class ClearExpiredRecordsTask implements Runnable {
-
-        public void run() {
-            final MapService mapService = MapContainer.this.mapService;
-            final NodeEngine nodeEngine = mapService.getNodeEngine();
-            for (int partitionId = 0; partitionId < nodeEngine.getPartitionService().getPartitionCount(); partitionId++) {
-                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
-                if (partition.isOwnerOrBackup(nodeEngine.getThisAddress())) {
-                    // check if record store has already been initialized or not.
-                    final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
-                    if (isUninitializedRecordStore(partitionContainer)) {
-                        continue;
-                    }
-                    final Operation expirationOperation = createExpirationOperation(partitionId);
-                    OperationService operationService = mapService.getNodeEngine().getOperationService();
-                    operationService.executeOperation(expirationOperation);
-                }
-            }
-        }
-
-        private boolean isUninitializedRecordStore(PartitionContainer partitionContainer) {
-            final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
-            return recordStore == null;
-        }
-    }
-
-    private Operation createExpirationOperation(int partitionId) {
-        final MapService mapService = this.mapService;
-        final ClearExpiredOperation clearExpiredOperation = new ClearExpiredOperation(name);
-        clearExpiredOperation
-                .setNodeEngine(mapService.getNodeEngine())
-                .setCallerUuid(mapService.getNodeEngine().getLocalMember().getUuid())
-                .setPartitionId(partitionId)
-                .setValidateTarget(false)
-                .setService(mapService);
-        return clearExpiredOperation;
     }
 
     public boolean isEvictionEnabled() {
@@ -162,8 +116,7 @@ public class MapContainer {
         if (!isWriteBehindMapStoreEnabled()) {
             return;
         }
-        this.writeBehindQueueManager
-                = WriteBehindManagers.createWriteBehindManager(name, mapService, storeWrapper);
+        this.writeBehindQueueManager = createWriteBehindManager();
         // listener for delete operations.
         this.writeBehindQueueManager.addStoreListener(new StoreListener<DelayedEntry>() {
             @Override
@@ -180,7 +133,7 @@ public class MapContainer {
                     return;
                 }
                 final Data key = (Data) storeEvent.getSource().getKey();
-                final int partitionId = mapService.getNodeEngine().getPartitionService().getPartitionId(key);
+                final int partitionId = delayedEntry.getPartitionId();
                 final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
                 final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
                 if (recordStore != null) {
@@ -188,7 +141,13 @@ public class MapContainer {
                 }
             }
         });
+
         this.writeBehindQueueManager.start();
+    }
+
+    private WriteBehindManager createWriteBehindManager() {
+        return WriteBehindManagers.createWriteBehindManager(name, mapService,
+                storeWrapper, mapConfig.getMapStoreConfig());
     }
 
     private RecordFactory createRecordFactory(NodeEngine nodeEngine) {
@@ -295,7 +254,7 @@ public class MapContainer {
             public void run() {
                 initialKeys.clear();
             }
-        }, 20, TimeUnit.MINUTES);
+        }, INITIAL_KEYS_REMOVE_DELAY_MINUTES, TimeUnit.MINUTES);
     }
 
     public void shutDownMapStoreScheduledExecutor() {

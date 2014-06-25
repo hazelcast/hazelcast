@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.security.Permission;
 
@@ -40,6 +39,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
     protected String name;
     protected Data key;
     protected long threadId;
+    protected boolean async;
     protected transient long startTime;
 
     public MapRemoveRequest() {
@@ -84,6 +84,10 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
         return op;
     }
 
+    public void setAsAsync() {
+        this.async = true;
+    }
+
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
@@ -91,6 +95,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeLong("t", threadId);
+        writer.writeBoolean("a", async);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
@@ -98,6 +103,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         threadId = reader.readLong("t");
+        async = reader.readBoolean("a");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
@@ -107,4 +113,16 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 
+    @Override
+    public String getMethodName() {
+        if (async) {
+            return "removeAsync";
+        }
+        return "remove";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

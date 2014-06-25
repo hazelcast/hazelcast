@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.eviction.EvictionHelper;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.operation.PutAllOperation;
+import com.hazelcast.map.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.map.writebehind.DelayedEntry;
@@ -39,9 +40,12 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.AbstractMap;
@@ -58,7 +62,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -70,31 +73,64 @@ public class DefaultRecordStore implements RecordStore {
     private static final long DEFAULT_TTL = -1L;
     /**
      * Number of reads before clean up.
+     * A nice number such as 2^n - 1.
      */
-    private static final byte POST_READ_CHECK_POINT = 0x3F;
+    private static final int POST_READ_CHECK_POINT = 63;
     private final String name;
     private final int partitionId;
     private final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
     private final MapContainer mapContainer;
     private final MapService mapService;
-    private final LockStore lockStore;
     private final RecordFactory recordFactory;
     private final ILogger logger;
     private final SizeEstimator sizeEstimator;
     private final AtomicBoolean loaded = new AtomicBoolean(false);
     private final WriteBehindQueue<DelayedEntry> writeBehindQueue;
+    private final LockStore lockStore;
     private long lastEvictionTime;
+    /**
+     * Flag for checking if this record store has at least one candidate entry
+     * for expiration (idle or tll) or not.
+     */
+    private volatile boolean expirable;
+
+    /**
+     * Iterates over a pre-set entry count/percentage in one round.
+     * Used in expiration logic for traversing entries. Initializes lazily.
+     */
+    private Iterator<Record> expirationIterator;
+
+    /**
+     * Iterates over a pre-set entry count/percentage in one round.
+     * Used in expiration logic for traversing entries. Initializes lazily.
+     */
+    private Iterator<DelayedEntry> evictionStagingAreaIterator;
+
     /**
      * If there is no clean-up caused by puts after some time,
      * count a number of gets and start eviction.
      */
-    private byte readCountBeforeCleanUp;
+    private int readCountBeforeCleanUp;
+
     /**
      * To check if a key has a delayed delete operation or not.
      */
     private final Set<Data> writeBehindWaitingDeletions;
+
     /**
-     * used for lru eviction.
+     * A temporary living space for evicted data if we are using a write-behind map store. Because every eviction triggers a
+     * map store flush and in write-behind mode this flush operation should not cause any inconsistencies like reading a stale value
+     * from map store. To prevent this kind of inconsistencies, first we are searching an evicted entry in this space and if it is not there,
+     * we are asking map store to load it. All read operations will use this staging area to return last set value on a specific key,
+     * since there is a possibility that WBQ {@link com.hazelcast.map.writebehind.WriteBehindQueue} may contain more than one waiting operations
+     * on a specific key.
+     * <p/>
+     * Method {@link com.hazelcast.map.DefaultRecordStore#cleanupEvictionStagingArea} will try to evict this staging area.
+     */
+    private final Map<Data, DelayedEntry> evictionStagingArea;
+
+    /**
+     * used in LRU eviction logic.
      */
     private long lruAccessSequenceNumber;
 
@@ -105,15 +141,13 @@ public class DefaultRecordStore implements RecordStore {
         this.mapContainer = mapService.getMapContainer(name);
         this.logger = mapService.getNodeEngine().getLogger(this.getName());
         this.recordFactory = mapContainer.getRecordFactory();
-        this.writeBehindQueue = WriteBehindQueues.createDefaultWriteBehindQueue(mapContainer.isWriteBehindMapStoreEnabled());
-        this.writeBehindWaitingDeletions = mapContainer.isWriteBehindMapStoreEnabled()
-                ? Collections.newSetFromMap(new ConcurrentHashMap()) : (Set<Data>) Collections.EMPTY_SET;
-        NodeEngine nodeEngine = mapService.getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        this.lockStore = lockService == null ? null
-                : lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+        this.lockStore = createLockStore();
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
-        loadFromMapStore(nodeEngine);
+        this.writeBehindQueue = createWriteBehindQueue();
+        this.writeBehindWaitingDeletions = createWriteBehindWaitingDeletionsSet();
+        this.expirable = isRecordStoreExpirable();
+        this.evictionStagingArea = createEvictionStagingArea();
+        loadFromMapStore();
     }
 
     public boolean isLoaded() {
@@ -154,7 +188,8 @@ public class DefaultRecordStore implements RecordStore {
         return records.get(key);
     }
 
-    public void putForReplication(Data key, Record record) {
+    @Override
+    public void putRecord(Data key, Record record) {
         final Record existingRecord = records.put(key, record);
         updateSizeEstimator(-calculateRecordSize(existingRecord));
         updateSizeEstimator(calculateRecordSize(record));
@@ -165,21 +200,29 @@ public class DefaultRecordStore implements RecordStore {
         return putBackup(key, value, DEFAULT_TTL);
     }
 
+    /**
+     * @param key   the key to be processed.
+     * @param value the value to be processed.
+     * @param ttl   milliseconds. Check out {@link com.hazelcast.map.proxy.MapProxySupport#putInternal}
+     * @return previous record if exists otherwise null.
+     */
     public Record putBackup(Data key, Object value, long ttl) {
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
+        markRecordStoreExpirable(ttl);
 
         Record record = records.get(key);
         if (record == null) {
-            record = mapService.createRecord(name, key, value, ttl);
+            record = mapService.createRecord(name, key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
+            setRecordValue(record, value, now);
             updateSizeEstimator(calculateRecordSize(record));
         }
         removeFromWriteBehindWaitingDeletions(key);
-        addToDelayedStore(key, record.getValue());
+        addToDelayedStore(key, record.getValue(), now);
         return record;
     }
 
@@ -192,6 +235,11 @@ public class DefaultRecordStore implements RecordStore {
 
     public Map<Data, Record> getReadonlyRecordMap() {
         return Collections.unmodifiableMap(records);
+    }
+
+    public Map<Data, Record> getReadonlyRecordMapByWaitingMapStoreLoad() {
+        checkIfLoaded();
+        return getReadonlyRecordMap();
     }
 
     public void clearPartition() {
@@ -210,6 +258,9 @@ public class DefaultRecordStore implements RecordStore {
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
+        writeBehindQueue.clear();
+        writeBehindWaitingDeletions.clear();
+        evictionStagingArea.clear();
     }
 
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
@@ -261,36 +312,86 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     @Override
-    public List findUnlockedExpiredRecords() {
-        checkIfLoaded();
+    public void evictExpiredEntries(int percentage, boolean ownerPartition) {
+        final long now = getNow();
+        final int size = size();
+        final int maxIterationCount = getMaxIterationCount(size, percentage);
+        final int maxRetry = 3;
+        int loop = 0;
+        int evicteds = 0;
+        while (true) {
+            evicteds += evictExpiredEntries0(maxIterationCount, now, ownerPartition);
+            if (evicteds >= maxIterationCount) {
+                break;
+            }
+            loop++;
+            if (loop > maxRetry) {
+                break;
+            }
+        }
+    }
 
-        final long nowInNanos = nowInNanos();
-        List<Object> expiredKeyValueSequence = Collections.emptyList();
-        boolean createLazy = true;
-        for (Map.Entry<Data, Record> entry : records.entrySet()) {
-            final Data key = entry.getKey();
+    /**
+     * Intended to put an upper bound to iterations. Used in evictions.
+     *
+     * @param size       of iterate-able.
+     * @param percentage percentage of size.
+     * @return 100 If calculated iteration count is less than 100, otherwise returns calculated iteration count.
+     */
+    private int getMaxIterationCount(int size, int percentage) {
+        final int defaultMaxIterationCount = 100;
+        final float oneHundred = 100F;
+        float maxIterationCount = size * (percentage / oneHundred);
+        if (maxIterationCount <= defaultMaxIterationCount) {
+            return defaultMaxIterationCount;
+        }
+        return Math.round(maxIterationCount);
+    }
+
+    private int evictExpiredEntries0(int maxIterationCount, long now, boolean ownerPartition) {
+        int evictedCount = 0;
+        int checkedEntryCount = 0;
+        initExpirationIterator();
+        while (expirationIterator.hasNext()) {
+            if (checkedEntryCount >= maxIterationCount) {
+                break;
+            }
+            checkedEntryCount++;
+            final Record record = expirationIterator.next();
+            final Data key = record.getKey();
             if (isLocked(key)) {
                 continue;
             }
-            final Record record = entry.getValue();
-            if (isReachable(record, nowInNanos)) {
+            if (isReachable(record, now)) {
                 continue;
             }
+            //!!! get entry value here because evict0(key) nulls the record value.
             final Object value = record.getValue();
-            evict(key);
-            if (createLazy) {
-                expiredKeyValueSequence = new ArrayList<Object>();
-                createLazy = false;
+            evict0(key);
+            evictedCount++;
+            initExpirationIterator();
+
+            // do post eviction operations if this partition is an owner partition.
+            if (ownerPartition) {
+                doPostEvictionOperations(key, value);
             }
-            expiredKeyValueSequence.add(key);
-            expiredKeyValueSequence.add(value);
+            if (!expirationIterator.hasNext()) {
+                break;
+            }
         }
-        return expiredKeyValueSequence;
+        return evictedCount;
+    }
+
+    private void initExpirationIterator() {
+        if (expirationIterator == null || !expirationIterator.hasNext()) {
+            expirationIterator = records.values().iterator();
+        }
     }
 
     @Override
     public boolean containsValue(Object value) {
         checkIfLoaded();
+        final long now = getNow();
         for (Record record : records.values()) {
             if (nullIfExpired(record) == null) {
                 continue;
@@ -299,7 +400,7 @@ public class DefaultRecordStore implements RecordStore {
                 return true;
             }
         }
-        postReadCleanUp();
+        postReadCleanUp(now);
         return false;
     }
 
@@ -329,7 +430,7 @@ public class DefaultRecordStore implements RecordStore {
 
     @Override
     public long getHeapCost() {
-        return getSizeEstimator().getSize();
+        return sizeEstimator.getSize();
     }
 
     public boolean isLocked(Data dataKey) {
@@ -366,6 +467,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
 
+    // TODO Does it need to load from store on backup?
     public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
@@ -378,13 +480,13 @@ public class DefaultRecordStore implements RecordStore {
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
-    private Record getRecordInternal(Data dataKey, boolean enableIndex) {
+    private Record getRecordInternal(Data key, boolean enableIndex) {
         Record record = null;
         if (mapContainer.getStore() != null) {
-            final Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
+            final Object value = loadFromStoreOrStagingArea(key);
             if (value != null) {
-                record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL);
-                records.put(dataKey, record);
+                record = mapService.createRecord(name, key, value, DEFAULT_TTL, getNow());
+                records.put(key, record);
                 if (enableIndex) {
                     saveIndex(record);
                 }
@@ -412,7 +514,7 @@ public class DefaultRecordStore implements RecordStore {
         return values;
     }
 
-    public void clear() {
+    public int clear() {
         checkIfLoaded();
         resetSizeEstimator();
         final Collection<Data> lockedKeys = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
@@ -439,11 +541,13 @@ public class DefaultRecordStore implements RecordStore {
             store.deleteAll(keysObject);
         }
 
+        int numOfClearedEntries = keysToDelete.size();
         removeIndex(keysToDelete);
 
         clearRecordsMap(lockedRecords);
         resetAccessSequenceNumber();
         writeBehindQueue.clear();
+        return numOfClearedEntries;
     }
 
     public void reset() {
@@ -454,30 +558,108 @@ public class DefaultRecordStore implements RecordStore {
         resetAccessSequenceNumber();
         writeBehindQueue.clear();
         writeBehindWaitingDeletions.clear();
+        evictionStagingArea.clear();
     }
 
     private void resetAccessSequenceNumber() {
         lruAccessSequenceNumber = 0L;
     }
 
-    public Object evict(Data dataKey) {
+    @Override
+    public Object evict(Data key) {
         checkIfLoaded();
+        return evict0(key);
+    }
 
-        Record record = records.get(dataKey);
-        Object oldValue = null;
+    private Object evict0(Data key) {
+        Record record = records.get(key);
+        Object value = null;
         if (record != null) {
-            mapService.interceptRemove(name, record.getValue());
-            oldValue = record.getValue();
+            value = record.getValue();
+            final long lastUpdateTime = record.getLastUpdateTime();
+            putEvictionStagingArea(key, value, lastUpdateTime);
+            mapService.interceptRemove(name, value);
             updateSizeEstimator(-calculateRecordSize(record));
-            deleteRecord(dataKey);
-            removeIndex(dataKey);
+            deleteRecord(key);
+            removeIndex(key);
         }
-        return oldValue;
+        removeFromWriteBehindWaitingDeletions(key);
+        return value;
+    }
+
+    @Override
+    public int evictAll() {
+        checkIfLoaded();
+        final int size = size();
+        final Set<Data> keysToPreserve = evictAll0();
+        removeIndexByPreserving(keysToPreserve);
+        return size - keysToPreserve.size();
+    }
+
+    @Override
+    public void evictAllBackup() {
+        evictAll0();
+    }
+
+    /**
+     * Internal evict all provides common functionality to all {@link #evictAll()}
+     *
+     * @return preserved keys.
+     */
+    private Set<Data> evictAll0() {
+        resetSizeEstimator();
+        resetAccessSequenceNumber();
+
+        Set<Data> keysToPreserve = Collections.emptySet();
+        final Map<Data, Record> recordsToPreserve = getLockedRecords();
+        if (!recordsToPreserve.isEmpty()) {
+            keysToPreserve = recordsToPreserve.keySet();
+            updateSizeEstimator(calculateRecordSize(recordsToPreserve.values()));
+        }
+        clearRecordsMap(recordsToPreserve);
+        return keysToPreserve;
+    }
+
+    /**
+     * Removes indexes by excluding keysToPreserve.
+     *
+     * @param keysToPreserve should not be removed from index.
+     */
+    private void removeIndexByPreserving(Set<Data> keysToPreserve) {
+        final Set<Data> currentKeySet = records.keySet();
+        currentKeySet.removeAll(keysToPreserve);
+
+        removeIndex(currentKeySet);
+    }
+
+    /**
+     * Returns locked records.
+     *
+     * @return map of locked records.
+     */
+    private Map<Data, Record> getLockedRecords() {
+        if (lockStore == null) {
+            return Collections.emptyMap();
+        }
+        final Collection<Data> lockedKeys = lockStore.getLockedKeys();
+        if (lockedKeys.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final Map<Data, Record> lockedRecords = new HashMap<Data, Record>(lockedKeys.size());
+        // Locked records should not be removed!
+        for (Data key : lockedKeys) {
+            Record record = records.get(key);
+            if (record != null) {
+                lockedRecords.put(key, record);
+            }
+        }
+        return lockedRecords;
     }
 
     @Override
     public void removeBackup(Data key) {
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
 
         final Record record = records.get(key);
         if (record == null) {
@@ -486,21 +668,21 @@ public class DefaultRecordStore implements RecordStore {
         // reduce size
         updateSizeEstimator(-calculateRecordSize(record));
         deleteRecord(key);
-        addToWriteBehindWaitingDeletions(key);
-        addToDelayedStore(key, null);
+        addToDelayedStore(key, null, now);
     }
 
     @Override
-    public boolean remove(Data dataKey, Object testValue) {
+    public boolean remove(Data key, Object testValue) {
         checkIfLoaded();
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
 
-        Record record = records.get(dataKey);
+        Record record = records.get(key);
         Object oldValue = null;
         boolean removed = false;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
+                oldValue = loadFromStoreOrStagingArea(key);
             }
             if (oldValue == null) {
                 return false;
@@ -510,41 +692,42 @@ public class DefaultRecordStore implements RecordStore {
         }
         if (mapService.compare(name, testValue, oldValue)) {
             mapService.interceptRemove(name, oldValue);
-            removeIndex(dataKey);
-            mapStoreDelete(record, dataKey);
+            removeIndex(key);
+            mapStoreDelete(record, key, now);
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
-            deleteRecord(dataKey);
+            deleteRecord(key);
             removed = true;
         }
         return removed;
     }
 
     @Override
-    public Object remove(Data dataKey) {
+    public Object remove(Data key) {
         checkIfLoaded();
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
 
-        Record record = records.get(dataKey);
+        Record record = records.get(key);
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
+                oldValue = loadFromStoreOrStagingArea(key);
                 if (oldValue != null) {
-                    removeIndex(dataKey);
-                    mapStoreDelete(null, dataKey);
+                    removeIndex(key);
+                    mapStoreDelete(null, key, now);
                 }
             }
         } else {
             oldValue = record.getValue();
             oldValue = mapService.interceptRemove(name, oldValue);
             if (oldValue != null) {
-                removeIndex(dataKey);
-                mapStoreDelete(record, dataKey);
+                removeIndex(key);
+                mapStoreDelete(record, key, now);
             }
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
-            deleteRecord(dataKey);
+            deleteRecord(key);
         }
         return oldValue;
     }
@@ -552,35 +735,43 @@ public class DefaultRecordStore implements RecordStore {
     @Override
     public Object get(Data key) {
         checkIfLoaded();
-        if (hasWaitingWriteBehindDeleteOperation(key)) {
-            // not reachable record.
-            return null;
-        }
+
+        long now = getNow();
         Record record = records.get(key);
         record = nullIfExpired(record);
         Object value = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                value = mapContainer.getStore().load(mapService.toObject(key));
+                value = loadFromStoreOrStagingArea(key);
                 if (value != null) {
-                    record = mapService.createRecord(name, key, value, DEFAULT_TTL);
+                    record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
                     records.put(key, record);
                     saveIndex(record);
                     updateSizeEstimator(calculateRecordSize(record));
                 }
             }
         } else {
-            accessRecord(record);
+            accessRecord(record, now);
             value = record.getValue();
         }
         value = mapService.interceptGet(name, value);
-        postReadCleanUp();
+        postReadCleanUp(now);
         return value;
+    }
+
+    private Object loadFromStoreOrStagingArea(Data key) {
+        if (hasWaitingWriteBehindDeleteOperation(key)) {
+            return null;
+        }
+        final Object fromStagingArea = getFromEvictionStagingArea(key);
+        return fromStagingArea == null ? mapContainer.getStore().load(mapService.toObject(key)) :
+                fromStagingArea;
     }
 
     @Override
     public MapEntrySet getAll(Set<Data> keySet) {
         checkIfLoaded();
+        final long now = getNow();
         final MapEntrySet mapEntrySet = new MapEntrySet();
         Map<Object, Data> keyMapForLoader = Collections.emptyMap();
         if (mapContainer.getStore() != null) {
@@ -588,9 +779,6 @@ public class DefaultRecordStore implements RecordStore {
         }
         for (Data dataKey : keySet) {
             Record record = records.get(dataKey);
-            if (hasWaitingWriteBehindDeleteOperation(dataKey)) {
-                continue;
-            }
             if (record == null) {
                 if (mapContainer.getStore() != null) {
                     keyMapForLoader.put(mapService.toObject(dataKey), dataKey);
@@ -607,6 +795,10 @@ public class DefaultRecordStore implements RecordStore {
         if (mapContainer.getStore() == null || keyMapForLoader.size() == 0) {
             return mapEntrySet;
         }
+        final Map<Object, Object> fromEvictionStagingArea = getFromEvictionStagingArea(keySet);
+        for (Object o : fromEvictionStagingArea.keySet()) {
+            keyMapForLoader.remove(o);
+        }
         final Map<Object, Object> loadedKeys = mapContainer.getStore().loadAll(keyMapForLoader.keySet());
         for (Map.Entry entry : loadedKeys.entrySet()) {
             final Object objectKey = entry.getKey();
@@ -616,7 +808,7 @@ public class DefaultRecordStore implements RecordStore {
                 continue;
             }
             if (value != null) {
-                Record record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL);
+                Record record = mapService.createRecord(name, dataKey, value, DEFAULT_TTL, now);
                 records.put(dataKey, record);
                 saveIndex(record);
                 updateSizeEstimator(calculateRecordSize(record));
@@ -626,6 +818,7 @@ public class DefaultRecordStore implements RecordStore {
                 mapEntrySet.add(new AbstractMap.SimpleImmutableEntry(dataKey, mapService.toData(value)));
             }
         }
+        postReadCleanUp(now);
         return mapEntrySet;
     }
 
@@ -633,18 +826,15 @@ public class DefaultRecordStore implements RecordStore {
     public boolean containsKey(Data key) {
         checkIfLoaded();
 
+        final long now = getNow();
         Record record = records.get(key);
-        if (hasWaitingWriteBehindDeleteOperation(key)) {
-            // not reachable record.
-            return false;
-        }
         record = nullIfExpired(record);
 
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                Object value = mapContainer.getStore().load(mapService.toObject(key));
+                Object value = loadFromStoreOrStagingArea(key);
                 if (value != null) {
-                    record = mapService.createRecord(name, key, value, DEFAULT_TTL);
+                    record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
                     records.put(key, record);
                     updateSizeEstimator(calculateRecordSize(record));
                 }
@@ -652,24 +842,25 @@ public class DefaultRecordStore implements RecordStore {
         }
         boolean contains = record != null;
         if (contains) {
-            accessRecord(record);
+            accessRecord(record, now);
         }
-        postReadCleanUp();
+        postReadCleanUp(now);
         return contains;
     }
 
     @Override
     public void put(Map.Entry<Data, Object> entry) {
         checkIfLoaded();
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
 
         Data key = entry.getKey();
         Object value = entry.getValue();
         Record record = records.get(key);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = mapStoreWrite(key, value, null);
-            record = mapService.createRecord(name, key, value, DEFAULT_TTL);
+            value = mapStoreWrite(key, value, null, now);
+            record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
             records.put(key, record);
             // increase size.
             updateSizeEstimator(calculateRecordSize(record));
@@ -677,10 +868,10 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             final Object oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            value = mapStoreWrite(key, value, record);
+            value = mapStoreWrite(key, value, record, now);
             // if key exists before, first reduce size
             updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
+            setRecordValue(record, value, now);
             // then increase size
             updateSizeEstimator(calculateRecordSize(record));
             saveIndex(record);
@@ -690,57 +881,61 @@ public class DefaultRecordStore implements RecordStore {
 
     public Object put(Data key, Object value, long ttl) {
         checkIfLoaded();
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
+        markRecordStoreExpirable(ttl);
 
         Record record = records.get(key);
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(key));
+                oldValue = loadFromStoreOrStagingArea(key);
             }
             value = mapService.interceptPut(name, null, value);
-            value = mapStoreWrite(key, value, null);
-            record = mapService.createRecord(name, key, value, ttl);
+            value = mapStoreWrite(key, value, null, now);
+            record = mapService.createRecord(name, key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
             saveIndex(record);
         } else {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            value = mapStoreWrite(key, value, record);
+            value = mapStoreWrite(key, value, record, now);
             // if key exists before, first reduce size
             updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
+            setRecordValue(record, value, now);
             // then increase size.
             updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
             saveIndex(record);
         }
-
         removeFromWriteBehindWaitingDeletions(key);
 
         return oldValue;
     }
 
+
     public boolean set(Data key, Object value, long ttl) {
         checkIfLoaded();
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
+        markRecordStoreExpirable(ttl);
 
         Record record = records.get(key);
         boolean newRecord = false;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = mapStoreWrite(key, value, null);
-            record = mapService.createRecord(name, key, value, ttl);
+            value = mapStoreWrite(key, value, null, now);
+            record = mapService.createRecord(name, key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
             newRecord = true;
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            value = mapStoreWrite(key, value, record);
+            value = mapStoreWrite(key, value, record, now);
             // if key exists before, first reduce size
             updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
+            setRecordValue(record, value, now);
             // then increase size.
             updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
@@ -753,7 +948,8 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean merge(Data key, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
 
         Record record = records.get(key);
         Object newValue;
@@ -764,8 +960,8 @@ public class DefaultRecordStore implements RecordStore {
             if (newValue == null) {
                 return false;
             }
-            newValue = mapStoreWrite(key, newValue, null);
-            record = mapService.createRecord(name, key, newValue, DEFAULT_TTL);
+            newValue = mapStoreWrite(key, newValue, null, now);
+            record = mapService.createRecord(name, key, newValue, DEFAULT_TTL, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
@@ -776,7 +972,7 @@ public class DefaultRecordStore implements RecordStore {
             // existing entry will be removed
             if (newValue == null) {
                 removeIndex(key);
-                mapStoreDelete(record, key);
+                mapStoreDelete(record, key, now);
                 // reduce size.
                 updateSizeEstimator(-calculateRecordSize(record));
                 //remove from map & invalidate.
@@ -787,7 +983,7 @@ public class DefaultRecordStore implements RecordStore {
             if (mapService.compare(name, newValue, oldValue)) {
                 return true;
             }
-            newValue = mapStoreWrite(key, newValue, record);
+            newValue = mapStoreWrite(key, newValue, record, now);
             updateSizeEstimator(-calculateRecordSize(record));
             recordFactory.setValue(record, newValue);
             updateSizeEstimator(calculateRecordSize(record));
@@ -796,18 +992,20 @@ public class DefaultRecordStore implements RecordStore {
         return newValue != null;
     }
 
+    // TODO why does not replace method load data from map store if currently not available in memory.
     public Object replace(Data dataKey, Object value) {
         checkIfLoaded();
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
 
         Record record = records.get(dataKey);
         Object oldValue;
         if (record != null && record.getValue() != null) {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            value = mapStoreWrite(dataKey, value, record);
+            value = mapStoreWrite(dataKey, value, record, now);
             updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
+            setRecordValue(record, value, now);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             return null;
@@ -819,7 +1017,8 @@ public class DefaultRecordStore implements RecordStore {
 
     public boolean replace(Data dataKey, Object testValue, Object newValue) {
         checkIfLoaded();
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
 
         Record record = records.get(dataKey);
         if (record == null) {
@@ -827,9 +1026,9 @@ public class DefaultRecordStore implements RecordStore {
         }
         if (mapService.compare(name, record.getValue(), testValue)) {
             newValue = mapService.interceptPut(name, record.getValue(), newValue);
-            newValue = mapStoreWrite(dataKey, newValue, record);
+            newValue = mapStoreWrite(dataKey, newValue, record, now);
             updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, newValue);
+            setRecordValue(record, newValue, now);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             return false;
@@ -841,18 +1040,20 @@ public class DefaultRecordStore implements RecordStore {
 
     public void putTransient(Data key, Object value, long ttl) {
         checkIfLoaded();
-        earlyWriteCleanup();
+        final long now = getNow();
+        earlyWriteCleanup(now);
+        markRecordStoreExpirable(ttl);
 
         Record record = records.get(key);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            record = mapService.createRecord(name, key, value, ttl);
+            record = mapService.createRecord(name, key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
             updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
+            setRecordValue(record, value, now);
             updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
         }
@@ -860,42 +1061,57 @@ public class DefaultRecordStore implements RecordStore {
         removeFromWriteBehindWaitingDeletions(key);
     }
 
-    public void putFromLoad(Data key, Object value, long ttl) {
-        Record record = records.get(key);
-        earlyWriteCleanup();
+    @Override
+    public Object putFromLoad(Data key, Object value) {
+        return putFromLoad(key, value, DEFAULT_TTL);
+    }
 
+    @Override
+    public Object putFromLoad(Data key, Object value, long ttl) {
+        final long now = getNow();
+        earlyWriteCleanup(now);
+        markRecordStoreExpirable(ttl);
+
+        Record record = records.get(key);
+        Object oldValue = null;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            record = mapService.createRecord(name, key, value, ttl);
+            record = mapService.createRecord(name, key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
+            oldValue = record.getValue();
             value = mapService.interceptPut(name, record.getValue(), value);
             updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
+            setRecordValue(record, value, now);
             updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
         removeFromWriteBehindWaitingDeletions(key);
+        return oldValue;
     }
+
 
     public boolean tryPut(Data key, Object value, long ttl) {
         checkIfLoaded();
-        earlyWriteCleanup();
+
+        final long now = getNow();
+        earlyWriteCleanup(now);
+        markRecordStoreExpirable(ttl);
 
         Record record = records.get(key);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
-            value = mapStoreWrite(key, value, null);
-            record = mapService.createRecord(name, key, value, ttl);
+            value = mapStoreWrite(key, value, null, now);
+            record = mapService.createRecord(name, key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            value = mapStoreWrite(key, value, record);
+            value = mapStoreWrite(key, value, record, now);
             updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
+            setRecordValue(record, value, now);
             updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
         }
@@ -907,27 +1123,30 @@ public class DefaultRecordStore implements RecordStore {
 
     public Object putIfAbsent(Data key, Object value, long ttl) {
         checkIfLoaded();
-        earlyWriteCleanup();
+
+        final long now = getNow();
+        earlyWriteCleanup(now);
+        markRecordStoreExpirable(ttl);
 
         Record record = records.get(key);
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(key));
+                oldValue = loadFromStoreOrStagingArea(key);
                 if (oldValue != null) {
-                    record = mapService.createRecord(name, key, oldValue, DEFAULT_TTL);
+                    record = mapService.createRecord(name, key, oldValue, DEFAULT_TTL, now);
                     records.put(key, record);
                     updateSizeEstimator(calculateRecordSize(record));
                 }
             }
         } else {
-            accessRecord(record);
+            accessRecord(record, now);
             oldValue = record.getValue();
         }
         if (oldValue == null) {
             value = mapService.interceptPut(name, null, value);
-            value = mapStoreWrite(key, value, record);
-            record = mapService.createRecord(name, key, value, ttl);
+            value = mapStoreWrite(key, value, record, now);
+            record = mapService.createRecord(name, key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
@@ -938,7 +1157,8 @@ public class DefaultRecordStore implements RecordStore {
         return oldValue;
     }
 
-    private void loadFromMapStore(NodeEngine nodeEngine) {
+    private void loadFromMapStore() {
+        final NodeEngine nodeEngine = mapService.getNodeEngine();
         final AtomicBoolean loadOccurred = loaded;
         if (!mapContainer.isMapStoreEnabled() || loadOccurred.get()) {
             return;
@@ -999,42 +1219,65 @@ public class DefaultRecordStore implements RecordStore {
      * This cleanup adds some latency to write operations.
      * But it sweeps records much better under high write loads.
      * <p/>
+     *
+     * @param now now in time.
      */
-    private void earlyWriteCleanup() {
-        if (!mapContainer.isEvictionEnabled()) {
-            return;
+    private void earlyWriteCleanup(long now) {
+        cleanupEvictionStagingArea(now);
+
+        if (mapContainer.isEvictionEnabled()) {
+            cleanUp(now);
         }
-        cleanUp();
     }
 
     /**
      * If there is no clean-up caused by puts after some time,
      * try to clean-up from gets.
+     *
+     * @param now now.
      */
-    private void postReadCleanUp() {
-        if (!mapContainer.isEvictionEnabled()) {
+    private void postReadCleanUp(long now) {
+        cleanupEvictionStagingArea(now);
+
+        if (mapContainer.isEvictionEnabled()) {
+            readCountBeforeCleanUp++;
+            if ((readCountBeforeCleanUp & POST_READ_CHECK_POINT) == 0) {
+                cleanUp(now);
+            }
+        }
+
+    }
+
+    private void cleanUp(long now) {
+        if (size() == 0) {
             return;
         }
-        readCountBeforeCleanUp++;
-        if ((readCountBeforeCleanUp & POST_READ_CHECK_POINT) == 0) {
-            cleanUp();
+        if (inEvictableTimeWindow(now) && isEvictable()) {
+            removeEvictables();
+            lastEvictionTime = now;
+            readCountBeforeCleanUp = 0;
         }
     }
 
-    private void cleanUp() {
-        final long now = System.currentTimeMillis();
-        final int evictAfterMs = 1000;
-        if (now - lastEvictionTime <= evictAfterMs) {
-            return;
-        }
-        final boolean evictable = EvictionHelper.checkEvictable(mapContainer);
-        if (!evictable) {
-            return;
-        }
+    private void removeEvictables() {
         EvictionHelper.removeEvictableRecords(DefaultRecordStore.this,
                 mapContainer.getMapConfig(), mapService);
-        lastEvictionTime = now;
-        readCountBeforeCleanUp = 0;
+    }
+
+
+    /**
+     * Eviction waits at least 1000 milliseconds to run.
+     *
+     * @return <code>true</code> if in that time window,
+     * otherwise <code>false</code>
+     */
+    private boolean inEvictableTimeWindow(long now) {
+        final int evictAfterMs = 1000;
+        return (now - lastEvictionTime) > evictAfterMs;
+    }
+
+    private boolean isEvictable() {
+        return EvictionHelper.checkEvictable(mapContainer);
     }
 
     private Record nullIfExpired(Record record) {
@@ -1056,11 +1299,134 @@ public class DefaultRecordStore implements RecordStore {
         writeBehindWaitingDeletions.remove(key);
     }
 
-    private boolean hasWaitingWriteBehindDeleteOperation(Data key) {
+    private boolean isInWriteBehindWaitingDeletions(Data key) {
         if (!mapContainer.isWriteBehindMapStoreEnabled()) {
             return false;
         }
         return writeBehindWaitingDeletions.contains(key);
+    }
+
+    private void initStagingAreaIterator() {
+        if (evictionStagingAreaIterator == null || !evictionStagingAreaIterator.hasNext()) {
+            evictionStagingAreaIterator = evictionStagingArea.values().iterator();
+        }
+    }
+
+    private void cleanupEvictionStagingArea(long now) {
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return;
+        }
+        if (evictionStagingArea.isEmpty() || !inEvictableTimeWindow(now)) {
+            return;
+        }
+        final long nextItemsStoreTimeInWriteBehindQueue = getNextItemsStoreTimeInWriteBehindQueue();
+        final int size = evictionStagingArea.size();
+        final int evictionPercentage = 20;
+        int maxAllowedIterationCount = getMaxIterationCount(size, evictionPercentage);
+        initStagingAreaIterator();
+        while (evictionStagingAreaIterator.hasNext()) {
+            if (maxAllowedIterationCount <= 0) {
+                break;
+            }
+            --maxAllowedIterationCount;
+            final DelayedEntry entry = evictionStagingAreaIterator.next();
+            if (entry.getStoreTime() < nextItemsStoreTimeInWriteBehindQueue) {
+                evictionStagingAreaIterator.remove();
+            }
+            initStagingAreaIterator();
+            if (!evictionStagingAreaIterator.hasNext()) {
+                break;
+            }
+        }
+    }
+
+    private long getNextItemsStoreTimeInWriteBehindQueue() {
+        final DelayedEntry firstEntryInQueue = writeBehindQueue.get(0);
+        if (firstEntryInQueue == null) {
+            return 0L;
+        }
+        return firstEntryInQueue.getStoreTime();
+    }
+
+    private void putEvictionStagingArea(Data key, Object value, long lastUpdateTime) {
+        assert value != null : String.format("value is null");
+        assert lastUpdateTime > 0 : String.format("lastUpdateTime should be greater than 0, but found %d", lastUpdateTime);
+
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return;
+        }
+        final long storeTime = lastUpdateTime + getWriteDelayTime();
+        final DelayedEntry<Void, Object> delayedEntry = DelayedEntry.createWithNullKey(value, storeTime);
+        evictionStagingArea.put(key, delayedEntry);
+    }
+
+    private Object getFromEvictionStagingArea(Data key) {
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return null;
+        }
+        final DelayedEntry entryWithNullKey = evictionStagingArea.get(key);
+        if (entryWithNullKey == null) {
+            return null;
+        }
+        return mapService.toObject(entryWithNullKey.getValue());
+    }
+
+    private void removeFromEvictionStagingArea(Data key) {
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return;
+        }
+        final Object value = evictionStagingArea.remove(key);
+        if (value == null) {
+            return;
+        }
+    }
+
+    private boolean isInEvictionStagingArea(Data key, long now) {
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return false;
+        }
+        final DelayedEntry entry = evictionStagingArea.get(key);
+        if (entry == null) {
+            return false;
+        }
+        final long storeTime = entry.getStoreTime();
+        return now < storeTime;
+    }
+
+    private Map<Object, Object> getFromEvictionStagingArea(Set<Data> keys) {
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return Collections.emptyMap();
+        }
+        final Map<Object, Object> map = new HashMap<Object, Object>();
+        for (Data key : keys) {
+            final Object valueFromEvictionStagingArea = getFromEvictionStagingArea(key);
+            if (valueFromEvictionStagingArea == null) {
+                continue;
+            }
+            map.put(mapService.toObject(key), valueFromEvictionStagingArea);
+        }
+        return map;
+    }
+
+    @Override
+    public boolean isExpirable() {
+        return expirable;
+    }
+
+    @Override
+    public void loadAllFromStore(Collection<Data> keys, boolean replaceExistingValues) {
+        if (keys.isEmpty()) {
+            return;
+        }
+        loaded.set(false);
+        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService.submit("hz:map-loadAllKeys", new LoadAllKeysTask(keys, replaceExistingValues));
+    }
+
+
+    private boolean hasWaitingWriteBehindDeleteOperation(Data key) {
+        return mapContainer.isWriteBehindMapStoreEnabled() && writeBehindWaitingDeletions.contains(key);
     }
 
     /**
@@ -1088,26 +1454,43 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private boolean isReachable(Record record) {
-        return isReachable(record, nowInNanos());
+        final long now = getNow();
+        return isReachable(record, now);
     }
 
-    private boolean isReachable(Record record, long timeInNanos) {
+    private boolean isReachable(Record record, long time) {
         final Record result = mapContainer.getReachabilityHandlerChain().isReachable(record,
-                -1L, timeInNanos);
+                -1L, time);
         return result != null;
     }
 
+    /**
+     * - Sends eviction event.
+     * - Invalidates near cache.
+     *
+     * @param key   the key to be processed.
+     * @param value the value to be processed.
+     */
     private void doPostEvictionOperations(Data key, Object value) {
-        mapService.interceptAfterRemove(name, value);
         if (mapService.isNearCacheAndInvalidationEnabled(name)) {
             mapService.invalidateAllNearCaches(name, key);
         }
         EvictionHelper.fireEvent(key, value, name, mapService);
     }
 
-    private void accessRecord(Record record) {
+    private void accessRecord(Record record, long now) {
         increaseRecordEvictionCriteriaNumber(record, mapContainer.getMapConfig().getEvictionPolicy());
+        record.setLastAccessTime(now);
         record.onAccess();
+    }
+
+    private void accessRecord(Record record) {
+        final long now = getNow();
+        accessRecord(record, now);
+    }
+
+    private long getNow() {
+        return Clock.currentTimeMillis();
     }
 
     private void increaseRecordEvictionCriteriaNumber(Record record, MapConfig.EvictionPolicy evictionPolicy) {
@@ -1136,31 +1519,31 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    private Object mapStoreWrite(Data dataKey, Object recordValue, Record record) {
+    private Object mapStoreWrite(Data key, Object value, Record record, long now) {
         final MapStoreWrapper store = mapContainer.getStore();
         if (store == null) {
-            return recordValue;
+            return value;
         }
-        if (mapContainer.getWriteDelayMillis() < 1L) {
-            Object objectValue = mapService.toObject(recordValue);
-            store.store(mapService.toObject(dataKey), objectValue);
+        if (getWriteDelayTime() < 1L) {
+            Object objectValue = mapService.toObject(value);
+            store.store(mapService.toObject(key), objectValue);
             if (record != null) {
                 record.onStore();
             }
             // if store is not a post-processing map-store, then avoid extra de-serialization phase.
-            return store.isPostProcessingMapStore() ? objectValue : recordValue;
+            return store.isPostProcessingMapStore() ? objectValue : value;
         }
-        addToDelayedStore(dataKey, recordValue);
-        return recordValue;
+        addToDelayedStore(key, value, now);
+        return value;
     }
 
-    private void mapStoreDelete(Record record, Data key) {
+    private void mapStoreDelete(Record record, Data key, long now) {
         final MapStoreWrapper store = mapContainer.getStore();
         if (store == null) {
             return;
         }
-        final long writeDelayMillis = mapContainer.getWriteDelayMillis();
-        if (writeDelayMillis < 1L) {
+        final long writeDelay = getWriteDelayTime();
+        if (writeDelay < 1L) {
             store.delete(mapService.toObject(key));
             // todo ea record will be deleted then why calling onStore
             if (record != null) {
@@ -1168,49 +1551,53 @@ public class DefaultRecordStore implements RecordStore {
             }
             return;
         }
-        addToDelayedStore(key, null);
+        addToDelayedStore(key, null, now);
     }
 
     /**
      * Constructs and adds a {@link com.hazelcast.map.writebehind.DelayedEntry}
      * instance to write behind queue.
      *
-     * @param dataKey
-     * @param recordValue
+     * @param key   to be stored.
+     * @param value to be stored.
      */
-    private void addToDelayedStore(Data dataKey, Object recordValue) {
+    private void addToDelayedStore(Data key, Object value, long now) {
         if (!mapContainer.isWriteBehindMapStoreEnabled()) {
             return;
         }
-        final long writeDelayMillis = mapContainer.getWriteDelayMillis();
-        final DelayedEntry<Data, Object> delayedEntry
-                = mapService.constructDelayedEntry(dataKey, recordValue,
-                partitionId, writeDelayMillis);
+        final long writeDelay = getWriteDelayTime();
+        final long storeTime = now + writeDelay;
+        final DelayedEntry<Data, Object> delayedEntry =
+                DelayedEntry.create(key, value, storeTime, partitionId);
         // if value is null this is a delete operation.
-        if (recordValue == null) {
-            addToWriteBehindWaitingDeletions(dataKey);
+        if (value == null) {
+            addToWriteBehindWaitingDeletions(key);
+            removeFromEvictionStagingArea(key);
         }
         writeBehindQueue.offer(delayedEntry);
     }
 
-    public SizeEstimator getSizeEstimator() {
-        return sizeEstimator;
+    private long getWriteDelayTime() {
+        return mapContainer.getWriteDelayMillis();
     }
 
-    private void updateTtl(Record record, long ttlInMillis) {
-        if (ttlInMillis < 0L) {
+    private void updateTtl(Record record, long ttl) {
+        if (ttl < 0L) {
             return;
         }
-        final long ttlInNanos = TimeUnit.MILLISECONDS.toNanos(ttlInMillis);
-        record.setTtl(ttlInNanos);
-
+        record.setTtl(ttl);
         if (record.getStatistics() != null) {
-            record.getStatistics().setExpirationTime(System.nanoTime() + ttlInNanos);
+            // when ttl is zero, entry should remain eternally.
+            final long expirationTime = ttl == 0 ? Long.MAX_VALUE : (getNow() + ttl);
+            record.getStatistics().setExpirationTime(expirationTime);
         }
     }
 
-    private static long nowInNanos() {
-        return System.nanoTime();
+
+    private void markRecordStoreExpirable(long ttl) {
+        if (ttl > 0L) {
+            expirable = true;
+        }
     }
 
     private void updateSizeEstimator(long recordSize) {
@@ -1221,12 +1608,27 @@ public class DefaultRecordStore implements RecordStore {
         return sizeEstimator.getCost(record);
     }
 
+    /**
+     * Returns total size of collection.
+     *
+     * @param collection which's size to be calculated.
+     * @return total size of collection.
+     */
+    private long calculateRecordSize(Collection<Record> collection) {
+        long totalSize = 0L;
+        for (Record record : collection) {
+            totalSize += calculateRecordSize(record);
+        }
+        return totalSize;
+    }
+
     private void resetSizeEstimator() {
         sizeEstimator.reset();
     }
 
-    private void setRecordValue(Record record, Object value) {
-        accessRecord(record);
+    private void setRecordValue(Record record, Object value, long now) {
+        accessRecord(record, now);
+        record.setLastUpdateTime(now);
         record.onUpdate();
         recordFactory.setValue(record, value);
     }
@@ -1247,9 +1649,258 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
+    private WriteBehindQueue<DelayedEntry> createWriteBehindQueue() {
+        final boolean writeBehindMapStoreEnabled = mapContainer.isWriteBehindMapStoreEnabled();
+        if (!writeBehindMapStoreEnabled) {
+            return WriteBehindQueues.emptyWriteBehindQueue();
+        }
+        final AtomicInteger counter = mapService.getWriteBehindQueueItemCounter();
+        final int maxPerNodeWriteBehindQueueSize = mapService.getMaxPerNodeSizeOfWriteBehindQueue();
+        return WriteBehindQueues.createDefaultWriteBehindQueue(maxPerNodeWriteBehindQueueSize, counter);
+    }
+
+    private Map<Data, DelayedEntry> createEvictionStagingArea() {
+        final boolean writeBehindMapStoreEnabled = mapContainer.isWriteBehindMapStoreEnabled();
+        if (!writeBehindMapStoreEnabled) {
+            return Collections.emptyMap();
+        }
+        return new ConcurrentHashMap<Data, DelayedEntry>();
+    }
+
+    private Set<Data> createWriteBehindWaitingDeletionsSet() {
+        final boolean writeBehindMapStoreEnabled = mapContainer.isWriteBehindMapStoreEnabled();
+        if (!writeBehindMapStoreEnabled) {
+            return Collections.emptySet();
+        }
+        return Collections.newSetFromMap(new ConcurrentHashMap());
+    }
+
+    private boolean isRecordStoreExpirable() {
+        return mapContainer.getMapConfig().getMaxIdleSeconds() > 0
+                || mapContainer.getMapConfig().getTimeToLiveSeconds() > 0;
+    }
+
+    private LockStore createLockStore() {
+        NodeEngine nodeEngine = mapService.getNodeEngine();
+        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        if (lockService == null) {
+            return null;
+        }
+        return lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+    }
+
+    private int getLoadBatchSize() {
+        return mapService.getNodeEngine().getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
+    }
+
+
+    private final class LoadAllKeysTask implements Runnable {
+
+        private final Collection<Data> keys;
+        private final boolean replaceExistingValues;
+
+        private LoadAllKeysTask(Collection<Data> keys, boolean replaceExistingValues) {
+            this.keys = keys;
+            this.replaceExistingValues = replaceExistingValues;
+        }
+
+        @Override
+        public void run() {
+            loadKeys(keys, replaceExistingValues);
+        }
+    }
+
+    private void loadKeys(Collection<Data> keys, boolean replaceExistingValues) {
+        if (!replaceExistingValues) {
+            removeExistingKeys(keys);
+        }
+        removeUnloadableKeys(keys);
+
+        if (keys.isEmpty()) {
+            loaded.set(true);
+            return;
+        }
+        final List<Object> objectKeys = convertDataKeysToObject(keys);
+        doBatchLoad(objectKeys);
+    }
+
+    private void doBatchLoad(List<Object> keys) {
+        final Queue<List<Object>> batchChunks = createBatchChunks(keys);
+        final int size = batchChunks.size();
+        final AtomicInteger finishedBatchCounter = new AtomicInteger(size);
+        while (!batchChunks.isEmpty()) {
+            final List<Object> chunk = batchChunks.poll();
+            final List<Data> keyValueSequence = loadAndGet(chunk);
+            if (keyValueSequence.isEmpty()) {
+                if (finishedBatchCounter.decrementAndGet() == 0) {
+                    loaded.set(true);
+                }
+                continue;
+            }
+            sendOperation(keyValueSequence, finishedBatchCounter);
+        }
+    }
+
+    private Queue<List<Object>> createBatchChunks(List<Object> keys) {
+        final Queue<List<Object>> chunks = new LinkedList<List<Object>>();
+        final int loadBatchSize = getLoadBatchSize();
+        int page = 0;
+        List<Object> tmpKeys;
+        while ((tmpKeys = getBatchChunk(keys, loadBatchSize, page++)) != null) {
+            chunks.add(tmpKeys);
+        }
+        return chunks;
+    }
+
+    private List<Data> loadAndGet(List<Object> keys) {
+        Map<Object, Object> entries = Collections.emptyMap();
+        try {
+            entries = mapContainer.getStore().loadAll(keys);
+        } catch (Throwable t) {
+            logger.warning("Could not load keys from map store", t);
+        }
+        return getKeyValueSequence(entries);
+    }
+
+    private List<Data> getKeyValueSequence(Map<Object, Object> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Data> keyValueSequence = new ArrayList<Data>();
+        for (final Map.Entry<Object, Object> entry : entries.entrySet()) {
+            final Object key = entry.getKey();
+            final Object value = entry.getValue();
+            final Data dataKey = mapService.toData(key);
+            final Data dataValue = mapService.toData(value);
+            keyValueSequence.add(dataKey);
+            keyValueSequence.add(dataValue);
+        }
+        return keyValueSequence;
+    }
+
+    /**
+     * Used to partition the list to chunks.
+     *
+     * @param list        to be paged.
+     * @param batchSize   batch operation size.
+     * @param chunkNumber batch chunk number.
+     * @return sub-list of list if any or null.
+     */
+    private List<Object> getBatchChunk(List<Object> list, int batchSize, int chunkNumber) {
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+        final int start = chunkNumber * batchSize;
+        final int end = Math.min(start + batchSize, list.size());
+        if (start >= end) {
+            return null;
+        }
+        return list.subList(start, end);
+    }
+
+    private void sendOperation(List<Data> keyValueSequence, AtomicInteger finishedBatchCounter) {
+        OperationService operationService = mapService.getNodeEngine().getOperationService();
+        final Operation operation = createOperation(keyValueSequence, finishedBatchCounter);
+        operationService.executeOperation(operation);
+    }
+
+    private Operation createOperation(List<Data> keyValueSequence, final AtomicInteger finishedBatchCounter) {
+        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final Operation operation = new PutFromLoadAllOperation(name, keyValueSequence);
+        operation.setNodeEngine(nodeEngine);
+        operation.setResponseHandler(new ResponseHandler() {
+            @Override
+            public void sendResponse(Object obj) {
+                if (finishedBatchCounter.decrementAndGet() == 0) {
+                    loaded.set(true);
+                }
+            }
+
+            public boolean isLocal() {
+                return true;
+            }
+        });
+        operation.setPartitionId(partitionId);
+        OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
+        operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+        operation.setServiceName(MapService.SERVICE_NAME);
+        return operation;
+    }
+
+    private List<Object> convertDataKeysToObject(Collection<Data> keys) {
+        if (keys.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Object> objectKeys = new ArrayList<Object>(keys.size());
+        for (Data key : keys) {
+            final Object objectKey = mapService.toObject(key);
+            objectKeys.add(objectKey);
+        }
+        return objectKeys;
+    }
+
+    private void removeExistingKeys(Collection<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        final ConcurrentMap<Data, Record> records = DefaultRecordStore.this.records;
+        final Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            final Data nextKey = iterator.next();
+            if (records.containsKey(nextKey)) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private void removeUnloadableKeys(Collection<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        final long now = getNow();
+        final Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            final Data key = iterator.next();
+            if (!loadable(key, this, now)) {
+                iterator.remove();
+            }
+        }
+    }
+
+    /**
+     * Used in {@link com.hazelcast.core.IMap#loadAll} calls.
+     * If write-behind map-store feature enabled, some things may lead possible data inconsistencies.
+     * These are:
+     * - calling evict/evictAll.
+     * - calling remove.
+     * - not yet stored write behind queue operation.
+     * <p/>
+     * With this method we can be sure that a key can be loadable from map-store or not.
+     *
+     * @param key         to be checked.
+     * @param recordStore record store.
+     * @param now         current time.
+     * @return <code>true</code> if loadable, otherwise false.
+     */
+    private boolean loadable(Data key, RecordStore recordStore, long now) {
+        if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            return true;
+        }
+        if (isInWriteBehindWaitingDeletions(key) || isInEvictionStagingArea(key, now)) {
+            return false;
+        }
+        final Record record = recordStore.getRecord(key);
+        final long scheduledStoreTime = record.getLastUpdateTime() + mapContainer.getWriteDelayMillis();
+        if (now < scheduledStoreTime) {
+            return false;
+        }
+
+        return true;
+    }
+
     private final class MapLoadAllTask implements Runnable {
-        private Map<Data, Object> keys;
-        private AtomicInteger checkIfMapLoaded;
+        private final Map<Data, Object> keys;
+        private final AtomicInteger checkIfMapLoaded;
 
         private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger checkIfMapLoaded) {
             this.keys = keys;

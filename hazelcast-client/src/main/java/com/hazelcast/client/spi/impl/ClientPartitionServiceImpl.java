@@ -29,6 +29,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.client.GetPartitionsRequest;
 import com.hazelcast.partition.client.PartitionsResponse;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,6 +68,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         try {
             client.getClientExecutionService().executeInternal(new RefreshTask());
         } catch (RejectedExecutionException ignored) {
+            EmptyStatement.ignore(ignored);
         }
     }
 
@@ -81,6 +83,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                         processPartitionResponse(response);
                     }
                 } catch (HazelcastInstanceNotActiveException ignored) {
+                    EmptyStatement.ignore(ignored);
                 } finally {
                     updating.set(false);
                 }

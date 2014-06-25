@@ -83,9 +83,9 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                         } else {
                             callback.onFailure((Throwable) resp);
                         }
-                    } catch (Throwable t) {
-                        //todo: improved error message
-                        basicInvocation.logger.severe("Failed to async for " + basicInvocation, t);
+                    } catch (Throwable cause) {
+                        basicInvocation.logger.severe("Failed asynchronous execution of execution callback: " + callback
+                                + "for call " + basicInvocation, cause);
                     }
                 }
             });
@@ -153,7 +153,6 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     @Override
     public E getSafely() {
         try {
-            //todo:
             //this method is quite inefficient when there is unchecked exception, because it will be wrapped
             //in a ExecutionException, and then it is unwrapped again.
             return get();
@@ -221,7 +220,6 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                     // target may change during invocation because of migration!
                     continue;
                 }
-                // TODO: @mm - improve logging (see SystemLogService)
                 basicInvocation.logger.warning("No response for " + lastPollTime + " ms. " + toString());
 
                 boolean executing = isOperationExecuting(target);
@@ -359,13 +357,11 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                     basicInvocation.nodeEngine, basicInvocation.serviceName, isStillExecuting,
                     target, 0, 0, 5000, null, null, true);
             Future f = inv.invoke();
-            // TODO: @mm - improve logging (see SystemLogService)
             basicInvocation.logger.warning("Asking if operation execution has been started: " + toString());
             executing = (Boolean) basicInvocation.nodeEngine.toObject(f.get(5000, TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             basicInvocation.logger.warning("While asking 'is-executing': " + toString(), e);
         }
-        // TODO: @mm - improve logging (see SystemLogService)
         basicInvocation.logger.warning("'is-executing': " + executing + " -> " + toString());
         return executing;
     }

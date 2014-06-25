@@ -223,12 +223,14 @@ public class ReplicatedMapTest
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testAddTtlBinaryDelay0()
             throws Exception {
 
         testAddTtl(buildConfig(InMemoryFormat.BINARY, 0));
     }
 
+    @Test
     @Category(ProblematicTest.class)
     public void testAddTtlBinaryDelayDefault()
             throws Exception {
@@ -289,6 +291,8 @@ public class ReplicatedMapTest
             record.setValue(record.getValue(), record.getLatestUpdateHash(), 1);
         }
 
+        TimeUnit.SECONDS.sleep(1);
+
         int map2Updated = 0;
         for (Map.Entry<String, String> entry : map2entries) {
             if (map2.get(entry.getKey()) == null) {
@@ -303,8 +307,7 @@ public class ReplicatedMapTest
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, map2entries.size(), map2Updated);
-        assertMatchSuccessfulOperationQuota(0.75, map1entries.size(), map1Updated);
+        assertMatchSuccessfulOperationQuota(0.75, operations, map1Updated, map2Updated);
     }
 
     @Test

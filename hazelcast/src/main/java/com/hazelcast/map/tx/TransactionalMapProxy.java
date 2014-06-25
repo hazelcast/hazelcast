@@ -107,6 +107,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
+
     public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
         checkTransactionState();
         MapService service = getService();
@@ -319,7 +320,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             if (isRemoved) {
                 keyWontBeIncluded.add(entry.getKey());
             } else {
-                if (isUpdated){
+                if (isUpdated) {
                     keyWontBeIncluded.add(entry.getKey());
                 }
                 final Object entryValue = entry.getValue().value;
@@ -334,9 +335,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
 
         final Iterator<Map.Entry> iterator = queryResultSet.rawIterator();
-        while (iterator.hasNext()){
+        while (iterator.hasNext()) {
             final Map.Entry entry = iterator.next();
-            if (keyWontBeIncluded.contains(entry.getKey())){
+            if (keyWontBeIncluded.contains(entry.getKey())) {
                 continue;
             }
             valueSet.add(entry.getValue());

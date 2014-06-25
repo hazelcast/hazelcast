@@ -92,12 +92,16 @@
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
         <!-- All types should have JavaDoc -->
-        <module name="JavadocType"/>
+
         <!-- Only some methods, on public APIs we agreed to JavaDoc. TODO figure out how to do that -->
         <!--<module name="JavadocMethod">-->
             <!--<property name="scope" value="public"/>-->
             <!--<property name="allowMissingParamTags" value="true"/>-->
         <!--</module>-->
+
+        <module name="JavadocType">
+            <property name="scope" value="public"/>
+        </module>
 
         <module name="JavadocVariable">
             <property name="scope" value="public"/>
@@ -257,6 +261,7 @@
         <module name="MagicNumber">
             <property name="ignoreHashCodeMethod" value="true"/>
             <property name="ignoreAnnotation" value="true"/>
+            <property name="ignoreNumbers" value="-1 , 0 , 1 ,2 , 3"/>
         </module>
         <module name="EqualsHashCode"/>
         <module name="IllegalInstantiation"/>
@@ -299,7 +304,6 @@
         <!-- Miscellaneous other checks.                   -->
         <!-- See http://checkstyle.sf.net/config_misc.html -->
         <module name="ArrayTypeStyle"/>
-        <module name="TodoComment"/>
         <module name="UpperEll"/>
 
     </module>

@@ -18,6 +18,9 @@ package com.hazelcast.config;
 
 import java.util.Arrays;
 
+/**
+ * Contains configuration for symmetric encryption
+ */
 public class SymmetricEncryptionConfig {
 
     private static final int ITERATION_COUNT = 19;

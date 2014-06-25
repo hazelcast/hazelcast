@@ -96,6 +96,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -123,7 +124,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS
             = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
-    public final ClientProperties clientProperties;
+    private final ClientProperties clientProperties;
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
     private final ClientConfig config;
@@ -148,6 +149,25 @@ public final class HazelcastClient implements HazelcastInstance {
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
+        serializationService = initSerializationService(config);
+        proxyManager = new ProxyManager(this);
+        executionService = new ClientExecutionServiceImpl(instanceName, threadGroup,
+                Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
+        transactionManager = new ClientTransactionManager(this);
+        LoadBalancer lb = config.getLoadBalancer();
+        if (lb == null) {
+            lb = new RoundRobinLB();
+        }
+        loadBalancer = lb;
+        connectionManager = createClientConnectionManager();
+        clusterService = new ClientClusterServiceImpl(this);
+        invocationService = new ClientInvocationServiceImpl(this);
+        userContext = new ConcurrentHashMap<String, Object>();
+        proxyManager.init(config);
+        partitionService = new ClientPartitionServiceImpl(this);
+    }
+
+    private SerializationServiceImpl initSerializationService(ClientConfig config) {
         SerializationService ss;
         try {
             String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
@@ -166,22 +186,7 @@ public final class HazelcastClient implements HazelcastInstance {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        serializationService = (SerializationServiceImpl) ss;
-        proxyManager = new ProxyManager(this);
-        executionService = new ClientExecutionServiceImpl(instanceName, threadGroup,
-                Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
-        transactionManager = new ClientTransactionManager(this);
-        LoadBalancer lb = config.getLoadBalancer();
-        if (lb == null) {
-            lb = new RoundRobinLB();
-        }
-        loadBalancer = lb;
-        connectionManager = createClientConnectionManager();
-        clusterService = new ClientClusterServiceImpl(this);
-        invocationService = new ClientInvocationServiceImpl(this);
-        userContext = new ConcurrentHashMap<String, Object>();
-        proxyManager.init(config);
-        partitionService = new ClientPartitionServiceImpl(this);
+        return (SerializationServiceImpl) ss;
     }
 
     public static HazelcastInstance newHazelcastClient() {
@@ -217,6 +222,7 @@ public final class HazelcastClient implements HazelcastInstance {
             try {
                 proxy.client.getLifecycleService().shutdown();
             } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
             }
             proxy.client = null;
         }
@@ -256,6 +262,10 @@ public final class HazelcastClient implements HazelcastInstance {
 
     public Config getConfig() {
         throw new UnsupportedOperationException("Client cannot access cluster config!");
+    }
+
+    public ClientProperties getClientProperties() {
+        return clientProperties;
     }
 
     @Override

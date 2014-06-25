@@ -54,7 +54,7 @@ es.submit(task, new ExecutionCallback<Long> () {
         t.printStackTrace();
     }
 
-});
+};
 ```
 
 As it can be seen, `ExecutionCallback` has the methods `onResponse` and `onFailure`. The former one in the above code is called upon a valid response and prints the calculation result, whereas the latter one is called upon a failure and prints the stacktrace.

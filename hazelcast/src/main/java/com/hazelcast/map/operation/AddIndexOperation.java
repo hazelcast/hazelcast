@@ -18,8 +18,8 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,7 +29,6 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-
 import java.io.IOException;
 import java.util.Map;
 

@@ -30,7 +30,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -86,5 +85,10 @@ public class MapValuesRequest extends AllPartitionsClientRequest implements Port
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "values";
     }
 }

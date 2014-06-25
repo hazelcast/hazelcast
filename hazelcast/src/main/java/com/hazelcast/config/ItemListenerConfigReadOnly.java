@@ -21,7 +21,7 @@ import com.hazelcast.core.ItemListener;
 import java.util.EventListener;
 
 /**
- * @ali 10/11/13
+ * Contains the configuration for an Item Listener(Read-only).
  */
 public class ItemListenerConfigReadOnly extends ItemListenerConfig {
 

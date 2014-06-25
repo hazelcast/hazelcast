@@ -20,13 +20,16 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.util.Map;
 
+/**
+ * Base class for client requests that will run on all partitions.
+ */
 public abstract class AllPartitionsClientRequest extends ClientRequest {
 
     @Override
     final void process() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        Map<Integer, Object> map = clientEngine.invokeOnAllPartitions(getServiceName(), operationFactory);
+        Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
         Object result = reduce(map);
         endpoint.sendResponse(result, getCallId());
     }

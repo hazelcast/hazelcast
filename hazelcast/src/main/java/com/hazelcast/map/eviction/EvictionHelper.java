@@ -28,7 +28,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
-
 import java.util.Arrays;
 import java.util.Map;
 
@@ -112,8 +111,7 @@ public final class EvictionHelper {
         final int evictableBaseIndex = index == 0 ? index : Math.min(evictableSize, index - 1);
         final long criteriaValue = criterias[evictableBaseIndex];
         int evictedRecordCounter = 0;
-        for (final Map.Entry<Data, Record> entry : entries.entrySet()) {
-            final Record record = entry.getValue();
+        for (final Record record : entries.values()) {
             final long value = getEvictionCriteriaValue(record, evictionPolicy);
             if (value <= criteriaValue) {
                 final Data tmpKey = record.getKey();
@@ -121,10 +119,7 @@ public final class EvictionHelper {
                 if (evictIfNotLocked(tmpKey, recordStore)) {
                     evictedRecordCounter++;
                     final String mapName = mapConfig.getName();
-                    mapService.interceptAfterRemove(mapName, value);
-                    if (mapService.isNearCacheAndInvalidationEnabled(mapName)) {
-                        mapService.invalidateAllNearCaches(mapName, tmpKey);
-                    }
+                    interceptAndInvalidate(mapService, value, tmpKey, mapName);
                     fireEvent(tmpKey, tmpValue, mapName, mapService);
                 }
             }
@@ -134,6 +129,12 @@ public final class EvictionHelper {
         }
     }
 
+    private static void interceptAndInvalidate(MapService mapService, long value, Data tmpKey, String mapName) {
+        mapService.interceptAfterRemove(mapName, value);
+        if (mapService.isNearCacheAndInvalidationEnabled(mapName)) {
+            mapService.invalidateAllNearCaches(mapName, tmpKey);
+        }
+    }
 
     public static void fireEvent(Data key, Object value, String mapName, MapService mapService) {
         final NodeEngine nodeEngine = mapService.getNodeEngine();

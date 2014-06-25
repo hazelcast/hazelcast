@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.UuidUtil;
@@ -155,6 +156,16 @@ public class WebFilter implements Filter {
 
                 public void entryEvicted(EntryEvent<String, Object> entryEvent) {
                     entryRemoved(entryEvent);
+                }
+
+                @Override
+                public void mapEvicted(MapEvent event) {
+                    // this method should be updated if we internally call evictAll in session replication logic
+                }
+
+                @Override
+                public void mapCleared(MapEvent event) {
+                    // this method should be updated if we internally call clearAll in session replication logic
                 }
             }, false);
         }
@@ -377,10 +388,10 @@ public class WebFilter implements Filter {
             }
             HazelcastHttpSession session = reqWrapper.getSession(false);
             if (session != null && session.isValid() && (session.sessionChanged() || !deferredWrite)) {
-                    if (LOGGER.isFinestEnabled()) {
-                        LOGGER.finest("PUTTING SESSION " + session.getId());
-                    }
-                    session.sessionDeferredWrite();
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("PUTTING SESSION " + session.getId());
+                }
+                session.sessionDeferredWrite();
             }
         }
     }
@@ -497,16 +508,16 @@ public class WebFilter implements Filter {
                 return hazelcastSession;
             }
 
-                HttpSession originalSession = getOriginalSession(false);
-                if (originalSession != null) {
-                    String hazelcastSessionId = MAP_ORIGINAL_SESSIONS.get(originalSession.getId());
-                    if (hazelcastSessionId != null) {
-                        hazelcastSession = MAP_SESSIONS.get(hazelcastSessionId);
-                        return hazelcastSession;
-                    }
-                        MAP_ORIGINAL_SESSIONS.remove(originalSession.getId());
-                        originalSession.invalidate();
+            HttpSession originalSession = getOriginalSession(false);
+            if (originalSession != null) {
+                String hazelcastSessionId = MAP_ORIGINAL_SESSIONS.get(originalSession.getId());
+                if (hazelcastSessionId != null) {
+                    hazelcastSession = MAP_SESSIONS.get(hazelcastSessionId);
+                    return hazelcastSession;
                 }
+                MAP_ORIGINAL_SESSIONS.remove(originalSession.getId());
+                originalSession.invalidate();
+            }
 
             hazelcastSession = fetchHazelcastSession();
 

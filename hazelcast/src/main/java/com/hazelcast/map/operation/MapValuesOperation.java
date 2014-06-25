@@ -19,10 +19,8 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.operation.AbstractMapOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.util.Collection;
 
 public class MapValuesOperation extends AbstractMapOperation implements PartitionAwareOperation {

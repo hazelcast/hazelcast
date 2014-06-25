@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.writebehind;
 
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.writebehind.store.StoreListener;
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ScheduledExecutorService;
@@ -34,8 +34,10 @@ public final class WriteBehindManagers {
     }
 
     public static WriteBehindManager createWriteBehindManager(String mapName,
-                                                              MapService service, MapStoreWrapper storeWrapper) {
-        return new WriteBehindQueueManager(mapName, service, storeWrapper);
+                                                              MapService service,
+                                                              MapStoreWrapper storeWrapper,
+                                                              MapStoreConfig mapStoreConfig) {
+        return new WriteBehindQueueManager(mapName, service, storeWrapper, mapStoreConfig);
     }
 
     public static WriteBehindManager emptyWriteBehindManager() {

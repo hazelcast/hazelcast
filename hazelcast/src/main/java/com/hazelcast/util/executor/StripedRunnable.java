@@ -16,6 +16,11 @@
 
 package com.hazelcast.util.executor;
 
+/**
+ * Striped Runnable is used in StripedExecutor.
+ * Runnable will run on associated thread depending on its key
+ * returned by getKey method.
+ */
 public interface StripedRunnable extends Runnable {
 
     int getKey();
