@@ -58,4 +58,14 @@ public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableR
         }
         return super.filter(response);
     }
+
+    @Override
+    public String getMethodName() {
+        return "get";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

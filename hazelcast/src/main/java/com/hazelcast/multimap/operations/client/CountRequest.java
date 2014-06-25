@@ -38,4 +38,14 @@ public class CountRequest extends MultiMapKeyBasedRequest implements RetryableRe
     public int getClassId() {
         return MultiMapPortableHook.COUNT;
     }
+
+    @Override
+    public String getMethodName() {
+        return "valueCount";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

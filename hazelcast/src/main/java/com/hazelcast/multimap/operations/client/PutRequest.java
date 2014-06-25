@@ -75,4 +75,14 @@ public class PutRequest extends MultiMapKeyBasedRequest {
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_PUT);
     }
+
+    @Override
+    public String getMethodName() {
+        return "put";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, value};
+    }
 }

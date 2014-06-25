@@ -71,4 +71,9 @@ public class MultiMapUnlockRequest extends AbstractUnlockRequest {
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_LOCK);
     }
+
+    @Override
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
+    }
 }
