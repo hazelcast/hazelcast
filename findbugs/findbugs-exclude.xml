@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
 
-    <!--comment out packages as they pass findbugs. e.g. examples now passes-->
-
-    <Match>
-        <Package name="com.hazelcast.nio.ssl" />
-    </Match>
+    <!-- all these issues below need to be resolved in 3.3-->
     <Match>
         <Package name="com.hazelcast.spi.impl" />
     </Match>
+
     <Match>
-        <Package name="com.hazelcast.nio.serialization" />
+        <Class name="com.hazelcast.nio.ssl.SSLSocketChannelWrapper" />
+        <Bug pattern="SWL_SLEEP_WITH_LOCK_HELD" />
     </Match>
 
 </FindBugsFilter>

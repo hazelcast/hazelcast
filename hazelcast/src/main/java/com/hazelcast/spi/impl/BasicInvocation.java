@@ -104,6 +104,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
+
+    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
 
     private final String executorName;
@@ -219,6 +221,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         doInvoke();
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
@@ -380,6 +384,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private Object resolveResponse(Object obj) {
         if (obj == null) {
             return NULL_RESPONSE;
