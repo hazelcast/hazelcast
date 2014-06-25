@@ -42,4 +42,9 @@ public class SizeRequest extends QueueRequest implements RetryableRequest {
     public int getClassId() {
         return QueuePortableHook.SIZE;
     }
+
+    @Override
+    public String getMethodName() {
+        return "size";
+    }
 }

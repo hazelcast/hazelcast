@@ -83,4 +83,14 @@ public class AddAllRequest extends QueueRequest {
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_ADD);
     }
+
+    @Override
+    public String getMethodName() {
+        return "addAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{dataList};
+    }
 }

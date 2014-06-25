@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Proxy implementation for the Queue.
+ *
  * @param <E>
  */
 public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, InitializingObject {
@@ -159,11 +160,6 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         final NodeEngine nodeEngine = getNodeEngine();
         final Object data = peekInternal();
         return nodeEngine.toObject(data);
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return size() == 0;
     }
 
     @Override
