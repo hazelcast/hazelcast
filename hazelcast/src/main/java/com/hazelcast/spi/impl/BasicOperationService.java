@@ -95,7 +95,7 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
 final class BasicOperationService implements InternalOperationService {
 
     private static final int INITIAL_CAPACITY = 1000;
-    private static final float LOAD_FACTOR = 1000;
+    private static final float LOAD_FACTOR = 0.75f;
     private static final long SLEEP_TIME = 100;
     private static final int TRY_COUNT = 10;
     private static final long TRY_PAUSE_MILLIS = 300;
