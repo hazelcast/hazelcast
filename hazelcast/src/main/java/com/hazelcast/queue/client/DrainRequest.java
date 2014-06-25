@@ -80,4 +80,17 @@ public class DrainRequest extends QueueRequest {
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "drainTo";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (maxSize == -1) {
+            return new Object[]{null};
+        }
+        return new Object[]{null, maxSize};
+    }
 }

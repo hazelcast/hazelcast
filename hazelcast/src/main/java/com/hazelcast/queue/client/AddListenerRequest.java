@@ -111,4 +111,14 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_LISTEN);
     }
+
+    @Override
+    public String getMethodName() {
+        return "addItemListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{null, includeValue};
+    }
 }

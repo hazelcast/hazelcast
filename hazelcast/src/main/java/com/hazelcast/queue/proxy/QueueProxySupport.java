@@ -27,6 +27,7 @@ import com.hazelcast.queue.ClearOperation;
 import com.hazelcast.queue.CompareAndRemoveOperation;
 import com.hazelcast.queue.ContainsOperation;
 import com.hazelcast.queue.DrainOperation;
+import com.hazelcast.queue.IsEmptyOperation;
 import com.hazelcast.queue.IteratorOperation;
 import com.hazelcast.queue.OfferOperation;
 import com.hazelcast.queue.PeekOperation;
@@ -94,6 +95,10 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         }
     }
 
+    public boolean isEmpty() {
+        IsEmptyOperation operation = new IsEmptyOperation(name);
+        return (Boolean) invokeAndGet(operation);
+    }
 
     public int size() {
         SizeOperation operation = new SizeOperation(name);
