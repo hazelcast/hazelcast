@@ -29,6 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Provides the request service for {@link com.hazelcast.queue.OfferOperation}
  */
@@ -77,5 +79,21 @@ public class OfferRequest extends QueueRequest {
     @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_ADD);
+    }
+
+    @Override
+    public String getMethodName() {
+        if (timeoutMillis == -1) {
+            return "put";
+        }
+        return "offer";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (timeoutMillis > 0) {
+            return new Object[]{data, timeoutMillis, TimeUnit.MILLISECONDS};
+        }
+        return new Object[]{data};
     }
 }

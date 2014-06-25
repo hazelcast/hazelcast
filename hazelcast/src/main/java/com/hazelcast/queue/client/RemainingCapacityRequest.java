@@ -79,4 +79,9 @@ public class RemainingCapacityRequest extends CallableClientRequest implements R
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "remainingCapacity";
+    }
 }
