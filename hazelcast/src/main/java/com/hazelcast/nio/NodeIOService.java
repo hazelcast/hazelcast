@@ -250,10 +250,8 @@ public class NodeIOService implements IOService {
     @Override
     public Collection<Integer> getOutboundPorts() {
         final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-        final Collection<String> portDefinitions = networkConfig.getOutboundPortDefinitions() == null
-                ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
-        final Set<Integer> ports = networkConfig.getOutboundPorts() == null
-                ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
+        final Collection<String> portDefinitions = getPortDefinitions(networkConfig);
+        final Set<Integer> ports = getPorts(networkConfig);
         if (portDefinitions.isEmpty() && ports.isEmpty()) {
             // means any port
             return Collections.emptySet();
@@ -262,6 +260,15 @@ public class NodeIOService implements IOService {
             // means any port
             return Collections.emptySet();
         }
+        transformPortDefinitionsToPorts(portDefinitions, ports);
+        if (ports.contains(0)) {
+            // means any port
+            return Collections.emptySet();
+        }
+        return ports;
+    }
+
+    private void transformPortDefinitionsToPorts(Collection<String> portDefinitions, Set<Integer> ports) {
         // not checking port ranges...
         for (String portDef : portDefinitions) {
             String[] portDefs = portDef.split("[,; ]");
@@ -279,11 +286,16 @@ public class NodeIOService implements IOService {
                 }
             }
         }
-        if (ports.contains(0)) {
-            // means any port
-            return Collections.emptySet();
-        }
-        return ports;
+    }
+
+    private Set<Integer> getPorts(NetworkConfig networkConfig) {
+        return networkConfig.getOutboundPorts() == null
+                    ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
+    }
+
+    private Collection<String> getPortDefinitions(NetworkConfig networkConfig) {
+        return networkConfig.getOutboundPortDefinitions() == null
+                    ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
     }
 }
 

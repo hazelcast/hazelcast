@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
@@ -210,6 +211,7 @@ public final class IOUtil {
                 int count = inflater.inflate(buf);
                 bos.write(buf, 0, count);
             } catch (DataFormatException e) {
+                Logger.getLogger(IOUtil.class).finest("Decompression failed", e);
             }
         }
         bos.close();
@@ -283,7 +285,8 @@ public final class IOUtil {
         if (closeable != null) {
             try {
                 closeable.close();
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
             }
         }
     }
