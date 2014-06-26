@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
@@ -75,7 +76,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         ioSelector.wakeup();
         try {
             latch.await(TIMEOUT, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
+            Logger.getLogger(WriteHandler.class).finest("CountDownLatch::await interrupted", e);
         }
     }
 
@@ -133,34 +135,15 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             createWriter(Protocols.CLUSTER);
         }
-        if (lastWritable == null && (lastWritable = poll()) == null && buffer.position() == 0) {
-            ready = true;
-            return;
+        if (lastWritable == null) {
+            lastWritable = poll();
+            if (lastWritable == null && buffer.position() == 0) {
+                ready = true;
+                return;
+            }
         }
         try {
-            while (buffer.hasRemaining() && lastWritable != null) {
-                boolean complete = socketWriter.write(lastWritable, buffer);
-                if (complete) {
-                    lastWritable = poll();
-                } else {
-                    break;
-                }
-            }
-            if (buffer.position() > 0) {
-                buffer.flip();
-                try {
-                    socketChannel.write(buffer);
-                } catch (Exception e) {
-                    lastWritable = null;
-                    handleSocketException(e);
-                    return;
-                }
-                if (buffer.hasRemaining()) {
-                    buffer.compact();
-                } else {
-                    buffer.clear();
-                }
-            }
+            writeBuffer();
         } catch (Throwable t) {
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
             connection.getSystemLogService().logConnection("Fatal Error at WriteHandler for endPoint "
@@ -168,6 +151,32 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         } finally {
             ready = false;
             registerWrite();
+        }
+    }
+
+    private void writeBuffer() throws Exception {
+        while (buffer.hasRemaining() && lastWritable != null) {
+            boolean complete = socketWriter.write(lastWritable, buffer);
+            if (complete) {
+                lastWritable = poll();
+            } else {
+                break;
+            }
+        }
+        if (buffer.position() > 0) {
+            buffer.flip();
+            try {
+                socketChannel.write(buffer);
+            } catch (Exception e) {
+                lastWritable = null;
+                handleSocketException(e);
+                return;
+            }
+            if (buffer.hasRemaining()) {
+                buffer.compact();
+            } else {
+                buffer.clear();
+            }
         }
     }
 

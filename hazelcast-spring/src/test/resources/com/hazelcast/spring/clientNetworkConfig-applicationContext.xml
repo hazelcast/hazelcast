@@ -54,7 +54,7 @@
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>
                 </hz:interfaces>
-                <hz:ssl enabled="true" factory-class-name="com.hazelcast.nio.ssl.BasicSSLContextFactory">
+                <hz:ssl enabled="false" factory-class-name="com.hazelcast.nio.ssl.BasicSSLContextFactory">
                     <hz:properties>
                         <hz:property name="javax.net.ssl.keyStore">#{systemProperties['test.keyStore']}</hz:property>
                         <hz:property name="javax.net.ssl.keyStorePassword">123456</hz:property>
@@ -82,8 +82,8 @@
                                linger-seconds="3"
                                reuse-address="false"
                                tcp-no-delay="false"/>
-            <hz:socket-interceptor enabled="true"/>
-            <hz:ssl enabled="true" factory-class-name="com.hazelcast.nio.ssl.BasicSSLContextFactory">
+            <hz:socket-interceptor enabled="false" class-name="com.hazelcast.spring.DummySocketInterceptor"/>
+            <hz:ssl enabled="false" factory-class-name="com.hazelcast.nio.ssl.BasicSSLContextFactory">
                 <hz:properties>
                     <hz:property name="javax.net.ssl.keyStore">#{systemProperties['test.keyStore']}</hz:property>
                     <hz:property name="javax.net.ssl.keyStorePassword">123456</hz:property>

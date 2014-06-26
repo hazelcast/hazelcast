@@ -25,6 +25,8 @@ import java.util.List;
 
 public class ClientNetworkConfig {
 
+    private static final int CONNECTION_TIMEOUT = 5000;
+    private static final int CONNECTION_ATTEMPT_PERIOD = 3000;
     /**
      * List of the initial set of addresses.
      * Client will use this list to find a running Member, connect to it.
@@ -52,7 +54,7 @@ public class ClientNetworkConfig {
     /**
      * Timeout value for nodes to accept client connection requests.
      */
-    private int connectionTimeout = 5000;
+    private int connectionTimeout = CONNECTION_TIMEOUT;
 
     /**
      * While client is trying to connect initially to one of the members in the {@link ClientNetworkConfig#addressList},
@@ -64,7 +66,7 @@ public class ClientNetworkConfig {
     /**
      * Period for the next attempt to find a member to connect. (see {@link ClientNetworkConfig#connectionAttemptLimit}).
      */
-    private int connectionAttemptPeriod = 3000;
+    private int connectionAttemptPeriod = CONNECTION_ATTEMPT_PERIOD;
 
 
     /**

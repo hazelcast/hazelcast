@@ -46,4 +46,9 @@ public class SizeRequest extends MultiMapAllPartitionRequest implements Retryabl
     public int getClassId() {
         return MultiMapPortableHook.SIZE;
     }
+
+    @Override
+    public String getMethodName() {
+        return "size";
+    }
 }

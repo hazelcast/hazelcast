@@ -203,6 +203,7 @@ public final class DefaultSerializers {
             return result;
         }
 
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings({ "OS_OPEN_STREAM" })
         public void write(final ObjectDataOutput out, final Object obj) throws IOException {
             final ObjectOutputStream objectOutputStream;
             final OutputStream outputStream = (OutputStream) out;

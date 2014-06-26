@@ -56,4 +56,9 @@ public class IteratorRequest extends QueueRequest implements RetryableRequest {
         }
         return super.filter(response);
     }
+
+    @Override
+    public String getMethodName() {
+        return "iterator";
+    }
 }

@@ -27,8 +27,8 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
-    private static final int CAPACITY = 500;
     private static final int RADIX = 16;
+    private static final int CAPACITY = 500;
 
     boolean nextLine;
     boolean readyToReadData;

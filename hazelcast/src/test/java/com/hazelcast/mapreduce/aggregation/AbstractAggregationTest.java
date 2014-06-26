@@ -16,10 +16,12 @@
 
 package com.hazelcast.mapreduce.aggregation;
 
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -46,6 +48,15 @@ public class AbstractAggregationTest
     @AfterClass
     public static void teardown() {
         INSTANCE_FACTORY.shutdownAll();
+    }
+
+    @After
+    public void cleanup() {
+        for (DistributedObject object : HAZELCAST_INSTANCE.getDistributedObjects()) {
+            if (object instanceof IMap) {
+                ((IMap) object).destroy();
+            }
+        }
     }
 
     protected static int random(int min, int max) {

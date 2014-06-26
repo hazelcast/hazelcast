@@ -76,4 +76,20 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
             dataList.add(data);
         }
     }
+
+    @Override
+    public String getMethodName() {
+        if (dataList.size() == 1) {
+            return "contains";
+        }
+        return "containsAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (dataList.size() == 1) {
+            return dataList.toArray();
+        }
+        return new Object[]{dataList};
+    }
 }

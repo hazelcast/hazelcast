@@ -50,4 +50,9 @@ public class ClearRequest extends QueueRequest implements RetryableRequest {
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "clear";
+    }
 }

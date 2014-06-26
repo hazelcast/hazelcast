@@ -14,9 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.queue;
 
-public interface BasicOperationProcessor {
+/**
+ * check if queue is empty
+ */
+public class IsEmptyOperation extends QueueOperation {
 
-    void process(Object o);
+    public IsEmptyOperation() {
+    }
+
+    public IsEmptyOperation(final String name) {
+        super(name);
+    }
+
+    @Override
+    public void run() throws Exception {
+        response = getOrCreateContainer().size() == 0;
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.IS_EMPTY;
+    }
 }

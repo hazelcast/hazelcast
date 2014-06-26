@@ -74,14 +74,6 @@ public class MapLockRequest extends AbstractLockRequest implements SecureRequest
     }
 
     @Override
-    public String getMethodName() {
-        if (timeout == -1) {
-            return "lock";
-        }
-        return "tryLock";
-    }
-
-    @Override
     public String getDistributedObjectType() {
         return MapService.SERVICE_NAME;
     }

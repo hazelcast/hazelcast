@@ -116,4 +116,17 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_LISTEN);
     }
+
+    @Override
+    public String getMethodName() {
+        return "addEntryListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (key != null) {
+            return new Object[]{null, key, includeValue};
+        }
+        return new Object[]{null, includeValue};
+    }
 }

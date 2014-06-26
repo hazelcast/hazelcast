@@ -29,6 +29,9 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
+    private static final long CALL_TIMEOUT = 5000;
+    private static final long GET_TIME = 5000;
+
     volatile boolean interrupted;
     private BasicInvocation basicInvocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
@@ -355,10 +358,10 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
             BasicInvocation inv = new BasicTargetInvocation(
                     basicInvocation.nodeEngine, basicInvocation.serviceName, isStillExecuting,
-                    target, 0, 0, 5000, null, null, true);
+                    target, 0, 0, CALL_TIMEOUT, null, null, true);
             Future f = inv.invoke();
             basicInvocation.logger.warning("Asking if operation execution has been started: " + toString());
-            executing = (Boolean) basicInvocation.nodeEngine.toObject(f.get(5000, TimeUnit.MILLISECONDS));
+            executing = (Boolean) basicInvocation.nodeEngine.toObject(f.get(GET_TIME, TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             basicInvocation.logger.warning("While asking 'is-executing': " + toString(), e);
         }

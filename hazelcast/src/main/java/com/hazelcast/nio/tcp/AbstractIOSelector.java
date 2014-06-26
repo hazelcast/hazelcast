@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOService;
 
 import java.io.IOException;
@@ -75,7 +76,8 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                 }
             });
             interrupt();
-        } catch (Throwable ignored) {
+        } catch (Throwable t) {
+            Logger.getLogger(AbstractIOSelector.class).finest("Exception while waiting for shutdown", t);
         }
     }
 
@@ -83,7 +85,8 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
     public final void awaitShutdown() {
         try {
             shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException t) {
+            Logger.getLogger(AbstractIOSelector.class).finest("Exception while waiting for shutdown", t);
         }
     }
 
@@ -126,17 +129,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                 if (selectedKeyCount == 0) {
                     continue;
                 }
-                final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
-                final Iterator<SelectionKey> it = setSelectedKeys.iterator();
-                while (it.hasNext()) {
-                    final SelectionKey sk = it.next();
-                    try {
-                        it.remove();
-                        handleSelectionKey(sk);
-                    } catch (Throwable e) {
-                        handleSelectorException(e);
-                    }
-                }
+                selectKeys(selector);
             }
         } catch (OutOfMemoryError e) {
             ioService.onOutOfMemory(e);
@@ -148,12 +141,27 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                     logger.finest("Closing selector " + getName());
                 }
                 selector.close();
-            } catch (final Exception ignored) {
+            } catch (final Exception e) {
+                Logger.getLogger(AbstractIOSelector.class).finest("Exception while closing selector", e);
             }
         }
     }
 
     protected abstract void handleSelectionKey(SelectionKey sk);
+
+    private void selectKeys(Selector selector) {
+        final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
+        final Iterator<SelectionKey> it = setSelectedKeys.iterator();
+        while (it.hasNext()) {
+            final SelectionKey sk = it.next();
+            try {
+                it.remove();
+                handleSelectionKey(sk);
+            } catch (Throwable e) {
+                handleSelectorException(e);
+            }
+        }
+    }
 
     private void handleSelectorException(final Throwable e) {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();

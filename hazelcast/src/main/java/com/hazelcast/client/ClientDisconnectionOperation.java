@@ -16,7 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -45,9 +44,9 @@ public class ClientDisconnectionOperation extends AbstractOperation implements U
         final ClientEndpointManager endpointManager = engine.getEndpointManager();
         Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
-            Connection connection = endpoint.getConnection();
-            endpointManager.removeEndpoint(connection, true);
+            endpointManager.removeEndpoint(endpoint, true);
         }
+        engine.removeOwnershipMapping(clientUuid);
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         nodeEngine.onClientDisconnected(clientUuid);

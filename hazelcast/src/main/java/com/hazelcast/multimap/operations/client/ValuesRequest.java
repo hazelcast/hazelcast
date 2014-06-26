@@ -62,4 +62,9 @@ public class ValuesRequest extends MultiMapAllPartitionRequest implements Retrya
     public int getClassId() {
         return MultiMapPortableHook.VALUES;
     }
+
+    @Override
+    public String getMethodName() {
+        return "values";
+    }
 }

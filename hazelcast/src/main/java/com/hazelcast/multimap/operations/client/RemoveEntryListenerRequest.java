@@ -53,4 +53,14 @@ public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest 
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_LISTEN);
     }
+
+    @Override
+    public String getMethodName() {
+        return "removeEntryListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{registrationId};
+    }
 }

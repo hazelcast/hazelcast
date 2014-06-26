@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -107,7 +108,9 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
 
         @Override
         public void sendResponse(Object obj) {
-            b.offer(obj);
+            if (!b.offer(obj)) {
+                throw new HazelcastException("Response could not be queued for transportation");
+            }
         }
 
         public Object get() throws InterruptedException {
