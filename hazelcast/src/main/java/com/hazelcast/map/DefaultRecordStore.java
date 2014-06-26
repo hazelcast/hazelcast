@@ -451,16 +451,14 @@ public class DefaultRecordStore implements RecordStore {
 
     private Record getRecordInternal(Data key, boolean enableIndex) {
         Record record = null;
-        if (mapContainer.getStore() != null) {
-            final Object value = mapDataStore.load(key);
-            if (value != null) {
-                record = mapService.createRecord(name, key, value, DEFAULT_TTL, getNow());
-                records.put(key, record);
-                if (enableIndex) {
-                    saveIndex(record);
-                }
-                updateSizeEstimator(calculateRecordSize(record));
+        final Object value = mapDataStore.load(key);
+        if (value != null) {
+            record = mapService.createRecord(name, key, value, DEFAULT_TTL, getNow());
+            records.put(key, record);
+            if (enableIndex) {
+                saveIndex(record);
             }
+            updateSizeEstimator(calculateRecordSize(record));
         }
         return record;
     }
@@ -644,12 +642,10 @@ public class DefaultRecordStore implements RecordStore {
         earlyWriteCleanup(now);
 
         Record record = records.get(key);
-        Object oldValue = null;
+        Object oldValue;
         boolean removed = false;
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                oldValue = mapDataStore.load(key);
-            }
+            oldValue = mapDataStore.load(key);
             if (oldValue == null) {
                 return false;
             }
@@ -676,14 +672,12 @@ public class DefaultRecordStore implements RecordStore {
         earlyWriteCleanup(now);
 
         Record record = records.get(key);
-        Object oldValue = null;
+        Object oldValue;
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                oldValue = mapDataStore.load(key);
-                if (oldValue != null) {
-                    removeIndex(key);
-                    mapDataStore.remove(key, now);
-                }
+            oldValue = mapDataStore.load(key);
+            if (oldValue != null) {
+                removeIndex(key);
+                mapDataStore.remove(key, now);
             }
         } else {
             oldValue = record.getValue();
@@ -712,16 +706,14 @@ public class DefaultRecordStore implements RecordStore {
     private Object get0(Data key, long now) {
         Record record = records.get(key);
         record = nullIfExpired(record);
-        Object value = null;
+        Object value;
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                value = mapDataStore.load(key);
-                if (value != null) {
-                    record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
-                    records.put(key, record);
-                    saveIndex(record);
-                    updateSizeEstimator(calculateRecordSize(record));
-                }
+            value = mapDataStore.load(key);
+            if (value != null) {
+                record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
+                records.put(key, record);
+                saveIndex(record);
+                updateSizeEstimator(calculateRecordSize(record));
             }
         } else {
             accessRecord(record, now);
@@ -780,13 +772,11 @@ public class DefaultRecordStore implements RecordStore {
         record = nullIfExpired(record);
 
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                Object value = mapDataStore.load(key);
-                if (value != null) {
-                    record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
-                    records.put(key, record);
-                    updateSizeEstimator(calculateRecordSize(record));
-                }
+            Object value = mapDataStore.load(key);
+            if (value != null) {
+                record = mapService.createRecord(name, key, value, DEFAULT_TTL, now);
+                records.put(key, record);
+                updateSizeEstimator(calculateRecordSize(record));
             }
         }
         boolean contains = record != null;
@@ -1079,15 +1069,13 @@ public class DefaultRecordStore implements RecordStore {
         markRecordStoreExpirable(ttl);
 
         Record record = records.get(key);
-        Object oldValue = null;
+        Object oldValue;
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                oldValue = mapDataStore.load(key);
-                if (oldValue != null) {
-                    record = mapService.createRecord(name, key, oldValue, DEFAULT_TTL, now);
-                    records.put(key, record);
-                    updateSizeEstimator(calculateRecordSize(record));
-                }
+            oldValue = mapDataStore.load(key);
+            if (oldValue != null) {
+                record = mapService.createRecord(name, key, oldValue, DEFAULT_TTL, now);
+                records.put(key, record);
+                updateSizeEstimator(calculateRecordSize(record));
             }
         } else {
             accessRecord(record, now);

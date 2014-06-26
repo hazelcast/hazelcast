@@ -62,6 +62,7 @@ public class EvictionTest extends HazelcastTestSupport {
     @Test
     public void testMapPutWithTTL() throws Exception {
         int n = 1;
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         IMap<Integer, String> map = factory.newHazelcastInstance(null).getMap("testMapPutWithTTL");
         map.put(1, "value0", 100, TimeUnit.MILLISECONDS);
@@ -73,7 +74,7 @@ public class EvictionTest extends HazelcastTestSupport {
         Thread.sleep(5000);
         assertEquals(true, map.containsKey(1));
         map.put(1, "value2", 10, TimeUnit.SECONDS);
-        Thread.sleep(5000);
+        Thread.sleep(2000);
         assertEquals(true, map.containsKey(1));
         map.put(1, "value3", 10, TimeUnit.SECONDS);
         assertEquals(true, map.containsKey(1));

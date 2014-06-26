@@ -100,6 +100,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -112,6 +113,13 @@ public class MapService implements ManagedService, MigrationAwareService,
      * Service name.
      */
     public static final String SERVICE_NAME = "hz:impl:mapService";
+    /**
+     * Per node global write behind queue item counter.
+     * Creating here because we want to have a counter per node.
+     * This is used by owner and backups together so it should be defined
+     * getting this into account.
+     */
+    private final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
     private final ILogger logger;
     private final NodeEngine nodeEngine;
     private final PartitionContainer[] partitionContainers;
@@ -1044,4 +1052,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return (value > 0) ? value : 0;
     }
 
+    public AtomicInteger getWriteBehindQueueItemCounter() {
+        return writeBehindQueueItemCounter;
+    }
 }

@@ -19,13 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * TODO Holds current write behind state and should be included in migrations.
  * Write behind map data store implementation.
+ * Created per every record-store.
  */
 public class WriteBehindMapDataStore extends AbstractMapDataStore<Data, Object> {
-
-    /**
-     * Global write behind queue item counter.
-     */
-    private static final AtomicInteger WRITE_BEHIND_QUEUE_ITEM_COUNTER = new AtomicInteger(0);
 
     private long writeDelayTime;
 
@@ -63,11 +59,12 @@ public class WriteBehindMapDataStore extends AbstractMapDataStore<Data, Object> 
     private long lastCleanupTime;
 
     public WriteBehindMapDataStore(MapStoreWrapper store, SerializationService serializationService,
-                                   long writeDelayTime, int partitionId, int maxPerNodeWriteBehindQueueSize) {
+                                   long writeDelayTime, int partitionId, int maxPerNodeWriteBehindQueueSize,
+                                   AtomicInteger writeBehindItemCounter) {
         super(store, serializationService);
         this.writeDelayTime = writeDelayTime;
         this.partitionId = partitionId;
-        this.writeBehindQueue = createWriteBehindQueue(maxPerNodeWriteBehindQueueSize);
+        this.writeBehindQueue = createWriteBehindQueue(maxPerNodeWriteBehindQueueSize, writeBehindItemCounter);
         this.evictionStagingArea = createEvictionStagingArea();
     }
 
@@ -218,8 +215,9 @@ public class WriteBehindMapDataStore extends AbstractMapDataStore<Data, Object> 
         return writeBehindWaitingDeletions.contains(key);
     }
 
-    private WriteBehindQueue<DelayedEntry> createWriteBehindQueue(int maxPerNodeWriteBehindQueueSize) {
-        return WriteBehindQueues.createDefaultWriteBehindQueue(maxPerNodeWriteBehindQueueSize, WRITE_BEHIND_QUEUE_ITEM_COUNTER);
+    private WriteBehindQueue<DelayedEntry> createWriteBehindQueue(int maxPerNodeWriteBehindQueueSize,
+                                                                  AtomicInteger writeBehindItemCounter) {
+        return WriteBehindQueues.createDefaultWriteBehindQueue(maxPerNodeWriteBehindQueueSize, writeBehindItemCounter);
     }
 
     private Map<Data, DelayedEntry> createEvictionStagingArea() {

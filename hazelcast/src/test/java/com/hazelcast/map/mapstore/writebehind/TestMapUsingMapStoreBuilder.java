@@ -110,4 +110,8 @@ public class TestMapUsingMapStoreBuilder<K, V> {
         nodes = instanceFactory.newInstances(config);
         return nodes[0].getMap(mapName);
     }
+
+    public HazelcastInstance[] getNodes() {
+        return nodes;
+    }
 }

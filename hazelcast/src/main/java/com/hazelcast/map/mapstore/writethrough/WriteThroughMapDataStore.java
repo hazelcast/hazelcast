@@ -26,6 +26,7 @@ import java.util.Collections;
 
 /**
  * Write through map data store implementation.
+ * Created per map.
  */
 public class WriteThroughMapDataStore extends AbstractMapDataStore<Data, Object> {
 
