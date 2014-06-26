@@ -19,9 +19,9 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.Record;
-import com.hazelcast.map.writebehind.DelayedEntry;
-import com.hazelcast.map.writebehind.WriteBehindQueue;
+import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.nio.serialization.Data;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -94,13 +94,12 @@ public interface RecordStore {
     Record getRecord(Data key);
 
     /**
-     * Puts a key-value to record store.
-     * Used in operations like replication and custom load from map store.
+     * Puts a data key and a record value to record-store.
+     * Used in replication operations.
      *
      * @param key    the data key to put record store.
      * @param record the value for record store.
-     * @see {@link com.hazelcast.map.operation.MapReplicationOperation} and
-     * {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
+     * @see {@link com.hazelcast.map.operation.MapReplicationOperation}
      */
     void putRecord(Data key, Record record);
 
@@ -182,8 +181,6 @@ public interface RecordStore {
 
     boolean isEmpty();
 
-    WriteBehindQueue<DelayedEntry> getWriteBehindQueue();
-
     /**
      * Do expiration operations.
      *
@@ -191,8 +188,6 @@ public interface RecordStore {
      * @param owner      <code>true</code> if an owner partition, otherwise <code>false</code>.
      */
     void evictExpiredEntries(int percentage, boolean owner);
-
-    void removeFromWriteBehindWaitingDeletions(Data key);
 
     /**
      * @return <code>true</code> if record store has at least one candidate entry
@@ -207,5 +202,8 @@ public interface RecordStore {
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
      */
     void loadAllFromStore(Collection<Data> keys, boolean replaceExistingValues);
+
+    MapDataStore<Data, Object> getMapDataStore();
+
 
 }

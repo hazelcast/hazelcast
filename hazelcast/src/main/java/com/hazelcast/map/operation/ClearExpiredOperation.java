@@ -19,13 +19,17 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.mapstore.MapDataStore;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindMapDataStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
 
@@ -42,6 +46,7 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
 
     @Override
     public void run() throws Exception {
+        final long now = Clock.currentTimeMillis();
         final MapService mapService = getService();
         final PartitionContainer partitionContainer = mapService.getPartitionContainer(getPartitionId());
         final ConcurrentMap<String, RecordStore> recordStores = partitionContainer.getMaps();
@@ -50,6 +55,17 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
             if (recordStore.size() > 0 && recordStore.isExpirable()) {
                 recordStore.evictExpiredEntries(expirationPercentage, isOwnerPartition);
             }
+            cleanupEvictionStagingArea(recordStore, now);
+        }
+    }
+
+    private void cleanupEvictionStagingArea(RecordStore recordStore, long now) {
+        if (recordStore == null) {
+            return;
+        }
+        final MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
+        if (mapDataStore instanceof WriteBehindMapDataStore) {
+            ((WriteBehindMapDataStore) mapDataStore).cleanupEvictionStagingArea(now);
         }
     }
 

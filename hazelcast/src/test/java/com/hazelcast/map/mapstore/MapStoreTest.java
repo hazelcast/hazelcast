@@ -35,7 +35,6 @@ import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.MapContainer;
@@ -43,7 +42,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
-import com.hazelcast.map.writebehind.ReachedMaxSizeException;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
@@ -429,7 +427,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         config
                 .getMapConfig("myMap")
                 .setMapStoreConfig(new MapStoreConfig()
-                        //.setWriteDelaySeconds(1)
+//                        .setWriteDelaySeconds(1)
                         .setImplementation(myMapStore));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
@@ -1533,20 +1531,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         map.set("foo", "bar");
 
         assertEquals("bar", map.get("foo"));
-    }
-
-    @Test(expected = ReachedMaxSizeException.class)
-    public void testWriteBehindQueueMaxSizePerNode() throws Exception {
-        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
-        Config config = newConfig(testMapStore, 100);
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
-        final Node node = getNode(instance);
-        final int maxSize = node.getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
-        IMap map = instance.getMap("default");
-        for (int i = 0; i < maxSize + 1; i++) {
-            map.put(i, i);
-        }
     }
 
     @Test
