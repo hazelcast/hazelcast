@@ -47,49 +47,50 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -20);
 
-    private static int increment = 1;
 
-    public static final int COLLECTION_ADD = increment++;
-    public static final int COLLECTION_ADD_BACKUP = increment++;
-    public static final int LIST_ADD = increment++;
-    public static final int LIST_GET = increment++;
-    public static final int COLLECTION_REMOVE = increment++;
-    public static final int COLLECTION_REMOVE_BACKUP = increment++;
-    public static final int COLLECTION_SIZE = increment++;
-    public static final int COLLECTION_CLEAR = increment++;
-    public static final int COLLECTION_CLEAR_BACKUP = increment++;
-    public static final int LIST_SET = increment++;
-    public static final int LIST_SET_BACKUP = increment++;
-    public static final int LIST_REMOVE = increment++;
-    public static final int LIST_INDEX_OF = increment++;
-    public static final int COLLECTION_CONTAINS = increment++;
-    public static final int COLLECTION_ADD_ALL = increment++;
-    public static final int COLLECTION_ADD_ALL_BACKUP = increment++;
-    public static final int LIST_ADD_ALL = increment++;
-    public static final int LIST_SUB = increment++;
-    public static final int COLLECTION_COMPARE_AND_REMOVE = increment++;
-    public static final int COLLECTION_GET_ALL = increment++;
-    public static final int COLLECTION_EVENT_FILTER = increment++;
-    public static final int COLLECTION_EVENT = increment++;
-    public static final int COLLECTION_ITEM = increment++;
+    public static final int COLLECTION_ADD = 1;
+    public static final int COLLECTION_ADD_BACKUP = 2;
+    public static final int LIST_ADD = 3;
+    public static final int LIST_GET = 4;
+    public static final int COLLECTION_REMOVE = 5;
+    public static final int COLLECTION_REMOVE_BACKUP = 6;
+    public static final int COLLECTION_SIZE = 7;
+    public static final int COLLECTION_CLEAR = 8;
+    public static final int COLLECTION_CLEAR_BACKUP = 9;
+    public static final int LIST_SET = 10;
+    public static final int LIST_SET_BACKUP = 11;
+    public static final int LIST_REMOVE = 12;
+    public static final int LIST_INDEX_OF = 13;
+    public static final int COLLECTION_CONTAINS = 14;
+    public static final int COLLECTION_ADD_ALL = 15;
+    public static final int COLLECTION_ADD_ALL_BACKUP = 16;
+    public static final int LIST_ADD_ALL = 17;
+    public static final int LIST_SUB = 18;
+    public static final int COLLECTION_COMPARE_AND_REMOVE = 19;
+    public static final int COLLECTION_GET_ALL = 20;
+    public static final int COLLECTION_EVENT_FILTER = 21;
+    public static final int COLLECTION_EVENT = 22;
+    public static final int COLLECTION_ITEM = 23;
 
-    public static final int COLLECTION_RESERVE_ADD = increment++;
-    public static final int COLLECTION_RESERVE_REMOVE = increment++;
-    public static final int COLLECTION_TXN_ADD = increment++;
-    public static final int COLLECTION_TXN_ADD_BACKUP = increment++;
-    public static final int COLLECTION_TXN_REMOVE = increment++;
-    public static final int COLLECTION_TXN_REMOVE_BACKUP = increment++;
+    public static final int COLLECTION_RESERVE_ADD = 24;
+    public static final int COLLECTION_RESERVE_REMOVE = 25;
+    public static final int COLLECTION_TXN_ADD = 26;
+    public static final int COLLECTION_TXN_ADD_BACKUP = 27;
+    public static final int COLLECTION_TXN_REMOVE = 28;
+    public static final int COLLECTION_TXN_REMOVE_BACKUP = 29;
 
-    public static final int COLLECTION_PREPARE = increment++;
-    public static final int COLLECTION_PREPARE_BACKUP = increment++;
-    public static final int COLLECTION_ROLLBACK = increment++;
-    public static final int COLLECTION_ROLLBACK_BACKUP = increment++;
+    public static final int COLLECTION_PREPARE = 30;
+    public static final int COLLECTION_PREPARE_BACKUP = 31;
+    public static final int COLLECTION_ROLLBACK = 32;
+    public static final int COLLECTION_ROLLBACK_BACKUP = 33;
 
-    public static final int TX_COLLECTION_ITEM = increment++;
-    public static final int TX_ROLLBACK = increment++;
+    public static final int TX_COLLECTION_ITEM = 34;
+    public static final int TX_ROLLBACK = 35;
 
-    public static final int LIST_REPLICATION = increment++;
-    public static final int SET_REPLICATION = increment++;
+    public static final int LIST_REPLICATION = 36;
+    public static final int SET_REPLICATION = 37;
+
+    public static final int COLLECTION_IS_EMPTY = 38;
 
     @Override
     public int getFactoryId() {
@@ -98,7 +99,8 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[increment];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
+                = new ConstructorFunction[COLLECTION_IS_EMPTY + 1];
 
         constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
@@ -287,6 +289,11 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[SET_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SetReplicationOperation();
+            }
+        };
+        constructors[COLLECTION_IS_EMPTY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionIsEmptyOperation();
             }
         };
 

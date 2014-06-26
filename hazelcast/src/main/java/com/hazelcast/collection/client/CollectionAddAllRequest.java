@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,5 +76,15 @@ public class CollectionAddAllRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_ADD;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "addAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{valueList};
     }
 }

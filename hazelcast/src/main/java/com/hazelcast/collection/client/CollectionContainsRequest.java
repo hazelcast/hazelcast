@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -81,5 +82,21 @@ public class CollectionContainsRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
+    }
+
+    @Override
+    public String getMethodName() {
+        if (valueSet.size() == 1) {
+            return "contains";
+        }
+        return "containsAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (valueSet.size() == 1) {
+            return valueSet.toArray();
+        }
+        return new Object[]{valueSet};
     }
 }

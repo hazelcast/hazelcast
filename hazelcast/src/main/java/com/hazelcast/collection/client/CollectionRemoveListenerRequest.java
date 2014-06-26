@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.EventService;
+
 import java.io.IOException;
 import java.security.Permission;
 
@@ -69,5 +70,15 @@ public class CollectionRemoveListenerRequest extends BaseClientRemoveListenerReq
     @Override
     public Permission getRequiredPermission() {
         return ActionConstants.getPermission(name, serviceName, ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "removeItemListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{registrationId};
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.collection.client.CollectionClearRequest;
 import com.hazelcast.collection.client.CollectionCompareAndRemoveRequest;
 import com.hazelcast.collection.client.CollectionContainsRequest;
 import com.hazelcast.collection.client.CollectionGetAllRequest;
+import com.hazelcast.collection.client.CollectionIsEmptyRequest;
 import com.hazelcast.collection.client.CollectionRemoveListenerRequest;
 import com.hazelcast.collection.client.CollectionRemoveRequest;
 import com.hazelcast.collection.client.CollectionSizeRequest;
@@ -46,6 +47,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.util.ConstructorFunction;
+
 import java.util.Collection;
 
 public class CollectionPortableHook implements PortableHook {
@@ -77,6 +79,7 @@ public class CollectionPortableHook implements PortableHook {
     public static final int TXN_SET_REMOVE = 21;
     public static final int TXN_SET_SIZE = 22;
     public static final int COLLECTION_REMOVE_LISTENER = 23;
+    public static final int COLLECTION_IS_EMPTY = 24;
 
     public int getFactoryId() {
         return F_ID;
@@ -84,7 +87,7 @@ public class CollectionPortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[COLLECTION_REMOVE_LISTENER + 1];
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[COLLECTION_IS_EMPTY + 1];
 
         constructors[COLLECTION_SIZE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
@@ -202,6 +205,11 @@ public class CollectionPortableHook implements PortableHook {
         constructors[COLLECTION_REMOVE_LISTENER] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new CollectionRemoveListenerRequest();
+            }
+        };
+        constructors[COLLECTION_IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new CollectionIsEmptyRequest();
             }
         };
 

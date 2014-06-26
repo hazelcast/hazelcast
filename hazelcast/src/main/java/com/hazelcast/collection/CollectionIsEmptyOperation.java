@@ -14,40 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.client;
+package com.hazelcast.collection;
 
-import com.hazelcast.collection.CollectionGetAllOperation;
-import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.spi.Operation;
+public class CollectionIsEmptyOperation extends CollectionOperation {
 
-public class CollectionGetAllRequest extends CollectionRequest {
-
-    public CollectionGetAllRequest() {
+    public CollectionIsEmptyOperation() {
     }
 
-    public CollectionGetAllRequest(String name) {
+    public CollectionIsEmptyOperation(String name) {
         super(name);
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return new CollectionGetAllOperation(name);
+    public void beforeRun() throws Exception {
     }
 
     @Override
-    public int getClassId() {
-        return CollectionPortableHook.COLLECTION_GET_ALL;
+    public void run() throws Exception {
+        response = getOrCreateContainer().size() == 0;
     }
 
     @Override
-    public String getRequiredAction() {
-        return ActionConstants.ACTION_READ;
+    public void afterRun() throws Exception {
     }
 
     @Override
-    public String getMethodName() {
-        return "iterator";
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_IS_EMPTY;
     }
-
 }

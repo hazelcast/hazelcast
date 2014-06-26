@@ -16,59 +16,37 @@
 
 package com.hazelcast.collection.client;
 
+import com.hazelcast.collection.CollectionIsEmptyOperation;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.list.ListRemoveOperation;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
-import java.io.IOException;
+public class CollectionIsEmptyRequest extends CollectionRequest {
 
-public class ListRemoveRequest extends CollectionRequest {
-
-    int index;
-
-    public ListRemoveRequest() {
+    public CollectionIsEmptyRequest() {
     }
 
-    public ListRemoveRequest(String name, int index) {
+    public CollectionIsEmptyRequest(String name) {
         super(name);
-        this.index = index;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new ListRemoveOperation(name, index);
+        return new CollectionIsEmptyOperation(name);
     }
 
     @Override
     public int getClassId() {
-        return CollectionPortableHook.LIST_REMOVE;
-    }
-
-    public void write(PortableWriter writer) throws IOException {
-        super.write(writer);
-        writer.writeInt("i", index);
-    }
-
-    public void read(PortableReader reader) throws IOException {
-        super.read(reader);
-        index = reader.readInt("i");
+        return CollectionPortableHook.COLLECTION_IS_EMPTY;
     }
 
     @Override
     public String getRequiredAction() {
-        return ActionConstants.ACTION_REMOVE;
+        return ActionConstants.ACTION_READ;
     }
 
     @Override
     public String getMethodName() {
-        return "remove";
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{index};
+        return "isEmpty";
     }
 }

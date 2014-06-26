@@ -30,6 +30,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -103,7 +104,9 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public boolean isEmpty() {
-        return size() == 0;
+        final CollectionIsEmptyOperation operation = new CollectionIsEmptyOperation(name);
+        final Boolean result = invoke(operation);
+        return result;
     }
 
     public boolean contains(Object o) {

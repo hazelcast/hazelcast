@@ -20,33 +20,32 @@ import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.collection.client.CollectionAddAllRequest;
-import com.hazelcast.collection.client.CollectionClearRequest;
-import com.hazelcast.collection.client.CollectionSizeRequest;
-import com.hazelcast.collection.client.CollectionContainsRequest;
-import com.hazelcast.collection.client.CollectionAddRequest;
-import com.hazelcast.collection.client.CollectionRemoveRequest;
-import com.hazelcast.collection.client.CollectionCompareAndRemoveRequest;
 import com.hazelcast.collection.client.CollectionAddListenerRequest;
-import com.hazelcast.collection.client.CollectionRemoveListenerRequest;
-import com.hazelcast.collection.client.CollectionRequest;
+import com.hazelcast.collection.client.CollectionAddRequest;
+import com.hazelcast.collection.client.CollectionClearRequest;
+import com.hazelcast.collection.client.CollectionCompareAndRemoveRequest;
+import com.hazelcast.collection.client.CollectionContainsRequest;
 import com.hazelcast.collection.client.CollectionGetAllRequest;
-
+import com.hazelcast.collection.client.CollectionIsEmptyRequest;
+import com.hazelcast.collection.client.CollectionRemoveListenerRequest;
+import com.hazelcast.collection.client.CollectionRemoveRequest;
+import com.hazelcast.collection.client.CollectionRequest;
+import com.hazelcast.collection.client.CollectionSizeRequest;
 import com.hazelcast.core.ICollection;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
-
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.spi.impl.SerializableCollection;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * @ali 9/4/13
@@ -67,7 +66,9 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public boolean isEmpty() {
-        return size() == 0;
+        CollectionIsEmptyRequest request = new CollectionIsEmptyRequest(getName());
+        final Boolean result = invoke(request);
+        return result;
     }
 
     public boolean contains(Object o) {

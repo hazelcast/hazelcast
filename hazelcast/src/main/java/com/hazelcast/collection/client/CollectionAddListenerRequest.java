@@ -36,6 +36,7 @@ import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.PortableItemEvent;
+
 import java.io.IOException;
 import java.security.Permission;
 
@@ -131,5 +132,15 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
             return new SetPermission(name, ActionConstants.ACTION_LISTEN);
         }
         throw new IllegalArgumentException("No service matched!!!");
+    }
+
+    @Override
+    public String getMethodName() {
+        return "addItemListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{null, includeValue};
     }
 }

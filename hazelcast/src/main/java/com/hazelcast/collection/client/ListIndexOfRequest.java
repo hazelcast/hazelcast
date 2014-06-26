@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
 public class ListIndexOfRequest extends CollectionRequest {
@@ -66,5 +67,18 @@ public class ListIndexOfRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
+    }
+
+    @Override
+    public String getMethodName() {
+        if (last) {
+            return "lastIndexOf";
+        }
+        return "indexOf";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{value};
     }
 }

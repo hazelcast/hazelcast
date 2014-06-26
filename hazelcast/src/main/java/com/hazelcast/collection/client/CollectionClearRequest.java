@@ -44,4 +44,9 @@ public class CollectionClearRequest extends CollectionRequest {
     public String getRequiredAction() {
         return ActionConstants.ACTION_REMOVE;
     }
+
+    @Override
+    public String getMethodName() {
+        return "clear";
+    }
 }
