@@ -345,12 +345,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         String key = generateKeyOwnedBy(instance1);
         final IMap<Object, Object> map = instance2.getMap("map");
 
-        map.executeOnKey(key, new EntryCreate());
-        assertEquals(6, map.get(key));
+        int expected = 6;
+        map.executeOnKey(key, new EntryCreate(expected));
+        assertEquals(expected, map.get(key));
 
         instance1.shutdown();
 
-        assertEquals(6, map.get(key));
+        assertEquals(expected, map.get(key));
 
 
     }
@@ -369,17 +370,18 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             keys.add(key);
         }
 
+        int expected = 6;
         map.get("");
-        map.executeOnKeys(keys, new EntryCreate());
+        map.executeOnKeys(keys, new EntryCreate(expected));
 
         for (Object key : keys) {
-            assertEquals(6, map.get(key));
+            assertEquals(expected, map.get(key));
         }
 
         instance1.shutdown();
 
         for (Object key : keys) {
-            assertEquals(6, map.get(key));
+            assertEquals(expected, map.get(key));
         }
 
     }
