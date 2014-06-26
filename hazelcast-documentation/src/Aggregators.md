@@ -106,21 +106,27 @@ those two options.
 First we have a look at a `KeyPredicate` and only accept people whose last name is Jones.
 
 ```java
-Supplier<...> supplier = Supplier.fromKeyPredicate( lastName -> "Jones".equalsIgnoreCase( lastName ) );
+Supplier<...> supplier = Supplier.fromKeyPredicate(
+                             lastName -> "Jones".equalsIgnoreCase( lastName )
+                         );
 ```
 
 Using the standard Hazelcst `Predicate` interface you can also filter based on the value of an data entry. For example you can
 only select values which are divisible without remainder by 4 using the following example. 
 
 ```java
-Supplier<...> supplier = Supplier.fromPredicate( entry -> entry.getValue() % 4 == 0 );
+Supplier<...> supplier = Supplier.fromPredicate(
+                             entry -> entry.getValue() % 4 == 0
+                         );
 ```
 
 Beside from the fact that a `Supplier` is used for filtering it is also used to extract or transform data before supplying them
 to the aggregation operation itself. We will now look into a short example on how to transform the input value to a string.
  
 ```java
-Supplier<String, Integer, String> supplier = Supplier.all( value -> Integer.toString(value) );
+Supplier<String, Integer, String> supplier = Supplier.all(
+                                                 value -> Integer.toString(value)
+                                             );
 ```
 
 Apart from the fact we transformed the input value of type int (or Integer) to a string we can see, that the generic information
