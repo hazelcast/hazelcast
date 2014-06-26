@@ -123,6 +123,7 @@ public final class BasicOperationScheduler {
                 + partitionOperationThreads.length + " partition operation threads.");
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({ "NP_NONNULL_PARAM_VIOLATION" })
     private static void initOperationThreads(OperationThread[] operationThreads, ThreadFactory threadFactory) {
         for (int threadId = 0; threadId < operationThreads.length; threadId++) {
             OperationThread operationThread = (OperationThread) threadFactory.newThread(null);

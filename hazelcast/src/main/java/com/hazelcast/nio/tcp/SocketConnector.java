@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.util.AddressUtil;
@@ -74,28 +75,7 @@ public class SocketConnector implements Runnable {
             } else {
                 // remote is IPv6 and this is either IPv4 or a global IPv6.
                 // find possible remote inet6 addresses and try each one to connect...
-                final Collection<Inet6Address> possibleInetAddresses = AddressUtil.getPossibleInetAddressesFor(
-                        (Inet6Address) address.getInetAddress());
-                final Level level = silent ? Level.FINEST : Level.INFO;
-                //TODO: collection.toString() will likely not produce any useful output!
-                if (logger.isLoggable(level)) {
-                    log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
-                }
-                boolean connected = false;
-                Exception error = null;
-                for (Inet6Address inetAddress : possibleInetAddresses) {
-                    try {
-                        tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), TIMEOUT);
-                        connected = true;
-                        break;
-                    } catch (Exception e) {
-                        error = e;
-                    }
-                }
-                if (!connected && error != null) {
-                    // could not connect any of addresses
-                    throw error;
-                }
+                tryConnectToIPv6();
             }
         } catch (Throwable e) {
             logger.finest(e);
@@ -103,8 +83,33 @@ public class SocketConnector implements Runnable {
         }
     }
 
-    private void tryToConnect(final InetSocketAddress socketAddress, final int timeout)
+    private void tryConnectToIPv6()
             throws Exception {
+        final Collection<Inet6Address> possibleInetAddresses = AddressUtil
+                .getPossibleInetAddressesFor((Inet6Address) address.getInetAddress());
+        final Level level = silent ? Level.FINEST : Level.INFO;
+        //TODO: collection.toString() will likely not produce any useful output!
+        if (logger.isLoggable(level)) {
+            log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
+        }
+        boolean connected = false;
+        Exception error = null;
+        for (Inet6Address inetAddress : possibleInetAddresses) {
+            try {
+                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), TIMEOUT);
+                connected = true;
+                break;
+            } catch (Exception e) {
+                error = e;
+            }
+        }
+        if (!connected && error != null) {
+            // could not connect any of addresses
+            throw error;
+        }
+    }
+
+    private void tryToConnect(final InetSocketAddress socketAddress, final int timeout) throws Exception {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
         if (connectionManager.ioService.isSocketBind()) {
@@ -118,18 +123,7 @@ public class SocketConnector implements Runnable {
         }
         try {
             socketChannel.configureBlocking(true);
-            try {
-                if (timeout > 0) {
-                    socketChannel.socket().connect(socketAddress, timeout);
-                } else {
-                    socketChannel.connect(socketAddress);
-                }
-            } catch (SocketException ex) {
-                //we want to include the socketAddress in the exception.
-                SocketException newEx = new SocketException(ex.getMessage() + " to address " + socketAddress);
-                newEx.setStackTrace(ex.getStackTrace());
-                throw newEx;
-            }
+            connectSocketChannel(socketAddress, timeout, socketChannel);
             if (logger.isFinestEnabled()) {
                 log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
             }
@@ -145,6 +139,22 @@ public class SocketConnector implements Runnable {
             log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                     + "[" + e.getMessage() + "]");
             throw e;
+        }
+    }
+
+    private void connectSocketChannel(InetSocketAddress socketAddress, int timeout, SocketChannel socketChannel)
+            throws IOException {
+        try {
+            if (timeout > 0) {
+                socketChannel.socket().connect(socketAddress, timeout);
+            } else {
+                socketChannel.connect(socketAddress);
+            }
+        } catch (SocketException ex) {
+            //we want to include the socketAddress in the exception.
+            SocketException newEx = new SocketException(ex.getMessage() + " to address " + socketAddress);
+            newEx.setStackTrace(ex.getStackTrace());
+            throw newEx;
         }
     }
 
@@ -182,7 +192,8 @@ public class SocketConnector implements Runnable {
         if (socketChannel != null) {
             try {
                 socketChannel.close();
-            } catch (final IOException ignored) {
+            } catch (final IOException e) {
+                Logger.getLogger(SocketConnector.class).finest("Closing socket channel failed", e);
             }
         }
     }

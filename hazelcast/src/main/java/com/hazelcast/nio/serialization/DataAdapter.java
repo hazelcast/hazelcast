@@ -206,8 +206,8 @@ public class DataAdapter implements SocketWritable, SocketReadable {
             setStatus(ST_VERSION);
         }
         if (!isStatusSet(ST_CLASS_DEF)) {
-            ClassDefinition cd;
-            if (!skipClassDef && (cd = context.lookup(factoryId, classId, version)) != null) {
+            ClassDefinition cd = context.lookup(factoryId, classId, version);
+            if (!skipClassDef && cd != null) {
                 data.classDefinition = cd;
                 skipClassDef = true;
             }

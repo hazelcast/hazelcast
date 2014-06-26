@@ -88,6 +88,8 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         version = in.readInt();
     }
 
+    //CHECKSTYLE:OFF
+    //Generated equals method has too high NPath Complexity
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -119,6 +121,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
 
         return true;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {

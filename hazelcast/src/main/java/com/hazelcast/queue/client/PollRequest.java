@@ -23,6 +23,8 @@ import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Provides the request service for {@link com.hazelcast.queue.PollOperation}
  */
@@ -52,5 +54,21 @@ public class PollRequest extends QueueRequest {
     @Override
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public String getMethodName() {
+        if (timeoutMillis == -1) {
+            return "take";
+        }
+        return "poll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (timeoutMillis > 0) {
+            return new Object[]{timeoutMillis, TimeUnit.MILLISECONDS};
+        }
+        return null;
     }
 }

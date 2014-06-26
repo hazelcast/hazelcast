@@ -16,9 +16,12 @@
 
 package com.hazelcast.mapreduce.aggregation;
 
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -33,16 +36,27 @@ public class AbstractAggregationTest
     private static final Random RANDOM = new Random();
 
     protected static HazelcastInstance HAZELCAST_INSTANCE;
+    protected static TestHazelcastInstanceFactory INSTANCE_FACTORY;
 
     @BeforeClass
     public static void startup() {
-        HAZELCAST_INSTANCE = Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
+        INSTANCE_FACTORY = new TestHazelcastInstanceFactory(2);
+        HAZELCAST_INSTANCE = INSTANCE_FACTORY.newHazelcastInstance();
+        INSTANCE_FACTORY.newHazelcastInstance();
     }
 
     @AfterClass
     public static void teardown() {
-        Hazelcast.shutdownAll();
+        INSTANCE_FACTORY.shutdownAll();
+    }
+
+    @After
+    public void cleanup() {
+        for (DistributedObject object : HAZELCAST_INSTANCE.getDistributedObjects()) {
+            if (object instanceof IMap) {
+                ((IMap) object).destroy();
+            }
+        }
     }
 
     protected static int random(int min, int max) {

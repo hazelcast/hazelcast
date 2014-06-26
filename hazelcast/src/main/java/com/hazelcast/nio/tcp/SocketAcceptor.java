@@ -18,6 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
@@ -86,7 +87,8 @@ public class SocketAcceptor implements Runnable {
                     logger.finest("Closing selector " + Thread.currentThread().getName());
                 }
                 selector.close();
-            } catch (final Exception ignored) {
+            } catch (final Exception e) {
+                Logger.getLogger(SocketAcceptor.class).finest("Exception while closing selector", e);
             }
         }
     }
@@ -113,7 +115,8 @@ public class SocketAcceptor implements Runnable {
                 log(Level.WARNING, error);
                 try {
                     serverSocketChannel.close();
-                } catch (Exception ignore) {
+                } catch (Exception ex) {
+                    Logger.getLogger(SocketAcceptor.class).finest("Closing server socket failed", ex);
                 }
                 connectionManager.ioService.onFatalError(e);
             }
@@ -121,11 +124,15 @@ public class SocketAcceptor implements Runnable {
         if (socketChannelWrapper != null) {
             final SocketChannelWrapper socketChannel = socketChannelWrapper;
             log(Level.INFO, "Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
-            connectionManager.ioService.executeAsync(new Runnable() {
-                public void run() {
-                    configureAndAssignSocket(socketChannel);
-                }
-            });
+            if (connectionManager.isSocketInterceptorEnabled()) {
+                configureAndAssignSocket(socketChannel);
+            } else {
+                connectionManager.ioService.executeAsync(new Runnable() {
+                    public void run() {
+                        configureAndAssignSocket(socketChannel);
+                    }
+                });
+            }
         }
     }
 

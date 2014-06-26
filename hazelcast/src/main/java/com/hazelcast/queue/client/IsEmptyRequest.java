@@ -17,34 +17,34 @@
 package com.hazelcast.queue.client;
 
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.queue.PeekOperation;
+import com.hazelcast.queue.IsEmptyOperation;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.spi.Operation;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.PeekOperation}
+ * Request to check if the Queue is empty
  */
-public class PeekRequest extends QueueRequest implements RetryableRequest {
+public class IsEmptyRequest extends QueueRequest implements RetryableRequest {
 
-    public PeekRequest() {
+    public IsEmptyRequest() {
     }
 
-    public PeekRequest(String name) {
+    public IsEmptyRequest(final String name) {
         super(name);
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new PeekOperation(name);
+        return new IsEmptyOperation(name);
     }
 
     @Override
     public int getClassId() {
-        return QueuePortableHook.PEEK;
+        return QueuePortableHook.IS_EMPTY;
     }
 
     @Override
     public String getMethodName() {
-        return "peek";
+        return "isEmpty";
     }
 }

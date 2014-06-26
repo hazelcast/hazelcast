@@ -28,6 +28,7 @@ import com.hazelcast.queue.client.ClearRequest;
 import com.hazelcast.queue.client.CompareAndRemoveRequest;
 import com.hazelcast.queue.client.ContainsRequest;
 import com.hazelcast.queue.client.DrainRequest;
+import com.hazelcast.queue.client.IsEmptyRequest;
 import com.hazelcast.queue.client.IteratorRequest;
 import com.hazelcast.queue.client.OfferRequest;
 import com.hazelcast.queue.client.PeekRequest;
@@ -66,6 +67,7 @@ public class QueuePortableHook implements PortableHook {
     public static final int TXN_SIZE = 16;
     public static final int TXN_PEEK = 17;
     public static final int REMOVE_LISTENER = 18;
+    public static final int IS_EMPTY = 19;
 
 
     public int getFactoryId() {
@@ -75,7 +77,7 @@ public class QueuePortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
 
-        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[REMOVE_LISTENER + 1];
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[IS_EMPTY + 1];
 
         constructors[OFFER] = new ConstructorFunction<Integer, Portable>() {
             @Override
@@ -183,6 +185,12 @@ public class QueuePortableHook implements PortableHook {
             @Override
             public Portable createNew(Integer arg) {
                 return new RemoveListenerRequest();
+            }
+        };
+        constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new IsEmptyRequest();
             }
         };
 

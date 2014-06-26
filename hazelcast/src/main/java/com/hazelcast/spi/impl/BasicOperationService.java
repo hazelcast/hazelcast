@@ -94,6 +94,16 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  */
 final class BasicOperationService implements InternalOperationService {
 
+    private static final int INITIAL_CAPACITY = 1000;
+    private static final float LOAD_FACTOR = 0.75f;
+    private static final long SLEEP_TIME = 100;
+    private static final int TRY_COUNT = 10;
+    private static final long TRY_PAUSE_MILLIS = 300;
+    private static final long SCHEDULE_DELAY = 1111;
+    private static final int CORE_SIZE_CHECK = 8;
+    private static final int CORE_SIZE_FACTOR = 4;
+    private static final int CONCURRENCY_LEVEL = 16;
+
     final ConcurrentMap<Long, BasicInvocation> invocations;
     final BasicOperationScheduler scheduler;
     private final AtomicLong executedOperationsCount = new AtomicLong();
@@ -116,10 +126,11 @@ final class BasicOperationService implements InternalOperationService {
         this.executionService = nodeEngine.getExecutionService();
 
         int coreSize = Runtime.getRuntime().availableProcessors();
-        boolean reallyMultiCore = coreSize >= 8;
-        int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
-        this.executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
-        this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(1000, 0.75f, concurrencyLevel);
+        boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
+        int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
+        this.executingCalls =
+                new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
+        this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.scheduler = new BasicOperationScheduler(node, executionService, new BasicOperationProcessorImpl());
     }
 
@@ -549,7 +560,7 @@ final class BasicOperationService implements InternalOperationService {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         Address owner = partitionService.getPartitionOwner(partition);
         while (owner == null) {
-            Thread.sleep(100);
+            Thread.sleep(SLEEP_TIME);
             owner = partitionService.getPartitionOwner(partition);
         }
         return owner;
@@ -567,7 +578,9 @@ final class BasicOperationService implements InternalOperationService {
             final Address address = mp.getKey();
             final List<Integer> partitions = mp.getValue();
             final PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
-            Future future = createInvocationBuilder(serviceName, pi, address).setTryCount(10).setTryPauseMillis(300).invoke();
+            Future future =
+                    createInvocationBuilder(serviceName, pi, address).setTryCount(TRY_COUNT)
+                            .setTryPauseMillis(TRY_PAUSE_MILLIS).invoke();
             responses.put(address, future);
         }
         Map<Integer, Object> partitionResults = new HashMap<Integer, Object>(
@@ -711,7 +724,7 @@ final class BasicOperationService implements InternalOperationService {
                     }
                 }
             }
-        }, 1111, TimeUnit.MILLISECONDS);
+        }, SCHEDULE_DELAY, TimeUnit.MILLISECONDS);
     }
 
     @Override

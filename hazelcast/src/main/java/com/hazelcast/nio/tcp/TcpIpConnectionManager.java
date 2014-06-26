@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.cluster.BindOperation;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.NodeInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -47,6 +48,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class TcpIpConnectionManager implements ConnectionManager {
+
+    private static final int DEFAULT_KILL_THREAD_MILLIS = 1000 * 10;
 
     final int socketReceiveBufferSize;
 
@@ -138,6 +141,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+        if (!isSocketInterceptorEnabled()) {
+            return;
+        }
         final MemberSocketInterceptor memberSocketInterceptor = initializer.getMemberSocketInterceptor();
         if (memberSocketInterceptor == null) {
             return;
@@ -147,6 +153,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
         } else {
             memberSocketInterceptor.onConnect(socket);
         }
+    }
+
+    public boolean isSocketInterceptorEnabled() {
+        final SocketInterceptorConfig socketInterceptorConfig = ioService.getSocketInterceptorConfig();
+        if (socketInterceptorConfig != null && socketInterceptorConfig.isEnabled()) {
+            return true;
+        }
+        return false;
     }
 
     public PacketReader createPacketReader(TcpIpConnection connection) {
@@ -207,17 +221,16 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (reply) {
             sendBindRequest(connection, remoteEndPoint, false);
         }
-        final Connection existingConnection = connectionsMap.get(remoteEndPoint);
-        if (existingConnection != null && existingConnection.live()) {
-            if (existingConnection != connection) {
-                if (logger.isFinestEnabled()) {
-                    log(Level.FINEST, existingConnection + " is already bound  to "
-                            + remoteEndPoint + ", new one is " + connection);
-                }
-                activeConnections.add(connection);
-            }
+        if (checkAlreadyConnected(connection, remoteEndPoint)) {
             return false;
         }
+        if (registerConnectionEndpoint(connection, remoteEndPoint, thisAddress)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean registerConnectionEndpoint(TcpIpConnection connection, Address remoteEndPoint, Address thisAddress) {
         if (!remoteEndPoint.equals(thisAddress)) {
             if (!connection.isClient()) {
                 connection.setMonitor(getConnectionMonitor(remoteEndPoint, true));
@@ -226,6 +239,21 @@ public class TcpIpConnectionManager implements ConnectionManager {
             connectionsInProgress.remove(remoteEndPoint);
             for (ConnectionListener listener : connectionListeners) {
                 listener.connectionAdded(connection);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkAlreadyConnected(TcpIpConnection connection, Address remoteEndPoint) {
+        final Connection existingConnection = connectionsMap.get(remoteEndPoint);
+        if (existingConnection != null && existingConnection.live()) {
+            if (existingConnection != connection) {
+                if (logger.isFinestEnabled()) {
+                    log(Level.FINEST, existingConnection + " is already bound to " + remoteEndPoint
+                            + ", new one is " + connection);
+                }
+                activeConnections.add(connection);
             }
             return true;
         }
@@ -448,7 +476,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         socketAcceptorThread = null;
         killingThread.interrupt();
         try {
-            killingThread.join(1000 * 10);
+            killingThread.join(DEFAULT_KILL_THREAD_MILLIS);
         } catch (InterruptedException e) {
             logger.finest(e);
         }

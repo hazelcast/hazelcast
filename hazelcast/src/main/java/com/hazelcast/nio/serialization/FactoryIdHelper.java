@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.logging.Logger;
 
 public final class FactoryIdHelper {
 
@@ -69,10 +70,10 @@ public final class FactoryIdHelper {
         if (value != null) {
             try {
                 return Integer.parseInt(value);
-            } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException e) {
+                Logger.getLogger(FactoryIdHelper.class).finest("Parameter for property prop could not be parsed", e);
             }
         }
         return defaultId;
     }
-
 }

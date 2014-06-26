@@ -14,37 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.client;
-
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.queue.PeekOperation;
-import com.hazelcast.queue.QueuePortableHook;
-import com.hazelcast.spi.Operation;
+package com.hazelcast.queue;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.PeekOperation}
+ * check if queue is empty
  */
-public class PeekRequest extends QueueRequest implements RetryableRequest {
+public class IsEmptyOperation extends QueueOperation {
 
-    public PeekRequest() {
+    public IsEmptyOperation() {
     }
 
-    public PeekRequest(String name) {
+    public IsEmptyOperation(final String name) {
         super(name);
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return new PeekOperation(name);
+    public void run() throws Exception {
+        response = getOrCreateContainer().size() == 0;
     }
 
     @Override
-    public int getClassId() {
-        return QueuePortableHook.PEEK;
+    public void afterRun() throws Exception {
+        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
     }
 
     @Override
-    public String getMethodName() {
-        return "peek";
+    public int getId() {
+        return QueueDataSerializerHook.IS_EMPTY;
     }
 }

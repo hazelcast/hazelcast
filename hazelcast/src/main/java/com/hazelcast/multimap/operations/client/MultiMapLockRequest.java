@@ -26,6 +26,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
+
 import java.io.IOException;
 import java.security.Permission;
 
@@ -70,5 +71,10 @@ public class MultiMapLockRequest extends AbstractLockRequest {
 
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_LOCK);
+    }
+
+    @Override
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
     }
 }

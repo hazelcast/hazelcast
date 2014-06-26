@@ -87,4 +87,17 @@ public class CompareAndRemoveRequest extends QueueRequest {
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        if (retain) {
+            return "retainAll";
+        }
+        return "removeAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{dataList};
+    }
 }

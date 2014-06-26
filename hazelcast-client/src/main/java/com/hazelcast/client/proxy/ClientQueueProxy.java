@@ -29,6 +29,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.client.AddListenerRequest;
+import com.hazelcast.queue.client.IsEmptyRequest;
 import com.hazelcast.queue.client.RemoveListenerRequest;
 import com.hazelcast.queue.client.RemoveRequest;
 import com.hazelcast.queue.client.PollRequest;
@@ -171,7 +172,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
         PortableCollection result = invoke(request);
         Collection<Data> coll = result.getCollection();
         for (Data data : coll) {
-            E e = (E) getContext().getSerializationService().toObject(data);
+            E e = getContext().getSerializationService().toObject(data);
             c.add(e);
         }
         return coll.size();
@@ -213,7 +214,9 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public boolean isEmpty() {
-        return size() == 0;
+        IsEmptyRequest request = new IsEmptyRequest(name);
+        Boolean result = invoke(request);
+        return result;
     }
 
     public Iterator<E> iterator() {

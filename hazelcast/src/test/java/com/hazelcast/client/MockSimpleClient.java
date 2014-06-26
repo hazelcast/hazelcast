@@ -81,7 +81,9 @@ public class MockSimpleClient implements SimpleClient {
     }
 
     public void close() {
-        clientEngine.getEndpointManager().removeEndpoint(connection, true);
+        final ClientEndpointManager endpointManager = clientEngine.getEndpointManager();
+        final ClientEndpoint endpoint = endpointManager.getEndpoint(connection);
+        endpointManager.removeEndpoint(endpoint, true);
         connection.close();
     }
 

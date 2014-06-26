@@ -27,23 +27,24 @@ import java.util.Set;
 public class ClientReAuthOperation extends AbstractOperation implements UrgentSystemOperation {
 
     private String clientUuid;
-    private boolean firstConnection;
 
     public ClientReAuthOperation() {
     }
 
-    public ClientReAuthOperation(String clientUuid, boolean firstConnection) {
+    public ClientReAuthOperation(String clientUuid) {
         this.clientUuid = clientUuid;
-        this.firstConnection = firstConnection;
     }
 
     public void run() throws Exception {
+        ClientEngineImpl service = getService();
+        String memberUuid = getCallerUuid();
         ClientEngineImpl engine = getService();
         Set<ClientEndpoint> endpoints = engine.getEndpointManager().getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
-            ClientPrincipal principal = new ClientPrincipal(clientUuid, getCallerUuid());
+            ClientPrincipal principal = new ClientPrincipal(clientUuid, memberUuid);
             endpoint.authenticated(principal);
         }
+        service.addOwnershipMapping(clientUuid, memberUuid);
     }
 
     @Override
@@ -65,13 +66,11 @@ public class ClientReAuthOperation extends AbstractOperation implements UrgentSy
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(clientUuid);
-        out.writeBoolean(firstConnection);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         clientUuid = in.readUTF();
-        firstConnection = in.readBoolean();
     }
 }

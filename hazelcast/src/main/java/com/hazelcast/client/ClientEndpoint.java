@@ -109,6 +109,7 @@ public final class ClientEndpoint implements Client {
         this.principal = principal;
         this.uuid = principal.getUuid();
         this.authenticated = true;
+        clientEngine.addOwnershipMapping(uuid, principal.getOwnerUuid());
     }
 
     public boolean isAuthenticated() {

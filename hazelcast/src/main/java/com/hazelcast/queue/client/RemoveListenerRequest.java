@@ -61,4 +61,9 @@ public class RemoveListenerRequest extends BaseClientRemoveListenerRequest {
     public Permission getRequiredPermission() {
         return new QueuePermission(name, ActionConstants.ACTION_LISTEN);
     }
+
+    @Override
+    public String getMethodName() {
+        return "removeItemListener";
+    }
 }

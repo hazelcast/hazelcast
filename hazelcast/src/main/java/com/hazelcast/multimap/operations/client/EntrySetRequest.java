@@ -55,4 +55,9 @@ public class EntrySetRequest extends MultiMapAllPartitionRequest implements Retr
     public int getClassId() {
         return MultiMapPortableHook.ENTRY_SET;
     }
+
+    @Override
+    public String getMethodName() {
+        return "entrySet";
+    }
 }

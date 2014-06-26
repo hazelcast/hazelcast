@@ -83,6 +83,11 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
     }
 
     @Override
+    public String getMethodName() {
+        return "isLocked";
+    }
+
+    @Override
     public Object[] getParameters() {
         return new Object[]{key};
     }

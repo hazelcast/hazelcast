@@ -98,6 +98,14 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
     }
 
     @Override
+    public String getMethodName() {
+        if (timeout == -1) {
+            return "lock";
+        }
+        return "tryLock";
+    }
+
+    @Override
     public Object[] getParameters() {
         if ((ttl == -1 && timeout == -1) || timeout == 0) {
             return new Object[]{key};
