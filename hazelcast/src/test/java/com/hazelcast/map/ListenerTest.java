@@ -439,7 +439,10 @@ public class ListenerTest extends HazelcastTestSupport {
 
         @Override
         public void mapEvicted(MapEvent event) {
+        }
 
+        @Override
+        public void mapCleared(MapEvent event) {
         }
 
         @Override
