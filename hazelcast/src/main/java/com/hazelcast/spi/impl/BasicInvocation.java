@@ -442,8 +442,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private Object resolveResponse(Object obj) {
         if (obj == null) {
             return NULL_RESPONSE;
