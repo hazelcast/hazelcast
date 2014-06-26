@@ -41,7 +41,7 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
  * The BasicOperationProcessor belongs to the BasicOperationService and is responsible for scheduling
  * operations/packets to the correct threads.
  * <p/>
- * The actual processing of the 'task' that is scheduled, is forwarded to the {@link BasicOperationProcessor}. So
+ * The actual processing of the 'task' that is scheduled, is forwarded to the {@link BasicDispatcher}. So
  * this class is purely responsible for assigning a 'task' to a particular thread.
  * <p/>
  * The {@link #execute(Object, int, boolean)} accepts an Object instead of a runnable to prevent needing to
@@ -55,7 +55,7 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
  * </li>
  * <li>
  * generic operation threads: these threads are responsible for executing operations that are not
- * specific to a partition. E.g. a heart beat or a map.size.
+ * specific to a partition. E.g. a heart beat.
  * </li>
  * </ol>
  */
@@ -71,7 +71,7 @@ public final class BasicOperationScheduler {
     private final ILogger logger;
     private final Node node;
     private final ExecutionService executionService;
-    private final BasicOperationProcessor processor;
+    private final BasicDispatcher dispatcher;
 
     //the generic workqueues are shared between all generic operation threads, so that work can be stolen
     //and a task gets processed as quickly as possible.
@@ -104,11 +104,11 @@ public final class BasicOperationScheduler {
 
     public BasicOperationScheduler(Node node,
                                    ExecutionService executionService,
-                                   BasicOperationProcessor processor) {
+                                   BasicDispatcher dispatcher) {
         this.executionService = executionService;
         this.logger = node.getLogger(BasicOperationScheduler.class);
         this.node = node;
-        this.processor = processor;
+        this.dispatcher = dispatcher;
 
         this.genericOperationThreads = new OperationThread[getGenericOperationThreadCount()];
         initOperationThreads(genericOperationThreads, new GenericOperationThreadFactory());
@@ -425,7 +425,7 @@ public final class BasicOperationScheduler {
 
         private void process(Object task) {
             try {
-                processor.process(task);
+                dispatcher.dispatch(task);
             } catch (Exception e) {
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
             }
@@ -487,7 +487,7 @@ public final class BasicOperationScheduler {
 
         private void process(Object task) {
             try {
-                processor.process(task);
+                dispatcher.dispatch(task);
             } catch (Exception e) {
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
             }
@@ -506,7 +506,7 @@ public final class BasicOperationScheduler {
 
         @Override
         public void run() {
-            processor.process(op);
+            dispatcher.dispatch(op);
         }
     }
 }

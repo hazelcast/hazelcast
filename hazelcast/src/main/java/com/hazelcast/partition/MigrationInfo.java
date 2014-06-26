@@ -128,6 +128,8 @@ public class MigrationInfo implements DataSerializable {
         }
     }
 
+    //CHECKSTYLE:OFF
+    // This equals method is to complex for our rules due to many internal object type members
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -154,6 +156,7 @@ public class MigrationInfo implements DataSerializable {
 
         return true;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {
