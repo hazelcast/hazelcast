@@ -140,11 +140,10 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
     private void transferPartitionsBetweenGroups(Queue<NodeGroup> underLoadedGroups, Collection<NodeGroup> overLoadedGroups,
                                                  int index, int avgPartitionPerGroup, int plusOneGroupCount) {
 
-        int plusOneGroupCounter = plusOneGroupCount;
         int maxPartitionPerGroup = avgPartitionPerGroup + 1;
         int maxTries = underLoadedGroups.size() * overLoadedGroups.size() * DEFAULT_RETRY_MULTIPLIER;
         int tries = 0;
-        int expectedPartitionCount = plusOneGroupCounter > 0 ? maxPartitionPerGroup : avgPartitionPerGroup;
+        int expectedPartitionCount = plusOneGroupCount > 0 ? maxPartitionPerGroup : avgPartitionPerGroup;
         while (tries++ < maxTries && !underLoadedGroups.isEmpty()) {
             NodeGroup toGroup = underLoadedGroups.poll();
             Iterator<NodeGroup> overLoadedGroupsIterator = overLoadedGroups.iterator();
@@ -152,8 +151,8 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
                 NodeGroup fromGroup = overLoadedGroupsIterator.next();
                 selectToGroupPartitions(index, expectedPartitionCount, toGroup, fromGroup);
                 int fromCount = fromGroup.getPartitionCount(index);
-                if (plusOneGroupCounter > 0 && fromCount == maxPartitionPerGroup) {
-                    if (--plusOneGroupCounter == 0) {
+                if (plusOneGroupCount > 0 && fromCount == maxPartitionPerGroup) {
+                    if (--plusOneGroupCount == 0) {
                         expectedPartitionCount = avgPartitionPerGroup;
                     }
                 }
@@ -161,8 +160,8 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
                     overLoadedGroupsIterator.remove();
                 }
                 int toCount = toGroup.getPartitionCount(index);
-                if (plusOneGroupCounter > 0 && toCount == maxPartitionPerGroup) {
-                    if (--plusOneGroupCounter == 0) {
+                if (plusOneGroupCount > 0 && toCount == maxPartitionPerGroup) {
+                    if (--plusOneGroupCount == 0) {
                         expectedPartitionCount = avgPartitionPerGroup;
                     }
                 }
@@ -220,15 +219,14 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
 
         // distribute free partitions among under-loaded groups
         int maxPartitionPerGroup = avgPartitionPerGroup + 1;
-        int plusOneGroupCounter = plusOneGroupCount;
         int maxTries = freePartitions.size() * underLoadedGroups.size();
         int tries = 0;
         while (tries++ < maxTries && !freePartitions.isEmpty() && !underLoadedGroups.isEmpty()) {
             NodeGroup group = underLoadedGroups.poll();
             assignFreePartitionsToNodeGroup(freePartitions, index, group);
             int count = group.getPartitionCount(index);
-            if (plusOneGroupCounter > 0 && count == maxPartitionPerGroup) {
-                if (--plusOneGroupCounter == 0) {
+            if (plusOneGroupCount > 0 && count == maxPartitionPerGroup) {
+                if (--plusOneGroupCount == 0) {
                     // all (avg + 1) partitions owned groups are found
                     // if there is any group has avg number of partitions in under-loaded queue
                     // remove it.
@@ -239,12 +237,12 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
                         }
                     }
                 }
-            } else if ((plusOneGroupCounter > 0 && count < maxPartitionPerGroup)
+            } else if ((plusOneGroupCount > 0 && count < maxPartitionPerGroup)
                     || (count < avgPartitionPerGroup)) {
                 underLoadedGroups.offer(group);
             }
         }
-        return plusOneGroupCounter;
+        return plusOneGroupCount;
     }
 
     private void assignFreePartitionsToNodeGroup(Queue<Integer> freePartitions, int index, NodeGroup group) {

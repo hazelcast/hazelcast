@@ -183,13 +183,12 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
 
-        byte[] sendableData = data;
         boolean compress = nodeEngine.getGroupProperties().PARTITION_MIGRATION_ZIP_ENABLED.getBoolean();
-        if (sendableData != null && sendableData.length > 0 && compress) {
-            sendableData = IOUtil.compress(sendableData);
+        if (data != null && data.length > 0 && compress) {
+            data = IOUtil.compress(data);
         }
 
-        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(sendableData, replicaVersions, compress);
+        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions, compress);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(getReplicaIndex());
         return syncResponse;
     }
