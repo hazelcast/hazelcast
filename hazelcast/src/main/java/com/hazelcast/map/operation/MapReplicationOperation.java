@@ -21,16 +21,18 @@ import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.mapstore.writebehind.DelayedEntry;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindMapDataStore;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordReplicationInfo;
-import com.hazelcast.map.writebehind.DelayedEntry;
-import com.hazelcast.map.writebehind.WriteBehindQueue;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,7 +87,13 @@ public class MapReplicationOperation extends AbstractOperation {
         delayedEntries = new HashMap<String, List<DelayedEntry>>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
             RecordStore recordStore = entry.getValue();
-            final List<DelayedEntry> delayedEntries = recordStore.getWriteBehindQueue().getSnapShot().asList();
+            MapContainer mapContainer = recordStore.getMapContainer();
+            if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+                continue;
+            }
+            final WriteBehindQueue<DelayedEntry> writeBehindQueue
+                    = ((WriteBehindMapDataStore) recordStore.getMapDataStore()).getWriteBehindQueue();
+            final List<DelayedEntry> delayedEntries = writeBehindQueue.getSnapShot().asList();
             if (delayedEntries != null && delayedEntries.size() == 0) {
                 continue;
             }
@@ -119,7 +127,8 @@ public class MapReplicationOperation extends AbstractOperation {
         for (Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
             final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), entry.getKey());
             final List<DelayedEntry> replicatedEntries = entry.getValue();
-            final WriteBehindQueue<DelayedEntry> writeBehindQueue = recordStore.getWriteBehindQueue();
+            final WriteBehindQueue<DelayedEntry> writeBehindQueue
+                    = ((WriteBehindMapDataStore) recordStore.getMapDataStore()).getWriteBehindQueue();
             writeBehindQueue.addEnd(replicatedEntries);
         }
     }

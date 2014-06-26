@@ -23,18 +23,12 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.map.eviction.ReachabilityHandlerChain;
-import com.hazelcast.map.eviction.ReachabilityHandlers;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.DataRecordFactory;
 import com.hazelcast.map.record.ObjectRecordFactory;
 import com.hazelcast.map.record.OffHeapRecordFactory;
 import com.hazelcast.map.record.RecordFactory;
-import com.hazelcast.map.writebehind.DelayedEntry;
-import com.hazelcast.map.writebehind.WriteBehindManager;
-import com.hazelcast.map.writebehind.WriteBehindManagers;
-import com.hazelcast.map.writebehind.store.StoreEvent;
-import com.hazelcast.map.writebehind.store.StoreListener;
+import com.hazelcast.map.mapstore.MapStoreManager;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -43,6 +37,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,37 +45,38 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteBehindManager;
+import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteThroughManager;
+import static com.hazelcast.map.mapstore.MapStoreManagers.emptyMapStoreManager;
+
 /**
  * Map container.
  */
-public class MapContainer {
+public class MapContainer extends MapContainerSupport {
 
     private static final int INITIAL_KEYS_REMOVE_DELAY_MINUTES = 20;
 
-    private volatile MapConfig mapConfig;
+
     private final String name;
     private final RecordFactory recordFactory;
     private final MapService mapService;
-    private MapStoreWrapper storeWrapper;
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
-    private final ReachabilityHandlerChain reachabilityHandlerChain;
     private final SizeEstimator nearCacheSizeEstimator;
-    private final Map<Data, Object> initialKeys = new ConcurrentHashMap<Data, Object>();
     private final PartitioningStrategy partitioningStrategy;
-    private WriteBehindManager writeBehindQueueManager;
     private WanReplicationPublisher wanReplicationPublisher;
     private MapMergePolicy wanMergePolicy;
-    private final boolean evictionEnabled;
+    private final Map<Data, Object> initialKeys = new ConcurrentHashMap<Data, Object>();
+    private MapStoreWrapper storeWrapper;
+    private MapStoreManager mapStoreManager;
 
     public MapContainer(final String name, final MapConfig mapConfig, final MapService mapService) {
+        super(mapConfig);
         this.name = name;
-        this.mapConfig = mapConfig;
         this.mapService = mapService;
         this.partitioningStrategy = createPartitioningStrategy();
-        this.reachabilityHandlerChain = ReachabilityHandlers.newHandlerChain(MapContainer.this);
         final NodeEngine nodeEngine = mapService.getNodeEngine();
         recordFactory = createRecordFactory(nodeEngine);
         initMapStoreOperations(nodeEngine);
@@ -89,65 +85,33 @@ public class MapContainer {
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
         nearCacheSizeEstimator = SizeEstimators.createNearCacheSizeEstimator();
-        evictionEnabled = !MapConfig.EvictionPolicy.NONE.equals(mapConfig.getEvictionPolicy());
+        mapStoreManager = createMapStoreManager(this);
+        mapStoreManager.start();
     }
 
-    public boolean isEvictionEnabled() {
-        return evictionEnabled;
+    public MapStoreManager createMapStoreManager(MapContainer mapContainer) {
+        if (!isMapStoreEnabled()) {
+            return emptyMapStoreManager();
+        }
+        if (isWriteBehindMapStoreEnabled()) {
+            return createWriteBehindManager(mapContainer);
+        } else {
+            return createWriteThroughManager(mapContainer);
+        }
+    }
+
+    public MapStoreManager getMapStoreManager() {
+        return mapStoreManager;
     }
 
     private void initMapStoreOperations(NodeEngine nodeEngine) {
         if (!isMapStoreEnabled()) {
-            this.writeBehindQueueManager = WriteBehindManagers.emptyWriteBehindManager();
             return;
         }
         storeWrapper = createMapStoreWrapper(mapConfig.getMapStoreConfig(), nodeEngine);
         if (storeWrapper != null) {
             initMapStore(storeWrapper.getImpl(), mapConfig.getMapStoreConfig(), nodeEngine);
         }
-        if (!isWriteBehindMapStoreEnabled()) {
-            this.writeBehindQueueManager = WriteBehindManagers.emptyWriteBehindManager();
-            return;
-        }
-        initWriteBehindMapStore();
-    }
-
-    private void initWriteBehindMapStore() {
-        if (!isWriteBehindMapStoreEnabled()) {
-            return;
-        }
-        this.writeBehindQueueManager = createWriteBehindManager();
-        // listener for delete operations.
-        this.writeBehindQueueManager.addStoreListener(new StoreListener<DelayedEntry>() {
-            @Override
-            public void beforeStore(StoreEvent<DelayedEntry> storeEvent) {
-
-            }
-
-            @Override
-            public void afterStore(StoreEvent<DelayedEntry> storeEvent) {
-                final DelayedEntry delayedEntry = storeEvent.getSource();
-                final Object value = delayedEntry.getValue();
-                // only process store delete operations.
-                if (value != null) {
-                    return;
-                }
-                final Data key = (Data) storeEvent.getSource().getKey();
-                final int partitionId = delayedEntry.getPartitionId();
-                final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
-                final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
-                if (recordStore != null) {
-                    recordStore.removeFromWriteBehindWaitingDeletions(key);
-                }
-            }
-        });
-
-        this.writeBehindQueueManager.start();
-    }
-
-    private WriteBehindManager createWriteBehindManager() {
-        return WriteBehindManagers.createWriteBehindManager(name, mapService,
-                storeWrapper, mapConfig.getMapStoreConfig());
     }
 
     private RecordFactory createRecordFactory(NodeEngine nodeEngine) {
@@ -167,14 +131,6 @@ public class MapContainer {
                 throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
         }
         return recordFactory;
-    }
-
-    public boolean isMapStoreEnabled() {
-        final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        if (mapStoreConfig == null || !mapStoreConfig.isEnabled()) {
-            return false;
-        }
-        return true;
     }
 
     private MapStoreWrapper createMapStoreWrapper(MapStoreConfig mapStoreConfig, NodeEngine nodeEngine) {
@@ -238,7 +194,7 @@ public class MapContainer {
         return strategy;
     }
 
-    public void loadInitialKeys() {
+    private void loadInitialKeys() {
         initialKeys.clear();
         Set keys = storeWrapper.loadAllKeys();
         if (keys == null || keys.isEmpty()) {
@@ -257,14 +213,9 @@ public class MapContainer {
         }, INITIAL_KEYS_REMOVE_DELAY_MINUTES, TimeUnit.MINUTES);
     }
 
-    public void shutDownMapStoreScheduledExecutor() {
-        writeBehindQueueManager.stop();
-    }
-
     public Map<Data, Object> getInitialKeys() {
         return initialKeys;
     }
-
 
     public IndexService getIndexService() {
         return indexService;
@@ -276,12 +227,6 @@ public class MapContainer {
 
     public MapMergePolicy getWanMergePolicy() {
         return wanMergePolicy;
-    }
-
-    public boolean isWriteBehindMapStoreEnabled() {
-        final MapStoreConfig mapStoreConfig = this.getMapConfig().getMapStoreConfig();
-        return mapStoreConfig != null && mapStoreConfig.isEnabled()
-                && mapStoreConfig.getWriteDelaySeconds() > 0;
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
@@ -325,20 +270,8 @@ public class MapContainer {
         return mapConfig.getBackupCount();
     }
 
-    public long getWriteDelayMillis() {
-        return TimeUnit.SECONDS.toMillis(mapConfig.getMapStoreConfig().getWriteDelaySeconds());
-    }
-
     public int getAsyncBackupCount() {
         return mapConfig.getAsyncBackupCount();
-    }
-
-    public void setMapConfig(MapConfig mapConfig) {
-        this.mapConfig = mapConfig;
-    }
-
-    public MapConfig getMapConfig() {
-        return mapConfig;
     }
 
     public MapStoreWrapper getStore() {
@@ -361,15 +294,4 @@ public class MapContainer {
         return mapService;
     }
 
-    public ReachabilityHandlerChain getReachabilityHandlerChain() {
-        return reachabilityHandlerChain;
-    }
-
-    public WriteBehindManager getWriteBehindManager() {
-        return writeBehindQueueManager;
-    }
-
-    public MapStoreWrapper getStoreWrapper() {
-        return storeWrapper;
-    }
 }

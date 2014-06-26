@@ -84,6 +84,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.SortingUtil;
 import com.hazelcast.wan.WanReplicationEvent;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -99,7 +100,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -121,10 +121,6 @@ public class MapService implements ManagedService, MigrationAwareService,
     private final Map<String, MapMergePolicy> mergePolicyMap;
     private final ExpirationManager expirationManager;
     private final MapEventsDispatcher dispatcher;
-    /**
-     * Holds per node total item count in all write behind queues.
-     */
-    private final AtomicInteger writeBehindQueueItemCounter;
 
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
     private final ConstructorFunction<String, LocalMapStatsImpl> localMapStatsConstructorFunction = new ConstructorFunction<String, LocalMapStatsImpl>() {
@@ -151,7 +147,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         mergePolicyMap.put(LatestUpdateMapMergePolicy.class.getName(), new LatestUpdateMapMergePolicy());
         expirationManager = new ExpirationManager(this);
         dispatcher = new MapEventsDispatcher(this, nodeEngine.getClusterService());
-        writeBehindQueueItemCounter = new AtomicInteger(0);
     }
 
 
@@ -337,11 +332,10 @@ public class MapService implements ManagedService, MigrationAwareService,
             for (final MapContainer mapContainer : recordMap.keySet()) {
                 Collection<Record> recordList = recordMap.get(mapContainer);
                 String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
-                MapMergePolicy mergePolicy = getMergePolicy(mergePolicyName);
 
                 // todo number of records may be high.
                 // todo below can be optimized a many records can be send in single invocation
-                final MapMergePolicy finalMergePolicy = mergePolicy;
+                final MapMergePolicy finalMergePolicy = getMergePolicy(mergePolicyName);
                 for (final Record record : recordList) {
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
@@ -368,10 +362,6 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public MapContainer getMapContainer(String mapName) {
         return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mapContainers, mapConstructor);
-    }
-
-    public Map<String, MapContainer> getMapContainers() {
-        return Collections.unmodifiableMap(mapContainers);
     }
 
     public PartitionContainer getPartitionContainer(int partitionId) {
@@ -627,7 +617,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     nearCache.clear();
                 }
             }
-            mapContainer.shutDownMapStoreScheduledExecutor();
+            mapContainer.getMapStoreManager().stop();
         }
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
@@ -998,7 +988,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                             lockedEntryCount++;
                         }
                     }
-                    dirtyCount += recordStore.getWriteBehindQueue().size();
+                    dirtyCount += recordStore.getMapDataStore().notFinishedOperationsCount();
                 }
             } else {
                 for (int replica = 1; replica <= backupCount; replica++) {
@@ -1054,11 +1044,4 @@ public class MapService implements ManagedService, MigrationAwareService,
         return (value > 0) ? value : 0;
     }
 
-    public AtomicInteger getWriteBehindQueueItemCounter() {
-        return writeBehindQueueItemCounter;
-    }
-
-    public int getMaxPerNodeSizeOfWriteBehindQueue() {
-        return nodeEngine.getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
-    }
 }
