@@ -23,11 +23,13 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +40,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -295,6 +298,79 @@ public class ListenerTest extends HazelcastTestSupport {
         });
     }
 
+    @Test
+    public void testEntryListenerEvent_withMapReplaceFail() throws Exception {
+        final int instanceCount = 1;
+        final HazelcastInstance instance = createHazelcastInstanceFactory(instanceCount).newInstances(new Config())[0];
+
+        final IMap map = instance.getMap(randomString());
+        final CounterEntryListener listener = new CounterEntryListener();
+
+        map.addEntryListener(listener, true);
+
+        final int putTotal = 1000;
+        final int oldVal = 1;
+        for (int i = 0; i < putTotal; i++) {
+            map.put(i, oldVal);
+        }
+
+        final int replaceTotal = 1000;
+        final int newVal = 2;
+        for (int i = 0; i < replaceTotal; i++) {
+            map.replace(i, "WrongValue", newVal);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+
+                for (int i = 0; i < replaceTotal; i++) {
+                    assertEquals( oldVal, map.get(i));
+                }
+
+                assertEquals(putTotal, listener.addCount.get());
+                assertEquals(0, listener.updateCount.get());
+            }
+        });
+    }
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void testEntryListenerEvent_withMapReplaceSuccess() throws Exception {
+        final int instanceCount = 1;
+        final HazelcastInstance instance = createHazelcastInstanceFactory(instanceCount).newInstances(new Config())[0];
+
+        final IMap map = instance.getMap(randomString());
+        final CounterEntryListener listener = new CounterEntryListener();
+
+        map.addEntryListener(listener, true);
+
+        final int putTotal = 1000;
+        final int oldVal = 1;
+        for (int i = 0; i < putTotal; i++) {
+            map.put(i, oldVal);
+        }
+
+        final int replaceTotal = 1000;
+        final int newVal = 2;
+        for (int i = 0; i < replaceTotal; i++) {
+            map.replace(i, oldVal, newVal);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+
+                for (int i = 0; i < replaceTotal; i++) {
+                    assertEquals(newVal, map.get(i));
+                }
+
+                assertEquals(putTotal, listener.addCount.get());
+                assertEquals(replaceTotal, listener.updateCount.get());
+            }
+        });
+    }
+
 
     private Predicate<String, String> matchingPredicate() {
         return new Predicate<String, String>() {
@@ -331,5 +407,50 @@ public class ListenerTest extends HazelcastTestSupport {
         };
     }
 
+
+    public class CounterEntryListener implements EntryListener<Object, Object> {
+
+        public final AtomicLong addCount = new AtomicLong();
+        public final AtomicLong removeCount = new AtomicLong();
+        public final AtomicLong updateCount = new AtomicLong();
+        public final AtomicLong evictCount = new AtomicLong();
+
+        public CounterEntryListener( ) { }
+
+        @Override
+        public void entryAdded(EntryEvent<Object, Object> objectObjectEntryEvent) {
+            addCount.incrementAndGet();
+        }
+
+        @Override
+        public void entryRemoved(EntryEvent<Object, Object> objectObjectEntryEvent) {
+            removeCount.incrementAndGet();
+        }
+
+        @Override
+        public void entryUpdated(EntryEvent<Object, Object> objectObjectEntryEvent) {
+            updateCount.incrementAndGet();
+        }
+
+        @Override
+        public void entryEvicted(EntryEvent<Object, Object> objectObjectEntryEvent) {
+            evictCount.incrementAndGet();
+        }
+
+        @Override
+        public void mapEvicted(MapEvent event) {
+
+        }
+
+        @Override
+        public String toString() {
+            return "EntryCounter{" +
+                    "addCount=" + addCount +
+                    ", removeCount=" + removeCount +
+                    ", updateCount=" + updateCount +
+                    ", evictCount=" + evictCount +
+                    '}';
+        }
+    }
 
 }
