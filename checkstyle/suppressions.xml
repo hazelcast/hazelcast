@@ -242,29 +242,16 @@
     <!-- the partition-invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicPartitionInvocation"/>
 
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="MethodLength" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="InnerAssignment" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocation"/>
+
+    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
 
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.EventServiceImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-
-    <!-- SPI unresolved -->
-    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-    <suppress checks="Todo" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-    <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocation"/>
-    <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicPartitionInvocation"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocation"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
-    <suppress checks="Todo" files="com.hazelcast.spi.impl.BasicOperationService"/>
 
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
