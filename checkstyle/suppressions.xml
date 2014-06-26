@@ -411,7 +411,8 @@
     <suppress checks="MagicNumber" files="com.hazelcast.nio.CipherHelper"/>
     <suppress checks="MagicNumber|NPathComplexity" files="com.hazelcast.nio.ClassLoaderUtil"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.Data"/>
-    <suppress checks="NPathComplexity|CyclomaticComplexity|ReturnCount|MethodLength" files="com.hazelcast.nio.serialization.DataAdapter"/>
+    <suppress checks="NPathComplexity|CyclomaticComplexity|ReturnCount|MethodLength"
+              files="com.hazelcast.nio.serialization.DataAdapter"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.DefaultPortableReader"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.DefaultPortableWriter"/>
     <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.DynamicByteBuffer"/>
@@ -421,9 +422,11 @@
     <suppress checks="MethodCount" files="com.hazelcast.nio.NodeIOService"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.Packet"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.ReadHandler"/>
-    <suppress checks="MagicNumber|MethodLength|MagicNumber|CyclomaticComplexity|EmptyBlock|NPathComplexity" files="com.hazelcast.nio.ssl.SSLSocketChannelWrapper"/>
+    <suppress checks="MagicNumber|MethodLength|MagicNumber|CyclomaticComplexity|EmptyBlock|NPathComplexity"
+              files="com.hazelcast.nio.ssl.SSLSocketChannelWrapper"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.SerializationServiceBuilder"/>
-    <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber" files="com.hazelcast.nio.serialization.SerializationServiceImpl"/>
+    <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
+              files="com.hazelcast.nio.serialization.SerializationServiceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
     <suppress checks="ExecutableStatement" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.UnsafeHelper"/>
@@ -469,7 +472,6 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.management.request.ConsoleRequestConstants"/>
 
 
-
     <!-- Map -->
     <suppress checks="JavadocMethod" files="com.hazelcast.map[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.map[\\/]"/>
@@ -486,7 +488,6 @@
 
 
     <suppress checks="MethodCountCheck" files="com.hazelcast.map.RecordStore"/>
-    <suppress checks="MethodCountCheck" files="com.hazelcast.map.MapContainer"/>
     <suppress checks="NPathComplexityCheck" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
     <suppress checks="InnerAssignment" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
 

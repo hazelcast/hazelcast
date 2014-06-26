@@ -104,5 +104,5 @@ public interface IOService {
 
     SerializationService getSerializationService();
 
-    PortableContext getSerializationContext();
+    PortableContext getPortableContext();
 }

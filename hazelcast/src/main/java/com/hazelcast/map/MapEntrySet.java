@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashSet;
@@ -29,7 +30,7 @@ import java.util.Set;
 
 public final class MapEntrySet implements IdentifiedDataSerializable {
 
-    private final Set<Map.Entry<Data, Data>> entrySet;
+    private Set<Map.Entry<Data, Data>> entrySet;
 
     public MapEntrySet() {
         entrySet = new HashSet<Map.Entry<Data, Data>>();
@@ -77,4 +78,5 @@ public final class MapEntrySet implements IdentifiedDataSerializable {
     public int getId() {
         return MapDataSerializerHook.ENTRY_SET;
     }
+
 }
