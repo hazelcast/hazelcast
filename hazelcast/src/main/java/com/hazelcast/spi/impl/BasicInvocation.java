@@ -474,6 +474,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         return error;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private Object resolveCallTimeout() {
         if (logger.isFinestEnabled()) {
             logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
