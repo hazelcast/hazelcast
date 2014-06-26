@@ -56,7 +56,9 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 
 public final class MigrationRequestOperation extends BaseMigrationOperation {
 
-    public static final int TRY_PAUSE_MILLIS = 1000;
+    private static final int TRY_PAUSE_MILLIS = 1000;
+    private static final int DEFAULT_DATA_OUTPUT_BUFFER_SIZE = 1024 * 32;
+
     private boolean returnResponse = true;
 
     public MigrationRequestOperation() {
@@ -155,7 +157,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     private BufferObjectDataOutput createDataOutput(SerializationService serializationService) {
-        return serializationService.createObjectDataOutput(1024 * 32);
+        return serializationService.createObjectDataOutput(DEFAULT_DATA_OUTPUT_BUFFER_SIZE);
     }
 
     private void verifyGoodMaster(NodeEngine nodeEngine) {
@@ -188,7 +190,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private boolean rethrowException() {
         NodeEngine nodeEngine = getNodeEngine();
-        if(nodeEngine == null){
+        if (nodeEngine == null) {
             return false;
         }
 
@@ -270,12 +272,13 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             }
         }
 
-        private void logThrowable(Throwable e) {
-            if (e instanceof ExecutionException) {
-                e = e.getCause() != null ? e.getCause() : e;
+        private void logThrowable(Throwable t) {
+            Throwable throwableToLog = t;
+            if (throwableToLog instanceof ExecutionException) {
+                throwableToLog = throwableToLog.getCause() != null ? throwableToLog.getCause() : throwableToLog;
             }
-            Level level = getLogLevel(e);
-            getLogger().log(level, e.getMessage(), e);
+            Level level = getLogLevel(throwableToLog);
+            getLogger().log(level, throwableToLog.getMessage(), throwableToLog);
         }
 
         private Level getLogLevel(Throwable e) {
