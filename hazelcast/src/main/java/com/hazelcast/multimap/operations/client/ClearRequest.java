@@ -59,4 +59,9 @@ public class ClearRequest extends MultiMapAllPartitionRequest implements Retryab
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "clear";
+    }
 }

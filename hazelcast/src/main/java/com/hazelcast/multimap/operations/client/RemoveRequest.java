@@ -70,4 +70,14 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "remove";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, value};
+    }
 }

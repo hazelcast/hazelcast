@@ -59,4 +59,9 @@ public class KeySetRequest extends MultiMapAllPartitionRequest implements Retrya
     public int getClassId() {
         return MultiMapPortableHook.KEY_SET;
     }
+
+    @Override
+    public String getMethodName() {
+        return "keySet";
+    }
 }

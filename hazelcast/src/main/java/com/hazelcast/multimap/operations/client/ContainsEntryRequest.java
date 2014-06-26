@@ -74,4 +74,24 @@ public class ContainsEntryRequest extends MultiMapAllPartitionRequest implements
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
     }
+
+    @Override
+    public String getMethodName() {
+        if (key != null && value != null) {
+            return "containsEntry";
+        } else if (key != null) {
+            return "containsKey";
+        }
+        return "containsValue";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (key != null && value != null) {
+            return new Object[]{key, value};
+        } else if (key != null) {
+            return new Object[]{key};
+        }
+        return new Object[]{value};
+    }
 }
