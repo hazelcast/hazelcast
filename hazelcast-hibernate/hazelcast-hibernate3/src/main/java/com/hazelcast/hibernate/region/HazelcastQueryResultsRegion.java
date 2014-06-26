@@ -28,8 +28,10 @@ import java.util.Properties;
 public class HazelcastQueryResultsRegion extends AbstractGeneralRegion<LocalRegionCache> implements QueryResultsRegion {
 
     public HazelcastQueryResultsRegion(final HazelcastInstance instance, final String name, final Properties props) {
-        // Note: We can pass HazelcastInstance as null, because instead of invalidation
-        // timestamps cache can take care of outdated queries.
-        super(instance, name, props, new LocalRegionCache(name, null, null));
+        // Note: The HazelcastInstance _must_ be passed down here. Otherwise query caches
+        // cannot be configured and will always use defaults. However, even though we're
+        // passing the HazelcastInstance, we don't want to use an ITopic for invalidation
+        // because the timestamps cache can take care of outdated queries
+        super(instance, name, props, new LocalRegionCache(name, instance, null, false));
     }
 }
