@@ -128,12 +128,12 @@ public class MemcacheTest {
             }
             // STATS
             final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
-            assertEquals("700", stats.get("cmd_set"));
-            assertEquals("1000", stats.get("cmd_get"));
-            assertEquals("700", stats.get("get_hits"));
-            assertEquals("300", stats.get("get_misses"));
-            assertEquals("100", stats.get("delete_hits"));
-            assertEquals("100", stats.get("delete_misses"));
+            assertEquals("700", stats.get("cmdSet"));
+            assertEquals("1000", stats.get("cmdGet"));
+            assertEquals("700", stats.get("getHits"));
+            assertEquals("300", stats.get("getMisses"));
+            assertEquals("100", stats.get("deleteHits"));
+            assertEquals("100", stats.get("deleteMisses"));
         } finally {
             client.shutdown();
         }
@@ -194,12 +194,12 @@ public class MemcacheTest {
                 assertEquals(i, client.get(String.valueOf(i)));
             }
             final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
-            assertEquals("100", stats.get("cmd_set"));
-            assertEquals("100", stats.get("cmd_get"));
-            assertEquals("100", stats.get("incr_hits"));
-            assertEquals("20", stats.get("incr_misses"));
-            assertEquals("100", stats.get("decr_hits"));
-            assertEquals("30", stats.get("decr_misses"));
+            assertEquals("100", stats.get("cmdSet"));
+            assertEquals("100", stats.get("cmdGet"));
+            assertEquals("100", stats.get("incrHits"));
+            assertEquals("20", stats.get("incrMisses"));
+            assertEquals("100", stats.get("decrHits"));
+            assertEquals("30", stats.get("decrMisses"));
         } finally {
             client.shutdown();
         }

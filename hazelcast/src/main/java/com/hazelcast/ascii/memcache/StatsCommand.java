@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
@@ -28,25 +29,28 @@ public class StatsCommand extends AbstractTextCommand {
     static final byte[] STAT = stringToBytes("STAT ");
     static final byte[] UPTIME = stringToBytes("uptime ");
     static final byte[] BYTES = stringToBytes("bytes ");
-    static final byte[] CMD_SET = stringToBytes("cmd_set ");
-    static final byte[] CMD_GET = stringToBytes("cmd_get ");
-    static final byte[] CMD_TOUCH = stringToBytes("cmd_touch ");
+    static final byte[] CMD_SET = stringToBytes("cmdSet ");
+    static final byte[] CMD_GET = stringToBytes("cmdGet ");
+    static final byte[] CMD_TOUCH = stringToBytes("cmdTouch ");
     static final byte[] THREADS = stringToBytes("threads ");
-    static final byte[] WAITING_REQUESTS = stringToBytes("waiting_requests ");
-    static final byte[] GET_HITS = stringToBytes("get_hits ");
-    static final byte[] GET_MISSES = stringToBytes("get_misses ");
-    static final byte[] DELETE_HITS = stringToBytes("delete_hits ");
-    static final byte[] DELETE_MISSES = stringToBytes("delete_misses ");
-    static final byte[] INCR_HITS = stringToBytes("incr_hits ");
-    static final byte[] INCR_MISSES = stringToBytes("incr_misses ");
-    static final byte[] DECR_HITS = stringToBytes("decr_hits ");
-    static final byte[] DECR_MISSES = stringToBytes("decr_misses ");
-    static final byte[] CURR_CONNECTIONS = stringToBytes("curr_connections ");
-    static final byte[] TOTAL_CONNECTIONS = stringToBytes("total_connections ");
+    static final byte[] WAITING_REQUESTS = stringToBytes("waitingRequests ");
+    static final byte[] GET_HITS = stringToBytes("getHits ");
+    static final byte[] GET_MISSES = stringToBytes("getMisses ");
+    static final byte[] DELETE_HITS = stringToBytes("deleteHits ");
+    static final byte[] DELETE_MISSES = stringToBytes("deleteMisses ");
+    static final byte[] INCR_HITS = stringToBytes("incrHits ");
+    static final byte[] INCR_MISSES = stringToBytes("incrMisses ");
+    static final byte[] DECR_HITS = stringToBytes("decrHits ");
+    static final byte[] DECR_MISSES = stringToBytes("decrMisses ");
+    static final byte[] CURR_CONNECTIONS = stringToBytes("currConnections ");
+    static final byte[] TOTAL_CONNECTIONS = stringToBytes("totalConnections ");
+
+    private static final int CAPACITY = 1000;
+
     ByteBuffer response;
 
     public StatsCommand() {
-        super(TextCommandType.STATS);
+        super(TextCommandConstants.TextCommandType.STATS);
     }
 
     public boolean readFrom(ByteBuffer cb) {
@@ -54,25 +58,25 @@ public class StatsCommand extends AbstractTextCommand {
     }
 
     public void setResponse(Stats stats) {
-        response = ByteBuffer.allocate(1000);
-        putInt(UPTIME, stats.uptime);
-        putInt(THREADS, stats.threads);
-        putInt(WAITING_REQUESTS, stats.waiting_requests);
-        putInt(CURR_CONNECTIONS, stats.curr_connections);
-        putInt(TOTAL_CONNECTIONS, stats.total_connections);
-        putLong(BYTES, stats.bytes);
-        putLong(CMD_GET, stats.cmd_get);
-        putLong(CMD_SET, stats.cmd_set);
-        putLong(CMD_TOUCH, stats.cmd_touch);
-        putLong(GET_HITS, stats.get_hits);
-        putLong(GET_MISSES, stats.get_misses);
-        putLong(DELETE_HITS, stats.delete_hits);
-        putLong(DELETE_MISSES, stats.delete_misses);
-        putLong(INCR_HITS, stats.incr_hits);
-        putLong(INCR_MISSES, stats.incr_misses);
-        putLong(DECR_HITS, stats.decr_hits);
-        putLong(DECR_MISSES, stats.decr_misses);
-        response.put(END);
+        response = ByteBuffer.allocate(CAPACITY);
+        putInt(UPTIME, stats.getUptime());
+        putInt(THREADS, stats.getThreads());
+        putInt(WAITING_REQUESTS, stats.getWaitingRequests());
+        putInt(CURR_CONNECTIONS, stats.getCurrConnections());
+        putInt(TOTAL_CONNECTIONS, stats.getTotalConnections());
+        putLong(BYTES, stats.getBytes());
+        putLong(CMD_GET, stats.getCmdGet());
+        putLong(CMD_SET, stats.getCmdSet());
+        putLong(CMD_TOUCH, stats.getCmdTouch());
+        putLong(GET_HITS, stats.getGetHits());
+        putLong(GET_MISSES, stats.getGetMisses());
+        putLong(DELETE_HITS, stats.getDeleteHits());
+        putLong(DELETE_MISSES, stats.getDeleteMisses());
+        putLong(INCR_HITS, stats.getIncrHits());
+        putLong(INCR_MISSES, stats.getIncrMisses());
+        putLong(DECR_HITS, stats.getDecrHits());
+        putLong(DECR_MISSES, stats.getDecrMisses());
+        response.put(TextCommandConstants.END);
         response.flip();
     }
 
@@ -80,14 +84,14 @@ public class StatsCommand extends AbstractTextCommand {
         response.put(STAT);
         response.put(name);
         response.put(stringToBytes(String.valueOf(value)));
-        response.put(RETURN);
+        response.put(TextCommandConstants.RETURN);
     }
 
     private void putLong(byte[] name, long value) {
         response.put(STAT);
         response.put(name);
         response.put(stringToBytes(String.valueOf(value)));
-        response.put(RETURN);
+        response.put(TextCommandConstants.RETURN);
     }
 
     public boolean writeTo(ByteBuffer bb) {

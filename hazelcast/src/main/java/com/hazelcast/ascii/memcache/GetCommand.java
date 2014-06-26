@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
@@ -26,13 +27,13 @@ public class GetCommand extends AbstractTextCommand {
     ByteBuffer value;
     ByteBuffer lastOne;
 
-    public GetCommand(TextCommandType type, String key) {
+    public GetCommand(TextCommandConstants.TextCommandType type, String key) {
         super(type);
         this.key = key;
     }
 
     public GetCommand(String key) {
-        this(TextCommandType.GET, key);
+        this(TextCommandConstants.TextCommandType.GET, key);
     }
 
     public String getKey() {
@@ -47,7 +48,7 @@ public class GetCommand extends AbstractTextCommand {
         if (entry != null) {
             value = entry.toNewBuffer();
         }
-        lastOne = (singleGet) ? ByteBuffer.wrap(END) : null;
+        lastOne = (singleGet) ? ByteBuffer.wrap(TextCommandConstants.END) : null;
     }
 
     public boolean writeTo(ByteBuffer bb) {

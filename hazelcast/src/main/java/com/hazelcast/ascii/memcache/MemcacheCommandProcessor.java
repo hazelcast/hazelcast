@@ -34,12 +34,13 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
     }
 
     public static byte[] longToByteArray(long v) {
-        int len = (int) (v / 256) + 1;
+        long paramV = v;
+        int len = (int) (paramV / 256) + 1;
         final byte[] bytes = new byte[len];
         for (int i = len - 1; i >= 0; i--) {
-            final long t = v % 256;
+            final long t = paramV % 256;
             bytes[i] = t < 128 ? (byte) t : (byte) (t - 256);
-            v = (v - t) / 256;
+            paramV = (paramV - t) / 256;
         }
         return bytes;
     }

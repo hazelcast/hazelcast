@@ -38,6 +38,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -69,9 +70,13 @@ import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.INCREMENT
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_SERVER;
 
-public class TextCommandServiceImpl implements TextCommandService, TextCommandConstants {
+public class TextCommandServiceImpl implements TextCommandService {
+
+    private static final int TEXT_COMMAND_PROCESSOR_SIZE = 100;
+    private static final int MILLIS_TO_SECONDS = 1000;
+    private static final long WAIT_TIME = 1000;
     private final Node node;
-    private final TextCommandProcessor[] textCommandProcessors = new TextCommandProcessor[100];
+    private final TextCommandProcessor[] textCommandProcessors = new TextCommandProcessor[TEXT_COMMAND_PROCESSOR_SIZE];
     private final HazelcastInstance hazelcast;
     private final AtomicLong sets = new AtomicLong();
     private final AtomicLong touches = new AtomicLong();
@@ -131,20 +136,20 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     @Override
     public Stats getStats() {
         Stats stats = new Stats();
-        stats.uptime = (int) ((Clock.currentTimeMillis() - startTime) / 1000);
-        stats.cmd_get = getMisses.get() + getHits.get();
-        stats.cmd_set = sets.get();
-        stats.cmd_touch = touches.get();
-        stats.get_hits = getHits.get();
-        stats.get_misses = getMisses.get();
-        stats.delete_hits = deleteHits.get();
-        stats.delete_misses = deleteMisses.get();
-        stats.incr_hits = incrementHits.get();
-        stats.incr_misses = incrementMisses.get();
-        stats.decr_hits = decrementHits.get();
-        stats.decr_misses = decrementMisses.get();
-        stats.curr_connections = node.connectionManager.getCurrentClientConnections();
-        stats.total_connections = node.connectionManager.getAllTextConnections();
+        stats.setUptime((int) ((Clock.currentTimeMillis() - startTime) / MILLIS_TO_SECONDS));
+        stats.setCmdGet(getMisses.get() + getHits.get());
+        stats.setCmdSet(sets.get());
+        stats.setCmdTouch(touches.get());
+        stats.setGetHits(getHits.get());
+        stats.setGetMisses(getMisses.get());
+        stats.setDecrHits(deleteHits.get());
+        stats.setDeleteMisses(deleteMisses.get());
+        stats.setIncrHits(incrementHits.get());
+        stats.setIncrMisses(incrementMisses.get());
+        stats.setDecrHits(decrementHits.get());
+        stats.setDecrMisses(decrementMisses.get());
+        stats.setCurrConnections(node.connectionManager.getCurrentClientConnections());
+        stats.setTotalConnections(node.connectionManager.getAllTextConnections());
         return stats;
     }
 
@@ -220,10 +225,10 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
 
     @Override
     public int getAdjustedTTLSeconds(int ttl) {
-        if (ttl <= MONTH_SECONDS) {
+        if (ttl <= TextCommandConstants.getMonthSeconds()) {
             return ttl;
         } else {
-            return ttl - (int) (Clock.currentTimeMillis() / 1000);
+            return ttl - (int) (Clock.currentTimeMillis() / MILLIS_TO_SECONDS);
         }
     }
 
@@ -337,7 +342,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         @Override
         public void run() {
             try {
-                TextCommandType type = command.getType();
+                TextCommandConstants.TextCommandType type = command.getType();
                 TextCommandProcessor textCommandProcessor = textCommandProcessors[type.getValue()];
                 textCommandProcessor.handle(command);
             } catch (Throwable e) {
@@ -394,8 +399,9 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
                         }
                     });
                     //noinspection WaitNotInLoop
-                    stopObject.wait(1000);
+                    stopObject.wait(WAIT_TIME);
                 } catch (Exception ignored) {
+                    EmptyStatement.ignore(ignored);
                 }
             }
         }
