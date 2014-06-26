@@ -47,6 +47,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -1087,6 +1088,16 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
     }
+    public static class EntryInc extends AbstractEntryProcessor<String, SimpleValue> {
+
+        @Override
+        public Object process(final Map.Entry<String, SimpleValue> entry) {
+            final SimpleValue value = entry.getValue();
+            value.i++;
+            return null;
+        }
+    }
+
 
     public static class SimpleValue implements Serializable {
 
