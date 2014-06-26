@@ -56,8 +56,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     public static final long TIMEOUT = 5;
 
-
-    
     /**
      * A response indicating the 'null' value.
      */
@@ -129,6 +127,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     volatile int backupsExpected;
 
     private final BasicInvocationFuture invocationFuture;
+    private final BasicOperationService operationService;
 
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
@@ -156,6 +155,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         this.invocationFuture = new BasicInvocationFuture(this, callback);
         this.executorName = executorName;
         this.resultDeserialized = resultDeserialized;
+        this.operationService = (BasicOperationService) nodeEngine.operationService;
     }
 
     abstract ExceptionAction onException(Throwable t);
@@ -185,7 +185,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             return callTimeout;
         }
 
-        BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
         final long defaultCallTimeout = operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = op.getWaitTimeout();
@@ -227,19 +226,22 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
-            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
             if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
         } catch (Exception e) {
-            if (e instanceof RetryableException) {
-                notify(e);
-            } else {
-                throw ExceptionUtil.rethrow(e);
-            }
+            handleInvocationException(e);
         }
         return invocationFuture;
+    }
+
+    private void handleInvocationException(Exception e) {
+        if (e instanceof RetryableException) {
+            notify(e);
+        } else {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     private void resetAndReInvoke() {
@@ -252,15 +254,69 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private void doInvoke() {
-        if (!nodeEngine.isActive()) {
-            remote = false;
-            notify(new HazelcastInstanceNotActiveException());
+        if (!engineActive()) {
             return;
         }
 
-        invTarget = getTarget();
         invokeCount++;
-        final Address thisAddress = nodeEngine.getThisAddress();
+
+        if (!initInvocationTarget()) {
+            return;
+        }
+
+        setInvocationTime(op, nodeEngine.getClusterTime());
+
+        if (remote) {
+            doInvokeRemote();
+        } else {
+            doInvokeLocal();
+        }
+    }
+
+    private void doInvokeLocal() {
+        if (op instanceof BackupAwareOperation) {
+            operationService.registerInvocation(this);
+        }
+
+        responseReceived = Boolean.FALSE;
+        op.setResponseHandler(this);
+
+        //todo: should move to the operationService.
+        if (operationService.scheduler.isAllowedToRunInCurrentThread(op)) {
+            operationService.runOperationOnCallingThread(op);
+        } else {
+            operationService.executeOperation(op);
+        }
+    }
+
+    private void doInvokeRemote() {
+        long callId = operationService.registerInvocation(this);
+        boolean sent = operationService.send(op, invTarget);
+        if (!sent) {
+            operationService.deregisterInvocation(callId);
+            notify(new RetryableIOException("Packet not send to -> " + invTarget));
+        }
+    }
+
+    private boolean engineActive() {
+        if (!nodeEngine.isActive()) {
+            remote = false;
+            notify(new HazelcastInstanceNotActiveException());
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Initializes the invocation target.
+     *
+     * @return true of the initialization was a success
+     */
+    private boolean initInvocationTarget() {
+        Address thisAddress = nodeEngine.getThisAddress();
+
+        invTarget = getTarget();
+
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
@@ -269,55 +325,29 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             } else {
                 notify(new HazelcastInstanceNotActiveException());
             }
-            return;
+            return false;
         }
 
         invTargetMember = nodeEngine.getClusterService().getMember(invTarget);
         if (!isJoinOperation(op) && invTargetMember == null) {
             notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
-            return;
+            return false;
         }
 
         if (op.getPartitionId() != partitionId) {
             notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
                     + " is not equal to the partition id of invocation: " + partitionId));
-            return;
+            return false;
         }
 
         if (op.getReplicaIndex() != replicaIndex) {
             notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
                     + " is not equal to the replica index of invocation: " + replicaIndex));
-            return;
+            return false;
         }
-
-        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        setInvocationTime(op, nodeEngine.getClusterTime());
 
         remote = !thisAddress.equals(invTarget);
-        if (remote) {
-            final long callId = operationService.registerInvocation(this);
-
-            boolean sent = operationService.send(op, invTarget);
-
-            if (!sent) {
-                operationService.deregisterInvocation(callId);
-                notify(new RetryableIOException("Packet not send to -> " + invTarget));
-            }
-        } else {
-            if (op instanceof BackupAwareOperation) {
-                operationService.registerInvocation(this);
-            }
-
-            responseReceived = Boolean.FALSE;
-            op.setResponseHandler(this);
-
-            //todo: should move to the operationService.
-            if (operationService.scheduler.isAllowedToRunInCurrentThread(op)) {
-                operationService.runOperationOnCallingThread(op);
-            } else {
-                operationService.executeOperation(op);
-            }
-        }
+        return true;
     }
 
     private static Throwable getError(Object obj) {
