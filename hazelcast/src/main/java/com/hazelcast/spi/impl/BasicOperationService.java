@@ -415,7 +415,10 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Executes an operation on a set of partitions.
      */
-    private class InvokeOnPartitions {
+    private final class InvokeOnPartitions {
+
+        public static final int TRY_COUNT = 10;
+        public static final int TRY_PAUSE_MILLIS = 300;
 
         private final String serviceName;
         private final OperationFactory operationFactory;
@@ -423,7 +426,7 @@ final class BasicOperationService implements InternalOperationService {
         private final Map<Address, Future> futures;
         private final Map<Integer, Object> partitionResults;
 
-        public InvokeOnPartitions(String serviceName, OperationFactory operationFactory,
+        private InvokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                   Map<Address, List<Integer>> memberPartitions) {
             this.serviceName = serviceName;
             this.operationFactory = operationFactory;
@@ -460,8 +463,8 @@ final class BasicOperationService implements InternalOperationService {
                 List<Integer> partitions = mp.getValue();
                 PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
                 Future future = createInvocationBuilder(serviceName, pi, address)
-                        .setTryCount(10)
-                        .setTryPauseMillis(300)
+                        .setTryCount(TRY_COUNT)
+                        .setTryPauseMillis(TRY_PAUSE_MILLIS)
                         .invoke();
                 futures.put(address, future);
             }
@@ -510,7 +513,7 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    public class BasicDispatcherImpl implements BasicDispatcher {
+    public final class BasicDispatcherImpl implements BasicDispatcher {
 
         @Override
         public void dispatch(Object task) {
@@ -538,7 +541,7 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for handling responses.
      */
-    private class ResponsePacketHandler {
+    private final class ResponsePacketHandler {
         private void handle(Packet packet) {
             try {
                 final Data data = packet.getData();
@@ -570,7 +573,7 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for handling operation packets.
      */
-    private class OperationPacketHandler {
+    private final class OperationPacketHandler {
 
         /**
          * Handles this packet.
@@ -641,7 +644,7 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for processing an Operation.
      */
-    private class OperationHandler {
+    private final class OperationHandler {
 
         /**
          * Runs operation in calling thread.
