@@ -142,7 +142,7 @@ public class TextCommandServiceImpl implements TextCommandService {
         stats.setCmdTouch(touches.get());
         stats.setGetHits(getHits.get());
         stats.setGetMisses(getMisses.get());
-        stats.setDecrHits(deleteHits.get());
+        stats.setDeleteHits(deleteHits.get());
         stats.setDeleteMisses(deleteMisses.get());
         stats.setIncrHits(incrementHits.get());
         stats.setIncrMisses(incrementMisses.get());
@@ -228,7 +228,7 @@ public class TextCommandServiceImpl implements TextCommandService {
         if (ttl <= TextCommandConstants.getMonthSeconds()) {
             return ttl;
         } else {
-            return ttl - (int) (Clock.currentTimeMillis() / MILLIS_TO_SECONDS);
+            return ttl - (int) (TimeUnit.MILLISECONDS.toSeconds(Clock.currentTimeMillis()));
         }
     }
 

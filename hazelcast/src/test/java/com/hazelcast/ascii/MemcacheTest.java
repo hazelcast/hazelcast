@@ -22,15 +22,18 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
 import net.spy.memcached.MemcachedClient;
 import net.spy.memcached.internal.OperationFuture;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -49,7 +52,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MemcacheTest {
+public class MemcacheTest extends HazelcastTestSupport {
 
     final static Config config = new XmlConfigBuilder().build();
 
@@ -128,12 +131,12 @@ public class MemcacheTest {
             }
             // STATS
             final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
-            assertEquals("700", stats.get("cmdSet"));
-            assertEquals("1000", stats.get("cmdGet"));
-            assertEquals("700", stats.get("getHits"));
-            assertEquals("300", stats.get("getMisses"));
-            assertEquals("100", stats.get("deleteHits"));
-            assertEquals("100", stats.get("deleteMisses"));
+            assertEquals("700", stats.get("cmd_set"));
+            assertEquals("1000", stats.get("cmd_get"));
+            assertEquals("700", stats.get("get_hits"));
+            assertEquals("300", stats.get("get_misses"));
+            assertEquals("100", stats.get("delete_hits"));
+            assertEquals("100", stats.get("delete_misses"));
         } finally {
             client.shutdown();
         }
@@ -194,12 +197,12 @@ public class MemcacheTest {
                 assertEquals(i, client.get(String.valueOf(i)));
             }
             final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
-            assertEquals("100", stats.get("cmdSet"));
-            assertEquals("100", stats.get("cmdGet"));
-            assertEquals("100", stats.get("incrHits"));
-            assertEquals("20", stats.get("incrMisses"));
-            assertEquals("100", stats.get("decrHits"));
-            assertEquals("30", stats.get("decrMisses"));
+            assertEquals("100", stats.get("cmd_set"));
+            assertEquals("100", stats.get("cmd_get"));
+            assertEquals("100", stats.get("incr_hits"));
+            assertEquals("20", stats.get("incr_misses"));
+            assertEquals("100", stats.get("decr_hits"));
+            assertEquals("30", stats.get("decr_misses"));
         } finally {
             client.shutdown();
         }
@@ -240,13 +243,17 @@ public class MemcacheTest {
     @Test
     public void testMemcacheTTL() throws IOException, ExecutionException, InterruptedException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        MemcachedClient client = getMemcacheClient(instance);
+        final MemcachedClient client = getMemcacheClient(instance);
         try {
-            OperationFuture<Boolean> future = client.set(String.valueOf(0), 3, 10);
+            OperationFuture<Boolean> future = client.set(String.valueOf(0), 10, 10);
             future.get();
             assertEquals(10, client.get(String.valueOf(0)));
-            Thread.sleep(6000);
-            assertEquals(null, client.get(String.valueOf(0)));
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(null, client.get(String.valueOf(0)));
+                }
+            });
         } finally {
             client.shutdown();
         }

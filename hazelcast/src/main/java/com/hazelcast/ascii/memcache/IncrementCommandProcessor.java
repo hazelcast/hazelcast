@@ -95,7 +95,7 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
             final long current = (value1 == null || value1.length == 0) ? 0 : byteArrayToLong(value1);
             long result = -1;
 
-            incrementCommandTypeCheck(incrementCommand, result, current);
+            result = incrementCommandTypeCheck(incrementCommand, result, current);
 
             incrementCommand.setResponse(ByteUtil.concatenate(stringToBytes(String.valueOf(result))
                     , TextCommandConstants.RETURN));
@@ -118,7 +118,7 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
         }
     }
 
-    private void incrementCommandTypeCheck(IncrementCommand incrementCommand, long result, long current) {
+    private long incrementCommandTypeCheck(IncrementCommand incrementCommand, long result, long current) {
         long paramResult = result;
         if (incrementCommand.getType() == TextCommandConstants.TextCommandType.INCREMENT) {
             paramResult = current + incrementCommand.getValue();
@@ -129,5 +129,7 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
             paramResult = 0 > paramResult ? 0 : paramResult;
             textCommandService.incrementDecrHitCount();
         }
+
+        return paramResult;
     }
 }

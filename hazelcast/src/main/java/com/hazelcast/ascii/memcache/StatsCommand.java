@@ -29,21 +29,21 @@ public class StatsCommand extends AbstractTextCommand {
     static final byte[] STAT = stringToBytes("STAT ");
     static final byte[] UPTIME = stringToBytes("uptime ");
     static final byte[] BYTES = stringToBytes("bytes ");
-    static final byte[] CMD_SET = stringToBytes("cmdSet ");
-    static final byte[] CMD_GET = stringToBytes("cmdGet ");
-    static final byte[] CMD_TOUCH = stringToBytes("cmdTouch ");
+    static final byte[] CMD_SET = stringToBytes("cmd_set ");
+    static final byte[] CMD_GET = stringToBytes("cmd_get ");
+    static final byte[] CMD_TOUCH = stringToBytes("cmd_touch ");
     static final byte[] THREADS = stringToBytes("threads ");
-    static final byte[] WAITING_REQUESTS = stringToBytes("waitingRequests ");
-    static final byte[] GET_HITS = stringToBytes("getHits ");
-    static final byte[] GET_MISSES = stringToBytes("getMisses ");
-    static final byte[] DELETE_HITS = stringToBytes("deleteHits ");
-    static final byte[] DELETE_MISSES = stringToBytes("deleteMisses ");
-    static final byte[] INCR_HITS = stringToBytes("incrHits ");
-    static final byte[] INCR_MISSES = stringToBytes("incrMisses ");
-    static final byte[] DECR_HITS = stringToBytes("decrHits ");
-    static final byte[] DECR_MISSES = stringToBytes("decrMisses ");
-    static final byte[] CURR_CONNECTIONS = stringToBytes("currConnections ");
-    static final byte[] TOTAL_CONNECTIONS = stringToBytes("totalConnections ");
+    static final byte[] WAITING_REQUESTS = stringToBytes("waiting_requests ");
+    static final byte[] GET_HITS = stringToBytes("get_hits ");
+    static final byte[] GET_MISSES = stringToBytes("get_misses ");
+    static final byte[] DELETE_HITS = stringToBytes("delete_hits ");
+    static final byte[] DELETE_MISSES = stringToBytes("delete_misses ");
+    static final byte[] INCR_HITS = stringToBytes("incr_hits ");
+    static final byte[] INCR_MISSES = stringToBytes("incr_misses ");
+    static final byte[] DECR_HITS = stringToBytes("decr_hits ");
+    static final byte[] DECR_MISSES = stringToBytes("decr_misses ");
+    static final byte[] CURR_CONNECTIONS = stringToBytes("curr_connections ");
+    static final byte[] TOTAL_CONNECTIONS = stringToBytes("total_connections ");
 
     private static final int CAPACITY = 1000;
 
