@@ -11,9 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Abstract store managers contains common functionality of store managers.
- * @param <K>
- * @param <V>
+ * Abstract map data store contains common functionality of map data stores.
+ *
+ * @param <K> key type for map data store.
+ * @param <V> value type for map data store.
  */
 public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
 
