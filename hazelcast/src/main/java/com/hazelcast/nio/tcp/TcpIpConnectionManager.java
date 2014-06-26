@@ -137,7 +137,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             outboundPorts.addAll(ports);
         }
         socketChannelWrapperFactory = initializer.getSocketChannelWrapperFactory();
-        portableContext = ioService.getSerializationContext();
+        portableContext = ioService.getPortableContext();
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {

@@ -243,7 +243,7 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public PortableContext getSerializationContext() {
+    public PortableContext getPortableContext() {
         return node.getSerializationService().getPortableContext();
     }
 
