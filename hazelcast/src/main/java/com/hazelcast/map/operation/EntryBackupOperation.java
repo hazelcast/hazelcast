@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Map;
 
 public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation {
