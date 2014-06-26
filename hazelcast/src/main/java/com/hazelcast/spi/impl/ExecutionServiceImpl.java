@@ -37,6 +37,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,6 +84,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
+                @Override
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
@@ -139,12 +141,21 @@ public final class ExecutionServiceImpl implements ExecutionService {
     }
 
     @Override
-    public ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type) {
+    public ManagedExecutorService register(String name, int defaultPoolSize, int defaultQueueCapacity,
+                                           ExecutorType type) {
         ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfigs().get(name);
+
+        int poolSize = defaultPoolSize;
+        int queueCapacity = defaultQueueCapacity;
         if (cfg != null) {
             poolSize = cfg.getPoolSize();
-            queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
+            if (cfg.getQueueCapacity() <= 0) {
+                queueCapacity = Integer.MAX_VALUE;
+            } else {
+                queueCapacity = cfg.getQueueCapacity();
+            }
         }
+
         ManagedExecutorService executor = createExecutor(name, poolSize, queueCapacity, type);
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
@@ -291,38 +302,53 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         @Override
         public void run() {
-            if (entries.isEmpty()) {
+            List<CompletableFutureEntry> removableEntries = removableEntries();
+            removeEntries(removableEntries);
+        }
+
+        private void removeEntries(List<CompletableFutureEntry> removableEntries) {
+            if (removableEntries.isEmpty()) {
                 return;
+            }
+
+            entriesLock.lock();
+            try {
+                entries.removeAll(removableEntries);
+            } finally {
+                entriesLock.unlock();
+            }
+        }
+
+        private List<CompletableFutureEntry> removableEntries() {
+            CompletableFutureEntry[] entries = copyEntries();
+
+            List<CompletableFutureEntry> removableEntries = Collections.EMPTY_LIST;
+            for (CompletableFutureEntry entry : entries) {
+                if (entry.processState()) {
+                    if (removableEntries.isEmpty()) {
+                        removableEntries = new ArrayList<CompletableFutureEntry>(entries.length / 2);
+                    }
+
+                    removableEntries.add(entry);
+                }
+            }
+            return removableEntries;
+        }
+
+        private CompletableFutureEntry[] copyEntries() {
+            if (entries.isEmpty()) {
+                return new CompletableFutureEntry[]{};
             }
 
             CompletableFutureEntry[] copy;
             entriesLock.lock();
             try {
                 copy = new CompletableFutureEntry[entries.size()];
-                copy = this.entries.toArray(copy);
+                copy = entries.toArray(copy);
             } finally {
                 entriesLock.unlock();
             }
-            List<CompletableFutureEntry> removes = null;
-            for (CompletableFutureEntry entry : copy) {
-                if (entry.processState()) {
-                    if (removes == null) {
-                        removes = new ArrayList<CompletableFutureEntry>(copy.length / 2);
-                    }
-                    removes.add(entry);
-                }
-            }
-            // Remove processed elements
-            if (removes != null && !removes.isEmpty()) {
-                entriesLock.lock();
-                try {
-                    for (int i = 0; i < removes.size(); i++) {
-                        entries.remove(removes.get(i));
-                    }
-                } finally {
-                    entriesLock.unlock();
-                }
-            }
+            return copy;
         }
     }
 

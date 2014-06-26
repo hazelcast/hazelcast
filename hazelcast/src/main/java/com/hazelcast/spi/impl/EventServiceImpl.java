@@ -279,24 +279,25 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey) {
-        final Iterator<EventRegistration> iter = registrations.iterator();
+    public void publishEvent(String serviceName, Collection<EventRegistration> registrations,
+                             Object event, int orderKey) {
+
         Data eventData = null;
-        while (iter.hasNext()) {
-            EventRegistration registration = iter.next();
+        for (EventRegistration registration : registrations) {
             if (!(registration instanceof Registration)) {
                 throw new IllegalArgumentException();
             }
-            final Registration reg = (Registration) registration;
+            Registration reg = (Registration) registration;
             if (isLocal(reg)) {
                 executeLocal(serviceName, event, reg, orderKey);
-            } else {
-                if (eventData == null) {
-                    eventData = nodeEngine.toData(event);
-                }
-                final Address subscriber = registration.getSubscriber();
-                sendEventPacket(subscriber, new EventPacket(registration.getId(), serviceName, eventData), orderKey);
+                continue;
             }
+
+            if (eventData == null) {
+                eventData = nodeEngine.toData(event);
+            }
+            EventPacket eventPacket = new EventPacket(registration.getId(), serviceName, eventData);
+            sendEventPacket(registration.getSubscriber(), eventPacket, orderKey);
         }
     }
 
@@ -512,25 +513,41 @@ public class EventServiceImpl implements EventService {
         }
 
         void process(EventPacket eventPacket) {
-            Object eventObject = eventPacket.event;
-            if (eventObject instanceof Data) {
-                eventObject = nodeEngine.toObject(eventObject);
+            Object eventObject = getEventObject(eventPacket);
+            String serviceName = eventPacket.serviceName;
+
+            EventPublishingService<Object, Object> service = getPublishingService(serviceName);
+            if (service == null) {
+                return;
             }
-            final String serviceName = eventPacket.serviceName;
+
+            Registration registration = getRegistration(eventPacket, serviceName);
+            if (registration == null) {
+                return;
+            }
+            service.dispatchEvent(eventObject, registration.listener);
+        }
+
+        private EventPublishingService<Object, Object> getPublishingService(String serviceName) {
             EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
             if (service == null) {
                 if (nodeEngine.isActive()) {
                     logger.warning("There is no service named: " + serviceName);
                 }
-                return;
+                return null;
             }
+            return service;
+        }
+
+        private Registration getRegistration(EventPacket eventPacket, String serviceName) {
             EventServiceSegment segment = getSegment(serviceName, false);
             if (segment == null) {
                 if (nodeEngine.isActive()) {
                     logger.warning("No service registration found for " + serviceName);
                 }
-                return;
+                return null;
             }
+
             Registration registration = segment.registrationIdMap.get(eventPacket.id);
             if (registration == null) {
                 if (nodeEngine.isActive()) {
@@ -538,17 +555,28 @@ public class EventServiceImpl implements EventService {
                         logger.finest("No registration found for " + serviceName + " / " + eventPacket.id);
                     }
                 }
-                return;
+                return null;
             }
+
             if (!isLocal(registration)) {
                 logger.severe("Invalid target for  " + registration);
-                return;
+                return null;
             }
+
             if (registration.listener == null) {
                 logger.warning("Something seems wrong! Subscriber is local but listener instance is null! -> " + registration);
-                return;
+                return null;
             }
-            service.dispatchEvent(eventObject, registration.listener);
+
+            return registration;
+        }
+
+        private Object getEventObject(EventPacket eventPacket) {
+            Object eventObject = eventPacket.event;
+            if (eventObject instanceof Data) {
+                eventObject = nodeEngine.toObject(eventObject);
+            }
+            return eventObject;
         }
 
         @Override
@@ -668,6 +696,7 @@ public class EventServiceImpl implements EventService {
             return localOnly;
         }
 
+        //CHECKSTYLE:OFF
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -697,6 +726,7 @@ public class EventServiceImpl implements EventService {
 
             return true;
         }
+        //CHECKSTYLE:ON
 
         @Override
         public int hashCode() {
