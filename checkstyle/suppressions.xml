@@ -228,7 +228,8 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="MethodCount" files="com.hazelcast.spi.Operation"/>
-
+    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiDataSerializerHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiPortableHook"/>
     <!-- since this class needs to manage services, it knows about them. So it is fine to have lots
@@ -237,21 +238,19 @@
     <!-- the following suppressions are ok because these classes are the heart of the system. Although
          in the future we need to get rid of classes knowing about node/node-engine because it is a
          god-object -->
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.EventServiceImpl"/>
     <!-- the invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
     <!-- the partition-invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicPartitionInvocation"/>
 
+    <!-- these need to be solved-->
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocation"/>
-
     <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
-
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.EventServiceImpl"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
 
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
