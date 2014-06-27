@@ -16,6 +16,7 @@
 
 package com.hazelcast.ascii.memcache;
 
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandService;
 
 import java.io.UnsupportedEncodingException;
@@ -48,10 +49,10 @@ public class DeleteCommandProcessor extends MemcacheCommandProcessor<DeleteComma
             final Object oldValue = textCommandService.delete(mapName, key);
             if (oldValue == null) {
                 textCommandService.incrementDeleteMissCount();
-                command.setResponse(NOT_FOUND);
+                command.setResponse(TextCommandConstants.NOT_FOUND);
             } else {
                 textCommandService.incrementDeleteHitCount(1);
-                command.setResponse(DELETED);
+                command.setResponse(TextCommandConstants.DELETED);
             }
         }
 

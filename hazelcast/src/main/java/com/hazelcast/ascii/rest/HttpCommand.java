@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.rest;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
@@ -28,7 +29,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final String HEADER_CONTENT_LENGTH = "content-length: ";
     public static final String HEADER_CHUNKED = "transfer-encoding: chunked";
     public static final String HEADER_EXPECT_100 = "expect: 100";
-
     public static final byte[] RES_200 = stringToBytes("HTTP/1.1 200 OK\r\n");
     public static final byte[] RES_400 = stringToBytes("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n");
     public static final byte[] RES_403 = stringToBytes("HTTP/1.1 403 Forbidden\r\n\r\n");
@@ -46,7 +46,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
     protected ByteBuffer response;
 
 
-    public HttpCommand(TextCommandType type, String uri) {
+    public HttpCommand(TextCommandConstants.TextCommandType type, String uri) {
         super(type);
         this.uri = uri;
     }
@@ -91,29 +91,29 @@ public abstract class HttpCommand extends AbstractTextCommand {
         if (contentType != null) {
             size += CONTENT_TYPE.length;
             size += contentType.length;
-            size += RETURN.length;
+            size += TextCommandConstants.RETURN.length;
         }
         size += CONTENT_LENGTH.length;
         size += len.length;
-        size += RETURN.length;
-        size += RETURN.length;
+        size += TextCommandConstants.RETURN.length;
+        size += TextCommandConstants.RETURN.length;
         size += valueSize;
-        size += RETURN.length;
+        size += TextCommandConstants.RETURN.length;
         this.response = ByteBuffer.allocate(size);
         response.put(RES_200);
         if (contentType != null) {
             response.put(CONTENT_TYPE);
             response.put(contentType);
-            response.put(RETURN);
+            response.put(TextCommandConstants.RETURN);
         }
         response.put(CONTENT_LENGTH);
         response.put(len);
-        response.put(RETURN);
-        response.put(RETURN);
+        response.put(TextCommandConstants.RETURN);
+        response.put(TextCommandConstants.RETURN);
         if (value != null) {
             response.put(value);
         }
-        response.put(RETURN);
+        response.put(TextCommandConstants.RETURN);
         response.flip();
     }
 

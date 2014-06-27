@@ -24,7 +24,7 @@ public class NoOpCommand extends AbstractTextCommand {
     final ByteBuffer response;
 
     public NoOpCommand(byte[] response) {
-        super(TextCommandType.NO_OP);
+        super(TextCommandConstants.TextCommandType.NO_OP);
         this.response = ByteBuffer.wrap(response);
     }
 

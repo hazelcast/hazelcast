@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 
 import java.nio.ByteBuffer;
 
@@ -32,7 +33,7 @@ public class TouchCommand extends AbstractTextCommand {
     boolean noreply;
     ByteBuffer response;
 
-    public TouchCommand(TextCommandType type, String key, int expiration, boolean noReply) {
+    public TouchCommand(TextCommandConstants.TextCommandType type, String key, int expiration, boolean noReply) {
         super(type);
         this.key = key;
         this.expiration = expiration;
@@ -41,7 +42,7 @@ public class TouchCommand extends AbstractTextCommand {
 
     public boolean writeTo(ByteBuffer destination) {
         if (response == null) {
-            response = ByteBuffer.wrap(STORED);
+            response = ByteBuffer.wrap(TextCommandConstants.STORED);
         }
         while (destination.hasRemaining() && response.hasRemaining()) {
             destination.put(response.get());
