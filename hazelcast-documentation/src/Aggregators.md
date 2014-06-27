@@ -26,7 +26,8 @@ versions. In addition to that the whole Aggregations API has full Java 8 Project
 [JSR 335](https://jcp.org/en/jsr/detail?id=335)) support.
 
 For illustration of the differences in Java 6 and 7 in comparison to Java 8 we now will have a quick look at both sourcecode
-examples. After that the documentation will go on using Java 8 syntax to keep examples short and easy to understand.
+examples. After that the documentation will focus on using Java 8 syntax to keep examples short and easy to understand but still
+offers some hints what it looks like on Java 6 or 7 style as well.
 
 The first basic example will produce the sum of some int values stored in a Hazelcast IMap. This is a very basic example not yet
 using a lot of the functionality of the Aggregations framework but will already perfectly show the main difference.
@@ -111,6 +112,14 @@ Supplier<...> supplier = Supplier.fromKeyPredicate(
 );
 ```
 
+```java
+class JoneyKeyPredicate implements KeyPredicate<String> {
+  public boolean evaluate( String key ) {
+    return "Jones".equalsIgnoreCase( key );
+  }
+}
+```
+
 Using the standard Hazelcst `Predicate` interface you can also filter based on the value of an data entry. For example you can
 only select values which are divisible without remainder by 4 using the following example. 
 
@@ -118,6 +127,14 @@ only select values which are divisible without remainder by 4 using the followin
 Supplier<...> supplier = Supplier.fromPredicate(
     entry -> entry.getValue() % 4 == 0
 );
+```
+
+```java
+class DivisiblePredicate implements Predicate<String, Integer> {
+  public boolean apply(Map.Entry<String, Integer> entry) {
+    return entry.getValue() % 4 == 0;
+  }
+}
 ```
 
 Beside from the fact that a `Supplier` is used for filtering it is also used to extract or transform data before supplying them
@@ -128,6 +145,8 @@ Supplier<String, Integer, String> supplier = Supplier.all(
     value -> Integer.toString(value)
 );
 ```
+
+A Java 6 / 7 example will follow up below.
 
 Apart from the fact we transformed the input value of type int (or Integer) to a string we can see, that the generic information
 of the resulting `Supplier` has changed as well, indicating that we now would have an aggregation working on string values.
@@ -179,6 +198,14 @@ class Person {
 }
 
 PropertyExtractor<Person, Integer> propertyExtractor = (person) -> person.getAge();
+```
+
+```java
+class AgeExtractor implements PropertyExtractor<Person, Integer> {
+  public Integer extract(Person value) {
+    return value.getAge();
+  }
+}
 ```
 
 In this example we extract the value from the person's age attribute and so the value type changes from person to Integer which
