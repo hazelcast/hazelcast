@@ -50,7 +50,7 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
                 continue;
             }
             if (entry.getValue() == null) {
-                recordStore.remove(key);
+                recordStore.deleteRecord(key);
             } else {
                 recordStore.putBackup(key, entry.getValue());
             }
