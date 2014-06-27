@@ -55,7 +55,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
             return;
         }
         if (entry.getValue() == null) {
-            recordStore.remove(dataKey);
+            recordStore.removeBackup(dataKey);
         } else {
             recordStore.putBackup(dataKey, entry.getValue());
         }
