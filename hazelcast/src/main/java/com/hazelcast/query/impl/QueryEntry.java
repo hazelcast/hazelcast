@@ -48,9 +48,6 @@ public class QueryEntry implements QueryableEntry {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
-        if (value == null) {
-            throw new IllegalArgumentException("value cannot be null");
-        }
         this.indexKey = indexKey;
         if (key instanceof Data) {
             this.key = (Data) key;

@@ -183,6 +183,8 @@ public interface IMap<K, V>
      * This method breaks the contract of EntryListener.
      * When an entry is removed by delete(), it fires an EntryEvent with a null oldValue.
      * <p/>
+     * Also listener with predicates, will have null values, so only keys can be queried via predicates.
+     * <p/>
      *
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException   if the key is of an inappropriate type for
