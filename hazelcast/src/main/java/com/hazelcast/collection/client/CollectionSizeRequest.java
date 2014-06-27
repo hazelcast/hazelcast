@@ -44,4 +44,9 @@ public class CollectionSizeRequest extends CollectionRequest {
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }
+
+    @Override
+    public String getMethodName() {
+        return "size";
+    }
 }

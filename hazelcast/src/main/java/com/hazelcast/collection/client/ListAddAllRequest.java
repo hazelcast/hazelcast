@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -55,5 +56,10 @@ public class ListAddAllRequest extends CollectionAddAllRequest {
     public void read(PortableReader reader) throws IOException {
         index = reader.readInt("i");
         super.read(reader);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{index, valueList};
     }
 }

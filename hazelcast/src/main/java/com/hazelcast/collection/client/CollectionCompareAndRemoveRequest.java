@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -80,5 +81,18 @@ public class CollectionCompareAndRemoveRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_REMOVE;
+    }
+
+    @Override
+    public String getMethodName() {
+        if (retain) {
+            return "retainAll";
+        }
+        return "removeAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{valueSet};
     }
 }

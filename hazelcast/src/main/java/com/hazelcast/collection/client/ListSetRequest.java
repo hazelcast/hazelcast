@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
 public class ListSetRequest extends CollectionRequest {
@@ -66,5 +67,15 @@ public class ListSetRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "set";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{index, value};
     }
 }
