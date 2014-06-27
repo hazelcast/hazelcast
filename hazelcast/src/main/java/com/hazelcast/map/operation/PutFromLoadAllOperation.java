@@ -85,7 +85,7 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
             final Data key = keyValueSequence.get(i);
             dataKeys.add(key);
         }
-        mapService.invalidateNearCache(name, dataKeys);
+        mapService.getNearCacheProvider().invalidateNearCache(name, dataKeys);
     }
 
     @Override

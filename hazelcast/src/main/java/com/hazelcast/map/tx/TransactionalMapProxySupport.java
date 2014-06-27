@@ -96,7 +96,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final MapService mapService = getService();
         final boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Object cached = mapService.getFromNearCache(name, key);
+            Object cached = mapService.getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
                 if (cached.equals(NearCache.NULL_OBJECT)) {
                     cached = null;

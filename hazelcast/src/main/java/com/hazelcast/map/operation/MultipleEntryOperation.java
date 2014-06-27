@@ -105,8 +105,8 @@ public class MultipleEntryOperation extends AbstractMapOperation
                 final Data oldValue = mapService.toData(valueBeforeProcess);
                 final Data value = mapService.toData(valueAfterProcess);
                 mapService.publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
-                if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-                    mapService.invalidateAllNearCaches(name, key);
+                if (mapService.getNearCacheProvider().isNearCacheAndInvalidationEnabled(name)) {
+                    mapService.getNearCacheProvider().invalidateAllNearCaches(name, key);
                 }
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     if (EntryEventType.REMOVED.equals(eventType)) {
