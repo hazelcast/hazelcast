@@ -21,6 +21,7 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.NearCacheProvider;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
@@ -131,8 +132,9 @@ public final class EvictionHelper {
 
     private static void interceptAndInvalidate(MapService mapService, long value, Data tmpKey, String mapName) {
         mapService.interceptAfterRemove(mapName, value);
-        if (mapService.isNearCacheAndInvalidationEnabled(mapName)) {
-            mapService.invalidateAllNearCaches(mapName, tmpKey);
+        final NearCacheProvider nearCacheProvider = mapService.getNearCacheProvider();
+        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
+            nearCacheProvider.invalidateAllNearCaches(mapName, tmpKey);
         }
     }
 

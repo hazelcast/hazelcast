@@ -209,7 +209,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final MapService mapService = getService();
         final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Object cached = mapService.getFromNearCache(name, key);
+            Object cached = mapService.getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
                 if (NearCache.NULL_OBJECT.equals(cached)) {
                     cached = null;
@@ -242,7 +242,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
                     .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
-                return mapService.putNearCache(name, key, result);
+                return mapService.getNearCacheProvider().putNearCache(name, key, result);
             }
         }
         return result;
@@ -254,7 +254,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Object cached = mapService.getFromNearCache(name, key);
+            Object cached = mapService.getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
                 if (NearCache.NULL_OBJECT.equals(cached)) {
                     cached = null;
@@ -278,7 +278,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
                         if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
                                 .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
-                            mapService.putNearCache(name, key, response);
+                            mapService.getNearCacheProvider().putNearCache(name, key, response);
                         }
                     }
                 }
@@ -408,7 +408,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
             }
-            if(numberOfAffectedEntries > 0 ){
+            if (numberOfAffectedEntries > 0) {
                 publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
             }
         } catch (Throwable t) {
@@ -600,7 +600,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             final Iterator<Data> iterator = keys.iterator();
             while (iterator.hasNext()) {
                 Data key = iterator.next();
-                Object cachedValue = mapService.getFromNearCache(name, key);
+                Object cachedValue = mapService.getNearCacheProvider().getFromNearCache(name, key);
                 if (cachedValue != null) {
                     if (!NearCache.NULL_OBJECT.equals(cachedValue)) {
                         result.put(mapService.toObject(key), mapService.toObject(cachedValue));
@@ -625,7 +625,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
                         if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
                                 .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
-                            mapService.putNearCache(name, entry.getKey(), entry.getValue());
+                            mapService.getNearCacheProvider().putNearCache(name, entry.getKey(), entry.getValue());
                         }
                     }
                 }
@@ -809,7 +809,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
             }
-            if(numberOfAffectedEntries > 0 ){
+            if (numberOfAffectedEntries > 0) {
                 publishMapEvent(numberOfAffectedEntries, EntryEventType.CLEAR_ALL);
             }
         } catch (Throwable t) {
@@ -1246,14 +1246,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     public LocalMapStats getLocalMapStats() {
-        return getService().createLocalMapStats(name);
+        return getService().getLocalMapStatsProvider().createLocalMapStats(name);
     }
 
     private boolean isKeyInNearCache(Data key) {
         final MapService mapService = getService();
         final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Object cached = mapService.getFromNearCache(name, key);
+            Object cached = mapService.getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null && !cached.equals(NearCache.NULL_OBJECT)) {
                 return true;
             }
@@ -1265,18 +1265,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (key == null) {
             return;
         }
-        getService().invalidateNearCache(name, key);
+        getService().getNearCacheProvider().invalidateNearCache(name, key);
     }
 
     private void invalidateNearCache(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        getService().invalidateNearCache(name, keys);
+        getService().getNearCacheProvider().invalidateNearCache(name, keys);
     }
 
     private void clearNearCache() {
-        getService().clearNearCache(name);
+        getService().getNearCacheProvider().clearNearCache(name);
     }
 
     private void publishMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {

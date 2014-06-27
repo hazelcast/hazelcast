@@ -118,7 +118,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     protected final void invalidateNearCaches() {
         if (mapContainer.isNearCacheEnabled()
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-            mapService.invalidateAllNearCaches(name, dataKey);
+            mapService.getNearCacheProvider().invalidateAllNearCaches(name, dataKey);
         }
     }
 

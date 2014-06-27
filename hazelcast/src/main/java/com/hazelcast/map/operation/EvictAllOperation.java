@@ -28,7 +28,7 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
     public void run() throws Exception {
 
         // TODO this also clears locked keys from near cache which should be preserved.
-        mapService.clearNearCache(name);
+        mapService.getNearCacheProvider().clearNearCache(name);
 
         final RecordStore recordStore = mapService.getExistingRecordStore(getPartitionId(), name);
         if (recordStore == null) {

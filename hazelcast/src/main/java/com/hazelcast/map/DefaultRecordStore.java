@@ -1337,8 +1337,8 @@ public class DefaultRecordStore implements RecordStore {
      * @param value the value to be processed.
      */
     private void doPostEvictionOperations(Data key, Object value) {
-        if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-            mapService.invalidateAllNearCaches(name, key);
+        if (mapService.getNearCacheProvider().isNearCacheAndInvalidationEnabled(name)) {
+            mapService.getNearCacheProvider().invalidateAllNearCaches(name, key);
         }
         EvictionHelper.fireEvent(key, value, name, mapService);
     }

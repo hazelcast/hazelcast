@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryViews;
 import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.NearCacheProvider;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
@@ -94,8 +95,9 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     }
 
     protected final void invalidateNearCaches(Set<Data> keys) {
-        if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-            mapService.invalidateAllNearCaches(name, keys);
+        final NearCacheProvider nearCacheProvider = mapService.getNearCacheProvider();
+        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(name)) {
+            nearCacheProvider.invalidateAllNearCaches(name, keys);
         }
     }
 

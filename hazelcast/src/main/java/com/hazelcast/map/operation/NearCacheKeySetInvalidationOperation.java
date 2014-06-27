@@ -45,7 +45,7 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation {
     public void run() {
         mapService = getService();
         if (mapService.getMapContainer(mapName).isNearCacheEnabled()) {
-            mapService.invalidateNearCache(mapName, mapKeySet.getKeySet());
+            mapService.getNearCacheProvider().invalidateNearCache(mapName, mapKeySet.getKeySet());
         } else {
             getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for " + mapName + " map. Possible configuration conflict among nodes.");
         }

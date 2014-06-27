@@ -120,8 +120,8 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
                 final Data oldValue = mapService.toData(valueBeforeProcess);
                 final Data value = mapService.toData(valueAfterProcess);
                 mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, value);
-                if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-                    mapService.invalidateAllNearCaches(name, dataKey);
+                if (mapService.getNearCacheProvider().isNearCacheAndInvalidationEnabled(name)) {
+                    mapService.getNearCacheProvider().invalidateAllNearCaches(name, dataKey);
                 }
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     if (EntryEventType.REMOVED.equals(eventType)) {
