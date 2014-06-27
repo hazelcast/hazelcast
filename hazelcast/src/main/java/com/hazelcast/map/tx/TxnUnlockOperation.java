@@ -27,7 +27,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 
 /**
- * @author mdogan 3/25/13
+ * An operation to unlock key on the partition owner.
  */
 public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOperation, BackupAwareOperation {
 
@@ -44,7 +44,6 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
 
     @Override
     public void run() {
-        System.out.println("Owner tid:" + getThreadId() + " pid:" + getPartitionId());
         recordStore.unlock(dataKey, ownerUuid, getThreadId());
     }
 

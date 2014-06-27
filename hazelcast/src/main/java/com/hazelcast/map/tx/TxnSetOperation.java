@@ -30,7 +30,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 
 /**
- * @author mdogan 3/25/13
+ * An operation to unlock and set (key,value) on the partition .
  */
 public class TxnSetOperation extends BasePutOperation implements MapTxnOperation {
 

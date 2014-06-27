@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -58,16 +58,18 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 /**
- * @author mdogan 2/26/13
+ * Base class contains proxy helper methods for {@link com.hazelcast.map.tx.TransactionalMapProxy}
  */
-public abstract class TransactionalMapProxySupport extends AbstractDistributedObject<MapService> implements TransactionalObject {
+public abstract class TransactionalMapProxySupport extends AbstractDistributedObject<MapService>
+        implements TransactionalObject {
 
     protected final String name;
     protected final TransactionSupport tx;
     protected final PartitioningStrategy partitionStrategy;
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
 
-    public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, TransactionSupport transaction) {
+    public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine,
+                                        TransactionSupport transaction) {
         super(nodeEngine, mapService);
         this.name = name;
         this.tx = transaction;
@@ -108,7 +110,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+            Future f = nodeEngine.getOperationService()
+                    .invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -186,7 +189,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key,
+                new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -195,7 +199,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         if (!getService().compare(name, versionedValue.value, value)) {
             return false;
         }
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key,
+                new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
@@ -209,10 +214,12 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            Future<VersionedValue> f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+            Future<VersionedValue> f = nodeEngine.getOperationService()
+                    .invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             versionedValue = f.get();
             if (versionedValue == null) {
-                throw new TransactionException("Transaction couldn't obtain lock for the key:" + getService().toObject(key));
+                throw new TransactionException("Transaction couldn't obtain lock for the key:"
+                        + getService().toObject(key));
             }
             valueMap.put(key, versionedValue);
             return versionedValue;
@@ -225,7 +232,10 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(new MapKeySetOperation(name), nodeEngine));
+                    .invokeOnAllPartitions(
+                            SERVICE_NAME,
+                            new BinaryOperationFactory(new MapKeySetOperation(name), nodeEngine)
+                    );
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
                 Set keys = ((MapKeySet) getService().toObject(result)).getKeySet();
@@ -241,7 +251,10 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(new MapValuesOperation(name), nodeEngine));
+                    .invokeOnAllPartitions(
+                            SERVICE_NAME,
+                            new BinaryOperationFactory(new MapValuesOperation(name), nodeEngine)
+                    );
             List<Data> values = new ArrayList<Data>();
             for (Object result : results.values()) {
                 values.addAll(((MapValueCollection) getService().toObject(result)).getValues());
@@ -257,63 +270,82 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        Set<Integer> plist = new HashSet<Integer>(partitionCount);
+        Set<Integer> partitions = new HashSet<Integer>(partitionCount);
         QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
         List<Integer> missingList = new ArrayList<Integer>();
         try {
-            List<Future> flist = new ArrayList<Future>();
-            for (MemberImpl member : members) {
-                Future future = operationService
-                        .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
-                flist.add(future);
-            }
-            for (Future future : flist) {
-                QueryResult queryResult = (QueryResult) future.get();
-                if (queryResult != null) {
-                    final List<Integer> partitionIds = queryResult.getPartitionIds();
-                    if (partitionIds != null) {
-                        plist.addAll(partitionIds);
-                        result.addAll(queryResult.getResult());
-                    }
-                }
-            }
-            if (plist.size() == partitionCount) {
+            List<Future> futures = new ArrayList<Future>();
+            invokeQueryOperaration(predicate, operationService, members, futures);
+            collectResults(partitions, result, futures);
+            if (partitions.size() == partitionCount) {
                 return result;
             }
-            for (int i = 0; i < partitionCount; i++) {
-                if (!plist.contains(i)) {
-                    missingList.add(i);
-                }
-            }
+            findMissingPartitions(partitionCount, partitions, missingList);
         } catch (Throwable t) {
             missingList.clear();
-            for (int i = 0; i < partitionCount; i++) {
-                if (!plist.contains(i)) {
-                    missingList.add(i);
-                }
-            }
+            findMissingPartitions(partitionCount, partitions, missingList);
         }
-
         try {
-            List<Future> futures = new ArrayList<Future>(missingList.size());
-            for (Integer pid : missingList) {
-                QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-                queryPartitionOperation.setPartitionId(pid);
-                try {
-                    Future f = operationService.invokeOnPartition(SERVICE_NAME, queryPartitionOperation, pid);
-                    futures.add(f);
-                } catch (Throwable t) {
-                    throw ExceptionUtil.rethrow(t);
-                }
-            }
-            for (Future future : futures) {
-                QueryResult queryResult = (QueryResult) future.get();
-                result.addAll(queryResult.getResult());
-            }
+            List<Future> missingFutures = new ArrayList<Future>(missingList.size());
+            invokeOperationOnMissingPartitions(predicate, operationService, missingList, missingFutures);
+            collectResultsFromMissingPartitions(result, missingFutures);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
         return result;
+    }
+
+    private void collectResultsFromMissingPartitions(QueryResultSet result, List<Future> futures)
+            throws InterruptedException, java.util.concurrent.ExecutionException {
+        for (Future future : futures) {
+            QueryResult queryResult = (QueryResult) future.get();
+            result.addAll(queryResult.getResult());
+        }
+    }
+
+    private void invokeOperationOnMissingPartitions(Predicate predicate, OperationService operationService,
+                                                    List<Integer> missingList, List<Future> futures) {
+        for (Integer pid : missingList) {
+            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+            queryPartitionOperation.setPartitionId(pid);
+            try {
+                Future f = operationService.invokeOnPartition(SERVICE_NAME, queryPartitionOperation, pid);
+                futures.add(f);
+            } catch (Throwable t) {
+                throw ExceptionUtil.rethrow(t);
+            }
+        }
+    }
+
+    private void findMissingPartitions(int partitionCount, Set<Integer> plist, List<Integer> missingList) {
+        for (int i = 0; i < partitionCount; i++) {
+            if (!plist.contains(i)) {
+                missingList.add(i);
+            }
+        }
+    }
+
+    private void collectResults(Set<Integer> plist, QueryResultSet result, List<Future> futures)
+            throws InterruptedException, java.util.concurrent.ExecutionException {
+        for (Future future : futures) {
+            QueryResult queryResult = (QueryResult) future.get();
+            if (queryResult != null) {
+                final List<Integer> partitionIds = queryResult.getPartitionIds();
+                if (partitionIds != null) {
+                    plist.addAll(partitionIds);
+                    result.addAll(queryResult.getResult());
+                }
+            }
+        }
+    }
+
+    private void invokeQueryOperaration(Predicate predicate, OperationService operationService,
+                                        Collection<MemberImpl> members, List<Future> futures) {
+        for (MemberImpl member : members) {
+            Future future = operationService
+                    .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
+            futures.add(future);
+        }
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {

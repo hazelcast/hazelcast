@@ -20,6 +20,9 @@ import com.hazelcast.map.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
+/**
+ * An operation to unlock key on the backup owner.
+ */
 public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
 
