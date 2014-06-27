@@ -209,7 +209,7 @@ public class StoreWorker implements Runnable {
     }
 
     private WriteBehindQueue<DelayedEntry> getWriteBehindQueue(RecordStore recordStore) {
-        final WriteBehindMapDataStore storeManager = (WriteBehindMapDataStore) recordStore.getMapDataStore();
+        final WriteBehindStore storeManager = (WriteBehindStore) recordStore.getMapDataStore();
         return storeManager.getWriteBehindQueue();
     }
 }

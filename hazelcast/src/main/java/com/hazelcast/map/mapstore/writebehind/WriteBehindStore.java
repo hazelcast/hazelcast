@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Write behind map data store implementation.
  * Created per every record-store.
  */
-public class WriteBehindMapDataStore extends AbstractMapDataStore<Data, Object> {
+public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     private long writeDelayTime;
 
@@ -58,9 +58,9 @@ public class WriteBehindMapDataStore extends AbstractMapDataStore<Data, Object> 
 
     private long lastCleanupTime;
 
-    public WriteBehindMapDataStore(MapStoreWrapper store, SerializationService serializationService,
-                                   long writeDelayTime, int partitionId, int maxPerNodeWriteBehindQueueSize,
-                                   AtomicInteger writeBehindItemCounter) {
+    public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
+                            long writeDelayTime, int partitionId, int maxPerNodeWriteBehindQueueSize,
+                            AtomicInteger writeBehindItemCounter) {
         super(store, serializationService);
         this.writeDelayTime = writeDelayTime;
         this.partitionId = partitionId;

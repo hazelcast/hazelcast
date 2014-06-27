@@ -28,9 +28,9 @@ import java.util.Collections;
  * Write through map data store implementation.
  * Created per map.
  */
-public class WriteThroughMapDataStore extends AbstractMapDataStore<Data, Object> {
+public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
 
-    public WriteThroughMapDataStore(MapStoreWrapper store, SerializationService serializationService) {
+    public WriteThroughStore(MapStoreWrapper store, SerializationService serializationService) {
         super(store, serializationService);
     }
 

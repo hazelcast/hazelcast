@@ -3,9 +3,9 @@ package com.hazelcast.map.mapstore;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapStoreWrapper;
-import com.hazelcast.map.mapstore.writebehind.WriteBehindMapDataStore;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.mapstore.writebehind.WriteBehindProcessor;
-import com.hazelcast.map.mapstore.writethrough.WriteThroughMapDataStore;
+import com.hazelcast.map.mapstore.writethrough.WriteThroughStore;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.concurrent.TimeUnit;
@@ -39,8 +39,8 @@ public final class MapDataStores {
         final long millis = MapService.convertTime(writeDelaySeconds, TimeUnit.SECONDS);
         final int capacity = mapService.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
         final AtomicInteger writeBehindQueueItemCounter = mapService.getWriteBehindQueueItemCounter();
-        final WriteBehindMapDataStore mapDataStore
-                = new WriteBehindMapDataStore(store, serializationService, millis,
+        final WriteBehindStore mapDataStore
+                = new WriteBehindStore(store, serializationService, millis,
                 partitionId, capacity, writeBehindQueueItemCounter);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
         return (MapDataStore<K, V>) mapDataStore;
@@ -55,7 +55,7 @@ public final class MapDataStores {
      * @return new write through store manager.
      */
     public static <K, V> MapDataStore<K, V> createWriteThroughStore(MapContainer mapContainer) {
-        return (MapDataStore<K, V>) new WriteThroughMapDataStore(mapContainer.getStore(),
+        return (MapDataStore<K, V>) new WriteThroughStore(mapContainer.getStore(),
                 mapContainer.getMapService().getSerializationService());
     }
 

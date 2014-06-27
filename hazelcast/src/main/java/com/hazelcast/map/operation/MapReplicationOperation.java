@@ -22,7 +22,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.mapstore.writebehind.DelayedEntry;
-import com.hazelcast.map.mapstore.writebehind.WriteBehindMapDataStore;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordReplicationInfo;
@@ -92,7 +92,7 @@ public class MapReplicationOperation extends AbstractOperation {
                 continue;
             }
             final WriteBehindQueue<DelayedEntry> writeBehindQueue
-                    = ((WriteBehindMapDataStore) recordStore.getMapDataStore()).getWriteBehindQueue();
+                    = ((WriteBehindStore) recordStore.getMapDataStore()).getWriteBehindQueue();
             final List<DelayedEntry> delayedEntries = writeBehindQueue.getSnapShot().asList();
             if (delayedEntries != null && delayedEntries.size() == 0) {
                 continue;
@@ -128,7 +128,7 @@ public class MapReplicationOperation extends AbstractOperation {
             final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), entry.getKey());
             final List<DelayedEntry> replicatedEntries = entry.getValue();
             final WriteBehindQueue<DelayedEntry> writeBehindQueue
-                    = ((WriteBehindMapDataStore) recordStore.getMapDataStore()).getWriteBehindQueue();
+                    = ((WriteBehindStore) recordStore.getMapDataStore()).getWriteBehindQueue();
             writeBehindQueue.addEnd(replicatedEntries);
         }
     }

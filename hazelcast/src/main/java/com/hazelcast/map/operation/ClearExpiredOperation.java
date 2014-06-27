@@ -20,7 +20,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.mapstore.MapDataStore;
-import com.hazelcast.map.mapstore.writebehind.WriteBehindMapDataStore;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -64,8 +64,8 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
             return;
         }
         final MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
-        if (mapDataStore instanceof WriteBehindMapDataStore) {
-            ((WriteBehindMapDataStore) mapDataStore).cleanupEvictionStagingArea(now);
+        if (mapDataStore instanceof WriteBehindStore) {
+            ((WriteBehindStore) mapDataStore).cleanupEvictionStagingArea(now);
         }
     }
 
