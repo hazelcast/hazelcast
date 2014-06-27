@@ -513,11 +513,38 @@ int count = employees.aggregate( Supplier.all(), Aggregations.count() );
 ```
 
 We now have a good overview of how to use aggregations in real life situations. If you want to do your colleagues a favor you
-might want to end up writing your own additional set of aggregations. Then please read on the next chapter, if not just stop
-here.
+might want to end up writing your own additional set of aggregations. Then please read on the next chapter, if not just stop here.
 
 ### Implementing Aggregations
 
+This chapter is about to explain how to implement your own aggregations for convenient reasons in your own application. This
+chapter is meant to be an advanced users section so if you don't intend to implement your own aggregation you might want to stop
+reading here and probably come back at a later point in time when there is a need to know how to implement your own aggregation.
 
+The main interface for making your own aggregation is `com.hazelcast.mapreduce.aggregation.Aggregation`. It consists of four
+methods can be explained very briefly.
+ 
+```java
+interface Aggregation<Key, Supplied, Result> {
+  Mapper getMapper(Supplier<Key, ?, Supplied> supplier);
+  CombinerFactory getCombinerFactory();
+  ReducerFactory getReducerFactory();
+  Collator<Map.Entry, Result> getCollator();
+}
+```
+ 
+As we can see an `Aggregation`implementation is nothing more than defining a map-reduce task with a small difference. The `Mapper`
+is always expected to work on a supplier that filters and / or transforms the mapped input value to some output value.
 
+Whereas `getMapper` and `getReducerFactory` are expected to return non-null values, `getCombinerFactory` and `getCollator` are
+optional operations and don't need to be implemented. If you want to implement those heavily depends on your usecase you want
+to achieve.
 
+For more information on how you implement mappers, combiners, reducer and collators you should have a look at the
+[MapReduce](#mapreduce), since it is out of the scope of this chapter to explain it.
+
+For best speed and traffic usage, as mentioned in the map-reduce documentation, you should add a `Combiner` to your aggregation
+whenever it is possible to do some kind of pre-reduction step.
+
+Your implementation also should use DataSerializable or IdentifiedDataSerializable for best compatibility and speed / stream-size
+reasons.
