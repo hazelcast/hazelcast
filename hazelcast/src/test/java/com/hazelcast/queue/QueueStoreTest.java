@@ -66,7 +66,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
         queueStoreConfig.setStoreImplementation(queueStore);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-         HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
         for (int i = 0; i < maxSize * 2; i++) {
             queueStore.store.put((long) i, i);
@@ -193,6 +193,72 @@ public class QueueStoreTest extends HazelcastTestSupport {
 
         queueStore.assertAwait(3);
     }
+
+    @Test
+    public void testStoreId_whenNodeDown() {
+        final Config config = new Config();
+        final QueueConfig queueConfig = config.getQueueConfig("default");
+        final IdCheckerQueueStore idCheckerQueueStore = new IdCheckerQueueStore();
+        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        queueStoreConfig.setEnabled(true).setStoreImplementation(idCheckerQueueStore);
+        queueConfig.setQueueStoreConfig(queueStoreConfig);
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        final String name = generateKeyOwnedBy(instance1);
+        final IQueue<Object> queue = instance2.getQueue(name);
+        queue.offer(randomString());
+        queue.offer(randomString());
+        queue.offer(randomString());
+
+        instance1.shutdown();
+
+        queue.offer(randomString());
+
+    }
+
+    static class IdCheckerQueueStore implements QueueStore {
+
+        Long lastKey;
+
+        @Override
+        public void store(final Long key, final Object value) {
+            if (lastKey != null && lastKey >= key) {
+                throw new RuntimeException("key[" + key + "] is already stored");
+            }
+            lastKey = key;
+        }
+
+        @Override
+        public void storeAll(final Map map) {
+        }
+
+        @Override
+        public void delete(final Long key) {
+        }
+
+        @Override
+        public void deleteAll(final Collection keys) {
+        }
+
+        @Override
+        public Object load(final Long key) {
+            return null;
+        }
+
+        @Override
+        public Map loadAll(final Collection keys) {
+            return null;
+        }
+
+        @Override
+        public Set<Long> loadAllKeys() {
+            return null;
+        }
+    }
+
 
     public static class TestQueueStore implements QueueStore {
 
