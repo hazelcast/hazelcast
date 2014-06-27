@@ -18,6 +18,7 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -47,16 +48,21 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     public void run() {
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryForBackup(dataKey);
-        if (mapEntry.getValue() != null) {
-            Map.Entry<Object, Object> entry = new AbstractMap.SimpleEntry<Object, Object>(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
-            entryProcessor.processBackup(entry);
-            if (entry.getValue() == null){
-                recordStore.remove(dataKey);
-            } else {
-                recordStore.putBackup(dataKey, entry.getValue());
-            }
+        Object objectKey = mapService.toObject(dataKey);
+        final Object valueBeforeProcess = mapService.toObject(mapEntry.getValue());
+        MapEntrySimple<Object, Object> entry = new MapEntrySimple<Object, Object>(objectKey, valueBeforeProcess);
+        entryProcessor.processBackup(entry);
+        if (!entry.isModified()){
+            return;
         }
+        if (entry.getValue() == null) {
+            recordStore.deleteRecord(dataKey);
+        } else {
+            recordStore.putBackup(dataKey, entry.getValue());
+        }
+
     }
+
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
