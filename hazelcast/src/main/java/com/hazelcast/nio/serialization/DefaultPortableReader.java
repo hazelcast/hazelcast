@@ -19,11 +19,9 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 public class DefaultPortableReader implements PortableReader {
 

@@ -326,7 +326,7 @@ public final class UTFEncoderDecoder {
         }
     }
 
-    private interface StringCreator {
+    public interface StringCreator {
         String buildString(char[] chars);
     }
 
