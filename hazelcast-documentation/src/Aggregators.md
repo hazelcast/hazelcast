@@ -182,6 +182,75 @@ contains typesafe aggregations of the following types:
  - DistinctValues
  - Count
 
+Those aggregations are a lot like their counterparts on relational databases. Said that we can mostly translate them to their
+direct SQL like way of describing them:
+ 
+**Average:**
+
+```java
+map.aggregate( Supplier.all( person -> person.getAge() ),
+               Aggregations.integerAvg() );
+```
+
+```sql
+SELECT AVG(person.age) FROM person;
+```
+
+**Sum:***
+
+```java
+map.aggregate( Supplier.all( person -> person.getAge() ),
+               Aggregations.integerSum() );
+```
+
+```sql
+SELECT SUM(person.age) FROM person;
+```
+
+**Minimum (Min):**
+
+```java
+map.aggregate( Supplier.all( person -> person.getAge() ),
+               Aggregations.integerMin() );
+```
+
+```sql
+SELECT MIN(person.age) FROM person;
+```
+
+**Maximum (Max):**
+
+```java
+map.aggregate( Supplier.all( person -> person.getAge() ),
+               Aggregations.integerMax() );
+```
+
+```sql
+SELECT MAX(person.age) FROM person;
+```
+
+**Distinct Values:**
+
+```java
+map.aggregate( Supplier.all( person -> person.getAge() ),
+               Aggregations.distinctValues() );
+```
+
+```sql
+SELECT DISTINCT person.age FROM person;
+```
+
+**Count:**
+
+```java
+map.aggregate( Supplier.all(), Aggregations.count() );
+```
+
+```sql
+SELECT COUNT(*) FROM person;
+```
+
+
 #### PropertyExtractor
 
 We already used the `com.hazelcast.mapreduce.aggregation.PropertyExtractor` interface before when we had a look at the example
