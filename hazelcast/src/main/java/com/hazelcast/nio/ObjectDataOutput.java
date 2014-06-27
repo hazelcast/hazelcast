@@ -20,23 +20,60 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
+/**
+ * Provides serialization methods for arrays by extending DataOutput
+ */
 public interface ObjectDataOutput extends DataOutput {
 
+    /**
+     * @param chars char array to be written
+     * @throws IOException
+     */
     void writeCharArray(char[] chars) throws IOException;
 
+    /**
+     * @param ints int array to be written
+     * @throws IOException
+     */
     void writeIntArray(int[] ints) throws IOException;
 
+    /**
+     * @param longs long array to be written
+     * @throws IOException
+     */
     void writeLongArray(long[] longs) throws IOException;
 
+    /**
+     * @param values double to be written
+     * @throws IOException
+     */
     void writeDoubleArray(double[] values) throws IOException;
 
+    /**
+     * @param values float to be written
+     * @throws IOException
+     */
     void writeFloatArray(float[] values) throws IOException;
 
+    /**
+     * @param values short to be written
+     * @throws IOException
+     */
     void writeShortArray(short[] values) throws IOException;
 
+    /**
+     * @param object object to be written
+     * @throws IOException
+     */
     void writeObject(Object object) throws IOException;
 
+    /**
+     * @return copy of internal byte array
+     */
     byte[] toByteArray();
 
+    /**
+     * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
+     */
     ByteOrder getByteOrder();
 }

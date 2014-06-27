@@ -18,9 +18,31 @@ package com.hazelcast.nio.serialization;
 
 import java.io.IOException;
 
+/**
+ * For sample usage custom serialization and other way of custom serialization
+ * see {@link com.hazelcast.nio.serialization.StreamSerializerAdapter}.
+ *
+ *  Note that read and write methods should be compatible
+ *
+ * @param <T> type of serialized object
+ */
 public interface ByteArraySerializer<T> extends Serializer {
 
+    /**
+     * Converts given object to byte array
+     *
+     * @param object that will be serialized
+     * @return byte array that object is serialized into
+     * @throws IOException
+     */
     byte[] write(T object) throws IOException;
 
+    /**
+     * Converts given byte array to object
+     *
+     * @param buffer that object will be read from
+     * @return deserialized object
+     * @throws IOException
+     */
     T read(byte[] buffer) throws IOException;
 }
