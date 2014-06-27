@@ -36,9 +36,12 @@ public class QueryEntry implements QueryableEntry {
     private PortableReader reader;
 
     public QueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
-        if (indexKey == null) throw new IllegalArgumentException("index keyData cannot be null");
-        if (key == null) throw new IllegalArgumentException("keyData cannot be null");
-        if (value == null) throw new IllegalArgumentException("value cannot be null");
+        if (indexKey == null) {
+            throw new IllegalArgumentException("index keyData cannot be null");
+        }
+        if (key == null) {
+            throw new IllegalArgumentException("keyData cannot be null");
+        }
         this.indexKey = indexKey;
         if (key instanceof Data) {
             this.key = (Data) key;
