@@ -16,8 +16,8 @@ will implement a first base example.
 Aggregations are available on both `com.hazelcast.core.IMap` and `com.hazelcast.core.MultiMap` interfaces using the `aggregate`
 methods. Two possible overloads of that method are available to support customized resource management of the underlying
 MapReduce framework by supplying a custom configured `com.hazelcast.mapreduce.JobTracker` instance. On how to configure
-the MapReduce framework please see the section about [JobTracker Configuration]. We will later see another way to configure the
-automatically used MapReduce framework if no special `JobTracker` is supplied.
+the MapReduce framework please see the section about [JobTracker Configuration](#jobtracker-configuration). We will later see
+another way to configure the automatically used MapReduce framework if no special `JobTracker` is supplied.
 
 To make Aggregations most convenient usable and future proof, the API is already heavily optimized for Java 8 and future version
 but still fully compatible to any Java version Hazelcast supports (Java 6 and Java 7). The biggest difference is how you have to
@@ -79,9 +79,9 @@ a `JobTracker` which is part of the MapReduce framework.
 
 If you are going to implement your own aggregations you also end up implementing them using a mixture of the Aggregations and
 the MapReduce API. If you are looking forward to implement your own aggregation, e.g. to make the life of colleagues easier,
-please read [Implementing Aggregations].
+please read [Implementing Aggregations](#implementing-aggregations).
 
-For the full MapReduce documentation please see [MapReduce].
+For the full MapReduce documentation please see [MapReduce](#mapreduce).
 
 
 ### Introduction to Aggregations API
@@ -170,7 +170,7 @@ Supplier<String, Integer, String> supplier =
 The `com.hazelcast.mapreduce.aggregation.Aggregation` interface defines the aggregation operation itself. It contains a set of
 MapReduce API implementations like `Mapper`, `Combiner`, `Reducer`, `Collator`. These implementations are normally unique to
 the chosen `Aggregation`. This interface can also be implemented with your aggregation operations based on map-reduce calls. To
-find deeper information on this please have a look at [Implementing Aggregations].
+find deeper information on this please have a look at [Implementing Aggregations](#implementing-aggregations).
 
 A common predefined set of aggregations are provided by the `com.hazelcast.mapreduce.aggregation.Aggregations` class. This class
 contains typesafe aggregations of the following types:
@@ -311,7 +311,7 @@ For `MultiMap` it is very similar:
 
 Knowing that we can configure the `JobTracker` in the Hazelcast configuration file as expected and as name we use the previously
 built name due to the specification. For more information on configuration of the `JobTracker` please see
-[JobTracker Configuration]. 
+[JobTracker Configuration](#jobtracker-configuration). 
 
 To finish this section let's have a quick example for the above naming specs:
 
@@ -382,9 +382,9 @@ class SalaryYear implements Serializable {
 On the other hand our data structures, the two `IMap`s and the `MultiMap` are defined as the following:
 
 ```java
-IMap<String, Employee> employees = hazelcastInstance.getMap( "employees" );
-IMap<String, SalaryYear> salaries = hazelcastInstance.getMap( "salaries" );
-MultiMap<String, String> officeAssignment = hazelcastInstance.getMultiMap( "office-employee" );
+IMap<String, Employee> employees = hz.getMap( "employees" );
+IMap<String, SalaryYear> salaries = hz.getMap( "salaries" );
+MultiMap<String, String> officeAssignment = hz.getMultiMap( "office-employee" );
 ```
 
 So far we know all important information to work out some example aggregations. We will look into some deeper implementation
@@ -395,8 +395,10 @@ we need a `PropertyExtractor` and the average aggregation for type `Integer`.
 
 ```java
 IMap<String, SalaryYear> salaries = hazelcastInstance.getMap( "salaries" );
-PropertyExtractor<SalaryYear, Integer> extractor = (salaryYear) -> salaryYear.getAnnualSalary();
-int avgSalary = salaries.aggregate( Supplier.all( extractor ), Aggregations.integerAvg() );
+PropertyExtractor<SalaryYear, Integer> extractor =
+    (salaryYear) -> salaryYear.getAnnualSalary();
+int avgSalary = salaries.aggregate( Supplier.all( extractor ),
+                                    Aggregations.integerAvg() );
 ```
 
 That's it. Internally we created a map-reduce task based on the predefined aggregation and fire it up immediately. Currently all
@@ -428,9 +430,11 @@ aggregation.
 
 ```java
 IMap<String, SalaryYear> salaries = hazelcastInstance.getMap( "salaries" );
-PropertyExtractor<SalaryYear, Integer> extractor = (salaryYear) -> salaryYear.getAnnualSalary();
-int avgSalary = salaries.aggregate( Supplier.fromKeyPredicate( new USEmployeeFilter(), extractor ),
-                                    Aggregations.integerAvg() );
+PropertyExtractor<SalaryYear, Integer> extractor =
+    (salaryYear) -> salaryYear.getAnnualSalary();
+int avgSalary = salaries.aggregate( Supplier.fromKeyPredicate(
+                                        new USEmployeeFilter(), extractor
+                                    ), Aggregations.integerAvg() );
 ```
 
 As mentioned before this example already was a bit more sophisticated. For our next example we will do some grouping based on
@@ -440,7 +444,7 @@ the box by a way more convenient way.
 
 So again let's start with our filter. This time we want to filter based on an office name and we again need to do some data joins
 to achieve this kind of filtering. **As a short tip:** to minimize the data transmission on the aggregation we can use
-[Data Affinity] rules to influence the partitioning of data. Be aware this is an expert feature of Hazelcast.
+[Data Affinity](#data-affinity) rules to influence the partitioning of data. Be aware this is an expert feature of Hazelcast.
 
 ```java
 class OfficeEmployeeFilter implements KeyPredicate<String>, HazelcastInstanceAware {
@@ -460,7 +464,9 @@ class OfficeEmployeeFilter implements KeyPredicate<String>, HazelcastInstanceAwa
   }
   
   public boolean evaluate( String email ) {
-    MultiMap<String, String> officeAssignment = hazelcastInstance.getMultiMap( "office-employee" );
+    MultiMap<String, String> officeAssignment = hazelcastInstance
+        .getMultiMap( "office-employee" );
+
     return officeAssignment.containsEntry( office, email );    
   }
 }
@@ -473,9 +479,11 @@ aggregations in a row but that will go away soon.
 Map<String, Integer> avgSalariesPerOffice = new HashMap<String, Integer>();
 
 IMap<String, SalaryYear> salaries = hazelcastInstance.getMap( "salaries" );
-MultiMap<String, String> officeAssignment = hazelcastInstance.getMultiMap( "office-employee" );
+MultiMap<String, String> officeAssignment =
+    hazelcastInstance.getMultiMap( "office-employee" );
 
-PropertyExtractor<SalaryYear, Integer> extractor = (salaryYear) -> salaryYear.getAnnualSalary();
+PropertyExtractor<SalaryYear, Integer> extractor =
+    (salaryYear) -> salaryYear.getAnnualSalary();
 
 for ( String office : officeAssignment.keySet() ) {
   OfficeEmployeeFilter filter = new OfficeEmployeeFilter( office );
