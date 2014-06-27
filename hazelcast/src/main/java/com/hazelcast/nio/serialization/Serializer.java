@@ -16,9 +16,21 @@
 
 package com.hazelcast.nio.serialization;
 
+/**
+ * Base interface of custom serialization interfaces
+ * <p/>
+ * see {@link com.hazelcast.nio.serialization.ByteArraySerializer}
+ * see {@link com.hazelcast.nio.serialization.StreamSerializer}
+ */
 public interface Serializer {
 
+    /**
+     * @return typeId of serializer
+     */
     int getTypeId();
 
+    /**
+     * Called when instance is shutting down. It can be used to clear used resources.
+     */
     void destroy();
 }
