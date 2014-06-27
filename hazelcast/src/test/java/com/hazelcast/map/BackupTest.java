@@ -22,6 +22,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.Partition;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
@@ -38,6 +40,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -529,5 +532,61 @@ public class BackupTest extends HazelcastTestSupport {
         } finally {
             ex.shutdown();
         }
+    }
+
+    @Test
+    public void testReadBackupData(){
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        final String name = MAP_NAME;
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "2");
+        config.getMapConfig(name).setBackupCount(2).setReadBackupData(true);
+
+        final HazelcastInstance hz1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+
+        final IMap<Integer, String> map = hz1.getMap(MAP_NAME);
+        final int key0=0;
+        final int key1=1;
+
+        final String value0 = "Ali";
+        final String value1 = "Veli";
+
+        map.put(key0, value0);
+        map.put(key1, value1);
+
+        final Partition partition = hz1.getPartitionService().getPartition(key1);
+        final Member owner = partition.getOwner();
+        final int backupKey;
+        final String backupValue;
+        if(hz1.getCluster().getLocalMember().equals(owner)){
+            backupKey = key1;
+            backupValue = value1;
+        } else {
+            backupKey = key0;
+            backupValue = value0;
+        }
+
+//SUSPEND THE OTHER INSTANCE
+        final String suspendGroupName= backupKey == key1 ? "_hzInstance_2_dev":"_hzInstance_1_dev";
+        ThreadGroup suspendGroup=null;
+        final Set<Thread> threads = Thread.getAllStackTraces().keySet();
+        for(Thread t:threads){
+            final ThreadGroup threadGroup = t.getThreadGroup();
+            if(suspendGroupName.equals(threadGroup.getName())){
+                suspendGroup = threadGroup;
+                break;
+            }
+        }
+
+        suspendGroup.allowThreadSuspension(true);
+        suspendGroup.suspend();
+//SUSPEND THE OTHER INSTANCE --END
+
+        assertEquals(backupValue, map.get(backupKey));
+
+        //resume to end the test
+        suspendGroup.resume();
     }
 }
