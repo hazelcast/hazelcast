@@ -544,7 +544,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (bulkLoad == 1) {
             item.setData(store.load(item.getItemId()));
         } else if (bulkLoad > 1) {
-            ListIterator<QueueItem> iter = getItemQueue().listIterator();
+            Iterator<QueueItem> iter = getItemQueue().iterator();
             HashSet<Long> keySet = new HashSet<Long>(bulkLoad);
             for (int i = 0; i < bulkLoad; i++) {
                 keySet.add(iter.next().getItemId());
@@ -562,14 +562,17 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public boolean hasEnoughCapacity(int delta) {
         return (getItemQueue().size() + delta) <= config.getMaxSize();
     }
-
-    LinkedList<QueueItem> getItemQueue() {
+    public Deque<QueueItem> getItemQueue() {
         if (itemQueue == null) {
             itemQueue = new LinkedList<QueueItem>();
             if (backupMap != null && !backupMap.isEmpty()) {
                 List<QueueItem> values = new ArrayList<QueueItem>(backupMap.values());
                 Collections.sort(values);
                 itemQueue.addAll(values);
+                final QueueItem lastItem = itemQueue.peekLast();
+                if (lastItem != null) {
+                    setId(lastItem.itemId);
+                }
                 backupMap.clear();
                 backupMap = null;
             }
