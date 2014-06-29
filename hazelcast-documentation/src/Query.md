@@ -67,29 +67,28 @@ Predicates can be joined using the `and`, `or` and `not` operators, as shown in 
 
 ```java
 public Set<Person> getWithNameAndAge(String name, int age) {
-        Predicate namePredicate = equal("name", name);
-        Predicate agePredicate = equal("age", age);
-        Predicate predicate = and(namePredicate, agePredicate);
-        return (Set<Person>) personMap.values(predicate);
-    }
+  Predicate namePredicate = equal("name", name);
+  Predicate agePredicate = equal("age", age);
+  Predicate predicate = and(namePredicate, agePredicate);
+  return (Set<Person>) personMap.values(predicate);
+}
 ```
 
 ```java
 public Set<Person> getWithNameOrAge(String name, int age) {
-        Predicate namePredicate = equal("name", name);
-        Predicate agePredicate = equal("age", age);
-        Predicate predicate = or(namePredicate, agePredicate);
-        return (Set<Person>) personMap.values(predicate);
-    }
+  Predicate namePredicate = equal("name", name);
+  Predicate agePredicate = equal("age", age);
+  Predicate predicate = or(namePredicate, agePredicate);
+  return (Set<Person>) personMap.values(predicate);
 }
 ```
 
 ```java
 public Set<Person> getNotWithName(String name) {
-        Predicate namePredicate = equal("name", name);
-        Predicate predicate = not(namePredicate);
-        return (Set<Person>) personMap.values(predicate);
-    }
+  Predicate namePredicate = equal("name", name);
+  Predicate predicate = not(namePredicate);
+  return (Set<Person>) personMap.values(predicate);
+}
 ```
 
 
@@ -99,10 +98,10 @@ Predicate usage can be simplified using the `PredicateBuilder` class. It offers 
 
 ```java
 public Set<Person> getWithNameAndAgeSimplified(String name, int age) {
-        EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate predicate = e.get("name").equal(name).and(e.get("age").equal(age));
-        return (Set<Person>) personMap.values(predicate);
-    }
+  EntryObject e = new PredicateBuilder().getEntryObject();
+  Predicate predicate = e.get("name").equal(name).and(e.get("age").equal(age));
+  return (Set<Person>) personMap.values(predicate);
+}
 ```     
 
 
@@ -116,9 +115,9 @@ import com.hazelcast.query.SqlPredicate;
 
 Config cfg = new Config();
 HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-IMap map = hz.getMap("employee");
+IMap<Employee> map = hz.getMap("employee");
 
-Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AND age < 30"));
+Set<Employee> employees = map.values(new SqlPredicate("active AND age < 30"));
 ```
 
 Supported SQL syntax:
@@ -184,21 +183,21 @@ Examples:
 
 Hazelcast provides paging for defined predicates. For this purpose, `PagingPredicate` class has been developed. You may want to get collection of keys, values or entries page by page, by filtering them with predicates and giving the size of pages. Also, you can sort the entries by specifying comparators.
 
-Below is a sample code where the `greaterEqual` predicate is used to get values from "students" map. This predicate puts a filter such that the objects with value of "age" is greater than or equal to 18 will be retrieved. Then, a `pagingPredicate` is constructed in which the page size is 5. So, there will be 5 objects in each page. 
+Below is a sample code where the `greaterEqual` predicate is used to get values from "students" map. This predicate puts a filter such that the objects with value of "age" is greater than or equal to 18 will be retrieved. Then, a `PagingPredicate` is constructed in which the page size is 5. So, there will be 5 objects in each page. 
 
 The first time the values are called will constitute the first page. You can get the subsequent pages by using the `nextPage()` method of `PagingPredicate`.
 
 
 ```
 final IMap<Integer, Student> map = instance.getMap("students");
-       final Predicate greaterEqual = Predicates.greaterEqual("age", 18);
-       final PagingPredicate pagingPredicate = new PagingPredicate(greaterEqual, 5);
-       Collection<Student> values = map.values(pagingPredicate); //First Page
-       ...
-       
-       pagingPredicate.nextPage();
-       values = map.values(pagingPredicate); //Second Page
-       ...
+final Predicate greaterEqual = Predicates.greaterEqual("age", 18);
+final PagingPredicate pagingPredicate = new PagingPredicate(greaterEqual, 5);
+Collection<Student> values = map.values(pagingPredicate); //First Page
+...
+
+pagingPredicate.nextPage();
+values = map.values(pagingPredicate); //Second Page
+...
 ```
 
 Paging Predicate is not supported in Transactional Context.
@@ -209,7 +208,7 @@ Paging Predicate is not supported in Transactional Context.
 
 ### Indexing
 
-Hazelcast distributed queries will run on each member in parallel and only results will return the conn. When a query runs on a member, Hazelcast will iterate through the entire owned entries and find the matching ones. This can be made faster by indexing the mostly queried fields. Just like you would do for your database. Of course, indexing will add overhead for each `write` operation but queries will be a lot faster. If you are querying your map a lot, make sure to add indexes for most frequently queried fields. So, if your `active and age < 30 ` query, for example, is used a lot, make sure you add index for `active` and `age` fields. Here is how:
+Hazelcast distributed queries will run on each member in parallel and only results will return the conn. When a query runs on a member, Hazelcast will iterate through the entire owned entries and find the matching ones. This can be made faster by indexing the mostly queried fields. Just like you would do for your database. Of course, indexing will add overhead for each `write` operation but queries will be a lot faster. If you are querying your map a lot, make sure to add indexes for most frequently queried fields. So, if your `active and age < 30` query, for example, is used a lot, make sure you add index for `active` and `age` fields. Here is how:
 
 ```java
 Config cfg = new Config();
@@ -219,39 +218,34 @@ imap.addIndex("age", true);        // ordered, since we have ranged queries for 
 imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
 ```
 
-`IMap.addIndex(fieldName, ordered)` is used for adding index. For each indexed field, if you have ranged queries such as `age>30`, `age BETWEEN 40 AND 60`, then `ordered` parameter should be`true`. Otherwise, set it to`false`.
+`IMap.addIndex(fieldName, ordered)` is used for adding index. For each indexed field, if you have ranged queries such as `age>30`, `age BETWEEN 40 AND 60`, then `ordered` parameter should be `true`. Otherwise, set it to `false`.
 
 Also, you can define `IMap` indexes in configuration, a sample of which is shown below.
 
-
-	```xml
-	<map name="default">
-	    ...
-	    <indexes>
-	        <index ordered="false">name</index>
-	        <index ordered="true">age</index>
-	    </indexes>
-	</map>```
-
+```xml
+<map name="default">
+  ...
+  <indexes>
+    <index ordered="false">name</index>
+    <index ordered="true">age</index>
+  </indexes>
+</map>
+```
 
 This sample in programmatic configuration looks like below.
 
-
-
-	```java
-	mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
-	mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));```
-
+```java
+mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
+mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));
+```
 
 And, the following is the Spring declarative configuration for the same sample.
- 
 
-
-	```xml
-	<hz:map name="default">
-	    <hz:indexes>
-	        <hz:index attribute="name"/>
-	        <hz:index attribute="age" ordered="true"/>
-	    </hz:indexes>
-	</hz:map>
+```xml
+<hz:map name="default">
+  <hz:indexes>
+    <hz:index attribute="name"/>
+    <hz:index attribute="age" ordered="true"/>
+  </hz:indexes>
+</hz:map>
 ```
