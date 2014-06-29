@@ -166,14 +166,14 @@ public class PostJoinMapOperation extends AbstractOperation {
     public void run() throws Exception {
         MapService mapService = getService();
         for (MapIndexInfo mapIndex : indexInfoList) {
-            final MapContainer mapContainer = mapService.getMapContainer(mapIndex.mapName);
+            final MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapIndex.mapName);
             final IndexService indexService = mapContainer.getIndexService();
             for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
                 indexService.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
             }
         }
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {
-            final MapContainer mapContainer = mapService.getMapContainer(interceptorInfo.mapName);
+            final MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(interceptorInfo.mapName);
             Map<String, MapInterceptor> interceptorMap = mapContainer.getInterceptorMap();
             List<Map.Entry<String, MapInterceptor>> entryList = interceptorInfo.interceptors;
             for (Map.Entry<String, MapInterceptor> entry : entryList) {

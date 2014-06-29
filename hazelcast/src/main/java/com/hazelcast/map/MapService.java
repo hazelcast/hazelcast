@@ -16,227 +16,202 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStoreInfo;
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.eviction.ExpirationManager;
-import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.operation.MergeOperation;
-import com.hazelcast.map.operation.PostJoinMapOperation;
-import com.hazelcast.map.operation.WanOriginatedDeleteOperation;
-import com.hazelcast.map.proxy.MapProxyImpl;
-import com.hazelcast.map.tx.TransactionalMapProxy;
-import com.hazelcast.map.wan.MapReplicationRemove;
-import com.hazelcast.map.wan.MapReplicationUpdate;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.Properties;
-import java.util.concurrent.Future;
 
 /**
- * The SPI Service for the Map.
+ * Defines map service behavior.
+ *
+ * @see com.hazelcast.spi.ManagedService
+ * @see com.hazelcast.spi.MigrationAwareService
+ * @see com.hazelcast.spi.TransactionalService
+ * @see com.hazelcast.spi.RemoteService
+ * @see com.hazelcast.spi.EventPublishingService
+ * @see com.hazelcast.spi.PostJoinAwareService
+ * @see com.hazelcast.spi.SplitBrainHandlerService
+ * @see com.hazelcast.spi.ReplicationSupportingService
  */
-public class MapService extends MapServiceSupport implements ManagedService, TransactionalService, RemoteService,
-        PostJoinAwareService, ReplicationSupportingService {
+public final class MapService implements ManagedService, MigrationAwareService,
+        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
 
-    /**
-     * Service name.
-     */
     public static final String SERVICE_NAME = "hz:impl:mapService";
-    private final ExpirationManager expirationManager;
-    private final NearCacheProvider nearCacheProvider;
-    private final LocalMapStatsProvider localMapStatsProvider;
 
-    private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
-        public MapContainer createNew(String mapName) {
-            return new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName), MapService.this);
-        }
-    };
+    private ManagedService managedService;
+    private MigrationAwareService migrationAwareService;
+    private TransactionalService transactionalService;
+    private RemoteService remoteService;
+    private EventPublishingService eventPublishingService;
+    private PostJoinAwareService postJoinAwareService;
+    private SplitBrainHandlerService splitBrainHandlerService;
+    private ReplicationSupportingService replicationSupportingService;
+    private MapServiceContext mapServiceContext;
 
-    public MapService(NodeEngine nodeEngine) {
-        super(nodeEngine);
-        expirationManager = new ExpirationManager(this);
-        nearCacheProvider = new NearCacheProvider(this);
-        localMapStatsProvider = new LocalMapStatsProvider(this);
+    private MapService() {
+    }
+
+    public static MapService create(NodeEngine nodeEngine) {
+        final MapServiceContext mapServiceContext = new DefaultMapServiceContext(nodeEngine);
+        final ManagedService managedService = new MapManagedService(mapServiceContext);
+        final MigrationAwareService migrationAwareService = new MapMigrationAwareService(mapServiceContext, nodeEngine);
+        final TransactionalService transactionalService = new MapTransactionalService(mapServiceContext, nodeEngine);
+        final RemoteService remoteService = new MapRemoteService(mapServiceContext, nodeEngine);
+        final EventPublishingService eventPublisher = new MapEventPublishingService(mapServiceContext, nodeEngine);
+        final PostJoinAwareService postJoinAwareService = new MapPostJoinAwareService(mapServiceContext);
+        final SplitBrainHandlerService splitBrainHandler = new MapSplitBrainHandler(mapServiceContext, nodeEngine);
+        final ReplicationSupportingService replicationSupportingService
+                = new MapReplicationSupportingService(mapServiceContext, nodeEngine);
+
+        final MapService mapService = new MapService();
+        mapService.setManagedService(managedService);
+        mapService.setMigrationAwareService(migrationAwareService);
+        mapService.setTransactionalService(transactionalService);
+        mapService.setRemoteService(remoteService);
+        mapService.setEventPublishingService(eventPublisher);
+        mapService.setPostJoinAwareService(postJoinAwareService);
+        mapService.setSplitBrainHandlerService(splitBrainHandler);
+        mapService.setReplicationSupportingService(replicationSupportingService);
+        mapService.setMapServiceContext(mapServiceContext);
+
+        mapServiceContext.setService(mapService);
+
+        return mapService;
+    }
+
+    public void setManagedService(ManagedService managedService) {
+        this.managedService = managedService;
+    }
+
+    public void setMigrationAwareService(MigrationAwareService migrationAwareService) {
+        this.migrationAwareService = migrationAwareService;
+    }
+
+    public void setTransactionalService(TransactionalService transactionalService) {
+        this.transactionalService = transactionalService;
+    }
+
+    public void setRemoteService(RemoteService remoteService) {
+        this.remoteService = remoteService;
+    }
+
+    public void setEventPublishingService(EventPublishingService eventPublishingService) {
+        this.eventPublishingService = eventPublishingService;
+    }
+
+    public void setPostJoinAwareService(PostJoinAwareService postJoinAwareService) {
+        this.postJoinAwareService = postJoinAwareService;
+    }
+
+    public void setSplitBrainHandlerService(SplitBrainHandlerService splitBrainHandlerService) {
+        this.splitBrainHandlerService = splitBrainHandlerService;
+    }
+
+    public void setReplicationSupportingService(ReplicationSupportingService replicationSupportingService) {
+        this.replicationSupportingService = replicationSupportingService;
     }
 
     @Override
-    public void init(final NodeEngine nodeEngine, Properties properties) {
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        for (int i = 0; i < partitionCount; i++) {
-            partitionContainers[i] = new PartitionContainer(this, i);
-        }
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        if (lockService != null) {
-            lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
-                public LockStoreInfo createNew(final ObjectNamespace key) {
-                    final MapContainer mapContainer = getMapContainer(key.getObjectName());
-                    return new LockStoreInfo() {
-                        public int getBackupCount() {
-                            return mapContainer.getBackupCount();
-                        }
+    public void dispatchEvent(EventData event, EntryListener listener) {
+        eventPublishingService.dispatchEvent(event, listener);
+    }
 
-                        public int getAsyncBackupCount() {
-                            return mapContainer.getAsyncBackupCount();
-                        }
-                    };
-                }
-            });
-        }
-        expirationManager.start();
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        managedService.init(nodeEngine, properties);
     }
 
     @Override
     public void reset() {
-        final PartitionContainer[] containers = partitionContainers;
-        for (PartitionContainer container : containers) {
-            if (container != null) {
-                container.clear();
-            }
-        }
-        nearCacheProvider.clear();
+        managedService.reset();
     }
 
     @Override
     public void shutdown(boolean terminate) {
-        if (!terminate) {
-            flushMapsBeforeShutdown();
-            destroyMapStores();
-            final PartitionContainer[] containers = partitionContainers;
-            for (PartitionContainer container : containers) {
-                if (container != null) {
-                    container.clear();
-                }
-            }
-            nearCacheProvider.clear();
-            mapContainers.clear();
-        }
+        managedService.shutdown(terminate);
     }
 
-    private void destroyMapStores() {
-        for (MapContainer mapContainer : mapContainers.values()) {
-            MapStoreWrapper store = mapContainer.getStore();
-            if (store != null) {
-                store.destroy();
-            }
-        }
+    @Override
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        return migrationAwareService.prepareReplicationOperation(event);
     }
 
-    private void flushMapsBeforeShutdown() {
-        for (PartitionContainer partitionContainer : partitionContainers) {
-            for (String mapName : mapContainers.keySet()) {
-                RecordStore recordStore = partitionContainer.getRecordStore(mapName);
-                recordStore.setLoaded(true);
-                recordStore.flush();
-            }
-        }
+    @Override
+    public void beforeMigration(PartitionMigrationEvent event) {
+        migrationAwareService.beforeMigration(event);
+    }
+
+    @Override
+    public void commitMigration(PartitionMigrationEvent event) {
+        migrationAwareService.commitMigration(event);
+    }
+
+    @Override
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        migrationAwareService.rollbackMigration(event);
+    }
+
+    @Override
+    public void clearPartitionReplica(int partitionId) {
+        migrationAwareService.clearPartitionReplica(partitionId);
     }
 
     @Override
     public Operation getPostJoinOperation() {
-        PostJoinMapOperation o = new PostJoinMapOperation();
-        for (MapContainer mapContainer : mapContainers.values()) {
-            o.addMapIndex(mapContainer);
-            o.addMapInterceptors(mapContainer);
-        }
-        return o;
+        return postJoinAwareService.getPostJoinOperation();
+    }
+
+    @Override
+    public DistributedObject createDistributedObject(String objectName) {
+        return remoteService.createDistributedObject(objectName);
+    }
+
+    @Override
+    public void destroyDistributedObject(String objectName) {
+        remoteService.destroyDistributedObject(objectName);
     }
 
     @Override
     public void onReplicationEvent(WanReplicationEvent replicationEvent) {
-        Object eventObject = replicationEvent.getEventObject();
-        if (eventObject instanceof MapReplicationUpdate) {
-            MapReplicationUpdate replicationUpdate = (MapReplicationUpdate) eventObject;
-            EntryView entryView = replicationUpdate.getEntryView();
-            MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
-            String mapName = replicationUpdate.getMapName();
-            MapContainer mapContainer = getMapContainer(mapName);
-            MergeOperation operation = new MergeOperation(mapName, toData(entryView.getKey(),
-                    mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
-            try {
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
-                Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                f.get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        } else if (eventObject instanceof MapReplicationRemove) {
-            MapReplicationRemove replicationRemove = (MapReplicationRemove) eventObject;
-            WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName(),
-                    replicationRemove.getKey());
-            try {
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
-                Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                f.get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        }
-    }
-
-
-    @Override
-    public MapContainer getMapContainer(String mapName) {
-        return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mapContainers, mapConstructor);
+        replicationSupportingService.onReplicationEvent(replicationEvent);
     }
 
     @Override
-    protected MapService getService() {
-        return this;
+    public Runnable prepareMergeRunnable() {
+        return splitBrainHandlerService.prepareMergeRunnable();
     }
 
-
-    @SuppressWarnings("unchecked")
     @Override
-    public TransactionalMapProxy createTransactionalObject(String name, TransactionSupport transaction) {
-        return new TransactionalMapProxy(name, this, nodeEngine, transaction);
+    public <T extends TransactionalObject> T createTransactionalObject(String name, TransactionSupport transaction) {
+        return transactionalService.createTransactionalObject(name, transaction);
     }
 
     @Override
     public void rollbackTransaction(String transactionId) {
-
+        transactionalService.rollbackTransaction(transactionId);
     }
 
-    @Override
-    public MapProxyImpl createDistributedObject(String name) {
-        return new MapProxyImpl(name, this, nodeEngine);
+    public void setMapServiceContext(MapServiceContext mapServiceContext) {
+        this.mapServiceContext = mapServiceContext;
     }
 
-    @Override
-    public void destroyDistributedObject(String name) {
-        MapContainer mapContainer = mapContainers.remove(name);
-        if (mapContainer != null) {
-            if (mapContainer.isNearCacheEnabled()) {
-                nearCacheProvider.remove(name);
-            }
-            mapContainer.getMapStoreManager().stop();
-        }
-        final PartitionContainer[] containers = partitionContainers;
-        for (PartitionContainer container : containers) {
-            if (container != null) {
-                container.destroyMap(name);
-            }
-        }
-        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
-    }
-
-    public NearCacheProvider getNearCacheProvider() {
-        return nearCacheProvider;
-    }
-
-    public LocalMapStatsProvider getLocalMapStatsProvider() {
-        return localMapStatsProvider;
+    public MapServiceContext getMapServiceContext() {
+        return mapServiceContext;
     }
 }

@@ -1,17 +1,14 @@
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.IMapEvent;
-import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.wan.MapReplicationRemove;
+import com.hazelcast.map.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.EventServiceImpl;
@@ -19,113 +16,40 @@ import com.hazelcast.spi.impl.EventServiceImpl;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Level;
 
-/**
- * Contains map service event publisher functionality.
- */
-abstract class MapEventPublisherSupport extends MapMigrationSupport
-        implements EventPublishingService<EventData, EntryListener> {
+class MapEventPublishSupport implements MapEventPublisher {
 
-    protected MapEventPublisherSupport(NodeEngine nodeEngine) {
-        super(nodeEngine);
+    private MapServiceContext mapServiceContext;
+
+    protected MapEventPublishSupport(MapServiceContext mapServiceContext) {
+        this.mapServiceContext = mapServiceContext;
     }
 
-    private void incrementEventStats(IMapEvent event) {
-        final String mapName = event.getName();
-        MapContainer mapContainer = getMapContainer(mapName);
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            getLocalMapStatsImpl(mapName).incrementReceivedEvents();
-        }
+    public void publishWanReplicationUpdate(String mapName, EntryView entryView) {
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapReplicationUpdate replicationEvent = new MapReplicationUpdate(mapName, mapContainer.getWanMergePolicy(),
+                entryView);
+        mapContainer.getWanReplicationPublisher().publishReplicationEvent(mapServiceContext.serviceName(), replicationEvent);
     }
 
-    @Override
-    public void dispatchEvent(EventData eventData, EntryListener listener) {
-        if (eventData instanceof EntryEventData) {
-            dispatchEntryEventData(eventData, listener);
-        } else if (eventData instanceof MapEventData) {
-            dispatchMapEventData(eventData, listener);
-        } else {
-            throw new IllegalArgumentException("Unknown map event data");
-        }
+    public void publishWanReplicationRemove(String mapName, Data key, long removeTime) {
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapReplicationRemove replicationEvent = new MapReplicationRemove(mapName, key, removeTime);
+        mapContainer.getWanReplicationPublisher().publishReplicationEvent(mapServiceContext.serviceName(), replicationEvent);
     }
-
-    private void dispatchMapEventData(EventData eventData, EntryListener listener) {
-        final MapEventData mapEventData = (MapEventData) eventData;
-        final Member member = getMemberOrNull(eventData);
-        if (member == null) {
-            return;
-        }
-        final MapEvent event = createMapEvent(mapEventData, member);
-        dispatch0(event, listener);
-        incrementEventStats(event);
-    }
-
-    private MapEvent createMapEvent(MapEventData mapEventData, Member member) {
-        return new MapEvent(mapEventData.getMapName(), member,
-                mapEventData.getEventType(), mapEventData.getNumberOfEntries());
-    }
-
-    private void dispatchEntryEventData(EventData eventData, EntryListener listener) {
-        final EntryEventData entryEventData = (EntryEventData) eventData;
-        final Member member = getMemberOrNull(eventData);
-
-        final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
-        dispatch0(event, listener);
-        incrementEventStats(event);
-    }
-
-    private Member getMemberOrNull(EventData eventData) {
-        final Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
-        if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());
-            }
-        }
-        return member;
-    }
-
-    private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
-        return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
-                entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(),
-                nodeEngine.getSerializationService());
-    }
-
-    private void dispatch0(IMapEvent event, EntryListener listener) {
-        switch (event.getEventType()) {
-            case ADDED:
-                listener.entryAdded((EntryEvent) event);
-                break;
-            case EVICTED:
-                listener.entryEvicted((EntryEvent) event);
-                break;
-            case UPDATED:
-                listener.entryUpdated((EntryEvent) event);
-                break;
-            case REMOVED:
-                listener.entryRemoved((EntryEvent) event);
-                break;
-            case EVICT_ALL:
-                listener.mapEvicted((MapEvent) event);
-                break;
-            case CLEAR_ALL:
-                listener.mapCleared((MapEvent) event);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
-        }
-    }
-
 
     public void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected) {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final Collection<EventRegistration> registrations = nodeEngine.getEventService()
-                .getRegistrations(getServiceName(), mapName);
+                .getRegistrations(mapServiceContext.serviceName(), mapName);
         if (registrations.isEmpty()) {
             return;
         }
         final String source = nodeEngine.getThisAddress().toString();
-        final MapEventData mapEventData = new MapEventData(source, mapName, caller, eventType.getType(), numberOfEntriesAffected);
-        nodeEngine.getEventService().publishEvent(getServiceName(), registrations, mapEventData, mapName.hashCode());
+        final MapEventData mapEventData = new MapEventData(source, mapName, caller,
+                eventType.getType(), numberOfEntriesAffected);
+        nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(),
+                registrations, mapEventData, mapName.hashCode());
 
     }
 
@@ -140,10 +64,10 @@ abstract class MapEventPublisherSupport extends MapMigrationSupport
         // iterate on candidates.
         for (final EventRegistration candidate : candidates) {
             Result result = Result.NONE;
-            EventFilter filter = candidate.getFilter();
-            if (filter instanceof EventServiceImpl.EmptyFilter) {
+            final EventFilter filter = candidate.getFilter();
+            if (emptyFilter(filter)) {
                 result = processEmptyFilter();
-            } else if (filter instanceof QueryEventFilter) {
+            } else if (queryEventFilter(filter)) {
                 result = processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue);
             } else if (filter.eval(dataKey)) {
                 result = processEntryEventFilter(filter);
@@ -161,8 +85,17 @@ abstract class MapEventPublisherSupport extends MapMigrationSupport
         publishWithoutValue(registrationsWithoutValue, eventData, orderKey);
     }
 
+    private boolean emptyFilter(EventFilter filter) {
+        return filter instanceof EventServiceImpl.EmptyFilter;
+    }
+
+    private boolean queryEventFilter(EventFilter filter) {
+        return filter instanceof QueryEventFilter;
+    }
+
     private Collection<EventRegistration> getCandidates(String mapName) {
-        return nodeEngine.getEventService().getRegistrations(getServiceName(), mapName);
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        return nodeEngine.getEventService().getRegistrations(mapServiceContext.serviceName(), mapName);
     }
 
     private int pickOrderKey(Data key) {
@@ -194,12 +127,14 @@ abstract class MapEventPublisherSupport extends MapMigrationSupport
     }
 
     private void publishWithValue(Set<EventRegistration> registrationsWithValue, EntryEventData event, int orderKey) {
-        nodeEngine.getEventService().publishEvent(getServiceName(),
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(),
                 registrationsWithValue, event, orderKey);
     }
 
     private void publishWithoutValue(Set<EventRegistration> registrationsWithoutValue, EntryEventData event, int orderKey) {
-        nodeEngine.getEventService().publishEvent(getServiceName(),
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(),
                 registrationsWithoutValue, event.cloneWithoutValues(), orderKey);
     }
 
@@ -209,6 +144,7 @@ abstract class MapEventPublisherSupport extends MapMigrationSupport
 
     private Result processQueryEventFilter(EventFilter filter, EntryEventType eventType,
                                            final Data dataKey, Data dataOldValue, Data dataValue) {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final SerializationService serializationService = nodeEngine.getSerializationService();
         Object testValue;
         if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
@@ -241,6 +177,7 @@ abstract class MapEventPublisherSupport extends MapMigrationSupport
 
     private EntryEventData createEntryEventData(String mapName, Address caller,
                                                 Data dataKey, Data dataNewValue, Data dataOldValue, int eventType) {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         return new EntryEventData(nodeEngine.getThisAddress().toString(), mapName, caller,
                 dataKey, dataNewValue, dataOldValue, eventType);
     }

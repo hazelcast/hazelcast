@@ -2,6 +2,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.map.operation.MapReplicationOperation;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -11,13 +12,16 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 
-/**
- * Contains map migration support.
- */
-abstract class MapMigrationSupport extends MapSplitBrainSupport implements MigrationAwareService {
+import java.util.List;
 
-    protected MapMigrationSupport(NodeEngine nodeEngine) {
-        super(nodeEngine);
+class MapMigrationAwareService implements MigrationAwareService {
+
+    private MapServiceContext mapServiceContext;
+    private SerializationService serializationService;
+
+    public MapMigrationAwareService(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
+        this.mapServiceContext = mapServiceContext;
+        this.serializationService = nodeEngine.getSerializationService();
     }
 
     @Override
@@ -27,10 +31,11 @@ abstract class MapMigrationSupport extends MapSplitBrainSupport implements Migra
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        final PartitionContainer container = partitionContainers[event.getPartitionId()];
+        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         final MapReplicationOperation operation
-                = new MapReplicationOperation(getService(), container, event.getPartitionId(), event.getReplicaIndex());
-        operation.setService(getService());
+                = new MapReplicationOperation(mapServiceContext.getService(), container,
+                event.getPartitionId(), event.getReplicaIndex());
+        operation.setService(mapServiceContext.serviceName());
         return operation.isEmpty() ? null : operation;
     }
 
@@ -38,28 +43,30 @@ abstract class MapMigrationSupport extends MapSplitBrainSupport implements Migra
     public void commitMigration(PartitionMigrationEvent event) {
         migrateIndex(event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearPartitionData(event.getPartitionId());
+            mapServiceContext.clearPartitionData(event.getPartitionId());
         }
-        ownedPartitions.set(getMemberPartitions());
+        final List<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
+        mapServiceContext.ownedPartitions().set(memberPartitions);
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearPartitionData(event.getPartitionId());
+            mapServiceContext.clearPartitionData(event.getPartitionId());
         }
-        ownedPartitions.set(getMemberPartitions());
+        final List<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
+        mapServiceContext.ownedPartitions().set(memberPartitions);
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        clearPartitionData(partitionId);
+        mapServiceContext.clearPartitionData(partitionId);
     }
 
     private void migrateIndex(PartitionMigrationEvent event) {
-        final PartitionContainer container = partitionContainers[event.getPartitionId()];
+        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = getMapContainer(recordStore.getName());
+            final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
                 for (Record record : recordStore.getReadonlyRecordMap().values()) {
@@ -68,7 +75,7 @@ abstract class MapMigrationSupport extends MapSplitBrainSupport implements Migra
                     } else {
                         Object value = record.getValue();
                         if (value != null) {
-                            indexService.saveEntryIndex(new QueryEntry(getSerializationService(), record.getKey(),
+                            indexService.saveEntryIndex(new QueryEntry(serializationService, record.getKey(),
                                     record.getKey(), value));
                         }
                     }

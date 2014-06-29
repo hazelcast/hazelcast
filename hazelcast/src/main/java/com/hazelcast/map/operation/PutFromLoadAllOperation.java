@@ -42,33 +42,33 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
         }
         final int partitionId = getPartitionId();
         final MapService mapService = this.mapService;
-        final RecordStore recordStore = mapService.getRecordStore(partitionId, name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
             final Data key = keyValueSequence.get(i);
             final Data dataValue = keyValueSequence.get(i + 1);
             // here object conversion is for interceptors.
-            final Object objectValue = mapService.toObject(dataValue);
+            final Object objectValue = mapService.getMapServiceContext().toObject(dataValue);
             final Object previousValue = recordStore.putFromLoad(key, objectValue);
 
             callAfterPutInterceptors(objectValue);
-            publishEntryEvent(key, mapService.toData(previousValue), dataValue);
+            publishEntryEvent(key, mapService.getMapServiceContext().toData(previousValue), dataValue);
             publishWanReplicationEvent(key, dataValue, recordStore.getRecord(key));
         }
     }
 
     private void callAfterPutInterceptors(Object value) {
-        mapService.interceptAfterPut(name, value);
+        mapService.getMapServiceContext().interceptAfterPut(name, value);
     }
 
     private void publishEntryEvent(Data key, Data previousValue, Data newValue) {
         final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        mapService.publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
+        mapService.getMapServiceContext().getMapEventPublisher().publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
     }
 
     private void publishWanReplicationEvent(Data key, Data value, Record record) {
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             final EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
-            mapService.publishWanReplicationUpdate(name, entryView);
+            mapService.getMapServiceContext().getMapEventPublisher().publishWanReplicationUpdate(name, entryView);
         }
     }
 
@@ -85,7 +85,7 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
             final Data key = keyValueSequence.get(i);
             dataKeys.add(key);
         }
-        mapService.getNearCacheProvider().invalidateNearCache(name, dataKeys);
+        mapService.getMapServiceContext().getNearCacheProvider().invalidateNearCache(name, dataKeys);
     }
 
     @Override

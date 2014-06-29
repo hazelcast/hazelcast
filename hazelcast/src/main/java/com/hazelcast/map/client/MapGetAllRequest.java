@@ -69,7 +69,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
         MapEntrySet resultSet = new MapEntrySet();
         MapService mapService = getService();
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) mapService.toObject(entry.getValue());
+            MapEntrySet mapEntrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(entry.getValue());
             Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
             for (Map.Entry<Data, Data> dataEntry : entrySet) {
                 resultSet.add(dataEntry);

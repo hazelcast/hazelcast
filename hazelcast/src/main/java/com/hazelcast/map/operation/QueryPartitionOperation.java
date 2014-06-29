@@ -37,7 +37,8 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
     }
 
     public void run() {
-        result = mapService.queryOnPartition(name, predicate, getPartitionId());
+        result = mapService.getMapServiceContext().getMapContextQuerySupport()
+                .queryOnPartition(name, predicate, getPartitionId());
     }
 
     @Override

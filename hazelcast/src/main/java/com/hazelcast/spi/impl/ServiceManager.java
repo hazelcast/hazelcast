@@ -75,7 +75,7 @@ final class ServiceManager {
 
     synchronized void start() {
         Map<String, Properties> serviceProps = new HashMap<String, Properties>();
-        Map<String, Object>  serviceConfigObjects = new HashMap<String, Object>();
+        Map<String, Object> serviceConfigObjects = new HashMap<String, Object>();
 
         registerServices(serviceProps, serviceConfigObjects);
         initServices(serviceProps, serviceConfigObjects);
@@ -87,9 +87,9 @@ final class ServiceManager {
         Node node = nodeEngine.getNode();
         ServicesConfig servicesConfig = node.getConfig().getServicesConfig();
         if (servicesConfig != null) {
-           registerDefaultServices(servicesConfig);
-           registerUserServices(servicesConfig, serviceProps, serviceConfigObjects);
-       }
+            registerDefaultServices(servicesConfig);
+            registerUserServices(servicesConfig, serviceProps, serviceConfigObjects);
+        }
     }
 
     private void registerCoreServices() {
@@ -109,7 +109,7 @@ final class ServiceManager {
         }
 
         logger.finest("Registering default services...");
-        registerService(MapService.SERVICE_NAME, new MapService(nodeEngine));
+        registerService(MapService.SERVICE_NAME, MapService.create(nodeEngine));
         registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
         registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
         registerService(TopicService.SERVICE_NAME, new TopicService());

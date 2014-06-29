@@ -39,9 +39,9 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     public void run() {
         // near-cache clear will be called multiple times by each clear operation,
         // but it's still preferred to send a separate operation to clear near-cache.
-        mapService.getNearCacheProvider().clearNearCache(name);
+        mapService.getMapServiceContext().getNearCacheProvider().clearNearCache(name);
 
-        final RecordStore recordStore = mapService.getExistingRecordStore(getPartitionId(), name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getExistingRecordStore(getPartitionId(), name);
         //if there is no recordStore, then there is nothing to clear.
         if (recordStore == null) {
             shouldBackup = false;
@@ -56,11 +56,11 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapContainer(name).getBackupCount();
+        return mapService.getMapServiceContext().getMapContainer(name).getBackupCount();
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapContainer(name).getAsyncBackupCount();
+        return mapService.getMapServiceContext().getMapContainer(name).getAsyncBackupCount();
     }
 
     @Override

@@ -55,11 +55,11 @@ public class PutFromLoadAllBackupOperation extends AbstractMapOperation implemen
         }
         final int partitionId = getPartitionId();
         final MapService mapService = this.mapService;
-        final RecordStore recordStore = mapService.getRecordStore(partitionId, name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
             final Data key = keyValueSequence.get(i);
             final Data value = keyValueSequence.get(i + 1);
-            final Object object = mapService.toObject(value);
+            final Object object = mapService.getMapServiceContext().toObject(value);
             recordStore.putFromLoad(key, object);
         }
     }

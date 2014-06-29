@@ -24,6 +24,7 @@ import com.hazelcast.map.NearCacheProvider;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -63,7 +64,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         backupRecordInfos = new ArrayList<RecordInfo>();
         backupEntrySet = new ArrayList<Map.Entry<Data, Data>>();
         int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
+        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
         InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         Set<Data> keysToInvalidate = new HashSet<Data>();
@@ -75,19 +76,19 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 if (initialLoad) {
                     recordStore.putFromLoad(dataKey, dataValue, -1);
                 } else {
-                    dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, -1));
+                    dataOldValue = mapService.getMapServiceContext().toData(recordStore.put(dataKey, dataValue, -1));
                 }
-                mapService.interceptAfterPut(name, dataValue);
+                mapService.getMapServiceContext().interceptAfterPut(name, dataValue);
                 EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-                mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
+                mapService.getMapServiceContext().getMapEventPublisher().publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
                 keysToInvalidate.add(dataKey);
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     Record record = recordStore.getRecord(dataKey);
-                    final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
-                    mapService.publishWanReplicationUpdate(name, entryView);
+                    final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, mapService.getMapServiceContext().toData(dataValue), record);
+                    mapService.getMapServiceContext().getMapEventPublisher().publishWanReplicationUpdate(name, entryView);
                 }
                 backupEntrySet.add(entry);
-                RecordInfo replicationInfo = mapService.createRecordInfo(recordStore.getRecord(dataKey));
+                RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
                 backupRecordInfos.add(replicationInfo);
             }
         }
@@ -95,7 +96,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     }
 
     protected final void invalidateNearCaches(Set<Data> keys) {
-        final NearCacheProvider nearCacheProvider = mapService.getNearCacheProvider();
+        final NearCacheProvider nearCacheProvider = mapService.getMapServiceContext().getNearCacheProvider();
         if (nearCacheProvider.isNearCacheAndInvalidationEnabled(name)) {
             nearCacheProvider.invalidateAllNearCaches(name, keys);
         }

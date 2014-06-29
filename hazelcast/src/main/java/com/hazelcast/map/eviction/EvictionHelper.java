@@ -131,17 +131,17 @@ public final class EvictionHelper {
     }
 
     private static void interceptAndInvalidate(MapService mapService, long value, Data tmpKey, String mapName) {
-        mapService.interceptAfterRemove(mapName, value);
-        final NearCacheProvider nearCacheProvider = mapService.getNearCacheProvider();
+        mapService.getMapServiceContext().interceptAfterRemove(mapName, value);
+        final NearCacheProvider nearCacheProvider = mapService.getMapServiceContext().getNearCacheProvider();
         if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
             nearCacheProvider.invalidateAllNearCaches(mapName, tmpKey);
         }
     }
 
     public static void fireEvent(Data key, Object value, String mapName, MapService mapService) {
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
-        mapService.publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED,
-                key, mapService.toData(value), null);
+        final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
+        mapService.getMapServiceContext().getMapEventPublisher().publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED,
+                key, mapService.getMapServiceContext().toData(value), null);
     }
 
     public static boolean evictIfNotLocked(Data key, RecordStore recordStore) {
@@ -168,9 +168,9 @@ public final class EvictionHelper {
                 break;
             case PER_NODE:
                 maxSize = mapConfig.getMaxSizeConfig().getSize();
-                int memberCount = mapService.getNodeEngine().getClusterService().getMembers().size();
+                int memberCount = mapService.getMapServiceContext().getNodeEngine().getClusterService().getMembers().size();
                 int maxPartitionSize = (maxSize
-                        * memberCount / mapService.getNodeEngine().getPartitionService().getPartitionCount());
+                        * memberCount / mapService.getMapServiceContext().getNodeEngine().getPartitionService().getPartitionCount());
                 targetSizePerPartition = Double.valueOf(maxPartitionSize
                         * ((ONE_HUNDRED_PERCENT - evictionPercentage) / (1D * ONE_HUNDRED_PERCENT))).intValue();
                 diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
@@ -203,17 +203,17 @@ public final class EvictionHelper {
 
     private static boolean isEvictablePerNode(MapContainer mapContainer) {
         int nodeTotalSize = 0;
-        final MapService mapService = mapContainer.getMapService();
+        final MapService mapService = mapContainer.getMapServiceContext().getService();
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
         final String mapName = mapContainer.getName();
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitionCount = partitionService.getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             final Address owner = partitionService.getPartitionOwner(i);
             if (nodeEngine.getThisAddress().equals(owner)) {
-                final PartitionContainer container = mapService.getPartitionContainer(i);
+                final PartitionContainer container = mapService.getMapServiceContext().getPartitionContainer(i);
                 if (container == null) {
                     return false;
                 }
@@ -252,16 +252,16 @@ public final class EvictionHelper {
     }
 
     private static boolean isEvictablePerPartition(final MapContainer mapContainer) {
-        final MapService mapService = mapContainer.getMapService();
+        final MapService mapService = mapContainer.getMapServiceContext().getService();
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
         final String mapName = mapContainer.getName();
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
             final Address owner = partitionService.getPartitionOwner(i);
             if (nodeEngine.getThisAddress().equals(owner)) {
-                final PartitionContainer container = mapService.getPartitionContainer(i);
+                final PartitionContainer container = mapService.getMapServiceContext().getPartitionContainer(i);
                 if (container == null) {
                     return false;
                 }
@@ -297,13 +297,13 @@ public final class EvictionHelper {
 
     private static long getUsedHeapSize(final MapContainer mapContainer) {
         long heapCost = 0L;
-        final MapService mapService = mapContainer.getMapService();
+        final MapService mapService = mapContainer.getMapServiceContext().getService();
         final String mapName = mapContainer.getName();
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
         final Address thisAddress = nodeEngine.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             if (nodeEngine.getPartitionService().getPartition(i).isOwnerOrBackup(thisAddress)) {
-                final PartitionContainer container = mapService.getPartitionContainer(i);
+                final PartitionContainer container = mapService.getMapServiceContext().getPartitionContainer(i);
                 if (container == null) {
                     return -1L;
                 }

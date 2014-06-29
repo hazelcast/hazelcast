@@ -71,7 +71,7 @@ public class MapIsEmptyRequest extends AllPartitionsClientRequest {
     protected Object reduce(Map<Integer, Object> map) {
         MapService mapService = getService();
         for (Object result : map.values()) {
-            boolean isEmpty = (Boolean) mapService.toObject(result);
+            boolean isEmpty = (Boolean) mapService.getMapServiceContext().toObject(result);
             if (!isEmpty) {
                 return false;
             }

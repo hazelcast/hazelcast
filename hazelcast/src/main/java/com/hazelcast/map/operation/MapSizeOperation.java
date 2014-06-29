@@ -32,11 +32,11 @@ public class MapSizeOperation extends AbstractMapOperation implements PartitionA
     }
 
     public void run() {
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
         recordStore.checkIfLoaded();
         size = recordStore.size();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();
+            ((MapService) getService()).getMapServiceContext().getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 

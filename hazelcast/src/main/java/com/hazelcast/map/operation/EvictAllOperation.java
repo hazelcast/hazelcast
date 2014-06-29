@@ -28,9 +28,9 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
     public void run() throws Exception {
 
         // TODO this also clears locked keys from near cache which should be preserved.
-        mapService.getNearCacheProvider().clearNearCache(name);
+        mapService.getMapServiceContext().getNearCacheProvider().clearNearCache(name);
 
-        final RecordStore recordStore = mapService.getExistingRecordStore(getPartitionId(), name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getExistingRecordStore(getPartitionId(), name);
         if (recordStore == null) {
             return;
         }
@@ -55,12 +55,12 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
 
     @Override
     public int getSyncBackupCount() {
-        return mapService.getMapContainer(name).getBackupCount();
+        return mapService.getMapServiceContext().getMapContainer(name).getBackupCount();
     }
 
     @Override
     public int getAsyncBackupCount() {
-        return mapService.getMapContainer(name).getAsyncBackupCount();
+        return mapService.getMapServiceContext().getMapContainer(name).getAsyncBackupCount();
     }
 
     @Override

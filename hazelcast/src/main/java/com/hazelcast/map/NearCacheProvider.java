@@ -21,7 +21,7 @@ public class NearCacheProvider {
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
         public NearCache createNew(String mapName) {
-            final MapContainer mapContainer = mapService.getMapContainer(mapName);
+            final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
             final SizeEstimator nearCacheSizeEstimator = mapContainer.getNearCacheSizeEstimator();
             final NearCache nearCache = new NearCache(mapName, nodeEngine);
             nearCache.setNearCacheSizeEstimator(nearCacheSizeEstimator);
@@ -29,16 +29,30 @@ public class NearCacheProvider {
         }
     };
 
-    private final MapService mapService;
+    private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
 
-    public NearCacheProvider(MapService mapService) {
-        this.mapService = mapService;
-        this.nodeEngine = mapService.getNodeEngine();
+    public NearCacheProvider(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
+        this.mapServiceContext = mapServiceContext;
+        this.nodeEngine = nodeEngine;
     }
 
     public NearCache getNearCache(String mapName) {
         return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
+    }
+
+    public void clear() {
+        for (NearCache nearCache : nearCacheMap.values()) {
+            nearCache.clear();
+        }
+        nearCacheMap.clear();
+    }
+
+    public void remove(String mapName) {
+        final NearCache nearCache = nearCacheMap.remove(mapName);
+        if (nearCache != null) {
+            nearCache.clear();
+        }
     }
 
     // this operation returns the given value in near-cache memory format (data or object)
@@ -82,8 +96,6 @@ public class NearCacheProvider {
         if (!isNearCacheEnabled(mapName)) {
             return;
         }
-        final MapService mapService = this.mapService;
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
@@ -102,13 +114,13 @@ public class NearCacheProvider {
 
 
     public boolean isNearCacheAndInvalidationEnabled(String mapName) {
-        final MapContainer mapContainer = getMapContainer(mapName);
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled()
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
     }
 
     public boolean isNearCacheEnabled(String mapName) {
-        final MapContainer mapContainer = getMapContainer(mapName);
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled();
     }
 
@@ -119,11 +131,9 @@ public class NearCacheProvider {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-
-        final MapService mapService = this.mapService;
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
         //send operation.
-        Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys).setServiceName(MapService.SERVICE_NAME);
+        Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys)
+                .setServiceName(MapService.SERVICE_NAME);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
@@ -132,7 +142,7 @@ public class NearCacheProvider {
                 }
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
-                mapService.getLogger().warning(throwable);
+                nodeEngine.getLogger(getClass()).warning(throwable);
             }
         }
         // below local invalidation is for the case the data is cached before partition is owned/migrated
@@ -147,24 +157,6 @@ public class NearCacheProvider {
         }
         NearCache nearCache = getNearCache(mapName);
         return nearCache.get(key);
-    }
-
-    private MapContainer getMapContainer(String mapName) {
-        return mapService.getMapContainer(mapName);
-    }
-
-    public void clear() {
-        for (NearCache nearCache : nearCacheMap.values()) {
-            nearCache.clear();
-        }
-        nearCacheMap.clear();
-    }
-
-    public void remove(String mapName) {
-        final NearCache nearCache = nearCacheMap.remove(mapName);
-        if (nearCache != null) {
-            nearCache.clear();
-        }
     }
 }
 

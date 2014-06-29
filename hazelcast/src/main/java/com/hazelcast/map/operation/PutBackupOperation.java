@@ -19,6 +19,7 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -49,7 +50,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     public void run() {
         final Record record = recordStore.putBackup(dataKey, dataValue, ttl);
         if (recordInfo != null) {
-            mapService.applyRecordInfo(record, recordInfo);
+            Records.applyRecordInfo(record, recordInfo);
         }
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);

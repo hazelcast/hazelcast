@@ -21,6 +21,7 @@ import com.hazelcast.map.operation.BasePutOperation;
 import com.hazelcast.map.operation.PutBackupOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -91,7 +92,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     public Operation getBackupOperation() {
-        RecordInfo replicationInfo = mapService.createRecordInfo(recordStore.getRecord(dataKey));
+        RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true);
     }
 
