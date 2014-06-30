@@ -17,16 +17,13 @@ The full example is available [here](http://github.com/noctarius/hz-map-reduce) 
 
 The JobTracker is used to create Job instances whereas every instance of `com.hazelcast.mapreduce.Job` defines a single MapReduce configuration. The same Job can be submitted multiple times, no matter if executed in parallel or after the previous execution is finished.
 
-***Note: After retrieving the JobTracker, be aware of the fact that it should only be used with data structures derived from the same HazelcastInstance. Otherwise, unexpected behavior will happen.***
+***ATTENTION:*** *After retrieving the JobTracker, be aware of the fact that it should only be used with data structures derived from the same HazelcastInstance. Otherwise, unexpected behavior will happen.*
 
 To retrieve a JobTracker from Hazelcast, we will start by using the "default" configuration for convenience reasons to show the basic way.
 
 ```java
-
-import com.hazelcast.core.*;
 import com.hazelcast.mapreduce.*;
 
-HazelcastInstance hazelcastInstance = getHazelcastInstance();
 JobTracker jobTracker = hazelcastInstance.getJobTracker( "default" );
 ```
 
@@ -46,7 +43,7 @@ Below example code is a direct follow up of the example of the JobTracker sectio
 
 We start by retrieving an instance of our data map and create the Job instance afterwards. Implementations used to configure the Job will be discussed while walking further through the API documentation, they are not yet discussed.
 
-***Note: Since the Job class is highly depending on generics to support type safety, the generics change over time and may not be assignment compatible to old variable types. To create full potential of the fluent API, we recommend to use fluent method chaining as shown in this example to prevent the need of too much variables.***
+***ATTENTION:*** *Since the Job class is highly depending on generics to support type safety, the generics change over time and may not be assignment compatible to old variable types. To create full potential of the fluent API, we recommend to use fluent method chaining as shown in this example to prevent the need of too much variables.*
 
 ```java
 IMap<String, String> map = hazelcastInstance.getMap( "articles" );
@@ -54,10 +51,10 @@ KeyValueSource<String, String> source = KeyValueSource.fromMap( map );
 Job<String, String> job = jobTracker.newJob( source );
 
 ICompletableFuture<Map<String, Long>> future = job
-        .mapper( new TokenizerMapper() )
-        .combiner( new WordCountCombinerFactory() )
-        .reducer( new WordCountReducerFactory() )
-        .submit();
+    .mapper( new TokenizerMapper() )
+    .combiner( new WordCountCombinerFactory() )
+    .reducer( new WordCountReducerFactory() )
+    .submit();
 
 // Attach a callback listener
 future.andThen( buildCallback() );
@@ -120,15 +117,15 @@ A common implementation of that Mapper might look like the following example:
 
 ```java
 public class TokenizerMapper implements Mapper<String, String, String, Long> {
-    private static final Long ONE = Long.valueOf( 1L );
+  private static final Long ONE = Long.valueOf( 1L );
 
-    @Override
-    public void map(String key, String document, Context<String, Long> context) {
-        StringTokenizer tokenizer = new StringTokenizer( document.toLowerCase() );
-        while ( tokenizer.hasMoreTokens() ) {
-            context.emit( tokenizer.nextToken(), ONE );
-        }
+  @Override
+  public void map(String key, String document, Context<String, Long> context) {
+    StringTokenizer tokenizer = new StringTokenizer( document.toLowerCase() );
+    while ( tokenizer.hasMoreTokens() ) {
+      context.emit( tokenizer.nextToken(), ONE );
     }
+  }
 }
 ```
 
@@ -153,31 +150,32 @@ Combiners can override `beginCombine` and `finalizeCombine` to perform preparati
 For our word count example, we are going to have a simple CombinerFactory and Combiner implementation similar to the following one:
 
 ```java
-public class WordCountCombinerFactory implements CombinerFactory<String, Long, Long> {
+public class WordCountCombinerFactory
+    implements CombinerFactory<String, Long, Long> {
+
+  @Override
+  public Combiner<Long, Long> newCombiner( String key ) {
+    return new WordCountCombiner();
+  }
+
+  private class WordCountCombiner extends Combiner<Long, Long> {
+    private long sum = 0;
 
     @Override
-    public Combiner<Long, Long> newCombiner( String key ) {
-        return new WordCountCombiner();
+    public void combine( Long value ) {
+      sum++;
     }
 
-    private class WordCountCombiner extends Combiner<Long, Long> {
-        private long sum = 0;
-
-        @Override
-        public void combine( Long value ) {
-            sum++;
-        }
-
-        @Override
-        public Long finalizeChunk() {
-            return sum;
-        }
+    @Override
+    public Long finalizeChunk() {
+      return sum;
+    }
         
-        @Override
-        public void reset() {
-            sum = 0;
-        }
+    @Override
+    public void reset() {
+      sum = 0;
     }
+  }
 }
 ```
 
@@ -198,25 +196,24 @@ Again for our word count example, the implementation will look similar to the fo
 ```java
 public class WordCountReducerFactory implements ReducerFactory<String, Long, Long> {
 
+  @Override
+  public Reducer<Long, Long> newReducer( String key ) {
+    return new WordCountReducer();
+  }
+
+  private class WordCountReducer extends Reducer<Long, Long> {
+    private volatile long sum = 0;
+
     @Override
-    public Reducer<Long, Long> newReducer( String key ) {
-        return new WordCountReducer();
+    public void reduce( Long value ) {
+      sum += value.longValue();
     }
 
-    private class WordCountReducer extends Reducer<Long, Long> {
-
-        private volatile long sum = 0;
-
-        @Override
-        public void reduce( Long value ) {
-            sum += value.longValue();
-        }
-
-        @Override
-        public Long finalizeReduce() {
-            return sum;
-        }
+    @Override
+    public Long finalizeReduce() {
+      return sum;
     }
+  }
 }
 ```
 
@@ -233,15 +230,15 @@ A collator would look like the following snippet:
 ```java
 public class WordCountCollator implements Collator<Map.Entry<String, Long>, Long> {
 
-    @Override
-    public Long collate( Iterable<Map.Entry<String, Long>> values ) {
-        long sum = 0;
+  @Override
+  public Long collate( Iterable<Map.Entry<String, Long>> values ) {
+    long sum = 0;
 
-        for ( Map.Entry<String, Long> entry : values ) {
-            sum += entry.getValue().longValue();
-        }
-        return sum;
+    for ( Map.Entry<String, Long> entry : values ) {
+      sum += entry.getValue().longValue();
     }
+    return sum;
+  }
 }
 ```
 
@@ -258,10 +255,10 @@ A basic KeyPredicate implementation to only map keys containing the word "hazelc
 ```java
 public class WordCountKeyPredicate implements KeyPredicate<String> {
 
-    @Override
-    public boolean evaluate( String s ) {
-        return s != null && s.toLowerCase().contains( "hazelcast" );
-    }
+  @Override
+  public boolean evaluate( String s ) {
+    return s != null && s.toLowerCase().contains( "hazelcast" );
+  }
 }
 ```
 
@@ -279,10 +276,10 @@ KeyValueSource<String, String> source = KeyValueSource.fromMap( map );
 Job<String, String> job = jobTracker.newJob( source );
 
 JobCompletableFuture<Map<String, Long>> future = job
-        .mapper( new TokenizerMapper() )
-        .combiner( new WordCountCombinerFactory() )
-        .reducer( new WordCountReducerFactory() )
-        .submit();
+    .mapper( new TokenizerMapper() )
+    .combiner( new WordCountCombinerFactory() )
+    .reducer( new WordCountReducerFactory() )
+    .submit();
 
 String jobId = future.getJobId();
 TrackableJob trackableJob = jobTracker.getTrackableJob(jobId);
@@ -300,7 +297,7 @@ for ( JobPartitionState partitionState : partitionStates ) {
 ```
 
 
-***Note: Caching of the JobProcessInformation does not work on Java native clients since current values are retrieved while retrieving the instance to minimize traffic between executing node and client.***
+**Note:** *Caching of the JobProcessInformation does not work on Java native clients since current values are retrieved while retrieving the instance to minimize traffic between executing node and client.*
 
 
 #### JobTracker Configuration
@@ -323,12 +320,12 @@ The following snippet shows a typical JobTracker configuration. We will discuss 
 </jobtracker>
 ```
 
--	**max-thread-size**: Configures the maximum thread pool size of the JobTracker.
--	**queue-size**: Defines the maximum number of tasksthat are able to wait to be processed. A value of 0 means unbounded queue. Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate chunks are lost.
--	**retry-count**: Currently not used but reserved for later use where the framework will automatically try to restart / retry operations from a available save point.
--	**chunk-size**: Defines the number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate transmission but remember that low values mean higher traffic costs. A very high value might cause an OutOfMemoryError to occur if emitted values not fit into heap memory before
+- **max-thread-size:** Configures the maximum thread pool size of the JobTracker.
+- **queue-size:** Defines the maximum number of tasksthat are able to wait to be processed. A value of 0 means unbounded queue. Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate chunks are lost.
+- **retry-count:** Currently not used but reserved for later use where the framework will automatically try to restart / retry operations from a available save point.
+- **chunk-size:** Defines the number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate transmission but remember that low values mean higher traffic costs. A very high value might cause an OutOfMemoryError to occur if emitted values not fit into heap memory before
 being sent to reducers. To prevent this, you might want to use a combiner to pre-reduce values on mapping nodes.
--	**communicate-stats**: Defines if statistics (for example about processed entries) are transmitted to the job emitter. This might be used to show any kind of progress to a user inside of an UI system but produces additional traffic. If not needed, you might want to deactivate this.
--	**topology-changed-strategy**: Defines how the MapReduce framework will react on topology changes while executing a job. Currently, only CANCEL_RUNNING_OPERATION is fully supported which throws an exception to the job emitter (will throw a `com.hazelcast.mapreduce.TopologyChangedException`).
+- **communicate-stats:** Defines if statistics (for example about processed entries) are transmitted to the job emitter. This might be used to show any kind of progress to a user inside of an UI system but produces additional traffic. If not needed, you might want to deactivate this.
+- **topology-changed-strategy:** Defines how the MapReduce framework will react on topology changes while executing a job. Currently, only CANCEL_RUNNING_OPERATION is fully supported which throws an exception to the job emitter (will throw a `com.hazelcast.mapreduce.TopologyChangedException`).
 
 
