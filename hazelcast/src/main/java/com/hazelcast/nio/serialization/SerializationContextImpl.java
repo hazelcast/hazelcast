@@ -183,7 +183,7 @@ final class SerializationContextImpl implements SerializationContext {
     }
 
     static long combineToLong(int x, int y) {
-        return ((long) x << 32) | ((long) y & 0xFFFFFFFL);
+        return ((long) x << 32) | ((long) y & 0xFFFFFFFFL);
     }
 
     static int extractInt(long value, boolean lowerBits) {
