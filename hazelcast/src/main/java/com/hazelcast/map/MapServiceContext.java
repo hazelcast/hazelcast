@@ -18,7 +18,7 @@ public interface MapServiceContext extends MapServiceContextSupport,
 
     PartitionContainer getPartitionContainer(int partitionId);
 
-    PartitionContainer[] getPartitionContainers();
+    void initPartitionsContainers();
 
     void clearPartitionData(int partitionId);
 

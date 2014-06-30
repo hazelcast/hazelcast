@@ -19,28 +19,24 @@ class MapManagedService implements ManagedService {
 
     @Override
     public void init(final NodeEngine nodeEngine, Properties properties) {
-        final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        final PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
-        for (int i = 0; i < partitionCount; i++) {
-            partitionContainers[i] = new PartitionContainer(mapServiceContext.getService(), i);
-        }
+        mapServiceContext.initPartitionsContainers();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.registerLockStoreConstructor(mapServiceContext.serviceName(),
                     new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
-                public LockStoreInfo createNew(final ObjectNamespace key) {
-                    final MapContainer mapContainer = mapServiceContext.getMapContainer(key.getObjectName());
-                    return new LockStoreInfo() {
-                        public int getBackupCount() {
-                            return mapContainer.getBackupCount();
-                        }
+                        public LockStoreInfo createNew(final ObjectNamespace key) {
+                            final MapContainer mapContainer = mapServiceContext.getMapContainer(key.getObjectName());
+                            return new LockStoreInfo() {
+                                public int getBackupCount() {
+                                    return mapContainer.getBackupCount();
+                                }
 
-                        public int getAsyncBackupCount() {
-                            return mapContainer.getAsyncBackupCount();
+                                public int getAsyncBackupCount() {
+                                    return mapContainer.getAsyncBackupCount();
+                                }
+                            };
                         }
-                    };
-                }
-            });
+                    });
         }
         mapServiceContext.getExpirationManager().start();
     }
