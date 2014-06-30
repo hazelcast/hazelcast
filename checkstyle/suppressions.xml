@@ -307,27 +307,17 @@
     <suppress checks="Todo" files="com.hazelcast.topic.TopicEvent"/>
 
     <!-- Ascii-->
-    <suppress checks="" files="com.hazelcast.ascii.memcache.Stats"/>
-    <suppress checks="" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
-    <suppress checks="" files="com.hazelcast.ascii.TextCommandConstants"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.ascii[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.ascii[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.ascii[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.ascii[\\/]"/>
 
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.ascii.rest.HttpPostCommand"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.ascii.memcache.IncrementCommandProcessor"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.ascii.memcache.SetCommandProcessor"/>
+    <suppress checks="ExecutableStatement" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
     <suppress checks="MagicNumber" files="com.hazelcast.ascii.memcache.MemcacheCommandProcessor"/>
-
-    <suppress checks="MethodLength" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="NestedIfDepth" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="MethodCount" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="ExecutableStatementCount" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.ascii[\\/]"/>
+    <suppress checks="MethodCount" files="com.hazelcast.ascii.memcache.Stats"/>
 
     <!-- Executor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>
@@ -510,8 +500,7 @@
     <suppress checks="" files="com.hazelcast.map.operation[\\/]"/>
     <!-- map.proxy-->
     <suppress checks="" files="com.hazelcast.map.proxy[\\/]"/>
-    <!-- map.tx-->
-    <suppress checks="" files="com.hazelcast.map.tx[\\/]"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.tx.TransactionalMapProxySupport"/>
 
 </suppressions>
 

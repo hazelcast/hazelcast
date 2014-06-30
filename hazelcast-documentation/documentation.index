@@ -52,7 +52,7 @@ src/DistributedQuery.md
 		src/MR-Essentials.md
 		src/MR-Introduction.md
 		src/MR-Architecture.md
-#	src/Aggregators.md
+	src/Aggregators.md
 	src/ContinuousQuery.md
 src/Transactions.md
 	src/J2EEIntegration.md

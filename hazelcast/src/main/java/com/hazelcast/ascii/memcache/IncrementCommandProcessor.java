@@ -16,6 +16,7 @@
 
 package com.hazelcast.ascii.memcache;
 
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
@@ -57,14 +58,24 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
         try {
             textCommandService.lock(mapName, key);
         } catch (Exception e) {
-            incrementCommand.setResponse(NOT_FOUND);
+            incrementCommand.setResponse(TextCommandConstants.NOT_FOUND);
             if (incrementCommand.shouldReply()) {
                 textCommandService.sendResponse(incrementCommand);
             }
             return;
         }
+        incrementUnderLock(incrementCommand, key, mapName);
+        textCommandService.unlock(mapName, key);
+        if (incrementCommand.shouldReply()) {
+            textCommandService.sendResponse(incrementCommand);
+        }
+
+    }
+
+    private void incrementUnderLock(IncrementCommand incrementCommand, String key, String mapName) {
         Object value = textCommandService.get(mapName, key);
         MemcacheEntry entry = null;
+
         if (value != null) {
             if (value instanceof MemcacheEntry) {
                 entry = (MemcacheEntry) value;
@@ -79,40 +90,46 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
                     throw ExceptionUtil.rethrow(e);
                 }
             }
+
             final byte[] value1 = entry.getValue();
             final long current = (value1 == null || value1.length == 0) ? 0 : byteArrayToLong(value1);
             long result = -1;
-            if (incrementCommand.getType() == TextCommandType.INCREMENT) {
-                result = current + incrementCommand.getValue();
-                result = 0 > result ? Long.MAX_VALUE : result;
-                textCommandService.incrementIncHitCount();
-            } else if (incrementCommand.getType() == TextCommandType.DECREMENT) {
-                result = current - incrementCommand.getValue();
-                result = 0 > result ? 0 : result;
-                textCommandService.incrementDecrHitCount();
-            }
-            incrementCommand.setResponse(ByteUtil.concatenate(stringToBytes(String.valueOf(result)), RETURN));
+
+            result = incrementCommandTypeCheck(incrementCommand, result, current);
+
+            incrementCommand.setResponse(ByteUtil.concatenate(stringToBytes(String.valueOf(result))
+                    , TextCommandConstants.RETURN));
             MemcacheEntry newValue = new MemcacheEntry(key, longToByteArray(result), entry.getFlag());
             textCommandService.put(mapName, key, newValue);
         } else {
-            if (incrementCommand.getType() == TextCommandType.INCREMENT) {
+            if (incrementCommand.getType() == TextCommandConstants.TextCommandType.INCREMENT) {
                 textCommandService.incrementIncMissCount();
             } else {
                 textCommandService.incrementDecrMissCount();
             }
-            incrementCommand.setResponse(NOT_FOUND);
+            incrementCommand.setResponse(TextCommandConstants.NOT_FOUND);
         }
-        textCommandService.unlock(mapName, key);
+    }
 
+    public void handleRejection(IncrementCommand incrementCommand) {
+        incrementCommand.setResponse(TextCommandConstants.NOT_FOUND);
         if (incrementCommand.shouldReply()) {
             textCommandService.sendResponse(incrementCommand);
         }
     }
 
-    public void handleRejection(IncrementCommand incrementCommand) {
-        incrementCommand.setResponse(NOT_FOUND);
-        if (incrementCommand.shouldReply()) {
-            textCommandService.sendResponse(incrementCommand);
+    private long incrementCommandTypeCheck(IncrementCommand incrementCommand, long result, long current) {
+        long paramResult = result;
+        if (incrementCommand.getType() == TextCommandConstants.TextCommandType.INCREMENT) {
+            paramResult = current + incrementCommand.getValue();
+            paramResult = 0 > paramResult ? Long.MAX_VALUE : paramResult;
+            textCommandService.incrementIncHitCount();
+        } else if (incrementCommand.getType() == TextCommandConstants.TextCommandType.DECREMENT) {
+            paramResult = current - incrementCommand.getValue();
+            paramResult = 0 > paramResult ? 0 : paramResult;
+            textCommandService.incrementDecrHitCount();
         }
+
+        return paramResult;
     }
 }

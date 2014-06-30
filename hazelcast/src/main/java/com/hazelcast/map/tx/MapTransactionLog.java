@@ -30,6 +30,9 @@ import com.hazelcast.util.ThreadUtil;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
+/**
+ * Represents an operation on the map in the transaction log.
+ */
 public class MapTransactionLog implements KeyAwareTransactionLog {
 
     String name;

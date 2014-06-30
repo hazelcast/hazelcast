@@ -589,13 +589,17 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return (getItemQueue().size() + delta) <= config.getMaxSize();
     }
 
-    Deque<QueueItem> getItemQueue() {
+    public Deque<QueueItem> getItemQueue() {
         if (itemQueue == null) {
             itemQueue = new LinkedList<QueueItem>();
             if (backupMap != null && !backupMap.isEmpty()) {
                 List<QueueItem> values = new ArrayList<QueueItem>(backupMap.values());
                 Collections.sort(values);
                 itemQueue.addAll(values);
+                final QueueItem lastItem = itemQueue.peekLast();
+                if (lastItem != null) {
+                    setId(lastItem.itemId);
+                }
                 backupMap.clear();
                 backupMap = null;
             }

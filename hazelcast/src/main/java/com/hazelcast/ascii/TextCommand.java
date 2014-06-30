@@ -21,9 +21,9 @@ import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 
-public interface TextCommand extends TextCommandConstants, SocketWritable, SocketReadable {
+public interface TextCommand extends SocketWritable, SocketReadable {
 
-    TextCommandType getType();
+    TextCommandConstants.TextCommandType getType();
 
     void init(SocketTextReader socketTextReader, long requestId);
 

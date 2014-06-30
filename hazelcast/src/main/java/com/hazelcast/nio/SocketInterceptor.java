@@ -22,13 +22,25 @@ import java.util.Properties;
 
 /**
  * An interface that provides the ability to intercept the creation of sockets.
- *
- * This class should belong in the {@link com.hazelcast.nio.tcp} package; unfortunately we can't move this
- * interface since it is a public API.
+ * It can be registered from client via config.
+ * For members see {@link com.hazelcast.nio.MemberSocketInterceptor}
+ * see {@link com.hazelcast.config.SocketInterceptorConfig}
  */
 public interface SocketInterceptor {
 
+    /**
+     * Initializes socket interceptor with properties which is set by
+     * {@link com.hazelcast.config.Config#setProperty(String, String)}
+     *
+     * @param properties from hazelcast config
+     */
     void init(Properties properties);
 
+    /**
+     * Called when a connection is established.
+     *
+     * @param connectedSocket related socket
+     * @throws IOException
+     */
     void onConnect(Socket connectedSocket) throws IOException;
 }

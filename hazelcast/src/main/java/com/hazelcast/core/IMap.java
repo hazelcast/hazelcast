@@ -183,6 +183,8 @@ public interface IMap<K, V>
      * This method breaks the contract of EntryListener.
      * When an entry is removed by delete(), it fires an EntryEvent with a null oldValue.
      * <p/>
+     * Also listener with predicates, will have null values, so only keys can be queried via predicates.
+     * <p/>
      *
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException   if the key is of an inappropriate type for
@@ -342,10 +344,13 @@ public interface IMap<K, V>
      * </code>
      * ExecutionException is never thrown.
      * <p/>
-     * <p><b>Warning:</b></p>
+     * <p><b>Warning 1:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     *
+     * <p><b>Warning 2:</b></p>
+     * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
      *
      * @param key      the key of the map entry
      * @param value    the new value of the map entry
@@ -436,6 +441,9 @@ public interface IMap<K, V>
      * previously put into map.
      * </p>
      *
+     * <p><b>Warning 3:</b></p>
+     * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
+     *
      * @param key      key of the entry
      * @param value    value of the entry
      * @param ttl      maximum time for this entry to stay in the map
@@ -451,10 +459,13 @@ public interface IMap<K, V>
      * will not be called to store/persist the entry.  If ttl is 0, then
      * the entry lives forever.
      * <p/>
-     * <p><b>Warning:</b></p>
+     * <p><b>Warning 1:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     *
+     * <p><b>Warning 2:</b></p>
+     * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
      *
      * @param key      key of the entry
      * @param value    value of the entry
@@ -497,6 +508,9 @@ public interface IMap<K, V>
      * This method returns a clone of previous value, not the original (identically equal) value
      * previously put into map.
      * </p>
+     *
+     * <p><b>Warning 3:</b></p>
+     * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
      *
      * @param key      key of the entry
      * @param value    value of the entry
@@ -564,10 +578,13 @@ public interface IMap<K, V>
      * the entry lives forever. Similar to put operation except that set
      * doesn't return the old value which is more efficient.
      * <p/>
-     * <p><b>Warning:</b></p>
+     * <p><b>Warning 1:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     *
+     * <p><b>Warning 2:</b></p>
+     * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
      *
      * @param key      key of the entry
      * @param value    value of the entry

@@ -18,7 +18,6 @@ package com.hazelcast.nio.ascii;
 
 import com.hazelcast.ascii.CommandParser;
 import com.hazelcast.ascii.TextCommand;
-import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.memcache.GetCommandParser;
 import com.hazelcast.ascii.memcache.SetCommandParser;
@@ -56,7 +55,7 @@ import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.VERSION;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
-public class SocketTextReader implements TextCommandConstants, SocketReader {
+public class SocketTextReader implements SocketReader {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 

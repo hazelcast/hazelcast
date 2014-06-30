@@ -26,8 +26,12 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 
+/**
+ * An operation to prepare transaction by locking the key on the key owner.
+ */
 public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupAwareOperation {
 
+    private static final long LOCK_TTL_MILLIS = 10000L;
     String ownerUuid;
 
     protected TxnPrepareOperation(String name, Data dataKey, String ownerUuid) {
@@ -40,10 +44,11 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), 10000L)) {
+        if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), LOCK_TTL_MILLIS)) {
             ILogger logger = getLogger();
             logger.severe(recordStore.isLocked(getKey()) + ":" + getKey());
-            throw new TransactionException("Lock is not owned by the transaction! Owner: " + recordStore.getLockOwnerInfo(getKey()));
+            throw new TransactionException("Lock is not owned by the transaction! Owner: "
+                    + recordStore.getLockOwnerInfo(getKey()));
         }
     }
 

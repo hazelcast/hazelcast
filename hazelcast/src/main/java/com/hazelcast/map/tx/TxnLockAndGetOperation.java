@@ -25,6 +25,9 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 
+/**
+ * Transactional lock and get operation.
+ */
 public class TxnLockAndGetOperation extends LockAwareOperation {
 
     private VersionedValue response;
@@ -79,10 +82,10 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
 
     @Override
     public String toString() {
-        return "TxnLockAndGetOperation{" +
-                "timeout=" + getWaitTimeout() +
-                ", thread=" + getThreadId() +
-                '}';
+        return "TxnLockAndGetOperation{"
+                + "timeout=" + getWaitTimeout()
+                + ", thread=" + getThreadId()
+                + '}';
     }
 
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.memcache;
 
 
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 
@@ -41,7 +42,7 @@ public class SimpleCommandProcessor extends MemcacheCommandProcessor<SimpleComma
                 logger.warning(e);
             }
         } else if (command.getType() == UNKNOWN) {
-            command.setResponse(ERROR);
+            command.setResponse(TextCommandConstants.ERROR);
             textCommandService.sendResponse(command);
         }
     }

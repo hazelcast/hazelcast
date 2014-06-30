@@ -36,16 +36,11 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
@@ -57,6 +52,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -859,6 +859,30 @@ public class ClientMapTest {
         assertTrue("put latency", 0 < localMapStats.getTotalPutLatency());
         assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
         assertTrue("remove latency", 0 < localMapStats.getTotalRemoveLatency());
+    }
+
+    @Test
+    public void testEntryListenerWithPredicateOnDeleteOperation() throws Exception {
+        final IMap<Object, Object> serverMap = server.getMap("A");
+        final IMap<Object, Object> clientMap = client.getMap("A");
+        final CountDownLatch latch = new CountDownLatch(1);
+        clientMap.addEntryListener(new EntryAdapter<Object, Object>(){
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+                latch.countDown();
+            }
+        }, new TestPredicate(), true);
+        serverMap.put("A", "B");
+        clientMap.delete("A");
+        assertOpenEventually(latch, 10);
+    }
+
+    private static final class TestPredicate implements Predicate<Object, Object>, Serializable {
+
+        @Override
+        public boolean apply(Map.Entry<Object, Object> mapEntry) {
+            assert mapEntry != null;
+            return mapEntry.getKey().equals("A");
+        }
     }
 
     static class TestMapStore extends MapStoreAdapter<Long, String> {
