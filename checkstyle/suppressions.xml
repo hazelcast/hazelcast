@@ -500,8 +500,7 @@
     <suppress checks="" files="com.hazelcast.map.operation[\\/]"/>
     <!-- map.proxy-->
     <suppress checks="" files="com.hazelcast.map.proxy[\\/]"/>
-    <!-- map.tx-->
-    <suppress checks="" files="com.hazelcast.map.tx[\\/]"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.tx.TransactionalMapProxySupport"/>
 
 </suppressions>
 

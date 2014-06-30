@@ -28,12 +28,12 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 
 /**
- * @author mdogan 3/25/13
+ * Transactional delete operation
  */
 public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOperation {
 
     private long version;
-    private boolean successful = false;
+    private boolean successful;
     private String ownerUuid;
 
     public TxnDeleteOperation() {
