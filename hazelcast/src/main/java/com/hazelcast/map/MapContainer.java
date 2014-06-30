@@ -260,9 +260,12 @@ public class MapContainer extends MapContainerSupport {
         record.setLastAccessTime(now);
         record.setLastUpdateTime(now);
         record.setCreationTime(now);
-        final long ttlFromMapConfig = mapConfig.getTimeToLiveSeconds();
-        if (ttl < 0L && ttlFromMapConfig > 0L) {
-            record.setTtl(ttlFromMapConfig);
+        final long configTTLSeconds = mapConfig.getTimeToLiveSeconds();
+        final long configTTLMillis
+                = mapServiceContext.convertTime(configTTLSeconds, TimeUnit.SECONDS);
+
+        if (ttl < 0L && configTTLMillis > 0L) {
+            record.setTtl(configTTLMillis);
         } else if (ttl > 0L) {
             record.setTtl(ttl);
         }
