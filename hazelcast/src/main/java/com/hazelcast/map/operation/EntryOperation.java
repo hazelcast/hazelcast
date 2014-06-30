@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 
@@ -67,6 +68,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
         final Object valueAfterProcess = entry.getValue();
+        if (mapService.hasEventRegistration(name)) {
+            oldValue = mapService.toData(oldValue);
+        }
         // no matching data by key.
         if (oldValue == null && valueAfterProcess == null) {
             eventType = __NO_NEED_TO_FIRE_EVENT;
@@ -107,7 +111,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(dataKey);
-                final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey,mapService.toData(dataValue),record);
+                final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
                 mapService.publishWanReplicationUpdate(name, entryView);
             }
         }
