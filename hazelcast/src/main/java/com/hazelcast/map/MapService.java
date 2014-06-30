@@ -39,14 +39,14 @@ import java.util.Properties;
 /**
  * Defines map service behavior.
  *
- * @see com.hazelcast.spi.ManagedService
- * @see com.hazelcast.spi.MigrationAwareService
- * @see com.hazelcast.spi.TransactionalService
- * @see com.hazelcast.spi.RemoteService
- * @see com.hazelcast.spi.EventPublishingService
- * @see com.hazelcast.spi.PostJoinAwareService
- * @see com.hazelcast.spi.SplitBrainHandlerService
- * @see com.hazelcast.spi.ReplicationSupportingService
+ * @see com.hazelcast.map.MapManagedService
+ * @see com.hazelcast.map.MapMigrationAwareService
+ * @see com.hazelcast.map.MapTransactionalService
+ * @see com.hazelcast.map.MapRemoteService
+ * @see com.hazelcast.map.MapEventPublishingService
+ * @see com.hazelcast.map.MapPostJoinAwareService
+ * @see com.hazelcast.map.MapSplitBrainHandler
+ * @see com.hazelcast.map.MapReplicationSupportingService
  */
 public final class MapService implements ManagedService, MigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
@@ -65,66 +65,6 @@ public final class MapService implements ManagedService, MigrationAwareService,
     private MapServiceContext mapServiceContext;
 
     private MapService() {
-    }
-
-    public static MapService create(NodeEngine nodeEngine) {
-        final MapServiceContext mapServiceContext = new DefaultMapServiceContext(nodeEngine);
-        final ManagedService managedService = new MapManagedService(mapServiceContext);
-        final MigrationAwareService migrationAwareService = new MapMigrationAwareService(mapServiceContext, nodeEngine);
-        final TransactionalService transactionalService = new MapTransactionalService(mapServiceContext, nodeEngine);
-        final RemoteService remoteService = new MapRemoteService(mapServiceContext, nodeEngine);
-        final EventPublishingService eventPublisher = new MapEventPublishingService(mapServiceContext, nodeEngine);
-        final PostJoinAwareService postJoinAwareService = new MapPostJoinAwareService(mapServiceContext);
-        final SplitBrainHandlerService splitBrainHandler = new MapSplitBrainHandler(mapServiceContext, nodeEngine);
-        final ReplicationSupportingService replicationSupportingService
-                = new MapReplicationSupportingService(mapServiceContext, nodeEngine);
-
-        final MapService mapService = new MapService();
-        mapService.setManagedService(managedService);
-        mapService.setMigrationAwareService(migrationAwareService);
-        mapService.setTransactionalService(transactionalService);
-        mapService.setRemoteService(remoteService);
-        mapService.setEventPublishingService(eventPublisher);
-        mapService.setPostJoinAwareService(postJoinAwareService);
-        mapService.setSplitBrainHandlerService(splitBrainHandler);
-        mapService.setReplicationSupportingService(replicationSupportingService);
-        mapService.setMapServiceContext(mapServiceContext);
-
-        mapServiceContext.setService(mapService);
-
-        return mapService;
-    }
-
-    public void setManagedService(ManagedService managedService) {
-        this.managedService = managedService;
-    }
-
-    public void setMigrationAwareService(MigrationAwareService migrationAwareService) {
-        this.migrationAwareService = migrationAwareService;
-    }
-
-    public void setTransactionalService(TransactionalService transactionalService) {
-        this.transactionalService = transactionalService;
-    }
-
-    public void setRemoteService(RemoteService remoteService) {
-        this.remoteService = remoteService;
-    }
-
-    public void setEventPublishingService(EventPublishingService eventPublishingService) {
-        this.eventPublishingService = eventPublishingService;
-    }
-
-    public void setPostJoinAwareService(PostJoinAwareService postJoinAwareService) {
-        this.postJoinAwareService = postJoinAwareService;
-    }
-
-    public void setSplitBrainHandlerService(SplitBrainHandlerService splitBrainHandlerService) {
-        this.splitBrainHandlerService = splitBrainHandlerService;
-    }
-
-    public void setReplicationSupportingService(ReplicationSupportingService replicationSupportingService) {
-        this.replicationSupportingService = replicationSupportingService;
     }
 
     @Override
@@ -214,4 +154,71 @@ public final class MapService implements ManagedService, MigrationAwareService,
     public MapServiceContext getMapServiceContext() {
         return mapServiceContext;
     }
+
+    /**
+     * Static factory method which creates a new map service object.
+     *
+     * @param nodeEngine node engine.
+     * @return new map service object.
+     */
+    public static MapService create(NodeEngine nodeEngine) {
+        final MapServiceContext mapServiceContext = new DefaultMapServiceContext(nodeEngine);
+        final ManagedService managedService = new MapManagedService(mapServiceContext);
+        final MigrationAwareService migrationAwareService = new MapMigrationAwareService(mapServiceContext, nodeEngine);
+        final TransactionalService transactionalService = new MapTransactionalService(mapServiceContext, nodeEngine);
+        final RemoteService remoteService = new MapRemoteService(mapServiceContext, nodeEngine);
+        final EventPublishingService eventPublisher = new MapEventPublishingService(mapServiceContext, nodeEngine);
+        final PostJoinAwareService postJoinAwareService = new MapPostJoinAwareService(mapServiceContext);
+        final SplitBrainHandlerService splitBrainHandler = new MapSplitBrainHandler(mapServiceContext, nodeEngine);
+        final ReplicationSupportingService replicationSupportingService
+                = new MapReplicationSupportingService(mapServiceContext, nodeEngine);
+
+        final MapService mapService = new MapService();
+        mapService.setManagedService(managedService);
+        mapService.setMigrationAwareService(migrationAwareService);
+        mapService.setTransactionalService(transactionalService);
+        mapService.setRemoteService(remoteService);
+        mapService.setEventPublishingService(eventPublisher);
+        mapService.setPostJoinAwareService(postJoinAwareService);
+        mapService.setSplitBrainHandlerService(splitBrainHandler);
+        mapService.setReplicationSupportingService(replicationSupportingService);
+        mapService.setMapServiceContext(mapServiceContext);
+
+        mapServiceContext.setService(mapService);
+
+        return mapService;
+    }
+
+    void setManagedService(ManagedService managedService) {
+        this.managedService = managedService;
+    }
+
+    void setMigrationAwareService(MigrationAwareService migrationAwareService) {
+        this.migrationAwareService = migrationAwareService;
+    }
+
+    void setTransactionalService(TransactionalService transactionalService) {
+        this.transactionalService = transactionalService;
+    }
+
+    void setRemoteService(RemoteService remoteService) {
+        this.remoteService = remoteService;
+    }
+
+    void setEventPublishingService(EventPublishingService eventPublishingService) {
+        this.eventPublishingService = eventPublishingService;
+    }
+
+    void setPostJoinAwareService(PostJoinAwareService postJoinAwareService) {
+        this.postJoinAwareService = postJoinAwareService;
+    }
+
+    void setSplitBrainHandlerService(SplitBrainHandlerService splitBrainHandlerService) {
+        this.splitBrainHandlerService = splitBrainHandlerService;
+    }
+
+    void setReplicationSupportingService(ReplicationSupportingService replicationSupportingService) {
+        this.replicationSupportingService = replicationSupportingService;
+    }
+
 }

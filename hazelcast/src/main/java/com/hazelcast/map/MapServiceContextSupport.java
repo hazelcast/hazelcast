@@ -5,6 +5,9 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Helper methods for {@link com.hazelcast.map.MapServiceContext}
+ */
 interface MapServiceContextSupport {
 
     long getNow();

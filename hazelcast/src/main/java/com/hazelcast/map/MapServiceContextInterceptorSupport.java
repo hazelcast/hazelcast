@@ -1,8 +1,11 @@
 package com.hazelcast.map;
 
+/**
+ * Helper interceptor methods for {@link com.hazelcast.map.MapServiceContext}.
+ */
 public interface MapServiceContextInterceptorSupport {
 
-    void interceptAfterGet(String mapName, Object value);
+    void interceptAfterGet(String mapNname, Object value);
 
     Object interceptPut(String mapName, Object oldValue, Object newValue);
 

@@ -5,6 +5,11 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
+/**
+ * Defines transactional service behavior of map service.
+ *
+ * @see com.hazelcast.map.MapService
+ */
 class MapTransactionalService implements TransactionalService {
 
     private MapServiceContext mapServiceContext;

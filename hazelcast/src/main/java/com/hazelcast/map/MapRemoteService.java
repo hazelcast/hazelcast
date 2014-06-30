@@ -6,6 +6,11 @@ import com.hazelcast.spi.RemoteService;
 
 import java.util.Map;
 
+/**
+ * Defines remote service behavior of map service.
+ *
+ * @see com.hazelcast.map.MapService
+ */
 class MapRemoteService implements RemoteService {
 
     private MapServiceContext mapServiceContext;

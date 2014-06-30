@@ -9,6 +9,11 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Properties;
 
+/**
+ * Defines managed service behavior of map service.
+ *
+ * @see com.hazelcast.map.MapService
+ */
 class MapManagedService implements ManagedService {
 
     private MapServiceContext mapServiceContext;

@@ -14,6 +14,11 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 
 import java.util.List;
 
+/**
+ * Defines migration behavior of map service.
+ *
+ * @see com.hazelcast.map.MapService
+ */
 class MapMigrationAwareService implements MigrationAwareService {
 
     private MapServiceContext mapServiceContext;

@@ -9,6 +9,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Context which is needed by a map service.
+ */
 public interface MapServiceContext extends MapServiceContextSupport,
         MapServiceContextInterceptorSupport, MapServiceContextEventListenerSupport {
 
