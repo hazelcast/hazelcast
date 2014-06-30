@@ -68,6 +68,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
         final Object valueAfterProcess = entry.getValue();
+        if (mapService.hasEventRegistration(name)){
+            oldValue = mapService.toData(oldValue);
+        }
         // no matching data by key.
         if (oldValue == null && valueAfterProcess == null) {
             eventType = __NO_NEED_TO_FIRE_EVENT;

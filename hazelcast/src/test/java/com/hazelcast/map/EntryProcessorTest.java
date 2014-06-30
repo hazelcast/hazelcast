@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.ascii.memcache.IncrementCommand;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapIndexConfig;
@@ -24,6 +25,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
@@ -51,6 +53,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -263,6 +266,60 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             instance2.shutdown();
         }
     }
+    @Test
+    public void testIssue2614(){
+        Config config = new Config();
+        config.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        IMap<Integer, int[]> testMap = instance.getMap("TestMap");
+        testMap.addEntryListener(new EntryListener<Integer, int[]>() {
+            @Override
+            public void entryUpdated(EntryEvent<Integer, int[]> event) {
+                if (Arrays.equals(event.getOldValue(), event.getValue())) {
+                    throw new IllegalStateException("Old object equals new object");
+                }
+                else
+                    System.out.println("not equals");
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<Integer, int[]> event) {
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<Integer, int[]> event) {
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
+
+            @Override
+            public void entryAdded(EntryEvent<Integer, int[]> event) {
+            }
+        }, true);
+
+        testMap.put(0, new int[] {0});
+        testMap.executeOnKey(0, new ObjectEntryProcessor());
+
+    }
+
+    public static class ObjectEntryProcessor extends AbstractEntryProcessor<Integer, int[]>{
+        @Override
+        public Object process(Map.Entry<Integer, int[]> entry) {
+            int[] currentValue = entry.getValue();
+            currentValue[0] = 1;
+            entry.setValue(currentValue);
+            return null;
+        }
+    }
+
     @Test
     public void testEntryProcessorWithKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
