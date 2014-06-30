@@ -18,8 +18,8 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.MapContainer;
-import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.mapstore.writebehind.DelayedEntry;
@@ -80,7 +80,7 @@ public class MapReplicationOperation extends AbstractOperation {
             for (Entry<Data, Record> recordEntry : recordStore.getReadonlyRecordMap().entrySet()) {
                 Record record = recordEntry.getValue();
                 RecordReplicationInfo recordReplicationInfo;
-                recordReplicationInfo = createRecordReplicationInfo(record);
+                recordReplicationInfo = createRecordReplicationInfo(record, mapService);
                 recordSet.add(recordReplicationInfo);
             }
             data.put(name, recordSet);
@@ -220,8 +220,7 @@ public class MapReplicationOperation extends AbstractOperation {
         return data == null || data.isEmpty();
     }
 
-    private RecordReplicationInfo createRecordReplicationInfo(Record record) {
-        final MapService mapService = getService();
+    private RecordReplicationInfo createRecordReplicationInfo(Record record, MapService mapService) {
         final RecordInfo info = Records.buildRecordInfo(record);
         return new RecordReplicationInfo(record.getKey(), mapService.getMapServiceContext().toData(record.getValue()), info);
     }

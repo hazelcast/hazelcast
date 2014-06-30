@@ -146,7 +146,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.name = name;
         mapConfig = service.getMapServiceContext().getMapContainer(name).getMapConfig();
         partitionStrategy = service.getMapServiceContext().getMapContainer(name).getPartitioningStrategy();
-        localMapStats = service.getMapServiceContext().getLocalMapStatsImpl(name);
+        localMapStats = service.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
 

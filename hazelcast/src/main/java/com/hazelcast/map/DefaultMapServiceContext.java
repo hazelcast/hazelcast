@@ -2,7 +2,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.map.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -136,11 +135,6 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
                 container.destroyMap(mapName);
             }
         }
-    }
-
-    @Override
-    public LocalMapStatsImpl getLocalMapStatsImpl(String mapName) {
-        return localMapStatsProvider.getLocalMapStatsImpl(mapName);
     }
 
     @Override

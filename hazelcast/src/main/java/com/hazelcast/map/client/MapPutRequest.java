@@ -87,7 +87,8 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         final MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getMapServiceContext().getLocalMapStatsImpl(name).incrementPuts(latency);
+            mapService.getMapServiceContext().getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(name).incrementPuts(latency);
         }
     }
 

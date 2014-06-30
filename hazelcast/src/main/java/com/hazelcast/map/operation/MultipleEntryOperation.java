@@ -59,7 +59,8 @@ public class MultipleEntryOperation extends AbstractMapOperation
         response = new MapEntrySet();
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         final RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
-        final LocalMapStatsImpl mapStats = mapServiceContext.getLocalMapStatsImpl(name);
+        final LocalMapStatsImpl mapStats = mapServiceContext
+                .getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         MapEntrySimple entry;
 
         for (Data key : keys) {

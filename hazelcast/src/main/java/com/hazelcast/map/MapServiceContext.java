@@ -2,7 +2,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.map.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.List;
@@ -34,8 +33,6 @@ public interface MapServiceContext extends MapServiceContextSupport,
     void flushMaps();
 
     void destroyMap(String mapName);
-
-    LocalMapStatsImpl getLocalMapStatsImpl(String mapName);
 
     NearCacheProvider getNearCacheProvider();
 

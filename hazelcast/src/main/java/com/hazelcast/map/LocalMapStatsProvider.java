@@ -46,7 +46,7 @@ public class LocalMapStatsProvider {
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
         final NodeEngine nodeEngine = this.nodeEngine;
         final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        final LocalMapStatsImpl localMapStats = mapServiceContext.getLocalMapStatsImpl(mapName);
+        final LocalMapStatsImpl localMapStats = getLocalMapStatsImpl(mapName);
         if (!mapContainer.getMapConfig().isStatisticsEnabled()) {
             return localMapStats;
         }

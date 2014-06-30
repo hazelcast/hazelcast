@@ -93,7 +93,8 @@ public class QueryOperation extends AbstractMapOperation {
             result.setPartitionIds(finalPartitions);
         }
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getMapServiceContext().getLocalMapStatsImpl(name).incrementOtherOperations();
+            ((MapService) getService()).getMapServiceContext()
+                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 

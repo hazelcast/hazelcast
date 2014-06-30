@@ -33,7 +33,8 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
         final String mapName = event.getName();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapServiceContext.getLocalMapStatsImpl(mapName).incrementReceivedEvents();
+            mapServiceContext.getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(mapName).incrementReceivedEvents();
         }
     }
 
@@ -112,10 +113,5 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
             default:
                 throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
         }
-    }
-
-
-    private String serviceName() {
-        return MapService.SERVICE_NAME;
     }
 }

@@ -1073,7 +1073,7 @@ public class DefaultRecordStore implements RecordStore {
         if (record == null) {
             oldValue = mapDataStore.load(key);
             if (oldValue != null) {
-                record = createRecord(key, value, now);
+                record = createRecord(key, oldValue, now);
                 records.put(key, record);
                 updateSizeEstimator(calculateRecordSize(record));
             }

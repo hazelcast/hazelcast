@@ -35,7 +35,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         final MapReplicationOperation operation
                 = new MapReplicationOperation(mapServiceContext.getService(), container,
                 event.getPartitionId(), event.getReplicaIndex());
-        operation.setService(mapServiceContext.serviceName());
+        operation.setService(mapServiceContext.getService());
         return operation.isEmpty() ? null : operation;
     }
 

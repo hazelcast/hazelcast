@@ -65,7 +65,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final long start = System.currentTimeMillis();
         oldValue = recordStore.getMapEntry(dataKey).getValue();
-        final LocalMapStatsImpl mapStats = mapServiceContext.getLocalMapStatsImpl(name);
+        final LocalMapStatsImpl mapStats
+                = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         final Object valueBeforeProcess = mapServiceContext.toObject(oldValue);
         final MapEntrySimple entry = new MapEntrySimple(mapServiceContext.toObject(dataKey), valueBeforeProcess);
         response = mapServiceContext.toData(entryProcessor.process(entry));
