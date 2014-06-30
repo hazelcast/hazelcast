@@ -2,11 +2,14 @@
 
 ## Socket Interceptor
 
-Hazelcast allows you to intercept socket connections before a node joins to cluster or a client connects to a node. This provides ability to add custom hooks to join/connection procedure (like identity checking using Kerberos, etc.). You should implement `com.hazelcast.nio.MemberSocketInterceptor` for members and `com.hazelcast.nio.SocketInterceptor` for clients.
+![](images/enterprise-onlycopy.jpg)
+
+Hazelcast allows you to intercept socket connections while a node joins to cluster or a client connects to a node. This provides ability to add custom hooks to join/connection procedure (like identity checking using Kerberos, etc.). You should implement `com.hazelcast.nio.MemberSocketInterceptor` for members and `com.hazelcast.nio.SocketInterceptor` for clients.
 
 ```java
 public class MySocketInterceptor implements MemberSocketInterceptor {
-    public void init(SocketInterceptorConfig socketInterceptorConfig) {
+
+    void init(Properties properties) {
         // initialize interceptor
     }
 
@@ -14,7 +17,7 @@ public class MySocketInterceptor implements MemberSocketInterceptor {
         // do something meaningful when connected
     }
 
-    public void onAccept(Socket acceptedSocket) throws IOException {
+    void onAccept(Socket acceptedSocket) throws IOException {
         // do something meaningful when accepted a connection
     }
 }
@@ -39,6 +42,11 @@ public class MySocketInterceptor implements MemberSocketInterceptor {
 
 ```java
 public class MyClientSocketInterceptor implements SocketInterceptor {
+
+    void init(Properties properties) {
+        // initialize interceptor
+    }
+
     void onConnect(Socket connectedSocket) throws IOException {
         // do something meaningful when connected
     }
@@ -46,8 +54,13 @@ public class MyClientSocketInterceptor implements SocketInterceptor {
 
 ClientConfig clientConfig = new ClientConfig();
 clientConfig.setGroupConfig(new GroupConfig("dev","dev-pass")).addAddress("10.10.3.4");
+ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
 
 MyClientSocketInterceptor myClientSocketInterceptor = new MyClientSocketInterceptor();
-clientConfig.setSocketInterceptor(myClientSocketInterceptor);
+SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
+socketInterceptorConfig.setEnabled(true);
+socketInterceptorConfig.setImplementation(myClientSocketInterceptor);
+networkConfig.setSocketInterceptorConfig(socketInterceptorConfig);
+
 HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 ```
