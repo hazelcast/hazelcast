@@ -2,8 +2,8 @@
 
 ### Sample JBoss Web Application Configuration
 
-- Place the `hazelcast-`*version*`.jar` into `JBOSS_HOME/server/deploy/default/lib` directory.
-- Place the `hazelcast-ra-`*version*`.rar` into `JBOSS_HOME/server/deploy/default/deploy` directory
+- Place the `hazelcast-`*version*`.jar` and `hazelcast-jca-`*version*`.jar` into `JBOSS_HOME/server/deploy/default/lib` directory.
+- Place the `hazelcast-jca-rar-`*version*`.rar` into `JBOSS_HOME/server/deploy/default/deploy` directory
 - Create a `hazelcast-ds.xml` file at `JBOSS_HOME/server/deploy/default/deploy` directory containing below content. Make sure to set the `rar-name` element to `hazelcast-ra-`*version*`.rar`.
 
 ```xml
@@ -17,7 +17,7 @@
       <local-transaction/>
       <track-connection-by-tx>true</track-connection-by-tx>
       <jndi-name>HazelcastCF</jndi-name>
-      <rar-name>hazelcast-ra-<version>.rar</rar-name>
+      <rar-name>hazelcast-jca-rar-<version>.rar</rar-name>
       <connection-definition>
            javax.resource.cci.ConnectionFactory
       </connection-definition>
