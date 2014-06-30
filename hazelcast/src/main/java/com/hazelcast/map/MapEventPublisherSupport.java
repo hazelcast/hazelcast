@@ -17,11 +17,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-class MapEventPublishSupport implements MapEventPublisher {
+class MapEventPublisherSupport implements MapEventPublisher {
 
     private MapServiceContext mapServiceContext;
 
-    protected MapEventPublishSupport(MapServiceContext mapServiceContext) {
+    protected MapEventPublisherSupport(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
 
