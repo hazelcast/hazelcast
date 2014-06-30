@@ -131,7 +131,7 @@ public final class ByteUtil {
     }
 
     public static long combineToLong(int x, int y) {
-        return ((long) x << 32) | ((long) y & 0xFFFFFFFL);
+        return ((long) x << 32) | ((long) y & 0xFFFFFFFFL);
     }
 
     public static int extractInt(long value, boolean lowerBits) {
