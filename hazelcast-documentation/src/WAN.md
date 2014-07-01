@@ -21,7 +21,7 @@ The current WAN Replication implementation supports two different operation mode
   or more non active ones for backup reasons
 
 - **Active-Active:** Every cluster is fully equal and all clusters replicating to all others which is normally used to connect
-  different clients to different clusters for the sake of shortest path between client and server
+  different clients to different clusters for the sake of shortest path between client and server.
 
 Let's see how we can set up WAN Replication for London and Tokyo clusters:
 
@@ -47,13 +47,13 @@ Let's see how we can set up WAN Replication for London and Tokyo clusters:
 </hazelcast>
 ```
 
-Using this configuration the cluster running in NY is replicating to Tokyo and London. Tokyo and London clusters should
+Using this configuration, the cluster running in NY is replicating to Tokyo and London. Tokyo and London clusters should
 have a similar configurations if you want to run in Active-Active mode.
 
 If New York and London cluster configurations contain the `wan-replication` element and Tokyo cluster does not, it means
 New York and London are active endpoints and Tokyo is a passive endpoint.
 
-Using an Active-Active Replication setup you might end up in situations where multiple clusters simultaneously updating the same
+By using an Active-Active Replication setup, you might end up in situations where multiple clusters simultaneously updating the same
 entry in the same distributed data structure. Those situations will cause conflicts which make it sufficient to provide
 merge-policies to resolve those conflicts. 
 
