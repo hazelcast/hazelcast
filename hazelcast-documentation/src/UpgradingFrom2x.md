@@ -9,7 +9,7 @@ In this section, we list the changes what users should take into account before 
 The static methods of Hazelcast class reaching Hazelcast data components have been removed. The functionality of these methods can be reached from HazelcastInstance interface. Namely you should replace following:
 
 ```java
-Map<Integer, String> customers = Hazelcast.getMap("customers");
+Map<Integer, String> customers = Hazelcast.getMap( "customers" );
 ```
 
 with
@@ -17,8 +17,8 @@ with
 ```java
 HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
 // or if you already started an instance named "instance1"
-// HazelcastInstance hazelcastInstance = Hazelcast.getHazelcastInstanceByName("instance1");
-Map<Integer, String> customers = hazelcastInstance.getMap("customers");
+// HazelcastInstance hazelcastInstance = Hazelcast.getHazelcastInstanceByName( "instance1" );
+Map<Integer, String> customers = hazelcastInstance.getMap( "customers" );
 ```
 - **Removal of lite members:**
 With 3.0 there will be no member type as lite member. As 3.0 clients are smart client that they know in which node the data is located, you can replace your lite members with native clients.
@@ -27,13 +27,13 @@ With 3.0 there will be no member type as lite member. As 3.0 clients are smart c
 Before 3.0 there was a confusion for the term "instance". It was used for both the cluster members and the distributed objects (map, queue, topic, etc. instances). Starting 3.0, the term instance will be only used for Hazelcast instances, namely cluster members. We will use the term "distributed object" for map, queue, etc. instances. So you should replace the related methods with the new renamed ones. As 3.0 clients are smart client that they know in which node the data is located, you can replace your lite members with native clients.
 
 ```java
-public static void main(String[] args) throws InterruptedException {
+public static void main( String[] args ) throws InterruptedException {
   HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
-  IMap map = hz.getMap("test");
+  IMap map = hazelcastInstance.getMap( "test" );
   Collection<Instance> instances = hazelcastInstance.getInstances();
-  for (Instance instance : instances) {
-    if(instance.getInstanceType() == Instance.InstanceType.MAP) {
-      System.out.println("there is a map with name:" + instance.getId());
+  for ( Instance instance : instances ) {
+    if ( instance.getInstanceType() == Instance.InstanceType.MAP ) {
+      System.out.println( "there is a map with name:" + instance.getId() );
     }
   }
 }
@@ -62,17 +62,17 @@ PartitionService has been moved to package `com.hazelcast.core` from `com.hazelc
 Before 3.0, `removeListener` methods was taking the Listener object as parameter. But, it causes confusion as same listener object may be used as parameter for different listener registrations. So we have changed the listener API. `addListener` methods return you an unique ID and you can remove listener by using this ID. So you should do following replacement if needed:
 
 ```java
-IMap map = hazelcastInstance.getMap("map");
-map.addEntryListener(listener,true);
-map.removeEntryListener(listener);
+IMap map = hazelcastInstance.getMap( "map" );
+map.addEntryListener( listener, true );
+map.removeEntryListener( listener );
 ``` 
    
 with
 	
 ```java
-IMap map = hazelcastInstance.getMap("map");
-String listenerId = map.addEntryListener(listener, true);
-map.removeEntryListener(listenerId);
+IMap map = hazelcastInstance.getMap( "map" );
+String listenerId = map.addEntryListener( listener, true );
+map.removeEntryListener( listenerId );
 ```
 
 - **IMap changes:**

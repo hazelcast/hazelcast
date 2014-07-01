@@ -7,9 +7,9 @@ Having `hazelcast-`*`<version>`*`.jar` added to your classpath, it is time to ge
 
 In this short tutorial, we will:
 
-1.	Create a simple Java application using Hazelcast distributed map and queue. 
-2.	Then, we will run our application twice to have two nodes (JVMs) clustered. 
-3.	And, connect to our cluster from another Java application by using Hazelcast Native Java Client API.
+1. Create a simple Java application using Hazelcast distributed map and queue. 
+2. Then, we will run our application twice to have two nodes (JVMs) clustered. 
+3. And, connect to our cluster from another Java application by using Hazelcast Native Java Client API.
 
 Let`s begin.
 
@@ -17,7 +17,6 @@ Let`s begin.
 -	Following code will start the first node and create and use `customers` map and queue.
 
 ```java
-import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
@@ -25,34 +24,32 @@ import java.util.Map;
 import java.util.Queue;
 
 public class GettingStarted {
+  public static void main( String[] args ) {
+    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+    Map<Integer, String> customers = hazelcastInstance.getMap( "customers" );
+    customers.put( 1, "Joe" );
+    customers.put( 2, "Ali" );
+    customers.put( 3, "Avi" );
 
-    public static void main(String[] args) {
-        Config cfg = new Config();
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
-        Map<Integer, String> mapCustomers = instance.getMap("customers");
-        mapCustomers.put(1, "Joe");
-        mapCustomers.put(2, "Ali");
-        mapCustomers.put(3, "Avi");
+    System.out.println( "Customer with key 1: " + customers.get(1) );
+    System.out.println( "Map Size:" + hazelcastInstance.size() );
 
-        System.out.println("Customer with key 1: "+ mapCustomers.get(1));
-        System.out.println("Map Size:" + mapCustomers.size());
-
-        Queue<String> queueCustomers = instance.getQueue("customers");
-        queueCustomers.offer("Tom");
-        queueCustomers.offer("Mary");
-        queueCustomers.offer("Jane");
-        System.out.println("First customer: " + queueCustomers.poll());
-        System.out.println("Second customer: "+ queueCustomers.peek());
-        System.out.println("Queue size: " + queueCustomers.size());
-    }
+    Queue<String> queueCustomers = hazelcastInstance.getQueue( "customers" );
+    queueCustomers.offer( "Tom" );
+    queueCustomers.offer( "Mary" );
+    queueCustomers.offer( "Jane" );
+    System.out.println( "First customer: " + queueCustomers.poll() );
+    System.out.println( "Second customer: "+ queueCustomers.peek() );
+    System.out.println( "Queue size: " + queueCustomers.size() );
+  }
 }
 ```
 -   Run this class second time to get the second node started. Have you seen they formed a cluster? You should see something like this:
 
 ```
 Members [2] {
-    Member [127.0.0.1:5701]
-    Member [127.0.0.1:5702] this
+  Member [127.0.0.1:5701]
+  Member [127.0.0.1:5702] this
 }                              
 ```
 
@@ -69,12 +66,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 
 public class GettingStartedClient {
-
-    public static void main(String[] args) {
+    public static void main( String[] args ) {
         ClientConfig clientConfig = new ClientConfig();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        IMap map = client.getMap("customers");
-        System.out.println("Map Size:" + map.size());
+        HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
+        IMap map = client.getMap( "customers" );
+        System.out.println( "Map Size:" + map.size() );
     }
 }
 ```

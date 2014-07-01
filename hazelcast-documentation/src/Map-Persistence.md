@@ -99,21 +99,15 @@ public interface MapLoaderLifecycleSupport {
 
 Moreover, there is InitialLoadMode configuration parameter in the class [`MapStoreConfig`](https://github.com/hazelcast/hazelcast/blob/5f4f6a876e572f91431ad22f01ad5af9f5837f72/hazelcast/src/main/java/com/hazelcast/config/MapStoreConfig.java) class. This parameter has two values: LAZY and EAGER. If InitialLoadMode is set as LAZY, data is not loaded during the map creation. If it is set as EAGER, whole data is loaded while the map is being created and everything becomes ready to use. Also, if you add indices to your map by [`MapIndexConfig`](https://github.com/hazelcast/hazelcast/blob/da5cceee74e471e33f65f43f31d891c9741e31e3/hazelcast/src/main/java/com/hazelcast/config/MapIndexConfig.java) class or [`addIndex`](#indexing) method, then InitialLoadMode is overridden and MapStoreConfig behaves as if EAGER mode is on.
 
-Here is MapLoader initialization flow;
+Here is MapLoader initialization flow:
 
-1.  When `getMap()` is first called from any node, initialization will start depending on the the value of InitialLoadMode. If it is set as EAGER, initialization starts.  If it is set as LAZY, initialization actually does not start but data is loaded at each time a partition loading is completed.
+1. When `getMap()` is first called from any node, initialization will start depending on the the value of InitialLoadMode. If it is set as EAGER, initialization starts.  If it is set as LAZY, initialization actually does not start but data is loaded at each time a partition loading is completed.
+2. Hazelcast will call `MapLoader.loadAllKeys()` to get all your keys on each node
+3. Each node will figure out the list of keys it owns
+4. Each node will load all its owned keys by calling `MapLoader.loadAll(keys)`
+5. Each node puts its owned entries into the map by calling `IMap.putTransient(key,value)`
 
-2.  Hazelcast will call `MapLoader.loadAllKeys()` to get all your keys on each node
-
-3.  Each node will figure out the list of keys it owns
-
-4.  Each node will load all its owned keys by calling `MapLoader.loadAll(keys)`
-
-5.  Each node puts its owned entries into the map by calling `IMap.putTransient(key,value)`
-
-
-***Warning:*** *If the load mode is LAZY and when *`clear()`* method is called (which triggers *`MapStore.deleteAll()`*), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (LAZY mode), please note that there may be still entries in your datastore.*
-
+***Warning:*** *If the load mode is LAZY and when `clear()` method is called (which triggers `MapStore.deleteAll()`), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (LAZY mode), please note that there may be still entries in your datastore.*
 
 #### Post Processing Map Store: ####
 
