@@ -640,6 +640,7 @@ public class WebFilter implements Filter {
             }
             if (value == null) {
                 removeAttribute(name);
+                return;
             }
             if (deferredWrite) {
                 LocalCacheEntry entry = localCache.get(name);
