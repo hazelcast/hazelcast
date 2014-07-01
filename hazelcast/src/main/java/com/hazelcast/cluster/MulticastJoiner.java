@@ -192,7 +192,7 @@ public class MulticastJoiner extends AbstractJoiner {
             lastDigits = RandomPicker.getInt(512);
         }
         lastDigits = lastDigits % 100;
-        int portDiff = node.getThisAddress().getPort() - networkConfig.getPort();
+        int portDiff = networkConfig.getPort() == 0 ? 0 : node.getThisAddress().getPort() - networkConfig.getPort();
         tryCount += lastDigits + portDiff * timeoutSeconds * 3;
         return tryCount;
     }
