@@ -91,6 +91,7 @@ src/Management.md
 #	src/MemcacheServer.md
 #	src/REST.md
 src/Security.md
+	src/SecurityInterceptor.md
 	src/Encryption.md
 	src/SSL.md
 	src/Credentials.md
