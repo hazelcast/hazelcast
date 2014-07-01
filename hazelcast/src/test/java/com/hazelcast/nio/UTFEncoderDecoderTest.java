@@ -20,11 +20,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.TimedMemberStateFactory;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -312,6 +312,29 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         User user = map.get("1");
         assertEquals("", user.getName());
         assertEquals("demirci", user.getSurname());
+    }
+
+    @Test
+    public void testIssue2674_multibyte_char_at_position_that_even_multiple_of_buffer_size() throws Exception {
+        SerializationService serializationService = new SerializationServiceBuilder().build();
+
+        for (int i : new int[]{50240, 100240, 80240}) {
+            String originalString = createString(i);
+            BufferObjectDataOutput dataOutput = serializationService.createObjectDataOutput(100000);
+            dataOutput.writeUTF(originalString);
+            BufferObjectDataInput dataInput = serializationService.createObjectDataInput(dataOutput.toByteArray());
+
+            assertEquals(originalString, dataInput.readUTF());
+        }
+    }
+
+    private String createString(int length) {
+        char[] c = new char[length];
+        for (int i = 0; i < c.length; i++) {
+            c[i] = 'a';
+        }
+        c[10240] = 'å';
+        return new String(c);
     }
 
     private static void assertContains(String className, String classType) {
