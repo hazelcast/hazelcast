@@ -24,7 +24,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -62,7 +65,9 @@ public class LocalMapStatsImpl
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
 
+
     // These fields are only accessed through the updaters
+    private volatile long creationTime;
     private volatile long lastAccessTime;
     private volatile long lastUpdateTime;
     private volatile long hits;
@@ -78,19 +83,19 @@ public class LocalMapStatsImpl
     private volatile long maxPutLatency;
     private volatile long maxRemoveLatency;
 
+    private AtomicLong ownedEntryCount = new AtomicLong(0);
+    private AtomicLong backupEntryCount = new AtomicLong(0);
+    private AtomicLong ownedEntryMemoryCost = new AtomicLong(0);
+    private AtomicLong backupEntryMemoryCost = new AtomicLong(0);
+    /**
+     * Holds total heap cost of map & near-cache & backups.
+     */
+    private AtomicLong heapCost = new AtomicLong(0);
+    private AtomicLong lockedEntryCount = new AtomicLong(0);
+    private AtomicLong dirtyEntryCount = new AtomicLong(0);
+    private AtomicInteger backupCount = new AtomicInteger(0);
 
-    private long ownedEntryCount;
-    private long backupEntryCount;
-    private long ownedEntryMemoryCost;
-    private long backupEntryMemoryCost;
-    // total heap cost with map &  nearcache  & backup
-    private long heapCost;
-    private long creationTime;
-    private long lockedEntryCount;
-    private long dirtyEntryCount;
-    private int backupCount;
-
-    private NearCacheStatsImpl nearCacheStats;
+    private volatile NearCacheStatsImpl nearCacheStats;
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -107,21 +112,21 @@ public class LocalMapStatsImpl
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
         out.writeLong(hits);
-        out.writeLong(ownedEntryCount);
-        out.writeLong(backupEntryCount);
-        out.writeInt(backupCount);
-        out.writeLong(ownedEntryMemoryCost);
-        out.writeLong(backupEntryMemoryCost);
+        out.writeLong(ownedEntryCount.get());
+        out.writeLong(backupEntryCount.get());
+        out.writeInt(backupCount.get());
+        out.writeLong(ownedEntryMemoryCost.get());
+        out.writeLong(backupEntryMemoryCost.get());
         out.writeLong(creationTime);
-        out.writeLong(lockedEntryCount);
-        out.writeLong(dirtyEntryCount);
+        out.writeLong(lockedEntryCount.get());
+        out.writeLong(dirtyEntryCount.get());
         out.writeLong(totalGetLatencies);
         out.writeLong(totalPutLatencies);
         out.writeLong(totalRemoveLatencies);
         out.writeLong(maxGetLatency);
         out.writeLong(maxPutLatency);
         out.writeLong(maxRemoveLatency);
-        out.writeLong(heapCost);
+        out.writeLong(heapCost.get());
         boolean hasNearCache = nearCacheStats != null;
         out.writeBoolean(hasNearCache);
         if (hasNearCache) {
@@ -140,21 +145,21 @@ public class LocalMapStatsImpl
         LAST_ACCESS_TIME_UPDATER.set(this, in.readLong());
         LAST_UPDATE_TIME_UPDATER.set(this, in.readLong());
         HITS_UPDATER.set(this, in.readLong());
-        ownedEntryCount = in.readLong();
-        backupEntryCount = in.readLong();
-        backupCount = in.readInt();
-        ownedEntryMemoryCost = in.readLong();
-        backupEntryMemoryCost = in.readLong();
+        ownedEntryCount.set(in.readLong());
+        backupEntryCount.set(in.readLong());
+        backupCount.set(in.readInt());
+        ownedEntryMemoryCost.set(in.readLong());
+        backupEntryMemoryCost.set(in.readLong());
         creationTime = in.readLong();
-        lockedEntryCount = in.readLong();
-        dirtyEntryCount = in.readLong();
+        lockedEntryCount.set(in.readLong());
+        dirtyEntryCount.set(in.readLong());
         TOTAL_GET_LATENCIES_UPDATER.set(this, in.readLong());
         TOTAL_PUT_LATENCIES_UPDATER.set(this, in.readLong());
         TOTAL_REMOVE_LATENCIES_UPDATER.set(this, in.readLong());
         MAX_GET_LATENCY_UPDATER.set(this, in.readLong());
         MAX_PUT_LATENCY_UPDATER.set(this, in.readLong());
         MAX_REMOVE_LATENCY_UPDATER.set(this, in.readLong());
-        heapCost = in.readLong();
+        heapCost.set(in.readLong());
         boolean hasNearCache = in.readBoolean();
         if (hasNearCache) {
             nearCacheStats = new NearCacheStatsImpl();
@@ -164,47 +169,55 @@ public class LocalMapStatsImpl
 
     @Override
     public long getOwnedEntryCount() {
-        return ownedEntryCount;
+        return ownedEntryCount.get();
     }
 
     public void setOwnedEntryCount(long ownedEntryCount) {
-        this.ownedEntryCount = ownedEntryCount;
+        this.ownedEntryCount.set(ownedEntryCount);
+    }
+
+    public void incrementOwnedEntryCount(long ownedEntryCount) {
+        this.ownedEntryCount.addAndGet(ownedEntryCount);
     }
 
     @Override
     public long getBackupEntryCount() {
-        return backupEntryCount;
+        return backupEntryCount.get();
     }
 
     public void setBackupEntryCount(long backupEntryCount) {
-        this.backupEntryCount = backupEntryCount;
+        this.backupEntryCount.set(backupEntryCount);
+    }
+
+    public void incrementBackupEntryCount(long backupEntryCount) {
+        this.backupEntryCount.addAndGet(backupEntryCount);
     }
 
     @Override
     public int getBackupCount() {
-        return backupCount;
+        return backupCount.get();
     }
 
     public void setBackupCount(int backupCount) {
-        this.backupCount = backupCount;
+        this.backupCount.set(backupCount);
     }
 
     @Override
     public long getOwnedEntryMemoryCost() {
-        return ownedEntryMemoryCost;
+        return ownedEntryMemoryCost.get();
     }
 
-    public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
-        this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+    public void incrementOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        this.ownedEntryMemoryCost.addAndGet(ownedEntryMemoryCost);
     }
 
     @Override
     public long getBackupEntryMemoryCost() {
-        return backupEntryMemoryCost;
+        return backupEntryMemoryCost.get();
     }
 
-    public void setBackupEntryMemoryCost(long backupEntryMemoryCost) {
-        this.backupEntryMemoryCost = backupEntryMemoryCost;
+    public void incrementBackupEntryMemoryCost(long backupEntryMemoryCost) {
+        this.backupEntryMemoryCost.addAndGet(backupEntryMemoryCost);
     }
 
     @Override
@@ -239,22 +252,30 @@ public class LocalMapStatsImpl
         HITS_UPDATER.set(this, hits);
     }
 
+    public void incrementHits(long hits) {
+        HITS_UPDATER.addAndGet(this, hits);
+    }
+
     @Override
     public long getLockedEntryCount() {
-        return lockedEntryCount;
+        return lockedEntryCount.get();
     }
 
     public void setLockedEntryCount(long lockedEntryCount) {
-        this.lockedEntryCount = lockedEntryCount;
+        this.lockedEntryCount.set(lockedEntryCount);
+    }
+
+    public void incrementLockedEntryCount(long lockedEntryCount) {
+        this.lockedEntryCount.addAndGet(lockedEntryCount);
     }
 
     @Override
     public long getDirtyEntryCount() {
-        return dirtyEntryCount;
+        return dirtyEntryCount.get();
     }
 
-    public void setDirtyEntryCount(long l) {
-        this.dirtyEntryCount = l;
+    public void incrementDirtyEntryCount(long dirtyEntryCount) {
+        this.dirtyEntryCount.addAndGet(dirtyEntryCount);
     }
 
     @Override
@@ -343,13 +364,13 @@ public class LocalMapStatsImpl
         NUMBER_OF_EVENTS_UPDATER.incrementAndGet(this);
     }
 
-    public void setHeapCost(long heapCost) {
-        this.heapCost = heapCost;
+    public void incrementHeapCost(long heapCost) {
+        this.heapCost.addAndGet(heapCost);
     }
 
     @Override
     public long getHeapCost() {
-        return heapCost;
+        return heapCost.get();
     }
 
     @Override
@@ -381,21 +402,21 @@ public class LocalMapStatsImpl
         root.add("lastAccessTime", lastAccessTime);
         root.add("lastUpdateTime", lastUpdateTime);
         root.add("hits", hits);
-        root.add("ownedEntryCount", ownedEntryCount);
-        root.add("backupEntryCount", backupEntryCount);
-        root.add("backupCount", backupCount);
-        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
-        root.add("backupEntryMemoryCost", backupEntryMemoryCost);
+        root.add("ownedEntryCount", ownedEntryCount.get());
+        root.add("backupEntryCount", backupEntryCount.get());
+        root.add("backupCount", backupCount.get());
+        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost.get());
+        root.add("backupEntryMemoryCost", backupEntryMemoryCost.get());
         root.add("creationTime", creationTime);
-        root.add("lockedEntryCount", lockedEntryCount);
-        root.add("dirtyEntryCount", dirtyEntryCount);
+        root.add("lockedEntryCount", lockedEntryCount.get());
+        root.add("dirtyEntryCount", dirtyEntryCount.get());
         root.add("totalGetLatencies", totalGetLatencies);
         root.add("totalPutLatencies", totalPutLatencies);
         root.add("totalRemoveLatencies", totalRemoveLatencies);
         root.add("maxGetLatency", maxGetLatency);
         root.add("maxPutLatency", maxPutLatency);
         root.add("maxRemoveLatency", maxRemoveLatency);
-        root.add("heapCost", heapCost);
+        root.add("heapCost", heapCost.get());
         if (nearCacheStats != null) {
             root.add("nearCacheStats", nearCacheStats.toJson());
         }
@@ -412,21 +433,21 @@ public class LocalMapStatsImpl
         LAST_ACCESS_TIME_UPDATER.set(this, getLong(json, "lastAccessTime", -1L));
         LAST_UPDATE_TIME_UPDATER.set(this, getLong(json, "lastUpdateTime", -1L));
         HITS_UPDATER.set(this, getLong(json, "hits", -1L));
-        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
-        backupEntryCount = getLong(json, "backupEntryCount", -1L);
-        backupCount = getInt(json, "backupCount", -1);
-        ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
-        backupEntryMemoryCost = getLong(json, "backupEntryMemoryCost", -1L);
+        ownedEntryCount.set(getLong(json, "ownedEntryCount", -1L));
+        backupEntryCount.set(getLong(json, "backupEntryCount", -1L));
+        backupCount.set(getInt(json, "backupCount", -1));
+        ownedEntryMemoryCost.set(getLong(json, "ownedEntryMemoryCost", -1L));
+        backupEntryMemoryCost.set(getLong(json, "backupEntryMemoryCost", -1L));
         creationTime = getLong(json, "creationTime", -1L);
-        lockedEntryCount = getLong(json, "lockedEntryCount", -1L);
-        dirtyEntryCount = getLong(json, "dirtyEntryCount", -1L);
+        lockedEntryCount.set(getLong(json, "lockedEntryCount", -1L));
+        dirtyEntryCount.set(getLong(json, "dirtyEntryCount", -1L));
         TOTAL_GET_LATENCIES_UPDATER.set(this, getLong(json, "totalGetLatencies", -1L));
         TOTAL_PUT_LATENCIES_UPDATER.set(this, getLong(json, "totalPutLatencies", -1L));
         TOTAL_REMOVE_LATENCIES_UPDATER.set(this, getLong(json, "totalRemoveLatencies", -1L));
         MAX_GET_LATENCY_UPDATER.set(this, getLong(json, "maxGetLatency", -1L));
         MAX_PUT_LATENCY_UPDATER.set(this, getLong(json, "maxPutLatency", -1L));
         MAX_REMOVE_LATENCY_UPDATER.set(this, getLong(json, "maxRemoveLatency", -1L));
-        heapCost = getLong(json, "heapCost", -1L);
+        heapCost.set(getLong(json, "heapCost", -1L));
         final JsonValue jsonNearCacheStats = json.get("nearCacheStats");
         if (jsonNearCacheStats != null) {
             nearCacheStats = new NearCacheStatsImpl();
