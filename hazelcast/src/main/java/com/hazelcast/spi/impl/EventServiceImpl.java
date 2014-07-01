@@ -69,6 +69,8 @@ public class EventServiceImpl implements EventService {
     private static final int SEND_EVENT_TIMEOUT_SECONDS = 3;
     private static final int DEREGISTER_TIMEOUT_SECONDS = 5;
 
+    private static final String SERVICE_NAME = "hz:impl:mapService";
+
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, EventServiceSegment> segments;
@@ -262,6 +264,13 @@ public class EventServiceImpl implements EventService {
             }
         }
         return Collections.emptySet();
+    }
+
+    @Override
+    public boolean hasEventRegistration(String topic) {
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, topic);
+        return !(registrations == null || registrations.isEmpty());
     }
 
     @Override

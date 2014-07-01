@@ -29,8 +29,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 
@@ -68,6 +71,12 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
         final Object valueAfterProcess = entry.getValue();
+
+        //when in-memory format is OBJECT, old value must be Data.
+        //if it is not EntryEvent object passed to Entry Listener may contain current value as a old value.
+        if (mapService.hasEventRegistration(name)) {
+            oldValue = mapService.toData(oldValue);
+        }
         // no matching data by key.
         if (oldValue == null && valueAfterProcess == null) {
             eventType = __NO_NEED_TO_FIRE_EVENT;
@@ -101,7 +110,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (eventType == __NO_NEED_TO_FIRE_EVENT) {
             return;
         }
-        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(oldValue), dataValue);
+        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, (Data) oldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             if (EntryEventType.REMOVED.equals(eventType)) {
