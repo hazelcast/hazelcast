@@ -29,7 +29,12 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-     <build>
+    <properties>
+        <!-- needed for checkstyle/findbugs -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
+
+    <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
