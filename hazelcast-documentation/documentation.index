@@ -59,7 +59,7 @@ src/Transactions.md
 		src/ResourceAdapterConfiguration.md
 		src/SampleGlassfishConfiguration.md
 		src/SampleJBossConfiguration.md
-#	src/XATransactions.md
+	src/XATransactions.md
 src/IntegratedClustering.md
 	src/WebSessionReplication.md
 		src/TomcatSessionReplication.md
