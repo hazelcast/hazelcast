@@ -421,6 +421,24 @@ public class XMLConfigBuilderTest {
         assertEquals(23, mapStoreConfig.getWriteBatchSize());
     }
 
+    @Test
+    public void testNearCacheInMemoryFormat() {
+        String mapName = "testMapNearCacheInMemoryFormat";
+        String xml =
+                "<hazelcast>\n" +
+                        "  <map name=\"" + mapName + "\">\n" +
+                        "    <near-cache>\n" +
+                        "      <in-memory-format>OBJECT</in-memory-format>\n" +
+                        "    </near-cache>\n" +
+                        "  </map>\n" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        System.out.println("config = " + config);
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        NearCacheConfig ncConfig = mapConfig.getNearCacheConfig();
+        assertEquals(InMemoryFormat.OBJECT, ncConfig.getInMemoryFormat());
+    }
+
     @Test(expected = HazelcastException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml =
