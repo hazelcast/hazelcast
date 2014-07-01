@@ -48,7 +48,7 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
     public void run() throws Exception {
         final long now = Clock.currentTimeMillis();
         final MapService mapService = getService();
-        final PartitionContainer partitionContainer = mapService.getPartitionContainer(getPartitionId());
+        final PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
         final ConcurrentMap<String, RecordStore> recordStores = partitionContainer.getMaps();
         final boolean isOwnerPartition = isOwner();
         for (final RecordStore recordStore : recordStores.values()) {
@@ -78,7 +78,7 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
     @Override
     public void afterRun() throws Exception {
         final MapService mapService = getService();
-        final PartitionContainer partitionContainer = mapService.getPartitionContainer(getPartitionId());
+        final PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
         partitionContainer.setHasRunningCleanup(false);
         partitionContainer.setLastCleanupTime(Clock.currentTimeMillis());
     }

@@ -57,7 +57,7 @@ public class MapValuesRequest extends AllPartitionsClientRequest implements Port
         List<Data> values = new ArrayList<Data>();
         MapService mapService = getService();
         for (Object result : results.values()) {
-            values.addAll(((MapValueCollection) mapService.toObject(result)).getValues());
+            values.addAll(((MapValueCollection) mapService.getMapServiceContext().toObject(result)).getValues());
         }
         return new MapValueCollection(values);
     }

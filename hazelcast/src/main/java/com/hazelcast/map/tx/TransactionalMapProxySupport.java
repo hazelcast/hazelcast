@@ -73,7 +73,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         super(nodeEngine, mapService);
         this.name = name;
         this.tx = transaction;
-        this.partitionStrategy = mapService.getMapContainer(name).getPartitioningStrategy();
+        this.partitionStrategy = mapService.getMapServiceContext().getMapContainer(name).getPartitioningStrategy();
     }
 
     protected void checkTransactionState() {
@@ -87,7 +87,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+            Future f = nodeEngine.getOperationService()
+                    .invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             return (Boolean) f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -96,9 +97,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public Object getInternal(Data key) {
         final MapService mapService = getService();
-        final boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
+        final boolean nearCacheEnabled = mapService.getMapServiceContext().getMapContainer(name).isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Object cached = mapService.getFromNearCache(name, key);
+            Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
                 if (cached.equals(NearCache.NULL_OBJECT)) {
                     cached = null;
@@ -132,7 +133,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                     .invokeOnAllPartitions(SERVICE_NAME, new SizeOperationFactory(name));
             int total = 0;
             for (Object result : results.values()) {
-                Integer size = (Integer) getService().toObject(result);
+                Integer size = (Integer) getService().getMapServiceContext().toObject(result);
                 total += size;
             }
             return total;
@@ -179,7 +180,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public boolean replaceIfSameInternal(Data key, Object oldValue, Data newValue) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        if (!getService().compare(name, oldValue, versionedValue.value)) {
+        if (!getService().getMapServiceContext().compare(name, oldValue, versionedValue.value)) {
             return false;
         }
         final TxnSetOperation op = new TxnSetOperation(name, key, newValue, versionedValue.version);
@@ -196,7 +197,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public boolean removeIfSameInternal(Data key, Object value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        if (!getService().compare(name, versionedValue.value, value)) {
+        if (!getService().getMapServiceContext().compare(name, versionedValue.value, value)) {
             return false;
         }
         tx.addTransactionLog(new MapTransactionLog(name, key,
@@ -210,7 +211,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             return versionedValue;
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, timeout, tx.getOwnerUuid());
+        TxnLockAndGetOperation operation
+                = new TxnLockAndGetOperation(name, key, timeout, timeout, tx.getOwnerUuid());
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -219,7 +221,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             versionedValue = f.get();
             if (versionedValue == null) {
                 throw new TransactionException("Transaction couldn't obtain lock for the key:"
-                        + getService().toObject(key));
+                        + getService().getMapServiceContext().toObject(key));
             }
             valueMap.put(key, versionedValue);
             return versionedValue;
@@ -238,7 +240,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                     );
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
-                Set keys = ((MapKeySet) getService().toObject(result)).getKeySet();
+                Set keys = ((MapKeySet) getService().getMapServiceContext().toObject(result)).getKeySet();
                 keySet.addAll(keys);
             }
             return keySet;
@@ -257,7 +259,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                     );
             List<Data> values = new ArrayList<Data>();
             for (Object result : results.values()) {
-                values.addAll(((MapValueCollection) getService().toObject(result)).getValues());
+                values.addAll(((MapValueCollection) getService()
+                        .getMapServiceContext().toObject(result)).getValues());
             }
             return values;
         } catch (Throwable t) {

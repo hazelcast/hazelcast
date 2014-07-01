@@ -67,16 +67,17 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
     public void run() {
         response = new MapEntrySet();
         MapEntrySimple entry;
-        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        final LocalMapStatsImpl mapStats = mapService.getLocalMapStatsImpl(name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
+        final LocalMapStatsImpl mapStats
+                = mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         final Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         for (final Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             final long start = System.currentTimeMillis();
             final Data dataKey = recordEntry.getKey();
             final Record record = recordEntry.getValue();
             final Object valueBeforeProcess = record.getValue();
-            final Object valueBeforeProcessObject = mapService.toObject(valueBeforeProcess);
-            Object objectKey = mapService.toObject(record.getKey());
+            final Object valueBeforeProcessObject = mapService.getMapServiceContext().toObject(valueBeforeProcess);
+            Object objectKey = mapService.getMapServiceContext().toObject(record.getKey());
             if (getPredicate() != null) {
                 final SerializationService ss = getNodeEngine().getSerializationService();
                 QueryEntry queryEntry = new QueryEntry(ss, dataKey, objectKey, valueBeforeProcessObject);
@@ -89,7 +90,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
             final Object valueAfterProcess = entry.getValue();
             Data dataValue = null;
             if (result != null) {
-                dataValue = mapService.toData(result);
+                dataValue = mapService.getMapServiceContext().toData(result);
                 response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, dataValue));
             }
 
@@ -117,19 +118,19 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
                 }
             }
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                final Data oldValue = mapService.toData(valueBeforeProcess);
-                final Data value = mapService.toData(valueAfterProcess);
-                mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, value);
-                if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-                    mapService.invalidateAllNearCaches(name, dataKey);
+                final Data oldValue = mapService.getMapServiceContext().toData(valueBeforeProcess);
+                final Data value = mapService.getMapServiceContext().toData(valueAfterProcess);
+                mapService.getMapServiceContext().getMapEventPublisher().publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, value);
+                if (mapService.getMapServiceContext().getNearCacheProvider().isNearCacheAndInvalidationEnabled(name)) {
+                    mapService.getMapServiceContext().getNearCacheProvider().invalidateAllNearCaches(name, dataKey);
                 }
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     if (EntryEventType.REMOVED.equals(eventType)) {
-                        mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
+                        mapService.getMapServiceContext().getMapEventPublisher().publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
                     } else {
                         Record r = recordStore.getRecord(dataKey);
                         final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValue, r);
-                        mapService.publishWanReplicationUpdate(name, entryView);
+                        mapService.getMapServiceContext().getMapEventPublisher().publishWanReplicationUpdate(name, entryView);
                     }
                 }
             }

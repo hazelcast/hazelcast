@@ -62,10 +62,10 @@ class DefaultWriteBehindProcessor implements WriteBehindProcessor<DelayedEntry> 
     private final int writeBatchSize;
 
     DefaultWriteBehindProcessor(MapContainer mapContainer) {
-        this.serializationService = mapContainer.getMapService().getSerializationService();
+        this.serializationService = mapContainer.getMapServiceContext().getNodeEngine().getSerializationService();
         this.mapStore = mapContainer.getStore();
         this.storeListeners = new ArrayList<StoreListener>(2);
-        this.logger = mapContainer.getMapService().getNodeEngine().getLogger(DefaultWriteBehindProcessor.class);
+        this.logger = mapContainer.getMapServiceContext().getNodeEngine().getLogger(DefaultWriteBehindProcessor.class);
         this.writeBatchSize = mapContainer.getMapConfig().getMapStoreConfig().getWriteBatchSize();
     }
 

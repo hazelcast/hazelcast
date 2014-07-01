@@ -17,15 +17,18 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.Record;
-import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Defines a record-store.
+ */
 public interface RecordStore {
 
     String getName();

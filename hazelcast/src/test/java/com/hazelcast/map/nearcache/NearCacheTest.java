@@ -105,7 +105,7 @@ public class NearCacheTest extends HazelcastTestSupport {
     private NearCache getNearCache(String mapName, HazelcastInstance instance) {
         NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
-        return service.getNearCache(mapName);
+        return service.getMapServiceContext().getNearCacheProvider().getNearCache(mapName);
     }
 
     @Test

@@ -56,7 +56,7 @@ public class MapEntrySetRequest extends AllPartitionsClientRequest implements Po
         MapEntrySet entrySet = new MapEntrySet();
         MapService service = getService();
         for (Object result : map.values()) {
-            Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) service.toObject(result)).getEntrySet();
+            Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) service.getMapServiceContext().toObject(result)).getEntrySet();
             for (Map.Entry<Data, Data> entry : entries) {
                 entrySet.add(entry);
             }

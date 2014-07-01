@@ -34,16 +34,16 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
     @Override
     public void run() throws Exception {
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
-        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
         MapEntrySimple entry;
 
         for (Data key : keys) {
             if (partitionService.getPartitionId(key) != getPartitionId()) {
                 continue;
             }
-            Object objectKey = mapService.toObject(key);
+            Object objectKey = mapService.getMapServiceContext().toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
-            final Object valueBeforeProcess = mapService.toObject(mapEntry.getValue());
+            final Object valueBeforeProcess = mapService.getMapServiceContext().toObject(mapEntry.getValue());
             entry = new MapEntrySimple(objectKey, valueBeforeProcess);
             backupProcessor.processBackup(entry);
             if (!entry.isModified()) {

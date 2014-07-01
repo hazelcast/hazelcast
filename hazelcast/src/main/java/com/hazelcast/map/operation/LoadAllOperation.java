@@ -35,13 +35,13 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
     @Override
     public void run() throws Exception {
         final int partitionId = getPartitionId();
-        final RecordStore recordStore = mapService.getRecordStore(partitionId, name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         keys = selectThisPartitionsKeys(this.keys);
         recordStore.loadAllFromStore(keys, replaceExistingValues);
     }
 
     private Collection<Data> selectThisPartitionsKeys(Collection<Data> keys) {
-        final InternalPartitionService partitionService = mapService.getNodeEngine().getPartitionService();
+        final InternalPartitionService partitionService = mapService.getMapServiceContext().getNodeEngine().getPartitionService();
         final int partitionId = getPartitionId();
         List<Data> dataKeys = null;
         for (Data key : keys) {

@@ -1,10 +1,10 @@
 package com.hazelcast.map.mapstore;
 
 import com.hazelcast.map.MapContainer;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapStoreWrapper;
-import com.hazelcast.map.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.mapstore.writebehind.WriteBehindProcessor;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.mapstore.writethrough.WriteThroughStore;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -32,13 +32,13 @@ public final class MapDataStores {
      */
     public static <K, V> MapDataStore<K, V> createWriteBehindStore(MapContainer mapContainer, int partitionId,
                                                                    WriteBehindProcessor writeBehindProcessor) {
-        final MapService mapService = mapContainer.getMapService();
+        final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
         final MapStoreWrapper store = mapContainer.getStore();
-        final SerializationService serializationService = mapService.getNodeEngine().getSerializationService();
+        final SerializationService serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         final int writeDelaySeconds = mapContainer.getMapConfig().getMapStoreConfig().getWriteDelaySeconds();
-        final long millis = MapService.convertTime(writeDelaySeconds, TimeUnit.SECONDS);
-        final int capacity = mapService.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
-        final AtomicInteger writeBehindQueueItemCounter = mapService.getWriteBehindQueueItemCounter();
+        final long millis = mapServiceContext.convertTime(writeDelaySeconds, TimeUnit.SECONDS);
+        final int capacity = mapServiceContext.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
+        final AtomicInteger writeBehindQueueItemCounter = mapServiceContext.getWriteBehindQueueItemCounter();
         final WriteBehindStore mapDataStore
                 = new WriteBehindStore(store, serializationService, millis,
                 partitionId, capacity, writeBehindQueueItemCounter);
@@ -56,7 +56,7 @@ public final class MapDataStores {
      */
     public static <K, V> MapDataStore<K, V> createWriteThroughStore(MapContainer mapContainer) {
         return (MapDataStore<K, V>) new WriteThroughStore(mapContainer.getStore(),
-                mapContainer.getMapService().getSerializationService());
+                mapContainer.getMapServiceContext().getNodeEngine().getSerializationService());
     }
 
     /**

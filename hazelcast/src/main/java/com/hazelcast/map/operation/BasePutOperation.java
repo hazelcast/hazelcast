@@ -21,6 +21,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryViews;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -43,19 +44,19 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public void afterRun() {
-        mapService.interceptAfterPut(name, dataValue);
+        mapService.getMapServiceContext().interceptAfterPut(name, dataValue);
         if (eventType == null) {
             eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         }
-        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
+        mapService.getMapServiceContext().getMapEventPublisher().publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             Record record = recordStore.getRecord(dataKey);
             if (record == null) {
                 return;
             }
-            final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
-            mapService.publishWanReplicationUpdate(name, entryView);
+            final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, mapService.getMapServiceContext().toData(dataValue), record);
+            mapService.getMapServiceContext().getMapEventPublisher().publishWanReplicationUpdate(name, entryView);
         }
     }
 
@@ -65,7 +66,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
-        RecordInfo replicationInfo = mapService.createRecordInfo(record);
+        RecordInfo replicationInfo = Records.buildRecordInfo(record);
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
     }
 

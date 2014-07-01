@@ -68,8 +68,8 @@ public class QueryOperation extends AbstractMapOperation {
     }
 
     public void run() throws Exception {
-        List<Integer> initialPartitions = mapService.getOwnedPartitions();
-        IndexService indexService = mapService.getMapContainer(name).getIndexService();
+        List<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        IndexService indexService = mapService.getMapServiceContext().getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
         // TODO: fix
         if (!getNodeEngine().getPartitionService().hasOnGoingMigration()) {
@@ -88,12 +88,13 @@ public class QueryOperation extends AbstractMapOperation {
                 runParallel(initialPartitions);
             }
         }
-        List<Integer> finalPartitions = mapService.getOwnedPartitions();
+        List<Integer> finalPartitions = mapService.getMapServiceContext().getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();
+            ((MapService) getService()).getMapServiceContext()
+                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 
@@ -182,7 +183,7 @@ public class QueryOperation extends AbstractMapOperation {
         }
 
         public Collection<QueryableEntry> call() throws Exception {
-            final PartitionContainer container = mapService.getPartitionContainer(partition);
+            final PartitionContainer container = mapService.getMapServiceContext().getPartitionContainer(partition);
             final RecordStore recordStore = container.getRecordStore(name);
             LinkedList<QueryableEntry> partitionResult = new LinkedList<QueryableEntry>();
             for (Record record : recordStore.getReadonlyRecordMapByWaitingMapStoreLoad().values()) {

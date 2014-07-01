@@ -19,6 +19,7 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -48,12 +49,12 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
 
     public void run() {
         int partitionId = getPartitionId();
-        recordStore = mapService.getRecordStore(partitionId, name);
+        recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         for (int i = 0; i < entries.size(); i++) {
             final RecordInfo recordInfo = recordInfos.get(i);
             final Map.Entry<Data, Data> entry = entries.get(i);
             final Record record = recordStore.putBackup(entry.getKey(), entry.getValue());
-            mapService.applyRecordInfo(record, recordInfo);
+            Records.applyRecordInfo(record, recordInfo);
         }
     }
 

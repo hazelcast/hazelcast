@@ -491,8 +491,8 @@
     <suppress checks="NPathComplexityCheck" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
     <suppress checks="InnerAssignment" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
 
-    <suppress checks="" files="com.hazelcast.map.MapService"/>
     <suppress checks="" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="" files="com.hazelcast.map.LocalMapStatsProvider"/>
     <suppress checks="" files="com.hazelcast.map.eviction.EvictionHelper"/>
     <suppress checks="" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
 
