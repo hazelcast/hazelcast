@@ -1,4 +1,4 @@
-# What's New in Hazelcast 3.3 EA
+# What's New in Hazelcast 3.3 RC
 
 
 
@@ -12,6 +12,10 @@ This section provides the new features introduced with Hazelcast 3.3 release.
 -	Tomcat 6 and 7 Web Sessions Clustering: Please see [Session Replication](#session-replication).
 
 -	Replicated Map implemented: Please see [Replicated Map](#replicated-map-beta).
+-	WAN Replication improved:
+-	Map/Reduce Aggregation implemented:
+-	EvictAll and LoadAll features for IMap: 
+
 
 
 

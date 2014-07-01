@@ -86,6 +86,26 @@ Hazelcast creates a separate distributed map for each Hibernate cache region. So
 
 -   [Near Cache Configuration](#near-cache)
 
+### RegionFactory Options
+
+##### HazelcastCacheRegionFactory
+
+HazelcastCacheRegionFactory uses standard Hazelcast distributed maps. Therefore, all operations like get, put and remove will be performed using the distributed map logic. The only downside of using HazelcastCacheRegionFactory may be the lower performance compared to HazelcastLocalCacheRegionFactory since operations are handled as distributed calls.
+
+
+
+##### HazelcastLocalCacheRegionFactory
+
+In this option, each cluster member has a local map and each of them is registered to a Hazelcast Topic (ITopic). Whenever a `put` or `remove` operation is performed on a member, an invalidation message is generated on the ITopic and sent to other members. And those other members also remove the related key, value pair on their local maps as soon as they get these invalidation messages. New value is only updated on this member when `get` operation is run for that key. In the case of `get` operations, invalidation messages are not generated and reads are performed on the local map.
+
+An illustration of the above logic is shown below.
+
+![image](images/HZLocalCacheRgnFactory.jpg)
+
+If your operations are mostly read ones, then this option is a better one regarding performance.
+
+
+
 
 ### Hazelcast Modes for Hibernate Usage
 
