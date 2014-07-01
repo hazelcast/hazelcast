@@ -144,6 +144,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
                     String executorName, boolean resultDeserialized) {
         this.logger = nodeEngine.getLogger(BasicInvocation.class);
+        this.operationService = (BasicOperationService) nodeEngine.operationService;
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -155,7 +156,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         this.invocationFuture = new BasicInvocationFuture(this, callback);
         this.executorName = executorName;
         this.resultDeserialized = resultDeserialized;
-        this.operationService = (BasicOperationService) nodeEngine.operationService;
     }
 
     abstract ExceptionAction onException(Throwable t);
