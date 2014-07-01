@@ -53,4 +53,9 @@ public class ClientReplicatedMapClearRequest
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "clear";
+    }
 }

@@ -146,4 +146,21 @@ public class ClientReplicatedMapAddEntryListenerRequest
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_LISTEN);
     }
+
+    @Override
+    public String getMethodName() {
+        return "addEntryListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (key == null && predicate == null) {
+            return new Object[]{null};
+        } else if (key == null && predicate != null) {
+            return new Object[]{null, predicate};
+        } else if (key != null && predicate == null) {
+            return new Object[]{null, key};
+        }
+        return new Object[]{null, key, predicate};
+    }
 }
