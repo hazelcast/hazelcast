@@ -60,6 +60,7 @@ public class LocalMapStatsProvider {
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         final Address thisAddress = clusterService.getThisAddress();
 
+        localMapStats.init();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
             InternalPartition partition = partitionService.getPartition(partitionId);
             Address owner = partition.getOwnerOrNull();
@@ -99,8 +100,6 @@ public class LocalMapStatsProvider {
         long hits = 0;
         final Map<Data, Record> records = recordStore.getReadonlyRecordMap();
 
-        localMapStats.incrementHeapCost(recordStore.getHeapCost());
-        localMapStats.incrementOwnedEntryCount(records.size());
         for (Record record : records.values()) {
             RecordStatistics stats = record.getStatistics();
             ownedEntryMemoryCost += record.getCost();
@@ -111,12 +110,15 @@ public class LocalMapStatsProvider {
                 lockedEntryCount++;
             }
         }
+
         localMapStats.incrementOwnedEntryMemoryCost(ownedEntryMemoryCost);
         localMapStats.incrementLockedEntryCount(lockedEntryCount);
         localMapStats.incrementHits(hits);
         localMapStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
         localMapStats.setLastAccessTime(lastAccessTime);
         localMapStats.setLastUpdateTime(lastUpdateTime);
+        localMapStats.incrementHeapCost(recordStore.getHeapCost());
+        localMapStats.incrementOwnedEntryCount(records.size());
     }
 
     /**
