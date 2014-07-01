@@ -355,3 +355,4 @@ Then set the log level to "Debug" in properties file. Below is a sample content.
 `#log4j.logger.com.hazelcast.hibernate=debug`
 
 The line `log4j.logger.com.hazelcast=debug` is used to see debug logs for all Hazelcast operations. Below this line, you can select to see specific logs (cluster, partition, hibernate, etc.).
+
