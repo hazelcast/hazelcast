@@ -202,10 +202,12 @@ public class EvictionTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(cfg);
 
         final IMap map = instances[0].getMap("testMapWideEviction");
-        for (int i = 0; i < size * n; i++) {
+        for (int i = 0; i < size * (n*2); i++) {
             map.put(i, i);
         }
+
         Thread.sleep(2000);
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
