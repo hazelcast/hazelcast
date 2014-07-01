@@ -62,7 +62,7 @@ public final class IsLockedRequest extends AbstractIsLockedRequest
 
     @Override
     public String getMethodName() {
-        if (threadId == 0) {
+        if (threadId != 0) {
             return "isLockedByCurrentThread";
         }
         return super.getMethodName();
