@@ -35,7 +35,7 @@ public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerReque
 
     public Object call() throws Exception {
         final MapService service = getService();
-        return service.removeEventListener(name, registrationId);
+        return service.getMapServiceContext().removeEventListener(name, registrationId);
     }
 
     public String getServiceName() {

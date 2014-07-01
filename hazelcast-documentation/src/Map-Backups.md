@@ -13,11 +13,11 @@ Distributed maps have 1 backup by default so that if a member goes down, you do 
 
 To provide data safety, Hazelcast allows you to specify the number of backup copies you want to have. That way, data on a JVM will be copied onto other JVM(s). It is configured using the `backup-count` property.
 
-```
+```xml
 <hazelcast>
-    <map name="default">
-        <backup-count>1</backup-count>
-    </map>
+  <map name="default">
+    <backup-count>1</backup-count>
+  </map>
 </hazelcast>
 ```
 
@@ -30,12 +30,12 @@ Hazelcast supports both synchronous and asynchronous backups. By default, backup
 Asynchronous backups, on the other hand, do not block operations. They are fire & forget and do not require acknowledgements (backup operations are performed at some point in time). Async backup is configured using the `async-backup-count` property.
  
 
-```
+```xml
 <hazelcast>
-    <map name="default">
-        <backup-count>0</backup-count>
-        <async-backup-count>1</async-backup-count>
-    </map>
+  <map name="default">
+    <backup-count>0</backup-count>
+    <async-backup-count>1</async-backup-count>
+  </map>
 </hazelcast>
 ```
 
@@ -51,13 +51,13 @@ Asynchronous backups, on the other hand, do not block operations. They are fire 
 By default, Hazelcast will have one sync backup copy. If backup count is more than 1, then each member will carry both owned entries and backup copies of other member(s). So for the `map.get(key)` call, it is possible that calling member has backup copy of that key but by default, `map.get(key)` will always read the value from the actual owner of the key for consistency.
 It is possible to enable backup reads (read local backup entries) by setting the value of `read-backup-data` property to **true**. Its default value is **false** for strong consistency. Enabling backup reads can improve the performance. 
 
-```
+```xml
 <hazelcast>
-    <map name="default">
-        <backup-count>0</backup-count>
-        <async-backup-count>1</async-backup-count>
-        <read-backup-data>true</read-backup-data>
-    </map>
+  <map name="default">
+    <backup-count>0</backup-count>
+    <async-backup-count>1</async-backup-count>
+    <read-backup-data>true</read-backup-data>
+  </map>
 </hazelcast>
 ```
 

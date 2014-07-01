@@ -23,8 +23,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Map;
 
 public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation {
@@ -47,8 +47,8 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     public void run() {
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryForBackup(dataKey);
-        Object objectKey = mapService.toObject(dataKey);
-        final Object valueBeforeProcess = mapService.toObject(mapEntry.getValue());
+        Object objectKey = mapService.getMapServiceContext().toObject(dataKey);
+        final Object valueBeforeProcess = mapService.getMapServiceContext().toObject(mapEntry.getValue());
         MapEntrySimple<Object, Object> entry = new MapEntrySimple<Object, Object>(objectKey, valueBeforeProcess);
         entryProcessor.processBackup(entry);
         if (!entry.isModified()){

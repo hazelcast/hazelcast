@@ -26,26 +26,26 @@ Here is a sample configuration:
 
 ```xml
 <hazelcast>
+  ...
+  <map name="default">
     ...
-    <map name="default">
-        ...
-        <map-store enabled="true">
-            <!--
-               Name of the class implementing MapLoader and/or MapStore.
-               The class should implement at least of these interfaces and
-               contain no-argument constructor. Note that the inner classes are not supported.
-            -->
-            <class-name>com.hazelcast.examples.DummyStore</class-name>
-            <!--
-               Number of seconds to delay to call the MapStore.store(key, value).
-               If the value is zero then it is write-through so MapStore.store(key, value)
-               will be called as soon as the entry is updated.
-               Otherwise it is write-behind so updates will be stored after write-delay-seconds
-               value by calling Hazelcast.storeAll(map). Default value is 0.
-            -->
-            <write-delay-seconds>0</write-delay-seconds>
-        </map-store>
-    </map>
+    <map-store enabled="true">
+      <!--
+        Name of the class implementing MapLoader and/or MapStore.
+        The class should implement at least of these interfaces and
+        contain no-argument constructor. Note that the inner classes are not supported.
+      -->
+      <class-name>com.hazelcast.examples.DummyStore</class-name>
+      <!--
+        Number of seconds to delay to call the MapStore.store(key, value).
+        If the value is zero then it is write-through so MapStore.store(key, value)
+        will be called as soon as the entry is updated.
+        Otherwise it is write-behind so updates will be stored after write-delay-seconds
+        value by calling Hazelcast.storeAll(map). Default value is 0.
+      -->
+      <write-delay-seconds>0</write-delay-seconds>
+    </map-store>
+  </map>
 </hazelcast>
 ```
 
@@ -54,41 +54,39 @@ As you know, a configuration can be applied to more than one map using wildcards
 Using this factory, `MapStore`s for each map can be created, when a wildcard configuration is used. A sample code is given below.
 
 ```java
-final Config config = new Config();
-final MapConfig mapConfig = config.getMapConfig("*");
-final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-mapStoreConfig.setFactoryImplementation(new MapStoreFactory<Object, Object>() {
-    @Override
-    public MapLoader<Object, Object> newMapStore(String mapName, Properties properties) {
-        return null;
-    }
-};
+Config config = new Config();
+MapConfig mapConfig = config.getMapConfig( "*" );
+MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+mapStoreConfig.setFactoryImplementation( new MapStoreFactory<Object, Object>() {
+  @Override
+  public MapLoader<Object, Object> newMapStore( String mapName, Properties properties ) {
+    return null;
+  }
+});
 ```
 
 Moreover, if the configuration implements `MapLoaderLifecycleSupport` interface, then the user will have the control to initialize the `MapLoader` implementation with the given map name, configuration properties and the Hazelcast instance. See the below code portion.
 
 ```java
-
 public interface MapLoaderLifecycleSupport {
 
-   /**
-     * Initializes this MapLoader implementation. Hazelcast will call
-     * this method when the map is first used on the
-     * HazelcastInstance. Implementation can
-     * initialize required resources for the implementing
-     * mapLoader such as reading a config file and/or creating
-     * database connection.
-     */
+  /**
+   * Initializes this MapLoader implementation. Hazelcast will call
+   * this method when the map is first used on the
+   * HazelcastInstance. Implementation can
+   * initialize required resources for the implementing
+   * mapLoader such as reading a config file and/or creating
+   * database connection.
+   */
+  void init( HazelcastInstance hazelcastInstance, Properties properties, String mapName );
 
-    void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName);
-
-   /**
-     * Hazelcast will call this method before shutting down.
-     * This method can be overridden to cleanup the resources
-     * held by this map loader implementation, such as closing the
-     * database connections etc.
-     */
-    void destroy();
+  /**
+   * Hazelcast will call this method before shutting down.
+   * This method can be overridden to cleanup the resources
+   * held by this map loader implementation, such as closing the
+   * database connections etc.
+   */
+  void destroy();
 }
 ```
 
@@ -107,7 +105,7 @@ Here is MapLoader initialization flow:
 4. Each node will load all its owned keys by calling `MapLoader.loadAll(keys)`
 5. Each node puts its owned entries into the map by calling `IMap.putTransient(key,value)`
 
-***Warning:*** *If the load mode is LAZY and when `clear()` method is called (which triggers `MapStore.deleteAll()`), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (LAZY mode), please note that there may be still entries in your datastore.*
+***ATTENTION:*** *If the load mode is LAZY and when `clear()` method is called (which triggers `MapStore.deleteAll()`), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (LAZY mode), please note that there may be still entries in your datastore.*
 
 #### Post Processing Map Store: ####
 
@@ -119,9 +117,10 @@ Here is an example of post processing map store:
 
 ```java
 class ProcessingStore extends MapStore<Integer, Employee> implements PostProcessingMapStore {
-	@Override
-	public void store(Integer key, Employee employee) {
-	EmployeeId id = saveEmployee();
-	employee.setId(id.getId());
+  @Override
+  public void store( Integer key, Employee employee ) {
+    EmployeeId id = saveEmployee();
+    employee.setId( id.getId() );
+  }
 }
 ```

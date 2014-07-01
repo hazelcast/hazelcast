@@ -228,7 +228,8 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="MethodCount" files="com.hazelcast.spi.Operation"/>
-
+    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiDataSerializerHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiPortableHook"/>
     <!-- since this class needs to manage services, it knows about them. So it is fine to have lots
@@ -240,19 +241,16 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.EventServiceImpl"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-
-    <!-- SPI unresolved -->
-    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-    <suppress checks="Todo" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <!-- the invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocation"/>
+    <!-- the partition-invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicPartitionInvocation"/>
+
+    <!-- these need to be solved-->
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocation"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
-    <suppress checks="Todo" files="com.hazelcast.spi.impl.BasicOperationService"/>
 
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
@@ -491,8 +489,8 @@
     <suppress checks="NPathComplexityCheck" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
     <suppress checks="InnerAssignment" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
 
-    <suppress checks="" files="com.hazelcast.map.MapService"/>
     <suppress checks="" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="" files="com.hazelcast.map.LocalMapStatsProvider"/>
     <suppress checks="" files="com.hazelcast.map.eviction.EvictionHelper"/>
     <suppress checks="" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
 

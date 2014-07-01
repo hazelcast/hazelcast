@@ -46,7 +46,7 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
     public void run() {
         MapService mapService = getService();
         int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
+        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
             recordStore.removeBackup(dataKey);

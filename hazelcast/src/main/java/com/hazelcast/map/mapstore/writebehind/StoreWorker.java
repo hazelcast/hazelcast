@@ -18,7 +18,7 @@ package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.map.MapContainer;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.Address;
@@ -43,7 +43,7 @@ public class StoreWorker implements Runnable {
 
     private final String mapName;
 
-    private final MapService mapService;
+    private final MapServiceContext mapServiceContext;
 
     private final WriteBehindProcessor writeBehindProcessor;
 
@@ -60,7 +60,7 @@ public class StoreWorker implements Runnable {
 
     public StoreWorker(MapContainer mapContainer, WriteBehindProcessor writeBehindProcessor) {
         this.mapName = mapContainer.getName();
-        this.mapService = mapContainer.getMapService();
+        this.mapServiceContext = mapContainer.getMapServiceContext();
         this.writeBehindProcessor = writeBehindProcessor;
         this.backupRunIntervalTime = getReplicaWaitTime();
         this.lastRunTime = Clock.currentTimeMillis();
@@ -68,15 +68,15 @@ public class StoreWorker implements Runnable {
 
 
     private long getReplicaWaitTime() {
-        return TimeUnit.SECONDS.toMillis(mapService.getNodeEngine().getGroupProperties()
+        return TimeUnit.SECONDS.toMillis(mapServiceContext.getNodeEngine().getGroupProperties()
                 .MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getInteger());
     }
 
     @Override
     public void run() {
-        final MapService mapService = this.mapService;
         final long now = Clock.currentTimeMillis();
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final ClusterService clusterService = nodeEngine.getClusterService();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         final Address thisAddress = clusterService.getThisAddress();
@@ -128,7 +128,7 @@ public class StoreWorker implements Runnable {
      * @param partitionId    corresponding partition id.
      */
     private void doInBackup(final WriteBehindQueue queue, final List<DelayedEntry> delayedEntries, final int partitionId) {
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final ClusterService clusterService = nodeEngine.getClusterService();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         final Address thisAddress = clusterService.getThisAddress();
@@ -154,7 +154,7 @@ public class StoreWorker implements Runnable {
     }
 
     private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {
-        final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
+        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         return partitionContainer.getExistingRecordStore(mapName);
     }
 

@@ -8,18 +8,16 @@ Hazelcast distributed queue is an implementation of `java.util.concurrent.Blocki
 import com.hazelcast.core.Hazelcast;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import com.hazelcast.config.Config;
 
-Config cfg = new Config();
-HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-BlockingQueue<MyTask> q = hz.getQueue("tasks");
-q.put(new MyTask());
-MyTask task = q.take();
+HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+BlockingQueue<MyTask> queue = hazelcastInstance.getQueue( "tasks" );
+queue.put( new MyTask() );
+MyTask task = queue.take();
 
-boolean offered = q.offer(new MyTask(), 10, TimeUnit.SECONDS);
-task = q.poll (5, TimeUnit.SECONDS);
-if (task != null) {
-    //process task
+boolean offered = queue.offer( new MyTask(), 10, TimeUnit.SECONDS );
+task = queue.poll( 5, TimeUnit.SECONDS );
+if ( task != null ) {
+  //process task
 }
 ```
 

@@ -47,7 +47,7 @@ public class UpdateMapConfigOperation extends Operation {
     @Override
     public void run() throws Exception {
         MapService service = getService();
-        MapConfig oldConfig = service.getMapContainer(mapName).getMapConfig();
+        MapConfig oldConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
         MapConfig newConfig = new MapConfig(oldConfig);
         newConfig.setTimeToLiveSeconds(mapConfig.getTimeToLiveSeconds());
         newConfig.setMaxIdleSeconds(mapConfig.getMaxIdleSeconds());
@@ -57,7 +57,7 @@ public class UpdateMapConfigOperation extends Operation {
         newConfig.setBackupCount(mapConfig.getBackupCount());
         newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
         newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
-        service.getMapContainer(mapName).setMapConfig(newConfig.getAsReadOnly());
+        service.getMapServiceContext().getMapContainer(mapName).setMapConfig(newConfig.getAsReadOnly());
     }
 
     @Override

@@ -987,7 +987,8 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         while (!loaded) {
             for (int i = 0; i < partitionCount; i++) {
-                final RecordStore recordStore = service.getPartitionContainer(i).getRecordStore(mapName);
+                final RecordStore recordStore = service.getMapServiceContext()
+                        .getPartitionContainer(i).getRecordStore(mapName);
                 if (recordStore != null) {
                     loaded = recordStore.isLoaded();
                     if (!loaded) {
@@ -1408,7 +1409,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         MapProxyImpl map = (MapProxyImpl) hz.getMap(mapName);
         MapService mapService = (MapService) map.getService();
-        MapContainer mapContainer = mapService.getMapContainer(mapName);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
         MapStoreWrapper mapStoreWrapper = mapContainer.getStore();
         Set keys = mapStoreWrapper.loadAllKeys();
         assertEquals(2, keys.size());

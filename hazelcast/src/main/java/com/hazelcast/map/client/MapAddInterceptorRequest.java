@@ -68,7 +68,7 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
     @Override
     protected OperationFactory createOperationFactory() {
         final MapService mapService = getService();
-        id = mapService.addInterceptor(name, mapInterceptor);
+        id = mapService.getMapServiceContext().addInterceptor(name, mapInterceptor);
         return new AddInterceptorOperationFactory(id, name, mapInterceptor);
     }
 

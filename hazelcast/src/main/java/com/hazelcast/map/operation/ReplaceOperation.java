@@ -31,7 +31,7 @@ public class ReplaceOperation extends BasePutOperation {
 
     public void run() {
         final Object oldValue = recordStore.replace(dataKey, dataValue);
-        dataOldValue = mapService.toData(oldValue);
+        dataOldValue = mapService.getMapServiceContext().toData(oldValue);
         successful = oldValue != null;
     }
 

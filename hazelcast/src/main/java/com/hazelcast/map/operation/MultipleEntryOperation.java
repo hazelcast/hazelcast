@@ -6,6 +6,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EntryViews;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.RecordStore;
@@ -54,10 +55,12 @@ public class MultipleEntryOperation extends AbstractMapOperation
 
     @Override
     public void run() throws Exception {
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         response = new MapEntrySet();
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
-        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        final LocalMapStatsImpl mapStats = mapService.getLocalMapStatsImpl(name);
+        final RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
+        final LocalMapStatsImpl mapStats = mapServiceContext
+                .getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         MapEntrySimple entry;
 
         for (Data key : keys) {
@@ -65,16 +68,16 @@ public class MultipleEntryOperation extends AbstractMapOperation
                 continue;
             }
             long start = System.currentTimeMillis();
-            Object objectKey = mapService.toObject(key);
+            Object objectKey = mapServiceContext.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
             final Object valueBeforeProcess = mapEntry.getValue();
-            final Object valueBeforeProcessObject = mapService.toObject(valueBeforeProcess);
+            final Object valueBeforeProcessObject = mapServiceContext.toObject(valueBeforeProcess);
             entry = new MapEntrySimple(objectKey, valueBeforeProcessObject);
             final Object result = entryProcessor.process(entry);
             final Object valueAfterProcess = entry.getValue();
             Data dataValue = null;
             if (result != null) {
-                dataValue = mapService.toData(result);
+                dataValue = mapServiceContext.toData(result);
                 response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, dataValue));
             }
             EntryEventType eventType;
@@ -102,20 +105,20 @@ public class MultipleEntryOperation extends AbstractMapOperation
             }
 
             if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                final Data oldValue = mapService.toData(valueBeforeProcess);
-                final Data value = mapService.toData(valueAfterProcess);
-                mapService.publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
-                if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-                    mapService.invalidateAllNearCaches(name, key);
+                final Data oldValue = mapServiceContext.toData(valueBeforeProcess);
+                final Data value = mapServiceContext.toData(valueAfterProcess);
+                mapServiceContext.getMapEventPublisher().publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
+                if (mapServiceContext.getNearCacheProvider().isNearCacheAndInvalidationEnabled(name)) {
+                    mapServiceContext.getNearCacheProvider().invalidateAllNearCaches(name, key);
                 }
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     if (EntryEventType.REMOVED.equals(eventType)) {
-                        mapService.publishWanReplicationRemove(name, key, Clock.currentTimeMillis());
+                        mapServiceContext.getMapEventPublisher().publishWanReplicationRemove(name, key, Clock.currentTimeMillis());
                     } else {
                         Record record = recordStore.getRecord(key);
-                        Data tempValue = mapService.toData(dataValue);
+                        Data tempValue = mapServiceContext.toData(dataValue);
                         final EntryView entryView = EntryViews.createSimpleEntryView(key, tempValue, record);
-                        mapService.publishWanReplicationUpdate(name, entryView);
+                        mapServiceContext.getMapEventPublisher().publishWanReplicationUpdate(name, entryView);
                     }
                 }
             }

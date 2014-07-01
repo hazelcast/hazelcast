@@ -86,4 +86,17 @@ public class ClientReplicatedMapPutTtlRequest
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_PUT);
     }
+
+    @Override
+    public String getMethodName() {
+        return "put";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (ttlMillis == 0) {
+            return new Object[]{key, value};
+        }
+        return new Object[]{key, value, ttlMillis, TimeUnit.MILLISECONDS};
+    }
 }

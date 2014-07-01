@@ -16,11 +16,12 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.util.Collection;
 
 public class MapValuesOperation extends AbstractMapOperation implements PartitionAwareOperation {
@@ -34,10 +35,12 @@ public class MapValuesOperation extends AbstractMapOperation implements Partitio
     }
 
     public void run() {
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         values = recordStore.valuesData();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();
+            mapServiceContext.getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 

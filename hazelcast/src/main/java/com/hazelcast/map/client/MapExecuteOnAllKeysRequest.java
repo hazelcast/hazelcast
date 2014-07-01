@@ -61,7 +61,7 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
         MapService mapService = getService();
         for (Object o : map.values()) {
             if (o != null) {
-                MapEntrySet entrySet = (MapEntrySet) mapService.toObject(o);
+                MapEntrySet entrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(o);
                 Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
                     result.add(entry);

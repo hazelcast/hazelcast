@@ -48,7 +48,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
             throw new TransactionException("Transaction couldn't obtain lock.");
         }
         Record record = recordStore.getRecord(dataKey);
-        Data value = record == null ? null : mapService.toData(record.getValue());
+        Data value = record == null ? null : mapService.getMapServiceContext().toData(record.getValue());
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());
     }
 
