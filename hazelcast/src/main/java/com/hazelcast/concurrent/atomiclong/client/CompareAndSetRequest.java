@@ -56,4 +56,14 @@ public class CompareAndSetRequest extends AtomicLongRequest {
         super.read(reader);
         expect = reader.readLong("e");
     }
+
+    @Override
+    public String getMethodName() {
+        return "compareAndSet";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{expect, delta};
+    }
 }

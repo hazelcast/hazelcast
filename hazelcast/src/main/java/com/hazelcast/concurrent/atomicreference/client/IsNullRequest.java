@@ -37,4 +37,9 @@ public class IsNullRequest extends ReadRequest {
     public int getClassId() {
         return AtomicReferencePortableHook.IS_NULL;
     }
+
+    @Override
+    public String getMethodName() {
+        return "isNull";
+    }
 }

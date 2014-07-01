@@ -107,4 +107,14 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
             endpoint.sendEvent(portableMessage, callId);
         }
     }
+
+    @Override
+    public String getMethodName() {
+        return "addMessageListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{null};
+    }
 }

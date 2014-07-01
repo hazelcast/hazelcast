@@ -58,4 +58,9 @@ public class RemoveMessageListenerRequest extends BaseClientRemoveListenerReques
     public Permission getRequiredPermission() {
         return new TopicPermission(name, ActionConstants.ACTION_LISTEN);
     }
+
+    @Override
+    public String getMethodName() {
+        return "removeMessageListener";
+    }
 }

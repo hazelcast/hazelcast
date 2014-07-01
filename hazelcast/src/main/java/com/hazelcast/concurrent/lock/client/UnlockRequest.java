@@ -57,4 +57,9 @@ public final class UnlockRequest extends AbstractUnlockRequest {
         String name = getName();
         return new LockPermission(name, ActionConstants.ACTION_LOCK);
     }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
 }

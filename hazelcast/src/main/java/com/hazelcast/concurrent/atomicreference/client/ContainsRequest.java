@@ -64,4 +64,14 @@ public class ContainsRequest extends ReadRequest {
         ObjectDataInput in = reader.getRawDataInput();
         expected = readNullableData(in);
     }
+
+    @Override
+    public String getMethodName() {
+        return "contains";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{expected};
+    }
 }

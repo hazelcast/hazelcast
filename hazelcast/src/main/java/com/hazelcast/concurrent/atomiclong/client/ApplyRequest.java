@@ -67,4 +67,14 @@ public class ApplyRequest extends ReadRequest {
         ObjectDataInput in = reader.getRawDataInput();
         function = readNullableData(in);
     }
+
+    @Override
+    public String getMethodName() {
+        return "apply";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{function};
+    }
 }
