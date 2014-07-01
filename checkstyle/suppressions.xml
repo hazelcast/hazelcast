@@ -502,5 +502,9 @@
     <suppress checks="" files="com.hazelcast.map.proxy[\\/]"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.tx.TransactionalMapProxySupport"/>
 
+    <!-- build utils -->
+    <!-- Taken from JBOSS project, suppress checkstyles -->
+    <suppress checks="" files="com.hazelcast.buildutils.ElementParser"/>
+
 </suppressions>
 
