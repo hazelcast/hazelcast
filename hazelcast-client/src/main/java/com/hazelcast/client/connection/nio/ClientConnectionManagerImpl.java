@@ -91,7 +91,7 @@ import static com.hazelcast.client.config.ClientProperties.PROP_MAX_FAILED_HEART
 
 public class ClientConnectionManagerImpl extends MembershipAdapter implements ClientConnectionManager, MembershipListener {
 
-    static final int BUFFER_SIZE = 16 << 10;
+    static final int BUFFER_SIZE = 32 << 10;
     // 32k
 
     static final int KILO_BYTE = 1024;
