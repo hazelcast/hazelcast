@@ -28,7 +28,7 @@ According to the above example, Hazelcast will try to find free ports between 57
 </network>
 ```
 
-Natrually, the parameter `port-count` is ignored when the above configuration is made.
+Naturally, the parameter `port-count` is ignored when the above configuration is made.
 
 
 #### Outbound Ports
