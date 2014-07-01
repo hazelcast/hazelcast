@@ -33,7 +33,7 @@ public static void main( String[] args ) throws InterruptedException {
   Collection<Instance> instances = hazelcastInstance.getInstances();
   for ( Instance instance : instances ) {
     if ( instance.getInstanceType() == Instance.InstanceType.MAP ) {
-      System.out.println( "there is a map with name:" + instance.getId() );
+      System.out.println( "There is a map with name: " + instance.getId() );
     }
   }
 }
@@ -42,13 +42,13 @@ public static void main( String[] args ) throws InterruptedException {
 with
 
 ```java
-public static void main(String[] args) throws InterruptedException {
+public static void main( String[] args ) throws InterruptedException {
   HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
-  IMap map = hz.getMap("test");
-  Collection<DistributedObject> distributedObjects = hazelcastInstance.getDistributedObjects();
-  for (DistributedObject distributedObject : distributedObjects) {
-    if(distributedObject instanceof IMap) {
-      System.out.println("there is a map with name:" + distributedObject.getName());
+  IMap map = hz.getMap( "test" );
+  Collection<DistributedObject> objects = hazelcastInstance.getDistributedObjects();
+  for ( DistributedObject object : objects ) {
+    if ( distributedObject instanceof IMap ) {
+      System.out.println( "There is a map with name: " + object.getName() );
     }
   }
 }
