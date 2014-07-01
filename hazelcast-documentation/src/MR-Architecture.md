@@ -3,6 +3,8 @@
 
 ### Hazelcast MapReduce Architecture
 
+This sub-chapter will explain some of the internals of the MapReduce framework. This is meant to be more advanced stuff. If you're not interested in how it works internally you might want to stop reading here.
+
 #### Node Interoperation Example
 
 To understand the following technical internals, we first will have a short look at what happens in terms of an example workflow.

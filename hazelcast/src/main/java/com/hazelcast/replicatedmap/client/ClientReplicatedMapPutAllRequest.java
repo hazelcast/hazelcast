@@ -24,6 +24,7 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,5 +79,20 @@ public class ClientReplicatedMapPutAllRequest
     @Override
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_PUT);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "putAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        final Set<Map.Entry> set = entrySet.getEntrySet();
+        final HashMap map = new HashMap();
+        for (Map.Entry entry : set) {
+            map.put(entry.getKey(), entry.getValue());
+        }
+        return new Object[]{map};
     }
 }

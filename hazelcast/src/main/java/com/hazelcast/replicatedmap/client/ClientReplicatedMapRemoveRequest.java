@@ -76,4 +76,14 @@ public class ClientReplicatedMapRemoveRequest
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_REMOVE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "remove";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }
