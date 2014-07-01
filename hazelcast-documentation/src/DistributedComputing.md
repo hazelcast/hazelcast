@@ -23,33 +23,33 @@ import com.hazelcast.core.IMap;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 
-public class SumTask implements
-        Callable<Integer>, Serializable, HazelcastInstanceAware {
-    private transient HazelcastInstance hz;
+public class SumTask
+    implements Callable<Integer>, Serializable, HazelcastInstanceAware {
+        
+  private transient HazelcastInstance hazelcastInstance;
 
-    public void setHazelcastInstance(HazelcastInstance hz) {
-        this.hz = hz;
-    }
+  public void setHazelcastInstance( HazelcastInstance hazelcastInstance ) {
+    this.hazelcastInstance = hazelcastInstance;
+  }
 
-    public Integer call() throws Exception {
-        IMap<String, Integer> map = hz.getMap("map");
-        int result = 0;
-        for (String key : map.localKeySet()) {
-            System.out.println("Calculating for key: " + key);
-            result += map.get(key);
-        }
-        System.out.println("Local Result: " + result);
-        return result;
+  public Integer call() throws Exception {
+    IMap<String, Integer> map = hazelcastInstance.getMap( "map" );
+    int result = 0;
+    for ( String key : map.localKeySet() ) {
+      System.out.println( "Calculating for key: " + key );
+      result += map.get( key );
     }
+    System.out.println( "Local Result: " + result );
+    return result;
+  }
 }
 ```
-
 
 Executing a task by using executor framework is very straight forward. Simply obtain an `ExecutorService` instance, generally via `Executors` and submit the task which returns a `Future`. After executing task, you do not have to wait for execution to complete, you can process other things and when ready use the `future` object to retrieve the result as shown in code below.
 
 ```java
 ExecutorService executorService = Executors.newSingleThreadExecutor();
-Future<String> future = executorService.submit(new Echo("myinput"));
+Future<String> future = executorService.submit( new Echo( "myinput" ) );
 //while it is executing, do some useful stuff
 //when ready, get the result of your execution
 String result = future.get();
@@ -64,20 +64,20 @@ Let's now go with a sample that is Runnable. Below is a task that waits for some
 
 ```java
 public class EchoTask implements Runnable, Serializable {
-    private final String msg;
+  private final String msg;
 
-    public EchoTask(String msg) {
+  public EchoTask( String msg ) {
     this.msg = msg;
-}
+  }
 
-    @Override
-    public void run() {
-       try {
-         Thread.sleep(5000);
-       } catch (InterruptedException e) {
-       }
-       System.out.println("echo:" + msg);
+  @Override
+  public void run() {
+    try {
+      Thread.sleep( 5000 );
+    } catch ( InterruptedException e ) {
     }
+    System.out.println( "echo:" + msg );
+  }
 }
 ```
 
@@ -85,16 +85,16 @@ Then let's write a class that submits and executes echo messages:
 
 ```java
 public class MasterMember {
-    public static void main(String[] args) throws Exception {
-       HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-       IExecutorService executor = hz.getExecutorService("exec");
-       for (int k = 1; k <= 1000; k++) {
-          Thread.sleep(1000);
-          System.out.println("Producing echo task: " + k);
-          executor.execute(new EchoTask("" + k));
-       }
-    System.out.println("EchoTaskMain finished!");
-   }
+  public static void main( String[] args ) throws Exception {
+    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+    IExecutorService executor = hazelcastInstance.getExecutorService( "exec" );
+    for ( int k = 1; k <= 1000; k++ ) {
+      Thread.sleep( 1000 );
+      System.out.println( "Producing echo task: " + k );
+      executor.execute( new EchoTask( String.valueOf( k ) ) );
+    }
+    System.out.println( "EchoTaskMain finished!" );
+  }
 }
 ```
 
@@ -106,7 +106,7 @@ By default, Executor is configured to have 8 threads in the pool. It can be chan
 
 ```xml
 <executor-service name="exec">
-    <pool-size>1</pool-size>
+  <pool-size>1</pool-size>
 </executor-service>
 ```
 

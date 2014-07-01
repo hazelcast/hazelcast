@@ -86,4 +86,9 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest
         String name = serializationService.toObject(key);
         return new LockPermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "getRemainingLeaseTime";
+    }
 }

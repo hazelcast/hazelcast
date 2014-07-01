@@ -32,9 +32,6 @@ import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;
 import com.hazelcast.topic.client.RemoveMessageListenerRequest;
 
-/**
- * @author ali 5/24/13
- */
 public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
     private final String name;

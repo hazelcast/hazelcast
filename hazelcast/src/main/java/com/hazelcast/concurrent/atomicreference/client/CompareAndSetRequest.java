@@ -64,4 +64,14 @@ public class CompareAndSetRequest extends ModifyRequest {
         ObjectDataInput in = reader.getRawDataInput();
         expected = readNullableData(in);
     }
+
+    @Override
+    public String getMethodName() {
+        return "compareAndSet";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{expected, update};
+    }
 }

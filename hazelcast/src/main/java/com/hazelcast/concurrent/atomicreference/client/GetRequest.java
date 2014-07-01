@@ -37,4 +37,9 @@ public class GetRequest extends ReadRequest {
     public int getClassId() {
         return AtomicReferencePortableHook.GET;
     }
+
+    @Override
+    public String getMethodName() {
+        return "get";
+    }
 }

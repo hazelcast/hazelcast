@@ -27,9 +27,6 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 5/28/13
- */
 public class ClientCountDownLatchProxy extends ClientProxy implements ICountDownLatch {
 
     private volatile Data key;

@@ -85,4 +85,14 @@ public final class SetCountRequest extends KeyBasedClientRequest
     public Permission getRequiredPermission() {
         return new CountDownLatchPermission(name, ActionConstants.ACTION_MODIFY);
     }
+
+    @Override
+    public String getMethodName() {
+        return "trySetCount";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{count};
+    }
 }
