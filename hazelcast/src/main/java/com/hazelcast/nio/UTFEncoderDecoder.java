@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.util.HazelcastUtil;
+import com.hazelcast.util.QuickMath;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -64,9 +64,14 @@ public final class UTFEncoderDecoder {
     }
 
     public void writeUTF0(final DataOutput out, final String str, byte[] buffer) throws IOException {
+        if (!QuickMath.isPowerOfTwo(buffer.length)) {
+            throw new IllegalArgumentException("Size of the buffer has to be power of two, was " + buffer.length);
+        }
         boolean isNull = str == null;
         out.writeBoolean(isNull);
-        if (isNull) return;
+        if (isNull) {
+            return;
+        }
 
         int length = str.length();
         out.writeInt(length);
@@ -80,32 +85,21 @@ public final class UTFEncoderDecoder {
         }
     }
 
-    private void writeShortUTF(final DataOutput out, final String str,
-                               final int beginIndex, final int endIndex,
+    private void writeShortUTF(final DataOutput out, final String str, final int beginIndex, final int endIndex,
                                byte[] buffer) throws IOException {
-        int utfLength = 0;
-        int c, count = 0;
-            /* use charAt instead of copying String to char array */
-        for (int i = beginIndex; i < endIndex; i++) {
-            c = str.charAt(i);
-            if ((c >= 0x0001) && (c <= 0x007F)) {
-                utfLength++;
-            } else if (c > 0x07FF) {
-                utfLength += 3;
-            } else {
-                utfLength += 2;
-            }
-        }
+        int utfLength = calculateUtf8Length(str, beginIndex, endIndex);
         if (utfLength > 65535) {
-            throw new UTFDataFormatException("encoded string too long:"
-                    + utfLength + " bytes");
+            throw new UTFDataFormatException("encoded string too long:" + utfLength + " bytes");
         }
         out.writeShort(utfLength);
         int i;
+        int c = 0;
+        int count = 0;
         for (i = beginIndex; i < endIndex; i++) {
             c = str.charAt(i);
-            if (!((c >= 0x0001) && (c <= 0x007F)))
+            if (!((c >= 0x0001) && (c <= 0x007F))) {
                 break;
+            }
             buffering(buffer, count++, (byte) c, out);
         }
         for (; i < endIndex; i++) {
@@ -126,96 +120,129 @@ public final class UTFEncoderDecoder {
     }
 
     public String readUTF0(final DataInput in, byte[] buffer) throws IOException {
+        if (!QuickMath.isPowerOfTwo(buffer.length)) {
+            throw new IllegalArgumentException("Size of the buffer has to be power of two, was " + buffer.length);
+        }
         boolean isNull = in.readBoolean();
-        if (isNull) return null;
+        if (isNull) {
+            return null;
+        }
         int length = in.readInt();
         final char[] data = new char[length];
         if (length > 0) {
             int chunkSize = length / STRING_CHUNK_SIZE + 1;
             for (int i = 0; i < chunkSize; i++) {
                 int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
-                int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-                readShortUTF(in, data, beginIndex, endIndex, buffer);
+                readShortUTF(in, data, beginIndex, buffer);
             }
         }
         return stringCreator.buildString(data);
     }
 
     private void readShortUTF(final DataInput in, final char[] data,
-                              final int beginIndex, final int endIndex,
-                              byte[] buffer) throws IOException {
+                              final int beginIndex, byte[] buffer) throws IOException {
         final int utflen = in.readShort();
-        int c = 0, char2, char3;
         int count = 0;
-        int chararr_count = beginIndex;
-        int lastCount = -1;
+        int charArrCount = beginIndex;
         while (count < utflen) {
-            c = buffered(buffer, count, utflen, in) & 0xff;
-            if (c > 127)
-                break;
-            lastCount = count;
-            count++;
-            data[chararr_count++] = (char) c;
-        }
-        while (count < utflen) {
-            if (lastCount > -1 && lastCount < count) {
-                c = buffered(buffer, count, utflen, in) & 0xff;
-            }
-            switch (c >> 4) {
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                    /* 0xxxxxxx */
-                    lastCount = count;
-                    count++;
-                    data[chararr_count++] = (char) c;
-                    break;
-                case 12:
-                case 13:
-                    /* 110x xxxx 10xx xxxx */
-                    lastCount = count++;
-                    if (count + 1 > utflen)
-                        throw new UTFDataFormatException("malformed input: partial character at end");
-                    char2 = buffered(buffer, count++, utflen, in);
-                    if ((char2 & 0xC0) != 0x80)
-                        throw new UTFDataFormatException("malformed input around byte " + count);
-                    data[chararr_count++] = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
-                    break;
-                case 14:
-                    /* 1110 xxxx 10xx xxxx 10xx xxxx */
-                    lastCount = count++;
-                    if (count + 2 > utflen)
-                        throw new UTFDataFormatException("malformed input: partial character at end");
-                    char2 = buffered(buffer, count++, utflen, in);
-                    char3 = buffered(buffer, count++, utflen, in);
-                    if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80))
-                        throw new UTFDataFormatException("malformed input around byte " + (count - 1));
-                    data[chararr_count++] = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
-                    break;
-                default:
-                    /* 10xx xxxx, 1111 xxxx */
-                    throw new UTFDataFormatException("malformed input around byte " + count);
-            }
+            int c = buffered(buffer, count++, utflen, in) & 0xff;
+            count = decodeChar(in, data, buffer, utflen, count, charArrCount, c);
+            charArrCount++;
         }
     }
 
+    private int decodeChar(DataInput in, char[] data, byte[] buffer, int utflen, int count, int charArrCount, int c)
+            throws IOException {
+        switch (c >> 4) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                decodeOneByteChar(data, charArrCount, c);
+                return count;
+            case 12:
+            case 13:
+                return decodeTwoBytesChar(data, charArrCount, c, in, buffer, utflen, count);
+            case 14:
+                return decodeThreeBytesChar(data, charArrCount, c, in, buffer, utflen, count);
+            default:
+                /* 10xx xxxx, 1111 xxxx */
+                throw new UTFDataFormatException("malformed input around byte " + count);
+        }
+    }
+
+    private int decodeThreeBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen,
+                                     int count) throws IOException {
+        /* 1110 xxxx 10xx xxxx 10xx xxxx */
+        int pos = count;
+        if (count + 2 > utflen) {
+            throw new UTFDataFormatException("malformed input: partial character at end");
+        }
+        int char2 = buffered(buffer, pos++, utflen, in);
+        int char3 = buffered(buffer, pos++, utflen, in);
+        if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
+            throw new UTFDataFormatException("malformed input around byte " + (count - 1));
+        }
+        int c1 = (char1 & 0x0F) << 12;
+        int c2 = (char2 & 0x3F) << 6;
+        int c3 = (char3 & 0x3F) << 0;
+        data[charArrCount] = (char) (c1 | c2 | c3);
+        return pos;
+    }
+
+    private int decodeTwoBytesChar(char[] data, int charArrCount, int char1, DataInput in, byte[] buffer, int utflen,
+                                   int count) throws IOException {
+    /* 110x xxxx 10xx xxxx */
+        int pos = count;
+        if (count + 1 > utflen) {
+            throw new UTFDataFormatException("malformed input: partial character at end");
+        }
+        int char2 = buffered(buffer, pos++, utflen, in);
+        if ((char2 & 0xC0) != 0x80) {
+            throw new UTFDataFormatException("malformed input around byte " + count);
+        }
+        data[charArrCount] = (char) (((char1 & 0x1F) << 6) | (char2 & 0x3F));
+        return pos;
+    }
+
+    private void decodeOneByteChar(char[] data, int charArrCount, int c) {
+    /* 0xxxxxxx */
+        data[charArrCount] = (char) c;
+        return;
+    }
+
+    private int calculateUtf8Length(String value, int beginIndex, int endIndex) {
+        int utfLength = 0;
+        /* use charAt instead of copying String to char array */
+        for (int i = beginIndex; i < endIndex; i++) {
+            int c = value.charAt(i);
+            if ((c >= 0x0001) && (c <= 0x007F)) {
+                utfLength++;
+            } else if (c > 0x07FF) {
+                utfLength += 3;
+            } else {
+                utfLength += 2;
+            }
+        }
+        return utfLength;
+    }
+
     private void buffering(byte[] buffer, int pos, byte value, DataOutput out) throws IOException {
-        int innerPos = pos % buffer.length;
+        int innerPos = QuickMath.mod(pos, buffer.length);
         if (pos > 0 && innerPos == 0) {
             out.write(buffer, 0, buffer.length);
         }
         buffer[innerPos] = value;
     }
 
-    private byte buffered(byte[] buffer, int pos, int utfLenght, DataInput in) throws IOException {
-        int innerPos = pos % buffer.length;
+    private byte buffered(byte[] buffer, int pos, int utfLength, DataInput in) throws IOException {
+        int innerPos = QuickMath.mod(pos, buffer.length);
         if (innerPos == 0) {
-            int length = Math.min(buffer.length, utfLenght - pos);
+            int length = Math.min(buffer.length, utfLength - pos);
             in.readFully(buffer, 0, length);
         }
         return buffer[innerPos];
