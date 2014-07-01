@@ -43,6 +43,8 @@ public interface EventService {
 
     Collection<EventRegistration> getRegistrations(String serviceName, String topic);
 
+    boolean hasEventRegistration(String topic);
+
     EventRegistration[] getRegistrationsAsArray(String serviceName, String topic);
 
     void publishEvent(String serviceName, EventRegistration registration, Object event, int orderKey);

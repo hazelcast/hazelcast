@@ -156,7 +156,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.put("b", new TempData("abc", "123"));
         TestPredicate predicate = new TestPredicate("foo");
         Map<String, Object> entries = map.executeOnEntries(new LoggingEntryProcessor(), predicate);
-        assertEquals("The predicate should be applied to only one entry if indexing works!", entries.size(),1);
+        assertEquals("The predicate should be applied to only one entry if indexing works!", entries.size(), 1);
     }
 
     /**
@@ -256,6 +256,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             instance2.shutdown();
         }
     }
+
     @Test
     public void testEntryProcessorWithKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -311,16 +312,15 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue2754(){
-
+    public void testIssue2754() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance();
         final HazelcastInstance instance2 = factory.newHazelcastInstance();
-        
+
         final IMap<Object, Object> map = instance2.getMap("map");
         Set<Object> keys = new HashSet<Object>();
 
-        for(int i =0 ; i < 4; i++){
+        for (int i = 0; i < 4; i++) {
             String key = generateKeyOwnedBy(instance1);
             keys.add(key);
         }
@@ -328,47 +328,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         int expected = 6;
         map.executeOnKeys(keys, new EntryCreate(expected));
 
-        for(Object key : keys){
+        for (Object key : keys) {
             assertEquals(expected, map.get(key));
         }
 
     }
-
-    @Test
-    public void testIssue2614(){
-        Config config = new Config();
-        config.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        IMap<Integer, int[]> testMap = instance.getMap("TestMap");
-        testMap.addEntryListener(new EntryListener<Integer, int[]>() {
-            @Override
-            public void entryUpdated(EntryEvent<Integer, int[]> event) {
-                if (Arrays.equals(event.getOldValue(), event.getValue())) {
-                    throw new IllegalStateException("Old object equals new object");
-                }
-                else
-                    System.out.println("not equals");
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent<Integer, int[]> event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent<Integer, int[]> event) {
-            }
-            @Override
-            public void entryAdded(EntryEvent<Integer, int[]> event) {
-            }
-        }, true);
-
-        testMap.put(0, new int[] {0});
-        testMap.executeOnKey(0, new ObjectEntryProcessor());
-
-    }
-
-
-    public static class ObjectEntryProcessor extends AbstractEntryProcessor<Integer, int[]>{
+    public static class ObjectEntryProcessor extends AbstractEntryProcessor<Integer, int[]> {
         @Override
         public Object process(Map.Entry<Integer, int[]> entry) {
             int[] currentValue = entry.getValue();
@@ -378,6 +343,26 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testIssue2614() {
+        Config config = new Config();
+        config.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        IMap<Integer, int[]> testMap = instance.getMap("TestMap");
+
+        testMap.addEntryListener(new EntryAdapter<Integer, int[]>() {
+            @Override
+            public void entryUpdated(EntryEvent<Integer, int[]> event) {
+                if (Arrays.equals(event.getOldValue(), event.getValue())) {
+                    throw new IllegalStateException("Old object equals new object");
+                }
+            }
+        }, true);
+
+        testMap.put(0, new int[]{0});
+        testMap.executeOnKey(0, new ObjectEntryProcessor());
+
+    }
 
     @Test
     public void testEntryProcessorDelete() {
@@ -1135,6 +1120,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
     }
+
     public static class EntryInc extends AbstractEntryProcessor<String, SimpleValue> {
 
         @Override
@@ -1180,14 +1166,15 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return "value: " + i;
         }
     }
+
     public static class EntryCreate extends AbstractEntryProcessor<String, Integer> {
 
         int expected;
 
-        public EntryCreate(){
+        public EntryCreate() {
         }
 
-        public EntryCreate(int expected){
+        public EntryCreate(int expected) {
             this.expected = expected;
         }
 
@@ -1218,6 +1205,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             deserializedCount = in.readInt() + 1;
         }
     }
+
     private static class StoreOperation implements EntryProcessor {
 
         @Override
@@ -1232,6 +1220,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return null;
         }
     }
+
     private static class FetchSerializedCount implements EntryProcessor<String, MyObject> {
 
         @Override
@@ -1244,6 +1233,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return null;
         }
     }
+
     private static class FetchDeSerializedCount implements EntryProcessor<String, MyObject> {
 
         @Override
