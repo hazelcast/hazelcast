@@ -171,9 +171,20 @@ For map-store, you should set either *class-name* or *implementation* attribute
 </hz:config>
 ```
 
-### Spring Managed Context
+### Spring Managed Context with *@SpringAware*
 
-It  is often desired to access Spring managed beans, to apply bean properties or to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware` or to apply bean post-processing such as `InitializingBean`, `@PostConstruct` like annotations while using Hazelcast distributed `ExecutorService` or more generally any Hazelcast managed object. Achieving those features are as simple as adding `@SpringAware` annotation to your distributed object types. Once you have configured HazelcastInstance as explained in [Spring Configuration](#spring-configuration) section, just mark any distributed type with `@SpringAware` annotation.
+Hazelcast Distributed Objects could be marked with @SpringAware if the object wants :
+
+- to apply bean properties
+- to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware` 
+- to apply bean post-processing annotations such as `InitializingBean`, `@PostConstruct`
+
+Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed object can benefit from these features. To enable SpringAware objects, you have to first configure HazelcastInstance as explained in [Spring Configuration](#spring-configuration) section.
+
+#### SpringAware Examples
+
+- Configure an Hazelcast Instance via Spring Configuration and define *someBean* as Spring Bean.
+
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -208,48 +219,9 @@ It  is often desired to access Spring managed beans, to apply bean properties or
     ...
 </beans>
 ```
+**Distributed Map Example:**
 
-**ExecutorService example:**
-
-```java
-@SpringAware
-public class SomeTask implements Callable<Long>, ApplicationContextAware, Serializable {
-
-    private transient ApplicationContext context;
-
-    private transient SomeBean someBean;
-
-    public Long call() throws Exception {
-        return someBean.value;
-    }
-
-    public void setApplicationContext(final ApplicationContext applicationContext)
-        throws BeansException {
-        context = applicationContext;
-    }
-
-    @Autowired
-    public void setSomeBean(final SomeBean someBean) {
-        this.someBean = someBean;
-    }
-}
-```
-```java
-HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
-SomeBean bean = (SomeBean) context.getBean("someBean");
-
-Future<Long> f = hazelcast.getExecutorService().submit(new SomeTask());
-Assert.assertEquals(bean.value, f.get().longValue());
-
-// choose a member
-Member member = hazelcast.getCluster().getMembers().iterator().next();
-
-Future<Long> f2 = (Future<Long>) hazelcast.getExecutorService()
-    .submitToMember(new SomeTask(), member);
-Assert.assertEquals(bean.value, f2.get().longValue());
-```
-
-**Distributed Map value example:**
+- create a class called SomeValue which contains Spring Bean definitions like ApplicaitonContext,SomeBean.
 
 ```java
 @SpringAware
@@ -282,7 +254,7 @@ public class SomeValue implements Serializable, ApplicationContextAware {
 }
 ```
 
-On Node-1;
+- get SomeValue Object from Context and put it into Hazelcast Distributed Map on Node-1
 
 ```java
 HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
@@ -291,7 +263,7 @@ IMap<String, SomeValue> map = hazelcast.getMap("values");
 map.put("key", value);
 ```
 
-On Node-2;
+- read SomeValue Object from Hazelcast Distributed Map and assert that init method is called as it is annotated with `@PostConstruct`
 
 ```java
 HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
@@ -299,6 +271,52 @@ IMap<String, SomeValue> map = hazelcast.getMap("values");
 SomeValue value = map.get("key");
 Assert.assertTrue(value.init);
 ```
+
+**ExecutorService Example:**
+
+- create a Callable Class called SomeTask which contains Spring Bean definitions like ApplicaitonContext,SomeBean.
+
+
+```java
+@SpringAware
+public class SomeTask implements Callable<Long>, ApplicationContextAware, Serializable {
+
+    private transient ApplicationContext context;
+
+    private transient SomeBean someBean;
+
+    public Long call() throws Exception {
+        return someBean.value;
+    }
+
+    public void setApplicationContext(final ApplicationContext applicationContext)
+        throws BeansException {
+        context = applicationContext;
+    }
+
+    @Autowired
+    public void setSomeBean(final SomeBean someBean) {
+        this.someBean = someBean;
+    }
+}
+
+- submit SomeTask to two Hazelcast Member and assert that `someBean` is autowired.
+
+```java
+HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
+SomeBean bean = (SomeBean) context.getBean("someBean");
+
+Future<Long> f = hazelcast.getExecutorService().submit(new SomeTask());
+Assert.assertEquals(bean.value, f.get().longValue());
+
+// choose a member
+Member member = hazelcast.getCluster().getMembers().iterator().next();
+
+Future<Long> f2 = (Future<Long>) hazelcast.getExecutorService()
+    .submitToMember(new SomeTask(), member);
+Assert.assertEquals(bean.value, f2.get().longValue());
+```
+
 
 *Note that, Spring managed properties/fields are marked as `transient`.*
 
@@ -329,7 +347,7 @@ For more information please see [Spring Cache Abstraction](http://static.springs
 If you are using Hibernate with Hazelcast as 2nd level cache provider, you can easily create `RegionFactory` instances within Spring configuration (by Spring version 3.1). That way, it is possible to use same `HazelcastInstance` as Hibernate L2 cache instance.
 
 ```xml
-<hz:hibernate-region-factory id="regionFactory" instance-ref="instance" />
+<hz:hibernate-region-factory id="regionFactory" instance-ref="instance" mode="LOCAL" />
 ...
 <bean id="sessionFactory" 
       class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" 
@@ -340,10 +358,15 @@ If you are using Hibernate with Hazelcast as 2nd level cache provider, you can e
 </bean>
 ```
 
+**Hibernate RegionFactory Modes**
+- LOCAL
+- DISTRIBUTED 
+
+please refer to Hibernate RegionFactory Section for more info. [TODO: add link to the related section]
 
 ### Best Practices
 
-#### Out of Memory Error
+#### Avoid Out of Memory Error with Large Distributed Data Structures
 
 Spring tries to create a new `Map`/`Collection` instance and fill the new instance by iterating and converting values of the original `Map`/`Collection` (`IMap`, `IQueue`, etc.) to required types when generic type parameters of the original `Map`/`Collection` and the target property/attribute do not match.
 
