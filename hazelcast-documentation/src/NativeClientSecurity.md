@@ -37,8 +37,9 @@ Authentication mechanism just works the same as cluster member authentication. I
 You can define as many as `LoginModules` you want in configuration. Those are executed in the given order. Usage attribute has 4 values; 'required', 'requisite', 'sufficient' and 'optional' as defined in `javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag`.
 
 ```java
-final Credentials credentials = new UsernamePasswordCredentials("dev", "dev-pass");
-HazelcastInstance client = HazelcastClient.newHazelcastClient(credentials, "localhost");
+ClientConfig clientConfig = new ClientConfig();
+clientConfig.setCredentials(new UsernamePasswordCredentials("dev", "dev-pass"));
+HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 ```
 
 ### Authorization
