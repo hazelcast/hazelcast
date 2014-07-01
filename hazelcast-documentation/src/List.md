@@ -14,23 +14,21 @@ Hazelcast List is very similar to Hazelcast Set but it allows duplicate elements
 import com.hazelcast.core.Hazelcast;
 import java.util.List;
 import java.util.Iterator;
-import com.hazelcast.config.Config;
 
-Config cfg = new Config();
-HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+HazelcastInstance hz = Hazelcast.newHazelcastInstance();
 
-java.util.List list = hz.getList("IBM-Quote-Frequency");
-list.add(new Price(10));
-list.add(new Price(11));
-list.add(new Price(12));
-list.add(new Price(11));
-list.add(new Price(12));
+List<Price> list = hz.getList( "IBM-Quote-Frequency" );
+list.add( new Price( 10 ) );
+list.add( new Price( 11 ) );
+list.add( new Price( 12 ) );
+list.add( new Price( 11 ) );
+list.add( new Price( 12 ) );
         
 //....
-Iterator it = list.iterator();
-while (it.hasNext()) { 
-    Price price = (Price) it.next(); 
-    //analyze
+Iterator<Price> iterator = list.iterator();
+while ( iterator.hasNext() ) { 
+  Price price = iterator.next(); 
+  //analyze
 }
 ```
 
@@ -47,42 +45,31 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryEvent; 
-import com.hazelcast.config.Config;
 
 public class Sample implements ItemListener{
 
-    public static void main(String[] args) { 
-        Sample sample = new Sample();
-        Config cfg = new Config();
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-        IList   list   = hz.getList   ("default");
-        list.addItemListener  (sample, true); 
+  public static void main( String[] args ) { 
+    Sample sample = new Sample();
+    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+    IList<Price> list = hazelcastInstance.getList( "default" );
+    list.addItemListener( sample, true ); 
         
-        Price price = new Price(10, time1)
-        list.add(price);
-        list.remove(price);
-    } 
+    Price price = new Price( 10, time1 )
+    list.add( price );
+    list.remove( price );
+  } 
 
-    public void itemAdded(Object item) {
-        System.out.println("Item added = " + item);
-    }
+  public void itemAdded( Object item ) {
+    System.out.println( "Item added = " + item );
+  }
 
-    public void itemRemoved(Object item) {
-        System.out.println("Item removed = " + item);
-    }     
+  public void itemRemoved( Object item ) {
+    System.out.println( "Item removed = " + item );
+  }     
 }
        
 ```
 
-
-<br> </br>
-
-<font color="red">
-***Related Information***
-</font>
-
-*Please refer to [Listener Configurations](#listener-configurations).*
-
-<br> </br>
+**Note:** *To learn more about the configuration of listeners please refer to [Listener Configurations](#listener-configurations).*
 
 

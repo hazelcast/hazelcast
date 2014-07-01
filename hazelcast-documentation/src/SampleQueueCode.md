@@ -11,17 +11,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 
 public class ProducerMember {
-    public static void main(String[] args) throws Exception {
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        IQueue<Integer> queue = hz.getQueue("queue");
-        for (int k = 1; k < 100; k++) {
-            queue.put(k);
-            System.out.println("Producing: " + k);
-            Thread.sleep(1000);
-        }
-        queue.put(-1);
-        System.out.println("Producer Finished!");
+  public static void main( String[] args ) throws Exception {
+    HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+    IQueue<Integer> queue = hz.getQueue( "queue" );
+    for ( int k = 1; k < 100; k++ ) {
+      queue.put( k );
+      System.out.println( "Producing: " + k );
+      Thread.sleep(1000);
     }
+    queue.put( -1 );
+    System.out.println( "Producer Finished!" );
+  }
 }
 ``` 
 
@@ -34,20 +34,20 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 
 public class ConsumerMember {
-    public static void main(String[] args) throws Exception {
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        IQueue<Integer> queue = hz.getQueue("queue");
-        while (true) {
-            int item = queue.take();
-            System.out.println("Consumed: " + item);
-            if (item == -1) {
-                queue.put(-1);
-                break;
-            }
-            Thread.sleep(5000);
-        }
-        System.out.println("Consumer Finished!");
+  public static void main( String[] args ) throws Exception {
+    HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+    IQueue<Integer> queue = hz.getQueue( "queue" );
+    while ( true ) {
+      int item = queue.take();
+      System.out.println( "Consumed: " + item );
+      if ( item == -1 ) {
+        queue.put( -1 );
+        break;
+      }
+      Thread.sleep( 5000 );
     }
+    System.out.println( "Consumer Finished!" );
+  }
 }
 ```
 
@@ -59,7 +59,7 @@ From the above codes, you can see that item production is done at every second, 
 
 Once the second consumer is started after a while, first consumer output:
 
-```
+```plain
 ...
 Consumed 13 
 Consumed 15
@@ -69,7 +69,7 @@ Consumer 17
 
 Second consumer output:
 
-```
+```plain
 ...
 Consumed 14 
 Consumed 16
@@ -79,4 +79,4 @@ Consumer 18
 
 In the case of a lot of producers and consumers for the queue, using a list of queues may solve the queue bottlenecks. Of course, in this case, you should be aware that ordering of messages being sent to different queues is not guaranteed. But, since in most cases strict ordering is not important, list of queues would be a good solution.
 
-<font color='red'>***Note***:</font> *The items are taken from the queue in the same order they were put. However, if there are more than one consumers, this ordering is not guaranteed.*
+***ATTENTION:*** *The items are taken from the queue in the same order they were put. However, if there are more than one consumers, this ordering is not guaranteed.*
