@@ -12,6 +12,9 @@ import java.util.Map;
  */
 public class TruePredicate implements DataSerializable, Predicate {
 
+    /**
+     * An instance of the TruePredicate.
+     */
     public static final TruePredicate INSTANCE = new TruePredicate();
 
     @Override
