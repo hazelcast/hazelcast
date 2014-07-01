@@ -46,4 +46,14 @@ public class DrainRequest extends SemaphoreRequest {
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "drainPermits";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
 }

@@ -38,4 +38,20 @@ public class SetRequest extends ModifyRequest {
     public int getClassId() {
         return AtomicReferencePortableHook.SET;
     }
+
+    @Override
+    public String getMethodName() {
+        if (update == null) {
+            return "clear";
+        }
+        return "set";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (update == null) {
+            return null;
+        }
+        return new Object[]{update};
+    }
 }

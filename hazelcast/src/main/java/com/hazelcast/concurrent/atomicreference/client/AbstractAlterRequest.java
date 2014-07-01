@@ -79,4 +79,9 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
     public Permission getRequiredPermission() {
         return new AtomicReferencePermission(name, ActionConstants.ACTION_MODIFY);
     }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{function};
+    }
 }

@@ -25,10 +25,11 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class AcquireRequest extends SemaphoreRequest {
 
-    private long timeout;
+    private long timeout = -1;
 
     public AcquireRequest() {
     }
@@ -63,5 +64,30 @@ public class AcquireRequest extends SemaphoreRequest {
     @Override
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
+    }
+
+    @Override
+    public String getMethodName() {
+        if (timeout != -1) {
+            return "tryAcquire";
+        }
+        return "acquire";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (permitCount == 1) {
+            if (timeout > 0) {
+                // tryAcquire(timeout, TimeUnit)
+                return new Object[]{timeout, TimeUnit.MILLISECONDS};
+            }
+            // acquire(), tryAcquire()
+            return null;
+        } else if (timeout > 0) {
+            //tryAcquire(permit, timeout, TimeUnit)
+            return new Object[]{permitCount, timeout, TimeUnit.MILLISECONDS};
+        }
+        // acquire(permit), tryAcquire(permit)
+        return super.getParameters();
     }
 }

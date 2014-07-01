@@ -76,9 +76,4 @@ public class CollectionRemoveListenerRequest extends BaseClientRemoveListenerReq
     public String getMethodName() {
         return "removeItemListener";
     }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{registrationId};
-    }
 }

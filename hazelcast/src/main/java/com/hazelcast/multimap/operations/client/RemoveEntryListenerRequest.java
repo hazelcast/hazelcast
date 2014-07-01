@@ -59,8 +59,4 @@ public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest 
         return "removeEntryListener";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{registrationId};
-    }
 }

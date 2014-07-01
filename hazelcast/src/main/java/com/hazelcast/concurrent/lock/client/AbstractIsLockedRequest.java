@@ -32,7 +32,7 @@ import java.io.IOException;
 public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
 
     protected Data key;
-    private long threadId;
+    protected long threadId;
 
     public AbstractIsLockedRequest() {
     }

@@ -47,4 +47,14 @@ public class AvailableRequest extends SemaphoreRequest implements RetryableReque
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "availablePermits";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
 }
