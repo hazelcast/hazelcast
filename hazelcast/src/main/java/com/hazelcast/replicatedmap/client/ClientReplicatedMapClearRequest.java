@@ -46,7 +46,7 @@ public class ClientReplicatedMapClearRequest
 
     @Override
     public int getClassId() {
-        return ReplicatedMapPortableHook.REMOVE;
+        return ReplicatedMapPortableHook.CLEAR;
     }
 
     @Override

@@ -161,6 +161,6 @@ public class ClientReplicatedMapAddEntryListenerRequest
         } else if (key != null && predicate == null) {
             return new Object[]{null, key};
         }
-        return new Object[]{null, key, predicate};
+        return new Object[]{null, predicate, key};
     }
 }
