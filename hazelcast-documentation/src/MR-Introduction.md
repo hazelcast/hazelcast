@@ -17,7 +17,7 @@ The full example is available [here](http://github.com/noctarius/hz-map-reduce) 
 
 The JobTracker is used to create Job instances whereas every instance of `com.hazelcast.mapreduce.Job` defines a single MapReduce configuration. The same Job can be submitted multiple times, no matter if executed in parallel or after the previous execution is finished.
 
-***ATTENTION:*** *After retrieving the JobTracker, be aware of the fact that it should only be used with data structures derived from the same HazelcastInstance. Otherwise, unexpected behavior will happen.*
+***ATTENTION:*** *After retrieving the JobTracker, be aware of the fact that it should only be used with data structures derived from the same HazelcastInstance. Otherwise you can get unexpected behavior*
 
 To retrieve a JobTracker from Hazelcast, we will start by using the "default" configuration for convenience reasons to show the basic way.
 
@@ -43,7 +43,7 @@ Below example code is a direct follow up of the example of the JobTracker sectio
 
 We start by retrieving an instance of our data map and create the Job instance afterwards. Implementations used to configure the Job will be discussed while walking further through the API documentation, they are not yet discussed.
 
-***ATTENTION:*** *Since the Job class is highly depending on generics to support type safety, the generics change over time and may not be assignment compatible to old variable types. To create full potential of the fluent API, we recommend to use fluent method chaining as shown in this example to prevent the need of too much variables.*
+***ATTENTION:*** *Since the Job class is highly depending on generics to support type safety, the generics change over time and may not be assignment compatible to old variable types. To make use of the full potential of the fluent API, we recommend to use fluent method chaining as shown in this example to prevent the need of too much variables.*
 
 ```java
 IMap<String, String> map = hazelcastInstance.getMap( "articles" );
@@ -321,8 +321,8 @@ The following snippet shows a typical JobTracker configuration. We will discuss 
 ```
 
 - **max-thread-size:** Configures the maximum thread pool size of the JobTracker.
-- **queue-size:** Defines the maximum number of tasksthat are able to wait to be processed. A value of 0 means unbounded queue. Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate chunks are lost.
-- **retry-count:** Currently not used but reserved for later use where the framework will automatically try to restart / retry operations from a available save point.
+- **queue-size:** Defines the maximum number of tasks that are able to wait to be processed. A value of 0 means unbounded queue. Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate chunks are lost.
+- **retry-count:** Currently not used but reserved for later use where the framework will automatically try to restart / retry operations from a available savepoint.
 - **chunk-size:** Defines the number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate transmission but remember that low values mean higher traffic costs. A very high value might cause an OutOfMemoryError to occur if emitted values not fit into heap memory before
 being sent to reducers. To prevent this, you might want to use a combiner to pre-reduce values on mapping nodes.
 - **communicate-stats:** Defines if statistics (for example about processed entries) are transmitted to the job emitter. This might be used to show any kind of progress to a user inside of an UI system but produces additional traffic. If not needed, you might want to deactivate this.
