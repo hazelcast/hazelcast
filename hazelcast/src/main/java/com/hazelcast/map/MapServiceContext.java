@@ -11,6 +11,18 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Context which is needed by a map service.
+ * <p/>
+ * Shared instances, configurations of all maps can be reached over this context.
+ * <p/>
+ * Also this context provides some support methods which are used in map operations and {@link RecordStore} implementations.
+ * For example all {@link com.hazelcast.map.PartitionContainer} and {@link com.hazelcast.map.MapContainer} instances
+ * can also be reached by using this interface.
+ * <p/>
+ * It is also responsible for providing methods which are used by lower layers of
+ * Hazelcast and exposed on {@link com.hazelcast.map.MapService}.
+ * <p/>
+ *
+ * @see com.hazelcast.map.MapManagedService
  */
 public interface MapServiceContext extends MapServiceContextSupport,
         MapServiceContextInterceptorSupport, MapServiceContextEventListenerSupport {
@@ -36,6 +48,8 @@ public interface MapServiceContext extends MapServiceContextSupport,
     void flushMaps();
 
     void destroyMap(String mapName);
+
+    void reset();
 
     NearCacheProvider getNearCacheProvider();
 

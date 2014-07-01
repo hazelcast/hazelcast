@@ -8,11 +8,14 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Creates merge policies.
+ */
 public final class MergePolicyProvider {
 
-    private Map<String, MapMergePolicy> mergePolicyMap;
+    private final Map<String, MapMergePolicy> mergePolicyMap;
 
-    private NodeEngine nodeEngine;
+    private final NodeEngine nodeEngine;
 
     public MergePolicyProvider(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;

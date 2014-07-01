@@ -48,8 +48,7 @@ class MapManagedService implements ManagedService {
 
     @Override
     public void reset() {
-        mapServiceContext.clearPartitions();
-        mapServiceContext.getNearCacheProvider().clear();
+        mapServiceContext.reset();
     }
 
     @Override

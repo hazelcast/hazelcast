@@ -52,6 +52,10 @@ public final class MapService implements ManagedService, MigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
 
+    /**
+     * Service name of map service used
+     * to register {@link com.hazelcast.spi.impl.ServiceManager#registerService}
+     */
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
     private ManagedService managedService;

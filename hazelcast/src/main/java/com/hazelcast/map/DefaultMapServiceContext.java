@@ -15,14 +15,18 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Default implementation of map service context.
+ */
 public class DefaultMapServiceContext extends AbstractMapServiceContextSupport implements MapServiceContext {
 
-    protected final PartitionContainer[] partitionContainers;
-    protected final ConcurrentMap<String, MapContainer> mapContainers;
-    protected final AtomicReference<List<Integer>> ownedPartitions;
+    private final PartitionContainer[] partitionContainers;
+    private final ConcurrentMap<String, MapContainer> mapContainers;
+    private final AtomicReference<List<Integer>> ownedPartitions;
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
-            return new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName), getService().getMapServiceContext());
+            return new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName),
+                    getService().getMapServiceContext());
         }
     };
     /**
@@ -139,6 +143,12 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
                 container.destroyMap(mapName);
             }
         }
+    }
+
+    @Override
+    public void reset() {
+        clearPartitions();
+        getNearCacheProvider().clear();
     }
 
     @Override

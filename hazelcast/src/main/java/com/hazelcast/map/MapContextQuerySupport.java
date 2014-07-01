@@ -15,6 +15,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Helper methods for querying map partitions.
+ */
 public class MapContextQuerySupport {
 
     private MapServiceContext mapServiceContext;

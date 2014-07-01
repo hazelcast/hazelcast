@@ -1,6 +1,12 @@
 package com.hazelcast.map.record;
 
-public abstract class Records {
+/**
+ * Contains various factory & helper methods for a {@link com.hazelcast.map.record.Record} object.
+ */
+public final class Records {
+
+    private Records() {
+    }
 
     public static void applyRecordInfo(Record record, RecordInfo replicationInfo) {
         record.setStatistics(replicationInfo.getStatistics());
