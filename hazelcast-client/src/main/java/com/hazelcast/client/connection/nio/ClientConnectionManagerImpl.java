@@ -80,7 +80,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
     static final int KILO_BYTE = 1024;
-    public static final int BUFFER_SIZE = 16 << 10; // 32k
+    public static final int BUFFER_SIZE = 32 << 10; // 32k
 
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();

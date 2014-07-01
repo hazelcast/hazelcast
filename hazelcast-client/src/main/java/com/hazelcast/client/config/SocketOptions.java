@@ -20,7 +20,7 @@ public class SocketOptions {
 
     // socket options
 
-    private boolean tcpNoDelay = false;
+    private boolean tcpNoDelay = true;
 
     private boolean keepAlive = true;
 
@@ -28,7 +28,8 @@ public class SocketOptions {
 
     private int lingerSeconds = 3;
 
-    private int bufferSize = -1; // in kb
+    private int bufferSize = 32;
+    // in kb
 
     public boolean isTcpNoDelay() {
         return tcpNoDelay;
