@@ -18,6 +18,7 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.RemoveAllListeners;
+import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
@@ -167,7 +168,7 @@ public class ClientConnection implements Connection, Closeable {
 
     public void write(Data data) throws IOException {
         final int totalSize = data.totalSize();
-        final int bufferSize = ClientConnectionManagerImpl.BUFFER_SIZE;
+        final int bufferSize = SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
         final ByteBuffer buffer = ByteBuffer.allocate(totalSize > bufferSize ? bufferSize : totalSize);
         final DataAdapter packet = new DataAdapter(data);
         boolean complete = false;
