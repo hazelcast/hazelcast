@@ -88,13 +88,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOUT_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT;
+import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
+import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
 public class ClientConnectionManagerImpl extends MembershipAdapter implements ClientConnectionManager, MembershipListener {
 
-    static final int BUFFER_SIZE = 32 << 10;
-    // 32k
 
-    static final int KILO_BYTE = 1024;
 
     private static final int TIMEOUT_PLUS = 2000;
     private static final int RETRY_COUNT = 20;
@@ -425,7 +424,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 }
                 int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
                 if (bufferSize < 0) {
-                    bufferSize = BUFFER_SIZE;
+                    bufferSize = DEFAULT_BUFFER_SIZE_BYTE;
                 }
                 socket.setSendBufferSize(bufferSize);
                 socket.setReceiveBufferSize(bufferSize);
