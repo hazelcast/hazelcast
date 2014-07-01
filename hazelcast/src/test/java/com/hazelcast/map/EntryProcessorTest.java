@@ -272,38 +272,15 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         config.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         IMap<Integer, int[]> testMap = instance.getMap("TestMap");
-        testMap.addEntryListener(new EntryListener<Integer, int[]>() {
+
+        testMap.addEntryListener(new EntryAdapter<Integer, int[]>(){
             @Override
             public void entryUpdated(EntryEvent<Integer, int[]> event) {
                 if (Arrays.equals(event.getOldValue(), event.getValue())) {
                     throw new IllegalStateException("Old object equals new object");
                 }
-                else
-                    System.out.println("not equals");
             }
-
-            @Override
-            public void entryRemoved(EntryEvent<Integer, int[]> event) {
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent<Integer, int[]> event) {
-            }
-
-            @Override
-            public void mapEvicted(MapEvent event) {
-
-            }
-
-            @Override
-            public void mapCleared(MapEvent event) {
-
-            }
-
-            @Override
-            public void entryAdded(EntryEvent<Integer, int[]> event) {
-            }
-        }, true);
+        },true);
 
         testMap.put(0, new int[] {0});
         testMap.executeOnKey(0, new ObjectEntryProcessor());
@@ -380,7 +357,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance();
         final HazelcastInstance instance2 = factory.newHazelcastInstance();
-        
+
         final IMap<Object, Object> map = instance2.getMap("map");
         Set<Object> keys = new HashSet<Object>();
 
