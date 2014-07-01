@@ -9,7 +9,7 @@ Hazelcast's Client security includes both authentication and authorization.
 
 ### Authentication
 
-Authentication mechanism just works the same as cluster member authentication. Implementation of client authentication requires a Credentials and one or more LoginModule(s). Client side does not have/need a factory object to create Credentials objects like `ICredentialsFactory`. Credentials must be created at client side and sent to connected node during connection process.
+Authentication mechanism just works the same as cluster member authentication. Implementation of client authentication requires a Credentials and one or more LoginModule(s). Client side does not have/need a factory object to create Credentials objects like `ICredentialsFactory`. Credentials must be created at the client side and sent to the connected node during connection process.
 
 ```xml
 <security enabled="true">
@@ -123,7 +123,7 @@ public interface IPermissionPolicy {
 
 Permission policy implementations can access client-permissions in configuration by using `SecurityConfig.getClientPermissionConfigs()` during `configure(SecurityConfig securityConfig, Properties properties)` method is called by Hazelcast.
 
-`IPermissionPolicy.getPermissions(Subject subject, Class<? extends Permission> type)` method is used to determine a client request has been granted permission to do a security-sensitive operation. 
+`IPermissionPolicy.getPermissions(Subject subject, Class<? extends Permission> type)` method is used to determine a client request that has been granted permission to perform a security-sensitive operation. 
 
 Permission policy should return a `PermissionCollection` containing permissions of given type for given `Subject`. Hazelcast access controller will call `PermissionCollection.implies(Permission)` on returning `PermissionCollection` and will decide if current `Subject` has permitted to access to requested resources or not.
 

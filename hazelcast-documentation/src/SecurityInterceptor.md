@@ -3,7 +3,7 @@
 
 ![](images/enterprise-onlycopy.jpg)
 
-Hazelcast allows you to intercept every remote-operation executed via client. This provides ability to add very flexible custom security logic. You should implement `com.hazelcast.security.SecurityInterceptor`
+Hazelcast allows you to intercept every remote operation executed by the client. This provides ability to add a very flexible custom security logic. You should implement `com.hazelcast.security.SecurityInterceptor`
 
 ```java
 public class MySecurityInterceptor implements SecurityInterceptor {
