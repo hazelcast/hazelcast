@@ -36,6 +36,7 @@
         <module>hazelcast-spring</module>
         <module>hazelcast-cloud</module>
         <module>hazelcast-ra</module>
+        <module>hazelcast-build-utils</module>
     </modules>
 
     <properties>
