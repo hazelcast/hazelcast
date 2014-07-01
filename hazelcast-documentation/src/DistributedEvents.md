@@ -7,14 +7,14 @@ As a rule of thumb, event listener should not implement heavy processes in its e
 
 ## Event Listeners
 
--   **MembershipListener** for cluster membership events
--   **DistributedObjectListener** for distributed object creation and destroy events
--   **MigrationListener** for partition migration start and complete events
--   **LifecycleListener** for HazelcastInstance lifecycle events
--   **EntryListener** for IMap and MultiMap entry events
--   **ItemListener** for IQueue, ISet and IList item events (please refer to Event Registration and Configuration sections of [Set](#set) and [List](#list)).
--   **MessageListener** for ITopic message events
--   **ClientListener** for client connection events
+- **MembershipListener** for cluster membership events
+- **DistributedObjectListener** for distributed object creation and destroy events
+- **MigrationListener** for partition migration start and complete events
+- **LifecycleListener** for HazelcastInstance lifecycle events
+- **EntryListener** for IMap and MultiMap entry events
+- **ItemListener** for IQueue, ISet and IList item events (please refer to Event Registration and Configuration sections of [Set](#set) and [List](#list)).
+- **MessageListener** for ITopic message events
+- **ClientListener** for client connection events
 
 ## Global Event Configuration
 
@@ -38,4 +38,3 @@ If listeners are doing a computation that requires a long time, this can cause e
 
 *Please refer to [Listener Configurations](#listener-configurations) section on how to configure each listener.*
 
-<br> </br>
