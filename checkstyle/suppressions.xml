@@ -158,4 +158,9 @@
 
     <suppress checks="MagicNumber" files="com.hazelcast.util.VersionCheck"/>
     <suppress checks="ReturnCount" files="com.hazelcast.logging.Slf4jFactory"/>
+
+    <!-- build utils -->
+    <!-- Taken from JBOSS project, suppress checkstyles -->
+    <suppress checks="" files="com.hazelcast.buildutils.ElementParser"/>
+
 </suppressions>
