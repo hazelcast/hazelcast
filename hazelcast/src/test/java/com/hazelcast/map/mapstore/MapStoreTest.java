@@ -43,6 +43,7 @@ import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -51,6 +52,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -1124,6 +1126,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore // see https://github.com/hazelcast/hazelcast/issues/2409
     public void testIssue1019() throws InterruptedException {
         final String keyWithNullValue = "keyWithNullValue";
 
@@ -1147,12 +1150,31 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap map = instance.getMap("default");
 
-        assertEquals(map.keySet(), mapForStore.keySet());
-        assertEquals(new HashSet(map.values()), new HashSet(mapForStore.values()));
+        Set expected = map.keySet();
+        Set actual = mapForStore.keySet();
+        assertEquals(expected, actual);
+        assertEquals(map.values(), mapForStore.values());
         assertEquals(map.entrySet(), mapForStore.entrySet());
 
         assertFalse(map.containsKey(keyWithNullValue));
         assertNull(map.get(keyWithNullValue));
+    }
+
+    @Test
+    public void testKeysWithPredicateShouldLoadMapStore() throws InterruptedException {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore()
+                .insert("key1",17)
+                .insert("key2",23)
+                .insert("key3",47);
+
+        HazelcastInstance instance = createHazelcastInstance(newConfig(testMapStore, 0));
+        IMap map = instance.getMap("default");
+
+        Set result = map.keySet();
+        assertEquals(3, result.size());
+        assertTrue(result.contains("key1"));
+        assertTrue(result.contains("key2"));
+        assertTrue(result.contains("key3"));
     }
 
     static class ProcessingStore extends MapStoreAdapter<Integer, Employee> implements PostProcessingMapStore {
@@ -1848,8 +1870,9 @@ public class MapStoreTest extends HazelcastTestSupport {
             return store;
         }
 
-        public void insert(K key, V value) {
+        public TestEventBasedMapStore insert(K key, V value) {
             store.put(key, value);
+            return this;
         }
 
         public void store(K key, V value) {
