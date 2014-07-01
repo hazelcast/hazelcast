@@ -7,11 +7,11 @@ Let's give **10** as the maximum size of our sample queue above.
 
 ```xml
 <hazelcast>
-    ...
-    <queue name="queue">
-        <max-size>10</max-size>
-     </queue>
-     ...
+  ...
+  <queue name="queue">
+    <max-size>10</max-size>
+  </queue>
+  ...
 </hazelcast>
 ```
 
