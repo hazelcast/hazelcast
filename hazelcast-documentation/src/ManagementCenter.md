@@ -66,9 +66,12 @@ Toolbar has the following buttons:
 
 
 #### Menu
-Home page includes a menu on the left which lists the distributed data structures in the cluster and also all cluster members (nodes), as shown below.
+Home page includes a menu on the left which lists the distributed data structures in the cluster and also all cluster members (nodes), as shown below. 
 
 ![](images/LeftMenu.jpg)
+
+***Note:*** *Distributed data structures will be shown there when the proxies created for them.*
+
 
 Menu items can be expanded/collapsed by clicking on them. Below is the list of menu items with the links to their explanations.
      
