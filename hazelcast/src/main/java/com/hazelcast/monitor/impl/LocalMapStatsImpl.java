@@ -67,7 +67,6 @@ public class LocalMapStatsImpl
 
 
     // These fields are only accessed through the updaters
-    private volatile long creationTime;
     private volatile long lastAccessTime;
     private volatile long lastUpdateTime;
     private volatile long hits;
@@ -82,6 +81,8 @@ public class LocalMapStatsImpl
     private volatile long maxGetLatency;
     private volatile long maxPutLatency;
     private volatile long maxRemoveLatency;
+
+    private volatile long creationTime;
 
     private AtomicLong ownedEntryCount = new AtomicLong(0);
     private AtomicLong backupEntryCount = new AtomicLong(0);
