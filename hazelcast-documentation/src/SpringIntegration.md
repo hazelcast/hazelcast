@@ -51,7 +51,7 @@ Hazelcast has its own namespace **hazelcast** for bean definitions. You can easi
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                 http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                 http://www.hazelcast.com/schema/spring
-                http://www.hazelcast.com/schema/spring/hazelcast-spring-3.0.xsd">
+                http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
 ```
 
 #### Supported Configurations with *hazelcast* Namespace
@@ -229,11 +229,11 @@ Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed 
 @Scope("prototype")
 public class SomeValue implements Serializable, ApplicationContextAware {
 
-    transient ApplicationContext context;
+    private transient ApplicationContext context;
 
-    transient SomeBean someBean;
+    private transient SomeBean someBean;
 
-    transient boolean init = false;
+    private transient boolean init = false;
 
     public void setApplicationContext(final ApplicationContext applicationContext)
         throws BeansException {
