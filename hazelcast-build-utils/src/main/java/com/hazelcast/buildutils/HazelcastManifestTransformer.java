@@ -51,7 +51,12 @@ public class HazelcastManifestTransformer
     private Manifest shadedManifest;
 
     // Configuration
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "UWF_UNWRITTEN_FIELD",
+            justification = "Filled by Maven")
     private Map<String, Attributes> manifestEntries;
+
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "UWF_UNWRITTEN_FIELD",
+            justification = "Filled by Maven")
     private String mainClass;
 
     @Override
