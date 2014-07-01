@@ -5,6 +5,11 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
+/**
+ * Helper methods for publishing events.
+ *
+ * @see MapEventPublisherSupport
+ */
 public interface MapEventPublisher {
 
     void publishWanReplicationUpdate(String mapName, EntryView entryView);
@@ -14,5 +19,5 @@ public interface MapEventPublisher {
     void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected);
 
     void publishEvent(Address caller, String mapName, EntryEventType eventType,
-                      final Data dataKey, Data dataOldValue, Data dataValue);
+                      Data dataKey, Data dataOldValue, Data dataValue);
 }
