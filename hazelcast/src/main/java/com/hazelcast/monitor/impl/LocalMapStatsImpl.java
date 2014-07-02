@@ -79,8 +79,8 @@ public class LocalMapStatsImpl
     private volatile long maxPutLatency;
     private volatile long maxRemoveLatency;
 
-    private volatile long creationTime;
 
+    private long creationTime;
     private long ownedEntryCount;
     private long backupEntryCount;
     private long ownedEntryMemoryCost;
@@ -101,9 +101,10 @@ public class LocalMapStatsImpl
 
 
     /**
-     * Only init these fields for every call since they represent current map state.
-     * However other fields hold historical data like {@link #putCount#getCount}
-     * from the creation of a map.
+     * Only init these fields for every {@link com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats}
+     * call since they represent current map state.
+     * However other fields hold historical data from the creation of a map like {@link #putCount#getCount}
+     * and they should not touch here.
      *
      * @see com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats
      */
@@ -397,10 +398,6 @@ public class LocalMapStatsImpl
 
     public void setNearCacheStats(NearCacheStatsImpl nearCacheStats) {
         this.nearCacheStats = nearCacheStats;
-    }
-
-    public void reset() {
-
     }
 
     @Override

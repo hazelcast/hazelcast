@@ -20,7 +20,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Provides node local statistics of a map.
+ * Provides node local statistics of a map via {@link #createLocalMapStats}
+ * and also holds all {@link com.hazelcast.monitor.impl.LocalMapStatsImpl} implementations of all maps.
  */
 public class LocalMapStatsProvider {
 
