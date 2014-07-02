@@ -64,6 +64,7 @@ public interface IAtomicReference<E> extends DistributedObject {
      *
      * @param update the new value
      * @return  the new value
+     * @deprecated will be removed from Hazelcast 3.4 since it doesn't really serve a purpose.
      */
     E setAndGet(E update);
 
