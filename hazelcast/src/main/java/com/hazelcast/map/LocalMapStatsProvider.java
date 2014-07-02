@@ -61,6 +61,9 @@ public class LocalMapStatsProvider {
         final Address thisAddress = clusterService.getThisAddress();
 
         localMapStats.init();
+        localMapStats.setBackupCount(backupCount);
+        addNearCacheStats(localMapStats, mapContainer);
+
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
             InternalPartition partition = partitionService.getPartition(partitionId);
             Address owner = partition.getOwnerOrNull();
@@ -75,11 +78,6 @@ public class LocalMapStatsProvider {
                         partition, clusterService, backupCount, thisAddress);
             }
         }
-
-        localMapStats.setBackupCount(backupCount);
-
-        addNearCacheStats(localMapStats, mapContainer);
-
         return localMapStats;
     }
 
@@ -88,8 +86,7 @@ public class LocalMapStatsProvider {
      * Calculates and adds owner partition stats.
      */
     private void addOwnerPartitionStats(LocalMapStatsImpl localMapStats, String mapName, int partitionId) {
-        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-        final RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+        final RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
         if (recordStore == null) {
             return;
         }
@@ -101,14 +98,11 @@ public class LocalMapStatsProvider {
         final Map<Data, Record> records = recordStore.getReadonlyRecordMap();
 
         for (Record record : records.values()) {
-            RecordStatistics stats = record.getStatistics();
+            hits += getHits(record);
             ownedEntryMemoryCost += record.getCost();
+            lockedEntryCount += isLocked(record, recordStore);
             lastAccessTime = Math.max(lastAccessTime, record.getLastAccessTime());
             lastUpdateTime = Math.max(lastUpdateTime, record.getLastUpdateTime());
-            hits += stats.getHits();
-            if (recordStore.isLocked(record.getKey())) {
-                lockedEntryCount++;
-            }
         }
 
         localMapStats.incrementOwnedEntryMemoryCost(ownedEntryMemoryCost);
@@ -119,6 +113,21 @@ public class LocalMapStatsProvider {
         localMapStats.setLastUpdateTime(lastUpdateTime);
         localMapStats.incrementHeapCost(recordStore.getHeapCost());
         localMapStats.incrementOwnedEntryCount(records.size());
+    }
+
+    private long getHits(Record record) {
+        final RecordStatistics stats = record.getStatistics();
+        return stats.getHits();
+    }
+
+    /**
+     * Return 1 if locked, otherwise 0;
+     */
+    private int isLocked(Record record, RecordStore recordStore) {
+        if (recordStore.isLocked(record.getKey())) {
+            return 1;
+        }
+        return 0;
     }
 
     /**
@@ -133,26 +142,50 @@ public class LocalMapStatsProvider {
 
         for (int replica = 1; replica <= backupCount; replica++) {
             final Address replicaAddress = getReplicaAddress(replica, partition, clusterService, backupCount);
-            if (replicaAddress == null && clusterService.getSize() > backupCount) {
-                nodeEngine.getLogger(getClass()).warning("Partition: " + partition
-                        + ", replica: " + replica + " has no owner!");
+            if (notGotReplicaAddress(replicaAddress, clusterService, backupCount)) {
+                printWarning(partition, replica);
                 continue;
             }
-            if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-                RecordStore recordStore = partitionContainer.getRecordStore(mapName);
-                heapCost += recordStore.getHeapCost();
+            if (gotReplicaAddress(replicaAddress, thisAddress)) {
+                RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
+                if (recordStore != null) {
+                    Map<Data, Record> records = recordStore.getReadonlyRecordMap();
 
-                Map<Data, Record> records = recordStore.getReadonlyRecordMap();
-                backupEntryCount += records.size();
-                for (Record record : records.values()) {
-                    backupEntryMemoryCost += record.getCost();
+                    heapCost += recordStore.getHeapCost();
+                    backupEntryCount += records.size();
+                    backupEntryMemoryCost += getMemoryCost(records);
                 }
             }
         }
         localMapStats.incrementHeapCost(heapCost);
         localMapStats.incrementBackupEntryCount(backupEntryCount);
         localMapStats.incrementBackupEntryMemoryCost(backupEntryMemoryCost);
+    }
+
+    private boolean notGotReplicaAddress(Address replicaAddress, ClusterService clusterService, int backupCount) {
+        return replicaAddress == null && clusterService.getSize() > backupCount;
+    }
+
+    private boolean gotReplicaAddress(Address replicaAddress, Address thisAddress) {
+        return replicaAddress != null && replicaAddress.equals(thisAddress);
+    }
+
+    private void printWarning(InternalPartition partition, int replica) {
+        nodeEngine.getLogger(getClass()).warning("Partition: " + partition
+                + ", replica: " + replica + " has no owner!");
+    }
+
+    private long getMemoryCost(Map<Data, Record> records) {
+        long cost = 0L;
+        for (Record record : records.values()) {
+            cost += record.getCost();
+        }
+        return cost;
+    }
+
+    private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {
+        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        return partitionContainer.getExistingRecordStore(mapName);
     }
 
     /**
