@@ -104,7 +104,7 @@ public class LocalMapStatsImpl
      * Only init these fields for every {@link com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats}
      * call since they represent current map state.
      * However other fields hold historical data from the creation of a map like {@link #putCount#getCount}
-     * and they should not touch here.
+     * and they should not be touched here.
      *
      * @see com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats
      */
