@@ -64,6 +64,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class EventServiceImpl implements EventService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
+    private final static String SERVICE_NAME = "hz:impl:mapService";
+
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, EventServiceSegment> segments;
@@ -85,7 +87,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public int getEventThreadCount(){
+    public int getEventThreadCount() {
         return eventThreadCount;
     }
 
@@ -124,7 +126,7 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("EventFilter required!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
-        Registration reg = new Registration( UUID.randomUUID().toString(), serviceName, topic, filter,
+        Registration reg = new Registration(UUID.randomUUID().toString(), serviceName, topic, filter,
                 nodeEngine.getThisAddress(), listener, localOnly);
         if (segment.addRegistration(topic, reg)) {
             if (!localOnly) {
@@ -175,8 +177,8 @@ public class EventServiceImpl implements EventService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Future f = nodeEngine.getOperationService().invokeOnTarget( serviceName,
-                        new RegistrationOperation( reg ), member.getAddress() );
+                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
+                        new RegistrationOperation(reg), member.getAddress());
                 calls.add(f);
             }
         }
@@ -198,8 +200,8 @@ public class EventServiceImpl implements EventService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Future f = nodeEngine.getOperationService().invokeOnTarget( serviceName,
-                        new DeregistrationOperation( topic, id ), member.getAddress() );
+                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
+                        new DeregistrationOperation(topic, id), member.getAddress());
                 calls.add(f);
             }
         }
@@ -236,6 +238,13 @@ public class EventServiceImpl implements EventService {
                     : Collections.<EventRegistration>emptySet();
         }
         return Collections.emptySet();
+    }
+
+    @Override
+    public boolean hasEventRegistration(String topic) {
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, topic);
+        return !(registrations == null || registrations.isEmpty());
     }
 
     public void publishEvent(String serviceName, EventRegistration registration, Object event, int orderKey) {
@@ -296,7 +305,7 @@ public class EventServiceImpl implements EventService {
             Future f = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
                     new SendEventOperation(eventPacket, orderKey), subscriber).setTryCount(50).invoke();
             try {
-                f.get( 3, TimeUnit.SECONDS );
+                f.get(3, TimeUnit.SECONDS);
             } catch (Exception ignored) {
             }
         } else {
@@ -329,7 +338,7 @@ public class EventServiceImpl implements EventService {
                 eventExecutor.execute(eventRunnable);
             } catch (RejectedExecutionException e) {
                 if (eventExecutor.isLive()) {
-                    logger.warning("EventQueue overloaded! Failed to execute event process: "  + eventRunnable);
+                    logger.warning("EventQueue overloaded! Failed to execute event process: " + eventRunnable);
                 }
             }
         }
@@ -343,7 +352,7 @@ public class EventServiceImpl implements EventService {
             if (eventExecutor.isLive()) {
                 final Connection conn = packet.getConn();
                 String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
-                logger.warning("EventQueue overloaded! Failed to process event packet sent from: "  + endpoint);
+                logger.warning("EventQueue overloaded! Failed to process event packet sent from: " + endpoint);
             }
         }
     }

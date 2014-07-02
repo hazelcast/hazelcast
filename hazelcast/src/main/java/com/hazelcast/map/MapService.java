@@ -673,6 +673,12 @@ public class MapService implements ManagedService, MigrationAwareService,
         mapContainer.getWanReplicationPublisher().publishReplicationEvent(SERVICE_NAME, replicationEvent);
     }
 
+    public boolean hasEventRegistration(String mapName){
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, mapName);
+        return !registrations.isEmpty();
+    }
+
     public void publishEvent(Address caller, String mapName, EntryEventType eventType, Data dataKey, Data dataOldValue, Data dataValue) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
