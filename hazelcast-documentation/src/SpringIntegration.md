@@ -10,15 +10,15 @@
 
 #### Classpath Configuration: 
 
-Hazelcast-Spring integration requires one of the following jar in the classpath:
+Hazelcast-Spring integration requires one of the following jar files in the classpath:
 
-- hazelcast-spring-*version*.jar
-- hazelcast-all-*version*.jar
+- `hazelcast-spring-`<*version*>`.jar`
+- `hazelcast-all-`<*version*>`.jar`
 
 
 #### Bean Declaration by Spring *beans* Namespace 
 
-You can declare Hazelcast Objects using default Spring *beans* namespace. You can find an example usage of Hazelcast Instance declaration as follows:
+You can declare Hazelcast Objects using the default Spring *beans* namespace. You can find an example usage of Hazelcast Instance declaration as follows:
 
 ```xml
 <bean id="instance" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance">
@@ -42,7 +42,7 @@ You can declare Hazelcast Objects using default Spring *beans* namespace. You ca
 
 #### Bean Declaration by *hazelcast* Namespace 
 
-Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add namespace *xmlns:hz="http://www.hazelcast.com/schema/spring"* to `beans` tag in context file so that *hz* namespace shortcut can be used bean declaration.
+Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add namespace *xmlns:hz="http://www.hazelcast.com/schema/spring"* to `beans` tag in context file so that *hz* namespace shortcut can be used as a bean declaration.
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -56,9 +56,9 @@ Hazelcast has its own namespace **hazelcast** for bean definitions. You can easi
 
 #### Supported Configurations with *hazelcast* Namespace
 
--   Hazelcast Instance Configuration
+-   **Hazelcast Instance Configuration**
 
-```xml
+	```xml
 <hz:hazelcast id="instance">
     <hz:config>
         <hz:group name="dev" password="password"/>
@@ -83,9 +83,9 @@ Hazelcast has its own namespace **hazelcast** for bean definitions. You can easi
 </hz:hazelcast>
 ```
 
--   Hazelcast Client Configuration
+-   **Hazelcast Client Configuration**
 
-```xml
+	```xml
 <hz:client id="client">
      <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
      <hz:network connection-attempt-limit="3"
@@ -99,22 +99,22 @@ Hazelcast has its own namespace **hazelcast** for bean definitions. You can easi
 </hz:client>
 ```
 
--   Hazelcast Supported Type Configurations and Examples
+-   **Hazelcast Supported Type Configurations and Examples**
 
--   `map`
--   `multiMap`
--   `replicatedmap`
--   `queue`
--   `topic`
--   `set`
--   `list`
--   `executorService`
--   `idGenerator`
--   `atomicLong`
--   `atomicReference`
--   `semaphore`
--   `countDownLatch`
--   `lock`
+	-   `map`
+	-   `multiMap`
+	-   `replicatedmap`
+	-   `queue`
+	-   `topic`
+	-   `set`
+	-   `list`
+	-   `executorService`
+	-   `idGenerator`
+	-   `atomicLong`
+	-   `atomicReference`
+	-   `semaphore`
+	-   `countDownLatch`
+	-   `lock`
 
 
 ```xml
@@ -134,7 +134,7 @@ Hazelcast has its own namespace **hazelcast** for bean definitions. You can easi
 <hz:lock id="lock" instance-ref="instance" name="lock"/>
 ```
 
--   Supported Spring Bean Attributes
+-   **Supported Spring Bean Attributes**
 
 Hazelcast also supports `lazy-init`, `scope` and `depends-on` bean attributes.
 
@@ -142,13 +142,12 @@ Hazelcast also supports `lazy-init`, `scope` and `depends-on` bean attributes.
 <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
     ...
 </hz:hazelcast>
-
 <hz:client id="client" scope="prototype" depends-on="instance">
     ...
 </hz:client>
 ```
 
--   MapStore and NearCache Configuration
+-   **MapStore and NearCache Configuration**
 
 For map-store, you should set either *class-name* or *implementation* attribute
 
@@ -171,19 +170,19 @@ For map-store, you should set either *class-name* or *implementation* attribute
 </hz:config>
 ```
 
-### Spring Managed Context with *@SpringAware*
+### Spring Managed Context with @SpringAware
 
-Hazelcast Distributed Objects could be marked with @SpringAware if the object wants :
+Hazelcast Distributed Objects could be marked with @SpringAware if the object wants
 
-- to apply bean properties
-- to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware` 
-- to apply bean post-processing annotations such as `InitializingBean`, `@PostConstruct`
+- to apply bean properties,
+- to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware`,
+- to apply bean post-processing annotations such as `InitializingBean`, `@PostConstruct`.
 
 Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed object can benefit from these features. To enable SpringAware objects, you have to first configure HazelcastInstance as explained in [Spring Configuration](#spring-configuration) section.
 
 #### SpringAware Examples
 
-- Configure an Hazelcast Instance via Spring Configuration and define *someBean* as Spring Bean.
+- Configure a Hazelcast Instance via Spring Configuration and define *someBean* as Spring Bean.
 
 
 ```xml
@@ -221,7 +220,7 @@ Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed 
 ```
 **Distributed Map Example:**
 
-- create a class called SomeValue which contains Spring Bean definitions like ApplicaitonContext,SomeBean.
+- Create a class called SomeValue which contains Spring Bean definitions like ApplicationContext, SomeBean.
 
 ```java
 @SpringAware
@@ -254,7 +253,7 @@ public class SomeValue implements Serializable, ApplicationContextAware {
 }
 ```
 
-- get SomeValue Object from Context and put it into Hazelcast Distributed Map on Node-1
+- Get SomeValue Object from Context and put it into Hazelcast Distributed Map on Node-1.
 
 ```java
 HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
@@ -263,7 +262,7 @@ IMap<String, SomeValue> map = hazelcast.getMap("values");
 map.put("key", value);
 ```
 
-- read SomeValue Object from Hazelcast Distributed Map and assert that init method is called as it is annotated with `@PostConstruct`
+- Read SomeValue Object from Hazelcast Distributed Map and assert that init method is called as it is annotated with `@PostConstruct`.
 
 ```java
 HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
@@ -274,7 +273,7 @@ Assert.assertTrue(value.init);
 
 **ExecutorService Example:**
 
-- create a Callable Class called SomeTask which contains Spring Bean definitions like ApplicaitonContext,SomeBean.
+- Create a Callable Class called SomeTask which contains Spring Bean definitions like ApplicaitonContext, SomeBean.
 
 
 ```java
@@ -299,8 +298,9 @@ public class SomeTask implements Callable<Long>, ApplicationContextAware, Serial
         this.someBean = someBean;
     }
 }
+```
 
-- submit SomeTask to two Hazelcast Member and assert that `someBean` is autowired.
+- Submit SomeTask to two Hazelcast Members and assert that `someBean` is autowired.
 
 ```java
 HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
@@ -318,7 +318,7 @@ Assert.assertEquals(bean.value, f2.get().longValue());
 ```
 
 
-*Note that, Spring managed properties/fields are marked as `transient`.*
+***Note:*** *Spring managed properties/fields are marked as `transient`.*
 
 
 
@@ -359,10 +359,11 @@ If you are using Hibernate with Hazelcast as 2nd level cache provider, you can e
 ```
 
 **Hibernate RegionFactory Modes**
+
 - LOCAL
 - DISTRIBUTED 
 
-please refer to Hibernate RegionFactory Section for more info. [TODO: add link to the related section]
+Please refer to Hibernate [RegionFactory Options](#regionfactory-options) section for more information.
 
 ### Best Practices
 
@@ -372,7 +373,7 @@ Spring tries to create a new `Map`/`Collection` instance and fill the new instan
 
 Since Hazelcast `Map`s/`Collection`s are designed to hold very large data which a single machine cannot carry, iterating through whole values can cause out of memory errors.
 
-To avoid this issue, either target property/attribute can be declared as un-typed `Map`/`Collection` as shown below:
+To avoid this issue, either target property/attribute can be declared as un-typed `Map`/`Collection` as shown below.
 
 ```java
 public class SomeBean {
@@ -386,7 +387,7 @@ public class SomeBean {
 }
 ```
 
-Or, parameters of injection methods (constructor, setter) can be un-typed as shown below:
+Or, parameters of injection methods (constructor, setter) can be un-typed as shown below.
 
 ```java
 public class SomeBean {
