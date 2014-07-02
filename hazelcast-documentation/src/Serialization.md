@@ -21,31 +21,31 @@ If all of the above checks do not work, then serialization will fail. When a cla
 
 Hazelcast optimizes the serialization for the below types, and the user cannot override this behavior:
 
--	`Byte`
--	`Boolean`
--	`Character`
--	`Short`
--	`Integer`
--	`Long`
--	`Float`
--	`Double`
--	`byte[]`
--	`char[]`
--	`short[]`
--	`int[]`
--	`long[]`
--	`float[]`
--	`double[]`
--	`String`
+- `Byte`
+- `Boolean`
+- `Character`
+- `Short`
+- `Integer`
+- `Long`
+- `Float`
+- `Double`
+- `byte[]`
+- `char[]`
+- `short[]`
+- `int[]`
+- `long[]`
+- `float[]`
+- `double[]`
+- `String`
 
 Hazelcast also optimizes the following types. However, you can override them by creating a custom serializer and registering it. See [Custom Serialization](#custom-serialization) for more information.
 
--   `Date`
--   `BigInteger`
--   `BigDecimal`
--   `Class`
--   `Externalizable`
--   `Serializable`
+- `Date`
+- `BigInteger`
+- `BigDecimal`
+- `Class`
+- `Externalizable`
+- `Serializable`
 
 Note that, if the object is not an instance of any explicit type, Hazelcast uses Java Serialization for Serializable and Externalizable objects. The default behavior can be changed using a [Custom Serialization](#custom-serialization).
 

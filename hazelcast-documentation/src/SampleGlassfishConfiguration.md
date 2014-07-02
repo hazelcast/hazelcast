@@ -9,9 +9,9 @@
 
 ```xml
 <resource-ref>
-    <res-ref-name>HazelcastCF</res-ref-name>
-    <res-type>com.hazelcast.jca.ConnectionFactoryImpl</res-type>
-    <res-auth>Container</res-auth>
+  <res-ref-name>HazelcastCF</res-ref-name>
+  <res-type>com.hazelcast.jca.ConnectionFactoryImpl</res-type>
+  <res-auth>Container</res-auth>
 </resource-ref>
 ```
 

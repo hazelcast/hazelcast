@@ -7,8 +7,8 @@ Hazelcast provides distributed second level cache for your Hibernate entities, c
 
 ### Supported Hibernate Versions
 
-- 	hibernate 3.3.x+
-- 	hibernate 4.x
+- hibernate 3.3.x+
+- hibernate 4.x
 
 ### Hibernate Configuration
 
@@ -30,7 +30,7 @@ Then add below properties into your Hibernate configuration file (e.g. `hibernat
 
 	```xml    
 	<property name="hibernate.cache.region.factory_class">
-	     com.hazelcast.hibernate.HazelcastCacheRegionFactory
+	  com.hazelcast.hibernate.HazelcastCacheRegionFactory
 	</property>
 	```
 
@@ -40,7 +40,7 @@ Then add below properties into your Hibernate configuration file (e.g. `hibernat
 
 	```xml
 	<property name="hibernate.cache.region.factory_class">
-	     com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory
+	  com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory
 	</property>
 	```
 
@@ -66,7 +66,7 @@ Then add below properties into your Hibernate configuration file (e.g. `hibernat
 
 	-	```xml
 <property name="hibernate.cache.provider_configuration_file_resource_path">
-     hazelcast-custom-config.xml
+  hazelcast-custom-config.xml
 </property>
 ```
 
@@ -74,17 +74,17 @@ Then add below properties into your Hibernate configuration file (e.g. `hibernat
 
 	-	```xml
 <property name="hibernate.cache.hazelcast.configuration_file_path">
-     hazelcast-custom-config.xml
+  hazelcast-custom-config.xml
 </property>
 ```
 
 Hazelcast creates a separate distributed map for each Hibernate cache region. So, these regions can be configured easily via Hazelcast map configuration. You can define **backup**, **eviction**, **TTL** and **Near Cache** properties.
 
--   [Backup Configuration](#map-backups)
+- [Backup Configuration](#map-backups)
 
--   [Eviction And TTL Configuration](#eviction)
+- [Eviction And TTL Configuration](#eviction)
 
--   [Near Cache Configuration](#near-cache)
+- [Near Cache Configuration](#near-cache)
 
 ### RegionFactory Options
 
@@ -117,7 +117,7 @@ With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. Yo
 
 **Disabling shutdown during SessionFactory.close()**
 
-Shutting down `HazelcastInstance` can be disabled during `SessionFactory.close()` by setting `hibernate.cache.hazelcast.shutdown_on_session_factory_close` Hibernate property to false. *(In this case Hazelcast property `hazelcast.shutdownhook.enabled` should not be set to false.)* Default value is `true`.
+Shutting down `HazelcastInstance` can be disabled during `SessionFactory.close()`. To achieve this set the Hibernate property `hibernate.cache.hazelcast.shutdown_on_session_factory_close` to false. *(In this case Hazelcast property `hazelcast.shutdownhook.enabled` should not be set to false.)* Default value is `true`.
 
 
 ##### CLIENT/SERVER
@@ -146,17 +146,17 @@ Hibernate has four cache concurrency strategies: *read-only*, *read-write*, *non
    
 ```xml
 <class name="eg.Immutable" mutable="false">
-    <cache usage="read-only"/>
-    .... 
+  <cache usage="read-only"/>
+  .... 
 </class>
 
 <class name="eg.Cat" .... >
+  <cache usage="read-write"/>
+  ....
+  <set name="kittens" ... >
     <cache usage="read-write"/>
     ....
-    <set name="kittens" ... >
-        <cache usage="read-write"/>
-        ....
-    </set>
+  </set>
 </class>
 ```
 -   If you are using Hibernate-Annotations, then you can add *class-cache* or *collection-cache* element into your Hibernate configuration file with *usage* attribute with one of *read only*, *read/write*, *nonstrict read/write*.
@@ -174,7 +174,7 @@ OR
 ```java    
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Cat implements Serializable {
-     ...
+  ...
 }
 ```
 
@@ -186,7 +186,8 @@ Using `com.hazelcast.hibernate.instance.HazelcastAccessor` you can access the un
 
 ```java   
 SessionFactory sessionFactory = ...;
-HazelcastInstance hazelcastInstance = HazelcastAccessor.getHazelcastInstance(sessionFactory);        
+HazelcastInstance hazelcastInstance = HazelcastAccessor
+    .getHazelcastInstance(sessionFactory);        
 ```
 
 **Changing/setting lock timeout value of *read-write* strategy**

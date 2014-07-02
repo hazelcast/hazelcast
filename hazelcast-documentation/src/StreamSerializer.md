@@ -9,10 +9,11 @@ First, let's create a simple object.
 
 ```java
 public class Employee {
-   private String surname;
-   public Employee(String surname) {
-      this.surname = surname;
-   }
+  private String surname;
+  
+  public Employee( String surname ) {
+    this.surname = surname;
+  }
 }
 ```
 
@@ -20,29 +21,29 @@ Now, let's implement StreamSerializer for `Employee` class.
 
 ```java
 public class EmployeeStreamSerializer
-         implements StreamSerializer <Employee> {
+    implements StreamSerializer<Employee> {
 
-   @Override
-   public int getTypeId () {
-      return 1; 
-   }
+  @Override
+  public int getTypeId () {
+    return 1; 
+  }
 
-   @Override
-   public void write(ObjectDataOutput out, Employee employee)
-         throws IOException { 
-      out.writeUTF(employee.getSurname());
-   }
+  @Override
+  public void write( ObjectDataOutput out, Employee employee )
+      throws IOException { 
+    out.writeUTF(employee.getSurname());
+  }
 
-   @Override
-   public Employee read(ObjectDataInput in) 
-         throws IOException { 
-      String surname = in.readUTF();
-      return new Employee(surname);
-   }
+  @Override
+  public Employee read( ObjectDataInput in ) 
+      throws IOException { 
+    String surname = in.readUTF();
+    return new Employee(surname);
+  }
 
-   @Override
-   public void destroy () { 
-   }
+  @Override
+  public void destroy () { 
+  }
 }
 ```
 
@@ -52,9 +53,9 @@ And now, as the last step, let's register the `EmployeeStreamSerializer` in the 
 
 ```xml
 <serialization>
-   <serializers>
-      <serializer type-class="Employee">EmployeeStreamSerializer</serializer>
-   </serializers>
+  <serializers>
+    <serializer type-class="Employee">EmployeeStreamSerializer</serializer>
+  </serializers>
 </serialization>
 ```
  
@@ -68,13 +69,15 @@ Let's take a look at another example implementing StreamSerializer.
 
 ```java
 public class Foo {
-    private String foo;
-    public String getFoo() {
-        return foo;
-    }
-    public void setFoo(String foo) {
-        this.foo = foo;
-    }
+  private String foo;
+  
+  public String getFoo() {
+    return foo;
+  }
+  
+  public void setFoo( String foo ) {
+    this.foo = foo;
+  }
 }
 ```
 
@@ -85,39 +88,39 @@ Foo into XML. First we need to implement a
 ```java
 public static class FooXmlSerializer implements StreamSerializer<Foo> {
 
-    @Override
-    public int getTypeId() {
-        return 10;
-    }
+  @Override
+  public int getTypeId() {
+    return 10;
+  }
 
-    @Override
-    public void write(ObjectDataOutput out, Foo object) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        XMLEncoder encoder = new XMLEncoder(bos);
-        encoder.writeObject(object);
-        encoder.close();
-        out.write(bos.toByteArray());
-    }
+  @Override
+  public void write( ObjectDataOutput out, Foo object ) throws IOException {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    XMLEncoder encoder = new XMLEncoder( bos );
+    encoder.writeObject( object );
+    encoder.close();
+    out.write( bos.toByteArray() );
+  }
 
-    @Override
-    public Foo read(ObjectDataInput in) throws IOException {
-        final InputStream inputStream = (InputStream) in;
-        XMLDecoder decoder = new XMLDecoder(inputStream);
-        return (Foo) decoder.readObject();
-    }
+  @Override
+  public Foo read( ObjectDataInput in ) throws IOException {
+    InputStream inputStream = (InputStream) in;
+    XMLDecoder decoder = new XMLDecoder( inputStream );
+    return (Foo) decoder.readObject();
+  }
 
-    @Override
-    public void destroy() {
-    }
+  @Override
+  public void destroy() {
+  }
 }
 ```
 
 Note that `typeId` must be unique as Hazelcast will use it to lookup the StreamSerializer while it de-serializes the object. Now, the last required step is to register the StreamSerializer to the Configuration. Below are the programmatic and declarative configurations for this step in order.
 
 ```java
-SerializerConfig sc = new SerializerConfig().
-        setImplementation(new FooXmlSerializer()).
-        setTypeClass(Foo.class);
+SerializerConfig sc = new SerializerConfig()
+    .setImplementation(new FooXmlSerializer())
+    .setTypeClass(Foo.class);
 Config config = new Config();
 config.getSerializationConfig().addSerializerConfig(sc);
 ```
@@ -125,11 +128,11 @@ config.getSerializationConfig().addSerializerConfig(sc);
 
 ```xml
 <hazelcast>
-    <serialization>
-        <serializers>
-            <serializer type-class="com.www.Foo">com.www.FooXmlSerializer</serializer>
-        </serializers>
-    </serialization>
+  <serialization>
+    <serializers>
+      <serializer type-class="com.www.Foo">com.www.FooXmlSerializer</serializer>
+    </serializers>
+  </serialization>
 </hazelcast>
 ```
 
