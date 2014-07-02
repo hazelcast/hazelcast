@@ -52,6 +52,16 @@ public abstract class HazelcastTestSupport {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
     }
 
+    public static void interruptCurrentThread(final int delaysMs){
+        final Thread currentThread = Thread.currentThread();
+        new Thread(){
+            public void run(){
+                sleepMillis(delaysMs);
+                currentThread.interrupt();
+            }
+        }.start();
+    }
+
     public static void assertIterableEquals(Iterable iter, Object... values) {
         int counter = 0;
         for (Object o : iter) {
