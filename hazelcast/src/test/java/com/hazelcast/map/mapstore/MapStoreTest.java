@@ -24,6 +24,7 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
@@ -1158,6 +1159,32 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         assertFalse(map.containsKey(keyWithNullValue));
         assertNull(map.get(keyWithNullValue));
+    }
+
+    @Test
+    public void testIssue2747() throws InterruptedException {
+
+        final int writeDelaySeconds = 5;
+        String mapName = "mapName";
+        Config config = new Config();
+        HazelcastInstance hzInstance = createHazelcastInstance(config);
+
+        IMap<String, String> map = hzInstance.getMap(mapName);
+
+        final MapStore<String, String> store = new SimpleMapStore<String, String>(map);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setClassName(null);
+        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
+        mapStoreConfig.setImplementation(store);
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        try {
+            map.destroy();
+        } finally {
+            hzInstance.getLifecycleService().shutdown();
+        }
     }
 
     @Test
