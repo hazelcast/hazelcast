@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -79,13 +80,15 @@ public class LocalMapStatsImpl
     private volatile long maxRemoveLatency;
 
 
+    private long creationTime;
     private long ownedEntryCount;
     private long backupEntryCount;
     private long ownedEntryMemoryCost;
     private long backupEntryMemoryCost;
-    // total heap cost with map &  nearcache  & backup
+    /**
+     * Holds total heap cost of map & near-cache & backups.
+     */
     private long heapCost;
-    private long creationTime;
     private long lockedEntryCount;
     private long dirtyEntryCount;
     private int backupCount;
@@ -94,6 +97,26 @@ public class LocalMapStatsImpl
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
+    }
+
+
+    /**
+     * Only init these fields for every {@link com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats}
+     * call since they represent current map state.
+     * However other fields hold historical data from the creation of a map like {@link #putCount#getCount}
+     * and they should not be touched here.
+     *
+     * @see com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats
+     */
+    public void init() {
+        ownedEntryCount = 0;
+        backupEntryCount = 0;
+        ownedEntryMemoryCost = 0;
+        backupEntryMemoryCost = 0;
+        heapCost = 0;
+        lockedEntryCount = 0;
+        dirtyEntryCount = 0;
+        backupCount = 0;
     }
 
     @Override
@@ -171,6 +194,10 @@ public class LocalMapStatsImpl
         this.ownedEntryCount = ownedEntryCount;
     }
 
+    public void incrementOwnedEntryCount(long ownedEntryCount) {
+        this.ownedEntryCount += ownedEntryCount;
+    }
+
     @Override
     public long getBackupEntryCount() {
         return backupEntryCount;
@@ -178,6 +205,10 @@ public class LocalMapStatsImpl
 
     public void setBackupEntryCount(long backupEntryCount) {
         this.backupEntryCount = backupEntryCount;
+    }
+
+    public void incrementBackupEntryCount(long backupEntryCount) {
+        this.backupEntryCount += backupEntryCount;
     }
 
     @Override
@@ -194,8 +225,8 @@ public class LocalMapStatsImpl
         return ownedEntryMemoryCost;
     }
 
-    public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
-        this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+    public void incrementOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        this.ownedEntryMemoryCost += ownedEntryMemoryCost;
     }
 
     @Override
@@ -203,8 +234,8 @@ public class LocalMapStatsImpl
         return backupEntryMemoryCost;
     }
 
-    public void setBackupEntryMemoryCost(long backupEntryMemoryCost) {
-        this.backupEntryMemoryCost = backupEntryMemoryCost;
+    public void incrementBackupEntryMemoryCost(long backupEntryMemoryCost) {
+        this.backupEntryMemoryCost += backupEntryMemoryCost;
     }
 
     @Override
@@ -239,6 +270,10 @@ public class LocalMapStatsImpl
         HITS_UPDATER.set(this, hits);
     }
 
+    public void incrementHits(long hits) {
+        HITS_UPDATER.addAndGet(this, hits);
+    }
+
     @Override
     public long getLockedEntryCount() {
         return lockedEntryCount;
@@ -248,13 +283,17 @@ public class LocalMapStatsImpl
         this.lockedEntryCount = lockedEntryCount;
     }
 
+    public void incrementLockedEntryCount(long lockedEntryCount) {
+        this.lockedEntryCount += lockedEntryCount;
+    }
+
     @Override
     public long getDirtyEntryCount() {
         return dirtyEntryCount;
     }
 
-    public void setDirtyEntryCount(long l) {
-        this.dirtyEntryCount = l;
+    public void incrementDirtyEntryCount(long dirtyEntryCount) {
+        this.dirtyEntryCount += dirtyEntryCount;
     }
 
     @Override
@@ -343,8 +382,8 @@ public class LocalMapStatsImpl
         NUMBER_OF_EVENTS_UPDATER.incrementAndGet(this);
     }
 
-    public void setHeapCost(long heapCost) {
-        this.heapCost = heapCost;
+    public void incrementHeapCost(long heapCost) {
+        this.heapCost += heapCost;
     }
 
     @Override
