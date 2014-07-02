@@ -147,6 +147,7 @@ public class DefaultRecordStore implements RecordStore {
         return name;
     }
 
+    @Override
     public void flush() {
         checkIfLoaded();
         final Collection<Data> processedKeys = mapDataStore.flush();
@@ -218,6 +219,7 @@ public class DefaultRecordStore implements RecordStore {
         return getReadonlyRecordMap();
     }
 
+    @Override
     public void clearPartition() {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
@@ -431,8 +433,8 @@ public class DefaultRecordStore implements RecordStore {
         } else {
             accessRecord(record);
         }
-        final Object data = record != null ? record.getValue() : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
+        final Object value = record != null ? record.getValue() : null;
+        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value);
     }
 
 
