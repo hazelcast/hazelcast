@@ -10,6 +10,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.EventServiceImpl;
 
@@ -36,6 +37,13 @@ class MapEventPublisherSupport implements MapEventPublisher {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         MapReplicationRemove replicationEvent = new MapReplicationRemove(mapName, key, removeTime);
         mapContainer.getWanReplicationPublisher().publishReplicationEvent(mapServiceContext.serviceName(), replicationEvent);
+    }
+
+    public boolean hasEventRegistration(String topic) {
+        EventService eventService = mapServiceContext.getNodeEngine().getEventService();
+        Collection<EventRegistration> registrations =
+                eventService.getRegistrations(mapServiceContext.serviceName(), topic);
+        return !registrations.isEmpty();
     }
 
     public void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected) {
