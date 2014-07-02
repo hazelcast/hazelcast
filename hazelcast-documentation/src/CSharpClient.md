@@ -8,7 +8,7 @@
 
 You can use native C# client to connect to Hazelcast nodes. All you need is to add `HazelcastClient3x.dll` into your C# project references. The API is very similar to Java native client. Sample code is shown below.
 
-```
+```csharp
 using Hazelcast.Config;
 using Hazelcast.Client;
 using Hazelcast.Core;
@@ -18,81 +18,83 @@ using System.Collections.Generic;
 
 namespace Hazelcast.Client.Example
 {
-    public class SimpleExample
+  public class SimpleExample
+  {
+
+    public static void Test()
     {
+      var clientConfig = new ClientConfig();
+      clientConfig.GetNetworkConfig().AddAddress( "10.0.0.1" );
+      clientConfig.GetNetworkConfig().AddAddress( "10.0.0.2:5702" );
 
-        public static void Test()
-        {
-            var clientConfig = new ClientConfig();
-            clientConfig.GetNetworkConfig().AddAddress("10.0.0.1");
-            clientConfig.GetNetworkConfig().AddAddress("10.0.0.2:5702");
+      // Portable Serialization setup up for Customer CLass
+      clientConfig.GetSerializationConfig()
+          .AddPortableFactory( MyPortableFactory.FactoryId, new MyPortableFactory() );
 
-            //Portable Serialization setup up for Customer CLass
-            clientConfig.GetSerializationConfig().AddPortableFactory(MyPortableFactory.FactoryId, new MyPortableFactory());
+      IHazelcastInstance client = HazelcastClient.NewHazelcastClient( clientConfig );
+      // All cluster operations that you can do with ordinary HazelcastInstance
+      IMap<string, Customer> mapCustomers = client.GetMap<string, Customer>( "customers" );
+      mapCustomers.Put( "1", new Customer( "Joe", "Smith" ) );
+      mapCustomers.Put( "2", new Customer( "Ali", "Selam" ) );
+      mapCustomers.Put( "3", new Customer( "Avi", "Noyan" ) );
 
-            IHazelcastInstance client = HazelcastClient.NewHazelcastClient(clientConfig);
-            //All cluster operations that you can do with ordinary HazelcastInstance
-            IMap<string, Customer> mapCustomers = client.GetMap<string, Customer>("customers");
-            mapCustomers.Put("1", new Customer("Joe", "Smith"));
-            mapCustomers.Put("2", new Customer("Ali", "Selam"));
-            mapCustomers.Put("3", new Customer("Avi", "Noyan"));
+      ICollection<Customer> customers = mapCustomers.Values();
+      foreach (var customer in customers)
+      {
+        //process customer
+      }
+    }
+  }
 
-            ICollection<Customer> customers = mapCustomers.Values();
-            foreach (var customer in customers)
-            {
-                //process customer
-            }
-        }
+  public class MyPortableFactory : IPortableFactory
+  {
+    public const int FactoryId = 1;
+
+    public IPortable Create( int classId ) {
+      if ( Customer.Id == classId )
+        return new Customer();
+      else
+        return null;
+    }
+  }
+
+  public class Customer : IPortable
+  {
+    private string name;
+    private string surname;
+
+    public const int Id = 5;
+
+    public Customer( string name, string surname )
+    {
+      this.name = name;
+      this.surname = surname;
     }
 
-    public class MyPortableFactory : IPortableFactory
-    {
-        public const int FactoryId = 1;
+    public Customer() {}
 
-        public IPortable Create(int classId) {
-            if (Customer.Id == classId)
-                return new Customer();
-            else return null;
-        }
+    public int GetFactoryId()
+    {
+      return MyPortableFactory.FactoryId;
     }
 
-    public class Customer: IPortable
+    public int GetClassId()
     {
-        private string name;
-        private string surname;
-
-        public const int Id = 5;
-
-        public Customer(string name, string surname)
-        {
-            this.name = name;
-            this.surname = surname;
-        }
-
-        public Customer(){}
-
-        public int GetFactoryId()
-        {
-            return MyPortableFactory.FactoryId;
-        }
-
-        public int GetClassId()
-        {
-            return Id;
-        }
-
-        public void WritePortable(IPortableWriter writer)
-        {
-            writer.WriteUTF("n", name);
-            writer.WriteUTF("s", surname);
-        }
-
-        public void ReadPortable(IPortableReader reader)
-        {
-            name = reader.ReadUTF("n");
-            surname = reader.ReadUTF("s");
-        }
+      return Id;
     }
+
+    public void WritePortable( IPortableWriter writer )
+    {
+      writer.WriteUTF( "n", name );
+      writer.WriteUTF( "s", surname );
+    }
+
+    public void ReadPortable( IPortableReader reader )
+    {
+      name = reader.ReadUTF( "n" );
+      surname = reader.ReadUTF( "s" );
+    }
+  }
 }
 ```
 
@@ -107,7 +109,7 @@ Hazelcast C# client can be configured via API or XML. To start the client, a con
 After configuration, one can obtain a client using one of the static methods of Hazelcast like as shown below.
 
 
-```
+```csharp
 IHazelcastInstance client = HazelcastClient.NewHazelcastClient(clientConfig);
 
 ...
@@ -122,7 +124,7 @@ IHazelcastInstance xmlConfClient = Hazelcast.NewHazelcastClient(@"..\Hazelcast.N
 
 IHazelcastInstance interface is the starting point where all distributed objects can be obtained using it.
 
-```
+```csharp
 var map = client.GetMap<int,string>("mapName");
 
 ...

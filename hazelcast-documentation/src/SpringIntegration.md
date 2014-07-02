@@ -22,21 +22,21 @@ You can declare Hazelcast Objects using the default Spring *beans* namespace. Yo
 
 ```xml
 <bean id="instance" class="com.hazelcast.core.Hazelcast" factory-method="newHazelcastInstance">
-    <constructor-arg>
-        <bean class="com.hazelcast.config.Config">
-            <property name="groupConfig">
-                <bean class="com.hazelcast.config.GroupConfig">
-                    <property name="name" value="dev"/>
-                    <property name="password" value="pwd"/>
-                </bean>
-            </property>
-            <!-- and so on ... -->
+  <constructor-arg>
+    <bean class="com.hazelcast.config.Config">
+      <property name="groupConfig">
+        <bean class="com.hazelcast.config.GroupConfig">
+          <property name="name" value="dev"/>
+          <property name="password" value="pwd"/>
         </bean>
-    </constructor-arg>
+      </property>
+      <!-- and so on ... -->
+    </bean>
+  </constructor-arg>
 </bean>
 
 <bean id="map" factory-bean="instance" factory-method="getMap">
-    <constructor-arg value="map"/>
+  <constructor-arg value="map"/>
 </bean>
 ```
 
@@ -56,81 +56,89 @@ Hazelcast has its own namespace **hazelcast** for bean definitions. You can easi
 
 #### Supported Configurations with *hazelcast* Namespace
 
--   **Hazelcast Instance Configuration**
+- **Hazelcast Instance Configuration**
 
-	```xml
+```xml
 <hz:hazelcast id="instance">
-    <hz:config>
-        <hz:group name="dev" password="password"/>
-        <hz:network port="5701" port-auto-increment="false">
-            <hz:join>
-                <hz:multicast enabled="false"
-                              multicast-group="224.2.2.3"
-                              multicast-port="54327"/>
-                <hz:tcp-ip enabled="true">
-                    <hz:members>10.10.1.2, 10.10.1.3</hz:members>
-                </hz:tcp-ip>
-            </hz:join>
-        </hz:network>
-        <hz:map name="map"
-                backup-count="2"
-                max-size="0"
-                eviction-percentage="30"
-                read-backup-data="true"
-                eviction-policy="NONE"
-                merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/>
-    </hz:config>
+  <hz:config>
+    <hz:group name="dev" password="password"/>
+    <hz:network port="5701" port-auto-increment="false">
+      <hz:join>
+        <hz:multicast enabled="false"
+                      multicast-group="224.2.2.3"
+                      multicast-port="54327"/>
+        <hz:tcp-ip enabled="true">
+          <hz:members>10.10.1.2, 10.10.1.3</hz:members>
+        </hz:tcp-ip>
+      </hz:join>
+    </hz:network>
+    <hz:map name="map"
+            backup-count="2"
+            max-size="0"
+            eviction-percentage="30"
+            read-backup-data="true"
+            eviction-policy="NONE"
+            merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/>
+  </hz:config>
 </hz:hazelcast>
 ```
 
 -   **Hazelcast Client Configuration**
 
-	```xml
+```xml
 <hz:client id="client">
-     <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
-     <hz:network connection-attempt-limit="3"
-                            connection-attempt-period="3000"
-                            connection-timeout="1000"
-                            redo-operation="true"
-                            smart-routing="true">
-                    <hz:member>10.10.1.2:5701</hz:member>
-                    <hz:member>10.10.1.3:5701</hz:member>
-     </hz:network>
+  <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+  <hz:network connection-attempt-limit="3"
+              connection-attempt-period="3000"
+              connection-timeout="1000"
+              redo-operation="true"
+              smart-routing="true">
+    <hz:member>10.10.1.2:5701</hz:member>
+    <hz:member>10.10.1.3:5701</hz:member>
+  </hz:network>
 </hz:client>
 ```
 
 -   **Hazelcast Supported Type Configurations and Examples**
 
-	-   `map`
-	-   `multiMap`
-	-   `replicatedmap`
-	-   `queue`
-	-   `topic`
-	-   `set`
-	-   `list`
-	-   `executorService`
-	-   `idGenerator`
-	-   `atomicLong`
-	-   `atomicReference`
-	-   `semaphore`
-	-   `countDownLatch`
-	-   `lock`
+	- `map`
+	- `multiMap`
+	- `replicatedmap`
+	- `queue`
+	- `topic`
+	- `set`
+	- `list`
+	- `executorService`
+	- `idGenerator`
+	- `atomicLong`
+	- `atomicReference`
+	- `semaphore`
+	- `countDownLatch`
+	- `lock`
 
 
 ```xml
 <hz:map id="map" instance-ref="client" name="map" lazy-init="true" />
-<hz:multiMap id="multiMap" instance-ref="instance" name="multiMap" lazy-init="false" />
-<hz:replicatedmap id="replicatedmap" instance-ref="instance" name="replicatedmap" lazy-init="false" />
-<hz:queue id="queue" instance-ref="client" name="queue" lazy-init="true" depends-on="instance"/>
-<hz:topic id="topic" instance-ref="instance" name="topic" depends-on="instance, client"/>
+<hz:multiMap id="multiMap" instance-ref="instance" name="multiMap"
+    lazy-init="false" />
+<hz:replicatedmap id="replicatedmap" instance-ref="instance" 
+    name="replicatedmap" lazy-init="false" />
+<hz:queue id="queue" instance-ref="client" name="queue" 
+    lazy-init="true" depends-on="instance"/>
+<hz:topic id="topic" instance-ref="instance" name="topic" 
+    depends-on="instance, client"/>
 <hz:set id="set" instance-ref="instance" name="set" />
 <hz:list id="list" instance-ref="instance" name="list"/>
-<hz:executorService id="executorService" instance-ref="client" name="executorService"/>
-<hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
+<hz:executorService id="executorService" instance-ref="client" 
+    name="executorService"/>
+<hz:idGenerator id="idGenerator" instance-ref="instance" 
+    name="idGenerator"/>
 <hz:atomicLong id="atomicLong" instance-ref="instance" name="atomicLong"/>
-<hz:atomicReference id="atomicReference" instance-ref="instance" name="atomicReference"/>
+<hz:atomicReference id="atomicReference" instance-ref="instance" 
+    name="atomicReference"/>
 <hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
-<hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
+<hz:countDownLatch id="countDownLatch" instance-ref="instance" 
+    name="countDownLatch"/>
 <hz:lock id="lock" instance-ref="instance" name="lock"/>
 ```
 
@@ -140,10 +148,10 @@ Hazelcast also supports `lazy-init`, `scope` and `depends-on` bean attributes.
 
 ```xml
 <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
-    ...
+  ...
 </hz:hazelcast>
 <hz:client id="client" scope="prototype" depends-on="instance">
-    ...
+  ...
 </hz:client>
 ```
 
@@ -153,20 +161,20 @@ For map-store, you should set either *class-name* or *implementation* attribute
 
 ```xml
 <hz:config>
-    <hz:map name="map1">
-            <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
-               eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/>
+  <hz:map name="map1">
+    <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
+        eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/>
 
-            <hz:map-store enabled="true" class-name="com.foo.DummyStore"
-                write-delay-seconds="0"/>
-    </hz:map>
+    <hz:map-store enabled="true" class-name="com.foo.DummyStore"
+        write-delay-seconds="0"/>
+  </hz:map>
 
-    <hz:map name="map2">
-            <hz:map-store enabled="true" implementation="dummyMapStore"
-                write-delay-seconds="0"/>
-    </hz:map>
+  <hz:map name="map2">
+    <hz:map-store enabled="true" implementation="dummyMapStore"
+        write-delay-seconds="0"/>
+  </hz:map>
 
-    <bean id="dummyMapStore" class="com.foo.DummyStore" />
+  <bean id="dummyMapStore" class="com.foo.DummyStore" />
 </hz:config>
 ```
 
@@ -197,25 +205,26 @@ Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed 
                 http://www.hazelcast.com/schema/spring
                 http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
 
-    <context:annotation-config />
+  <context:annotation-config />
 
-    <hz:hazelcast id="instance">
-        <hz:config>
-            <hz:group name="dev" password="password"/>
-            <hz:network port="5701" port-auto-increment="false">
-                <hz:join>
-                    <hz:multicast enabled="false" />
-                    <hz:tcp-ip enabled="true">
-                        <hz:members>10.10.1.2, 10.10.1.3</hz:members>
-                    </hz:tcp-ip>
-                </hz:join>
-            </hz:network>
-            ...
-        </hz:config>
-    </hz:hazelcast>
+  <hz:hazelcast id="instance">
+    <hz:config>
+      <hz:group name="dev" password="password"/>
+      <hz:network port="5701" port-auto-increment="false">
+        <hz:join>
+          <hz:multicast enabled="false" />
+          <hz:tcp-ip enabled="true">
+            <hz:members>10.10.1.2, 10.10.1.3</hz:members>
+          </hz:tcp-ip>
+        </hz:join>
+      </hz:network>
+      ...
+    </hz:config>
+  </hz:hazelcast>
 
-    <bean id="someBean" class="com.hazelcast.examples.spring.SomeBean" scope="singleton" />
-    ...
+  <bean id="someBean" class="com.hazelcast.examples.spring.SomeBean"
+      scope="singleton" />
+  ...
 </beans>
 ```
 **Distributed Map Example:**
@@ -228,47 +237,49 @@ Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed 
 @Scope("prototype")
 public class SomeValue implements Serializable, ApplicationContextAware {
 
-    private transient ApplicationContext context;
+  private transient ApplicationContext context;
 
-    private transient SomeBean someBean;
+  private transient SomeBean someBean;
 
-    private transient boolean init = false;
+  private transient boolean init = false;
 
-    public void setApplicationContext(final ApplicationContext applicationContext)
-        throws BeansException {
-        context = applicationContext;
-    }
+  public void setApplicationContext( ApplicationContext applicationContext )
+    throws BeansException {
+    context = applicationContext;
+  }
 
-    @Autowired
-    public void setSomeBean(final SomeBean someBean) {
-        this.someBean = someBean;
-    }
+  @Autowired
+  public void setSomeBean( SomeBean someBean)  {
+    this.someBean = someBean;
+  }
 
-    @PostConstruct
-    public void init() {
-        someBean.doSomethingUseful();
-        init = true;
-    }
-    ...
+  @PostConstruct
+  public void init() {
+    someBean.doSomethingUseful();
+    init = true;
+  }
+  ...
 }
 ```
 
 - Get SomeValue Object from Context and put it into Hazelcast Distributed Map on Node-1.
 
 ```java
-HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
-SomeValue value = (SomeValue) context.getBean("someValue")
-IMap<String, SomeValue> map = hazelcast.getMap("values");
-map.put("key", value);
+HazelcastInstance hazelcastInstance = 
+    (HazelcastInstance) context.getBean( "hazelcast" );
+SomeValue value = (SomeValue) context.getBean( "someValue" )
+IMap<String, SomeValue> map = hazelcastInstance.getMap( "values" );
+map.put( "key", value );
 ```
 
 - Read SomeValue Object from Hazelcast Distributed Map and assert that init method is called as it is annotated with `@PostConstruct`.
 
 ```java
-HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
-IMap<String, SomeValue> map = hazelcast.getMap("values");
-SomeValue value = map.get("key");
-Assert.assertTrue(value.init);
+HazelcastInstance hazelcastInstance = 
+    (HazelcastInstance) context.getBean( "hazelcast" );
+IMap<String, SomeValue> map = hazelcastInstance.getMap( "values" );
+SomeValue value = map.get( "key" );
+Assert.assertTrue( value.init );
 ```
 
 **ExecutorService Example:**
@@ -278,39 +289,41 @@ Assert.assertTrue(value.init);
 
 ```java
 @SpringAware
-public class SomeTask implements Callable<Long>, ApplicationContextAware, Serializable {
+public class SomeTask
+    implements Callable<Long>, ApplicationContextAware, Serializable {
 
-    private transient ApplicationContext context;
+  private transient ApplicationContext context;
 
-    private transient SomeBean someBean;
+  private transient SomeBean someBean;
 
-    public Long call() throws Exception {
-        return someBean.value;
-    }
+  public Long call() throws Exception {
+    return someBean.value;
+  }
 
-    public void setApplicationContext(final ApplicationContext applicationContext)
-        throws BeansException {
-        context = applicationContext;
-    }
+  public void setApplicationContext( ApplicationContext applicationContext )
+      throws BeansException {
+    context = applicationContext;
+  }
 
-    @Autowired
-    public void setSomeBean(final SomeBean someBean) {
-        this.someBean = someBean;
-    }
+  @Autowired
+  public void setSomeBean( SomeBean someBean ) {
+    this.someBean = someBean;
+  }
 }
 ```
 
 - Submit SomeTask to two Hazelcast Members and assert that `someBean` is autowired.
 
 ```java
-HazelcastInstance hazelcast = (HazelcastInstance) context.getBean("hazelcast");
-SomeBean bean = (SomeBean) context.getBean("someBean");
+HazelcastInstance hazelcastInstance =
+    (HazelcastInstance) context.getBean( "hazelcast" );
+SomeBean bean = (SomeBean) context.getBean( "someBean" );
 
-Future<Long> f = hazelcast.getExecutorService().submit(new SomeTask());
+Future<Long> f = hazelcastInstance.getExecutorService().submit(new SomeTask());
 Assert.assertEquals(bean.value, f.get().longValue());
 
 // choose a member
-Member member = hazelcast.getCluster().getMembers().iterator().next();
+Member member = hazelcastInstance.getCluster().getMembers().iterator().next();
 
 Future<Long> f2 = (Future<Long>) hazelcast.getExecutorService()
     .submitToMember(new SomeTask(), member);
@@ -330,11 +343,11 @@ As of version 3.1, Spring Framework provides support for adding caching into an 
 <cache:annotation-driven cache-manager="cacheManager" />
 
 <hz:hazelcast id="hazelcast">
-    ...
+  ...
 </hz:hazelcast>
 
 <bean id="cacheManager" class="com.hazelcast.spring.cache.HazelcastCacheManager">
-    <constructor-arg ref="instance"/>
+  <constructor-arg ref="instance"/>
 </bean>
 ```
 
@@ -347,14 +360,15 @@ For more information please see [Spring Cache Abstraction](http://static.springs
 If you are using Hibernate with Hazelcast as 2nd level cache provider, you can easily create `RegionFactory` instances within Spring configuration (by Spring version 3.1). That way, it is possible to use same `HazelcastInstance` as Hibernate L2 cache instance.
 
 ```xml
-<hz:hibernate-region-factory id="regionFactory" instance-ref="instance" mode="LOCAL" />
+<hz:hibernate-region-factory id="regionFactory" instance-ref="instance"
+    mode="LOCAL" />
 ...
 <bean id="sessionFactory" 
       class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" 
 	  scope="singleton">
-    <property name="dataSource" ref="dataSource"/>
-    <property name="cacheRegionFactory" ref="regionFactory" />
-    ...
+  <property name="dataSource" ref="dataSource"/>
+  <property name="cacheRegionFactory" ref="regionFactory" />
+  ...
 </bean>
 ```
 
@@ -377,13 +391,13 @@ To avoid this issue, either target property/attribute can be declared as un-type
 
 ```java
 public class SomeBean {
-    @Autowired
-    IMap map; // instead of IMap<K, V> map
+  @Autowired
+  IMap map; // instead of IMap<K, V> map
 
-    @Autowired
-    IQueue queue; // instead of IQueue<E> queue
+  @Autowired
+  IQueue queue; // instead of IQueue<E> queue
 
-    ...
+  ...
 }
 ```
 
@@ -392,20 +406,22 @@ Or, parameters of injection methods (constructor, setter) can be un-typed as sho
 ```java
 public class SomeBean {
 
-    IMap<K, V> map;
+  IMap<K, V> map;
 
-    IQueue<E> queue;
+  IQueue<E> queue;
 
-    public SomeBean(IMap map) { // instead of IMap<K, V> map
-        this.map = map;
-    }
+  // Instead of IMap<K, V> map
+  public SomeBean(IMap map) {
+    this.map = map;
+  }
 
-    ...
+  ...
 
-    public void setQueue(IQueue queue) { // instead of IQueue<E> queue
-        this.queue = queue;
-    }
-    ...
+  // Instead of IQueue<E> queue
+  public void setQueue(IQueue queue) {
+    this.queue = queue;
+  }
+  ...
 }
 ```
 

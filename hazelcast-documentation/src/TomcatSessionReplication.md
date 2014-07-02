@@ -56,7 +56,8 @@ Update `<Manager>` tag in the `$CATALINA_HOME$/conf/context.xml` as shown below.
 
 ```xml
 <Context>
-  <Manager className="com.hazelcast.session.HazelcastSessionManager" clientOnly="true" mapName="sessionMap" sticky="false"/>
+  <Manager className="com.hazelcast.session.HazelcastSessionManager"
+      clientOnly="true" mapName="sessionMap" sticky="false"/>
 </Context>
 ```
 <br></br>
@@ -82,7 +83,8 @@ Update `<Manager>` tag in the `$CATALINA_HOME$/conf/context.xml` as shown below.
 
 ```xml
 <Context>
-  <Manager className="com.hazelcast.session.HazelcastSessionManager" mapName="sessionMap" sticky="false"/>
+  <Manager className="com.hazelcast.session.HazelcastSessionManager"
+      mapName="sessionMap" sticky="false"/>
 </Context>
 ```
 <br></br>
