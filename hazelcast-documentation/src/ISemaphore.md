@@ -2,7 +2,7 @@
 
 ## ISemaphore
 
-Hazelcast ISemaphore is the distributed implementation of `java.util.concurrent.Semaphore`. As you may know, semaphores offer permits to control the thread counts in the case of performing concurrent activities. To execute a concurrent activity, a thread grants a permit or waits until a permit becomes available. When the execution is completed, permit is released.
+Hazelcast ISemaphore is the distributed implementation of `java.util.concurrent.Semaphore`. As you may know, semaphores offer **permit**s to control the thread counts in the case of performing concurrent activities. To execute a concurrent activity, a thread grants a permit or waits until a permit becomes available. When the execution is completed, permit is released.
 
 ***ATTENTION:*** *Semaphore with a single permit may be considered as a lock. But, unlike the locks, when semaphores are used any thread can release the permit and also semaphores can have multiple permits.*
 
@@ -44,7 +44,7 @@ Let's limit the concurrent access to this resource by allowing at most 3 threads
 </semaphore>
 ```
 
-<font color="red">***Note:***</font> *If there is a shortage of permits while the semaphore is being created, value of this property can be set to a negative number.*
+***Note:*** *If there is a shortage of permits while the semaphore is being created, value of this property can be set to a negative number.*
 
 If you execute the above `SemaphoreMember` class 5 times, output will be similar to the following:
 

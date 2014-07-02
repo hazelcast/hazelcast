@@ -27,7 +27,7 @@ try {
 
 - If a lock is not released in the cluster, another thread that is trying to get the
 lock can wait forever. To avoid this, `tryLock` with a timeout value can be used. One can
-set a high value (normally should not take that long) for `tryLock`. Return value of `tryLock` can be checked as follows :
+set a high value (normally should not take that long) for `tryLock`. Return value of `tryLock` can be checked as follows:
 
 ```java
 if ( lock.tryLock ( 10, TimeUnit.SECONDS ) ) {

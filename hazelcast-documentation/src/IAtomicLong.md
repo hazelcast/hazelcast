@@ -1,7 +1,7 @@
 
 ## IAtomicLong
 
-Hazelcast IAtomicLong is the distributed implementation of `java.util.concurrent.atomic.AtomicLong`. It offers most of AtomicLong's operations such as `get`, `set`, `getAndSet`, `compareAndSet` and `incrementAndGet`. Since IAtomicLong is a distributed implementation, these operations involve remote calls and hence their performance differs from AtomicLong.
+Hazelcast IAtomicLong is the distributed implementation of `java.util.concurrent.atomic.AtomicLong`. It offers most of AtomicLong's operations such as `get`, `set`, `getAndSet`, `compareAndSet` and `incrementAndGet`. Since IAtomicLong is a distributed implementation, these operations involve remote calls and hence their performances differ from AtomicLong.
 
 
 Below sample code creates an instance, increments it by a million and prints the count.
@@ -22,7 +22,7 @@ public class Member {
 }
 ```
 
-When you start other instances with the code above, you will see the count as *member count a million*.
+When you start other instances with the code above, you will see the count as *member count* times *a million*.
 
 You can send functions to an IAtomicLong. `Function` is a Hazelcast owned, single method interface. Below sample `Function` implementation doubles the original value.
 
@@ -72,7 +72,7 @@ public class Member {
 }
 ```
 
-The reason for using a function instead of a simple code line like `atomicLong.set(atomicLong.get() + 2));` is that read and write operations of IAtomicLong are not atomic. Since it is a distributed implementation, those operations can be remote ones, which may lead to race problems. By using functions, the data is not pulled into the code, but the code is sent to the data. And this makes it more scalable.
+The reason for using a function instead of a simple code line like `atomicLong.set(atomicLong.get() + 2));` is that, read and write operations of IAtomicLong are not atomic. Since it is a distributed implementation, those operations can be remote ones, which may lead to race problems. By using functions, the data is not pulled into the code, but the code is sent to the data. And this makes it more scalable.
 
 ***ATTENTION:*** *IAtomicLong has 1 synchronous backup and no asynchronous backups. Its backup count is not configurable.*
 
