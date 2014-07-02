@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -68,12 +69,14 @@ public class HazelcastManifestTransformer
     public void processResource(String resource, InputStream inputStream, List<Relocator> relocators)
             throws IOException {
 
+        Attributes attributes;
         if (shadedManifest == null) {
             shadedManifest = new Manifest(inputStream);
+            attributes = shadedManifest.getMainAttributes();
+        } else {
+            Manifest manifest = new Manifest(inputStream);
+            attributes = manifest.getMainAttributes();
         }
-
-        Manifest manifest = new Manifest(inputStream);
-        Attributes attributes = manifest.getMainAttributes();
 
         Set<String> imports = new LinkedHashSet<String>();
         Set<String> exports = new LinkedHashSet<String>();
