@@ -34,7 +34,7 @@ using a lot of the functionality of the Aggregations framework but will already 
 
 ```java
 IMap<String, Integer> personAgeMapping = hazelcastInstance.getMap( "person-age" );
-for (int i = 0; i < 1000; i++) {
+for ( int i = 0; i < 1000; i++ ) {
   String lastName = RandomUtil.randomLastName();
   int age = RandomUtil.randomAgeBetween( 20, 80 );
   personAgeMapping.put( lastName, Integer.valueOf( age ) );
@@ -358,14 +358,14 @@ To finish this section, let's have a quick example for the above naming specs:
 IMap<String, Integer> map = hazelcastInstance.getMap( "mymap" );
 
 // The internal JobTracker name resolves to 'hz::aggregation-map-mymap' 
-map.aggregate(...);
+map.aggregate( ... );
 ```
 
 ```java
 MultiMap<String, Integer> multimap = hazelcastInstance.getMultiMap( "mymultimap" );
 
 // The internal JobTracker name resolves to 'hz::aggregation-multimap-mymultimap' 
-multimap.aggregate(...);
+multimap.aggregate( ... );
 ```
 
 ### Aggregations Examples
