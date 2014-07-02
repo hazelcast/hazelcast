@@ -20,7 +20,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.MapContainer;
+import com.hazelcast.map.MapEventPublisher;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.NearCacheProvider;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
@@ -29,6 +31,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
+
 import java.util.Arrays;
 import java.util.Map;
 
@@ -67,49 +70,19 @@ public final class EvictionHelper {
         return result;
     }
 
-    public static void removeEvictableRecords(final RecordStore recordStore, final MapConfig mapConfig,
-                                              final MapService mapService) {
-        final int partitionSize = recordStore.size();
-        if (partitionSize < 1) {
-            return;
-        }
-        final int evictableSize = getEvictableSize(partitionSize, mapConfig, mapService);
-        if (evictableSize < 1) {
-            return;
-        }
+    public static void removeEvictableRecords(final RecordStore recordStore, int evictableSize, final MapConfig mapConfig,
+                                              final MapServiceContext mapServiceContext) {
         final MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         final Map<Data, Record> entries = recordStore.getReadonlyRecordMap();
-        final int size = entries.size();
-        // size have a tendency to change to here so check again.
-        if (entries.isEmpty()) {
-            return;
-        }
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
-        final long[] criterias = new long[size];
-        int index = 0;
-        for (final Record record : entries.values()) {
-            criterias[index] = getEvictionCriteriaValue(record, evictionPolicy);
-            index++;
-            //in case size may change (increase or decrease) when iterating.
-            if (index == size) {
-                break;
-            }
-        }
-        if (criterias.length == 0) {
+        long[] criterias = createAndPopulateEvictionCriteriaArray(entries, evictionPolicy);
+        if (criterias == null) {
             return;
-        }
-        // just in case there may be unassigned indexes in criterias array due to size variances
-        // assign them to Long.MAX_VALUE so when sorting asc they will locate
-        // in the upper array indexes and we wont care about them.
-        if (index < criterias.length) {
-            for (int i = index; i < criterias.length; i++) {
-                criterias[i] = Long.MAX_VALUE;
-            }
         }
         Arrays.sort(criterias);
         // check in case record store size may be smaller than evictable size.
-        final int evictableBaseIndex = index == 0 ? index : Math.min(evictableSize, index - 1);
+        final int evictableBaseIndex = getEvictionStartIndex(criterias, evictableSize);
         final long criteriaValue = criterias[evictableBaseIndex];
         int evictedRecordCounter = 0;
         for (final Record record : entries.values()) {
@@ -120,8 +93,8 @@ public final class EvictionHelper {
                 if (evictIfNotLocked(tmpKey, recordStore)) {
                     evictedRecordCounter++;
                     final String mapName = mapConfig.getName();
-                    interceptAndInvalidate(mapService, value, tmpKey, mapName);
-                    fireEvent(tmpKey, tmpValue, mapName, mapService);
+                    interceptAndInvalidate(mapServiceContext, value, tmpKey, mapName);
+                    fireEvent(tmpKey, tmpValue, mapName, mapServiceContext);
                 }
             }
             if (evictedRecordCounter >= evictableSize) {
@@ -130,18 +103,58 @@ public final class EvictionHelper {
         }
     }
 
-    private static void interceptAndInvalidate(MapService mapService, long value, Data tmpKey, String mapName) {
-        mapService.getMapServiceContext().interceptAfterRemove(mapName, value);
-        final NearCacheProvider nearCacheProvider = mapService.getMapServiceContext().getNearCacheProvider();
+    private static long[] createAndPopulateEvictionCriteriaArray(Map<Data, Record> entries,
+                                                                 MapConfig.EvictionPolicy evictionPolicy) {
+        final int size = entries.size();
+        long[] criterias = null;
+        int index = 0;
+        for (final Record record : entries.values()) {
+            if (criterias == null) {
+                criterias = new long[size];
+            }
+            criterias[index] = getEvictionCriteriaValue(record, evictionPolicy);
+            index++;
+            //in case size may change (increase or decrease) when iterating.
+            if (index == size) {
+                break;
+            }
+        }
+        if (criterias == null) {
+            return null;
+        }
+        // just in case there may be unassigned indexes in criterias array due to size variances
+        // assign them to Long.MAX_VALUE so when sorting asc they will locate
+        // in the upper array indexes and we wont care about them.
+        if (index < criterias.length) {
+            for (int i = index; i < criterias.length; i++) {
+                criterias[i] = Long.MAX_VALUE;
+            }
+        }
+        return criterias;
+    }
+
+    private static int getEvictionStartIndex(long[] criterias, int evictableSize) {
+        final int length = criterias.length;
+        final int sizeToEvict = Math.min(evictableSize, length);
+        final int index = sizeToEvict - 1;
+        return index < 0 ? 0 : index;
+    }
+
+    private static void interceptAndInvalidate(MapServiceContext mapServiceContext, long value, Data tmpKey, String mapName) {
+        mapServiceContext.interceptAfterRemove(mapName, value);
+        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
             nearCacheProvider.invalidateAllNearCaches(mapName, tmpKey);
         }
     }
 
-    public static void fireEvent(Data key, Object value, String mapName, MapService mapService) {
-        final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
-        mapService.getMapServiceContext().getMapEventPublisher().publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED,
-                key, mapService.getMapServiceContext().toData(value), null);
+    public static void fireEvent(Data key, Object value, String mapName, MapServiceContext mapServiceContext) {
+        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final Address thisAddress = nodeEngine.getThisAddress();
+        final Data dataValue = mapServiceContext.toData(value);
+        mapEventPublisher.publishEvent(thisAddress, mapName, EntryEventType.EVICTED,
+                key, dataValue, null);
     }
 
     public static boolean evictIfNotLocked(Data key, RecordStore recordStore) {
@@ -153,7 +166,7 @@ public final class EvictionHelper {
     }
 
 
-    public static int getEvictableSize(int currentPartitionSize, MapConfig mapConfig, MapService mapService) {
+    public static int getEvictableSize(int currentPartitionSize, MapConfig mapConfig, MapServiceContext mapServiceContext) {
         int evictableSize;
         final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
         final int evictionPercentage = mapConfig.getEvictionPercentage();
@@ -168,9 +181,9 @@ public final class EvictionHelper {
                 break;
             case PER_NODE:
                 maxSize = mapConfig.getMaxSizeConfig().getSize();
-                int memberCount = mapService.getMapServiceContext().getNodeEngine().getClusterService().getMembers().size();
+                int memberCount = mapServiceContext.getNodeEngine().getClusterService().getMembers().size();
                 int maxPartitionSize = (maxSize
-                        * memberCount / mapService.getMapServiceContext().getNodeEngine().getPartitionService().getPartitionCount());
+                        * memberCount / mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount());
                 targetSizePerPartition = Double.valueOf(maxPartitionSize
                         * ((ONE_HUNDRED_PERCENT - evictionPercentage) / (1D * ONE_HUNDRED_PERCENT))).intValue();
                 diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
