@@ -11,7 +11,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.executor.ExecutorType;
 
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,34 +25,31 @@ public class WriteBehindManager implements MapStoreManager {
 
     private static final int EXECUTOR_DEFAULT_QUEUE_CAPACITY = 10000;
 
+    private final ScheduledExecutorService scheduledExecutor;
+
     private WriteBehindProcessor writeBehindProcessor;
 
     private StoreWorker storeWorker;
 
     private MapContainer mapContainer;
 
-    private ExecutionService executionService;
-
     private String executorName;
-
 
     public WriteBehindManager(MapContainer mapContainer) {
         this.mapContainer = mapContainer;
         writeBehindProcessor = createWriteBehindProcessor(mapContainer);
         storeWorker = new StoreWorker(mapContainer, writeBehindProcessor);
-        MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        executionService = nodeEngine.getExecutionService();
         executorName = EXECUTOR_NAME_PREFIX + mapContainer.getName();
+        scheduledExecutor = getScheduledExecutorService(mapContainer.getMapServiceContext());
     }
 
     public void start() {
-        executionService.getScheduledExecutor(executorName)
-                .scheduleAtFixedRate(storeWorker, 1, 1, TimeUnit.SECONDS);
+        scheduledExecutor.scheduleAtFixedRate(storeWorker, 1, 1, TimeUnit.SECONDS);
     }
 
     public void stop() {
-        executionService.shutdownExecutor(executorName);
+        NodeEngine nodeEngine = mapContainer.getMapServiceContext().getNodeEngine();
+        nodeEngine.getExecutionService().shutdownExecutor(executorName);
     }
 
     @Override
@@ -88,4 +87,11 @@ public class WriteBehindManager implements MapStoreManager {
         return writeBehindProcessor;
     }
 
+
+    private ScheduledExecutorService getScheduledExecutorService(MapServiceContext mapServiceContext) {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService.register(executorName, 1, EXECUTOR_DEFAULT_QUEUE_CAPACITY, ExecutorType.CACHED);
+        return executionService.getScheduledExecutor(executorName);
+    }
 }
