@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -511,5 +512,28 @@ public class BackupTest extends HazelcastTestSupport {
         } finally {
             ex.shutdown();
         }
+    }
+
+    /**
+     * Tests data safety when multiple nodes start and a non-master node is shutdown
+     * immediately after start and doing a partition based operation.
+     */
+    @Test
+    public void testGracefulShutdown_Issue2804() {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+
+        Object key = "key";
+        Object value = "value";
+
+        IMap<Object, Object> map = h1.getMap(MAP_NAME);
+        map.put(key, value);
+
+        h2.shutdown();
+        Assert.assertEquals(value, map.get(key));
     }
 }

@@ -392,7 +392,7 @@ public class Node {
         if (logger.isFinestEnabled()) {
             logger.finest("** we are being asked to shutdown when active = " + String.valueOf(active));
         }
-        if (!terminate && isActive()) {
+        if (!terminate && isActive() && joined()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");

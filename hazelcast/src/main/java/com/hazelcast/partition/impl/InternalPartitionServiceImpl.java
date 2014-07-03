@@ -521,12 +521,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 }
             }
 
+            stateVersion.set(partitionState.getVersion());
+            initialized = true;
+
             PartitionInfo[] state = partitionState.getPartitions();
             filterAndLogUnknownAddressesInPartitionTable(sender, state);
             finalizeOrRollbackMigration(partitionState, state);
-
-            stateVersion.set(partitionState.getVersion());
-            initialized = true;
         } finally {
             lock.unlock();
         }
@@ -862,7 +862,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 timeoutInMillis = sleepWithBusyWait(timeoutInMillis, sleep);
             }
             if (timeoutInMillis <= 0) {
-                return false;
+                break;
             }
 
             if (node.isMaster()) {
@@ -870,7 +870,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             } else {
                 timeoutInMillis = waitForOngoingMigrations(timeoutInMillis, sleep);
                 if (timeoutInMillis <= 0) {
-                    return false;
+                    break;
                 }
             }
 
@@ -882,7 +882,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 return true;
             } else {
                 if (timeoutInMillis <= 0) {
-                    return false;
+                    break;
                 }
                 logger.info("Some backup replicas are inconsistent with primary, waiting for synchronization. Timeout: "
                         + timeoutInMillis + "ms");
@@ -1022,7 +1022,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private boolean checkReplicaSyncState() {
-        if (!initialized || !node.joined()) {
+        if (!initialized) {
             return true;
         }
 
