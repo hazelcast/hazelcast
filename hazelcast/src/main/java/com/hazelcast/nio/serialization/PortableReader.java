@@ -19,6 +19,8 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -73,4 +75,14 @@ public interface PortableReader {
     Portable[] readPortableArray(String fieldName) throws IOException;
 
     ObjectDataInput getRawDataInput() throws IOException;
+
+    <T> T readObject(String fieldName) throws IOException;
+
+    <T> T[] readObjectArray(String fieldName,  final Class<T[]> clazz) throws IOException;
+
+    <K, V> void readMap(String fieldName, Map<K, V> map) throws IOException;
+
+    <T> void readCollection(String fieldName, Collection<T> collection) throws IOException;
+
+
 }

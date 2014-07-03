@@ -39,7 +39,11 @@ public enum FieldType {
     INT_ARRAY(14),
     LONG_ARRAY(15),
     FLOAT_ARRAY(16),
-    DOUBLE_ARRAY(17);
+    DOUBLE_ARRAY(17),
+    TYPED_ARRAY(18),
+    MAP(19),
+    COLLECTION(20),
+    OBJECT(21);
 
     private final byte type;
 

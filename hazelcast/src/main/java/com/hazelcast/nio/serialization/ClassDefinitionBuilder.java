@@ -152,6 +152,31 @@ public final class ClassDefinitionBuilder {
         return this;
     }
 
+    public ClassDefinitionBuilder addMapField(String fieldName) {
+        check();
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.MAP));
+        return this;
+    }
+
+    public ClassDefinitionBuilder addCollectionField(final String fieldName) {
+        check();
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.COLLECTION));
+        return this;
+    }
+
+
+    public ClassDefinitionBuilder addObjectField(final String fieldName) {
+        check();
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.OBJECT));
+        return this;
+    }
+
+    public ClassDefinitionBuilder addArrayField(final String fieldName) {
+        check();
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.TYPED_ARRAY));
+        return this;
+    }
+
     public ClassDefinition build() {
         done = true;
         final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId);
@@ -169,4 +194,5 @@ public final class ClassDefinitionBuilder {
             throw new HazelcastSerializationException("ClassDefinition is already built for " + classId);
         }
     }
+
 }
