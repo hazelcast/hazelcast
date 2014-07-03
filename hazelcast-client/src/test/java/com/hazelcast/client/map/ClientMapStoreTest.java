@@ -177,6 +177,37 @@ public class ClientMapStoreTest extends HazelcastTestSupport{
         }
     }
 
+
+    @Test
+    public void destroyMap_configedWith_MapStore() throws Exception{
+        Config config = new Config();
+        MapConfig mapConfig = new MapConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+
+        final MapStoreBackup store = new MapStoreBackup();
+        final int delaySeconds = 4;
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(store);
+        mapStoreConfig.setWriteDelaySeconds(delaySeconds);
+
+        mapConfig.setName(MAP_NAME);
+
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.addMapConfig(mapConfig);
+
+        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+        IMap map = server.getMap(MAP_NAME);
+
+        for(int i=0; i<1; i++){
+            map.putAsync(i, i);
+        }
+
+        map.destroy();
+
+        assertEquals(0, map.size());
+    }
+
+
     static class SimpleMapStore implements MapStore<String, String>, MapLoader<String, String> {
 
         public static final int MAX_KEYS = 30;
