@@ -56,9 +56,9 @@ Toolbar has the following buttons:
 -	**Time Travel**: It is used to see the cluster's situation at a time in the past. Please see [Time Travel](#time-travel).
 -	**Cluster Selector**: It is used to switch between clusters. When the mouse is moved onto this item, a dropdown list of clusters appears.
 
-     ![](images/4ChangeCluster.jpg)
-     
-     The user can select any cluster and once selected, the page immediately loads with the selected cluster's information.
+  ![](images/4ChangeCluster.jpg)
+  
+  The user can select any cluster and once selected, the page immediately loads with the selected cluster's information.
 -	**Logout**: It is used to close the current user's session.
 
 

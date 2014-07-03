@@ -234,7 +234,7 @@ Please see [Custom JMX instrumentation by YAML](http://docs.newrelic.com/docs/ja
 
 Below is an example Map monitoring `.yml` file for New Relic.
 
-```
+```plain
 name: Clustered JMX
 version: 1.0
 enabled: true
@@ -242,9 +242,11 @@ enabled: true
 jmx:
   - object_name: ManagementCenter[clustername]:type=Maps,name=mapname
     metrics:
-      - attributes: PutOperationCount, GetOperationCount, RemoveOperationCount, Hits, BackupEntryCount, OwnedEntryCount, LastAccessTime, LastUpdateTime
+      - attributes: PutOperationCount, GetOperationCount, RemoveOperationCount, Hits,\ 
+            BackupEntryCount, OwnedEntryCount, LastAccessTime, LastUpdateTime
         type: simple
-  - object_name: ManagementCenter[clustername]:type=Members,name="node address in double quotes"
+  - object_name: ManagementCenter[clustername]:type=Members,name="node address in\
+        double quotes"
     metrics:
       - attributes: OwnedPartitionCount
         type: simple
@@ -254,25 +256,40 @@ You should put the `.yml` file under the `extensions` folder in your New Relic i
 
 After you set your extension, you can attach New Relic Java agent and start Management Center as shown below.
 
-```
-java -javaagent:/path/to/newrelic.jar -Dhazelcast.mc.jmx.enabled=true -Dhazelcast.mc.jmx.port=9999 -jar mancenter-3.3.jar
+```plain
+java -javaagent:/path/to/newrelic.jar -Dhazelcast.mc.jmx.enabled=true\
+    -Dhazelcast.mc.jmx.port=9999 -jar mancenter-3.3.jar
 ```
 
 Once started and if your logging level is set as FINER, you should see the logs  similar to below in the file `newrelic_agent.log`, which is located at `logs` folder in your New Relic installation.
 
-```
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINE: JMX Service : querying MBeans (1)
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: JMX Service : MBeans query ManagementCenter[dev]:type=Members,name="192.168.2.79:5701", matches 1
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: Recording JMX metric OwnedPartitionCount : 68
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: JMX Service : MBeans query ManagementCenter[dev]:type=Maps,name=orders, matches 1
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: Recording JMX metric Hits : 46,593
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: Recording JMX metric BackupEntryCount : 1,100
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: Recording JMX metric OwnedEntryCount : 1,100
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: Recording JMX metric RemoveOperationCount : 0
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: Recording JMX metric PutOperationCount : 118,962
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: Recording JMX metric GetOperationCount : 0
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: Recording JMX metric LastUpdateTime : 1,401,962,426,811
-Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: Recording JMX metric LastAccessTime : 1,401,962,426,811
+```plain
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINE:
+    JMX Service : querying MBeans (1)
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER:
+    JMX Service : MBeans query ManagementCenter[dev]:type=Members,
+    name="192.168.2.79:5701", matches 1
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER:
+    Recording JMX metric OwnedPartitionCount : 68
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER:
+    JMX Service : MBeans query ManagementCenter[dev]:type=Maps,name=orders, 
+    matches 1
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: 
+    Recording JMX metric Hits : 46,593
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: 
+    Recording JMX metric BackupEntryCount : 1,100
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: 
+    Recording JMX metric OwnedEntryCount : 1,100
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: 
+    Recording JMX metric RemoveOperationCount : 0
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: 
+    Recording JMX metric PutOperationCount : 118,962
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: 
+    Recording JMX metric GetOperationCount : 0
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: 
+    Recording JMX metric LastUpdateTime : 1,401,962,426,811
+Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER: 
+    Recording JMX metric LastAccessTime : 1,401,962,426,811
 ```
 
 Then, you can navigate to your New Relic account and create Custom Dashboards. Please see [Creating custom dashboards](http://docs.newrelic.com/docs/dashboards-menu/creating-custom-dashboards) on creating one.
@@ -289,13 +306,14 @@ For monitoring on AppDynamics, please see [Using AppDynamics for JMX Monitoring]
 
 After installing AppDynamics agent, you can start Management Center as shown below.
 
-```
-java -javaagent:/path/to/javaagent.jar -Dhazelcast.mc.jmx.enabled=true -Dhazelcast.mc.jmx.port=9999 -jar mancenter-3.3.jar
+```plain
+java -javaagent:/path/to/javaagent.jar -Dhazelcast.mc.jmx.enabled=true\
+    -Dhazelcast.mc.jmx.port=9999 -jar mancenter-3.3.jar
 ```
 
 Once started, you should see the below logs.
 
-```
+```plain
 Started AppDynamics Java Agent Successfully.
 Hazelcast Management Center starting on port 8080 at path : /mancenter
 ```
