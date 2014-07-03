@@ -10,7 +10,7 @@ Clustered REST API is exposed from Management Center to allow you to monitor clu
 
 In order to enable Clustered REST on your Management Center, you need to pass the following system property at startup. This feature is disabled by default.
 
-```
+```plain
 -Dhazelcast.mc.rest.enabled=true
 ```
 
@@ -30,7 +30,7 @@ This resource returns list of clusters that are connected to the Management Cent
 + *URL:* `/rest/clusters`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters
 	```
 + *Response:* `200` (application/json)
@@ -50,7 +50,7 @@ This resource returns information related to provided cluster name.
 + *URL:* `/rest/clusters/{clustername}`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/
 	```
 + *Response:* `200` (application/json)
@@ -69,7 +69,7 @@ This resource returns list of members belonging to provided clusters.
 + *URL:* `/rest/clusters/{clustername}/members`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/members
 	```
 + *Response:* `200` (application/json)
@@ -88,7 +88,7 @@ This resource returns information related to provided member.
 + *URL:* `/rest/clusters/{clustername}/members/{member}`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701
 	```
 + *Response:* `200` (application/json)
@@ -113,7 +113,7 @@ This resource returns information related to provided member.
 + *URL:* `/rest/clusters/{clustername}/members/{member}/connectionManager`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701/connectionManager
 	```
 + *Response:* `200` (application/json)
@@ -132,7 +132,7 @@ This resource returns information related to provided member.
 + *URL:* `/rest/clusters/{clustername}/members/{member}/operationService`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701/operationService
 	```
 + *Response:* `200` (application/json)
@@ -154,7 +154,7 @@ This resource returns information related to provided member.
 + *URL:* `/rest/clusters/{clustername}/members/{member}/eventService`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701/eventService
 	```
 + *Response:* `200` (application/json)
@@ -173,7 +173,7 @@ This resource returns information related to provided member.
 + *URL:* `/rest/clusters/{clustername}/members/{member}/partitionService`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701/partitionService
 	```
 + *Response:* `200` (application/json)
@@ -191,7 +191,7 @@ This resource returns information related to provided member.
 + *URL:* `/rest/clusters/{clustername}/members/{member}/proxyService`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701/proxyService
 	```
 + *Response:* `200` (application/json)
@@ -208,7 +208,7 @@ This resource returns information related to provided member.
 + *URL:* `/rest/clusters/{clustername}/members/{member}/managedExecutors`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701/managedExecutors
 	```
 + *Response:* `200` (application/json)
@@ -223,7 +223,7 @@ This resource returns information related to provided member.
 + *URL:* `/rest/clusters/{clustername}/members/{member}/managedExecutors/{managedExecutor}`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701/managedExecutors/hz:system
 	```
 + *Response:* `200` (application/json)
@@ -250,7 +250,7 @@ This resource returns list of clients belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/clients`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/clients
 	```
 + *Response:* `200` (application/json)
@@ -265,7 +265,7 @@ This resource returns list of clients belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/clients/{client}`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/clients/192.168.2.78:61708
 	```
 + *Response:* `200` (application/json)
@@ -289,7 +289,7 @@ This resource returns list of maps belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/maps`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/maps
 	```
 + *Response:* `200` (application/json)
@@ -304,7 +304,7 @@ This resource returns list of maps belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/maps/{mapName}`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/maps/customers
 	```
 + *Response:* `200` (application/json)
@@ -348,7 +348,7 @@ This resource returns list of multimaps belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/multimaps`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/multimaps
 	```
 + *Response:* `200` (application/json)
@@ -363,7 +363,7 @@ This resource returns list of multimaps belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/multimaps/{multimapname}`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/multimaps/customerAddresses
 	```
 + *Response:* `200` (application/json)
@@ -406,7 +406,7 @@ This resource returns list of queues belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/queues`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/queues
 	```
 + *Response:* `200` (application/json)
@@ -421,7 +421,7 @@ This resource returns list of queues belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/queues/{queueName}`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/queues/messages
 	```
 + *Response:* `200` (application/json)
@@ -457,7 +457,7 @@ This resource returns list of topics belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/topics`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/topics
 	```
 + *Response:* `200` (application/json)
@@ -472,7 +472,7 @@ This resource returns list of topics belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/topics/{topicName}`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/topics/news
 	```
 + *Response:* `200` (application/json)
@@ -499,7 +499,7 @@ This resource returns list of executors belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/executors`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/executors
 	```
 + *Response:* `200` (application/json)
@@ -514,7 +514,7 @@ This resource returns list of executors belonging to provided cluster.
 + *URL:* `/rest/clusters/{clustername}/executors/{executorName}`
 + *Request:*
 
-	```
+	```plain
 	curl http://localhost:8083/mancenter/rest/clusters/dev/executors/order-executor
 	```
 + *Response:* `200` (application/json)

@@ -102,7 +102,7 @@ configuration property.
 
 This can either be achieved using a command line property (where xxx is the queue size):
 
-```xml
+```plain
 -Dhazelcast.enterprise.wanrep.queuesize=xxx
 ```
 

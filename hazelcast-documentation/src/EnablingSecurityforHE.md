@@ -18,11 +18,11 @@ Security can be enabled as stated in the below programmatic or declarative confi
     xmlns="http://www.hazelcast.com/schema/config"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     
-    ...
+  ...
     
-    <security enabled="true">
+  <security enabled="true">
     ...
-    </security>
+  </security>
 </hazelcast>
 ```
 
@@ -31,7 +31,7 @@ Security can be enabled as stated in the below programmatic or declarative confi
 ```java
 Config cfg = new Config();
 SecurityConfig securityCfg = cfg.getSecurityConfig();
-securityCfg.setEnabled(true);
+securityCfg.setEnabled( true );
 ```
 
 Also, please see [Setting License Key](#setting-license-key).

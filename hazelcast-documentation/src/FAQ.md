@@ -53,9 +53,9 @@ Note that the distributed Set and List store their entries as the keys in a dist
 Hazelcast always return a clone copy of a value. Modifying the returned value does not change the actual value in the map (or multimap, list, set). You should put the modified value back to make changes visible to all nodes.
 
 ```java
-V value = map.get(key);
+V value = map.get( key );
 value.updateSomeProperty();
-map.put(key, value);
+map.put( key, value );
 ```
 
 Collections which return values of methods such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`, contain cloned values. These collections are NOT backup by related Hazelcast objects. So changes to the these are **NOT** reflected in the originals, and vice-versa.
@@ -71,23 +71,23 @@ Let's say you want to test if two members have the same size of a map.
 ```java
 @Test
 public void testTwoMemberMapSizes() {
-    // start the first member
-    HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-    // get the map and put 1000 entries
-    Map map1 = h1.getMap("testmap");
-    for (int i = 0; i < 1000; i++) {
-        map1.put(i, "value" + i);
-    }
-    // check the map size
-    assertEquals(1000, map1.size());
-    // start the second member
-    HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-    // get the same map from the second member
-    Map map2 = h2.getMap("testmap");
-    // check the size of map2
-    assertEquals(1000, map2.size());
-    // check the size of map1 again
-    assertEquals(1000, map1.size());
+  // start the first member
+  HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
+  // get the map and put 1000 entries
+  Map map1 = h1.getMap( "testmap" );
+  for ( int i = 0; i < 1000; i++ ) {
+    map1.put( i, "value" + i );
+  }
+  // check the map size
+  assertEquals( 1000, map1.size() );
+  // start the second member
+  HazelcastInstance h2 = Hazelcast.newHazelcastInstance();
+  // get the same map from the second member
+  Map map2 = h2.getMap( "testmap" );
+  // check the size of map2
+  assertEquals( 1000, map2.size() );
+  // check the size of map1 again
+  assertEquals( 1000, map1.size() );
 }
 ```
 
@@ -96,41 +96,41 @@ In the test above, everything happens in the same thread. When developing multi-
 ```java
 @Test
 public void testTopic() {
-    // start two member cluster
-    HazelcastInstance h1 = Hazelcast.newHazelcastInstance(null);
-    HazelcastInstance h2 = Hazelcast.newHazelcastInstance(null);
-    String topicName = "TestMessages";
-    // get a topic from the first member and add a messageListener
-    ITopic<String> topic1 = h1.getTopic(topicName);
-    final CountDownLatch latch1 = new CountDownLatch(1);
-    topic1.addMessageListener(new MessageListener() {
-        public void onMessage(Object msg) {
-            assertEquals("Test1", msg);
-            latch1.countDown();
-        }
-    });
-    // get a topic from the second member and add a messageListener
-    ITopic<String> topic2 = h2.getTopic(topicName);
-    final CountDownLatch latch2 = new CountDownLatch(2);
-    topic2.addMessageListener(new MessageListener() {
-        public void onMessage(Object msg) {
-            assertEquals("Test1", msg);
-            latch2.countDown();
-        }
-    });
-    // publish the first message, both should receive this
-    topic1.publish("Test1");
-    // shutdown the first member
-    h1.shutdown();
-    // publish the second message, second member's topic should receive this
-    topic2.publish("Test1");
-    try {
-        // assert that the first member's topic got the message
-        assertTrue(latch1.await(5, TimeUnit.SECONDS));
-        // assert that the second members' topic got two messages
-        assertTrue(latch2.await(5, TimeUnit.SECONDS));
-    } catch (InterruptedException ignored) {
+  // start two member cluster
+  HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
+  HazelcastInstance h2 = Hazelcast.newHazelcastInstance();
+  String topicName = "TestMessages";
+  // get a topic from the first member and add a messageListener
+  ITopic<String> topic1 = h1.getTopic( topicName );
+  final CountDownLatch latch1 = new CountDownLatch( 1 );
+  topic1.addMessageListener( new MessageListener() {
+    public void onMessage( Object msg ) {
+      assertEquals( "Test1", msg );
+      latch1.countDown();
     }
+  });
+  // get a topic from the second member and add a messageListener
+  ITopic<String> topic2 = h2.getTopic(topicName);
+  final CountDownLatch latch2 = new CountDownLatch( 2 );
+  topic2.addMessageListener( new MessageListener() {
+    public void onMessage( Object msg ) {
+      assertEquals( "Test1", msg );
+      latch2.countDown();
+    }
+  } );
+  // publish the first message, both should receive this
+  topic1.publish( "Test1" );
+  // shutdown the first member
+  h1.shutdown();
+  // publish the second message, second member's topic should receive this
+  topic2.publish( "Test1" );
+  try {
+    // assert that the first member's topic got the message
+    assertTrue( latch1.await( 5, TimeUnit.SECONDS ) );
+    // assert that the second members' topic got two messages
+    assertTrue( latch2.await( 5, TimeUnit.SECONDS ) );
+  } catch ( InterruptedException ignored ) {
+  }
 }
 ```
 You can surely start Hazelcast members with different configurations. Let's say we want to test if Hazelcast `LiteMember` can shutdown fine.
@@ -138,24 +138,24 @@ You can surely start Hazelcast members with different configurations. Let's say 
 ```java
 @Test(timeout = 60000)
 public void shutdownLiteMember() {
-    // first config for normal cluster member
-    Config c1 = new XmlConfigBuilder().build();
-    c1.setPortAutoIncrement(false);
-    c1.setPort(5709);
-    // second config for LiteMember
-    Config c2 = new XmlConfigBuilder().build();
-    c2.setPortAutoIncrement(false);
-    c2.setPort(5710);
-    // make sure to set LiteMember=true
-    c2.setLiteMember(true);
-    // start the normal member with c1
-    HazelcastInstance hNormal = Hazelcast.newHazelcastInstance(c1);
-    // start the LiteMember with different configuration c2
-    HazelcastInstance hLite = Hazelcast.newHazelcastInstance(c2);
-    hNormal.getMap("default").put("1", "first");
-    assert hLite.getMap("default").get("1").equals("first");
-    hNormal.shutdown();
-    hLite.shutdown();
+  // first config for normal cluster member
+  Config c1 = new XmlConfigBuilder().build();
+  c1.setPortAutoIncrement( false );
+  c1.setPort( 5709 );
+  // second config for LiteMember
+  Config c2 = new XmlConfigBuilder().build();
+  c2.setPortAutoIncrement( false );
+  c2.setPort( 5710 );
+  // make sure to set LiteMember=true
+  c2.setLiteMember( true );
+  // start the normal member with c1
+  HazelcastInstance hNormal = Hazelcast.newHazelcastInstance( c1 );
+  // start the LiteMember with different configuration c2
+  HazelcastInstance hLite = Hazelcast.newHazelcastInstance( c2 );
+  hNormal.getMap( "default" ).put( "1", "first" );
+  assert hLite.getMap( "default" ).get( "1" ).equals( "first" );
+  hNormal.shutdown();
+  hLite.shutdown();
 }
 ```
 Also remember to call `Hazelcast.shutdownAll()` after each test case to make sure that there is no other running member left from the previous tests.
@@ -163,7 +163,7 @@ Also remember to call `Hazelcast.shutdownAll()` after each test case to make sur
 ```java
 @After
 public void cleanup() throws Exception {
-    Hazelcast.shutdownAll();
+  Hazelcast.shutdownAll();
 }
 ```
 
@@ -175,11 +175,11 @@ By specifying group name and group password, you can separate your clusters in a
 
 ```xml
 <hazelcast>
-    <group>
-        <name>dev</name>
-        <password>dev-pass</password>
-    </group>
-    ...
+  <group>
+    <name>dev</name>
+    <password>dev-pass</password>
+  </group>
+  ...
 </hazelcast>
 ```
 
@@ -187,14 +187,14 @@ You can also set the `groupName` with programmatic configuration. JVM can host m
 
 ```java
 Config configApp1 = new Config();
-configApp1.getGroupConfig().setName("app1");
+configApp1.getGroupConfig().setName( "app1" );
 
 Config configApp2 = new Config();
-configApp2.getGroupConfig().setName("app2");
+configApp2.getGroupConfig().setName( "app2" );
 
-HazelcastInstance h1 = Hazelcast.newHazelcastInstance(configApp1);
-HazelcastInstance h2 = Hazelcast.newHazelcastInstance(configApp2);
-HazelcastInstance h3 = Hazelcast.newHazelcastInstance(configApp2);
+HazelcastInstance h1 = Hazelcast.newHazelcastInstance( configApp1 );
+HazelcastInstance h2 = Hazelcast.newHazelcastInstance( configApp2 );
+HazelcastInstance h3 = Hazelcast.newHazelcastInstance( configApp2 );
 ```
 
 
@@ -242,17 +242,17 @@ So each member of the merging cluster is actually rejoining to the new cluster a
 
 ```java
 public interface MergePolicy {
-    /**
-    * Returns the value of the entry after the merge
-    * of entries with the same key. Returning value can be
-    * You should consider the case where existingEntry is null.
-    *
-    * @param mapName       name of the map
-    * @param mergingEntry  entry merging into the destination cluster
-    * @param existingEntry existing entry in the destination cluster
-    * @return final value of the entry. If returns null then entry will be removed.
-    */
-    Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry);
+  /**
+  * Returns the value of the entry after the merge
+  * of entries with the same key. Returning value can be
+  * You should consider the case where existingEntry is null.
+  *
+  * @param mapName       name of the map
+  * @param mergingEntry  entry merging into the destination cluster
+  * @param existingEntry existing entry in the destination cluster
+  * @return final value of the entry. If returns null then entry will be removed.
+  */
+  Object merge( String mapName, EntryView mergingEntry, EntryView existingEntry );
 }
 ```
 
@@ -260,32 +260,36 @@ Here is how merge policies are specified per map:
 
 ```xml
 <hazelcast>
-    ...
-    <map name="default">
-        <backup-count>1</backup-count>
-        <eviction-policy>NONE</eviction-policy>
-        <max-size>0</max-size>
-        <eviction-percentage>25</eviction-percentage>
-        <!--
-            While recovering from split-brain (network partitioning),
-            map entries in the small cluster will merge into the bigger cluster
-            based on the policy set here. When an entry merge into the
-            cluster, there might an existing entry with the same key already.
-            Values of these entries might be different for that same key.
-            Which value should be set for the key? Conflict is resolved by
-            the policy set here. Default policy is hz.ADD_NEW_ENTRY
+  ...
+  <map name="default">
+    <backup-count>1</backup-count>
+    <eviction-policy>NONE</eviction-policy>
+    <max-size>0</max-size>
+    <eviction-percentage>25</eviction-percentage>
+    <!--
+      While recovering from split-brain (network partitioning),
+      map entries in the small cluster will merge into the bigger cluster
+      based on the policy set here. When an entry merge into the
+      cluster, there might an existing entry with the same key already.
+      Values of these entries might be different for that same key.
+      Which value should be set for the key? Conflict is resolved by
+      the policy set here. Default policy is hz.ADD_NEW_ENTRY
 
-            There are built-in merge policies such as
-            There are built-in merge policies such as
-            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if there is no existing entry for the key.
-            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
-            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
-            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
-        -->
-        <merge-policy>MY_MERGE_POLICY_CLASS</merge-policy>
-    </map>
+      There are built-in merge policies such as
+      There are built-in merge policies such as
+      com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if
+          there is no existing entry for the key.
+      com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be 
+          added if the merging entry doesn't exist in the cluster.
+      com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the
+          higher hits wins.
+      com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the
+          latest update wins.
+    -->
+    <merge-policy>MY_MERGE_POLICY_CLASS</merge-policy>
+  </map>
 
-    ...
+  ...
 </hazelcast>
 ```
 
@@ -320,11 +324,11 @@ By changing the log level to "Debug". Below sample lines are for **log4j** loggi
 First, set the logging type as follows.
 
 ```java
-final String location = "log4j.configuration";
-final String logging = "hazelcast.logging.type";
-System.setProperty(logging, "log4j");
+String location = "log4j.configuration";
+String logging = "hazelcast.logging.type";
+System.setProperty( logging, "log4j" );
 /**if you want to give a new location. **/
-System.setProperty(location, "file:/path/mylog4j.properties");
+System.setProperty( location, "file:/path/mylog4j.properties" );
 ```
 
 Then set the log level to "Debug" in properties file. Below is a sample content.
