@@ -88,6 +88,7 @@ public class ClientConfig {
 
     /**
      * Gets a property already set or from system properties if not exists.
+     *
      * @param name property name
      * @return value of the property
      */
@@ -98,9 +99,11 @@ public class ClientConfig {
 
     /**
      * Sets the value of a named property
-     * @param name property name
+     *
+     * @param name  property name
      * @param value value of the property
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     * @see {@link com.hazelcast.client.config.ClientProperties} for properties that is used to configure client
      */
     public ClientConfig setProperty(String name, String value) {
         properties.put(name, value);
@@ -109,6 +112,7 @@ public class ClientConfig {
 
     /**
      * Gets {@link java.util.Properties} object
+     *
      * @return {@link java.util.Properties} object
      */
     public Properties getProperties() {
@@ -117,6 +121,7 @@ public class ClientConfig {
 
     /**
      * sets all properties
+     *
      * @param properties {@link java.util.Properties} object
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
@@ -127,6 +132,7 @@ public class ClientConfig {
 
     /**
      * Gets {@link com.hazelcast.client.config.ClientSecurityConfig} object
+     *
      * @return {@link com.hazelcast.client.config.ClientSecurityConfig}
      * @see com.hazelcast.client.config.ClientSecurityConfig
      */
@@ -136,6 +142,7 @@ public class ClientConfig {
 
     /**
      * Sets {@link com.hazelcast.client.config.ClientSecurityConfig} object
+     *
      * @param securityConfig {@link com.hazelcast.client.config.ClientSecurityConfig} to be set
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.client.config.ClientSecurityConfig
@@ -147,6 +154,7 @@ public class ClientConfig {
 
     /**
      * Gets {@link com.hazelcast.client.config.ClientNetworkConfig}
+     *
      * @return {@link com.hazelcast.client.config.ClientNetworkConfig}
      * @see com.hazelcast.client.config.ClientNetworkConfig
      */
@@ -156,6 +164,7 @@ public class ClientConfig {
 
     /**
      * Sets {@link com.hazelcast.client.config.ClientNetworkConfig}
+     *
      * @param networkConfig {@link com.hazelcast.client.config.ClientNetworkConfig} to be set
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.client.config.ClientNetworkConfig
@@ -168,9 +177,9 @@ public class ClientConfig {
     /**
      * please use {@link ClientConfig#addNearCacheConfig(NearCacheConfig)}
      *
-     * @param mapName
-     * @param nearCacheConfig
-     * @return
+     * @param mapName         name of the IMap that near cache config will be applied to
+     * @param nearCacheConfig nearCacheConfig
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     @Deprecated
     public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig) {
@@ -180,6 +189,7 @@ public class ClientConfig {
 
     /**
      * Helper method to add a new NearCacheConfig
+     *
      * @param nearCacheConfig {@link com.hazelcast.config.NearCacheConfig}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.config.NearCacheConfig
@@ -191,6 +201,7 @@ public class ClientConfig {
 
     /**
      * Helper method to add a new ListenerConfig
+     *
      * @param listenerConfig ListenerConfig
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.config.ListenerConfig
@@ -202,6 +213,7 @@ public class ClientConfig {
 
     /**
      * Helper method to add a new {@link ProxyFactoryConfig}
+     *
      * @param proxyFactoryConfig {@link ProxyFactoryConfig}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.client.config.ProxyFactoryConfig
@@ -213,6 +225,7 @@ public class ClientConfig {
 
     /**
      * Gets the {@link NearCacheConfig} configured for the map with mapName
+     *
      * @param mapName name of the map
      * @return Configured {@link NearCacheConfig}
      * @see com.hazelcast.config.NearCacheConfig
@@ -223,6 +236,7 @@ public class ClientConfig {
 
     /**
      * Map of all configured NearCacheConfig's with the map name key and configuration as the value
+     *
      * @return map of NearCacheConfig
      * @see com.hazelcast.config.NearCacheConfig
      */
@@ -232,6 +246,7 @@ public class ClientConfig {
 
     /**
      * Sets all {@link NearCacheConfig}'s with the provided map
+     *
      * @param nearCacheConfigMap map of (mapName, {@link NearCacheConfig})
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
@@ -327,6 +342,7 @@ public class ClientConfig {
 
     /**
      * Gets {@link com.hazelcast.security.Credentials}
+     *
      * @return {@link com.hazelcast.security.Credentials}
      * @see com.hazelcast.security.Credentials
      */
@@ -336,14 +352,9 @@ public class ClientConfig {
 
     /**
      * Sets {@link com.hazelcast.security.Credentials}
-     * @return {@link com.hazelcast.security.Credentials}
-     * @see com.hazelcast.security.Credentials
-     */
-
-    /**
-     * Sets {@link com.hazelcast.security.Credentials}
+     *
      * @param credentials {@link com.hazelcast.security.Credentials}
-     * @return
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setCredentials(Credentials credentials) {
         securityConfig.setCredentials(credentials);
@@ -378,6 +389,7 @@ public class ClientConfig {
 
     /**
      * gets {@link GroupConfig}
+     *
      * @return {@link GroupConfig}
      * @see com.hazelcast.config.GroupConfig
      */
@@ -387,6 +399,7 @@ public class ClientConfig {
 
     /**
      * Sets {@link GroupConfig}
+     *
      * @param groupConfig {@link GroupConfig}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
@@ -397,6 +410,7 @@ public class ClientConfig {
 
     /**
      * Gets list of all configured {@link ListenerConfig}'s
+     *
      * @return {@link ListenerConfig}
      * @see com.hazelcast.config.ListenerConfig
      */
@@ -406,6 +420,7 @@ public class ClientConfig {
 
     /**
      * Sets all {@link ListenerConfig}'s
+     *
      * @param listenerConfigs list of {@link ListenerConfig}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.config.ListenerConfig
@@ -417,6 +432,7 @@ public class ClientConfig {
 
     /**
      * Gets LoadBalancer
+     *
      * @return LoadBalancer
      * @see com.hazelcast.client.LoadBalancer
      */
@@ -426,6 +442,7 @@ public class ClientConfig {
 
     /**
      * Sets the {@link LoadBalancer}
+     *
      * @param loadBalancer {@link LoadBalancer}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.client.LoadBalancer
@@ -471,6 +488,7 @@ public class ClientConfig {
 
     /**
      * Gets the classLoader
+     *
      * @return configured classLoader, null if not yet configured
      */
     public ClassLoader getClassLoader() {
@@ -479,6 +497,7 @@ public class ClientConfig {
 
     /**
      * Sets the classLoader which is used by serialization and listener configuration
+     *
      * @param classLoader
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
@@ -489,6 +508,7 @@ public class ClientConfig {
 
     /**
      * Gets {@link ManagedContext}
+     *
      * @return {@link ManagedContext}
      * @see com.hazelcast.core.ManagedContext
      */
@@ -498,6 +518,7 @@ public class ClientConfig {
 
     /**
      * Sets {@link ManagedContext}
+     *
      * @param managedContext {@link ManagedContext}
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.core.ManagedContext
@@ -508,8 +529,9 @@ public class ClientConfig {
     }
 
     /**
-     * Client side Executor pool size.
-     * @return
+     * Pool size for internal ExecutorService which handles responses etc.
+     *
+     * @return int Executor pool size.
      */
     public int getExecutorPoolSize() {
         return executorPoolSize;
@@ -517,6 +539,7 @@ public class ClientConfig {
 
     /**
      * Sets Client side Executor pool size.
+     *
      * @param executorPoolSize pool size
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
@@ -527,6 +550,7 @@ public class ClientConfig {
 
     /**
      * Gets list of {@link com.hazelcast.client.config.ProxyFactoryConfig}
+     *
      * @return list of {@link com.hazelcast.client.config.ProxyFactoryConfig}
      * @see com.hazelcast.client.config.ProxyFactoryConfig
      */
@@ -535,7 +559,8 @@ public class ClientConfig {
     }
 
     /**
-     * Sets the {@link ProxyFactoryConfigs}
+     * Sets the {@link ProxyFactoryConfig}
+     *
      * @param proxyFactoryConfigs list to assign
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
@@ -546,6 +571,7 @@ public class ClientConfig {
 
     /**
      * Gets {@link com.hazelcast.config.SerializationConfig}
+     *
      * @return SerializationConfig
      * @see com.hazelcast.config.SerializationConfig
      */
@@ -554,7 +580,8 @@ public class ClientConfig {
     }
 
     /**
-     * Sers {@link com.hazelcast.config.SerializationConfig}
+     * Sets {@link com.hazelcast.config.SerializationConfig}
+     *
      * @param serializationConfig SerializationConfig
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      * @see com.hazelcast.config.SerializationConfig
