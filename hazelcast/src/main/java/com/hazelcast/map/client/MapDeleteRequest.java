@@ -92,6 +92,11 @@ public class MapDeleteRequest extends KeyBasedClientRequest implements Portable,
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "delete";
     }

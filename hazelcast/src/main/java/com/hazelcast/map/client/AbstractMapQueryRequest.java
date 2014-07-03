@@ -171,4 +171,9 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

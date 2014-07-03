@@ -84,6 +84,11 @@ public final class GetCountRequest extends KeyBasedClientRequest
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "getCount";
     }

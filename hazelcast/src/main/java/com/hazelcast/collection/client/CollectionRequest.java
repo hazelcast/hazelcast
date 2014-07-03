@@ -85,4 +85,9 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
     }
 
     public abstract String getRequiredAction();
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

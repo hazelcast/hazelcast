@@ -83,4 +83,9 @@ public abstract class ModifyRequest extends PartitionClientRequest implements Po
     public Permission getRequiredPermission() {
         return new AtomicReferencePermission(name, ActionConstants.ACTION_MODIFY);
     }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

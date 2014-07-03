@@ -88,6 +88,11 @@ public class MapValuesRequest extends AllPartitionsClientRequest implements Port
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "values";
     }

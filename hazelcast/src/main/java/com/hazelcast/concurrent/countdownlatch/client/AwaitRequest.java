@@ -87,6 +87,11 @@ public final class AwaitRequest extends KeyBasedClientRequest implements Portabl
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "await";
     }

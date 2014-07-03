@@ -106,6 +106,11 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "addInterceptor";
     }

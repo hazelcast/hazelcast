@@ -91,6 +91,11 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return serializationService.toObject(key);
+    }
+
+    @Override
     public String getMethodName() {
         if (force) {
             return "forceUnlock";

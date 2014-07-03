@@ -94,6 +94,11 @@ public class MapContainsValueRequest extends AllPartitionsClientRequest implemen
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "containsValue";
     }

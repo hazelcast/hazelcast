@@ -77,4 +77,9 @@ public class MultiMapLockRequest extends AbstractLockRequest {
     public String getDistributedObjectType() {
         return MultiMapService.SERVICE_NAME;
     }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

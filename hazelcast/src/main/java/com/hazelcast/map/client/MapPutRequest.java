@@ -134,6 +134,11 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         if (async) {
             return "putAsync";

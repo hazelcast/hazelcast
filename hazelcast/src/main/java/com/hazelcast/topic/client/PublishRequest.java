@@ -96,6 +96,11 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "publish";
     }

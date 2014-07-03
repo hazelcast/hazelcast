@@ -82,6 +82,11 @@ public final class CountDownRequest extends KeyBasedClientRequest implements Por
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "countDown";
     }
