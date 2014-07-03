@@ -69,34 +69,38 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
             return;
         }
         try {
-            while (buffer.hasRemaining() && lastWritable != null) {
-                boolean complete = lastWritable.writeTo(buffer);
-                if (complete) {
-                    lastWritable = poll();
-                } else {
-                    break;
-                }
-            }
-            if (buffer.position() > 0) {
-                buffer.flip();
-                try {
-                    socketChannel.write(buffer);
-                } catch (Exception e) {
-                    lastWritable = null;
-                    handleSocketException(e);
-                    return;
-                }
-                if (buffer.hasRemaining()) {
-                    buffer.compact();
-                } else {
-                    buffer.clear();
-                }
-            }
+            writeBuffer();
         } catch (Throwable t) {
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
         } finally {
             ready = false;
             registerWrite();
+        }
+    }
+
+    private void writeBuffer() {
+        while (buffer.hasRemaining() && lastWritable != null) {
+            boolean complete = lastWritable.writeTo(buffer);
+            if (complete) {
+                lastWritable = poll();
+            } else {
+                break;
+            }
+        }
+        if (buffer.position() > 0) {
+            buffer.flip();
+            try {
+                socketChannel.write(buffer);
+            } catch (Exception e) {
+                lastWritable = null;
+                handleSocketException(e);
+                return;
+            }
+            if (buffer.hasRemaining()) {
+                buffer.compact();
+            } else {
+                buffer.clear();
+            }
         }
     }
 

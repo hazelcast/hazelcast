@@ -70,20 +70,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
             }
             buffer.flip();
 
-            while (buffer.hasRemaining()) {
-                if (packet == null) {
-                    final SerializationService ss = connection.getConnectionManager().getSerializationService();
-                    packet = new ClientPacket(ss.getPortableContext());
-                }
-                boolean complete = packet.readFrom(buffer);
-                if (complete) {
-                    packet.setConn(connection);
-                    connectionManager.handlePacket(packet);
-                    packet = null;
-                } else {
-                    break;
-                }
-            }
+            readPacket();
 
             if (buffer.hasRemaining()) {
                 buffer.compact();
@@ -94,6 +81,23 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
             handleSocketException(t);
         }
 
+    }
+
+    private void readPacket() {
+        while (buffer.hasRemaining()) {
+            if (packet == null) {
+                final SerializationService ss = connection.getSerializationService();
+                packet = new ClientPacket(ss.getPortableContext());
+            }
+            boolean complete = packet.readFrom(buffer);
+            if (complete) {
+                packet.setConn(connection);
+                connectionManager.handlePacket(packet);
+                packet = null;
+            } else {
+                break;
+            }
+        }
     }
 
     long getLastHandle() {
