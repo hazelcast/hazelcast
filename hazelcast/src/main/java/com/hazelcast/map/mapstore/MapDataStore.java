@@ -29,6 +29,12 @@ public interface MapDataStore<K, V> {
 
     Map loadAll(Collection keys);
 
+    /**
+     * Removes keys from map store.
+     * It also handles {@link com.hazelcast.nio.serialization.Data} to object conversions of keys.
+     *
+     * @param keys to be removed.
+     */
     void removeAll(Collection keys);
 
     boolean loadable(K key, long lastUpdateTime, long now);
