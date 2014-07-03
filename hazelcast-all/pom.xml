@@ -32,47 +32,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${maven.bundle.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                        <configuration>
-                            <instructions>
-                                <Bundle-Activator>com.hazelcast.osgi.Activator</Bundle-Activator>
-                                <Export-Package>
-                                    com.hazelcast.*
-                                </Export-Package>
-                                <Import-Package>
-                                    !sun.misc,
-                                    !org.junit,
-                                    org.apache.log4j;resolution:=optional,
-                                    org.apache.log4j.*;resolution:=optional,
-                                    org.slf4j;resolution:=optional,
-                                    org.hibernate;resolution:=optional,
-                                    org.hibernate.*;resolution:=optional,
-                                    com.mongodb;resolution:=optional,
-                                    com.mongodb.*;resolution:=optional,
-                                    org.springframework;resolution:=optional,
-                                    org.springframework.*;resolution:=optional,
-                                    org.bson;resolution:=optional,
-                                    org.bson.*;resolution:=optional,
-                                    org.codehaus.groovy.jsr223;resolution:=optional,
-                                    org.jruby.embed.jsr223;resolution:=optional,
-                                    *
-                                </Import-Package>
-                            </instructions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven.jar.plugin.version}</version>
@@ -86,7 +45,6 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>
@@ -117,7 +75,7 @@
                             </artifactSet>
                             <transformers>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                        implementation="com.hazelcast.buildutils.HazelcastManifestTransformer">
                                     <mainClass>com.hazelcast.console.ConsoleApp</mainClass>
                                 </transformer>
                                 <transformer
@@ -136,6 +94,13 @@
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.hazelcast</groupId>
+                        <artifactId>hazelcast-build-utils</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -147,11 +112,14 @@
     </build>
 
     <dependencies>
+        <!-- Make sure that the core module is the first dependency! -->
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- Make sure that the core module is the first dependency! -->
+
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client</artifactId>
