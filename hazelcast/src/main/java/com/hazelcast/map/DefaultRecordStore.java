@@ -1365,7 +1365,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().executeOperation(operation);
             } catch (Exception e) {
-                e.printStackTrace();
                 logger.warning("Exception while load all task:" + e.toString());
             }
         }
