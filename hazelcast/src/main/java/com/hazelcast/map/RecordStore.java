@@ -112,6 +112,11 @@ public interface RecordStore {
     Map<Data, Record> getReadonlyRecordMap();
 
     /**
+     * Returns records map.
+     */
+    Map<Data, Record> getRecordMap();
+
+    /**
      * Returns read only records map by waiting map store load.
      * If an operation needs to wait a data source to load like querying
      * in {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
@@ -207,5 +212,6 @@ public interface RecordStore {
 
     MapDataStore<Data, Object> getMapDataStore();
 
+    int getPartitionId();
 
 }

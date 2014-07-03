@@ -53,8 +53,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      */
     protected long lastEvictionTime;
 
-    protected AbstractEvictableRecordStore(MapContainer mapContainer) {
-        super(mapContainer);
+    protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
+        super(mapContainer, partitionId);
         this.evictionEnabled
                 = !MapConfig.EvictionPolicy.NONE.equals(mapContainer.getMapConfig().getEvictionPolicy());
         this.expirable = isRecordStoreExpirable();
@@ -342,4 +342,25 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         fireEvent(key, value, name, mapServiceContext);
     }
 
+    protected void increaseRecordEvictionCriteriaNumber(Record record, MapConfig.EvictionPolicy evictionPolicy) {
+        switch (evictionPolicy) {
+            case LRU:
+                ++lruAccessSequenceNumber;
+                record.setEvictionCriteriaNumber(lruAccessSequenceNumber);
+                break;
+            case LFU:
+                record.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber() + 1L);
+                break;
+            case NONE:
+                break;
+            default:
+                throw new IllegalArgumentException("Not an appropriate eviction policy [" + evictionPolicy + ']');
+        }
+    }
+
+    @Override
+    protected void accessRecord(Record record, long now) {
+        super.accessRecord(record, now);
+        increaseRecordEvictionCriteriaNumber(record, mapContainer.getMapConfig().getEvictionPolicy());
+    }
 }

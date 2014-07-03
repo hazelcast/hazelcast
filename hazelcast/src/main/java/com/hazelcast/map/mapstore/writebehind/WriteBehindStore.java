@@ -152,11 +152,14 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             final Object key = iterator.next();
             final Data dataKey = toData(key);
             if (hasWaitingWriteBehindDeleteOperation(dataKey)) {
+                iterator.remove();
                 continue;
             }
             final Object valueFromStagingArea = getFromEvictionStagingArea(dataKey);
-            map.put(dataKey, valueFromStagingArea);
-            iterator.remove();
+            if (valueFromStagingArea != null) {
+                map.put(dataKey, valueFromStagingArea);
+                iterator.remove();
+            }
         }
         map.putAll(super.loadAll(keys));
         return map;

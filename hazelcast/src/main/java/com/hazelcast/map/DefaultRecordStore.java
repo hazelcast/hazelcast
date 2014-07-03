@@ -18,27 +18,14 @@ package com.hazelcast.map;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.operation.PutAllOperation;
-import com.hazelcast.map.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.record.Record;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.IndexService;
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -49,52 +36,41 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Default implementation of record-store.
  */
 public class DefaultRecordStore extends AbstractEvictableRecordStore implements RecordStore {
 
-    private static final long DEFAULT_TTL = -1L;
-
-    private final int partitionId;
-    private final ILogger logger;
-    private final SizeEstimator sizeEstimator;
-    private final AtomicBoolean loaded = new AtomicBoolean(false);
     private final LockStore lockStore;
     private final MapDataStore<Data, Object> mapDataStore;
+    private final RecordStoreLoader recordStoreLoader;
 
     public DefaultRecordStore(MapContainer mapContainer, int partitionId) {
-        super(mapContainer);
-        this.partitionId = partitionId;
-        this.logger = mapServiceContext.getNodeEngine().getLogger(this.getName());
+        super(mapContainer, partitionId);
         this.lockStore = createLockStore();
-        this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
-        this.mapDataStore = mapContainer.getMapStoreManager().getMapDataStore(partitionId);
-        loadFromMapStore();
+        this.mapDataStore
+                = mapContainer.getMapStoreManager().getMapDataStore(partitionId);
+        this.recordStoreLoader = createRecordStoreLoader();
+        this.recordStoreLoader.loadAllKeys();
     }
 
     @Override
     public boolean isLoaded() {
-        return loaded.get();
+        return recordStoreLoader.isLoaded();
     }
 
     @Override
-    public void setLoaded(boolean isLoaded) {
-        loaded.set(isLoaded);
+    public void setLoaded(boolean loaded) {
+        recordStoreLoader.setLoaded(loaded);
     }
 
     @Override
     public void checkIfLoaded() {
-        if (mapContainer.getStore() != null && !loaded.get()) {
+        if (!recordStoreLoader.isLoaded()) {
             throw ExceptionUtil.rethrow(new RetryableHazelcastException("Map is not ready!!!"));
         }
     }
@@ -119,8 +95,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public void putRecord(Data key, Record record) {
         final Record existingRecord = records.put(key, record);
-        updateSizeEstimator(-calculateRecordSize(existingRecord));
-        updateSizeEstimator(calculateRecordSize(record));
+        updateSizeEstimator(-calculateRecordHeapCost(existingRecord));
+        updateSizeEstimator(calculateRecordHeapCost(record));
     }
 
     @Override
@@ -144,11 +120,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (record == null) {
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         }
         mapDataStore.addBackup(key, value, now);
         return record;
@@ -165,6 +141,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public Map<Data, Record> getReadonlyRecordMap() {
         return Collections.unmodifiableMap(records);
+    }
+
+    @Override
+    public Map<Data, Record> getRecordMap() {
+        return records;
     }
 
     @Override
@@ -252,11 +233,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public long getHeapCost() {
-        return sizeEstimator.getSize();
-    }
-
-    @Override
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
@@ -318,7 +294,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             if (enableIndex) {
                 saveIndex(record);
             }
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         }
         return record;
     }
@@ -354,7 +330,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             Record record = records.get(key);
             if (record != null) {
                 lockedRecords.put(key, record);
-                updateSizeEstimator(calculateRecordSize(record));
+                updateSizeEstimator(calculateRecordHeapCost(record));
             }
         }
         Set<Data> keysToDelete = records.keySet();
@@ -396,7 +372,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             final long lastUpdateTime = record.getLastUpdateTime();
             mapDataStore.addStagingArea(key, value, lastUpdateTime);
             mapServiceContext.interceptRemove(name, value);
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             deleteRecord(key);
             removeIndex(key);
         }
@@ -430,7 +406,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         final Map<Data, Record> recordsToPreserve = getLockedRecords();
         if (!recordsToPreserve.isEmpty()) {
             keysToPreserve = recordsToPreserve.keySet();
-            updateSizeEstimator(calculateRecordSize(recordsToPreserve.values()));
+            updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
         }
         clearRecordsMap(recordsToPreserve);
         return keysToPreserve;
@@ -482,7 +458,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             return;
         }
         // reduce size
-        updateSizeEstimator(-calculateRecordSize(record));
+        updateSizeEstimator(-calculateRecordHeapCost(record));
         deleteRecord(key);
         mapDataStore.removeBackup(key, now);
     }
@@ -510,7 +486,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             mapDataStore.remove(key, now);
             onStore(record);
             // reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             deleteRecord(key);
             removed = true;
         }
@@ -540,7 +516,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 onStore(record);
             }
             // reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             deleteRecord(key);
         }
         return oldValue;
@@ -565,7 +541,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 record = createRecord(key, value, now);
                 records.put(key, record);
                 saveIndex(record);
-                updateSizeEstimator(calculateRecordSize(record));
+                updateSizeEstimator(calculateRecordHeapCost(record));
             }
         } else {
             accessRecord(record, now);
@@ -628,7 +604,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             if (value != null) {
                 record = createRecord(key, value, now);
                 records.put(key, record);
-                updateSizeEstimator(calculateRecordSize(record));
+                updateSizeEstimator(calculateRecordHeapCost(record));
             }
         }
         boolean contains = record != null;
@@ -654,7 +630,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             record = createRecord(key, value, now);
             records.put(key, record);
             // increase size.
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             saveIndex(record);
         } else {
             final Object oldValue = record.getValue();
@@ -662,14 +638,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapDataStore.add(key, value, now);
             onStore(record);
             // if key exists before, first reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
             // then increase size
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             saveIndex(record);
         }
     }
 
+    @Override
     public Object put(Data key, Object value, long ttl) {
         checkIfLoaded();
         final long now = getNow();
@@ -684,7 +661,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapDataStore.add(key, value, now);
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             saveIndex(record);
         } else {
             oldValue = record.getValue();
@@ -692,10 +669,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapDataStore.add(key, value, now);
             onStore(record);
             // if key exists before, first reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
             // then increase size.
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             updateTtl(record, ttl);
             saveIndex(record);
         }
@@ -703,7 +680,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return oldValue;
     }
 
-
+    @Override
     public boolean set(Data key, Object value, long ttl) {
         checkIfLoaded();
         final long now = getNow();
@@ -717,17 +694,17 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapDataStore.add(key, value, now);
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             newRecord = true;
         } else {
             value = mapServiceContext.interceptPut(name, record.getValue(), value);
             value = mapDataStore.add(key, value, now);
             onStore(record);
             // if key exists before, first reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
             // then increase size.
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
@@ -735,6 +712,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return newRecord;
     }
 
+    @Override
     public boolean merge(Data key, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
         final long now = getNow();
@@ -752,7 +730,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             newValue = mapDataStore.add(key, newValue, now);
             record = createRecord(key, newValue, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
             Object oldValue = record.getValue();
             EntryView existingEntry = EntryViews.createSimpleEntryView(mapServiceContext.toObject(record.getKey()),
@@ -764,7 +742,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 mapDataStore.remove(key, now);
                 onStore(record);
                 // reduce size.
-                updateSizeEstimator(-calculateRecordSize(record));
+                updateSizeEstimator(-calculateRecordHeapCost(record));
                 //remove from map & invalidate.
                 deleteRecord(key);
                 return true;
@@ -775,9 +753,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             }
             newValue = mapDataStore.add(key, newValue, now);
             onStore(record);
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             recordFactory.setValue(record, newValue);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         }
         saveIndex(record);
         return newValue != null;
@@ -797,9 +775,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapServiceContext.interceptPut(name, oldValue, value);
             value = mapDataStore.add(key, value, now);
             onStore(record);
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
             return null;
         }
@@ -822,9 +800,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             newValue = mapServiceContext.interceptPut(name, record.getValue(), newValue);
             newValue = mapDataStore.add(key, newValue, now);
             onStore(record);
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, newValue, now);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
             return false;
         }
@@ -845,12 +823,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapServiceContext.interceptPut(name, null, value);
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
             value = mapServiceContext.interceptPut(name, record.getValue(), value);
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
@@ -874,13 +852,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapServiceContext.interceptPut(name, null, value);
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, record.getValue(), value);
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
@@ -901,14 +879,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapDataStore.add(key, value, now);
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
             value = mapServiceContext.interceptPut(name, record.getValue(), value);
             value = mapDataStore.add(key, value, now);
             onStore(record);
-            updateSizeEstimator(-calculateRecordSize(record));
+            updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
@@ -931,7 +909,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             if (oldValue != null) {
                 record = createRecord(key, oldValue, now);
                 records.put(key, record);
-                updateSizeEstimator(calculateRecordSize(record));
+                updateSizeEstimator(calculateRecordHeapCost(record));
             }
         } else {
             accessRecord(record, now);
@@ -943,75 +921,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             onStore(record);
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordSize(record));
+            updateSizeEstimator(calculateRecordHeapCost(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
 
         return oldValue;
-    }
-
-    private void onStore(Record record) {
-        if (record != null) {
-            record.onStore();
-        }
-    }
-
-    private void loadFromMapStore() {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final AtomicBoolean loadOccurred = loaded;
-        if (!mapContainer.isMapStoreEnabled() || loadOccurred.get()) {
-            return;
-        }
-        final Address partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-        final boolean isOwner = nodeEngine.getThisAddress().equals(partitionOwner);
-        if (!isOwner) {
-            loadOccurred.set(true);
-            return;
-        }
-        final Map<Data, Object> loadedKeys = mapContainer.getInitialKeys();
-        if (loadedKeys == null || loadedKeys.isEmpty()) {
-            loadOccurred.set(true);
-            return;
-        }
-        doChunkedLoad(loadedKeys, nodeEngine);
-    }
-
-    private void doChunkedLoad(Map<Data, Object> loadedKeys, NodeEngine nodeEngine) {
-        final int mapLoadChunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
-        final Queue<Map> chunks = new LinkedList<Map>();
-        Map<Data, Object> partitionKeys = new HashMap<Data, Object>();
-        Iterator<Map.Entry<Data, Object>> iterator = loadedKeys.entrySet().iterator();
-        while (iterator.hasNext()) {
-            final Map.Entry<Data, Object> entry = iterator.next();
-            final Data data = entry.getKey();
-            if (partitionId == nodeEngine.getPartitionService().getPartitionId(data)) {
-                partitionKeys.put(data, entry.getValue());
-                //split into chunks
-                if (partitionKeys.size() >= mapLoadChunkSize) {
-                    chunks.add(partitionKeys);
-                    partitionKeys = new HashMap<Data, Object>();
-                }
-                iterator.remove();
-            }
-        }
-        if (!partitionKeys.isEmpty()) {
-            chunks.add(partitionKeys);
-        }
-        if (chunks.isEmpty()) {
-            loaded.set(true);
-            return;
-        }
-        try {
-            final AtomicInteger checkIfMapLoaded = new AtomicInteger(chunks.size());
-            ExecutionService executionService = nodeEngine.getExecutionService();
-            Map<Data, Object> chunkedKeys;
-            while ((chunkedKeys = chunks.poll()) != null) {
-                executionService.submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
-            }
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
     }
 
 
@@ -1020,10 +935,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (keys.isEmpty()) {
             return;
         }
-        loaded.set(false);
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.submit("hz:map-loadAllKeys", new LoadAllKeysTask(keys, replaceExistingValues));
+        recordStoreLoader.loadKeys(keys, replaceExistingValues);
     }
 
     @Override
@@ -1031,342 +943,4 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return mapDataStore;
     }
 
-
-    private Record createRecord(Data key, Object value, long ttl, long now) {
-        return mapContainer.createRecord(key, value, ttl, now);
-    }
-
-    private Record createRecord(Data key, Object value, long now) {
-        return mapContainer.createRecord(key, value, DEFAULT_TTL, now);
-    }
-
-
-    private void accessRecord(Record record, long now) {
-        increaseRecordEvictionCriteriaNumber(record, mapContainer.getMapConfig().getEvictionPolicy());
-        record.setLastAccessTime(now);
-        record.onAccess();
-    }
-
-    private void accessRecord(Record record) {
-        final long now = getNow();
-        accessRecord(record, now);
-    }
-
-    private void increaseRecordEvictionCriteriaNumber(Record record, MapConfig.EvictionPolicy evictionPolicy) {
-        switch (evictionPolicy) {
-            case LRU:
-                ++lruAccessSequenceNumber;
-                record.setEvictionCriteriaNumber(lruAccessSequenceNumber);
-                break;
-            case LFU:
-                record.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber() + 1L);
-                break;
-            case NONE:
-                break;
-            default:
-                throw new IllegalArgumentException("Not an appropriate eviction policy [" + evictionPolicy + ']');
-        }
-    }
-
-    private void saveIndex(Record record) {
-        Data dataKey = record.getKey();
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
-            SerializationService ss = mapServiceContext.getNodeEngine().getSerializationService();
-            QueryableEntry queryableEntry = new QueryEntry(ss, dataKey, dataKey, record.getValue());
-            indexService.saveEntryIndex(queryableEntry);
-        }
-    }
-
-    private void updateTtl(Record record, long ttl) {
-        if (ttl < 0L) {
-            return;
-        }
-        record.setTtl(ttl);
-        if (record.getStatistics() != null) {
-            // when ttl is zero, entry should remain eternally.
-            final long expirationTime = ttl == 0 ? Long.MAX_VALUE : (getNow() + ttl);
-            record.getStatistics().setExpirationTime(expirationTime);
-        }
-    }
-
-    private void updateSizeEstimator(long recordSize) {
-        sizeEstimator.add(recordSize);
-    }
-
-    private long calculateRecordSize(Record record) {
-        return sizeEstimator.getCost(record);
-    }
-
-    /**
-     * Returns total size of collection.
-     *
-     * @param collection which's size to be calculated.
-     * @return total size of collection.
-     */
-    private long calculateRecordSize(Collection<Record> collection) {
-        long totalSize = 0L;
-        for (Record record : collection) {
-            totalSize += calculateRecordSize(record);
-        }
-        return totalSize;
-    }
-
-    private void resetSizeEstimator() {
-        sizeEstimator.reset();
-    }
-
-    private void setRecordValue(Record record, Object value, long now) {
-        accessRecord(record, now);
-        record.setLastUpdateTime(now);
-        record.onUpdate();
-        recordFactory.setValue(record, value);
-    }
-
-    private void removeIndex(Data key) {
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
-            indexService.removeEntryIndex(key);
-        }
-    }
-
-    private void removeIndex(Set<Data> keys) {
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
-            for (Data key : keys) {
-                indexService.removeEntryIndex(key);
-            }
-        }
-    }
-
-
-    private LockStore createLockStore() {
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        if (lockService == null) {
-            return null;
-        }
-        return lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
-    }
-
-    private int getLoadBatchSize() {
-        return mapServiceContext.getNodeEngine().getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
-    }
-
-
-    private final class LoadAllKeysTask implements Runnable {
-
-        private final List<Data> keys;
-        private final boolean replaceExistingValues;
-
-        private LoadAllKeysTask(List<Data> keys, boolean replaceExistingValues) {
-            this.keys = keys;
-            this.replaceExistingValues = replaceExistingValues;
-        }
-
-        @Override
-        public void run() {
-            loadKeys(keys, replaceExistingValues);
-        }
-    }
-
-    private void loadKeys(List<Data> keys, boolean replaceExistingValues) {
-        if (!replaceExistingValues) {
-            removeExistingKeys(keys);
-        }
-        removeUnloadableKeys(keys);
-
-        if (keys.isEmpty()) {
-            loaded.set(true);
-            return;
-        }
-        doBatchLoad(keys);
-    }
-
-    private void doBatchLoad(List<Data> keys) {
-        final Queue<List<Data>> batchChunks = createBatchChunks(keys);
-        final int size = batchChunks.size();
-        final AtomicInteger finishedBatchCounter = new AtomicInteger(size);
-        while (!batchChunks.isEmpty()) {
-            final List<Data> chunk = batchChunks.poll();
-            final List<Data> keyValueSequence = loadAndGet(chunk);
-            if (keyValueSequence.isEmpty()) {
-                if (finishedBatchCounter.decrementAndGet() == 0) {
-                    loaded.set(true);
-                }
-                continue;
-            }
-            sendOperation(keyValueSequence, finishedBatchCounter);
-        }
-    }
-
-    private Queue<List<Data>> createBatchChunks(List<Data> keys) {
-        final Queue<List<Data>> chunks = new LinkedList<List<Data>>();
-        final int loadBatchSize = getLoadBatchSize();
-        int page = 0;
-        List<Data> tmpKeys;
-        while ((tmpKeys = getBatchChunk(keys, loadBatchSize, page++)) != null) {
-            chunks.add(tmpKeys);
-        }
-        return chunks;
-    }
-
-    private List<Data> loadAndGet(List<Data> keys) {
-        Map<Object, Object> entries = Collections.emptyMap();
-        try {
-            entries = mapDataStore.loadAll(keys);
-        } catch (Throwable t) {
-            logger.warning("Could not load keys from map store", t);
-        }
-        return getKeyValueSequence(entries);
-    }
-
-    private List<Data> getKeyValueSequence(Map<Object, Object> entries) {
-        if (entries == null || entries.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final List<Data> keyValueSequence = new ArrayList<Data>();
-        for (final Map.Entry<Object, Object> entry : entries.entrySet()) {
-            final Object key = entry.getKey();
-            final Object value = entry.getValue();
-            final Data dataKey = mapServiceContext.toData(key);
-            final Data dataValue = mapServiceContext.toData(value);
-            keyValueSequence.add(dataKey);
-            keyValueSequence.add(dataValue);
-        }
-        return keyValueSequence;
-    }
-
-    /**
-     * Used to partition the list to chunks.
-     *
-     * @param list        to be paged.
-     * @param batchSize   batch operation size.
-     * @param chunkNumber batch chunk number.
-     * @return sub-list of list if any or null.
-     */
-    private List<Data> getBatchChunk(List<Data> list, int batchSize, int chunkNumber) {
-        if (list == null || list.isEmpty()) {
-            return null;
-        }
-        final int start = chunkNumber * batchSize;
-        final int end = Math.min(start + batchSize, list.size());
-        if (start >= end) {
-            return null;
-        }
-        return list.subList(start, end);
-    }
-
-    private void sendOperation(List<Data> keyValueSequence, AtomicInteger finishedBatchCounter) {
-        OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
-        final Operation operation = createOperation(keyValueSequence, finishedBatchCounter);
-        operationService.executeOperation(operation);
-    }
-
-    private Operation createOperation(List<Data> keyValueSequence, final AtomicInteger finishedBatchCounter) {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final Operation operation = new PutFromLoadAllOperation(name, keyValueSequence);
-        operation.setNodeEngine(nodeEngine);
-        operation.setResponseHandler(new ResponseHandler() {
-            @Override
-            public void sendResponse(Object obj) {
-                if (finishedBatchCounter.decrementAndGet() == 0) {
-                    loaded.set(true);
-                }
-            }
-
-            public boolean isLocal() {
-                return true;
-            }
-        });
-        operation.setPartitionId(partitionId);
-        OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-        operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-        operation.setServiceName(MapService.SERVICE_NAME);
-        return operation;
-    }
-
-    private void removeExistingKeys(Collection<Data> keys) {
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-        final ConcurrentMap<Data, Record> records = DefaultRecordStore.this.records;
-        final Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            final Data nextKey = iterator.next();
-            if (records.containsKey(nextKey)) {
-                iterator.remove();
-            }
-        }
-    }
-
-    private void removeUnloadableKeys(Collection<Data> keys) {
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-        final long now = getNow();
-        final Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            final Data key = iterator.next();
-            final Record record = records.get(key);
-            final long lastUpdateTime = record == null ? 0L : record.getLastUpdateTime();
-            if (!mapDataStore.loadable(key, lastUpdateTime, now)) {
-                iterator.remove();
-            }
-        }
-    }
-
-    private final class MapLoadAllTask implements Runnable {
-        private final Map<Data, Object> keys;
-        private final AtomicInteger checkIfMapLoaded;
-
-        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger checkIfMapLoaded) {
-            this.keys = keys;
-            this.checkIfMapLoaded = checkIfMapLoaded;
-        }
-
-        public void run() {
-            final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-            try {
-                Map values = mapContainer.getStore().loadAll(keys.values());
-                if (values == null || values.isEmpty()) {
-                    if (checkIfMapLoaded.decrementAndGet() == 0) {
-                        loaded.set(true);
-                    }
-                    return;
-                }
-
-                MapEntrySet entrySet = new MapEntrySet();
-                for (Data dataKey : keys.keySet()) {
-                    Object key = keys.get(dataKey);
-                    Object value = values.get(key);
-                    if (value != null) {
-                        Data dataValue = mapServiceContext.toData(value);
-                        entrySet.add(dataKey, dataValue);
-                    }
-                }
-                PutAllOperation operation = new PutAllOperation(name, entrySet, true);
-                operation.setNodeEngine(nodeEngine);
-                operation.setResponseHandler(new ResponseHandler() {
-                    @Override
-                    public void sendResponse(Object obj) {
-                        if (checkIfMapLoaded.decrementAndGet() == 0) {
-                            loaded.set(true);
-                        }
-                    }
-
-                    public boolean isLocal() {
-                        return true;
-                    }
-                });
-                operation.setPartitionId(partitionId);
-                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-                operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-                operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().executeOperation(operation);
-            } catch (Exception e) {
-                logger.warning("Exception while load all task:" + e.toString());
-            }
-        }
-    }
 }
