@@ -119,7 +119,6 @@ public class ClientMapStoreTest {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception{
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
@@ -136,7 +135,9 @@ public class ClientMapStoreTest {
         mapConfig.setMapStoreConfig(mapStoreConfig);
         config.addMapConfig(mapConfig);
 
-        Hazelcast.newHazelcastInstance(config);
+
+
+        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         final IMap map = client.getMap(MAP_NAME);
 
@@ -145,8 +146,8 @@ public class ClientMapStoreTest {
             map.putAsync(i, i);
         }
 
-        Thread.sleep(1000 * (delaySeconds+1));
-        assertEquals(max, map.size());
+        Thread.sleep(1000 * (delaySeconds + 1));
+        assertEquals(max - 1, map.size());
     }
 
     @Test (expected = ReachedMaxSizeException.class )
