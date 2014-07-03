@@ -631,23 +631,23 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 final String value = getTextContent(n);
                 final Object oValue;
                 if ("string".equals(attributeType)) {
-                	oValue = value;
+                    oValue = value;
                 } else if ("boolean".equals(attributeType)) {
-                	oValue = Boolean.parseBoolean(value);
+                    oValue = Boolean.parseBoolean(value);
                 } else if ("byte".equals(attributeType)) {
-                	oValue = Byte.parseByte(value);
+                    oValue = Byte.parseByte(value);
                 } else if ("double".equals(attributeType)) {
-                	oValue = Double.parseDouble(value);
+                    oValue = Double.parseDouble(value);
                 } else if ("float".equals(attributeType)) {
-                	oValue = Float.parseFloat(value);
+                    oValue = Float.parseFloat(value);
                 } else if ("int".equals(attributeType)) {
-                	oValue = Integer.parseInt(value);
+                    oValue = Integer.parseInt(value);
                 } else if ("long".equals(attributeType)) {
-                	oValue = Long.parseLong(value);
+                    oValue = Long.parseLong(value);
                 } else if ("short".equals(attributeType)) {
-                	oValue = Short.parseShort(value);
+                    oValue = Short.parseShort(value);
                 } else {
-                	oValue = value;
+                    oValue = value;
                 }
                 attributes.put(attributeName, oValue);
             }
