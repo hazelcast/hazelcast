@@ -23,6 +23,7 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -124,8 +125,6 @@ public interface RecordStore {
 
     int size();
 
-    boolean lock(Data key, String caller, long threadId, long ttl);
-
     boolean txnLock(Data key, String caller, long threadId, long ttl);
 
     boolean extendLock(Data key, String caller, long threadId, long ttl);
@@ -204,7 +203,7 @@ public interface RecordStore {
      * @param keys                  keys to be loaded.
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
      */
-    void loadAllFromStore(Collection<Data> keys, boolean replaceExistingValues);
+    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
 
     MapDataStore<Data, Object> getMapDataStore();
 

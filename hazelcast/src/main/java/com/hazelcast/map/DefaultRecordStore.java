@@ -18,17 +18,14 @@ package com.hazelcast.map;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.eviction.EvictionHelper;
 import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.operation.PutAllOperation;
 import com.hazelcast.map.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.record.Record;
-import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -43,7 +40,6 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.AbstractMap;
@@ -58,96 +54,49 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
-import static com.hazelcast.map.eviction.EvictionHelper.removeEvictableRecords;
 
 /**
  * Default implementation of record-store.
  */
-public class DefaultRecordStore implements RecordStore {
+public class DefaultRecordStore extends AbstractEvictableRecordStore implements RecordStore {
 
     private static final long DEFAULT_TTL = -1L;
-    /**
-     * Number of reads before clean up.
-     * A nice number such as 2^n - 1.
-     */
-    private static final int POST_READ_CHECK_POINT = 63;
-    private final String name;
+
     private final int partitionId;
-    private final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
-    private final MapContainer mapContainer;
-    private final MapServiceContext mapServiceContext;
-    private final RecordFactory recordFactory;
     private final ILogger logger;
     private final SizeEstimator sizeEstimator;
     private final AtomicBoolean loaded = new AtomicBoolean(false);
     private final LockStore lockStore;
-    private long lastEvictionTime;
-    /**
-     * Flag for checking if this record store has at least one candidate entry
-     * for expiration (idle or tll) or not.
-     */
-    private volatile boolean expirable;
+    private final MapDataStore<Data, Object> mapDataStore;
 
-    /**
-     * Iterates over a pre-set entry count/percentage in one round.
-     * Used in expiration logic for traversing entries. Initializes lazily.
-     */
-    private Iterator<Record> expirationIterator;
-
-    /**
-     * If there is no clean-up caused by puts after some time,
-     * count a number of gets and start eviction.
-     */
-    private int readCountBeforeCleanUp;
-
-    /**
-     * used in LRU eviction logic.
-     */
-    private long lruAccessSequenceNumber;
-
-    private boolean evictionEnabled;
-
-    private MapDataStore<Data, Object> mapDataStore;
-
-    public DefaultRecordStore(String name, MapServiceContext mapServiceContext, int partitionId) {
-        this.name = name;
+    public DefaultRecordStore(MapContainer mapContainer, int partitionId) {
+        super(mapContainer);
         this.partitionId = partitionId;
-        this.mapServiceContext = mapServiceContext;
-        this.mapContainer = mapServiceContext.getMapContainer(name);
         this.logger = mapServiceContext.getNodeEngine().getLogger(this.getName());
-        this.recordFactory = mapContainer.getRecordFactory();
         this.lockStore = createLockStore();
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
-        this.expirable = isRecordStoreExpirable();
-        loadFromMapStore();
-        this.evictionEnabled
-                = !MapConfig.EvictionPolicy.NONE.equals(mapContainer.getMapConfig().getEvictionPolicy());
         this.mapDataStore = mapContainer.getMapStoreManager().getMapDataStore(partitionId);
+        loadFromMapStore();
     }
 
+    @Override
     public boolean isLoaded() {
         return loaded.get();
     }
 
+    @Override
     public void setLoaded(boolean isLoaded) {
         loaded.set(isLoaded);
     }
 
+    @Override
     public void checkIfLoaded() {
         if (mapContainer.getStore() != null && !loaded.get()) {
             throw ExceptionUtil.rethrow(new RetryableHazelcastException("Map is not ready!!!"));
         }
-    }
-
-    public String getName() {
-        return name;
     }
 
     @Override
@@ -162,10 +111,7 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    public MapContainer getMapContainer() {
-        return mapContainer;
-    }
-
+    @Override
     public Record getRecord(Data key) {
         return records.get(key);
     }
@@ -177,6 +123,7 @@ public class DefaultRecordStore implements RecordStore {
         updateSizeEstimator(calculateRecordSize(record));
     }
 
+    @Override
     public Record putBackup(Data key, Object value) {
         return putBackup(key, value, DEFAULT_TTL);
     }
@@ -187,6 +134,7 @@ public class DefaultRecordStore implements RecordStore {
      * @param ttl   milliseconds. Check out {@link com.hazelcast.map.proxy.MapProxySupport#putInternal}
      * @return previous record if exists otherwise null.
      */
+    @Override
     public Record putBackup(Data key, Object value, long ttl) {
         final long now = getNow();
         earlyWriteCleanup(now);
@@ -206,6 +154,7 @@ public class DefaultRecordStore implements RecordStore {
         return record;
     }
 
+    @Override
     public void deleteRecord(Data key) {
         Record record = records.remove(key);
         if (record != null) {
@@ -213,10 +162,12 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
+    @Override
     public Map<Data, Record> getReadonlyRecordMap() {
         return Collections.unmodifiableMap(records);
     }
 
+    @Override
     public Map<Data, Record> getReadonlyRecordMapByWaitingMapStoreLoad() {
         checkIfLoaded();
         return getReadonlyRecordMap();
@@ -242,125 +193,24 @@ public class DefaultRecordStore implements RecordStore {
         mapDataStore.reset();
     }
 
-    private void clearRecordsMap(Map<Data, Record> excludeRecords) {
-        InMemoryFormat inMemoryFormat = recordFactory.getStorageFormat();
-        switch (inMemoryFormat) {
-            case BINARY:
-            case OBJECT:
-                records.clear();
-                if (excludeRecords != null && !excludeRecords.isEmpty()) {
-                    records.putAll(excludeRecords);
-                }
-                return;
-
-            case OFFHEAP:
-                Iterator<Record> iter = records.values().iterator();
-                while (iter.hasNext()) {
-                    Record record = iter.next();
-                    if (excludeRecords == null || !excludeRecords.containsKey(record.getKey())) {
-                        record.invalidate();
-                        iter.remove();
-                    }
-                }
-                return;
-
-            default:
-                throw new IllegalArgumentException("Unknown storage format: " + inMemoryFormat);
-        }
-    }
-
     /**
      * Size may not give precise size at a specific moment
      * due to the expiration logic. But eventually, it should be correct.
      *
      * @return record store size.
      */
+    @Override
     public int size() {
         // do not add checkIfLoaded(), size() is also used internally
         return records.size();
     }
 
+    @Override
     public boolean isEmpty() {
         checkIfLoaded();
         return records.isEmpty();
     }
 
-    @Override
-    public void evictExpiredEntries(int percentage, boolean ownerPartition) {
-        final long now = getNow();
-        final int size = size();
-        final int maxIterationCount = getMaxIterationCount(size, percentage);
-        final int maxRetry = 3;
-        int loop = 0;
-        int evictedEntryCount = 0;
-        while (true) {
-            evictedEntryCount += evictExpiredEntries0(maxIterationCount, now, ownerPartition);
-            if (evictedEntryCount >= maxIterationCount) {
-                break;
-            }
-            loop++;
-            if (loop > maxRetry) {
-                break;
-            }
-        }
-    }
-
-    /**
-     * Intended to put an upper bound to iterations. Used in evictions.
-     *
-     * @param size       of iterate-able.
-     * @param percentage percentage of size.
-     * @return 100 If calculated iteration count is less than 100, otherwise returns calculated iteration count.
-     */
-    private int getMaxIterationCount(int size, int percentage) {
-        final int defaultMaxIterationCount = 100;
-        final float oneHundred = 100F;
-        float maxIterationCount = size * (percentage / oneHundred);
-        if (maxIterationCount <= defaultMaxIterationCount) {
-            return defaultMaxIterationCount;
-        }
-        return Math.round(maxIterationCount);
-    }
-
-    private int evictExpiredEntries0(int maxIterationCount, long now, boolean ownerPartition) {
-        int evictedCount = 0;
-        int checkedEntryCount = 0;
-        initExpirationIterator();
-        while (expirationIterator.hasNext()) {
-            if (checkedEntryCount >= maxIterationCount) {
-                break;
-            }
-            checkedEntryCount++;
-            final Record record = expirationIterator.next();
-            final Data key = record.getKey();
-            if (isLocked(key)) {
-                continue;
-            }
-            if (isReachable(record, now)) {
-                continue;
-            }
-            //!!! get entry value here because evict0(key) nulls the record value.
-            final Object value = record.getValue();
-            evict0(key);
-            evictedCount++;
-            initExpirationIterator();
-
-            // do post eviction operations if this partition is an owner partition.
-            if (ownerPartition) {
-                doPostEvictionOperations(key, value);
-            }
-            if (!expirationIterator.hasNext()) {
-                break;
-            }
-        }
-        return evictedCount;
-    }
-
-    private void initExpirationIterator() {
-        if (expirationIterator == null || !expirationIterator.hasNext()) {
-            expirationIterator = records.values().iterator();
-        }
-    }
 
     @Override
     public boolean containsValue(Object value) {
@@ -378,26 +228,25 @@ public class DefaultRecordStore implements RecordStore {
         return false;
     }
 
-    public boolean lock(Data key, String caller, long threadId, long ttl) {
-        checkIfLoaded();
-        return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
-    }
-
+    @Override
     public boolean txnLock(Data key, String caller, long threadId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
     }
 
+    @Override
     public boolean extendLock(Data key, String caller, long threadId, long ttl) {
         checkIfLoaded();
         return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
+    @Override
     public boolean unlock(Data key, String caller, long threadId) {
         checkIfLoaded();
         return lockStore != null && lockStore.unlock(key, caller, threadId);
     }
 
+    @Override
     public boolean forceUnlock(Data dataKey) {
         return lockStore != null && lockStore.forceUnlock(dataKey);
     }
@@ -407,18 +256,22 @@ public class DefaultRecordStore implements RecordStore {
         return sizeEstimator.getSize();
     }
 
+    @Override
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
 
+    @Override
     public boolean canAcquireLock(Data key, String caller, long threadId) {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
+    @Override
     public String getLockOwnerInfo(Data key) {
         return lockStore != null ? lockStore.getOwnerInfo(key) : null;
     }
 
+    @Override
     public Set<Map.Entry<Data, Data>> entrySetData() {
         checkIfLoaded();
         Map<Data, Data> temp = new HashMap<Data, Data>(records.size());
@@ -428,6 +281,7 @@ public class DefaultRecordStore implements RecordStore {
         return temp.entrySet();
     }
 
+    @Override
     public Map.Entry<Data, Object> getMapEntry(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
@@ -442,6 +296,7 @@ public class DefaultRecordStore implements RecordStore {
 
 
     // TODO Does it need to load from store on backup?
+    @Override
     public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
@@ -468,6 +323,7 @@ public class DefaultRecordStore implements RecordStore {
         return record;
     }
 
+    @Override
     public Set<Data> keySet() {
         checkIfLoaded();
         Set<Data> keySet = new HashSet<Data>(records.size());
@@ -477,6 +333,7 @@ public class DefaultRecordStore implements RecordStore {
         return keySet;
     }
 
+    @Override
     public Collection<Data> valuesData() {
         checkIfLoaded();
         Collection<Data> values = new ArrayList<Data>(records.size());
@@ -486,6 +343,7 @@ public class DefaultRecordStore implements RecordStore {
         return values;
     }
 
+    @Override
     public int clear() {
         checkIfLoaded();
         resetSizeEstimator();
@@ -513,6 +371,7 @@ public class DefaultRecordStore implements RecordStore {
         return numOfClearedEntries;
     }
 
+    @Override
     public void reset() {
         checkIfLoaded();
 
@@ -522,9 +381,6 @@ public class DefaultRecordStore implements RecordStore {
         mapDataStore.reset();
     }
 
-    private void resetAccessSequenceNumber() {
-        lruAccessSequenceNumber = 0L;
-    }
 
     @Override
     public Object evict(Data key) {
@@ -532,7 +388,7 @@ public class DefaultRecordStore implements RecordStore {
         return evict0(key);
     }
 
-    private Object evict0(Data key) {
+    Object evict0(Data key) {
         Record record = records.get(key);
         Object value = null;
         if (record != null) {
@@ -928,6 +784,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     // TODO why does not replace method load data from map store if currently not available in memory.
+    @Override
     public Object replace(Data key, Object value) {
         checkIfLoaded();
         final long now = getNow();
@@ -951,6 +808,7 @@ public class DefaultRecordStore implements RecordStore {
         return oldValue;
     }
 
+    @Override
     public boolean replace(Data key, Object testValue, Object newValue) {
         checkIfLoaded();
         final long now = getNow();
@@ -975,6 +833,7 @@ public class DefaultRecordStore implements RecordStore {
         return true;
     }
 
+    @Override
     public void putTransient(Data key, Object value, long ttl) {
         checkIfLoaded();
         final long now = getNow();
@@ -1028,7 +887,7 @@ public class DefaultRecordStore implements RecordStore {
         return oldValue;
     }
 
-
+    @Override
     public boolean tryPut(Data key, Object value, long ttl) {
         checkIfLoaded();
 
@@ -1057,6 +916,7 @@ public class DefaultRecordStore implements RecordStore {
         return true;
     }
 
+    @Override
     public Object putIfAbsent(Data key, Object value, long ttl) {
         checkIfLoaded();
 
@@ -1154,96 +1014,9 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    /**
-     * TODO make checkEvictable fast by carrying threshold logic to partition.
-     * This cleanup adds some latency to write operations.
-     * But it sweeps records much better under high write loads.
-     * <p/>
-     *
-     * @param now now in time.
-     */
-    private void earlyWriteCleanup(long now) {
-        if (evictionEnabled) {
-            cleanUp(now);
-        }
-    }
-
-    /**
-     * If there is no clean-up caused by puts after some time,
-     * try to clean-up from gets.
-     *
-     * @param now now.
-     */
-    private void postReadCleanUp(long now) {
-        if (evictionEnabled) {
-            readCountBeforeCleanUp++;
-            if ((readCountBeforeCleanUp & POST_READ_CHECK_POINT) == 0) {
-                cleanUp(now);
-            }
-        }
-
-    }
-
-    private void cleanUp(long now) {
-        if (size() == 0) {
-            return;
-        }
-        if (inEvictableTimeWindow(now) && isEvictable()) {
-            removeEvictables();
-            lastEvictionTime = now;
-            readCountBeforeCleanUp = 0;
-        }
-    }
-
-    private void removeEvictables() {
-        final int evictableSize = getEvictableSize();
-        if (evictableSize < 1) {
-            return;
-        }
-        final MapConfig mapConfig = mapContainer.getMapConfig();
-        removeEvictableRecords(this, evictableSize, mapConfig, mapServiceContext);
-    }
-
-    private int getEvictableSize() {
-        final int size = size();
-        if (size < 1) {
-            return 0;
-        }
-        final int evictableSize
-                = EvictionHelper.getEvictableSize(size, mapContainer.getMapConfig(), mapServiceContext);
-        if (evictableSize < 1) {
-            return 0;
-        }
-        return evictableSize;
-    }
-
-
-    /**
-     * Eviction waits at least 1000 milliseconds to run.
-     *
-     * @return <code>true</code> if in that time window,
-     * otherwise <code>false</code>
-     */
-    private boolean inEvictableTimeWindow(long now) {
-        final int evictAfterMs = 1000;
-        return (now - lastEvictionTime) > evictAfterMs;
-    }
-
-    private boolean isEvictable() {
-        return EvictionHelper.checkEvictable(mapContainer);
-    }
-
-    private Record nullIfExpired(Record record) {
-        return evictIfNotReachable(record);
-    }
 
     @Override
-    public boolean isExpirable() {
-        return expirable;
-    }
-
-    @Override
-    public void loadAllFromStore(Collection<Data> keys, boolean replaceExistingValues) {
+    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
         if (keys.isEmpty()) {
             return;
         }
@@ -1267,104 +1040,6 @@ public class DefaultRecordStore implements RecordStore {
         return mapContainer.createRecord(key, value, DEFAULT_TTL, now);
     }
 
-    /**
-     * Check if record is reachable according to ttl or idle times.
-     * If not reachable return null.
-     *
-     * @param record {@link com.hazelcast.map.record.Record}
-     * @return null if evictable.
-     */
-    private Record evictIfNotReachable(Record record) {
-        if (record == null) {
-            return null;
-        }
-        if (isLocked(record.getKey())) {
-            return record;
-        }
-        if (isReachable(record)) {
-            return record;
-        }
-        final Data key = record.getKey();
-        final Object value = record.getValue();
-        evict(key);
-        doPostEvictionOperations(key, value);
-        return null;
-    }
-
-    private boolean isReachable(Record record) {
-        final long now = getNow();
-        return isReachable(record, now);
-    }
-
-    private boolean isReachable(Record record, long time) {
-        final Record idleExpired = isIdleExpired(record, time);
-        if (idleExpired == null) {
-            return false;
-        }
-        final Record ttlExpired = isTTLExpired(record, time);
-
-        return ttlExpired != null;
-    }
-
-    private Record isIdleExpired(Record record, long time) {
-        if (record == null) {
-            return null;
-        }
-        boolean result;
-        // lastAccessTime : updates on every touch (put/get).
-        final long lastAccessTime = record.getLastAccessTime();
-
-        assert lastAccessTime > 0L;
-        assert time > 0L;
-        assert time >= lastAccessTime;
-
-        final long idleTime = getIdleTime();
-        result = time - lastAccessTime >= idleTime;
-
-        return result ? null : record;
-    }
-
-    private long getIdleTime() {
-        final int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
-        return maxIdleSeconds == 0 ? Long.MAX_VALUE : mapServiceContext.convertTime(maxIdleSeconds, TimeUnit.SECONDS);
-    }
-
-    private Record isTTLExpired(Record record, long time) {
-        if (record == null) {
-            return null;
-        }
-        boolean result;
-        final long ttl = record.getTtl();
-        // when ttl is zero or negative, it should remain eternally.
-        if (ttl < 1L) {
-            return record;
-        }
-        final long creationTime = record.getCreationTime();
-
-        assert ttl > 0L : String.format("wrong ttl %d", ttl);
-        assert creationTime > 0L : String.format("wrong creationTime %d", creationTime);
-        assert time > 0L : String.format("wrong time %d", time);
-        assert time >= creationTime : String.format("time >= lastUpdateTime (%d >= %d)",
-                time, creationTime);
-
-        result = time - creationTime >= ttl;
-        return result ? null : record;
-    }
-
-    /**
-     * - Sends eviction event.
-     * - Invalidates near cache.
-     *
-     * @param key   the key to be processed.
-     * @param value the value to be processed.
-     */
-    private void doPostEvictionOperations(Data key, Object value) {
-        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(name)) {
-            nearCacheProvider.invalidateAllNearCaches(name, key);
-        }
-        fireEvent(key, value, name, mapServiceContext);
-    }
 
     private void accessRecord(Record record, long now) {
         increaseRecordEvictionCriteriaNumber(record, mapContainer.getMapConfig().getEvictionPolicy());
@@ -1375,10 +1050,6 @@ public class DefaultRecordStore implements RecordStore {
     private void accessRecord(Record record) {
         final long now = getNow();
         accessRecord(record, now);
-    }
-
-    private long getNow() {
-        return Clock.currentTimeMillis();
     }
 
     private void increaseRecordEvictionCriteriaNumber(Record record, MapConfig.EvictionPolicy evictionPolicy) {
@@ -1416,13 +1087,6 @@ public class DefaultRecordStore implements RecordStore {
             // when ttl is zero, entry should remain eternally.
             final long expirationTime = ttl == 0 ? Long.MAX_VALUE : (getNow() + ttl);
             record.getStatistics().setExpirationTime(expirationTime);
-        }
-    }
-
-
-    private void markRecordStoreExpirable(long ttl) {
-        if (ttl > 0L) {
-            expirable = true;
         }
     }
 
@@ -1475,10 +1139,6 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    private boolean isRecordStoreExpirable() {
-        return mapContainer.getMapConfig().getMaxIdleSeconds() > 0
-                || mapContainer.getMapConfig().getTimeToLiveSeconds() > 0;
-    }
 
     private LockStore createLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -1496,10 +1156,10 @@ public class DefaultRecordStore implements RecordStore {
 
     private final class LoadAllKeysTask implements Runnable {
 
-        private final Collection<Data> keys;
+        private final List<Data> keys;
         private final boolean replaceExistingValues;
 
-        private LoadAllKeysTask(Collection<Data> keys, boolean replaceExistingValues) {
+        private LoadAllKeysTask(List<Data> keys, boolean replaceExistingValues) {
             this.keys = keys;
             this.replaceExistingValues = replaceExistingValues;
         }
@@ -1510,7 +1170,7 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    private void loadKeys(Collection<Data> keys, boolean replaceExistingValues) {
+    private void loadKeys(List<Data> keys, boolean replaceExistingValues) {
         if (!replaceExistingValues) {
             removeExistingKeys(keys);
         }
@@ -1520,16 +1180,15 @@ public class DefaultRecordStore implements RecordStore {
             loaded.set(true);
             return;
         }
-        final List<Object> objectKeys = convertDataKeysToObject(keys);
-        doBatchLoad(objectKeys);
+        doBatchLoad(keys);
     }
 
-    private void doBatchLoad(List<Object> keys) {
-        final Queue<List<Object>> batchChunks = createBatchChunks(keys);
+    private void doBatchLoad(List<Data> keys) {
+        final Queue<List<Data>> batchChunks = createBatchChunks(keys);
         final int size = batchChunks.size();
         final AtomicInteger finishedBatchCounter = new AtomicInteger(size);
         while (!batchChunks.isEmpty()) {
-            final List<Object> chunk = batchChunks.poll();
+            final List<Data> chunk = batchChunks.poll();
             final List<Data> keyValueSequence = loadAndGet(chunk);
             if (keyValueSequence.isEmpty()) {
                 if (finishedBatchCounter.decrementAndGet() == 0) {
@@ -1541,18 +1200,18 @@ public class DefaultRecordStore implements RecordStore {
         }
     }
 
-    private Queue<List<Object>> createBatchChunks(List<Object> keys) {
-        final Queue<List<Object>> chunks = new LinkedList<List<Object>>();
+    private Queue<List<Data>> createBatchChunks(List<Data> keys) {
+        final Queue<List<Data>> chunks = new LinkedList<List<Data>>();
         final int loadBatchSize = getLoadBatchSize();
         int page = 0;
-        List<Object> tmpKeys;
+        List<Data> tmpKeys;
         while ((tmpKeys = getBatchChunk(keys, loadBatchSize, page++)) != null) {
             chunks.add(tmpKeys);
         }
         return chunks;
     }
 
-    private List<Data> loadAndGet(List<Object> keys) {
+    private List<Data> loadAndGet(List<Data> keys) {
         Map<Object, Object> entries = Collections.emptyMap();
         try {
             entries = mapDataStore.loadAll(keys);
@@ -1586,7 +1245,7 @@ public class DefaultRecordStore implements RecordStore {
      * @param chunkNumber batch chunk number.
      * @return sub-list of list if any or null.
      */
-    private List<Object> getBatchChunk(List<Object> list, int batchSize, int chunkNumber) {
+    private List<Data> getBatchChunk(List<Data> list, int batchSize, int chunkNumber) {
         if (list == null || list.isEmpty()) {
             return null;
         }
@@ -1625,18 +1284,6 @@ public class DefaultRecordStore implements RecordStore {
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
         operation.setServiceName(MapService.SERVICE_NAME);
         return operation;
-    }
-
-    private List<Object> convertDataKeysToObject(Collection<Data> keys) {
-        if (keys.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final List<Object> objectKeys = new ArrayList<Object>(keys.size());
-        for (Data key : keys) {
-            final Object objectKey = mapServiceContext.toObject(key);
-            objectKeys.add(objectKey);
-        }
-        return objectKeys;
     }
 
     private void removeExistingKeys(Collection<Data> keys) {
@@ -1681,7 +1328,7 @@ public class DefaultRecordStore implements RecordStore {
         public void run() {
             final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
             try {
-                Map values = mapDataStore.loadAll(keys.values());
+                Map values = mapContainer.getStore().loadAll(keys.values());
                 if (values == null || values.isEmpty()) {
                     if (checkIfMapLoaded.decrementAndGet() == 0) {
                         loaded.set(true);
@@ -1718,6 +1365,7 @@ public class DefaultRecordStore implements RecordStore {
                 operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().executeOperation(operation);
             } catch (Exception e) {
+                e.printStackTrace();
                 logger.warning("Exception while load all task:" + e.toString());
             }
         }
