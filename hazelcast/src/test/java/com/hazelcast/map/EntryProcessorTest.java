@@ -640,7 +640,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger removeCount = new AtomicInteger(0);
         final AtomicInteger addKey1Sum = new AtomicInteger(0);
         final AtomicInteger updateKey1Sum = new AtomicInteger(0);
-        final AtomicInteger updateKey1OldSum = new AtomicInteger(0);
         final AtomicInteger removeKey1Sum = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(6);
         map.addEntryListener(new EntryListener<Integer, Integer>() {
@@ -666,7 +665,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             public void entryUpdated(EntryEvent<Integer, Integer> event) {
                 updateCount.incrementAndGet();
                 if (event.getKey() == 1) {
-                    updateKey1OldSum.addAndGet(event.getOldValue());
                     updateKey1Sum.addAndGet(event.getValue());
                 }
                 latch.countDown();
@@ -702,7 +700,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         assertEquals(5, addKey1Sum.get());
         assertEquals(4, updateKey1Sum.get());
-        assertEquals(8, updateKey1OldSum.get());
         assertEquals(1, removeKey1Sum.get());
 
     }
