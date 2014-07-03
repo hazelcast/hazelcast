@@ -126,10 +126,10 @@ public class DefaultRecordStore implements RecordStore {
         this.lockStore = createLockStore();
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
         this.expirable = isRecordStoreExpirable();
-        loadFromMapStore();
         this.evictionEnabled
                 = !MapConfig.EvictionPolicy.NONE.equals(mapContainer.getMapConfig().getEvictionPolicy());
         this.mapDataStore = mapContainer.getMapStoreManager().getMapDataStore(partitionId);
+        loadFromMapStore();
     }
 
     public boolean isLoaded() {
