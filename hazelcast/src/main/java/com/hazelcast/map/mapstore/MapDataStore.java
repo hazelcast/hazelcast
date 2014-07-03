@@ -29,7 +29,7 @@ public interface MapDataStore<K, V> {
 
     Map loadAll(Collection keys);
 
-    void removeAll(Collection keys, long now);
+    void removeAll(Collection keys);
 
     boolean loadable(K key, long lastUpdateTime, long now);
 

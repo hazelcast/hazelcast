@@ -50,7 +50,7 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
      * It works same for write-behind and write-through stores.
      */
     @Override
-    public void removeAll(Collection keys, long now) {
+    public void removeAll(Collection keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }

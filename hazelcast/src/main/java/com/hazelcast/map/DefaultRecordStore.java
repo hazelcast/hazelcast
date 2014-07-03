@@ -487,7 +487,6 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public int clear() {
-        final long now = getNow();
         checkIfLoaded();
         resetSizeEstimator();
         final Collection<Data> lockedKeys = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
@@ -503,7 +502,7 @@ public class DefaultRecordStore implements RecordStore {
         Set<Data> keysToDelete = records.keySet();
         keysToDelete.removeAll(lockedRecords.keySet());
 
-        mapDataStore.removeAll(keysToDelete, now);
+        mapDataStore.removeAll(keysToDelete);
 
         int numOfClearedEntries = keysToDelete.size();
         removeIndex(keysToDelete);
