@@ -94,10 +94,11 @@ public class ClientConnection implements Connection, Closeable {
     public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
                             ClientExecutionService executionService,
-                            ClientInvocationServiceImpl invocationService) throws IOException {
+                            ClientInvocationServiceImpl invocationService,
+                            SerializationService serializationService) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
-        this.serializationService = connectionManager.getSerializationService();
+        this.serializationService = serializationService;
         this.executionService = executionService;
         this.invocationService = invocationService;
         this.socketChannelWrapper = socketChannelWrapper;
@@ -138,6 +139,10 @@ public class ClientConnection implements Connection, Closeable {
             return null;
         }
         return future.getHandler();
+    }
+
+    public SerializationService getSerializationService() {
+        return serializationService;
     }
 
     @Override
