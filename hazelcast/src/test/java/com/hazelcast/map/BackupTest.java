@@ -20,8 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
@@ -67,10 +65,9 @@ public class BackupTest extends HazelcastTestSupport {
 
     @Test
     public void testGracefulShutdown() throws Exception {
-        int size = 250000;
+        int size = 50000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap m1 = h1.getMap(MAP_NAME);
@@ -98,13 +95,12 @@ public class BackupTest extends HazelcastTestSupport {
     public void testGracefulShutdown2() throws Exception {
         Config config = new Config();
         config.getMapConfig(MAP_NAME).setBackupCount(2);
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
         TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(6);
         final HazelcastInstance hz = f.newHazelcastInstance(config);
 
         final IMap<Object, Object> map = hz.getMap(MAP_NAME);
-        final int size = 200000;
+        final int size = 50000;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
@@ -151,13 +147,12 @@ public class BackupTest extends HazelcastTestSupport {
     public void testGracefulShutdown3() throws Exception {
         Config config = new Config();
         config.getMapConfig(MAP_NAME).setBackupCount(1);
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
         TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(6);
         final HazelcastInstance hz = f.newHazelcastInstance(config);
 
         final IMap<Object, Object> map = hz.getMap(MAP_NAME);
-        final int size = 200000;
+        final int size = 50000;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
@@ -214,7 +209,7 @@ public class BackupTest extends HazelcastTestSupport {
      */
     @Test
     public void testBackupMigrationAndRecovery() throws Exception {
-        testBackupMigrationAndRecovery(4, 1, 50000);
+        testBackupMigrationAndRecovery(4, 1, 5000);
     }
 
     /**
@@ -222,15 +217,14 @@ public class BackupTest extends HazelcastTestSupport {
      */
     @Test
     public void testBackupMigrationAndRecovery2() throws Exception {
-        testBackupMigrationAndRecovery(6, 2, 50000);
+        testBackupMigrationAndRecovery(6, 2, 5000);
     }
 
     private void testBackupMigrationAndRecovery(int nodeCount, int backupCount, int mapSize) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodeCount);
         final String name = MAP_NAME;
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
-        config.setProperty(GroupProperties.PROP_PARTITION_BACKUP_SYNC_INTERVAL, "3");
+        config.setProperty(GroupProperties.PROP_PARTITION_BACKUP_SYNC_INTERVAL, "1");
         config.getMapConfig(name).setBackupCount(backupCount).setStatisticsEnabled(true);
 
         final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
@@ -255,18 +249,6 @@ public class BackupTest extends HazelcastTestSupport {
                 ix = rand.nextInt(nodeCount);
             } while (instances[ix] == null);
 
-            final CountDownLatch latch = new CountDownLatch(1);
-            // add listener
-            instances[ix].getLifecycleService().addLifecycleListener(new LifecycleListener() {
-                @Override
-                public void stateChanged(LifecycleEvent event) {
-                    if (event.getState().equals(LifecycleEvent.LifecycleState.SHUTDOWN)) {
-                        latch.countDown();
-                    }
-                }
-            });
-            latch.await(5, TimeUnit.SECONDS);
-            // shutdown.
             TestUtil.terminateInstance(instances[ix]);
             instances[ix] = null;
             checkMapSizes(mapSize, backupCount, instances);
