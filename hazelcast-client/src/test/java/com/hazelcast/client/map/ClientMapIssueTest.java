@@ -30,31 +30,30 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import java.lang.reflect.Field;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @ali 24/10/13
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientMapIssueTest {
+public class ClientMapIssueTest extends HazelcastTestSupport {
 
     @After
-    public void reset(){
+    public void reset() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -90,7 +89,7 @@ public class ClientMapIssueTest {
         final HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(instance1);
         final EventService eventService = impl.node.nodeEngine.getEventService();
         final Collection<EventRegistration> regs = eventService.getRegistrations(MapService.SERVICE_NAME, mapName);
-        assertEquals("there should be only one registrations" , 1 , regs.size());
+        assertEquals("there should be only one registrations", 1, regs.size());
     }
 
     @Test
@@ -113,7 +112,7 @@ public class ClientMapIssueTest {
         instance2.getLifecycleService().terminate();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     m.get("ali");
@@ -123,7 +122,7 @@ public class ClientMapIssueTest {
             }
         }.start();
 
-        assertTrue(latch.await(15, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
 
     }
 
@@ -146,7 +145,7 @@ public class ClientMapIssueTest {
         final PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.nextPage();
 
-        final Set<Map.Entry<Integer,Integer>> entries = map.entrySet(predicate);
+        final Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
         assertEquals(pageSize, entries.size());
 
 
@@ -201,7 +200,6 @@ public class ClientMapIssueTest {
 
 
     }
-
 
 
 }

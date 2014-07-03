@@ -26,7 +26,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
@@ -60,7 +59,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @ali 7/3/13
@@ -273,7 +277,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
         try {
             map.get("key1");
             fail();
-        } catch (HazelcastException ignored) {
+        } catch (Exception ignored) {
         }
         assertFalse(instance.getLifecycleService().isRunning());
     }
