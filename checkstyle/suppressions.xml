@@ -483,11 +483,9 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.MapPortableHook"/>
     <suppress checks="ExecutableStatementCount" files="com.hazelcast.map.MapPortableHook"/>
     <suppress checks="MethodLengthCheck" files="com.hazelcast.map.MapDataSerializerHook"/>
-
-
     <suppress checks="MethodCountCheck" files="com.hazelcast.map.RecordStore"/>
+
     <suppress checks="" files="com.hazelcast.map.DefaultRecordStore"/>
-    <suppress checks="" files="com.hazelcast.map.eviction.EvictionHelper"/>
     <suppress checks="" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
 
     <!-- map.operation-->

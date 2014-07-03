@@ -64,6 +64,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
+import static com.hazelcast.map.eviction.EvictionHelper.removeEvictableRecords;
+
 /**
  * Default implementation of record-store.
  */
@@ -1202,8 +1205,25 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void removeEvictables() {
-        EvictionHelper.removeEvictableRecords(DefaultRecordStore.this,
-                mapContainer.getMapConfig(), mapServiceContext.getService());
+        final int evictableSize = getEvictableSize();
+        if (evictableSize < 1) {
+            return;
+        }
+        final MapConfig mapConfig = mapContainer.getMapConfig();
+        removeEvictableRecords(this, evictableSize, mapConfig, mapServiceContext);
+    }
+
+    private int getEvictableSize() {
+        final int size = size();
+        if (size < 1) {
+            return 0;
+        }
+        final int evictableSize
+                = EvictionHelper.getEvictableSize(size, mapContainer.getMapConfig(), mapServiceContext);
+        if (evictableSize < 1) {
+            return 0;
+        }
+        return evictableSize;
     }
 
 
@@ -1352,7 +1372,7 @@ public class DefaultRecordStore implements RecordStore {
         if (nearCacheProvider.isNearCacheAndInvalidationEnabled(name)) {
             nearCacheProvider.invalidateAllNearCaches(name, key);
         }
-        EvictionHelper.fireEvent(key, value, name, mapServiceContext.getService());
+        fireEvent(key, value, name, mapServiceContext);
     }
 
     private void accessRecord(Record record, long now) {
