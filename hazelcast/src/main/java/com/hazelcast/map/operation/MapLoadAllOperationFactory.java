@@ -8,8 +8,8 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Operation factory for load all operations.
@@ -17,7 +17,7 @@ import java.util.Collections;
 public class MapLoadAllOperationFactory implements OperationFactory {
 
     private String name;
-    private Collection<Data> keys;
+    private List<Data> keys;
     private boolean replaceExistingValues;
 
 
@@ -25,7 +25,7 @@ public class MapLoadAllOperationFactory implements OperationFactory {
         keys = Collections.emptyList();
     }
 
-    public MapLoadAllOperationFactory(String name, Collection<Data> keys, boolean replaceExistingValues) {
+    public MapLoadAllOperationFactory(String name, List<Data> keys, boolean replaceExistingValues) {
         this.name = name;
         this.keys = keys;
         this.replaceExistingValues = replaceExistingValues;

@@ -546,7 +546,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (keys.isEmpty()) {
             return;
         }
-        final Collection<Data> dataKeys = convertKeysToData(keys);
+        final List<Data> dataKeys = convertKeysToData(keys);
         if (replaceExistingValues) {
             invalidateNearCache(dataKeys);
         }
@@ -555,7 +555,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     // todo duplicate code.
-    private <K> Collection<Data> convertKeysToData(Set<K> keys) {
+    private <K> List<Data> convertKeysToData(Set<K> keys) {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyList();
         }
