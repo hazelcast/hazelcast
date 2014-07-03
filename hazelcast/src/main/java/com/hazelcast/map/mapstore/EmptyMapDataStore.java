@@ -55,6 +55,11 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
+    public void removeAll(Collection keys) {
+
+    }
+
+    @Override
     public boolean loadable(Object key, long lastUpdateTime, long now) {
         return false;
     }

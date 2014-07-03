@@ -21,6 +21,7 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -35,7 +36,8 @@ public class PartitionContainer {
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = new ConstructorFunction<String, RecordStore>() {
         public RecordStore createNew(String name) {
-            return new DefaultRecordStore(name, mapService.getMapServiceContext(), partitionId);
+            final MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
+            return new DefaultRecordStore(mapContainer, partitionId);
         }
     };
     /**

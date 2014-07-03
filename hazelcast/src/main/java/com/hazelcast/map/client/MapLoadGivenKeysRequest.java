@@ -19,8 +19,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,7 +30,7 @@ public class MapLoadGivenKeysRequest extends AllPartitionsClientRequest implemen
 
     private String name;
 
-    private Collection<Data> keys;
+    private List<Data> keys;
 
     private boolean replaceExistingValues;
 
@@ -38,7 +38,7 @@ public class MapLoadGivenKeysRequest extends AllPartitionsClientRequest implemen
         keys = Collections.emptyList();
     }
 
-    public MapLoadGivenKeysRequest(String name, Collection<Data> keys, boolean replaceExistingValues) {
+    public MapLoadGivenKeysRequest(String name, List<Data> keys, boolean replaceExistingValues) {
         this.name = name;
         this.keys = keys;
         this.replaceExistingValues = replaceExistingValues;
