@@ -24,6 +24,7 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
@@ -83,6 +84,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -1161,11 +1163,32 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    //issue#2747:when MapStore configured with write behind, distributed objects' destroy method does not work.
+    public void testWriteBehindDestroy() throws InterruptedException {
+        final int writeDelaySeconds = 3;
+        String mapName = randomMapName();
+
+        final MapStore<String, String> store = new SimpleMapStore<String, String>();
+
+        Config config = newConfig(mapName, store, writeDelaySeconds);
+        HazelcastInstance hzInstance = createHazelcastInstance(config);
+        IMap<String, String> map = hzInstance.getMap(mapName);
+
+        map.put("key", "value");
+
+        map.destroy();
+
+        sleepSeconds(2 * writeDelaySeconds);
+
+        assertNotEquals("value", store.load("key"));
+    }
+
+    @Test
     public void testKeysWithPredicateShouldLoadMapStore() throws InterruptedException {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore()
-                .insert("key1",17)
-                .insert("key2",23)
-                .insert("key3",47);
+                .insert("key1", 17)
+                .insert("key2", 23)
+                .insert("key3", 47);
 
         HazelcastInstance instance = createHazelcastInstance(newConfig(testMapStore, 0));
         IMap map = instance.getMap("default");
