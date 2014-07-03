@@ -152,6 +152,6 @@ Topic related but not topic specific configuration parameters
    - `hazelcast.event.queue.timeout.millis`: default value is 250
    - `hazelcast.event.thread.count`: default value is 5
 
-**Note:** *For description of these parameters, please see [Global Event Configuration](#global-event-configuration)*
+***Note:*** *For description of these parameters, please see [Global Event Configuration](#global-event-configuration)*
 
 
