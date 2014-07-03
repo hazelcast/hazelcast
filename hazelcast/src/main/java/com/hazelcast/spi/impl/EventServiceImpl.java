@@ -63,6 +63,8 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 public class EventServiceImpl implements EventService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
+    private static final String SERVICE_NAME = "hz:impl:mapService";
+
     private static final int REGISTRATION_TIMEOUT_SECONDS = 5;
     private static final int EVENT_SYNC_FREQUENCY = 100000;
     private static final int SEND_RETRY_COUNT = 50;
@@ -262,6 +264,13 @@ public class EventServiceImpl implements EventService {
             }
         }
         return Collections.emptySet();
+    }
+
+    @Override
+    public boolean hasEventRegistration(String serviceName, String topic) {
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, topic);
+        return !(registrations == null || registrations.isEmpty());
     }
 
     @Override

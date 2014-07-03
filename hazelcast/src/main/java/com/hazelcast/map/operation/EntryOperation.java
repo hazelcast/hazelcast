@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 
@@ -46,7 +47,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private EntryEventType eventType;
     private Object response;
     protected Object oldValue;
-
+    protected Data oldValueData;
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
         super(name, dataKey);
@@ -65,12 +66,19 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final long start = System.currentTimeMillis();
         oldValue = recordStore.getMapEntry(dataKey).getValue();
+
+        //when in-memory format is OBJECT, old value must be Data.
+        //if it is not EntryEvent object passed to Entry Listener may contain current value as a old value.
+        if (mapServiceContext.getMapEventPublisher().hasEventRegistration(name)) {
+            oldValueData = mapServiceContext.toData(oldValue);
+        }
         final LocalMapStatsImpl mapStats
                 = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         final Object valueBeforeProcess = mapServiceContext.toObject(oldValue);
         final MapEntrySimple entry = new MapEntrySimple(mapServiceContext.toObject(dataKey), valueBeforeProcess);
         response = mapServiceContext.toData(entryProcessor.process(entry));
         final Object valueAfterProcess = entry.getValue();
+
         // no matching data by key.
         if (oldValue == null && valueAfterProcess == null) {
             eventType = NO_NEED_TO_FIRE_EVENT;
@@ -98,14 +106,16 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         }
     }
 
-
     public void afterRun() throws Exception {
         super.afterRun();
         if (eventType == NO_NEED_TO_FIRE_EVENT) {
             return;
         }
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        mapService.getMapServiceContext().getMapEventPublisher().publishEvent(getCallerAddress(), name, eventType, dataKey, mapServiceContext.toData(oldValue), dataValue);
+        if (mapServiceContext.getMapEventPublisher().hasEventRegistration(name)) {
+            mapService.getMapServiceContext().getMapEventPublisher().
+                    publishEvent(getCallerAddress(), name, eventType, dataKey, oldValueData, dataValue);
+        }
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             if (EntryEventType.REMOVED.equals(eventType)) {

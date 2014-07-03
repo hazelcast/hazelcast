@@ -20,4 +20,6 @@ public interface MapEventPublisher {
 
     void publishEvent(Address caller, String mapName, EntryEventType eventType,
                       Data dataKey, Data dataOldValue, Data dataValue);
+
+    boolean hasEventRegistration(String topic);
 }
