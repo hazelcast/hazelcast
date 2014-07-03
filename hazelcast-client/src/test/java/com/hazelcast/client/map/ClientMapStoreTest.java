@@ -33,7 +33,7 @@ import static junit.framework.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class ClientMapStoreTest {
+public class ClientMapStoreTest extends HazelcastTestSupport{
 
     static final String MAP_NAME = "clientMapStoreLoad";
     Config nodeConfig;
@@ -135,13 +135,12 @@ public class ClientMapStoreTest {
         mapConfig.setMapStoreConfig(mapStoreConfig);
         config.addMapConfig(mapConfig);
 
-
-
         HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         final IMap map = client.getMap(MAP_NAME);
 
-        final int max = 50001;
+
+        final int max = getMaxCapacity(server) + 1;
         for(int i=0; i<max; i++){
             map.putAsync(i, i);
         }
@@ -167,12 +166,12 @@ public class ClientMapStoreTest {
         mapConfig.setMapStoreConfig(mapStoreConfig);
         config.addMapConfig(mapConfig);
 
-        Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         final IMap map = client.getMap(MAP_NAME);
 
-        final int mapStoreQ_MaxCapacity = 50001;
+        final int mapStoreQ_MaxCapacity = getMaxCapacity(server) + 1;
         for(int i=0; i<mapStoreQ_MaxCapacity; i++){
             map.put(i, i);
         }
@@ -292,5 +291,9 @@ public class ClientMapStoreTest {
         public Set<Object> loadAllKeys() {
             return store.keySet();
         }
+    }
+
+    private int getMaxCapacity(HazelcastInstance node) {
+        return getNode(node).getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
     }
 }
