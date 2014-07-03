@@ -101,6 +101,11 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "executeOnEntries";
     }

@@ -118,6 +118,11 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "addEntryListener";
     }

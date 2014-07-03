@@ -83,6 +83,11 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return serializationService.toObject(key);
+    }
+
+    @Override
     public String getMethodName() {
         return "isLocked";
     }

@@ -81,6 +81,11 @@ public class RemainingCapacityRequest extends CallableClientRequest implements R
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "remainingCapacity";
     }

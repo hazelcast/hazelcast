@@ -121,6 +121,11 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "executeOnKeys";
     }

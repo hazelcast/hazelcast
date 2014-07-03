@@ -84,6 +84,11 @@ public class MapIsEmptyRequest extends AllPartitionsClientRequest {
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "isEmpty";
     }

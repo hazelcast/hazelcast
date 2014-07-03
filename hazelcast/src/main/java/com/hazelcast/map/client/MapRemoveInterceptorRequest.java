@@ -96,6 +96,11 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "removeInterceptor";
     }

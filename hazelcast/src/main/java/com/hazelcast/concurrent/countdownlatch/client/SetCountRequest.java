@@ -87,6 +87,11 @@ public final class SetCountRequest extends KeyBasedClientRequest
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "trySetCount";
     }

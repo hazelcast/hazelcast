@@ -69,6 +69,11 @@ public abstract class ReadRequest extends PartitionClientRequest implements Port
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public Permission getRequiredPermission() {
         return new AtomicReferencePermission(name, ActionConstants.ACTION_READ);
     }

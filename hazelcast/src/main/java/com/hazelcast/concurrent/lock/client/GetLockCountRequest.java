@@ -90,6 +90,11 @@ public final class GetLockCountRequest extends KeyBasedClientRequest
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return serializationService.toObject(key);
+    }
+
+    @Override
     public String getMethodName() {
         return "getLockCount";
     }

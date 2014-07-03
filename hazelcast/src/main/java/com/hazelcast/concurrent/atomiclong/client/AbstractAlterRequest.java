@@ -88,6 +88,11 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public Object[] getParameters() {
         return new Object[]{function};
     }

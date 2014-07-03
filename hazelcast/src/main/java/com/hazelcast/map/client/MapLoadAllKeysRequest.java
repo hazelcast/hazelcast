@@ -77,6 +77,11 @@ public class MapLoadAllKeysRequest extends InvocationClientRequest {
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "loadAll";
     }

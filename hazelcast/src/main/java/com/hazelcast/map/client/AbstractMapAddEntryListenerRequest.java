@@ -112,4 +112,8 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         return new MapPermission(name, ActionConstants.ACTION_LISTEN);
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

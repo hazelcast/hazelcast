@@ -135,6 +135,11 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "addItemListener";
     }
