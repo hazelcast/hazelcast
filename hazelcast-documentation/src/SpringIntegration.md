@@ -331,7 +331,7 @@ Assert.assertEquals(bean.value, f2.get().longValue());
 ```
 
 
-***Note:*** *Spring managed properties/fields are marked as `transient`.*
+***NOTE:*** *Spring managed properties/fields are marked as `transient`.*
 
 
 
@@ -424,7 +424,9 @@ public class SomeBean {
   ...
 }
 ```
+<br> </br>
+
+***RELATED INFORMATION***
 
 For more information please see [Spring issue-3407](https://jira.springsource.org/browse/SPR-3407).
 
-<br> </br>

@@ -36,7 +36,7 @@ The parameters `tag-key` and `tag-value` provides unique keys and values to memb
 
 The parameter `security-group-name` is also used to filter/group members.
 
-<font color='red'>***Note:***</font> *If you are using a cloud provider other than AWS, you can use the programmatic configuration specify a TCP/IP cluster. The members will needed to be retrieved from that provider (e.g. JClouds).*
+***NOTE:*** *If you are using a cloud provider other than AWS, you can use the programmatic configuration specify a TCP/IP cluster. The members will needed to be retrieved from that provider (e.g. JClouds).*
 
 #### AWSClient
 
@@ -64,9 +64,7 @@ public static void main(String[] args)throws Exception{
 When and if needed, Hazelcast can log the events for the instances that exist in a region. To see what has happened or trace the activities while forming the cluster, change the log level in your logging mechanism to FINEST or DEBUG. After this change, you can also see whether the instances are accepted or rejected, and the reason of rejection for the rejected instances in the generated log. Note that, changing the log level to one of the mentioned levels may affect the performance of the cluster.
 
 <br> </br>
-<font color="red">
-***Related Information***
-</font>
+***RELATED INFORMATION***
 
 *You can download the white paper *"Hazelcast on AWS: Best Practices for Deployment"* from [Hazelcast.com](http://hazelcast.com/resources/hazelcast-on-aws-best-practices-for-deployment/).*
 <br> </br>

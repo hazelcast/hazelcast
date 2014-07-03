@@ -117,9 +117,8 @@ or using properties inside the `hazelcast.xml` (also here change xxx to the requ
 ```
 
 ### WAN Replication Additional Information
-<font color="red">
-***Related Information***
-</font>
+
+***RELATED INFORMATION***
 
 _You can download the white paper **Hazelcast on AWS: Best Practices for Deployment** from
 [Hazelcast.com](http://hazelcast.com/resources/hazelcast-on-aws-best-practices-for-deployment/)._

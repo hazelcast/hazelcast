@@ -169,7 +169,7 @@ Last but not least, you might prefer (or end up in a necessary situation) implem
 requirements. But do not be afraid, this is a very basic task. The `Supplier` abstract class has just one method.
 <br></br>
 
-<font color='red'>***Note:***</font> *Due to a limitation of the Java Lambda API you cannot implement abstract classes using Lambdas, so instead it is
+***NOTE:*** *Due to a limitation of the Java Lambda API you cannot implement abstract classes using Lambdas, so instead it is
 recommended to create a standard named class instead.*
  
 ```java
@@ -482,7 +482,9 @@ achieve this goal. In later versions of the Aggregations API this will not be su
 the box by a much more convenient way.
 
 So again, let's start with our filter. This time we want to filter based on an office name and we again need to do some data joins
-to achieve this kind of filtering. **A short tip:** to minimize the data transmission on the aggregation we can use
+to achieve this kind of filtering. 
+
+**A short tip:** to minimize the data transmission on the aggregation we can use
 [Data Affinity](#data-affinity) rules to influence the partitioning of data. Be aware that this is an expert feature of Hazelcast.
 
 ```java

@@ -66,6 +66,6 @@ public abstract class ClusterLoginModule implements LoginModule {
 ```
 <br></br>
 
-<font color='red'>***Related Information***:</font>
+***RELATED INFORMATION***
 
 *Please refer to [JAAS Reference Guide](http://docs.oracle.com/javase/7/docs/technotes/guides/security/jaas/JAASRefGuide.html) for further information.*

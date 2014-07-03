@@ -57,7 +57,7 @@ myTopic.getLocalTopicStats().getReceiveOperationCount();
 
 This feature can be disabled with topic configuration. Please see [Topic Configuration](#topic-configuration).
 
-**Note:** *These statistics values can be also viewed in Management Center. Please see [Topics](#topics)*.
+***NOTE:*** *These statistics values can be also viewed in Management Center. Please see [Topics](#topics)*.
 
 
 
@@ -151,7 +151,10 @@ Topic related but not topic specific configuration parameters
    - `hazelcast.event.queue.capacity`: default value is 1,000,000
    - `hazelcast.event.queue.timeout.millis`: default value is 250
    - `hazelcast.event.thread.count`: default value is 5
+   
+<br></br>
+***RELATED INFORMATION*** 
 
-***Note:*** *For description of these parameters, please see [Global Event Configuration](#global-event-configuration)*
+*For description of these parameters, please see [Global Event Configuration](#global-event-configuration)*
 
 

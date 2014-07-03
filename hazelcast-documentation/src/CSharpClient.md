@@ -102,7 +102,7 @@ namespace Hazelcast.Client.Example
 #### Client Configuration
 Hazelcast C# client can be configured via API or XML. To start the client, a configuration can be passed or can be left empty to use default values.
 
-***Note***: *C# and Java clients are similar in terms of configuration. Therefore, you can refer to [Java Client](#java-client) section for configuration aspects. For information on C# API documentation, please refer to the API document provided along with the Hazelcast Enterprise license*.
+***NOTE***: *C# and Java clients are similar in terms of configuration. Therefore, you can refer to [Java Client](#java-client) section for configuration aspects. For information on C# API documentation, please refer to the API document provided along with the Hazelcast Enterprise license*.
 
 
 #### Client Startup

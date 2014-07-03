@@ -15,9 +15,8 @@ To use built-in adaptors, you should set `hazelcast.logging.type` property to on
 
 You can set `hazelcast.logging.type` through declarative configuration, programmatic configuration or JVM system property.
 
-<br></br>
 
-<font color='red'>***Note***:</font> *If you choose to use `log4j` or `slf4j`, proper dependencies should be included in the classpath.*
+***NOTE:*** *If you choose to use `log4j` or `slf4j`, proper dependencies should be included in the classpath.*
 <br></br>
 
 -   **Declarative Configuration**
@@ -71,6 +70,6 @@ loggingService.addLogListener(Level.INFO, listener):
 ```
 Through the `LoggingService`, you can get the current used ILogger implementation and log your own messages, too.
 
-<font color='red'>***Note***:</font> *If you are not using command line for configuring logging, you should be careful about Hazelcast classes. They may be defaulted to `jdk` logging before newly configured logging is read. When logging mechanism is selected, it will not change.*
+***NOTE:*** *If you are not using command line for configuring logging, you should be careful about Hazelcast classes. They may be defaulted to `jdk` logging before newly configured logging is read. When logging mechanism is selected, it will not change.*
 
 <br></br>

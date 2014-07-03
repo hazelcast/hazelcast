@@ -44,7 +44,7 @@ Let's limit the concurrent access to this resource by allowing at most 3 threads
 </semaphore>
 ```
 
-***Note:*** *If there is a shortage of permits while the semaphore is being created, value of this property can be set to a negative number.*
+***NOTE:*** *If there is a shortage of permits while the semaphore is being created, value of this property can be set to a negative number.*
 
 If you execute the above `SemaphoreMember` class 5 times, output will be similar to the following:
 

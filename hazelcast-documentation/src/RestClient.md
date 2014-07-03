@@ -27,7 +27,7 @@ Members [5] {
 
 ---
 
-***Note***: *All of the requests below can return one of the following two in case of a failure*
+***NOTE***: *All of the requests below can return one of the following two in case of a failure*
 
 - If HTTP request syntax is not known, the following will be returned as response.
 
@@ -215,6 +215,6 @@ AllConnectionCount: 20
 RESTful access is provided through any member of your cluster. So you can even put an HTTP load-balancer in front of your cluster members for load balancing and fault tolerance.
 
 
-***Note***: *You need to handle the failures on REST polls as there is no transactional guarantee.*
+***NOTE***: *You need to handle the failures on REST polls as there is no transactional guarantee.*
 
 

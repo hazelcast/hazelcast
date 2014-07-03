@@ -30,7 +30,7 @@ Here are the steps:
 
 -   Browse to `http://localhost:8080/mancenter` and login. **Initial login username/password is `admin/admin`**
 
-*Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files. You can change the data directory by setting `hazelcast.mancenter.home` system property.*
+Management Center creates a directory with name "mancenter" under your "user/home" directory to save data files. You can change the data directory by setting `hazelcast.mancenter.home` system property.
 
 
 
@@ -62,7 +62,7 @@ Toolbar has the following buttons:
 -	**Logout**: It is used to close the current user's session.
 
 
-***Note:*** *Not all of the above listed toolbar items are visible to the users who are not admin or have **read-only** permission. Also, some of the operations explained in the later sections cannot be performed by users with read-only permission. Please see [Administration](#administration) for details.*
+***NOTE:*** *Not all of the above listed toolbar items are visible to the users who are not admin or have **read-only** permission. Also, some of the operations explained in the later sections cannot be performed by users with read-only permission. Please see [Administration](#administration) for details.*
 
 
 #### Menu
@@ -70,7 +70,7 @@ Home page includes a menu on the left which lists the distributed data structure
 
 ![](images/LeftMenu.jpg)
 
-***Note:*** *Distributed data structures will be shown there when the proxies created for them.*
+***NOTE:*** *Distributed data structures will be shown there when the proxies created for them.*
 
 
 Menu items can be expanded/collapsed by clicking on them. Below is the list of menu items with the links to their explanations.
@@ -382,7 +382,7 @@ Click on the **Save** button; your filter will be saved and put into the **Filte
 
 ### Administration
 
-***Note:*** *This toolbar item is available only to admin users, i.e. the users who initially have ***admin*** as their both usernames and passwords.*
+***NOTE:*** *This toolbar item is available only to admin users, i.e. the users who initially have ***admin*** as their both usernames and passwords.*
 
 **Admin** user can add, edit, remove users and specify the permissions for the users of Management Center. To perform these operations, click on **Administration** button located at the toolbar. The page shown below appears.
 

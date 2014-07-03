@@ -41,14 +41,14 @@ dropped. This means that the event system is a 'best effort' system. There is no
 event. It can also be that Topic A has a lot of pending messages, and therefore B cannot receive messages because the queue
 has no capacity and messages for B are dropped.
 
-### IExecutor Threading:
+### IExecutor Threading
 
 Executor threading is straight forward. When a task is received to be executed on Executor E, then E will have its
 own `ThreadPoolExecutor` instance and the work is put on the work queue of this executor. So, Executors are fully isolated, but of course, they will share the same underlying hardware; most importantly the CPUs. 
 
 The IExecutor can be configured using the `ExecutorConfig` (programmatic configuration) or using `<executor>` (declarative configuration).
 
-### Operation Threading:
+### Operation Threading
 
 There are 2 types of operations:
 
@@ -101,7 +101,7 @@ using e.g. AtomicReference.alter or a IMap.executeOnKey, because these operation
 Currently, there is no support for work stealing; so different partitions, that map to the same thread may need to wait 
 till one of the partitions is finished, even though there are other free partition-operation threads available.
 
-<font color='red'>**Example**</font>
+**Example:**
 
 Take a 3 node cluster. Two members will have 90 primary partitions and one member will have 91 primary partitions. Let's
 say you have one CPU and 4 cores per CPU. By default, 8 operation threads will be allocated to serve 90 or 91 partitions.

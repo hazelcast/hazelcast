@@ -136,7 +136,7 @@ To setup Native Client properly, you should add Hazelcast **group-name**, **grou
 <property name="hibernate.cache.hazelcast.native_client_password">dev-pass</property>
 ```
 
-***Note***: *To use Native Client, you should add `hazelcast-client-<version>.jar` into your classpath. Refer to [Native Clients](#native-client) for more information.*
+***NOTE***: *To use Native Client, you should add `hazelcast-client-<version>.jar` into your classpath. Refer to [Native Clients](#native-client) for more information.*
 
 ### Hibernate Concurrency Strategies
 
