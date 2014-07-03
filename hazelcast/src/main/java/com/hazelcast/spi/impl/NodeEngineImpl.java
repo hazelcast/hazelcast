@@ -386,9 +386,9 @@ public class NodeEngineImpl implements NodeEngine {
         waitNotifyService.shutdown();
         proxyService.shutdown();
         serviceManager.shutdown(terminate);
-        executionService.shutdown();
         eventService.shutdown();
         operationService.shutdown();
         wanReplicationService.shutdown();
+        executionService.shutdown();
     }
 }
