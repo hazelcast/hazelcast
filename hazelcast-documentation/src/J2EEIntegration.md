@@ -16,34 +16,38 @@ Hazelcast can be integrated into J2EE containers via Hazelcast Resource Adapter 
 <%
 UserTransaction txn = null;
 HazelcastConnection conn = null;
-Config cfg = new Config();
-HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
 
 try {
-    Context context = new InitialContext();
-    txn = (UserTransaction) context.lookup("java:comp/UserTransaction");
-    txn.begin();
+  Context context = new InitialContext();
+  txn = (UserTransaction) context.lookup( "java:comp/UserTransaction" );
+  txn.begin();
 
-    HazelcastConnectionFactory cf = (HazelcastConnectionFactory) context.lookup ("java:comp/env/HazelcastCF");
-    conn = cf.getConnection();
+  HazelcastConnectionFactory cf = (HazelcastConnectionFactory)
+      context.lookup ( "java:comp/env/HazelcastCF" );
+        
+  conn = cf.getConnection();
 
-    TransactionalMap<String, String> txMap = conn.getTransactionalMap("default");
-    txMap.put("key", "value");
+  TransactionalMap<String, String> txMap = conn.getTransactionalMap( "default" );
+  txMap.put( "key", "value" );
 
-    txn.commit();
-} catch (Throwable e) {
-    if (txn != null) {
-        try {
-            txn.rollback();
-        } catch (Exception ix) {ix.printStackTrace();};
-    }
-    e.printStackTrace();
+  txn.commit();
+    
+} catch ( Throwable e ) {
+  if ( txn != null ) {
+    try {
+      txn.rollback();
+    } catch ( Exception ix ) {
+      ix.printStackTrace();
+    };
+  }
+  e.printStackTrace();
 } finally {
-    if (conn != null) {
-        try {
-            conn.close();
-        } catch (Exception ignored) {};
-    }
+  if ( conn != null ) {
+    try {
+      conn.close();
+    } catch (Exception ignored) {};
+  }
 }
 %>
 ```

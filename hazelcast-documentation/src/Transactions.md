@@ -8,9 +8,9 @@ Hazelcast can be used in transactional context. Basically, create a `Transaction
 
 Hazelcast supports two types of transactions: LOCAL (One Phase) and TWO\_PHASE. With the type, you have influence on how much guarantee you get when a member crashes while a transaction is committing. Default behavior is TWO\_PHASE.
 
--	**LOCAL**: Unlike the name suggests, local is a two phase commit. First, all cohorts are asked to prepare; if everyone agrees then all cohorts are asked to commit. The problem happens when during the commit phase one or more members crash, that the system could be left in an inconsistent state.
+- **LOCAL**: Unlike the name suggests, local is a two phase commit. First, all cohorts are asked to prepare; if everyone agrees then all cohorts are asked to commit. The problem happens when during the commit phase one or more members crash, that the system could be left in an inconsistent state.
 
--	**TWO\_PHASE**: The two phase commit is more than the classic two phase commit (if you want a regular two phase commit, use local). Before it commits, it copies the commit-log to other members, so in case of member failure, another member can complete the commit.
+- **TWO\_PHASE**: The two phase commit is more than the classic two phase commit (if you want a regular two phase commit, use local). Before it commits, it copies the commit-log to other members, so in case of member failure, another member can complete the commit.
 
 ```java
 import java.util.Queue;
@@ -19,26 +19,27 @@ import java.util.Set;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Transaction; 
 
-Config cfg = new Config();
-HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
 
-TransactionOptions options = new TransactionOptions().setTransactionType(TransactionType.LOCAL);
-TransactionContext context = hz.newTransactionContext(options)
+TransactionOptions options = new TransactionOptions()
+    .setTransactionType( TransactionType.LOCAL );
+    
+TransactionContext context = hazelcastInstance.newTransactionContext( options )
 context.beginTransaction();
 
-TransactionalQueue queue = context.getQueue("myqueue");
-TransactionalMap map     = context.getMap  ("mymap");
-TransactionalSet set     = context.getSet  ("myset");
+TransactionalQueue queue = context.getQueue( "myqueue" );
+TransactionalMap map = context.getMap( "mymap" );
+TransactionalSet set = context.getSet( "myset" );
 
 try {
-    Object obj = queue.poll();
-    //process obj
-    map.put ("1", "value1");
-    set.add ("value");
-    //do other things..
-    context.commitTransaction();
-}catch (Throwable t)  {
-    context.rollbackTransaction();
+  Object obj = queue.poll();
+  //process obj
+  map.put( "1", "value1" );
+  set.add( "value" );
+  //do other things..
+  context.commitTransaction();
+} catch ( Throwable t ) {
+  context.rollbackTransaction();
 }
 ```
 

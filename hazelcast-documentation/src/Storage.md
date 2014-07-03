@@ -27,19 +27,20 @@ Below is the declarative configuration.
 
 ```xml
 <hazelcast>
+  ...
+  <map name="default">
     ...
-    <map name="default">
-        ...
-        <in-memory-format>OFFHEAP</in-memory-format>
-    </map>
-</hazelcast>```
+    <in-memory-format>OFFHEAP</in-memory-format>
+  </map>
+</hazelcast>
+```
 
 
 And, the programmatic configuration:
 
 ```java
 MapConfig mapConfig = new MapConfig();
-mapConfig.setInMemoryFormat(InMemoryFormat.OFFHEAP);
+mapConfig.setInMemoryFormat( InMemoryFormat.OFFHEAP );
 ```
 
 <br> </br>
