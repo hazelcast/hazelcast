@@ -487,6 +487,7 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public int clear() {
+        final long now = getNow();
         checkIfLoaded();
         resetSizeEstimator();
         final Collection<Data> lockedKeys = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
@@ -502,16 +503,7 @@ public class DefaultRecordStore implements RecordStore {
         Set<Data> keysToDelete = records.keySet();
         keysToDelete.removeAll(lockedRecords.keySet());
 
-        final MapStoreWrapper store = mapContainer.getStore();
-        if (store != null) {
-            // Use an ArrayList so that we don't trigger calls to equals or hashCode on the key objects
-            Collection<Object> keysObject = new ArrayList<Object>(keysToDelete.size());
-            for (Data key : keysToDelete) {
-                keysObject.add(mapServiceContext.toObject(key));
-            }
-
-            store.deleteAll(keysObject);
-        }
+        mapDataStore.removeAll(keysToDelete, now);
 
         int numOfClearedEntries = keysToDelete.size();
         removeIndex(keysToDelete);
@@ -1564,7 +1556,7 @@ public class DefaultRecordStore implements RecordStore {
     private List<Data> loadAndGet(List<Object> keys) {
         Map<Object, Object> entries = Collections.emptyMap();
         try {
-            entries = mapContainer.getStore().loadAll(keys);
+            entries = mapDataStore.loadAll(keys);
         } catch (Throwable t) {
             logger.warning("Could not load keys from map store", t);
         }
@@ -1690,7 +1682,7 @@ public class DefaultRecordStore implements RecordStore {
         public void run() {
             final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
             try {
-                Map values = mapContainer.getStore().loadAll(keys.values());
+                Map values = mapDataStore.loadAll(keys.values());
                 if (values == null || values.isEmpty()) {
                     if (checkIfMapLoaded.decrementAndGet() == 0) {
                         loaded.set(true);

@@ -35,16 +35,27 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyMap();
         }
-        final List<Object> objectKeys = new ArrayList<Object>();
-        for (Object key : keys) {
-            objectKeys.add(toObject(key));
-        }
+        final List<Object> objectKeys = convertToObjectKeys(keys);
 
         final Map entries = getStore().loadAll(objectKeys);
+
         if (entries == null || entries.isEmpty()) {
             return Collections.emptyMap();
         }
         return entries;
+    }
+
+    /**
+     * Directly removes keys from map store as in write-through mode.
+     * It works same for write-behind and write-through stores.
+     */
+    @Override
+    public void removeAll(Collection keys, long now) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        final List<Object> objectKeys = convertToObjectKeys(keys);
+        getStore().deleteAll(objectKeys);
     }
 
     protected Object toObject(Object obj) {
@@ -58,4 +69,16 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
     public MapStoreWrapper getStore() {
         return store;
     }
+
+    protected List<Object> convertToObjectKeys(Collection keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyList();
+        }
+        final List<Object> objectKeys = new ArrayList<Object>();
+        for (Object key : keys) {
+            objectKeys.add(toObject(key));
+        }
+        return objectKeys;
+    }
+
 }
