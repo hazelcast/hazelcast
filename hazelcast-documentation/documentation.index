@@ -91,6 +91,7 @@ src/Management.md
 #	src/MemcacheServer.md
 #	src/REST.md
 src/Security.md
+	src/SocketInterceptor.md
 	src/SecurityInterceptor.md
 	src/Encryption.md
 	src/SSL.md
@@ -98,7 +99,6 @@ src/Security.md
 	src/ClusterLoginModule.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
-	src/EnablingSecurityforHE.md
 src/Performance.md
     src/ThreadingModel.md
 src/WAN.md

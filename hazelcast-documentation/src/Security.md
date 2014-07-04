@@ -3,61 +3,39 @@
 # Security
 
 
-
-## Socket Interceptor
+## Enabling Security for Hazelcast Enterprise
 
 ![](images/enterprise-onlycopy.jpg)
 
 
-Hazelcast allows you to intercept socket connections before a node joins to cluster or a client connects to a node. This provides ability to add custom hooks to join/connection procedure (like identity checking using Kerberos, etc.). You should implement `com.hazelcast.nio.MemberSocketInterceptor` for members and `com.hazelcast.nio.SocketInterceptor` for clients.
 
-```java
-public class MySocketInterceptor implements MemberSocketInterceptor {
-  public void init( SocketInterceptorConfig socketInterceptorConfig ) {
-    // initialize interceptor
-  }
+Hazelcast has an extensible, JAAS based security feature which can be used to authenticate both cluster members and clients and to perform access control checks on client operations. Access control can be done according to endpoint principal and/or endpoint address. 
 
-  void onConnect( Socket connectedSocket ) throws IOException {
-    // do something meaningful when connected
-  }
+Security can be enabled as stated in the below programmatic or declarative configuration.
 
-  public void onAccept( Socket acceptedSocket ) throws IOException {
-    // do something meaningful when accepted a connection
-  }
-}
-```
+
 
 ```xml
-<hazelcast>
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config
+    http://www.hazelcast.com/schema/config/hazelcast-config-3.3.xsd"
+    xmlns="http://www.hazelcast.com/schema/config"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    
   ...
-  <network>
+    
+  <security enabled="true">
     ...
-    <socket-interceptor enabled="true">
-      <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
-      <properties>
-        <property name="kerberos-host">kerb-host-name</property>
-        <property name="kerberos-config-file">kerb.conf</property>
-      </properties>
-    </socket-interceptor>
-  </network>
-  ...
+  </security>
 </hazelcast>
 ```
 
+
+
 ```java
-public class MyClientSocketInterceptor implements SocketInterceptor {
-  void onConnect( Socket connectedSocket ) throws IOException {
-    // do something meaningful when connected
-  }
-}
-
-ClientConfig clientConfig = new ClientConfig();
-clientConfig.setGroupConfig( new GroupConfig( "dev", "dev-pass" ) )
-    .addAddress( "10.10.3.4" );
-
-MyClientSocketInterceptor clientSocketInterceptor = new MyClientSocketInterceptor();
-clientConfig.setSocketInterceptor( clientSocketInterceptor );
-HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
+Config cfg = new Config();
+SecurityConfig securityCfg = cfg.getSecurityConfig();
+securityCfg.setEnabled( true );
 ```
 
+Also, please see [Setting License Key](#setting-license-key).
 
