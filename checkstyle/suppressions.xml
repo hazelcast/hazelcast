@@ -84,40 +84,15 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.concurrent[\\/]"/>
 
-    <!-- current.atomiclong-->
-    <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
-    <suppress checks="AnonInnerLength" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
-
-    <!-- concurrent.atomicreference -->
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity"
-              files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
-    <suppress checks="AnonInnerLength"
-              files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
-
-    <!-- concurrent.countdownlatch -->
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook"/>
 
     <!-- concurrent.semaphore -->
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.client.SemaphorePortableHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
-    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
 
     <!-- concurrent.lock -->
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.lock.client.LockPortableHook.java"/>
-    <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockServiceImpl"/>
-    <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockStoreImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
     <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
-    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
 
     <!-- Storage -->
     <suppress checks="JavadocMethod" files="com.hazelcast.storage[\\/]"/>

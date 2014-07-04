@@ -26,51 +26,17 @@ import com.hazelcast.concurrent.atomiclong.operations.GetAndAlterOperation;
 import com.hazelcast.concurrent.atomiclong.operations.GetAndSetOperation;
 import com.hazelcast.concurrent.atomiclong.operations.GetOperation;
 import com.hazelcast.concurrent.atomiclong.operations.SetOperation;
-import com.hazelcast.core.AsyncAtomicLong;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService> implements AsyncAtomicLong {
-
-    private final String name;
-    private final int partitionId;
+public class AtomicLongProxy extends AtomicLongProxySupport {
 
     public AtomicLongProxy(String name, NodeEngine nodeEngine, AtomicLongService service) {
-        super(nodeEngine, service);
-        this.name = name;
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
-    }
-
-    private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation) {
-        try {
-            OperationService operationService = getNodeEngine().getOperationService();
-            //noinspection unchecked
-            return (InternalCompletableFuture<E>) operationService.invokeOnPartition(
-                    AtomicLongService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    public int getPartitionId() {
-        return partitionId;
-    }
-
-    @Override
-    public String getServiceName() {
-        return AtomicLongService.SERVICE_NAME;
+        super(name, nodeEngine, service);
     }
 
     @Override

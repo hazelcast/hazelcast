@@ -16,15 +16,14 @@
 
 package com.hazelcast.concurrent.semaphore.client;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.AbstractPortableHook;
+import com.hazelcast.nio.serialization.ArrayPortableFactory;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Collection;
-
-public class SemaphorePortableHook implements PortableHook {
+public class SemaphorePortableHook extends AbstractPortableHook {
 
     static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY, -16);
     static final int ACQUIRE = 1;
@@ -41,31 +40,14 @@ public class SemaphorePortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        return new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                switch (classId) {
-                    case ACQUIRE:
-                        return new AcquireRequest();
-                    case AVAILABLE:
-                        return new AvailableRequest();
-                    case DRAIN:
-                        return new DrainRequest();
-                    case INIT:
-                        return new InitRequest();
-                    case REDUCE:
-                        return new ReduceRequest();
-                    case RELEASE:
-                        return new ReleaseRequest();
-                    default:
-                        return null;
-                }
-            }
-        };
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[RELEASE + 1];
+        constructors[ACQUIRE] = createFunction(new AcquireRequest());
+        constructors[AVAILABLE] = createFunction(new AvailableRequest());
+        constructors[DRAIN] = createFunction(new DrainRequest());
+        constructors[INIT] = createFunction(new InitRequest());
+        constructors[REDUCE] = createFunction(new ReduceRequest());
+        constructors[RELEASE] = createFunction(new ReleaseRequest());
+        return new ArrayPortableFactory(constructors);
     }
 
-    @Override
-    public Collection<ClassDefinition> getBuiltinDefinitions() {
-        return null;
-    }
 }
