@@ -14,12 +14,12 @@ This short section will quickly guide you through the basics of the Aggregations
 We also will implement a first base example.
 
 Aggregations are available on both types of map interfaces, `com.hazelcast.core.IMap` and `com.hazelcast.core.MultiMap`, using
-the `aggregate` methods. Two possible overloads of that method are available to support customized resource management of the
+the `aggregate` methods. Two overloaded methods are available to customize resource management of the
 underlying MapReduce framework by supplying a custom configured `com.hazelcast.mapreduce.JobTracker` instance. To find out how to
 configure the MapReduce framework please see [JobTracker Configuration](#jobtracker-configuration) section. We will
 later see another way to configure the automatically used MapReduce framework if no special `JobTracker` is supplied.
 
-To make Aggregations most convenient to use and future proof, the API is already heavily optimized for Java 8 and future version
+To make Aggregations more convenient to use and future proof, the API is already heavily optimized for Java 8 and future version
 but still fully compatible to any Java version Hazelcast supports (Java 6 and Java 7). The biggest difference is how you have to
 work with the Java generics; on Java 6 and 7 the generics resolving process is not as strong as on Java 8 and
 upcoming Java versions. In addition, the whole Aggregations API has full Java 8 Project Lambda (or Closure, 
