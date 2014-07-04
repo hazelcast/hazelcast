@@ -33,7 +33,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     protected String name;
     protected Data dataKey;
     protected long threadId;
-    protected Data dataValue = null;
+    protected Data dataValue;
     protected long ttl = -1;
 
     protected transient MapService mapService;

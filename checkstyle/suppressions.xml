@@ -475,11 +475,8 @@
     <suppress checks="MethodLengthCheck" files="com.hazelcast.map.MapDataSerializerHook"/>
     <suppress checks="MethodCountCheck" files="com.hazelcast.map.RecordStore"/>
     <suppress checks="MethodCountCheck" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
 
-    <suppress checks="" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
-
-    <!-- map.operation-->
-    <suppress checks="" files="com.hazelcast.map.operation[\\/]"/>
     <!-- map.proxy-->
     <suppress checks="" files="com.hazelcast.map.proxy[\\/]"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.tx.TransactionalMapProxySupport"/>

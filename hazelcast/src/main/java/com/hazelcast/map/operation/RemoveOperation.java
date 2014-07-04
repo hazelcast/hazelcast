@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
  */
 public final class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
 
-    boolean successful = false;
+    boolean successful;
 
     public RemoveOperation(String name, Data dataKey) {
         super(name, dataKey);

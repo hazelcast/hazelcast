@@ -52,7 +52,8 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
             Object objectKey = mapService.getMapServiceContext().toObject(record.getKey());
             Object valueBeforeProcess = mapService.getMapServiceContext().toObject(record.getValue());
             if (getPredicate() != null) {
-                QueryEntry queryEntry = new QueryEntry(getNodeEngine().getSerializationService(), dataKey, objectKey, valueBeforeProcess);
+                QueryEntry queryEntry
+                        = new QueryEntry(getNodeEngine().getSerializationService(), dataKey, objectKey, valueBeforeProcess);
                 if (!getPredicate().apply(queryEntry)) {
                     continue;
                 }

@@ -81,7 +81,8 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
 
     @Override
     public String toString() {
-        return "ClearOperation{" +
-                '}';
+        return "ClearOperation{"
+                + '}';
+
     }
 }

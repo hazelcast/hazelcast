@@ -51,7 +51,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         final Object valueBeforeProcess = mapService.getMapServiceContext().toObject(mapEntry.getValue());
         MapEntrySimple<Object, Object> entry = new MapEntrySimple<Object, Object>(objectKey, valueBeforeProcess);
         entryProcessor.processBackup(entry);
-        if (!entry.isModified()){
+        if (!entry.isModified()) {
             return;
         }
         if (entry.getValue() == null) {

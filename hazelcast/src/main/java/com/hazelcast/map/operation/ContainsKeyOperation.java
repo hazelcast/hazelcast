@@ -40,7 +40,7 @@ public class ContainsKeyOperation extends KeyBasedMapOperation {
 
     @Override
     public String toString() {
-        return "ContainsKeyOperation{" +
-                '}';
+        return "ContainsKeyOperation{"
+                + '}';
     }
 }
