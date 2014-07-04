@@ -25,7 +25,7 @@ import java.util.Map;
  * This obviates the need to explicitly lock as would be required with a {@link java.util.concurrent.ExecutorService}.
  * <p/>
  * Performance can be very high as the data is not moved off the Member partition. This avoids network cost and, if
- * the storage format is {@link com.hazelcast.config.InMemoryFormat#OBJECT} then there is no deserialization or serialization
+ * the storage format is {@link com.hazelcast.config.InMemoryFormat#OBJECT} then there is no de-serialization or serialization
  * cost.
  * <p/>
  * EntryProcessors execute on the partition thread in a member. Multiple operations on the same partition are queued.
