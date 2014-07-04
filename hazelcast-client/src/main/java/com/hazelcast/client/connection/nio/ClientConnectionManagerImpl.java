@@ -68,6 +68,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -694,7 +695,15 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             }
             return;
         }
-        ownerConnection.close();
-        connection.close();
+        try {
+            ownerConnection.close();
+        } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+        try {
+            connection.close();
+        } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
+        }
     }
 }
