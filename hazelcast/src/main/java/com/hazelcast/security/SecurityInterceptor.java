@@ -26,20 +26,22 @@ public interface SecurityInterceptor {
     /**
      *
      * @param credentials
-     * @param serviceName
+     * @param objectType
+     * @param objectName
      * @param methodName
      * @param parameters
      * @throws AccessControlException
      */
-    void before(Credentials credentials, String serviceName, String methodName,
+    void before(Credentials credentials, String objectType, String objectName, String methodName,
                 Parameters parameters) throws AccessControlException;
 
     /**
      *
      * @param credentials
-     * @param serviceName
+     * @param objectType
+     * @param objectName
      * @param methodName
      * @param parameters
      */
-    void after(Credentials credentials, String serviceName, String methodName, Parameters parameters);
+    void after(Credentials credentials, String objectType, String objectName, String methodName, Parameters parameters);
 }

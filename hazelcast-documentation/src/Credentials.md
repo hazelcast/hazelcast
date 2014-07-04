@@ -10,9 +10,9 @@ One of the key elements in Hazelcast security is `Credentials` object. It is use
 ```java
 package com.hazelcast.security;
 public interface Credentials extends Serializable {
-    String getEndpoint();
-    void setEndpoint(String endpoint) ;    
-    String getPrincipal() ;    
+  String getEndpoint();
+  void setEndpoint( String endpoint ) ;    
+  String getPrincipal() ;    
 }
 ```
 
@@ -22,9 +22,9 @@ public interface Credentials extends Serializable {
 package com.hazelcast.security;
 ...
 public abstract class AbstractCredentials implements Credentials, DataSerializable {
-    private transient String endpoint;
-    private String principal;
-    ...
+  private transient String endpoint;
+  private String principal;
+  ...
 }
 ```
 
@@ -34,7 +34,7 @@ public abstract class AbstractCredentials implements Credentials, DataSerializab
 package com.hazelcast.security;
 ...
 public class UsernamePasswordCredentials extends Credentials {
-    private byte[] password;
-    ...
+  private byte[] password;
+  ...
 }
 ```

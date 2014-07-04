@@ -7,30 +7,30 @@ All you need is to define IPv6 addresses or interfaces in [network configuration
 
 ```xml
 <hazelcast>
+  ...
+  <network>
+    <port auto-increment="true">5701</port>
+    <join>
+      <multicast enabled="false">
+        <multicast-group>FF02:0:0:0:0:0:0:1</multicast-group>
+        <multicast-port>54327</multicast-port>
+      </multicast>
+      <tcp-ip enabled="true">
+        <member>[fe80::223:6cff:fe93:7c7e]:5701</member>
+        <interface>192.168.1.0-7</interface>
+        <interface>192.168.1.*</interface>
+        <interface>fe80:0:0:0:45c5:47ee:fe15:493a</interface>
+      </tcp-ip>
+    </join>
+    <interfaces enabled="true">
+      <interface>10.3.16.*</interface>
+      <interface>10.3.10.4-18</interface>
+      <interface>fe80:0:0:0:45c5:47ee:fe15:*</interface>
+      <interface>fe80::223:6cff:fe93:0-5555</interface>
+    </interfaces>
     ...
-    <network>
-        <port auto-increment="true">5701</port>
-        <join>
-            <multicast enabled="false">
-                <multicast-group>FF02:0:0:0:0:0:0:1</multicast-group>
-                <multicast-port>54327</multicast-port>
-            </multicast>
-            <tcp-ip enabled="true">
-                <member>[fe80::223:6cff:fe93:7c7e]:5701</member>
-                <interface>192.168.1.0-7</interface>
-                <interface>192.168.1.*</interface>
-                <interface>fe80:0:0:0:45c5:47ee:fe15:493a</interface>
-            </tcp-ip>
-        </join>
-        <interfaces enabled="true">
-            <interface>10.3.16.*</interface>
-            <interface>10.3.10.4-18</interface>
-            <interface>fe80:0:0:0:45c5:47ee:fe15:*</interface>
-            <interface>fe80::223:6cff:fe93:0-5555</interface>
-        </interfaces>
-        ...
-    </network>
-    ...
+  </network>
+  ...
 </hazelcast>
 ```
 

@@ -93,6 +93,11 @@ public class MapEvictRequest extends KeyBasedClientRequest implements Portable, 
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "evict";
     }

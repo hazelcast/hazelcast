@@ -73,8 +73,14 @@ public class MapUnlockRequest extends AbstractUnlockRequest implements SecureReq
         return new MapPermission(name, ActionConstants.ACTION_LOCK);
     }
 
+
     @Override
     public String getDistributedObjectType() {
         return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }

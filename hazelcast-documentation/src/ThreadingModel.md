@@ -148,9 +148,9 @@ nothing else than trigger the worker to wake up and check the priority queue.
 When an Operation is invoked, a `Future` is returned. Let's take the below sample code. 
 
 ```java
-GetOperation op = new GetOperation(mapName, key)
-Future f = operationService.invoke(op)
-f.get)
+GetOperation operation = new GetOperation( mapName, key )
+Future future = operationService.invoke( operation )
+future.get)
 ```
 
 So, the calling side blocks for a reply. In this case, `GetOperation` is set in the work queue for the partition of `key`, where

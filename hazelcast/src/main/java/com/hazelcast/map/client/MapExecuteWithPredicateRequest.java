@@ -103,6 +103,11 @@ public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest {
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "executeOnEntries";
     }

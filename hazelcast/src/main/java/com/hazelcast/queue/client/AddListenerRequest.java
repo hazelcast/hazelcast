@@ -113,6 +113,11 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "addItemListener";
     }

@@ -77,4 +77,8 @@ public abstract class AbstractReplicatedMapClientRequest
         return replicatedMapService.getReplicatedRecordStore(mapName, true);
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return mapName;
+    }
 }

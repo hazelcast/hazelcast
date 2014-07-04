@@ -88,6 +88,11 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest implements Port
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "containsKey";
     }
