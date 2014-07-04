@@ -22,12 +22,14 @@ import com.hazelcast.concurrent.countdownlatch.operations.CountDownLatchReplicat
 import com.hazelcast.concurrent.countdownlatch.operations.CountDownOperation;
 import com.hazelcast.concurrent.countdownlatch.operations.GetCountOperation;
 import com.hazelcast.concurrent.countdownlatch.operations.SetCountOperation;
+import com.hazelcast.nio.serialization.AbstractDataSerializerHook;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.ConstructorFunction;
 
-public final class CountDownLatchDataSerializerHook implements DataSerializerHook {
+public final class CountDownLatchDataSerializerHook extends AbstractDataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CDL_PORTABLE_FACTORY, -14);
 
@@ -38,6 +40,8 @@ public final class CountDownLatchDataSerializerHook implements DataSerializerHoo
     public static final int GET_COUNT_OPERATION = 4;
     public static final int SET_COUNT_OPERATION = 5;
 
+    private static final int LEN = SET_COUNT_OPERATION + 1;
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -45,26 +49,13 @@ public final class CountDownLatchDataSerializerHook implements DataSerializerHoo
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case AWAIT_OPERATION:
-                        return new AwaitOperation();
-                    case COUNT_DOWN_LATCH_BACKUP_OPERATION:
-                        return new CountDownLatchBackupOperation();
-                    case COUNT_DOWN_LATCH_REPLICATION_OPERATION:
-                        return new CountDownLatchReplicationOperation();
-                    case COUNT_DOWN_OPERATION:
-                        return new CountDownOperation();
-                    case GET_COUNT_OPERATION:
-                        return new GetCountOperation();
-                    case SET_COUNT_OPERATION:
-                        return new SetCountOperation();
-                    default:
-                        return null;
-                }
-            }
-        };
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        constructors[AWAIT_OPERATION] = createFunction(new AwaitOperation());
+        constructors[COUNT_DOWN_LATCH_BACKUP_OPERATION] = createFunction(new CountDownLatchBackupOperation());
+        constructors[COUNT_DOWN_LATCH_REPLICATION_OPERATION] = createFunction(new CountDownLatchReplicationOperation());
+        constructors[COUNT_DOWN_OPERATION] = createFunction(new CountDownOperation());
+        constructors[GET_COUNT_OPERATION] = createFunction(new GetCountOperation());
+        constructors[SET_COUNT_OPERATION] = createFunction(new SetCountOperation());
+        return new ArrayDataSerializableFactory(constructors);
     }
 }

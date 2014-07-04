@@ -16,8 +16,8 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.concurrent.lock.operations.AwaitBackupOperation;
+import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.concurrent.lock.operations.BeforeAwaitBackupOperation;
 import com.hazelcast.concurrent.lock.operations.BeforeAwaitOperation;
 import com.hazelcast.concurrent.lock.operations.GetLockCountOperation;
@@ -30,12 +30,14 @@ import com.hazelcast.concurrent.lock.operations.SignalBackupOperation;
 import com.hazelcast.concurrent.lock.operations.SignalOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockBackupOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
+import com.hazelcast.nio.serialization.AbstractDataSerializerHook;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.ConstructorFunction;
 
-public final class LockDataSerializerHook implements DataSerializerHook {
+public final class LockDataSerializerHook extends AbstractDataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_DS_FACTORY, -15);
 
@@ -62,42 +64,21 @@ public final class LockDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case AWAIT_BACKUP:
-                        return new AwaitBackupOperation();
-                    case AWAIT:
-                        return new AwaitOperation();
-                    case BEFORE_AWAIT_BACKUP:
-                        return new BeforeAwaitBackupOperation();
-                    case BEFORE_AWAIT:
-                        return new BeforeAwaitOperation();
-                    case GET_LOCK_COUNT:
-                        return new GetLockCountOperation();
-                    case GET_REMAINING_LEASETIME:
-                        return new GetRemainingLeaseTimeOperation();
-                    case IS_LOCKED:
-                        return new IsLockedOperation();
-                    case LOCK:
-                        return new LockOperation();
-                    case LOCK_BACKUP:
-                        return new LockBackupOperation();
-                    case LOCK_REPLICATION:
-                        return new LockReplicationOperation();
-                    case SIGNAL_BACKUP:
-                        return new SignalBackupOperation();
-                    case SIGNAL:
-                        return new SignalOperation();
-                    case UNLOCK_BACKUP:
-                        return new UnlockBackupOperation();
-                    case UNLOCK:
-                        return new UnlockOperation();
-                    default:
-                        return null;
-                }
-            }
-        };
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[UNLOCK + 1];
+        constructors[AWAIT_BACKUP] = createFunction(new AwaitBackupOperation());
+        constructors[AWAIT] = createFunction(new AwaitOperation());
+        constructors[BEFORE_AWAIT_BACKUP] = createFunction(new BeforeAwaitBackupOperation());
+        constructors[BEFORE_AWAIT] = createFunction(new BeforeAwaitOperation());
+        constructors[GET_LOCK_COUNT] = createFunction(new GetLockCountOperation());
+        constructors[GET_REMAINING_LEASETIME] = createFunction(new GetRemainingLeaseTimeOperation());
+        constructors[IS_LOCKED] = createFunction(new IsLockedOperation());
+        constructors[LOCK] = createFunction(new LockOperation());
+        constructors[LOCK_BACKUP] = createFunction(new LockBackupOperation());
+        constructors[LOCK_REPLICATION] = createFunction(new LockReplicationOperation());
+        constructors[SIGNAL_BACKUP] = createFunction(new SignalBackupOperation());
+        constructors[SIGNAL] = createFunction(new SignalOperation());
+        constructors[UNLOCK_BACKUP] = createFunction(new UnlockBackupOperation());
+        constructors[UNLOCK] = createFunction(new UnlockOperation());
+        return new ArrayDataSerializableFactory(constructors);
     }
 }

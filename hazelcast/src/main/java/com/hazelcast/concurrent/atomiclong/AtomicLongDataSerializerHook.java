@@ -29,12 +29,14 @@ import com.hazelcast.concurrent.atomiclong.operations.GetAndSetOperation;
 import com.hazelcast.concurrent.atomiclong.operations.GetOperation;
 import com.hazelcast.concurrent.atomiclong.operations.SetBackupOperation;
 import com.hazelcast.concurrent.atomiclong.operations.SetOperation;
+import com.hazelcast.nio.serialization.AbstractDataSerializerHook;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.ConstructorFunction;
 
-public final class AtomicLongDataSerializerHook implements DataSerializerHook {
+public final class AtomicLongDataSerializerHook extends AbstractDataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_DS_FACTORY, -17);
 
@@ -59,40 +61,20 @@ public final class AtomicLongDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case ADD_BACKUP:
-                        return new AddBackupOperation();
-                    case ADD_AND_GET:
-                        return new AddAndGetOperation();
-                    case ALTER:
-                        return new AlterOperation();
-                    case ALTER_AND_GET:
-                        return new AlterAndGetOperation();
-                    case APPLY:
-                        return new ApplyOperation();
-                    case COMPARE_AND_SET:
-                        return new CompareAndSetOperation();
-                    case GET:
-                        return new GetOperation();
-                    case GET_AND_SET:
-                        return new GetAndSetOperation();
-                    case GET_AND_ALTER:
-                        return new GetAndAlterOperation();
-                    case GET_AND_ADD:
-                        return new GetAndAddOperation();
-                    case SET_OPERATION:
-                        return new SetOperation();
-                    case SET_BACKUP:
-                        return new SetBackupOperation();
-                    case REPLICATION:
-                        return new AtomicLongReplicationOperation();
-                    default:
-                        return null;
-                }
-            }
-        };
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[REPLICATION + 1];
+        constructors[ADD_BACKUP] = createFunction(new AddBackupOperation());
+        constructors[ADD_AND_GET] = createFunction(new AddAndGetOperation());
+        constructors[ALTER] = createFunction(new AlterOperation());
+        constructors[ALTER_AND_GET] = createFunction(new AlterAndGetOperation());
+        constructors[APPLY] = createFunction(new ApplyOperation());
+        constructors[COMPARE_AND_SET] = createFunction(new CompareAndSetOperation());
+        constructors[GET] = createFunction(new GetOperation());
+        constructors[GET_AND_SET] = createFunction(new GetAndSetOperation());
+        constructors[GET_AND_ALTER] = createFunction(new GetAndAlterOperation());
+        constructors[GET_AND_ADD] = createFunction(new GetAndAddOperation());
+        constructors[SET_OPERATION] = createFunction(new SetOperation());
+        constructors[SET_BACKUP] = createFunction(new SetBackupOperation());
+        constructors[REPLICATION] = createFunction(new AtomicLongReplicationOperation());
+        return new ArrayDataSerializableFactory(constructors);
     }
 }

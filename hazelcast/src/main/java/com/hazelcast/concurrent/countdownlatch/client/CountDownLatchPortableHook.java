@@ -16,15 +16,14 @@
 
 package com.hazelcast.concurrent.countdownlatch.client;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.AbstractPortableHook;
+import com.hazelcast.nio.serialization.ArrayPortableFactory;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Collection;
-
-public final class CountDownLatchPortableHook implements PortableHook {
+public final class CountDownLatchPortableHook extends AbstractPortableHook {
 
     static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CDL_PORTABLE_FACTORY, -14);
 
@@ -40,27 +39,11 @@ public final class CountDownLatchPortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        return new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                switch (classId) {
-                    case COUNT_DOWN:
-                        return new CountDownRequest();
-                    case AWAIT:
-                        return new AwaitRequest();
-                    case SET_COUNT:
-                        return new SetCountRequest();
-                    case GET_COUNT:
-                        return new GetCountRequest();
-                    default:
-                        return null;
-                }
-            }
-        };
-    }
-
-    @Override
-    public Collection<ClassDefinition> getBuiltinDefinitions() {
-        return null;
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[GET_COUNT + 1];
+        constructors[COUNT_DOWN] = createFunction(new CountDownRequest());
+        constructors[AWAIT] = createFunction(new AwaitRequest());
+        constructors[SET_COUNT] = createFunction(new SetCountRequest());
+        constructors[GET_COUNT] = createFunction(new GetCountRequest());
+        return new ArrayPortableFactory(constructors);
     }
 }

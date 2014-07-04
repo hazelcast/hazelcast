@@ -243,27 +243,23 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearPartition(event.getPartitionId());
-        }
-    }
-
-    private void clearPartition(int partitionId) {
-        final LockStoreContainer container = containers[partitionId];
-        for (LockStoreImpl ls : container.getLockStores()) {
-            ls.clear();
+            clearPartitionReplica(event.getPartitionId());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearPartition(event.getPartitionId());
+            clearPartitionReplica(event.getPartitionId());
         }
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        clearPartition(partitionId);
+        final LockStoreContainer container = containers[partitionId];
+        for (LockStoreImpl ls : container.getLockStores()) {
+            ls.clear();
+        }
     }
 
     @Override

@@ -30,12 +30,14 @@ import com.hazelcast.concurrent.semaphore.operations.ReleaseBackupOperation;
 import com.hazelcast.concurrent.semaphore.operations.ReleaseOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
+import com.hazelcast.nio.serialization.AbstractDataSerializerHook;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.ConstructorFunction;
 
-public class SemaphoreDataSerializerHook implements DataSerializerHook {
+public class SemaphoreDataSerializerHook extends AbstractDataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_DS_FACTORY, -16);
 
@@ -54,6 +56,9 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
     public static final int SEMAPHORE_DEAD_MEMBER_OPERATION = 12;
     public static final int SEMAPHORE_REPLICATION_OPERATION = 13;
 
+    private static final int LEN = SEMAPHORE_REPLICATION_OPERATION + 1;
+
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -61,42 +66,22 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case ACQUIRE_BACKUP_OPERATION:
-                        return new AcquireBackupOperation();
-                    case ACQUIRE_OPERATION:
-                        return new AcquireOperation();
-                    case AVAILABLE_OPERATION:
-                        return new AvailableOperation();
-                    case DEAD_MEMBER_BACKUP_OPERATION:
-                        return new DeadMemberBackupOperation();
-                    case DRAIN_BACKUP_OPERATION:
-                        return new DrainBackupOperation();
-                    case DRAIN_OPERATION:
-                        return new DrainOperation();
-                    case INIT_BACKUP_OPERATION:
-                        return new InitBackupOperation();
-                    case INIT_OPERATION:
-                        return new InitOperation();
-                    case REDUCE_BACKUP_OPERATION:
-                        return new ReduceBackupOperation();
-                    case REDUCE_OPERATION:
-                        return new ReduceOperation();
-                    case RELEASE_BACKUP_OPERATION:
-                        return new ReleaseBackupOperation();
-                    case RELEASE_OPERATION:
-                        return new ReleaseOperation();
-                    case SEMAPHORE_DEAD_MEMBER_OPERATION:
-                        return new SemaphoreDeadMemberOperation();
-                    case SEMAPHORE_REPLICATION_OPERATION:
-                        return new SemaphoreReplicationOperation();
-                    default:
-                        return null;
-                }
-            }
-        };
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        constructors[ACQUIRE_BACKUP_OPERATION] = createFunction(new AcquireBackupOperation());
+        constructors[ACQUIRE_OPERATION] = createFunction(new AcquireOperation());
+        constructors[AVAILABLE_OPERATION] = createFunction(new AvailableOperation());
+        constructors[DRAIN_BACKUP_OPERATION] = createFunction(new DrainBackupOperation());
+        constructors[DRAIN_OPERATION] = createFunction(new DrainOperation());
+        constructors[INIT_BACKUP_OPERATION] = createFunction(new InitBackupOperation());
+        constructors[INIT_OPERATION] = createFunction(new InitOperation());
+        constructors[RELEASE_BACKUP_OPERATION] = createFunction(new ReduceBackupOperation());
+        constructors[REDUCE_OPERATION] = createFunction(new ReduceOperation());
+        constructors[RELEASE_BACKUP_OPERATION] = createFunction(new ReleaseBackupOperation());
+        constructors[RELEASE_OPERATION] = createFunction(new ReleaseOperation());
+        constructors[DEAD_MEMBER_BACKUP_OPERATION] = createFunction(new DeadMemberBackupOperation());
+        constructors[SEMAPHORE_DEAD_MEMBER_OPERATION] = createFunction(new SemaphoreDeadMemberOperation());
+        constructors[SEMAPHORE_REPLICATION_OPERATION] = createFunction(new SemaphoreReplicationOperation());
+        return new ArrayDataSerializableFactory(constructors);
     }
+
 }

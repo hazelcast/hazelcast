@@ -16,15 +16,14 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.AbstractPortableHook;
+import com.hazelcast.nio.serialization.ArrayPortableFactory;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Collection;
-
-public class AtomicLongPortableHook implements PortableHook {
+public class AtomicLongPortableHook extends AbstractPortableHook {
 
     static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_PORTABLE_FACTORY, -17);
 
@@ -45,37 +44,16 @@ public class AtomicLongPortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        return new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                switch (classId) {
-                    case ADD_AND_GET:
-                        return new AddAndGetRequest();
-                    case COMPARE_AND_SET:
-                        return new CompareAndSetRequest();
-                    case GET_AND_ADD:
-                        return new GetAndAddRequest();
-                    case GET_AND_SET:
-                        return new GetAndSetRequest();
-                    case SET:
-                        return new SetRequest();
-                    case APPLY:
-                        return new ApplyRequest();
-                    case ALTER:
-                        return new AlterRequest();
-                    case ALTER_AND_GET:
-                        return new AlterAndGetRequest();
-                    case GET_AND_ALTER:
-                        return new GetAndAlterRequest();
-                    default:
-                        return null;
-                }
-            }
-        };
-    }
-
-    @Override
-    public Collection<ClassDefinition> getBuiltinDefinitions() {
-        return null;
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[GET_AND_ALTER + 1];
+        constructors[ADD_AND_GET] = createFunction(new AddAndGetRequest());
+        constructors[COMPARE_AND_SET] = createFunction(new CompareAndSetRequest());
+        constructors[GET_AND_ADD] = createFunction(new GetAndAddRequest());
+        constructors[GET_AND_SET] = createFunction(new GetAndSetRequest());
+        constructors[SET] = createFunction(new SetRequest());
+        constructors[APPLY] = createFunction(new ApplyRequest());
+        constructors[ALTER] = createFunction(new AlterRequest());
+        constructors[ALTER_AND_GET] = createFunction(new AlterAndGetRequest());
+        constructors[GET_AND_ALTER] = createFunction(new GetAndAlterRequest());
+        return new ArrayPortableFactory(constructors);
     }
 }

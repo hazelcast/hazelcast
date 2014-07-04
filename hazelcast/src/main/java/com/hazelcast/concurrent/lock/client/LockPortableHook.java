@@ -16,15 +16,14 @@
 
 package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.AbstractPortableHook;
+import com.hazelcast.nio.serialization.ArrayPortableFactory;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Collection;
-
-public class LockPortableHook implements PortableHook {
+public class LockPortableHook extends AbstractPortableHook {
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_PORTABLE_FACTORY, -15);
 
@@ -44,34 +43,15 @@ public class LockPortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        return new PortableFactory() {
-            public Portable create(int classId) {
-                switch (classId) {
-                    case LOCK:
-                        return new LockRequest();
-                    case UNLOCK:
-                        return new UnlockRequest();
-                    case IS_LOCKED:
-                        return new IsLockedRequest();
-                    case GET_LOCK_COUNT:
-                        return new GetLockCountRequest();
-                    case GET_REMAINING_LEASE:
-                        return new GetRemainingLeaseRequest();
-                    case CONDITION_BEFORE_AWAIT:
-                        return new BeforeAwaitRequest();
-                    case CONDITION_AWAIT:
-                        return new AwaitRequest();
-                    case CONDITION_SIGNAL:
-                        return new SignalRequest();
-                    default:
-                        return null;
-                }
-            }
-        };
-    }
-
-    @Override
-    public Collection<ClassDefinition> getBuiltinDefinitions() {
-        return null;
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[CONDITION_SIGNAL + 1];
+        constructors[LOCK] = createFunction(new LockRequest());
+        constructors[UNLOCK] = createFunction(new UnlockRequest());
+        constructors[IS_LOCKED] = createFunction(new IsLockedRequest());
+        constructors[GET_LOCK_COUNT] = createFunction(new GetLockCountRequest());
+        constructors[GET_REMAINING_LEASE] = createFunction(new GetRemainingLeaseRequest());
+        constructors[CONDITION_BEFORE_AWAIT] = createFunction(new BeforeAwaitRequest());
+        constructors[CONDITION_AWAIT] = createFunction(new AwaitRequest());
+        constructors[CONDITION_SIGNAL] = createFunction(new SignalRequest());
+        return new ArrayPortableFactory(constructors);
     }
 }
