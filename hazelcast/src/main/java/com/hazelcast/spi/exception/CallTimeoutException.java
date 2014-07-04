@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi.exception;
 
+/**
+ * A RetryableHazelcastException that indicates that the execution of an operation ran into a timeout.
+ */
 public class CallTimeoutException extends RetryableHazelcastException {
 
     public CallTimeoutException() {

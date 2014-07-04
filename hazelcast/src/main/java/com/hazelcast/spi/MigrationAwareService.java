@@ -16,6 +16,11 @@
 
 package com.hazelcast.spi;
 
+/**
+ * An interface that can be implemented by SPI services to get notified of partition changes. E.g. if a
+ * {@link com.hazelcast.map.MapService} that start moving its data around because partitions are moving
+ * to a different machine.
+ */
 public interface MigrationAwareService {
 
     Operation prepareReplicationOperation(PartitionReplicationEvent event);

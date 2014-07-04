@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi;
 
+/**
+ * Can be implemented by DistributedObject (proxies) to indicate that they want to be initialized.
+ */
 public interface InitializingObject {
 
     void initialize();

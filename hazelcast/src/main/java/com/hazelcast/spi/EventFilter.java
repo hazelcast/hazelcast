@@ -16,7 +16,10 @@
 
 package com.hazelcast.spi;
 
+/**
+ * A predicate that can filter out events.
+ */
 public interface EventFilter {
 
-    boolean eval(Object arg);
+    boolean eval(Object event);
 }

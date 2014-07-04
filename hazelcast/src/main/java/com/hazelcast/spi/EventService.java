@@ -18,6 +18,9 @@ package com.hazelcast.spi;
 
 import java.util.Collection;
 
+/**
+ * Component responsible for handling events like topic events or map.listener events.
+ */
 public interface EventService {
 
     int getEventThreadCount();

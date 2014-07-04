@@ -16,6 +16,10 @@
 
 package com.hazelcast.spi;
 
+/**
+ * A handler for the {@link com.hazelcast.spi.OperationService} when it has calculated a response. This way you can hook
+ * into the system and decide what to do with it, e.g. send it to the right machine,
+ */
 public interface ResponseHandler {
 
     void sendResponse(Object obj);
