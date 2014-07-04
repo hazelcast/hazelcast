@@ -29,7 +29,7 @@ import java.io.IOException;
 
 public final class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
-    private boolean unlockKey = false;
+    private boolean unlockKey;
 
     public RemoveBackupOperation(String name, Data dataKey) {
         super(name, dataKey);

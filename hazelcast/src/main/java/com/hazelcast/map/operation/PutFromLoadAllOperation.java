@@ -3,7 +3,9 @@ package com.hazelcast.map.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryViews;
+import com.hazelcast.map.MapEventPublisher;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -62,7 +64,9 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
 
     private void publishEntryEvent(Data key, Data previousValue, Data newValue) {
         final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        mapService.getMapServiceContext().getMapEventPublisher().publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
     }
 
     private void publishWanReplicationEvent(Data key, Data value, Record record) {

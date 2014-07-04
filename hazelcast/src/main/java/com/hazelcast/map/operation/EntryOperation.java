@@ -22,8 +22,9 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EntryViews;
-import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapEntrySimple;
+import com.hazelcast.map.MapEventPublisher;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,6 +33,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 
@@ -42,10 +44,10 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     private static final EntryEventType NO_NEED_TO_FIRE_EVENT = null;
 
+    protected Object oldValue;
     private EntryProcessor entryProcessor;
     private EntryEventType eventType;
     private Object response;
-    protected Object oldValue;
 
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
@@ -82,9 +84,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
             if (oldValue == null) {
                 mapStats.incrementPuts(getLatencyFrom(start));
                 eventType = EntryEventType.ADDED;
-            }
-            // take this case as a read so no need to fire an event.
-            else if (!entry.isModified()) {
+            } else if (!entry.isModified()) {
+                // take this case as a read so no need to fire an event.
                 mapStats.incrementGets(getLatencyFrom(start));
                 eventType = NO_NEED_TO_FIRE_EVENT;
             } else {
@@ -105,15 +106,18 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
             return;
         }
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        mapService.getMapServiceContext().getMapEventPublisher().publishEvent(getCallerAddress(), name, eventType, dataKey, mapServiceContext.toData(oldValue), dataValue);
+        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        final Data oldValueAsData = mapServiceContext.toData(oldValue);
+        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValueAsData, dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             if (EntryEventType.REMOVED.equals(eventType)) {
-                mapServiceContext.getMapEventPublisher().publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
+                mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(dataKey);
-                final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, mapServiceContext.toData(dataValue), record);
-                mapServiceContext.getMapEventPublisher().publishWanReplicationUpdate(name, entryView);
+                final Data dataValueAsData = mapServiceContext.toData(dataValue);
+                final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
+                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
 

@@ -26,7 +26,7 @@ import java.io.IOException;
 public class MergeRemoveOperation extends BaseRemoveOperation {
 
     private long removeTime;
-    private boolean merged = false;
+    private boolean merged;
 
     public MergeRemoveOperation(String name, Data dataKey, long removeTime) {
         super(name, dataKey);

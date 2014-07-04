@@ -51,8 +51,9 @@ public class GetEntryViewOperation extends KeyBasedMapOperation {
 
     @Override
     public String toString() {
-        return "GetEntryViewOperation{" +
-                '}';
+        return "GetEntryViewOperation{"
+                + '}';
+
     }
 
 }
