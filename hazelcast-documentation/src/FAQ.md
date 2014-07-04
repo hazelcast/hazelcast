@@ -133,32 +133,7 @@ public void testTopic() {
   }
 }
 ```
-You can surely start Hazelcast members with different configurations. Let's say we want to test if Hazelcast `LiteMember` can shutdown fine.
-
-```java
-@Test(timeout = 60000)
-public void shutdownLiteMember() {
-  // first config for normal cluster member
-  Config c1 = new XmlConfigBuilder().build();
-  c1.setPortAutoIncrement( false );
-  c1.setPort( 5709 );
-  // second config for LiteMember
-  Config c2 = new XmlConfigBuilder().build();
-  c2.setPortAutoIncrement( false );
-  c2.setPort( 5710 );
-  // make sure to set LiteMember=true
-  c2.setLiteMember( true );
-  // start the normal member with c1
-  HazelcastInstance hNormal = Hazelcast.newHazelcastInstance( c1 );
-  // start the LiteMember with different configuration c2
-  HazelcastInstance hLite = Hazelcast.newHazelcastInstance( c2 );
-  hNormal.getMap( "default" ).put( "1", "first" );
-  assert hLite.getMap( "default" ).get( "1" ).equals( "first" );
-  hNormal.shutdown();
-  hLite.shutdown();
-}
-```
-Also remember to call `Hazelcast.shutdownAll()` after each test case to make sure that there is no other running member left from the previous tests.
+You can surely start Hazelcast members with different configurations. Remember to call `Hazelcast.shutdownAll()` after each test case to make sure that there is no other running member left from the previous tests.
 
 ```java
 @After
