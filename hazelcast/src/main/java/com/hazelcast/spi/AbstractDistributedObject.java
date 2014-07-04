@@ -22,6 +22,10 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
+/**
+ * Abstract DistributedObject implementation. Useful to provide basic functionality.
+ * @param <S>
+ */
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
 
     protected static final PartitioningStrategy PARTITIONING_STRATEGY = StringPartitioningStrategy.INSTANCE;
@@ -55,6 +59,12 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     protected void postDestroy() {
     }
 
+    /**
+     * Gets the node engine.
+     *
+     * @return the node engine
+     * @throws HazelcastInstanceNotActiveException if NodeEngine not active or DistributedObject destroyed.
+     */
     public final NodeEngine getNodeEngine() {
         final NodeEngine engine = nodeEngine;
         lifecycleCheck(engine);
@@ -71,6 +81,12 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         throw new HazelcastInstanceNotActiveException();
     }
 
+    /**
+     * Gets the Service of this AbstractDistributedObject.
+     *
+     * @return the service
+     * @throws HazelcastInstanceNotActiveException if object is destroyed or HazelcastInstance shutdown.
+     */
     public final S getService() {
         final S s = service;
         if (s == null) {

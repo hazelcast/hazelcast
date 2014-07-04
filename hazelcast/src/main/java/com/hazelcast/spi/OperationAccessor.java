@@ -22,6 +22,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+/**
+ * Allows access to certain attributes on an Operation.
+ */
 @PrivateApi
 public final class OperationAccessor {
 

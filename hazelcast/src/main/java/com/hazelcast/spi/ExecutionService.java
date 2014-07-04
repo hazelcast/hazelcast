@@ -34,11 +34,34 @@ import java.util.concurrent.TimeUnit;
  */
 public interface ExecutionService {
 
+    /**
+     * Name of the system executor.
+     */
     String SYSTEM_EXECUTOR = "hz:system";
+
+    /**
+     * Name of the async executor.
+     */
     String ASYNC_EXECUTOR = "hz:async";
+
+    /**
+     * Name of the scheduled executor.
+     */
     String SCHEDULED_EXECUTOR = "hz:scheduled";
+
+    /**
+     * Name of the client executor.
+     */
     String CLIENT_EXECUTOR = "hz:client";
+
+    /**
+     * Name of the query executor.
+     */
     String QUERY_EXECUTOR = "hz:query";
+
+    /**
+     * Name of the io executor.
+     */
     String IO_EXECUTOR = "hz:io";
 
     ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type);
