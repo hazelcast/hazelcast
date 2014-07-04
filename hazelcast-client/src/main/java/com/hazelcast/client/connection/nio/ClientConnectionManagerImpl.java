@@ -688,6 +688,11 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
     public void connectionMarkedAsNotResponsive(ClientConnection connection) {
         if (smartRouting) {
+            //closing the owner connection if unresponsive so that it can be switched to a healthy one.
+            if (ownerConnection.getEndPoint().equals(connection.getEndPoint())) {
+                LOGGER.warning("Heartbeat is timed out, Closing owner connection to " + ownerConnection.getEndPoint());
+                ownerConnection.close();
+            }
             return;
         }
         try {
