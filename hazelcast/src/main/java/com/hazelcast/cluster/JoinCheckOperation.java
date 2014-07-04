@@ -21,9 +21,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-
 import java.io.IOException;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * An operation that checks whether {@link com.hazelcast.cluster.JoinRequest} is valid or not.
+ */
 public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
     private JoinRequest joinRequest;
@@ -46,6 +50,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
             try {
                 ok = service.validateJoinMessage(joinRequest);
             } catch (Exception ignored) {
+                ignore(ignored);
             }
         }
         if (ok) {

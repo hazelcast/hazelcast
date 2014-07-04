@@ -44,14 +44,10 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.cluster[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.cluster[\\/]"/>
     <suppress checks="ReturnCount" files="com.hazelcast.cluster.ClusterDataSerializerHook"/>
-    <suppress checks="" files="com.hazelcast.cluster.AbstractJoiner"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.cluster.AbstractJoiner"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.cluster.AbstractJoiner"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.cluster.TcpIpJoiner"/>
     <suppress checks="" files="com.hazelcast.cluster.ClusterServiceImpl"/>
-    <suppress checks="" files="com.hazelcast.cluster.MulticastJoiner"/>
-    <suppress checks="" files="com.hazelcast.cluster.MulticastService"/>
-    <suppress checks="" files="com.hazelcast.cluster.TcpIpJoiner"/>
-    <suppress checks="" files="com.hazelcast.cluster.ConfigCheck"/>
-    <suppress checks="" files="com.hazelcast.cluster.FinalizeJoinOperation"/>
-    <suppress checks="" files="com.hazelcast.cluster.JoinCheckOperation"/>
 
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>

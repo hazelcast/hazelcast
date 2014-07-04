@@ -25,7 +25,6 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -36,9 +35,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Service that handles Multicast communication.
+ */
 public class MulticastService implements Runnable {
 
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
+    private static final int OUTPUT_BUFFER_SIZE = 1024;
+    private static final int SHUTDOWN_WAIT_SECONDS = 5;
 
     private final ILogger logger;
     private final MulticastSocket multicastSocket;
@@ -59,7 +65,7 @@ public class MulticastService implements Runnable {
         Config config = node.getConfig();
         this.multicastSocket = multicastSocket;
 
-        sendOutput = node.getSerializationService().createObjectDataOutput(1024);
+        sendOutput = node.getSerializationService().createObjectDataOutput(OUTPUT_BUFFER_SIZE);
         datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
         final MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
         datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress
@@ -83,9 +89,10 @@ public class MulticastService implements Runnable {
             try {
                 multicastSocket.close();
             } catch (Throwable ignored) {
+                ignore(ignored);
             }
             running = false;
-            if (!stopLatch.await(5, TimeUnit.SECONDS)) {
+            if (!stopLatch.await(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS)) {
                 logger.warning("Failed to shutdown MulticastService in 5 seconds!");
             }
         } catch (Throwable e) {
@@ -100,6 +107,7 @@ public class MulticastService implements Runnable {
             datagramPacketReceive.setData(new byte[0]);
             datagramPacketSend.setData(new byte[0]);
         } catch (Throwable ignored) {
+            ignore(ignored);
         }
         stopLatch.countDown();
     }
@@ -158,8 +166,8 @@ public class MulticastService implements Runnable {
                 }
             } catch (Exception e) {
                 if (e instanceof EOFException || e instanceof HazelcastSerializationException) {
-                    logger.warning("Received data format is invalid." +
-                            " (An old version of Hazelcast may be running here.)", e);
+                    logger.warning("Received data format is invalid."
+                            + " (An old version of Hazelcast may be running here.)", e);
                 } else {
                     throw e;
                 }
@@ -171,7 +179,9 @@ public class MulticastService implements Runnable {
     }
 
     public void send(JoinMessage joinMessage) {
-        if (!running) return;
+        if (!running) {
+            return;
+        }
         final BufferObjectDataOutput out = sendOutput;
         synchronized (sendLock) {
             try {

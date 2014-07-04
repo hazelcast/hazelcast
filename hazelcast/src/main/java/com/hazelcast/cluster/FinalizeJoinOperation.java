@@ -24,7 +24,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,8 +32,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.LoggingUtil.logIfFinestEnabled;
+
+/**
+ * Operation that finalizes join process with processing member information and executing post join operations.
+ */
 public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
 
+    private static final int TRY_COUNT = 10;
+    private static final int TRY_PAUSE_MILLIS = 100;
     private PostJoinOperation postJoinOp;
 
     public FinalizeJoinOperation() {
@@ -50,8 +57,10 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         if (isValid()) {
             processMemberUpdate();
 
-            // Post join operations must be lock free; means no locks at all;
-            // no partition locks, no key-based locks, no service level locks!
+            /**
+             *  Post join operations must be lock free; means no locks at all;
+             *  no partition locks, no key-based locks, no service level locks!
+             */
 
             final ClusterServiceImpl clusterService = getService();
             final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
@@ -64,7 +73,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                     if (!member.localMember()) {
                         Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                                 new PostJoinOperation(postJoinOperations), member.getAddress())
-                                .setTryCount(10).setTryPauseMillis(100).invoke();
+                                .setTryCount(TRY_COUNT).setTryPauseMillis(TRY_PAUSE_MILLIS).invoke();
                         calls.add(f);
                     }
                 }
@@ -83,13 +92,13 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                     try {
                         f.get(1, TimeUnit.SECONDS);
                     } catch (InterruptedException ignored) {
+                        ignore(ignored);
                     } catch (TimeoutException ignored) {
+                        ignore(ignored);
                     } catch (ExecutionException e) {
                         final ILogger logger = nodeEngine.getLogger(FinalizeJoinOperation.class);
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Error while executing post-join operations -> "
-                                    + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
-                        }
+                        logIfFinestEnabled(logger, "Error while executing post-join operations -> "
+                                + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
                     }
                 }
             }

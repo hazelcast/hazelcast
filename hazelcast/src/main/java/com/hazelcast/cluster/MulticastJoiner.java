@@ -23,14 +23,25 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.RandomPicker;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Cluster joiner implementation over multicast addresses.
+ */
 public class MulticastJoiner extends AbstractJoiner {
+
+    private static final int TRY_COUNT = 49;
+    private static final int PUBLISH_INTERVAL = 100;
+    private static final int SECOND_IN_MILLIS = 1000;
+    private static final long BUSY_WAIT_MILLIS = 500L;
+    private static final int LAST_TWO_DIGIT_MODULO_CONSTANT = 100;
+    private static final int RANDOM_NUMBER_UPPER_LIMIT = 512;
 
     private final AtomicInteger currentTryCount = new AtomicInteger(0);
     private final AtomicInteger maxTryCount;
@@ -44,7 +55,8 @@ public class MulticastJoiner extends AbstractJoiner {
     public void doJoin(AtomicBoolean joined) {
         int tryCount = 0;
         long joinStartTime = Clock.currentTimeMillis();
-        long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+        int maxJoinSeconds = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger();
+        long maxJoinMillis = TimeUnit.SECONDS.toMillis(maxJoinSeconds);
 
         while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
             Address masterAddressNow = getTargetAddress();
@@ -66,7 +78,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
                 return;
             }
-            if (++tryCount > 49) {
+            if (++tryCount > TRY_COUNT) {
                 failedJoiningToMaster(true, tryCount);
             }
             if (!node.getMasterAddress().equals(node.getThisAddress())) {
@@ -77,8 +89,9 @@ public class MulticastJoiner extends AbstractJoiner {
             }
             try {
                 //noinspection BusyWait
-                Thread.sleep(500L);
+                Thread.sleep(BUSY_WAIT_MILLIS);
             } catch (InterruptedException ignored) {
+                ignore(ignored);
             }
         }
     }
@@ -110,10 +123,14 @@ public class MulticastJoiner extends AbstractJoiner {
             JoinMessage joinInfo = q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
                 if (joinInfo.getMemberCount() == 1) {
-                    // if the other cluster has just single member, that may be a newly starting node
-                    // instead of a split node.
-                    // Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest.
-                    Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
+                    /**
+                     * If the other cluster has just single member, that may be a newly starting node
+                     * instead of a split node.
+                     * Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest.
+                     */
+                    final int waitSecondsBeforeJoin = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger();
+                    final long waitMillisBeforeJoin = TimeUnit.SECONDS.toMillis(waitSecondsBeforeJoin);
+                    Thread.sleep(waitMillisBeforeJoin * 2);
                 }
                 if (shouldMerge(joinInfo)) {
                     logger.warning(node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
@@ -121,6 +138,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
             }
         } catch (InterruptedException ignored) {
+            ignore(ignored);
         } catch (Exception e) {
             if (logger != null) {
                 logger.warning(e);
@@ -154,7 +172,6 @@ public class MulticastJoiner extends AbstractJoiner {
         }
     }
 
-    private static final int publishInterval = 100;
 
     private Address findMasterWithMulticast() {
         try {
@@ -164,7 +181,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 node.multicastService.send(joinRequest);
                 if (node.getMasterAddress() == null) {
                     //noinspection BusyWait
-                    Thread.sleep(publishInterval);
+                    Thread.sleep(PUBLISH_INTERVAL);
                 } else {
                     return node.getMasterAddress();
                 }
@@ -182,16 +199,16 @@ public class MulticastJoiner extends AbstractJoiner {
     private int calculateTryCount() {
         final NetworkConfig networkConfig = config.getNetworkConfig();
         int timeoutSeconds = networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
-        int tryCountCoefficient = 1000 / publishInterval;
+        int tryCountCoefficient = SECOND_IN_MILLIS / PUBLISH_INTERVAL;
         int tryCount = timeoutSeconds * tryCountCoefficient;
         String host = node.getThisAddress().getHost();
         int lastDigits;
         try {
             lastDigits = Integer.parseInt(host.substring(host.lastIndexOf('.') + 1));
         } catch (NumberFormatException e) {
-            lastDigits = RandomPicker.getInt(512);
+            lastDigits = RandomPicker.getInt(RANDOM_NUMBER_UPPER_LIMIT);
         }
-        lastDigits = lastDigits % 100;
+        lastDigits = lastDigits % LAST_TWO_DIGIT_MODULO_CONSTANT;
         int portDiff = node.getThisAddress().getPort() - networkConfig.getPort();
         tryCount += lastDigits + portDiff * timeoutSeconds * 3;
         return tryCount;
