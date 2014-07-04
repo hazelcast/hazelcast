@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import java.io.EOFException;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -25,18 +26,21 @@ import java.io.ObjectOutput;
  * Proxy class which encapsulates Hazelcast DataSerializable
  * serialized bytearrays.
  */
-public class InterceptingObjectProxy
-        implements Externalizable {
+public class InterceptingObjectProxy implements Externalizable {
 
     private byte[] data;
 
     public InterceptingObjectProxy() {
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "EI_EXPOSE_REP",
+            justification = "Only used when reading it from the stream")
     public InterceptingObjectProxy(byte[] data) {
         this.data = data;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "EI_EXPOSE_REP",
+            justification = "Only used to write it to the stream")
     public byte[] getData() {
         return data;
     }
@@ -56,6 +60,8 @@ public class InterceptingObjectProxy
 
         int length = in.readInt();
         data = new byte[length];
-        in.read(data, 0, length);
+        if (in.read(data, 0, length) == -1) {
+            throw new EOFException("Unexpected end of stream");
+        }
     }
 }
