@@ -92,6 +92,8 @@ Hazelcast creates a separate distributed map for each Hibernate cache region. So
 
 HazelcastCacheRegionFactory uses standard Hazelcast distributed maps. Therefore, all operations like get, put and remove will be performed using the distributed map logic. The only downside of using HazelcastCacheRegionFactory may be the lower performance compared to HazelcastLocalCacheRegionFactory since operations are handled as distributed calls.
 
+***NOTE:*** *If you use HazelcastCacheRegionFactory, you can see your maps on [Management Center](#management-center).*
+
 
 
 ##### HazelcastLocalCacheRegionFactory
@@ -103,6 +105,9 @@ An illustration of the above logic is shown below.
 ![image](images/HZLocalCacheRgnFactory.jpg)
 
 If your operations are mostly read ones, then this option is a better one regarding performance.
+
+***NOTE:*** *If you use HazelcastLocalCacheRegionFactory, you cannot see your maps on [Management Center](#management-center).*
+
 
 
 
