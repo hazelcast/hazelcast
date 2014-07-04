@@ -17,23 +17,21 @@
 package com.hazelcast.nio.ssl;
 
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapper;
-
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLHandshakeException;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
+import javax.net.ssl.SSLSession;
 
 public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
 
     private static final boolean DEBUG = false;
 
-    private final ByteBuffer in;
+    private final ByteBuffer applicationBuffer;
     private final ByteBuffer emptyBuffer;
     private final ByteBuffer netOutBuffer;
     // "reliable" write transport
@@ -49,7 +47,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         sslEngine.setUseClientMode(client);
         sslEngine.setEnableSessionCreation(true);
         SSLSession session = sslEngine.getSession();
-        in = ByteBuffer.allocate(64 * 1024);
+        applicationBuffer = ByteBuffer.allocate(session.getApplicationBufferSize());
         emptyBuffer = ByteBuffer.allocate(0);
         int netBufferMax = session.getPacketBufferSize();
         netOutBuffer = ByteBuffer.allocate(netBufferMax);
@@ -137,8 +135,8 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
             if (DEBUG) {
                 log("Handshake completed!");
             }
-            in.clear();
-            in.flip();
+            applicationBuffer.clear();
+            applicationBuffer.flip();
             handshakeCompleted = true;
         }
     }
@@ -150,9 +148,12 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
     }
 
     private ByteBuffer unwrap(ByteBuffer b) throws SSLException {
-        in.clear();
+        applicationBuffer.clear();
         while (b.hasRemaining()) {
-            sslEngineResult = sslEngine.unwrap(b, in);
+            sslEngineResult = sslEngine.unwrap(b, applicationBuffer);
+            if (sslEngineResult.getStatus() == SSLEngineResult.Status.BUFFER_OVERFLOW) {
+                return applicationBuffer;
+            }
             if (sslEngineResult.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_TASK) {
                 if (DEBUG) {
                     log("Handshake NEED TASK");
@@ -166,10 +167,10 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
                 }
             } else if (sslEngineResult.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED
                     || sslEngineResult.getStatus() == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
-                return in;
+                return applicationBuffer;
             }
         }
-        return in;
+        return applicationBuffer;
     }
 
     @Override
@@ -198,20 +199,20 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         }
         int readBytesCount = 0;
         int limit;
-        if (in.hasRemaining()) {
-            limit = Math.min(in.remaining(), output.remaining());
+        if (applicationBuffer.hasRemaining()) {
+            limit = Math.min(applicationBuffer.remaining(), output.remaining());
             for (int i = 0; i < limit; i++) {
-                output.put(in.get());
+                output.put(applicationBuffer.get());
                 readBytesCount++;
             }
             return readBytesCount;
         }
         if (netInBuffer.hasRemaining()) {
             unwrap(netInBuffer);
-            in.flip();
-            limit = Math.min(in.remaining(), output.remaining());
+            applicationBuffer.flip();
+            limit = Math.min(applicationBuffer.remaining(), output.remaining());
             for (int i = 0; i < limit; i++) {
-                output.put(in.get());
+                output.put(applicationBuffer.get());
                 readBytesCount++;
             }
             if (sslEngineResult.getStatus() != SSLEngineResult.Status.BUFFER_UNDERFLOW) {
@@ -232,10 +233,10 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         }
         netInBuffer.flip();
         unwrap(netInBuffer);
-        in.flip();
-        limit = Math.min(in.remaining(), output.remaining());
+        applicationBuffer.flip();
+        limit = Math.min(applicationBuffer.remaining(), output.remaining());
         for (int i = 0; i < limit; i++) {
-            output.put(in.get());
+            output.put(applicationBuffer.get());
             readBytesCount++;
         }
         return readBytesCount;
