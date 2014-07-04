@@ -214,7 +214,7 @@ class DefaultAddressPicker implements AddressPicker {
                             addressDomainMap.put(address, s);
                         }
                     } catch (UnknownHostException e) {
-                        logger.severe("Could not resolve address: " + s);
+                        logger.warning("Cannot resolve hostname: '" + s + "'");
                     }
                 }
             }

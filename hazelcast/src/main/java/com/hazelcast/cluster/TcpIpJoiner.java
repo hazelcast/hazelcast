@@ -349,11 +349,11 @@ public class TcpIpJoiner extends AbstractJoiner {
         final Set<Address> possibleAddresses = new HashSet<Address>();
         final NetworkConfig networkConfig = config.getNetworkConfig();
         for (String possibleMember : possibleMembers) {
+            AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
             try {
-                final AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
-                final boolean portIsDefined = addressHolder.port != -1 || !networkConfig.isPortAutoIncrement();
-                final int count = portIsDefined ? 1 : MAX_PORT_TRIES;
-                final int port = addressHolder.port != -1 ? addressHolder.port : networkConfig.getPort();
+                boolean portIsDefined = addressHolder.port != -1 || !networkConfig.isPortAutoIncrement();
+                int count = portIsDefined ? 1 : MAX_PORT_TRIES;
+                int port = addressHolder.port != -1 ? addressHolder.port : networkConfig.getPort();
                 AddressMatcher addressMatcher = null;
                 try {
                     addressMatcher = AddressUtil.getAddressMatcher(addressHolder.address);
@@ -394,7 +394,11 @@ public class TcpIpJoiner extends AbstractJoiner {
                     }
                 }
             } catch (UnknownHostException e) {
-                logger.warning(e);
+                logger.warning("Cannot resolve hostname '" + addressHolder.address
+                        + "'. Please make sure host is valid and reachable.");
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Error during resolving possible target!", e);
+                }
             }
         }
         return possibleAddresses;
@@ -404,8 +408,8 @@ public class TcpIpJoiner extends AbstractJoiner {
                                       final String host, final InetAddress inetAddress,
                                       final int port, final int count) throws UnknownHostException {
         for (int i = 0; i < count; i++) {
-            final int currentPort = port + i;
-            final Address address = host != null ? new Address(host, currentPort) : new Address(inetAddress, currentPort);
+            int currentPort = port + i;
+            Address address = host != null ? new Address(host, currentPort) : new Address(inetAddress, currentPort);
             if (!isLocalAddress(address)) {
                 possibleAddresses.add(address);
             }
