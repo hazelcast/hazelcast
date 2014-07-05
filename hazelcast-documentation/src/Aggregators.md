@@ -1,47 +1,47 @@
 
 ## Aggregators
 
-Based on the Hazelcast MapReduce framework Aggregators are ready-to-use data aggregations. Those are typical operations like
+Based on the Hazelcast MapReduce framework, Aggregators are ready-to-use data aggregations. Those are typical operations like
 sum up values, finding minimum or maximum values, calculating averages and other operations as you expect them to be available in
 the relational database world.  
 
-Aggregation operations are implemented, as mentioned above, on top of the MapReduce framework and therefor all operations can be
+Aggregation operations are implemented, as mentioned above, on top of the MapReduce framework and therefore all operations can be
 achieved using pure map-reduce calls but using the Aggregation feature is more convenient for a big set of standard operations.
 
 ### Aggregations Basics
 
-This short sub-chapter will quickly guide you through the basics of the Aggregations framework and some of the available classes.
+This short section will quickly guide you through the basics of the Aggregations framework and some of the available classes.
 We also will implement a first base example.
 
 Aggregations are available on both types of map interfaces, `com.hazelcast.core.IMap` and `com.hazelcast.core.MultiMap`, using
-the `aggregate` methods. Two possible overloads of that method are available to support customized resource management of the
+the `aggregate` methods. Two overloaded methods are available to customize resource management of the
 underlying MapReduce framework by supplying a custom configured `com.hazelcast.mapreduce.JobTracker` instance. To find out how to
-configure the MapReduce framework please see the section about [JobTracker Configuration](#jobtracker-configuration). We will
+configure the MapReduce framework please see [JobTracker Configuration](#jobtracker-configuration) section. We will
 later see another way to configure the automatically used MapReduce framework if no special `JobTracker` is supplied.
 
-To make Aggregations most convenient to use and future proof, the API is already heavily optimized for Java 8 and future version
+To make Aggregations more convenient to use and future proof, the API is already heavily optimized for Java 8 and future version
 but still fully compatible to any Java version Hazelcast supports (Java 6 and Java 7). The biggest difference is how you have to
-work with the Java generics due to the fact that on Java 6 and 7 the generics resolving process is not as strong as on Java 8 and
-upcoming Java versions. In addition the whole Aggregations API has full Java 8 Project Lambda (or Closure, 
+work with the Java generics; on Java 6 and 7 the generics resolving process is not as strong as on Java 8 and
+upcoming Java versions. In addition, the whole Aggregations API has full Java 8 Project Lambda (or Closure, 
 [JSR 335](https://jcp.org/en/jsr/detail?id=335)) support.
 
-For illustration of the differences in Java 6 and 7 in comparison to Java 8 we now will have a quick look at both sourcecode
-examples. After that the documentation will focus on using Java 8 syntax to keep examples short and easy to understand but still
+For illustration of the differences in Java 6 and 7 in comparison to Java 8, we  will have a quick look at both sourcecode
+examples. After that, the documentation will focus on using Java 8 syntax to keep examples short and easy to understand but still
 offers some hints what it looks like on Java 6 or 7 style.
 
-The first basic example will produce the sum of some int values stored in a Hazelcast IMap. This is a very basic example not yet
+The first basic example will produce the sum of some `int` values stored in a Hazelcast IMap. This is a very basic example not yet
 using a lot of the functionality of the Aggregations framework but will already perfectly show the main difference.
 
 ```java
 IMap<String, Integer> personAgeMapping = hazelcastInstance.getMap( "person-age" );
-for (int i = 0; i < 1000; i++) {
+for ( int i = 0; i < 1000; i++ ) {
   String lastName = RandomUtil.randomLastName();
   int age = RandomUtil.randomAgeBetween( 20, 80 );
   personAgeMapping.put( lastName, Integer.valueOf( age ) );
 }
 ```
 
-Since our demo data are now prepared we can have a look at how to produce the sums in the different Java versions.
+Since our demo data are now prepared we can have a look at how to produce the sums in different Java versions.
 
 #### Aggregations and Java 6 or Java 7
 
@@ -69,12 +69,12 @@ the above lines of source will end up in one line on Java 8.
 int sum = personAgeMapping.aggregate( Supplier.all(), Aggregations.integerSum() );
 ```
 
-As you can see this really looks stunning and easy to use.
+As you can see, this really looks stunning and easy to use.
 
 #### Quick look at the MapReduce Framework
 
-As mentioned before the Aggregations implementation is based on the Hazelcast MapReduce framework and therefor you might find
-overlaps of the different APIs and we've already seen one before. One overload of the `aggregate` method can be supplied with
+As mentioned before, the Aggregations implementation is based on the Hazelcast MapReduce framework and therefore you might find
+overlaps of the different APIs and we have already seen one before. One overload of the `aggregate` method can be supplied with
 a `JobTracker` which is part of the MapReduce framework.
 
 If you are going to implement your own aggregations you also end up implementing them using a mixture of the Aggregations and
@@ -86,8 +86,8 @@ For the full MapReduce documentation please see [MapReduce](#mapreduce).
 
 ### Introduction to Aggregations API
 
-Following the basic example we now want to look into the real API, in the possible options and what can be achieved using the
-Aggregations API. To work on some more and deeper examples let's quickly have a look at the available classes and interfaces and
+Following the basic example, we now want to look into the real API, for the possible options and what can be achieved using the
+Aggregations API. To work on some more and deeper examples, let's quickly have a look at the available classes and interfaces and
 discuss their usage.
 
 #### Supplier
@@ -97,14 +97,14 @@ This class already provides a few different static methods to achieve most commo
 which accepts all incoming values and does not apply any data extraction or transformation upon them before supplying them to
 the aggregation function itself.
 
-For filtering data sets you, by default, have two different options. You can either supply a `com.hazelcast.query.Predicate`
+For filtering data sets, you have two different options by default. You can either supply a `com.hazelcast.query.Predicate`
 if you want to filter on values and / or keys or a `com.hazelcast.mapreduce.KeyPredicate` if you can decide directly on the data
 key without the need to deserialize the value.
 
-As mentioned above all APIs are fully Java 8 and Lambda compatible so let's have a look on how we can do basic filtering using
+As mentioned above, all APIs are fully Java 8 and Lambda compatible, so let's have a look on how we can do basic filtering using
 those two options.
 
-First we have a look at a `KeyPredicate` and only accept people whose last name is Jones.
+First, we have a look at a `KeyPredicate` and only accept people whose last name is "Jones".
 
 ```java
 Supplier<...> supplier = Supplier.fromKeyPredicate(
@@ -120,7 +120,7 @@ class JonesKeyPredicate implements KeyPredicate<String> {
 }
 ```
 
-Using the standard Hazelcst `Predicate` interface you can also filter based on the value of an data entry. For example you can
+Using the standard Hazelcast `Predicate` interface, you can also filter based on the value of a data entry. For example, you can
 only select values which are divisible without remainder by 4 using the following example. 
 
 ```java
@@ -137,7 +137,7 @@ class DivisiblePredicate implements Predicate<String, Integer> {
 }
 ```
 
-Beside from the fact that a `Supplier` is used for filtering it is also used to extract or transform data before supplying them
+Besides from the fact that a `Supplier` is used for filtering, it is also used to extract or transform data before supplying them
 to the aggregation operation itself. We will now look into a short example on how to transform the input value to a string.
  
 ```java
@@ -146,12 +146,12 @@ Supplier<String, Integer, String> supplier = Supplier.all(
 );
 ```
 
-A Java 6 / 7 example will follow up below in the following sub-chapter.
+A Java 6 / 7 example will follow up below in the following section.
 
-Apart from the fact we transformed the input value of type int (or Integer) to a string we can see, that the generic information
-of the resulting `Supplier` has changed as well, indicating that we now would have an aggregation working on string values.
+Apart from the fact we transformed the input value of type `int` (or Integer) to a string, we can see that the generic information
+of the resulting `Supplier` has changed as well. This indicates that we now would have an aggregation working on string values.
 
-Another bit to say about the `Supplier` is that it is possible to chain multiple filtering rules so let's combine all of the
+Another bit to say about the `Supplier` is that it is possible to chain multiple filtering rules, so let's combine all of the
 above examples into one rule set:
 
 ```java
@@ -165,10 +165,11 @@ Supplier<String, Integer, String> supplier =
     );
 ```
 
-Last but not least you might prefer (or end up in a necessary situation) implementing your `Supplier` based on special
-requirements. But don't be afraid, this is a very basic task. The `Supplier` abstract class has just one method.
+Last but not least, you might prefer (or end up in a necessary situation) implementing your `Supplier` based on special
+requirements. But do not be afraid, this is a very basic task. The `Supplier` abstract class has just one method.
+<br></br>
 
-**Note:** *Due to a limitation of the Java Lambda API you cannot implement abstract classes using Lambdas, so instead it is
+***NOTE:*** *Due to a limitation of the Java Lambda API you cannot implement abstract classes using Lambdas, so instead it is
 recommended to create a standard named class instead.*
  
 ```java
@@ -184,10 +185,10 @@ class MyCustomSupplier extends Supplier<String, Integer, String> {
 ```
 
 `Supplier`s are expected to return null from the `apply` method whenever the input value should not be mapped to the aggregation
-process. This can be used, as seen above, to implement filter rules directly. Anyways trying to implement filters using the
+process. This can be used, as seen above, to implement filter rules directly. Anyways, trying to implement filters using the
 `KeyPredicate` and `Predicate` interfaces might be more convenient.
 
-To use your own `Supplier` just pass it to the aggregate method or use it in combination with other `Supplier`s.
+To use your own `Supplier`, just pass it to the aggregate method or use it in combination with other `Supplier`s.
 
 ```java
 int sum = personAgeMapping.aggregate( new MyCustomSupplier(), Aggregations.count() );
@@ -207,7 +208,7 @@ int sum = personAgeMapping.aggregate( supplier, Aggregations.count() );
 The `com.hazelcast.mapreduce.aggregation.Aggregation` interface defines the aggregation operation itself. It contains a set of
 MapReduce API implementations like `Mapper`, `Combiner`, `Reducer`, `Collator`. These implementations are normally unique to
 the chosen `Aggregation`. This interface can also be implemented with your aggregation operations based on map-reduce calls. To
-find deeper information on this please have a look at [Implementing Aggregations](#implementing-aggregations).
+find deeper information on this, please have a look at [Implementing Aggregations](#implementing-aggregations).
 
 A common predefined set of aggregations are provided by the `com.hazelcast.mapreduce.aggregation.Aggregations` class. This class
 contains typesafe aggregations of the following types:
@@ -224,7 +225,7 @@ direct SQL like way of describing them:
  
 ##### Average #####
 
-Calculates an average value based on all selected values
+Calculates an average value based on all selected values.
 
 ```java
 map.aggregate( Supplier.all( person -> person.getAge() ),
@@ -237,7 +238,7 @@ SELECT AVG(person.age) FROM person;
 
 ##### Sum #####
 
-Calculates a sum based on all selected values
+Calculates a sum based on all selected values.
 
 ```java
 map.aggregate( Supplier.all( person -> person.getAge() ),
@@ -250,7 +251,7 @@ SELECT SUM(person.age) FROM person;
 
 ##### Minimum (Min) #####
 
-Find the minimal value over all selected values
+Finds the minimal value over all selected values.
 
 ```java
 map.aggregate( Supplier.all( person -> person.getAge() ),
@@ -263,7 +264,7 @@ SELECT MIN(person.age) FROM person;
 
 ##### Maximum (Max) #####
 
-Find the maximal value over all selected values
+Finds the maximal value over all selected values.
 
 ```java
 map.aggregate( Supplier.all( person -> person.getAge() ),
@@ -302,7 +303,7 @@ SELECT COUNT(*) FROM person;
 
 #### PropertyExtractor
 
-We already used the `com.hazelcast.mapreduce.aggregation.PropertyExtractor` interface before when we had a look at the example
+We have already used the `com.hazelcast.mapreduce.aggregation.PropertyExtractor` interface before when we had a look at the example
 on how to use a `Supplier` to transform a value to another type. It can also be used to extract attributes from values.
 
 ```java
@@ -325,7 +326,7 @@ class AgeExtractor implements PropertyExtractor<Person, Integer> {
 }
 ```
 
-In this example we extract the value from the person's age attribute and so the value type changes from Person to `Integer` which
+In this example, we extract the value from the person's age attribute and so the value type changes from Person to `Integer` which
 again is reflected in the generics information to stay typesafe.
 
 `PropertyExtractor`s are meant to be used for any kind of transformation of data, you might even want to have multiple
@@ -333,42 +334,44 @@ transformation steps chained one after another.
 
 #### Aggregation Configuration
 
-As stated before the easiest way to configure the resources used by the underlying MapReduce framework is to supply a `JobTracker`
+As stated before, the easiest way to configure the resources used by the underlying MapReduce framework is to supply a `JobTracker`
 to the aggregation call itself by passing it to either `IMap::aggregate` or `MultiMap::aggregate`.
 
 There is also a second way on how to implicitly configure the underlying used `JobTracker`. If no specific `JobTracker` was
 passed for the aggregation call, internally the one to be used will be created using a naming specification as the following:
 
 For `IMap` aggregation calls the naming spec is created as:
+
 - `hz::aggregation-map-` and concatenated the name of the map
 
 For `MultiMap` it is very similar:
+
 - `hz::aggregation-multimap-` and concatenated the name of the multimap
 
 Knowing that we can configure the `JobTracker` in the Hazelcast configuration file as expected and as name we use the previously
 built name due to the specification. For more information on configuration of the `JobTracker` please see
 [JobTracker Configuration](#jobtracker-configuration). 
 
-To finish this section let's have a quick example for the above naming specs:
+To finish this section, let's have a quick example for the above naming specs:
 
 ```java
 IMap<String, Integer> map = hazelcastInstance.getMap( "mymap" );
 
 // The internal JobTracker name resolves to 'hz::aggregation-map-mymap' 
-map.aggregate(...);
+map.aggregate( ... );
 ```
 
 ```java
 MultiMap<String, Integer> multimap = hazelcastInstance.getMultiMap( "mymultimap" );
 
 // The internal JobTracker name resolves to 'hz::aggregation-multimap-mymultimap' 
-multimap.aggregate(...);
+multimap.aggregate( ... );
 ```
 
 ### Aggregations Examples
 
-For the final example imagine you're working for a international company and you have an employee database stored in Hazelcast
-`IMap` with all employees worldwide and a `MultiMap` for assigning employees to their certain locations or offices. In addition
+For the final example, imagine you are working for an international company and you have an employee database stored in Hazelcast
+`IMap` with all employees worldwide and a `MultiMap` for assigning employees to their certain locations or offices. In addition,
 there is another `IMap` which holds the salary per employee.
 
 Let's have a look at our data model:
@@ -415,7 +418,7 @@ class SalaryYear implements Serializable {
 }
 ```
 
-On the other hand our data structures, the two `IMap`s and the `MultiMap` are defined as the following:
+On the other hand, our data structures, the two `IMap`s and the `MultiMap`, are defined as the following:
 
 ```java
 IMap<String, Employee> employees = hz.getMap( "employees" );
@@ -423,10 +426,10 @@ IMap<String, SalaryYear> salaries = hz.getMap( "salaries" );
 MultiMap<String, String> officeAssignment = hz.getMultiMap( "office-employee" );
 ```
 
-So far we know all important information to work out some example aggregations. We will look into some deeper implementation
+So far, we know all important information to work out some example aggregations. We will look into some deeper implementation
 details and how we can work around some current limitations that will be eliminated in future versions of the API.
 
-So let's start with an already seen, very basic example. We want to know the average salary of all of our employees. To do this
+So let's start with an already seen, very basic example. We want to know the average salary of all of our employees. To do this,
 we need a `PropertyExtractor` and the average aggregation for type `Integer`.
 
 ```java
@@ -437,7 +440,7 @@ int avgSalary = salaries.aggregate( Supplier.all( extractor ),
                                     Aggregations.integerAvg() );
 ```
 
-That's it. Internally we created a map-reduce task based on the predefined aggregation and fire it up immediately. Currently all
+That's it. Internally, we created a map-reduce task based on the predefined aggregation and fire it up immediately. Currently, all
 aggregation calls are blocking operations, so it is not yet possible to execute the aggregation in a reactive way (using
 `com.hazelcast.core.ICompletableFuture`) but this will be part of one of the upcoming versions.
 
@@ -460,7 +463,7 @@ class USEmployeeFilter implements KeyPredicate<String>, HazelcastInstanceAware {
 }
 ```
 
-Using the `HazelcastInstanceAware` interface we get the current instance of Hazelcast injected into our filter and can do data
+Using the `HazelcastInstanceAware` interface, we get the current instance of Hazelcast injected into our filter and can perform data
 joins on other data structures of the cluster. We now only select employees that work as part of our US offices into the
 aggregation.
 
@@ -473,14 +476,16 @@ int avgSalary = salaries.aggregate( Supplier.fromKeyPredicate(
                                     ), Aggregations.integerAvg() );
 ```
 
-As mentioned before this example already was a bit more sophisticated. For our next example we will do some grouping based on
-the different worldwide offices. Currently a group aggregator is not yet available, that means we need a small workaround to
-achieve this goal. In later versions of the Aggregations API this won't be sufficient anymore since it will be available out of
-the box by a way more convenient way.
+As mentioned before, this example already was a bit more sophisticated. For our next example, we will do some grouping based on
+the different worldwide offices. Currently, a group aggregator is not yet available, that means we need a small workaround to
+achieve this goal. In later versions of the Aggregations API this will not be sufficient anymore since it will be available out of
+the box by a much more convenient way.
 
-So again let's start with our filter. This time we want to filter based on an office name and we again need to do some data joins
-to achieve this kind of filtering. **As a short tip:** to minimize the data transmission on the aggregation we can use
-[Data Affinity](#data-affinity) rules to influence the partitioning of data. Be aware this is an expert feature of Hazelcast.
+So again, let's start with our filter. This time we want to filter based on an office name and we again need to do some data joins
+to achieve this kind of filtering. 
+
+**A short tip:** to minimize the data transmission on the aggregation we can use
+[Data Affinity](#data-affinity) rules to influence the partitioning of data. Be aware that this is an expert feature of Hazelcast.
 
 ```java
 class OfficeEmployeeFilter implements KeyPredicate<String>, HazelcastInstanceAware {
@@ -508,7 +513,7 @@ class OfficeEmployeeFilter implements KeyPredicate<String>, HazelcastInstanceAwa
 }
 ```
 
-Now we can execute our aggregations. As mentioned we currently need to do the grouping on our own by executing multiple
+Now, we can execute our aggregations. As mentioned, we currently need to do the grouping on our own by executing multiple
 aggregations in a row but that will go away soon.
 
 ```java
@@ -530,18 +535,18 @@ for ( String office : officeAssignment.keySet() ) {
 }
 ```
 
-After the previous example we want to fade out from the examples sub-chapter by executing one final, easy but nice aggregation. We
-just want to know how many employees we currently have on a worldwide basis. Before reading the next lines of sourcecode you
+After the previous example, we want to fade out from this section by executing one final, easy but nice aggregation. We
+just want to know how many employees we currently have on a worldwide basis. Before reading the next lines of sourcecode, you
 can try to do it on your own to see if you understood the way of executing aggregations.
 
-As said, this is again a very basic example but it is the perfect closing point for this sub-chapter:
+As said, this is again a very basic example but it is the perfect closing point for this section:
 
 ```java
 IMap<String, Employee> employees = hazelcastInstance.getMap( "employees" );
 int count = employees.size();
 ```
 
-Ok after that quick joke we look at the real two code lines:
+Ok, after that quick joke, we look at the real two code lines:
 
 ```java
 IMap<String, Employee> employees = hazelcastInstance.getMap( "employees" );
@@ -549,18 +554,18 @@ int count = employees.aggregate( Supplier.all(), Aggregations.count() );
 ```
 
 We now have a good overview of how to use aggregations in real life situations. If you want to do your colleagues a favor you
-might want to end up writing your own additional set of aggregations. Then please read on the next sub-chapter, if not just stop
+might want to end up writing your own additional set of aggregations. Then please read on the next section, if not just stop
 here.
 
 ### Implementing Aggregations
 
-This sub-chapter is about to explain how to implement your own aggregations for convenient reasons in your own application. This
-sub-chapter is meant to be an advanced users section so if you don't intend to implement your own aggregation you might want to
+This section explains how to implement your own aggregations for convenient reasons in your own application. It
+is meant to be an advanced users section so if you do not intend to implement your own aggregation, you might want to
 stop reading here and probably come back at a later point in time when there is the need to know how to implement your own
 aggregation.
 
 The main interface for making your own aggregation is `com.hazelcast.mapreduce.aggregation.Aggregation`. It consists of four
-methods can be explained very briefly.
+methods that can be explained very briefly.
  
 ```java
 interface Aggregation<Key, Supplied, Result> {
@@ -571,18 +576,20 @@ interface Aggregation<Key, Supplied, Result> {
 }
 ```
  
-As we can see an `Aggregation` implementation is nothing more than defining a map-reduce task with a small difference. The `Mapper`
+As we can see, an `Aggregation` implementation is nothing more than defining a map-reduce task with a small difference. The `Mapper`
 is always expected to work on a `Supplier` that filters and / or transforms the mapped input value to some output value.
 
-Whereas `getMapper` and `getReducerFactory` are expected to return non-null values, `getCombinerFactory` and `getCollator` are
-optional operations and don't need to be implemented. If you want to implement those, heavily depends on your use case you want
+Whereas, `getMapper` and `getReducerFactory` are expected to return non-null values, `getCombinerFactory` and `getCollator` are
+optional operations and do not need to be implemented. If you want to implement these, it heavily depends on your use case you want
 to achieve.
 
 For more information on how you implement mappers, combiners, reducer and collators you should have a look at the
-[MapReduce](#mapreduce), since it is out of the scope of this chapter to explain it.
+[MapReduce](#mapreduce) section, since it is out of the scope of this chapter to explain it.
 
 For best speed and traffic usage, as mentioned in the map-reduce documentation, you should add a `Combiner` to your aggregation
 whenever it is possible to do some kind of pre-reduction step.
 
 Your implementation also should use DataSerializable or IdentifiedDataSerializable for best compatibility and speed / stream-size
 reasons.
+
+<br></br>

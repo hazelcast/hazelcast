@@ -16,6 +16,12 @@
 
 package com.hazelcast.spi;
 
+/**
+ * A capability for SPI services. So if your SPI service needs to be configured, implement this method. It will get the
+ * configured properties injected.
+ *
+ * @param <T>
+ */
 public interface ConfigurableService<T> {
 
     void configure(T configObject);

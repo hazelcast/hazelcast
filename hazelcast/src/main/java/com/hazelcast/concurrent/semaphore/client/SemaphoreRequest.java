@@ -69,4 +69,14 @@ public abstract class SemaphoreRequest extends PartitionClientRequest
         name = reader.readUTF("n");
         permitCount = reader.readInt("p");
     }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{permitCount};
+    }
 }

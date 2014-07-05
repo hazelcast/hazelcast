@@ -85,6 +85,11 @@ public class MapSizeRequest extends AllPartitionsClientRequest implements Portab
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "size";
     }

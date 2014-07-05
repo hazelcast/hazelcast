@@ -90,6 +90,11 @@ public class MapEntrySetRequest extends AllPartitionsClientRequest implements Po
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "entrySet";
     }

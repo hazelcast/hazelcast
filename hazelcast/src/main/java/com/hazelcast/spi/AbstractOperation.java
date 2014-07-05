@@ -21,6 +21,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * Abstract {@link com.hazelcast.spi.Operation} implementation with some basic methods
+ * implemented.
+ */
 public abstract class AbstractOperation extends Operation {
 
     @Override

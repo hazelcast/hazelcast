@@ -33,9 +33,6 @@ import java.util.concurrent.locks.Condition;
 
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
-/**
- * @author ali 5/28/13
- */
 public class ClientLockProxy extends ClientProxy implements ILock {
 
     private volatile Data key;

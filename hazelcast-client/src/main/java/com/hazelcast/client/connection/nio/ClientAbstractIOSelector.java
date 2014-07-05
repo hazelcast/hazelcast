@@ -136,17 +136,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
                 if (selectedKeyCount == 0) {
                     continue;
                 }
-                final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
-                final Iterator<SelectionKey> it = setSelectedKeys.iterator();
-                while (it.hasNext()) {
-                    final SelectionKey sk = it.next();
-                    try {
-                        it.remove();
-                        handleSelectionKey(sk);
-                    } catch (Throwable e) {
-                        handleSelectorException(e);
-                    }
-                }
+                selectKeys();
             }
         } catch (Throwable e) {
             logger.warning("Unhandled exception in " + getName(), e);
@@ -158,6 +148,20 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
                 selector.close();
             } catch (final Exception ignored) {
                 EmptyStatement.ignore(ignored);
+            }
+        }
+    }
+
+    private void selectKeys() {
+        final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
+        final Iterator<SelectionKey> it = setSelectedKeys.iterator();
+        while (it.hasNext()) {
+            final SelectionKey sk = it.next();
+            try {
+                it.remove();
+                handleSelectionKey(sk);
+            } catch (Throwable e) {
+                handleSelectorException(e);
             }
         }
     }

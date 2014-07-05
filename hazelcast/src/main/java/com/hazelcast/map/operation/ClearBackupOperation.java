@@ -46,7 +46,8 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
 
     @Override
     public String toString() {
-        return "ClearBackupOperation{" +
-                '}';
+        return "ClearBackupOperation{"
+                + '}';
+
     }
 }

@@ -94,4 +94,19 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
     public Permission getRequiredPermission() {
         return new TopicPermission(name, ActionConstants.ACTION_PUBLISH);
     }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "publish";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{message};
+    }
 }

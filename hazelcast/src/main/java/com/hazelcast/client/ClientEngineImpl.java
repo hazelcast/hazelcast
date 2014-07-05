@@ -373,9 +373,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             initService(request);
             request.setClientEngine(ClientEngineImpl.this);
             final Credentials credentials = endpoint.getCredentials();
-            interceptBefore(credentials, request);
             request.setSerializationService(serializationService);
             request.setOperationService(nodeEngine.getOperationService());
+            interceptBefore(credentials, request);
             checkPermissions(endpoint, request);
             request.process();
             interceptAfter(credentials, request);
@@ -385,8 +385,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             final SecurityContext securityContext = getSecurityContext();
             final String methodName = request.getMethodName();
             if (securityContext != null && methodName != null) {
-                final String distributedObjectType = request.getDistributedObjectType();
-                securityContext.interceptBefore(credentials, distributedObjectType, methodName, request.getParameters());
+                final String objectType = request.getDistributedObjectType();
+                final String objectName = request.getDistributedObjectName();
+                securityContext.interceptBefore(credentials, objectType, objectName, methodName, request.getParameters());
             }
         }
 
@@ -394,8 +395,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             final SecurityContext securityContext = getSecurityContext();
             final String methodName = request.getMethodName();
             if (securityContext != null && methodName != null) {
-                final String distributedObjectType = request.getDistributedObjectType();
-                securityContext.interceptAfter(credentials, distributedObjectType, methodName);
+                final String objectType = request.getDistributedObjectType();
+                final String objectName = request.getDistributedObjectName();
+                securityContext.interceptAfter(credentials, objectType, objectName, methodName);
             }
         }
 

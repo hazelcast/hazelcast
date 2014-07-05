@@ -19,11 +19,12 @@ package com.hazelcast.map.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+
 import java.io.IOException;
 
 public class TryRemoveOperation extends BaseRemoveOperation {
 
-    private boolean successful = false;
+    private boolean successful;
 
     public TryRemoveOperation(String name, Data dataKey, long timeout) {
         super(name, dataKey);

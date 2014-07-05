@@ -18,6 +18,7 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.RemoveAllListeners;
+import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
@@ -93,10 +94,11 @@ public class ClientConnection implements Connection, Closeable {
     public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
                             ClientExecutionService executionService,
-                            ClientInvocationServiceImpl invocationService) throws IOException {
+                            ClientInvocationServiceImpl invocationService,
+                            SerializationService serializationService) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
-        this.serializationService = connectionManager.getSerializationService();
+        this.serializationService = serializationService;
         this.executionService = executionService;
         this.invocationService = invocationService;
         this.socketChannelWrapper = socketChannelWrapper;
@@ -139,6 +141,10 @@ public class ClientConnection implements Connection, Closeable {
         return future.getHandler();
     }
 
+    public SerializationService getSerializationService() {
+        return serializationService;
+    }
+
     @Override
     public boolean write(SocketWritable packet) {
         if (!live) {
@@ -167,7 +173,7 @@ public class ClientConnection implements Connection, Closeable {
 
     public void write(Data data) throws IOException {
         final int totalSize = data.totalSize();
-        final int bufferSize = ClientConnectionManagerImpl.BUFFER_SIZE;
+        final int bufferSize = SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
         final ByteBuffer buffer = ByteBuffer.allocate(totalSize > bufferSize ? bufferSize : totalSize);
         final DataAdapter packet = new DataAdapter(data);
         boolean complete = false;

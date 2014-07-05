@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -65,8 +66,9 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
 
     @Override
     public String toString() {
-        return "PutAllBackupOperation{" +
-                '}';
+        return "PutAllBackupOperation{"
+                + '}';
+
     }
 
     @Override

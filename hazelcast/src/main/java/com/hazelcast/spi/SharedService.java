@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi;
 
+/**
+ * A shared service (not clear what the difference is between shared and unshared though).
+ */
 public interface SharedService {
 
 }

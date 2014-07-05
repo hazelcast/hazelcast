@@ -7,30 +7,32 @@ Hazelcast allows you to use SSL socket communication among all Hazelcast members
 
 ```java
 public class MySSLContextFactory implements SSLContextFactory {
-    public void init(Properties properties) throws Exception {
-    }
+  public void init( Properties properties ) throws Exception {
+  }
 
-    public SSLContext getSSLContext() {
-        ...
-        SSLContext sslCtx = SSLContext.getInstance(protocol);
-        return sslCtx;
-    }
+  public SSLContext getSSLContext() {
+    ...
+    SSLContext sslCtx = SSLContext.getInstance( protocol );
+    return sslCtx;
+  }
 }
 ```
 
 ```xml
 <hazelcast>
+  ...
+  <network>
     ...
-    <network>
-        ...
-        <ssl enabled="true">
-            <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
-            <properties>
-                <property name="foo">bar</property>
-            </properties>
-        </ssl>
-    </network>
-    ...
+    <ssl enabled="true">
+      <factory-class-name>
+          com.hazelcast.examples.MySSLContextFactory
+      </factory-class-name>
+      <properties>
+        <property name="foo">bar</property>
+      </properties>
+    </ssl>
+  </network>
+  ...
 </hazelcast>
 ```
 
@@ -38,33 +40,38 @@ Hazelcast provides a default SSLContextFactory; `com.hazelcast.nio.ssl.BasicSSLC
 
 ```xml
 <hazelcast>
+  ...
+  <network>
     ...
-    <network>
-        ...
-        <ssl enabled="true">
-            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
-            <properties>
-                <property name="keyStore">keyStore</property>
-                <property name="keyStorePassword">keyStorePassword</property>
-                <property name="keyManagerAlgorithm">SunX509</property>
-                <property name="trustManagerAlgorithm">SunX509</property>
-                <property name="protocol">TLS</property>
-            </properties>
-        </ssl>
-    </network>
-    ...
+    <ssl enabled="true">
+      <factory-class-name>
+          com.hazelcast.nio.ssl.BasicSSLContextFactory
+      </factory-class-name>
+      <properties>
+        <property name="keyStore">keyStore</property>
+        <property name="keyStorePassword">keyStorePassword</property>
+        <property name="keyManagerAlgorithm">SunX509</property>
+        <property name="trustManagerAlgorithm">SunX509</property>
+        <property name="protocol">TLS</property>
+      </properties>
+    </ssl>
+  </network>
+  ...
 </hazelcast>
 ```
 
 Hazelcast client has SSL support too. Client SSL configuration can be defined using programmatic configuration as shown below.
 
-````java
+```java
 Properties props = new Properties();
 ...
 ClientConfig config = new ClientConfig();
-config.getSocketOptions().setSocketFactory(new SSLSocketFactory(props));
+config.getSocketOptions().setSocketFactory( new SSLSocketFactory( props ) );
 ```
 
-You can also set `keyStore` and `keyStorePassword` through `javax.net.ssl.keyStore` and `javax.net.ssl.keyStorePassword` system properties. 
+You can also set `keyStore` and `keyStorePassword` through the following system properties:
 
-<font color='red'>***Note***:</font> *You cannot use SSL when [Hazelcast Encryption](#encryption) is enabled.*
+ - `javax.net.ssl.keyStore`
+ - `javax.net.ssl.keyStorePassword` 
+
+***NOTE:*** *You cannot use SSL when [Hazelcast Encryption](#encryption) is enabled.*

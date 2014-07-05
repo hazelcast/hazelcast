@@ -6,7 +6,7 @@ You can specify the ports which Hazelcast will use to communicate between cluste
 
 ```xml
 <network>
-   <port>5701</port>
+  <port>5701</port>
 </network>
 ```
 
@@ -16,7 +16,7 @@ You can choose to change the port count in the cases like having large instances
 
 ```xml
 <network>
-   <port port-count="20">5781</port>
+  <port port-count="20">5781</port>
 </network>
 ```
 
@@ -24,7 +24,7 @@ According to the above example, Hazelcast will try to find free ports between 57
 
 ```xml
 <network>
-   <port auto-increment="false">5701</port>
+  <port auto-increment="false">5701</port>
 </network>
 ```
 
@@ -37,17 +37,19 @@ By default, Hazelcast lets the system to pick up an ephemeral port during socket
 
 ```xml
 <hazelcast>
+  ...
+  <network>
+    <port auto-increment="true">5701</port>
+    <outbound-ports>
+      <!-- ports between 33000 and 35000 -->
+      <ports>33000-35000</ports>
+      <!-- comma separated ports -->
+      <ports>37000,37001,37002,37003</ports> 
+      <ports>38000,38500-38600</ports>
+    </outbound-ports>
     ...
-    <network>
-        <port auto-increment="true">5701</port>
-        <outbound-ports>
-            <ports>33000-35000</ports>   <!-- ports between 33000 and 35000 -->
-            <ports>37000,37001,37002,37003</ports> <!-- comma separated ports -->
-            <ports>38000,38500-38600</ports>
-        </outbound-ports>
-        ...
-    </network>
-    ...
+  </network>
+  ...
 </hazelcast>
 ```
 
@@ -56,8 +58,10 @@ Or, by programmatically:
 ```java
 ...
 NetworkConfig networkConfig = config.getNetworkConfig();
-networkConfig.addOutboundPortDefinition("35000-35100");  // ports between 35000 and 35100
-networkConfig.addOutboundPortDefinition("36001, 36002, 36003"); // comma separated ports
+// ports between 35000 and 35100
+networkConfig.addOutboundPortDefinition("35000-35100");
+// comma separated ports
+networkConfig.addOutboundPortDefinition("36001, 36002, 36003");
 networkConfig.addOutboundPort(37000);
 networkConfig.addOutboundPort(37001);
 ...

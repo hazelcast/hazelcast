@@ -18,6 +18,10 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.core.HazelcastException;
 
+/**
+ * A {@link com.hazelcast.core.HazelcastException} that indicates that a {@link com.hazelcast.core.DistributedObject}
+ * access was attempted, but the object is destroyed.
+ */
 public class DistributedObjectDestroyedException extends HazelcastException {
 
     public DistributedObjectDestroyedException(String service, String name) {

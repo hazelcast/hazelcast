@@ -26,7 +26,7 @@ applied to the `employee` map using the `map.values(predicate)` method. This met
 and merges the results coming from them. As you can guess, since the predicate is communicated between the members, it needs to
 be serializable.
 
-<font color='red'>***Note:***</font> *Predicates can also be applied to `keySet`, `entrySet` and `localKeySet` of Hazelcast distributed map.*
+***NOTE:*** *Predicates can also be applied to `keySet`, `entrySet` and `localKeySet` of Hazelcast distributed map.*
 
 #### Predicates Class
 
@@ -46,9 +46,9 @@ characters,  (underscore) is placeholder for only one character.
 - *in*: checks if the result of an expression is an element of a certain collection.
 - *isNot*: checks if the result of an expression is false.
 - *regex*: checks if the result of an expression matches some regular expression.
-
 <br></br> 
-<font color='red'>***Related Information***</font> 
+
+***RELATED INFORMATION*** 
 
 *Please see
 [Predicates](https://github.com/hazelcast/hazelcast/blob/2709bc81cd499a3160827de24422cdb6cf98fe36/hazelcast/src/main/java/com/hazelcast/query/Predicates.java)
@@ -176,10 +176,9 @@ values = map.values( pagingPredicate );
 ```
 
 Paging Predicate is not supported in Transactional Context.
+<br></br>
 
-<br></br> 
-<font color='red'>***Related Information***</font> 
-
+***RELATED INFORMATION***
 
 *Please refer to the [Javadoc](http://hazelcast.org/docs/latest/javadoc/com/hazelcast/query/Predicates.html) for all
 predicates.*

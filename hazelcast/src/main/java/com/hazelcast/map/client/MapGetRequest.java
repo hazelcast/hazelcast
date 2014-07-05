@@ -111,6 +111,11 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         if (async) {
             return "getAsync";

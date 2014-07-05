@@ -22,9 +22,9 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
     private NodeEngine nodeEngine;
     private ILogger logger;
 
-    protected MapEventPublishingService(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
+    protected MapEventPublishingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = mapServiceContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
     }
 

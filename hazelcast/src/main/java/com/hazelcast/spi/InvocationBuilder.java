@@ -28,10 +28,29 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
  */
 public abstract class InvocationBuilder {
 
+    /**
+     * Default call timeout.
+     */
     public static final long DEFAULT_CALL_TIMEOUT = -1L;
+
+    /**
+     * Default replica index.
+     */
     public static final int DEFAULT_REPLICA_INDEX = 0;
+
+    /**
+     * Default try count.
+     */
     public static final int DEFAULT_TRY_COUNT = 250;
+
+    /**
+     * Default try pause in millis. So if a call is retried, then perhaps a delay is needed.
+     */
     public static final long DEFAULT_TRY_PAUSE_MILLIS = 500;
+
+    /**
+     * If the result of an operation automatically should be deserialized to an object.
+     */
     public static final boolean DEFAULT_DESERIALIZE_RESULT = true;
 
     protected final NodeEngineImpl nodeEngine;
@@ -48,6 +67,15 @@ public abstract class InvocationBuilder {
     protected String executorName;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
 
+    /**
+     * Creates an InvocationBuilder
+     *
+     * @param nodeEngine  the nodeEngine
+     * @param serviceName the name of the service
+     * @param op          the operation to execute
+     * @param partitionId the id of the partition to execute the operation on
+     * @param target      the target machine. Either the partitionId or the target needs to be set.
+     */
     public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
                              int partitionId, Address target) {
         this.nodeEngine = nodeEngine;
@@ -73,13 +101,20 @@ public abstract class InvocationBuilder {
      * Sets the executor name. Value can be null, meaning that no custom executor will be used.
      *
      * @param executorName the name of the executor.
+     * @return the InvocationBuilder
      */
-
     public InvocationBuilder setExecutorName(String executorName) {
         this.executorName = executorName;
         return this;
     }
 
+    /**
+     * Sets the replicaIndex
+     *
+     * @param replicaIndex
+     * @return the InvocationBuilder
+     * @throws java.lang.IllegalArgumentException if replicaIndex smaller than 0 or larger than the max replica count.
+     */
     public InvocationBuilder setReplicaIndex(int replicaIndex) {
         if (replicaIndex < 0 || replicaIndex >= InternalPartition.MAX_REPLICA_COUNT) {
             throw new IllegalArgumentException("Replica index is out of range [0-"
@@ -114,11 +149,23 @@ public abstract class InvocationBuilder {
         return this;
     }
 
+    /**
+     * Sets the try count; the number of times this operation can be retried.
+     *
+     * @param tryCount the try count.
+     * @return the InvocationBuilder
+     */
     public InvocationBuilder setTryCount(int tryCount) {
         this.tryCount = tryCount;
         return this;
     }
 
+    /**
+     * Sets the pause time in millis.
+     *
+     * @param tryPauseMillis the pause time in millis.
+     * @return the InvocationBuilder
+     */
     public InvocationBuilder setTryPauseMillis(long tryPauseMillis) {
         this.tryPauseMillis = tryPauseMillis;
         return this;

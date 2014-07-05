@@ -64,6 +64,7 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null ? new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate) : null;
+        return backupProcessor != null
+                ? new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate) : null;
     }
 }

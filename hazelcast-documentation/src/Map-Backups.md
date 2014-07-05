@@ -40,9 +40,9 @@ Asynchronous backups, on the other hand, do not block operations. They are fire 
 ```
 
 <br></br>
-<font color='red'>***Note:***</font> *Backups increase memory usage since they are also kept in memory. So for every backup, you  double the original memory consumption.*
+***ATTENTION:*** *Backups increase memory usage since they are also kept in memory. So for every backup, you  double the original memory consumption.*
 
-<font color='red'>***Note:***</font> *A map can have both sync and aysnc backups at the same time.*
+***NOTE:*** *A map can have both sync and aysnc backups at the same time.*
 
 
 

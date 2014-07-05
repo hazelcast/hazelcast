@@ -9,30 +9,34 @@ Hazelcast supports standard Java Security (JAAS) based authentication between cl
 
 ```xml
 <security enabled="true">
-    <member-credentials-factory class-name="com.hazelcast.examples.MyCredentialsFactory">
-        <properties>
-            <property name="property1">value1</property>
-            <property name="property2">value2</property>
-        </properties>
-    </member-credentials-factory>
-    <member-login-modules>
-        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="required">
-            <properties>
-                <property name="property3">value3</property>
-            </properties>
-        </login-module>
-        <login-module class-name="com.hazelcast.examples.MySufficientLoginModule" usage="sufficient">
-            <properties>
-                <property name="property4">value4</property>
-            </properties>
-        </login-module>
-        <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="optional">
-            <properties>
-                <property name="property5">value5</property>
-            </properties>
-        </login-module>
-    </member-login-modules>
-    ...
+  <member-credentials-factory 
+      class-name="com.hazelcast.examples.MyCredentialsFactory">
+    <properties>
+      <property name="property1">value1</property>
+      <property name="property2">value2</property>
+    </properties>
+  </member-credentials-factory>
+  <member-login-modules>
+    <login-module usage="required"
+        class-name="com.hazelcast.examples.MyRequiredLoginModule">
+      <properties>
+        <property name="property3">value3</property>
+      </properties>
+    </login-module>
+    <login-module usage="sufficient"
+        class-name="com.hazelcast.examples.MySufficientLoginModule">
+      <properties>
+        <property name="property4">value4</property>
+      </properties>
+    </login-module>
+    <login-module usage="optional"
+        class-name="com.hazelcast.examples.MyOptionalLoginModule">
+      <properties>
+        <property name="property5">value5</property>
+      </properties>
+    </login-module>
+  </member-login-modules>
+  ...
 </security>
 ```
 
@@ -46,11 +50,11 @@ package com.hazelcast.security;
  */
 public interface ICredentialsFactory {
 
-    void configure(GroupConfig groupConfig, Properties properties);
+  void configure( GroupConfig groupConfig, Properties properties );
 
-    Credentials newCredentials();
+  Credentials newCredentials();
 
-    void destroy();
+  void destroy();
 }
 ```
 

@@ -9,25 +9,26 @@ There are some advanced configuration properties to tune some aspects of Hazelca
     http://www.hazelcast.com/schema/config/hazelcast-config-3.0.xsd"
     xmlns="http://www.hazelcast.com/schema/config"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    
+  ....
+  <properties>
+    <property name="hazelcast.property.foo">value</property>
     ....
-    <properties>
-        <property name="hazelcast.property.foo">value</property>
-            ....
-    </properties>
+  </properties>
 </hazelcast>
 ```
 ### Programmatic Configuration
 
 ```java
-Config cfg = new Config() ;
-cfg.setProperty("hazelcast.property.foo", "value");
+Config config = new Config() ;
+config.setProperty( "hazelcast.property.foo", "value" );
 ```
 
 ### System Property
 
 1. Using JVM parameter: `java -Dhazelcast.property.foo=value`
 
-2. Using System class: `System.setProperty("hazelcast.property.foo", "value");`
+2. Using System class: `System.setProperty( "hazelcast.property.foo", "value" );`
 
 Below table lists the advanced configuration properties with their descriptions.
 

@@ -79,6 +79,7 @@ public final class UTFEncoderDecoder {
 
         int length = str.length();
         out.writeInt(length);
+        out.writeInt(length);
         if (length > 0) {
             int chunkSize = (length / STRING_CHUNK_SIZE) + 1;
             for (int i = 0; i < chunkSize; i++) {
@@ -132,6 +133,10 @@ public final class UTFEncoderDecoder {
             return null;
         }
         int length = in.readInt();
+        int lengthCheck = in.readInt();
+        if (length != lengthCheck) {
+            throw new UTFDataFormatException("Length check failed, maybe broken bytestream or wrong stream position");
+        }
         final char[] data = new char[length];
         if (length > 0) {
             int chunkSize = length / STRING_CHUNK_SIZE + 1;

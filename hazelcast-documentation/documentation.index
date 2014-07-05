@@ -30,7 +30,7 @@ src/Distributed_Data_Structures.md
 	src/Lock.md
 	src/IAtomicLong.md
 	src/ISemaphore.md
-#	src/IAtomicReference.md
+	src/IAtomicReference.md
 	src/ICountDownLatch.md
 	src/IdGenerator.md
     src/replicatedmap/ReplicatedMap.md
@@ -91,13 +91,14 @@ src/Management.md
 #	src/MemcacheServer.md
 #	src/REST.md
 src/Security.md
+	src/SocketInterceptor.md
+	src/SecurityInterceptor.md
 	src/Encryption.md
 	src/SSL.md
 	src/Credentials.md
 	src/ClusterLoginModule.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
-	src/EnablingSecurityforHE.md
 src/Performance.md
     src/ThreadingModel.md
 src/WAN.md

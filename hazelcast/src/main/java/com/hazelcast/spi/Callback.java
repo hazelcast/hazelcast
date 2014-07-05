@@ -16,6 +16,11 @@
 
 package com.hazelcast.spi;
 
+/**
+ * A callback interface; make it possible to receive a callback.
+ *
+ * @param <T>
+ */
 public interface Callback<T> {
 
     void notify(T object);

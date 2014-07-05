@@ -59,4 +59,9 @@ public abstract class MultiMapAllPartitionRequest extends AllPartitionsClientReq
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

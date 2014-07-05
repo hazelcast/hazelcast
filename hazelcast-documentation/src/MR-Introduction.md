@@ -297,7 +297,7 @@ for ( JobPartitionState partitionState : partitionStates ) {
 ```
 
 
-**Note:** *Caching of the JobProcessInformation does not work on Java native clients since current values are retrieved while retrieving the instance to minimize traffic between executing node and client.*
+***NOTE:*** *Caching of the JobProcessInformation does not work on Java native clients since current values are retrieved while retrieving the instance to minimize traffic between executing node and client.*
 
 
 #### JobTracker Configuration
@@ -310,13 +310,13 @@ The following snippet shows a typical JobTracker configuration. We will discuss 
 
 ```xml
 <jobtracker name="default">
-    <max-thread-size>0</max-thread-size>
-    <!-- Queue size 0 means number of partitions * 2 -->
-    <queue-size>0</queue-size>
-    <retry-count>0</retry-count>
-    <chunk-size>1000</chunk-size>
-    <communicate-stats>true</communicate-stats>
-    <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
+  <max-thread-size>0</max-thread-size>
+  <!-- Queue size 0 means number of partitions * 2 -->
+  <queue-size>0</queue-size>
+  <retry-count>0</retry-count>
+  <chunk-size>1000</chunk-size>
+  <communicate-stats>true</communicate-stats>
+  <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
 </jobtracker>
 ```
 

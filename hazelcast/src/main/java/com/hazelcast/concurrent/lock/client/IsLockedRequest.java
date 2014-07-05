@@ -59,4 +59,17 @@ public final class IsLockedRequest extends AbstractIsLockedRequest
         String name = getName();
         return new LockPermission(name, ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        if (threadId != 0) {
+            return "isLockedByCurrentThread";
+        }
+        return super.getMethodName();
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
 }

@@ -98,6 +98,11 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return serializationService.toObject(key);
+    }
+
+    @Override
     public String getMethodName() {
         if (timeout == -1) {
             return "lock";

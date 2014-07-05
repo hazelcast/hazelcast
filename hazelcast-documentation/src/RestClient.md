@@ -15,23 +15,23 @@ For the operations to be performed, standard REST conventions for HTTP calls are
 
 Assume that your cluster members are as shown below.
 
-```
+```plain
 Members [5] {
-    Member [10.20.17.1:5701]
-    Member [10.20.17.2:5701]
-    Member [10.20.17.4:5701]
-    Member [10.20.17.3:5701]
-    Member [10.20.17.5:5701]
- }
+  Member [10.20.17.1:5701]
+  Member [10.20.17.2:5701]
+  Member [10.20.17.4:5701]
+  Member [10.20.17.3:5701]
+  Member [10.20.17.5:5701]
+}
 ```
 
 ---
 
-***Note***: *All of the requests below can return one of the following two in case of a failure*
+***NOTE***: *All of the requests below can return one of the following two in case of a failure*
 
 - If HTTP request syntax is not known, the following will be returned as response.
 
-	```
+```plain
 HTTP/1.1 400 Bad Request
 Content-Length: 0
 ```
@@ -39,7 +39,7 @@ Content-Length: 0
 
 - In case of an unexpected exception, it will return:
 
-	```
+```plain
 < HTTP/1.1 500 Internal Server Error
 < Content-Length: 0
 ```
@@ -53,13 +53,13 @@ You can put a new `key1/value1` entry into a map by using POST call to `http://1
 
 A sample POST call is shown below.
 
-```
+```plain
 $ curl -v -X POST -H "Content-Type: text/plain" -d "bar" http://10.20.17.1:5701/hazelcast/rest/maps/mapName/foo
 ```
 
 It will return the following if successful:
 
-```
+```plain
 < HTTP/1.1 200 OK
 < Content-Type: text/plain
 < Content-Length: 0
@@ -71,13 +71,13 @@ If you want to retrieve an entry, you can use GET call to `http://10.20.17.1:570
 
 A sample GET call is shown below.
 
-```
+```plain
 $ curl -X GET http://10.20.17.3:5701/hazelcast/rest/maps/mapName/foo
 ```
 
 It will return the following if there is a corresponding value:
 
-```
+```plain
 < HTTP/1.1 200 OK
 < Content-Type: text/plain
 < Content-Length: 3
@@ -88,7 +88,7 @@ As you can see, GET call returned value, its length and also the MIME type (`tex
 
 It will return the following if there is no mapping for the given key:
 
-```
+```plain
 < HTTP/1.1 204 No Content
 < Content-Length: 0
 ```
@@ -98,7 +98,7 @@ It will return the following if there is no mapping for the given key:
 
 You can use DELETE call to remove an entry. A sample DELETE call is shown below with its returns.
 
-```
+```plain
 $ curl -v -X DELETE http://10.20.17.1:5701/hazelcast/rest/maps/mapName/foo
 ```
 ```
@@ -108,10 +108,11 @@ $ curl -v -X DELETE http://10.20.17.1:5701/hazelcast/rest/maps/mapName/foo
 ```
 If you leave key empty as follows, it will delete all entries from map.
 
-```
+```plain
 $ curl -v -X DELETE http://10.20.17.1:5701/hazelcast/rest/maps/mapName
 ```
-```
+
+```plain
 < HTTP/1.1 200 OK
 < Content-Type: text/plain
 < Content-Length: 0
@@ -121,7 +122,7 @@ $ curl -v -X DELETE http://10.20.17.1:5701/hazelcast/rest/maps/mapName
 
 You can use POST call to create an item on the queue. A sample is shown below.
 
-```
+```plain
 $ curl -v -X POST -H "Content-Type: text/plain" -d "foo" http://10.20.17.1:5701/hazelcast/rest/queues/myEvents
 ```
 
@@ -129,7 +130,7 @@ Above call is equivalent to `HazelcastInstance#getQueue("myEvents").offer("foo")
 
 It will return the following if successful:
 
-```
+```plain
 < HTTP/1.1 200 OK
 < Content-Type: text/plain
 < Content-Length: 0
@@ -137,7 +138,7 @@ It will return the following if successful:
 
 It will return the following if queue is full and item is not be able to offered to queue:
 
-```
+```plain
 < HTTP/1.1 503 Service Unavailable
 < Content-Length: 0
 ```
@@ -148,13 +149,13 @@ DELETE call can be used for retrieving. Note that, poll timeout should be stated
 
 A sample is shown below (**10** being the timeout value).
 
-```
+```plain
 $ curl -v -X DELETE \http://10.20.17.1:5701/hazelcast/rest/queues/myEvents/10
 ```
 
 Above call is equivalent to `HazelcastInstance#getQueue("myEvents").poll(10, SECONDS);`. Below is the returns of above call.
 
-```
+```plain
 < HTTP/1.1 200 OK
 < Content-Type: text/plain
 < Content-Length: 3
@@ -164,7 +165,7 @@ foo
 When the timeout is reached, the return will be `No Content` success, i.e. there is no item on the queue to be returned.
 
 
-```
+```plain
 < HTTP/1.1 204 No Content
 < Content-Length: 0
 ```
@@ -172,13 +173,13 @@ When the timeout is reached, the return will be `No Content` success, i.e. there
 
 **Getting the size of the queue**
 
-```
+```plain
 $ curl -v -X GET \http://10.20.17.1:5701/hazelcast/rest/queues/myEvents/size
 ```
 
 Above call is equivalent to `HazelcastInstance#getQueue("myEvents").size();`. Below is a sample return of above call.
 
-```
+```plain
 < HTTP/1.1 200 OK
 < Content-Type: text/plain
 < Content-Length: 1
@@ -187,23 +188,23 @@ Above call is equivalent to `HazelcastInstance#getQueue("myEvents").size();`. Be
 ---
 Besides the above operations, you can check the status of your cluster, a sample of which is shown below.
 
-```
+```plain
 $ curl -v http://127.0.0.1:5701/hazelcast/rest/cluster
 ```
 
 The return will be similar to the following:
 
-```
+```plain
 < HTTP/1.1 200 OK
 < Content-Length: 119
 
 Members [5] {
-    Member [10.20.17.1:5701] this
-    Member [10.20.17.2:5701]
-    Member [10.20.17.4:5701]
-    Member [10.20.17.3:5701]
-    Member [10.20.17.5:5701]
- }
+  Member [10.20.17.1:5701] this
+  Member [10.20.17.2:5701]
+  Member [10.20.17.4:5701]
+  Member [10.20.17.3:5701]
+  Member [10.20.17.5:5701]
+}
 
 ConnectionCount: 5
 AllConnectionCount: 20
@@ -214,6 +215,6 @@ AllConnectionCount: 20
 RESTful access is provided through any member of your cluster. So you can even put an HTTP load-balancer in front of your cluster members for load balancing and fault tolerance.
 
 
-***Note***: *You need to handle the failures on REST polls as there is no transactional guarantee.*
+***NOTE***: *You need to handle the failures on REST polls as there is no transactional guarantee.*
 
 

@@ -32,7 +32,7 @@ import java.io.IOException;
 public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
 
     protected Data key;
-    private long threadId;
+    protected long threadId;
 
     public AbstractIsLockedRequest() {
     }
@@ -80,6 +80,11 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return serializationService.toObject(key);
     }
 
     @Override

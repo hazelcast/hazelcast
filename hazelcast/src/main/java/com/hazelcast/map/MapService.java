@@ -168,12 +168,12 @@ public final class MapService implements ManagedService, MigrationAwareService,
     public static MapService create(NodeEngine nodeEngine) {
         final MapServiceContext mapServiceContext = new DefaultMapServiceContext(nodeEngine);
         final ManagedService managedService = new MapManagedService(mapServiceContext);
-        final MigrationAwareService migrationAwareService = new MapMigrationAwareService(mapServiceContext, nodeEngine);
-        final TransactionalService transactionalService = new MapTransactionalService(mapServiceContext, nodeEngine);
-        final RemoteService remoteService = new MapRemoteService(mapServiceContext, nodeEngine);
-        final EventPublishingService eventPublisher = new MapEventPublishingService(mapServiceContext, nodeEngine);
+        final MigrationAwareService migrationAwareService = new MapMigrationAwareService(mapServiceContext);
+        final TransactionalService transactionalService = new MapTransactionalService(mapServiceContext);
+        final RemoteService remoteService = new MapRemoteService(mapServiceContext);
+        final EventPublishingService eventPublisher = new MapEventPublishingService(mapServiceContext);
         final PostJoinAwareService postJoinAwareService = new MapPostJoinAwareService(mapServiceContext);
-        final SplitBrainHandlerService splitBrainHandler = new MapSplitBrainHandler(mapServiceContext, nodeEngine);
+        final SplitBrainHandlerService splitBrainHandler = new MapSplitBrainHandler(mapServiceContext);
         final ReplicationSupportingService replicationSupportingService
                 = new MapReplicationSupportingService(mapServiceContext, nodeEngine);
 

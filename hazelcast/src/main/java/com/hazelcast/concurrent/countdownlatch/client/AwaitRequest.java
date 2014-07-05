@@ -29,6 +29,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public final class AwaitRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
@@ -83,5 +84,20 @@ public final class AwaitRequest extends KeyBasedClientRequest implements Portabl
     @Override
     public Permission getRequiredPermission() {
         return new CountDownLatchPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "await";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{timeout, TimeUnit.MILLISECONDS};
     }
 }

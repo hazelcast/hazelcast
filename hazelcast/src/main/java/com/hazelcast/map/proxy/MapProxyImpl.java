@@ -41,6 +41,7 @@ import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -48,7 +49,6 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -409,14 +409,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+    public String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key,
+                                        boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
-        return addLocalEntryListenerInternal(listener, predicate, toData(key, partitionStrategy), includeValue);
+        Data keyData = toData(key, partitionStrategy);
+        return addLocalEntryListenerInternal(listener, predicate, keyData, includeValue);
     }
 
     @Override
@@ -509,7 +511,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (keys.isEmpty()) {
             return;
         }
-        final Collection<Data> dataKeys = convertKeysToData(keys);
+        final List<Data> dataKeys = convertKeysToData(keys);
         loadAllInternal(dataKeys, replaceExistingValues);
     }
 
@@ -531,6 +533,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
      *
      * @see #clear
      */
+    //TODO: Why is this not tested
+    //TODO: how come the implementation is the same as clear? I think this code is broken.
+    //TODO: This method also isn't part of the IMap API.
     public void clearMapOnly() {
         //need a different method here that does not call deleteAll
         clearInternal();
@@ -538,33 +543,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Set<K> keySet() {
-        Set<Data> dataSet = keySetInternal();
-        HashSet<K> keySet = new HashSet<K>();
-        for (Data data : dataSet) {
-            keySet.add((K) toObject(data));
-        }
-        return keySet;
+       return keySet(TruePredicate.INSTANCE);
     }
 
     @Override
     public Collection<V> values() {
-        Collection<Data> dataSet = valuesInternal();
-        Collection<V> valueSet = new ArrayList<V>();
-        for (Data data : dataSet) {
-            valueSet.add((V) toObject(data));
-        }
-        return valueSet;
+        return values(TruePredicate.INSTANCE);
     }
 
     @Override
     public Set entrySet() {
-        Set<Entry<Data, Data>> entries = entrySetInternal();
-        Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
-        for (Entry<Data, Data> entry : entries) {
-            resultSet.add(new AbstractMap.SimpleImmutableEntry((K) toObject(entry.getKey()),
-                    (V) toObject(entry.getValue())));
-        }
-        return resultSet;
+        return entrySet(TruePredicate.INSTANCE);
     }
 
     @Override
@@ -593,12 +582,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Set<K> localKeySet() {
-        final Set<Data> dataSet = localKeySetInternal();
-        final Set<K> keySet = new HashSet<K>(dataSet.size());
-        for (Data data : dataSet) {
-            keySet.add((K) toObject(data));
-        }
-        return keySet;
+        return localKeySet(TruePredicate.INSTANCE);
     }
 
     @Override
@@ -614,7 +598,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        return toObject(executeOnKeyInternal(toData(key, partitionStrategy), entryProcessor));
+        Data result = executeOnKeyInternal(toData(key, partitionStrategy), entryProcessor);
+        return toObject(result);
     }
 
     @Override
@@ -675,15 +660,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
             MappingJob mappingJob = job.mapper(mapper);
             ReducingSubmittableJob reducingJob;
-            if (combinerFactory != null) {
-                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
-            } else {
+            if (combinerFactory == null) {
                 reducingJob = mappingJob.reducer(reducerFactory);
+            } else {
+                reducingJob = mappingJob.combiner(combinerFactory).reducer(reducerFactory);
             }
 
             ICompletableFuture<Result> future = reducingJob.submit(collator);
             return future.get();
         } catch (Exception e) {
+            //todo: not what we want because it can lead to wrapping of even hazelcastexception
             throw new HazelcastException(e);
         }
     }
@@ -699,7 +685,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return returnObj;
     }
 
-    private <K> Collection<Data> convertKeysToData(Set<K> keys) {
+    private <K> List<Data> convertKeysToData(Set<K> keys) {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyList();
         }

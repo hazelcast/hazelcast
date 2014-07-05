@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.config;
 
+/**
+ * This class is related to SPI. To register custom services to java client.
+ */
 public class ProxyFactoryConfig {
 
     private String service;
@@ -30,18 +33,32 @@ public class ProxyFactoryConfig {
         this.service = service;
     }
 
+    /**
+     * @return class name of proxy factory
+     */
     public String getClassName() {
         return className;
     }
 
+    /**
+     * Sets class name of proxy factory
+     *
+     * @param className of proxy factory
+     */
     public void setClassName(String className) {
         this.className = className;
     }
 
+    /**
+     * @return service implementation of related proxy factory
+     */
     public String getService() {
         return service;
     }
 
+    /**
+     * @param service for given proxy factory
+     */
     public void setService(String service) {
         this.service = service;
     }

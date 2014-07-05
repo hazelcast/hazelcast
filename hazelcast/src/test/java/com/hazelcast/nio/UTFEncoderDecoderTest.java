@@ -21,18 +21,15 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
+
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -46,6 +43,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -350,6 +348,31 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testIssue2705_integer_overflow_on_old_version_multicast_package() throws Exception {
+        SerializationService serializationService = new SerializationServiceBuilder().build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(64000);
+        byte[] temp = new byte[1024];
+        InputStream is = UTFEncoderDecoderTest.class.getResourceAsStream("hz-3.1.5-multicast-package.dump");
+        int length;
+        while ((length = is.read(temp)) != -1) {
+            baos.write(temp, 0, length);
+        }
+
+        BufferObjectDataInput dataInput = serializationService.createObjectDataInput(baos.toByteArray());
+        dataInput.position(1);
+
+        try {
+            dataInput.readObject();
+        } catch (HazelcastSerializationException e) {
+            if (e.getCause() == null || !(e.getCause() instanceof UTFDataFormatException)) {
+                fail("Expected UTFDataFormatException");
+            }
+            return;
+        }
+        fail("HazelcastSerializationException is expected");
+    }
 
     private String createString(int length) {
         char[] c = new char[length];

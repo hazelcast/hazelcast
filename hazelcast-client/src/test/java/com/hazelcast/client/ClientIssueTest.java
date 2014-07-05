@@ -279,7 +279,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
         try {
             map.get("key1");
             fail();
-        } catch (HazelcastException ignored) {
+        } catch (Exception ignored) {
         }
         assertFalse(instance.getLifecycleService().isRunning());
     }

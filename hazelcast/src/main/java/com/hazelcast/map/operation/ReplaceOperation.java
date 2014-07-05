@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 
 public class ReplaceOperation extends BasePutOperation {
 
-    private boolean successful = false;
+    private boolean successful;
 
     public ReplaceOperation(String name, Data dataKey, Data value) {
         super(name, dataKey, value);

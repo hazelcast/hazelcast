@@ -77,6 +77,11 @@ public class MapFlushRequest extends AllPartitionsClientRequest implements Porta
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "flush";
     }

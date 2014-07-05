@@ -52,9 +52,9 @@ After you run the first code, run the `PrintMember`. You will see the key **`a`*
 When using MultiMap, the collection type of values can be either a **Set** or a **List**. This is configured with `valueCollectionType` parameter. If you choose `Set`, duplicate and null values are allowed in your collection and ordering is irrelevant. If you choose `List`, ordering is relevant and your collection can include duplicate and null values.
 
 You can also enable statistics for your MultiMap using the `statisticsEnabled` parameter. If enabled, statistics can be retrieved with `getLocalMultiMapStats()` method.
+<br></br>
 
-
-<font color="red">***Related Information***</font>
+***RELATED INFORMATION***
 
 *Please refer to [MultiMapConfig.java](https://github.com/hazelcast/hazelcast/blob/b20df7b1677e00431ceddb7e90a0e3615a3e9914/hazelcast/src/main/java/com/hazelcast/config/MultiMapConfig.java) for more information on configuration options.*
 

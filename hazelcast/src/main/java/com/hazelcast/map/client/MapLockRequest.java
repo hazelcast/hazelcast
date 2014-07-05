@@ -77,4 +77,9 @@ public class MapLockRequest extends AbstractLockRequest implements SecureRequest
     public String getDistributedObjectType() {
         return MapService.SERVICE_NAME;
     }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

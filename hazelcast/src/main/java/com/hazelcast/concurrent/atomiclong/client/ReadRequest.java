@@ -70,6 +70,11 @@ public abstract class ReadRequest extends PartitionClientRequest
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public Permission getRequiredPermission() {
         return new AtomicLongPermission(name, ActionConstants.ACTION_READ);
     }

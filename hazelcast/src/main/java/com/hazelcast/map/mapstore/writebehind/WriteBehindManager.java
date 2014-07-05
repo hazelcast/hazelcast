@@ -33,22 +33,26 @@ public class WriteBehindManager implements MapStoreManager {
 
     private MapContainer mapContainer;
 
+    private String executorName;
+
     public WriteBehindManager(MapContainer mapContainer) {
         this.mapContainer = mapContainer;
         writeBehindProcessor = createWriteBehindProcessor(mapContainer);
         storeWorker = new StoreWorker(mapContainer, writeBehindProcessor);
-        scheduledExecutor = getScheduledExecutorService(mapContainer.getName(), mapContainer.getMapServiceContext());
+        executorName = EXECUTOR_NAME_PREFIX + mapContainer.getName();
+        scheduledExecutor = getScheduledExecutorService(mapContainer.getMapServiceContext());
     }
 
     public void start() {
         scheduledExecutor.scheduleAtFixedRate(storeWorker, 1, 1, TimeUnit.SECONDS);
     }
 
-    // TODO add shutdown test.
     public void stop() {
-        scheduledExecutor.shutdown();
+        NodeEngine nodeEngine = mapContainer.getMapServiceContext().getNodeEngine();
+        nodeEngine.getExecutionService().shutdownExecutor(executorName);
     }
 
+    //todo get this via constructor function.
     @Override
     public MapDataStore getMapDataStore(int partitionId) {
         return MapDataStores.createWriteBehindStore(mapContainer, partitionId, writeBehindProcessor);
@@ -85,10 +89,9 @@ public class WriteBehindManager implements MapStoreManager {
     }
 
 
-    private ScheduledExecutorService getScheduledExecutorService(String mapName, MapServiceContext mapServiceContext) {
+    private ScheduledExecutorService getScheduledExecutorService(MapServiceContext mapServiceContext) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final ExecutionService executionService = nodeEngine.getExecutionService();
-        final String executorName = EXECUTOR_NAME_PREFIX + mapName;
         executionService.register(executorName, 1, EXECUTOR_DEFAULT_QUEUE_CAPACITY, ExecutorType.CACHED);
         return executionService.getScheduledExecutor(executorName);
     }

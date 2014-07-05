@@ -115,6 +115,11 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         if (async) {
             return "removeAsync";

@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi;
 
+/**
+ * A component used in wait/notify systems like Condition.
+ */
 public interface Notifier {
 
     boolean shouldNotify();

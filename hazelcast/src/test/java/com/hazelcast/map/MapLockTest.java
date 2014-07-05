@@ -215,7 +215,7 @@ public class MapLockTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        assertTrue(latch.await(60, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
     }
 
     @Test(timeout = 1000*15, expected = IllegalMonitorStateException.class)

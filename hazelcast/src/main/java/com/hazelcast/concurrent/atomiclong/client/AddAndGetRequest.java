@@ -38,4 +38,21 @@ public class AddAndGetRequest extends AtomicLongRequest {
         return AtomicLongPortableHook.ADD_AND_GET;
     }
 
+    @Override
+    public String getMethodName() {
+        if (delta == -1) {
+            return "decrementAndGet";
+        } else if (delta == 1) {
+            return "incrementAndGet";
+        }
+        return "addAndGet";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (delta == 1 || delta == -1) {
+            return null;
+        }
+        return super.getParameters();
+    }
 }

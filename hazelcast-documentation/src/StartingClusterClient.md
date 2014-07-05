@@ -11,7 +11,7 @@ In this short tutorial, we will:
 2. Then, we will run our application twice to have two nodes (JVMs) clustered. 
 3. And, connect to our cluster from another Java application by using Hazelcast Native Java Client API.
 
-Let`s begin.
+Let's begin.
 
 
 -	Following code will start the first node and create and use `customers` map and queue.
@@ -78,13 +78,13 @@ public class GettingStartedClient {
 
 Hazelcast also offers a tool, **Management Center**, that enables monitoring your cluster. To be able to use it, deploy the `mancenter-`*`<version>`*`.war` included in the ZIP file to your web server. You can use it to monitor your maps, queues, other distributed data structures and nodes. Please see [Management Center](#management-center) for usage explanations.
 
-<br> </br>
-
-<font color="red">
-***Related Information***
-</font>
 
 By default Hazelcast uses Multicast to discover other nodes to form a cluster.  If you are working with other Hazelcast developers on the same network, you may find yourself joining their clusters using the default settings.  Hazelcast provides a way to segregate clusters within the same network when using Multicast. Please see [How do I create separate clusters](#how-do-i-create-separate-clusters) for more information.  Alternatively, if you do not wish to use the default Multicast mechanism, you can provide a fixed list of IP addresses that are allowed to join. Please see the section [Configuring TCP/IP Cluster](#network-configuration) for more information.
+
+<br> </br>
+
+
+***RELATED INFORMATION***
 
 *You can also check the video tutorials [here](http://hazelcast.org/getting-started/).*
 
