@@ -47,7 +47,7 @@ public class DefaultRecordStoreLoader implements RecordStoreLoader {
         this.name = mapContainer.getName();
         this.mapServiceContext = mapContainer.getMapServiceContext();
         this.partitionId = recordStore.getPartitionId();
-        this.mapDataStore = mapContainer.getMapStoreManager().getMapDataStore(partitionId);
+        this.mapDataStore = recordStore.getMapDataStore();
         this.logger = mapServiceContext.getNodeEngine().getLogger(getClass());
         this.loaded = new AtomicBoolean(false);
     }
