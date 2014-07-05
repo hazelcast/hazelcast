@@ -16,9 +16,9 @@ class MapRemoteService implements RemoteService {
     private MapServiceContext mapServiceContext;
     private NodeEngine nodeEngine;
 
-    public MapRemoteService(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
+    public MapRemoteService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = mapServiceContext.getNodeEngine();
     }
 
     @Override

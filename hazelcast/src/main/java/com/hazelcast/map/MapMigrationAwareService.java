@@ -24,9 +24,9 @@ class MapMigrationAwareService implements MigrationAwareService {
     private MapServiceContext mapServiceContext;
     private SerializationService serializationService;
 
-    public MapMigrationAwareService(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
+    public MapMigrationAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
     }
 
     @Override

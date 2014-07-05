@@ -21,9 +21,9 @@ class MapSplitBrainHandler implements SplitBrainHandlerService {
     private MapServiceContext mapServiceContext;
     private NodeEngine nodeEngine;
 
-    public MapSplitBrainHandler(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
+    public MapSplitBrainHandler(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = mapServiceContext.getNodeEngine();
     }
 
     @Override
