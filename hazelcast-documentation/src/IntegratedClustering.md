@@ -57,6 +57,8 @@ Then add below properties into your Hibernate configuration file (e.g. `hibernat
 	```xml
 	<property name="hibernate.cache.use_minimal_puts">true</property>
 	```
+	
+***NOTE:*** *QueryCache is always LOCAL to the node and never distributed across Hazelcast Cluster.*
 
 ### Hazelcast Configuration
 
@@ -90,10 +92,15 @@ Hazelcast creates a separate distributed map for each Hibernate cache region. So
 
 ##### HazelcastCacheRegionFactory
 
-HazelcastCacheRegionFactory uses standard Hazelcast distributed maps. Therefore, all operations like get, put and remove will be performed using the distributed map logic. The only downside of using HazelcastCacheRegionFactory may be the lower performance compared to HazelcastLocalCacheRegionFactory since operations are handled as distributed calls.
+HazelcastCacheRegionFactory uses standard Hazelcast Distributed Maps. Therefore, all operations like get, put and remove will be performed using the Distributed Map logic. The only downside of using HazelcastCacheRegionFactory may be the lower performance compared to HazelcastLocalCacheRegionFactory since operations are handled as distributed calls.
 
 ***NOTE:*** *If you use HazelcastCacheRegionFactory, you can see your maps on [Management Center](#management-center).*
 
+With HazelcastCacheRegionFactory , all of the following caches are distributed across Hazelcast Cluster.
+
+- Entity Cache
+- Collection Cache
+- Timestamp Cache
 
 
 ##### HazelcastLocalCacheRegionFactory
@@ -108,7 +115,15 @@ If your operations are mostly read ones, then this option is a better one regard
 
 ***NOTE:*** *If you use HazelcastLocalCacheRegionFactory, you cannot see your maps on [Management Center](#management-center).*
 
+With HazelcastLocalCacheRegionFactory , all of the following caches are not distributed and kept locally in the Hazelcast Node.
 
+- Entity Cache
+- Collection Cache
+- Timestamp Cache
+
+Entity and Collection are invalidated on update. When they are updated on a node, an invalidation message is sent to all other nodes in order to remove the entity from their local cache. When needed, Each node reads that data from underlying DB. 
+
+Timestamp cache is replicated. On every update, a replication message is sent to all other nodes.
 
 
 
