@@ -197,7 +197,9 @@ public class ClientMapStoreTest extends HazelcastTestSupport{
         config.addMapConfig(mapConfig);
 
         HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
-        IMap map = server.getMap(MAP_NAME);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        IMap map = client.getMap(MAP_NAME);
 
         for(int i=0; i<1; i++){
             map.putAsync(i, i);
