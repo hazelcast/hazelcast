@@ -16,7 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.helpers.DummyMapStore;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -41,11 +44,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 //it needs to run serial because some tests are relying on System properties they are setting themselves.
 @RunWith(HazelcastSerialClassRunner.class)
@@ -447,6 +446,33 @@ public class XMLConfigBuilderTest {
         buildConfig(invalidXml);
         fail(); //if we, for any reason, we get through the parsing, fail.
     }
+
+
+    @Test
+    public void setMapStoreConfigImplementationTest() {
+        String mapName = "mapStoreImpObjTest";
+        String xml =
+                "<hazelcast>\n" +
+                    "<map name=\""+ mapName +"\">\n" +
+                        "<map-store enabled=\"true\">\n" +
+                            "<class-name>com.hazelcast.config.helpers.DummyMapStore</class-name>\n" +
+                            "<write-delay-seconds>5</write-delay-seconds>\n" +
+                        "</map-store>\n" +
+                    "</map>\n" +
+                "</hazelcast>\n";
+
+        Config config = buildConfig(xml);
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        hz.getMap(mapName);
+
+        MapConfig mapConfig = hz.getConfig().getMapConfig(mapName);
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        Object o = mapStoreConfig.getImplementation();
+
+        assertNotNull(o);
+        assertTrue(o instanceof DummyMapStore);
+    }
+
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);

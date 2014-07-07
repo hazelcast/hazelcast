@@ -154,6 +154,7 @@ public class MapContainer extends MapContainerSupport {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        nodeEngine.getConfig().getMapConfig(name).getMapStoreConfig().setImplementation(store);
         storeWrapper = new MapStoreWrapper(store, name, mapStoreConfig.isEnabled());
         return storeWrapper;
     }
