@@ -456,6 +456,21 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         Address endpoint = clientConnection.getRemoteEndpoint();
         if (endpoint != null) {
             connections.remove(clientConnection.getRemoteEndpoint());
+            closeIfOwnerConnection(endpoint);
+        }
+    }
+
+    private void closeIfOwnerConnection(Address endpoint) {
+        final ClientConnection currentOwnerConnection = ownerConnection;
+        if (currentOwnerConnection == null || !currentOwnerConnection.live()) {
+            return;
+        }
+        if (endpoint.equals(currentOwnerConnection.getRemoteEndpoint())) {
+            try {
+                currentOwnerConnection.close();
+            } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
+            }
         }
     }
 
