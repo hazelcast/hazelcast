@@ -448,7 +448,7 @@ public class WebFilter implements Filter {
             IMap<String, Object> clusterMap = getClusterMap();
             if (deferredWrite) {
                 LocalCacheEntry cacheEntry = localCache.get(name);
-                if (cacheEntry == null || cacheEntry.reload) {
+                if (cacheEntry == null || (cacheEntry.reload && !cacheEntry.dirty)) {
                     Object value = clusterMap.get(buildAttributeName(name));
                     if (value == null) {
                         cacheEntry = NULL_ENTRY;

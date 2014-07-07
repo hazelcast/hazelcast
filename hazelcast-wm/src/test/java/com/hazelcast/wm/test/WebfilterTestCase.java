@@ -187,4 +187,29 @@ public class WebfilterTestCase extends AbstractWebfilterTestCase {
         assertNotEquals(oldSessionId, newSessionId);
     }
 
+    @Test
+    public void testUpdateAndReadSameRequest() throws Exception{
+        IMap<String, Object> map = hz.getMap("default");
+
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("write", serverPort1, cookieStore);
+
+        String value = executeRequest("update-and-read-same-request", serverPort2, cookieStore);
+        assertEquals("value-updated", value);
+    }
+
+    @Test
+    public void testUpdateAndReadSameRequestWithRestart() throws Exception{
+        IMap<String, Object> map = hz.getMap("default");
+
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("write", serverPort1, cookieStore);
+        server1.stop();
+        server1.start();
+
+        String value = executeRequest("update-and-read-same-request", serverPort1, cookieStore);
+        assertEquals("value-updated", value);
+    }
+
+
 }
