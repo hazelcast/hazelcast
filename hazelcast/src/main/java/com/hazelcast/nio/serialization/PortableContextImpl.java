@@ -177,9 +177,7 @@ final class PortableContextImpl implements PortableContext {
             }
             if (cd instanceof ClassDefinitionImpl) {
                 final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
-                if (cdImpl.getVersion() < 0) {
-                    cdImpl.version = getVersion();
-                }
+                cdImpl.setVersionIfNotSet(getVersion());
                 setClassDefBinary(cdImpl);
                 registerNestedDefinitions(cdImpl);
             }
@@ -189,6 +187,10 @@ final class PortableContextImpl implements PortableContext {
                 return cd;
             }
             if (currentCd instanceof ClassDefinitionImpl) {
+                if (!currentCd.equals(cd)) {
+                    throw new HazelcastSerializationException("Incompatible class-definitions with same class-id: " +
+                            cd + " VS " + currentCd);
+                }
                 return currentCd;
             }
             versionedDefinitions.put(versionedClassId, cd);

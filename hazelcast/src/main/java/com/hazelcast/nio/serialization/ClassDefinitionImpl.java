@@ -128,8 +128,18 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         }
     }
 
+    @Override
     public int getFieldCount() {
         return fieldDefinitions.size();
+    }
+
+    void setVersionIfNotSet(int version) {
+        if (getVersion() < 0) {
+            this.version = version;
+            for (FieldDefinition fd : fieldDefinitions) {
+                ((FieldDefinitionImpl) fd).setVersionIfNotSet(version);
+            }
+        }
     }
 
     @Override
@@ -148,6 +158,18 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         }
         if (version != that.version) {
             return false;
+        }
+        if (getFieldCount() != that.getFieldCount()) {
+            return false;
+        }
+        for (FieldDefinition fd : fieldDefinitions) {
+            FieldDefinition fd2 = that.get(fd.getName());
+            if (fd2 == null) {
+                return false;
+            }
+            if (!fd.equals(fd2)) {
+                return false;
+            }
         }
 
         return true;
