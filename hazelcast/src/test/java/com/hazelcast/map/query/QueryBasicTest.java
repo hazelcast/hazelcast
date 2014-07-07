@@ -2,8 +2,13 @@ package com.hazelcast.map.query;
 
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -19,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -861,4 +867,113 @@ public class QueryBasicTest extends HazelcastTestSupport {
         assertEquals(3, values.size());
     }
 
+    @Test
+    public void testQueryPortableObjectWithoutIndex() {
+        testQueryUsingPortableObject(new Config(), randomMapName());
+    }
+
+    @Test
+    public void testQueryPortableObjectWithoutIndexAndOptimizeQueries() {
+        String name = randomMapName();
+        Config config = new Config();
+        config.addMapConfig(new MapConfig(name).setOptimizeQueries(true));
+
+        testQueryUsingPortableObject(config, name);
+    }
+
+    @Test
+    public void testQueryPortableObjectWithIndex() {
+        String name = randomMapName();
+        Config config = new Config();
+        MapConfig mapConfig = new MapConfig(name)
+                .addMapIndexConfig(new MapIndexConfig("timestamp", true));
+        config.addMapConfig(mapConfig);
+
+        testQueryUsingPortableObject(config, name);
+    }
+
+    @Test
+    public void testQueryPortableObjectWithIndexAndOptimizeQueries() {
+        String name = randomMapName();
+        Config config = new Config();
+        MapConfig mapConfig = new MapConfig(name)
+                .setOptimizeQueries(true)
+                .addMapIndexConfig(new MapIndexConfig("timestamp", true));
+        config.addMapConfig(mapConfig);
+
+        testQueryUsingPortableObject(config, name);
+    }
+
+    private void testQueryUsingPortableObject(Config config, String mapName) {
+        HazelcastInstance hz = createHazelcastInstance(config);
+        IMap<Object, Object> map = hz.getMap(mapName);
+
+        map.put(1, new NestedObject(1L));
+        Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
+        assertEquals(1, values.size());
+    }
+
+    public static class OuterObject implements Portable {
+
+        private NestedObject nested;
+
+        public OuterObject(NestedObject nested) {
+            this.nested = nested;
+        }
+
+        public NestedObject getNested() {
+            return nested;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 1;
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writePortable("nested", nested);
+        }
+    }
+
+    public static class NestedObject implements Portable {
+
+        private long timestamp;
+
+        public NestedObject(long timestamp) {
+            this.timestamp = timestamp;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 2;
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeLong("timestamp", timestamp);
+        }
+    }
 }

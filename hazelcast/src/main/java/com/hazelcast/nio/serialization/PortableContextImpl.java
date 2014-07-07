@@ -188,8 +188,8 @@ final class PortableContextImpl implements PortableContext {
             }
             if (currentCd instanceof ClassDefinitionImpl) {
                 if (!currentCd.equals(cd)) {
-                    throw new HazelcastSerializationException("Incompatible class-definitions with same class-id: " +
-                            cd + " VS " + currentCd);
+                    throw new HazelcastSerializationException("Incompatible class-definitions with same class-id: "
+                            + cd + " VS " + currentCd);
                 }
                 return currentCd;
             }

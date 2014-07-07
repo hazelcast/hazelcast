@@ -142,6 +142,8 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         }
     }
 
+    //CHECKSTYLE:OFF
+    //Generated equals method has too high NPath Complexity
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -174,6 +176,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
 
         return true;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {

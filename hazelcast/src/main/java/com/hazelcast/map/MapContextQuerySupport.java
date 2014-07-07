@@ -2,8 +2,10 @@ package com.hazelcast.map;
 
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.IterationType;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -17,9 +19,9 @@ public interface MapContextQuerySupport {
      * @param mapName     map name.
      * @param predicate   any predicate.
      * @param partitionId partition id.
-     * @return {@link com.hazelcast.map.QueryResult}
+     * @return result of query
      */
-    QueryResult queryOnPartition(String mapName, Predicate predicate, int partitionId);
+    Collection<QueryableEntry> queryOnPartition(String mapName, Predicate predicate, int partitionId);
 
     /**
      * Used for predicates which queries on node local entries, except paging predicate.
