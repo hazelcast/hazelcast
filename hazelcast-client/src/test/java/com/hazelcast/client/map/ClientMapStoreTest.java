@@ -179,6 +179,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport{
 
 
     @Test
+    @Category(ProblematicTest.class)
     public void destroyMap_configedWith_MapStore() throws Exception{
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
