@@ -524,6 +524,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 logger.warning(s.toString());
             }
 
+            stateVersion.set(partitionState.getVersion());
+            initialized = true;
+
             Collection<MigrationInfo> completedMigrations = partitionState.getCompletedMigrations();
             for (MigrationInfo completedMigration : completedMigrations) {
                 addCompletedMigration(completedMigration);
@@ -540,8 +543,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 partition.setPartitionInfo(replicas);
             }
 
-            stateVersion.set(partitionState.getVersion());
-            initialized = true;
         } finally {
             lock.unlock();
         }
@@ -800,7 +801,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 timeoutInMillis -= sleep;
             }
             if (timeoutInMillis <= 0) {
-                return false;
+                break;
             }
 
             if (node.isMaster()) {
@@ -817,7 +818,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     timeoutInMillis -= sleep;
                 }
                 if (timeoutInMillis <= 0) {
-                    return false;
+                    break;
                 }
             }
 
@@ -829,7 +830,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 return true;
             } else {
                 if (timeoutInMillis <= 0) {
-                    return false;
+                    break;
                 }
                 logger.info("Some backup replicas are inconsistent with primary, " +
                         "waiting for synchronization. Timeout: " + timeoutInMillis + "ms");
@@ -870,7 +871,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private boolean checkReplicaSyncState() {
-        if (!initialized || !node.joined()) {
+        if (!initialized) {
             return true;
         }
 
