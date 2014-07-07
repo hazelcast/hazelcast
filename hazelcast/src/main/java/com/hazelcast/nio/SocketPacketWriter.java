@@ -19,9 +19,8 @@ package com.hazelcast.nio;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ExceptionUtil;
-
-import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
+import javax.crypto.Cipher;
 
 class SocketPacketWriter implements SocketWriter<Packet> {
 
@@ -101,8 +100,10 @@ class SocketPacketWriter implements SocketWriter<Packet> {
                 if (outputSize <= socketBuffer.remaining()) {
                     cipher.update(packetBuffer, socketBuffer);
                 } else {
-                    int min = Math.min(packetBuffer.remaining(), socketBuffer.remaining());
-                    int len = min / 2;
+                    int len = packetBuffer.remaining() / 2;
+                    while (len > 0 && cipher.getOutputSize(len) > socketBuffer.remaining()) {
+                        len = len / 2;
+                    }
                     if (len > 0) {
                         int limitOld = packetBuffer.limit();
                         packetBuffer.limit(packetBuffer.position() + len);

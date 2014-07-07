@@ -18,10 +18,9 @@ package com.hazelcast.nio;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ExceptionUtil;
-
+import java.nio.ByteBuffer;
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
-import java.nio.ByteBuffer;
 
 class SocketPacketReader implements SocketReader {
 
@@ -133,9 +132,15 @@ class SocketPacketReader implements SocketReader {
                     if (complete) {
                         enqueueFullPacket(packet);
                         packet = null;
+                    } else {
+                        break;
                     }
                 }
-                cipherBuffer.clear();
+                if (cipherBuffer.hasRemaining()) {
+                    cipherBuffer.compact();
+                } else {
+                    cipherBuffer.clear();
+                }
             }
         }
     }
