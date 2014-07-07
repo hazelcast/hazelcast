@@ -91,7 +91,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final IOSelector inSelector;
     private final IOSelector outSelector;
     private final boolean smartRouting;
-    private volatile Address ownerConnectionAddress = null;
+    private volatile ClientConnection ownerConnection = null;
     private final Object ownerConnectionLock = new Object();
 
     private final Credentials credentials;
@@ -204,13 +204,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     public void markOwnerAddressAsClosed() {
         synchronized (ownerConnectionLock) {
-            ownerConnectionAddress = null;
+            ownerConnection = null;
         }
     }
 
     private Address waitForOwnerConnection() throws RetryableIOException {
-        if (ownerConnectionAddress != null) {
-            return ownerConnectionAddress;
+        if (ownerConnection != null) {
+            return ownerConnection.getRemoteEndpoint();
         }
 
         synchronized (ownerConnectionLock) {
@@ -219,7 +219,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
             int waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
 
-            while (ownerConnectionAddress == null) {
+            while (ownerConnection == null) {
                 try {
                     ownerConnectionLock.wait(waitTime);
                 } catch (InterruptedException e) {
@@ -227,7 +227,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     throw new RetryableIOException(e);
                 }
             }
-            return ownerConnectionAddress;
+            return ownerConnection.getRemoteEndpoint();
         }
     }
 
@@ -237,12 +237,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
         ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
         try {
-            final ClientConnection clientConnection = future.get(5, TimeUnit.SECONDS);
+            ownerConnection = future.get(5, TimeUnit.SECONDS);
             synchronized (ownerConnectionLock) {
-                ownerConnectionAddress = clientConnection.getRemoteEndpoint();
                 ownerConnectionLock.notifyAll();
             }
-            return clientConnection;
+            return ownerConnection;
         } catch (Exception e) {
             future.cancel(true);
             throw new RetryableIOException(e);
@@ -390,6 +389,20 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         Address endpoint = clientConnection.getRemoteEndpoint();
         if (endpoint != null) {
             connections.remove(clientConnection.getRemoteEndpoint());
+            closeIfOwnerConnection(endpoint);
+        }
+    }
+
+    private void closeIfOwnerConnection(Address endpoint) {
+        final ClientConnection currentOwnerConnection = ownerConnection;
+        if (currentOwnerConnection == null || !currentOwnerConnection.live()) {
+            return;
+        }
+        if (endpoint.equals(currentOwnerConnection.getRemoteEndpoint())) {
+            try {
+                currentOwnerConnection.close();
+            } catch (Exception ignored) {
+            }
         }
     }
 
