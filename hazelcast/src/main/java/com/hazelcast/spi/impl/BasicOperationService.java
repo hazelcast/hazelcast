@@ -124,6 +124,7 @@ final class BasicOperationService implements InternalOperationService {
     private final long defaultCallTimeout;
     private final ExecutionService executionService;
     private final OperationHandler operationHandler;
+    private final OperationBackupHandler operationBackupHandler;
     private final OperationPacketHandler operationPacketHandler;
     private final ResponsePacketHandler responsePacketHandler;
 
@@ -142,6 +143,7 @@ final class BasicOperationService implements InternalOperationService {
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.scheduler = new BasicOperationScheduler(node, executionService, new BasicDispatcherImpl());
         this.operationHandler = new OperationHandler();
+        this.operationBackupHandler = new OperationBackupHandler();
         this.operationPacketHandler = new OperationPacketHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
     }
@@ -711,7 +713,7 @@ final class BasicOperationService implements InternalOperationService {
                 BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
                 int syncBackupCount = 0;
                 if (backupAwareOp.shouldBackup()) {
-                    syncBackupCount = new OperationBackupHandler(backupAwareOp).backup();
+                    syncBackupCount = operationBackupHandler.backup(backupAwareOp);
                 }
                 if (returnsResponse) {
                     response = new NormalResponse(op.getResponse(), op.getCallId(), syncBackupCount, op.isUrgent());
@@ -826,52 +828,46 @@ final class BasicOperationService implements InternalOperationService {
      */
     private final class OperationBackupHandler {
 
-        private final BackupAwareOperation backupAwareOp;
-        private final Operation op;
-        private final InternalPartitionService partitionService;
-        private final String serviceName;
-        private final int partitionId;
-
-        private OperationBackupHandler(BackupAwareOperation backupAwareOp) {
-            this.backupAwareOp = backupAwareOp;
-            this.op = (Operation) backupAwareOp;
-            this.serviceName = op.getServiceName();
-            this.partitionService = nodeEngine.getPartitionService();
-            this.partitionId = op.getPartitionId();
-        }
-
-        public int backup() throws Exception {
+        public int backup(BackupAwareOperation backupAwareOp) throws Exception {
             int requestedSyncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                     ? min(InternalPartition.MAX_BACKUP_COUNT, backupAwareOp.getSyncBackupCount()) : 0;
 
             int requestedAsyncBackupCount = backupAwareOp.getAsyncBackupCount() > 0
-                    ? min(InternalPartition.MAX_BACKUP_COUNT - requestedSyncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
+                    ? min(InternalPartition.MAX_BACKUP_COUNT - requestedSyncBackupCount,
+                    backupAwareOp.getAsyncBackupCount()) : 0;
 
             int totalRequestedBackupCount = requestedSyncBackupCount + requestedAsyncBackupCount;
             if (totalRequestedBackupCount == 0) {
                 return 0;
             }
 
-            long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(partitionId, totalRequestedBackupCount);
+            Operation op = (Operation) backupAwareOp;
+            InternalPartitionService partitionService = node.getPartitionService();
+            long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(op.getPartitionId(),
+                    totalRequestedBackupCount);
 
-            int maxPossibleBackupCount = min(partitionService.getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT);
+            int maxPossibleBackupCount = min(partitionService.getMemberGroupsSize() - 1,
+                    InternalPartition.MAX_BACKUP_COUNT);
             int syncBackupCount = min(maxPossibleBackupCount, requestedSyncBackupCount);
             int asyncBackupCount = min(maxPossibleBackupCount - syncBackupCount, requestedAsyncBackupCount);
-            if (!op.returnsResponse()) {
-                asyncBackupCount += syncBackupCount;
-                syncBackupCount = 0;
-            }
 
             int totalBackupCount = syncBackupCount + asyncBackupCount;
             if (totalBackupCount == 0) {
                 return 0;
             }
 
-            return makeBackups(replicaVersions, syncBackupCount, totalBackupCount);
+            if (!op.returnsResponse()) {
+                syncBackupCount = 0;
+            }
+
+            return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackupCount, totalBackupCount);
         }
 
-        private int makeBackups(long[] replicaVersions, int syncBackupCount, int totalBackupCount) {
+        private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
+                int syncBackupCount, int totalBackupCount) {
+
             int sentSyncBackupCount = 0;
+            InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition partition = partitionService.getPartition(partitionId);
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
                 Address target = partition.getReplicaAddress(replicaIndex);
@@ -882,8 +878,8 @@ final class BasicOperationService implements InternalOperationService {
                 assertNoBackupOnPrimaryMember(partition, target);
 
                 boolean isSyncBackup = replicaIndex <= syncBackupCount;
-
-                makeBackup(replicaVersions, replicaIndex, target, isSyncBackup);
+                Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
+                send(backup, target);
 
                 if (isSyncBackup) {
                     sentSyncBackupCount++;
@@ -892,37 +888,35 @@ final class BasicOperationService implements InternalOperationService {
             return sentSyncBackupCount;
         }
 
-        private void makeBackup(long[] replicaVersions, int replicaIndex, Address target, boolean isSyncBackup) {
-            Backup backup = newBackup(replicaVersions, replicaIndex, isSyncBackup);
-            send(backup, target);
-        }
-
-        private Backup newBackup(long[] replicaVersions, int replicaIndex, boolean isSyncBackup) {
-            Operation backupOp = initBackupOperation(replicaIndex);
+        private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
+                int replicaIndex, boolean isSyncBackup) {
+            Operation op = (Operation) backupAwareOp;
+            Operation backupOp = initBackupOperation(backupAwareOp, replicaIndex);
             Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
             Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, isSyncBackup);
-            backup.setPartitionId(partitionId)
+            backup.setPartitionId(op.getPartitionId())
                     .setReplicaIndex(replicaIndex)
-                    .setServiceName(serviceName)
+                    .setServiceName(op.getServiceName())
                     .setCallerUuid(nodeEngine.getLocalMember().getUuid());
             setCallId(backup, op.getCallId());
             return backup;
         }
 
-        private Operation initBackupOperation(int replicaIndex) {
+        private Operation initBackupOperation(BackupAwareOperation backupAwareOp, int replicaIndex) {
             Operation backupOp = backupAwareOp.getBackupOperation();
             if (backupOp == null) {
                 throw new IllegalArgumentException("Backup operation should not be null!");
             }
 
-            backupOp.setPartitionId(partitionId)
+            Operation op = (Operation) backupAwareOp;
+            backupOp.setPartitionId(op.getPartitionId())
                     .setReplicaIndex(replicaIndex)
-                    .setServiceName(serviceName);
+                    .setServiceName(op.getServiceName());
             return backupOp;
         }
 
         /**
-         * Verfies that the backup of a partition doesn't end up at the member that also has the primary.
+         * Verifies that the backup of a partition doesn't end up at the member that also has the primary.
          */
         private void assertNoBackupOnPrimaryMember(InternalPartition partition, Address target) {
             if (target.equals(node.getThisAddress())) {
