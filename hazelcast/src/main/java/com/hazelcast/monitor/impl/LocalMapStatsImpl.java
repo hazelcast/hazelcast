@@ -117,6 +117,7 @@ public class LocalMapStatsImpl
         lockedEntryCount = 0;
         dirtyEntryCount = 0;
         backupCount = 0;
+        HITS_UPDATER.set(this,0);
     }
 
     @Override
