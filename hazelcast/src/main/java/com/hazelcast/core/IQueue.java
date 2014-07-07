@@ -123,6 +123,11 @@ public interface IQueue<E> extends BlockingQueue<E>, BaseQueue<E>, ICollection<E
 
     /**
      * {@inheritDoc}
+     *
+     * <p> The view's <tt>iterator</tt> is a "weakly consistent" iterator,
+     * and guarantees to traverse elements as they existed upon
+     * construction of the iterator, and may (but is not guaranteed to)
+     * reflect any modifications subsequent to construction.
      */
     Iterator<E> iterator();
 
