@@ -45,7 +45,7 @@ public class GetMapConfigOperation extends Operation {
     @Override
     public void run() throws Exception {
         MapService service = getService();
-        mapConfig = service.getMapContainer(mapName).getMapConfig();
+        mapConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
     }
 
     @Override

@@ -9,23 +9,26 @@ Let's use the Fibonacci series to explain this. Below sample code is the calcula
 
 ```java
 public class Fibonacci<Long> implements Callable<Long>, Serializable {
-    int input = 0;
+  int input = 0;
 
-    public Fibonacci() {
-    }
+  public Fibonacci() {
+  }
 
-    public Fibonacci(int input) {
-        this.input = input;
-    }
+  public Fibonacci( int input ) {
+    this.input = input;
+  }
 
-    public Long call() {
-        return calculate (input);
-    }
+  public Long call() {
+    return calculate( input );
+  }
 
-    private long calculate (int n) {
-        if (n <= 1) return n;
-        else return calculate(n-1) + calculate(n-2);
+  private long calculate( int n ) {
+    if (n <= 1) {
+      return n;
+    } else {
+      return calculate( n - 1 ) + calculate( n - 2 );
     }
+  }
 }
 ```
 
@@ -37,23 +40,22 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IExecutorService;
 import java.util.concurrent.Future;
-import com.hazelcast.config.Config;
 
-Config cfg = new Config();
-HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-IExecutorService es = hz.getExecutorService();
-Callable<Long> task = new Fibonacci(10);
+HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+IExecutorService es = hazelcastInstance.getExecutorService();
+Callable<Long> task = new Fibonacci( 10 );
 
 es.submit(task, new ExecutionCallback<Long> () {
 
-    public void onResponse(Long response) {
-        System.out.println("Fibonacci calculation result = " + response);
-    }
+  @Override
+  public void onResponse( Long response ) {
+    System.out.println( "Fibonacci calculation result = " + response );
+  }
 
-    public void onFailure(Throwable t) {
-        t.printStackTrace();
-    }
-
+  @Override
+  public void onFailure( Throwable t ) {
+    t.printStackTrace();
+  }
 };
 ```
 

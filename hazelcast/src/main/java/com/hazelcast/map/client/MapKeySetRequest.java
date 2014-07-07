@@ -56,7 +56,7 @@ public class MapKeySetRequest extends AllPartitionsClientRequest implements Port
         Set res = new HashSet();
         MapService service = getService();
         for (Object o : map.values()) {
-            Set keys = ((MapKeySet) service.toObject(o)).getKeySet();
+            Set keys = ((MapKeySet) service.getMapServiceContext().toObject(o)).getKeySet();
             res.addAll(keys);
         }
         return new MapKeySet(res);
@@ -85,6 +85,11 @@ public class MapKeySetRequest extends AllPartitionsClientRequest implements Port
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
     @Override

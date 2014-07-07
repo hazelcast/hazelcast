@@ -1,7 +1,7 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.map.MapContainer;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.mapstore.MapDataStore;
@@ -33,29 +33,33 @@ public class WriteBehindManager implements MapStoreManager {
 
     private MapContainer mapContainer;
 
+    private String executorName;
+
     public WriteBehindManager(MapContainer mapContainer) {
         this.mapContainer = mapContainer;
         writeBehindProcessor = createWriteBehindProcessor(mapContainer);
         storeWorker = new StoreWorker(mapContainer, writeBehindProcessor);
-        scheduledExecutor = getScheduledExecutorService(mapContainer.getName(), mapContainer.getMapService());
+        executorName = EXECUTOR_NAME_PREFIX + mapContainer.getName();
+        scheduledExecutor = getScheduledExecutorService(mapContainer.getMapServiceContext());
     }
 
     public void start() {
         scheduledExecutor.scheduleAtFixedRate(storeWorker, 1, 1, TimeUnit.SECONDS);
     }
 
-    // TODO add shutdown test.
     public void stop() {
-        scheduledExecutor.shutdown();
+        NodeEngine nodeEngine = mapContainer.getMapServiceContext().getNodeEngine();
+        nodeEngine.getExecutionService().shutdownExecutor(executorName);
     }
 
+    //todo get this via constructor function.
     @Override
     public MapDataStore getMapDataStore(int partitionId) {
         return MapDataStores.createWriteBehindStore(mapContainer, partitionId, writeBehindProcessor);
     }
 
     private WriteBehindProcessor createWriteBehindProcessor(final MapContainer mapContainer) {
-        final MapService mapService = mapContainer.getMapService();
+        final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
         final WriteBehindProcessor writeBehindProcessor
                 = WriteBehindProcessors.createWriteBehindProcessor(mapContainer);
         writeBehindProcessor.addStoreListener(new StoreListener<DelayedEntry>() {
@@ -74,7 +78,7 @@ public class WriteBehindManager implements MapStoreManager {
                 }
                 final Data key = (Data) storeEvent.getSource().getKey();
                 final int partitionId = delayedEntry.getPartitionId();
-                final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
+                final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
                 final RecordStore recordStore = partitionContainer.getExistingRecordStore(mapContainer.getName());
                 if (recordStore != null) {
                     recordStore.getMapDataStore().addTransient(key, Clock.currentTimeMillis());
@@ -85,10 +89,9 @@ public class WriteBehindManager implements MapStoreManager {
     }
 
 
-    private ScheduledExecutorService getScheduledExecutorService(String mapName, MapService mapService) {
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
+    private ScheduledExecutorService getScheduledExecutorService(MapServiceContext mapServiceContext) {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final ExecutionService executionService = nodeEngine.getExecutionService();
-        final String executorName = EXECUTOR_NAME_PREFIX + mapName;
         executionService.register(executorName, 1, EXECUTOR_DEFAULT_QUEUE_CAPACITY, ExecutorType.CACHED);
         return executionService.getScheduledExecutor(executorName);
     }

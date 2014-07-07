@@ -67,7 +67,7 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
     protected Object reduce(Map<Integer, Object> map) {
         MapService mapService = getService();
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            Object result = mapService.toObject(entry.getValue());
+            Object result = mapService.getMapServiceContext().toObject(entry.getValue());
             if (result instanceof Throwable) {
                 throw ExceptionUtil.rethrow((Throwable) result);
             }
@@ -94,6 +94,11 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_PUT);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
     @Override

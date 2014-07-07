@@ -18,6 +18,7 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.RecordStore;
@@ -34,8 +35,10 @@ import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.SortingUtil;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,8 +71,8 @@ public class QueryOperation extends AbstractMapOperation {
     }
 
     public void run() throws Exception {
-        List<Integer> initialPartitions = mapService.getOwnedPartitions();
-        IndexService indexService = mapService.getMapContainer(name).getIndexService();
+        List<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        IndexService indexService = mapService.getMapServiceContext().getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
         // TODO: fix
         if (!getNodeEngine().getPartitionService().hasOnGoingMigration()) {
@@ -88,19 +91,25 @@ public class QueryOperation extends AbstractMapOperation {
                 runParallel(initialPartitions);
             }
         }
-        List<Integer> finalPartitions = mapService.getOwnedPartitions();
+        List<Integer> finalPartitions = mapService.getMapServiceContext().getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();
+            final MapServiceContext mapServiceContext = ((MapService) getService())
+                    .getMapServiceContext();
+            mapServiceContext
+                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 
     protected void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
-        final SerializationService ss = getNodeEngine().getSerializationService();
-        final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
-        final List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
+        final NodeEngine nodeEngine = getNodeEngine();
+        final SerializationService ss = nodeEngine.getSerializationService();
+        final ExecutorService executor
+                = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
+        final List<Future<Collection<QueryableEntry>>> lsFutures
+                = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
         for (final Integer partition : initialPartitions) {
             Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(ss, partition, null));
             lsFutures.add(f);
@@ -116,9 +125,12 @@ public class QueryOperation extends AbstractMapOperation {
     }
 
     protected void runParallelForPaging(List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
-        final SerializationService ss = getNodeEngine().getSerializationService();
-        final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
-        final List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
+        final NodeEngine nodeEngine = getNodeEngine();
+        final SerializationService ss = nodeEngine.getSerializationService();
+        final ExecutorService executor
+                = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
+        final List<Future<Collection<QueryableEntry>>> lsFutures
+                = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
 
         final Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
         for (final Integer partition : initialPartitions) {
@@ -168,7 +180,7 @@ public class QueryOperation extends AbstractMapOperation {
         }
     }
 
-    private class PartitionCallable implements Callable<Collection<QueryableEntry>> {
+    private final class PartitionCallable implements Callable<Collection<QueryableEntry>> {
 
         int partition;
         SerializationService ss;
@@ -182,21 +194,12 @@ public class QueryOperation extends AbstractMapOperation {
         }
 
         public Collection<QueryableEntry> call() throws Exception {
-            final PartitionContainer container = mapService.getPartitionContainer(partition);
+            final PartitionContainer container = mapService.getMapServiceContext().getPartitionContainer(partition);
             final RecordStore recordStore = container.getRecordStore(name);
             LinkedList<QueryableEntry> partitionResult = new LinkedList<QueryableEntry>();
             for (Record record : recordStore.getReadonlyRecordMapByWaitingMapStoreLoad().values()) {
                 final Data key = record.getKey();
-                Object value = record.getCachedValue();
-                if (value == Record.NOT_CACHED) {
-                    value = record.getValue();
-                    if (value != null && value instanceof Data) {
-                        value = ss.toObject(value);
-                    }
-                } else {
-                    value = ss.toObject(record.getValue());
-                    record.setCachedValue(value);
-                }
+                final Object value = getValueOrCachedValue(record);
                 if (value == null) {
                     continue;
                 }
@@ -205,7 +208,8 @@ public class QueryOperation extends AbstractMapOperation {
                     if (pagingPredicate != null) {
                         Map.Entry anchor = pagingPredicate.getAnchor();
                         final Comparator comparator = pagingPredicate.getComparator();
-                        if (anchor != null &&
+                        if (anchor != null
+                                &&
                                 SortingUtil.compare(comparator, pagingPredicate.getIterationType(), anchor, queryEntry) >= 0) {
                             continue;
                         }
@@ -221,6 +225,21 @@ public class QueryOperation extends AbstractMapOperation {
             }
             return partitionResult;
         }
+
+        private Object getValueOrCachedValue(Record record) {
+            Object value = record.getCachedValue();
+            if (value == Record.NOT_CACHED) {
+                value = record.getValue();
+                if (value != null && value instanceof Data) {
+                    value = ss.toObject(value);
+                }
+            } else {
+                value = ss.toObject(record.getValue());
+                record.setCachedValue(value);
+            }
+            return value;
+        }
+
     }
 
 }

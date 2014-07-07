@@ -4,6 +4,7 @@ import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.EvictAllOperationFactory;
@@ -61,14 +62,14 @@ public class MapEvictAllRequest extends AllPartitionsClientRequest implements Po
     protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
         MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         for (Object result : map.values()) {
-            Integer size = (Integer) mapService.toObject(result);
+            Integer size = (Integer) mapServiceContext.toObject(result);
             total += size;
         }
-        final MapService service = getService();
-        final Address thisAddress = service.getNodeEngine().getThisAddress();
+        final Address thisAddress = mapServiceContext.getNodeEngine().getThisAddress();
         if (total > 0) {
-            service.publishMapEvent(thisAddress, name, EntryEventType.EVICT_ALL, total);
+            mapServiceContext.getMapEventPublisher().publishMapEvent(thisAddress, name, EntryEventType.EVICT_ALL, total);
         }
         return total;
     }
@@ -77,6 +78,10 @@ public class MapEvictAllRequest extends AllPartitionsClientRequest implements Po
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 
     @Override
     public String getMethodName() {

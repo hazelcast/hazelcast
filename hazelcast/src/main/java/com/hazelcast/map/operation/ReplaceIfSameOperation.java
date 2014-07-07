@@ -25,7 +25,7 @@ import java.io.IOException;
 public class ReplaceIfSameOperation extends BasePutOperation {
 
     private Data testValue;
-    private boolean successful = false;
+    private boolean successful;
 
     public ReplaceIfSameOperation(String name, Data dataKey, Data testValue, Data value) {
         super(name, dataKey, value);
@@ -37,6 +37,9 @@ public class ReplaceIfSameOperation extends BasePutOperation {
 
     public void run() {
         successful = recordStore.replace(dataKey, testValue, dataValue);
+        if (successful) {
+            dataOldValue = testValue;
+        }
     }
 
     public void afterRun() {

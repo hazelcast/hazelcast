@@ -88,21 +88,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOUT_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT;
+import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
+import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
 public class ClientConnectionManagerImpl extends MembershipAdapter implements ClientConnectionManager, MembershipListener {
 
-    static final int BUFFER_SIZE = 16 << 10;
-    // 32k
-
-    static final int KILO_BYTE = 1024;
 
     private static final int TIMEOUT_PLUS = 2000;
     private static final int RETRY_COUNT = 20;
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    final int connectionTimeout;
-    final int heartBeatInterval;
-    final int heartBeatTimeout;
+    private final int connectionTimeout;
+    private final int heartBeatInterval;
+    private final int heartBeatTimeout;
     final int maxFailedHeartbeatCount;
 
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
@@ -142,19 +140,19 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         connectionTimeout = networkConfig.getConnectionTimeout();
 
         final ClientProperties clientProperties = client.getClientProperties();
-        int timeout = clientProperties.heartbeatTimeout.getInteger();
+        int timeout = clientProperties.getHeartbeatTimeout().getInteger();
         this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_HEARTBEAT_TIMEOUT_DEFAULT);
 
-        int interval = clientProperties.heartbeatInterval.getInteger();
+        int interval = clientProperties.getHeartbeatInterval().getInteger();
         heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
 
-        int failedHeartbeat = clientProperties.maxFailedHeartbeatCount.getInteger();
+        int failedHeartbeat = clientProperties.getMaxFailedHeartbeatCount().getInteger();
         maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat
                 : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
 
         smartRouting = networkConfig.isSmartRouting();
         executionService = client.getClientExecutionService();
-        credentials = getCredentials(config);
+        credentials = initCredentials(config);
         router = new Router(loadBalancer);
         inSelector = new ClientInSelectorImpl(client.getThreadGroup());
         outSelector = new ClientOutSelectorImpl(client.getThreadGroup());
@@ -180,7 +178,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         }
     }
 
-    private Credentials getCredentials(ClientConfig config) {
+    private Credentials initCredentials(ClientConfig config) {
         final GroupConfig groupConfig = config.getGroupConfig();
         final ClientSecurityConfig securityConfig = config.getSecurityConfig();
         Credentials c = securityConfig.getCredentials();
@@ -224,7 +222,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return live;
     }
 
-    public SerializationService getSerializationService() {
+    private SerializationService getSerializationService() {
         return client.getSerializationService();
     }
 
@@ -425,7 +423,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 }
                 int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
                 if (bufferSize < 0) {
-                    bufferSize = BUFFER_SIZE;
+                    bufferSize = DEFAULT_BUFFER_SIZE_BYTE;
                 }
                 socket.setSendBufferSize(bufferSize);
                 socket.setReceiveBufferSize(bufferSize);
@@ -433,7 +431,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 SocketChannelWrapper socketChannelWrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
                 final ClientConnection clientConnection = new ClientConnection(ClientConnectionManagerImpl.this, inSelector,
                         outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper,
-                        executionService, invocationService);
+                        executionService, invocationService, client.getSerializationService());
                 socketChannel.configureBlocking(true);
                 if (socketInterceptor != null) {
                     socketInterceptor.onConnect(socket);
@@ -690,6 +688,11 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
     public void connectionMarkedAsNotResponsive(ClientConnection connection) {
         if (smartRouting) {
+            //closing the owner connection if unresponsive so that it can be switched to a healthy one.
+            if (ownerConnection.getEndPoint().equals(connection.getEndPoint())) {
+                LOGGER.warning("Heartbeat is timed out, Closing owner connection to " + ownerConnection.getEndPoint());
+                ownerConnection.close();
+            }
             return;
         }
         try {

@@ -43,6 +43,10 @@ public class TestServlet extends HttpServlet {
             session.removeAttribute("key");
             resp.getWriter().write("true");
 
+        } else if (req.getRequestURI().endsWith("remove_set_null")) {
+            session.setAttribute("key", null);
+            resp.getWriter().write("true");
+
         } else if (req.getRequestURI().endsWith("invalidate")) {
             session.invalidate();
             resp.getWriter().write("true");

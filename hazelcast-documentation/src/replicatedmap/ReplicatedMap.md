@@ -17,22 +17,20 @@ It nearly fully implements the `java.util.Map` interface but lacks the methods f
 there are no atomic guarantees to writes or reads.
 
 ```java
-import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import java.util.Collection;
 import java.util.Map;
 
-Config config = new Config();
-HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-Map<String, Customer> mapCustomers = hz.getReplicatedMap("customers");
-mapCustomers.put("1", new Customer("Joe", "Smith"));
-mapCustomers.put("2", new Customer("Ali", "Selam"));
-mapCustomers.put("3", new Customer("Avi", "Noyan"));
+HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+Map<String, Customer> customers = hazelcastInstance.getReplicatedMap("customers");
+customers.put( "1", new Customer( "Joe", "Smith" ) );
+customers.put( "2", new Customer( "Ali", "Selam" ) );
+customers.put( "3", new Customer( "Avi", "Noyan" ) );
 
-Collection<Customer> colCustomers = mapCustomers.values();
-for (Customer customer : colCustomers) {
-    // process customer
+Collection<Customer> colCustomers = customers.values();
+for ( Customer customer : colCustomers ) {
+  // process customer
 }
 ```
 

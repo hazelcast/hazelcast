@@ -8,16 +8,19 @@ Hazelcast allows you to intercept every remote operation executed by the client.
 ```java
 public class MySecurityInterceptor implements SecurityInterceptor {
 
-    public void before(Credentials credentials, String serviceName, String methodName, Parameters parameters) throws AccessControlException {
-        //credentials: client credentials 
-        //serviceName: MapService.SERVICE_NAME, QueueService.SERVICE_NAME, ... etc
-        //methodName: put, get, offer, poll, ... etc
-        //parameters: holds parameters of the executed method, iterable.
-    }
+  public void before( Credentials credentials, String serviceName,
+                      String methodName, Parameters parameters )
+      throws AccessControlException {
+    // credentials: client credentials 
+    // serviceName: MapService.SERVICE_NAME, QueueService.SERVICE_NAME, ... etc
+    // methodName: put, get, offer, poll, ... etc
+    // parameters: holds parameters of the executed method, iterable.
+  }
 
-    public void after(Credentials credentials, String serviceName, String methodName, Parameters parameters) {
-        // can be used for logging etc.
-    }
+  public void after( Credentials credentials, String serviceName,
+                     String methodName, Parameters parameters ) {
+    // can be used for logging etc.
+  }
 }
 ```
 

@@ -17,6 +17,8 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.MapEventPublisher;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -34,12 +36,14 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     }
 
     public void afterRun() {
-        mapService.interceptAfterRemove(name, dataValue);
-        mapService.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        mapServiceContext.interceptAfterRemove(name, dataValue);
+        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             // todo should evict operation replicated??
-            mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
+            mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
         }
     }
 

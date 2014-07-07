@@ -17,15 +17,19 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.Record;
-import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Defines a record-store.
+ */
 public interface RecordStore {
 
     String getName();
@@ -108,6 +112,11 @@ public interface RecordStore {
     Map<Data, Record> getReadonlyRecordMap();
 
     /**
+     * Returns records map.
+     */
+    Map<Data, Record> getRecordMap();
+
+    /**
      * Returns read only records map by waiting map store load.
      * If an operation needs to wait a data source to load like querying
      * in {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
@@ -120,8 +129,6 @@ public interface RecordStore {
     Set<Data> keySet();
 
     int size();
-
-    boolean lock(Data key, String caller, long threadId, long ttl);
 
     boolean txnLock(Data key, String caller, long threadId, long ttl);
 
@@ -201,9 +208,10 @@ public interface RecordStore {
      * @param keys                  keys to be loaded.
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
      */
-    void loadAllFromStore(Collection<Data> keys, boolean replaceExistingValues);
+    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
 
     MapDataStore<Data, Object> getMapDataStore();
 
+    int getPartitionId();
 
 }

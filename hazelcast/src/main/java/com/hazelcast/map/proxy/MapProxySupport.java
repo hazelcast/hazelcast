@@ -35,13 +35,10 @@ import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.NearCache;
 import com.hazelcast.map.QueryEventFilter;
 import com.hazelcast.map.QueryResult;
-import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.operation.AddIndexOperation;
 import com.hazelcast.map.operation.AddInterceptorOperation;
 import com.hazelcast.map.operation.BasePutOperation;
@@ -57,14 +54,10 @@ import com.hazelcast.map.operation.GetOperation;
 import com.hazelcast.map.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.operation.KeyBasedMapOperation;
 import com.hazelcast.map.operation.LoadAllOperation;
-import com.hazelcast.map.operation.MapEntrySetOperation;
 import com.hazelcast.map.operation.MapFlushOperation;
 import com.hazelcast.map.operation.MapGetAllOperationFactory;
-import com.hazelcast.map.operation.MapKeySetOperation;
-import com.hazelcast.map.operation.MapValuesOperation;
 import com.hazelcast.map.operation.MultipleEntryOperationFactory;
 import com.hazelcast.map.operation.PartitionCheckIfLoadedOperationFactory;
-import com.hazelcast.map.operation.PartitionWideEntryOperationFactory;
 import com.hazelcast.map.operation.PartitionWideEntryWithPredicateOperationFactory;
 import com.hazelcast.map.operation.PutAllOperation;
 import com.hazelcast.map.operation.PutIfAbsentOperation;
@@ -91,6 +84,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Callback;
@@ -110,6 +104,7 @@ import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.SortedQueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.executor.CompletedFuture;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -127,9 +122,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-/**
- * @author enesakar 1/17/13
- */
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
@@ -144,9 +136,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected MapProxySupport(final String name, final MapService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);
         this.name = name;
-        mapConfig = service.getMapContainer(name).getMapConfig();
-        partitionStrategy = service.getMapContainer(name).getPartitioningStrategy();
-        localMapStats = service.getLocalMapStatsImpl(name);
+        mapConfig = service.getMapServiceContext().getMapContainer(name).getMapConfig();
+        partitionStrategy = service.getMapServiceContext().getMapContainer(name).getPartitioningStrategy();
+        localMapStats = service.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
 
@@ -155,7 +147,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         initializeListeners();
         initializeIndexes();
         initializeMapStoreLoad();
-
     }
 
     private void initializeMapStoreLoad() {
@@ -206,15 +197,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     // this operation returns the object in data format except it is got from near-cache and near-cache memory format is object.
     protected Object getInternal(Data key) {
+        // todo: why does this method not make use of getAsyncInternal and just do a get on it?
+        // now there is a lot of duplication.
+
         final MapService mapService = getService();
         final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Object cached = mapService.getFromNearCache(name, key);
+            Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
                 if (NearCache.NULL_OBJECT.equals(cached)) {
                     cached = null;
                 }
-                mapService.interceptAfterGet(name, cached);
+                mapService.getMapServiceContext().interceptAfterGet(name, cached);
                 return cached;
             }
         }
@@ -222,16 +216,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         // todo action for read-backup true is not well tested.
         if (mapConfig.isReadBackupData()) {
             int backupCount = mapConfig.getTotalBackupCount();
-            InternalPartitionService partitionService = mapService.getNodeEngine().getPartitionService();
+            InternalPartitionService partitionService = mapService.getMapServiceContext().getNodeEngine().getPartitionService();
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
                 InternalPartition partition = partitionService.getPartition(partitionId);
                 if (nodeEngine.getThisAddress().equals(partition.getReplicaAddress(i))) {
-                    Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
+                    Object val = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(name).get(key);
                     if (val != null) {
-                        mapService.interceptAfterGet(name, val);
+                        mapService.getMapServiceContext().interceptAfterGet(name, val);
                         // this serialization step is needed not to expose the object, see issue 1292
-                        return mapService.toData(val);
+                        return mapService.getMapServiceContext().toData(val);
                     }
                 }
             }
@@ -242,7 +236,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
                     .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
-                return mapService.putNearCache(name, key, result);
+                return mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, result);
             }
         }
         return result;
@@ -254,7 +248,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Object cached = mapService.getFromNearCache(name, key);
+            Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
                 if (NearCache.NULL_OBJECT.equals(cached)) {
                     cached = null;
@@ -278,7 +272,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
                         if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
                                 .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
-                            mapService.putNearCache(name, key, response);
+                            mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, response);
                         }
                     }
                 }
@@ -408,7 +402,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
             }
-            if(numberOfAffectedEntries > 0 ){
+            if (numberOfAffectedEntries > 0) {
                 publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
             }
         } catch (Throwable t) {
@@ -423,20 +417,20 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      * @param keys
      * @param replaceExistingValues
      */
-    protected void loadAllInternal(Collection<Data> keys, boolean replaceExistingValues) {
+    protected void loadAllInternal(List<Data> keys, boolean replaceExistingValues) {
         final NodeEngine nodeEngine = getNodeEngine();
-        final Map<Integer, Collection<Data>> partitionIdToKeys = getPartitionIdToKeysMap(keys);
-        final Set<Entry<Integer, Collection<Data>>> entries = partitionIdToKeys.entrySet();
-        for (final Entry<Integer, Collection<Data>> entry : entries) {
+        final Map<Integer, List<Data>> partitionIdToKeys = getPartitionIdToKeysMap(keys);
+        final Set<Entry<Integer, List<Data>>> entries = partitionIdToKeys.entrySet();
+        for (final Entry<Integer, List<Data>> entry : entries) {
             final Integer partitionId = entry.getKey();
-            final Collection<Data> correspondingKeys = entry.getValue();
+            final List<Data> correspondingKeys = entry.getValue();
             final Operation operation = createLoadAllOperation(correspondingKeys, replaceExistingValues);
             nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
         }
         waitUntilLoaded();
     }
 
-    private Operation createLoadAllOperation(final Collection<Data> keys, boolean replaceExistingValues) {
+    private Operation createLoadAllOperation(final List<Data> keys, boolean replaceExistingValues) {
         return new LoadAllOperation(name, keys, replaceExistingValues);
     }
 
@@ -492,7 +486,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, containsKeyOperation,
                     partitionId);
-            return (Boolean) getService().toObject(f.get());
+            return (Boolean) getService().getMapServiceContext().toObject(f.get());
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -538,7 +532,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
-
     }
 
     public int size() {
@@ -548,7 +541,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     .invokeOnAllPartitions(SERVICE_NAME, new SizeOperationFactory(name));
             int total = 0;
             for (Object result : results.values()) {
-                Integer size = (Integer) getService().toObject(result);
+                Integer size = (Integer) getService().getMapServiceContext().toObject(result);
                 total += size;
             }
             return total;
@@ -563,7 +556,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new ContainsValueOperationFactory(name, dataValue));
             for (Object result : results.values()) {
-                Boolean contains = (Boolean) getService().toObject(result);
+                Boolean contains = (Boolean) getService().getMapServiceContext().toObject(result);
                 if (contains) {
                     return true;
                 }
@@ -577,11 +570,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public boolean isEmpty() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
+            //TODO: We don't need to wait for all to complete, as soon as there is one future returning to false
+            //we can stop. Also there is no need to make use of isEmptyOperation; just use size. This reduces the
+            //amount of code.
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME,
                             new IsEmptyOperationFactory(name));
             for (Object result : results.values()) {
-                if (!(Boolean) getService().toObject(result)) {
+                if (!(Boolean) getService().getMapServiceContext().toObject(result)) {
                     return false;
                 }
             }
@@ -600,10 +596,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             final Iterator<Data> iterator = keys.iterator();
             while (iterator.hasNext()) {
                 Data key = iterator.next();
-                Object cachedValue = mapService.getFromNearCache(name, key);
+                Object cachedValue = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
                 if (cachedValue != null) {
                     if (!NearCache.NULL_OBJECT.equals(cachedValue)) {
-                        result.put(mapService.toObject(key), mapService.toObject(cachedValue));
+                        result.put(mapService.getMapServiceContext().toObject(key), mapService.getMapServiceContext().toObject(cachedValue));
                     }
                     iterator.remove();
                 }
@@ -618,14 +614,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             responses = nodeEngine.getOperationService()
                     .invokeOnPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys), partitions);
             for (Object response : responses.values()) {
-                Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) mapService.toObject(response)).getEntrySet();
+                Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) mapService.getMapServiceContext().toObject(response)).getEntrySet();
                 for (Entry<Data, Data> entry : entries) {
-                    result.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+                    result.put(mapService.getMapServiceContext().toObject(entry.getKey()), mapService.getMapServiceContext().toObject(entry.getValue()));
                     if (nearCacheEnabled) {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
                         if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
                                 .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
-                            mapService.putNearCache(name, entry.getKey(), entry.getValue());
+                            mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, entry.getKey(), entry.getValue());
                         }
                     }
                 }
@@ -651,18 +647,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return partitionIds;
     }
 
-    private Map<Integer, Collection<Data>> getPartitionIdToKeysMap(Collection<Data> keys) {
+    private Map<Integer, List<Data>> getPartitionIdToKeysMap(List<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyMap();
         }
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
-        final Map<Integer, Collection<Data>> idToKeys = new HashMap<Integer, Collection<Data>>();
+        final Map<Integer, List<Data>> idToKeys = new HashMap<Integer, List<Data>>();
 
         final Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
             final Data key = iterator.next();
             final int partitionId = partitionService.getPartitionId(key);
-            Collection<Data> keyList = idToKeys.get(partitionId);
+            List<Data> keyList = idToKeys.get(partitionId);
             if (keyList == null) {
                 keyList = new ArrayList<Data>();
                 idToKeys.put(partitionId, keyList);
@@ -695,12 +691,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     if (!entryMap.containsKey(partitionId)) {
                         entryMap.put(partitionId, new MapEntrySet());
                     }
-                    entryMap.get(partitionId).add(new AbstractMap.SimpleImmutableEntry<Data, Data>(mapService.toData(
-                            entry.getKey(),
-                            partitionStrategy),
-                            mapService
-                                    .toData(entry.getValue())
-                    ));
+                    entryMap.get(partitionId).add(
+                            new AbstractMap.SimpleImmutableEntry<Data, Data>(mapService.getMapServiceContext().toData(
+                                    entry.getKey(),
+                                    partitionStrategy),
+                                    mapService.getMapServiceContext()
+                                            .toData(entry.getValue())
+                            ));
                 }
 
                 for (final Map.Entry<Integer, MapEntrySet> entry : entryMap.entrySet()) {
@@ -722,49 +719,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     if (entry.getValue() == null) {
                         throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
                     }
-                    putInternal(mapService.toData(entry.getKey(), partitionStrategy),
-                            mapService.toData(entry.getValue()),
+                    putInternal(mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
+                            mapService.getMapServiceContext().toData(entry.getValue()),
                             -1,
                             TimeUnit.SECONDS);
                 }
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
-        }
-    }
-
-    protected Set<Data> keySetInternal() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        try {
-            // todo you can optimize keyset by taking keys without lock then re-fetch missing ones. see localKeySet
-            Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME,
-                            new BinaryOperationFactory(new MapKeySetOperation(name), nodeEngine));
-            Set<Data> keySet = new HashSet<Data>();
-            for (Object result : results.values()) {
-                Set keys = ((MapKeySet) getService().toObject(result)).getKeySet();
-                keySet.addAll(keys);
-            }
-            return keySet;
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-    }
-
-    protected Set<Data> localKeySetInternal() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final MapService mapService = getService();
-        Set<Data> keySet = new HashSet<Data>();
-        try {
-            List<Integer> memberPartitions =
-                    nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
-            for (Integer memberPartition : memberPartitions) {
-                RecordStore recordStore = mapService.getRecordStore(memberPartition, name);
-                keySet.addAll(recordStore.getReadonlyRecordMap().keySet());
-            }
-            return keySet;
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -775,22 +737,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME,
                             new BinaryOperationFactory(new MapFlushOperation(name), nodeEngine));
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-    }
-
-    protected Collection<Data> valuesInternal() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        try {
-            Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME,
-                            new BinaryOperationFactory(new MapValuesOperation(name), nodeEngine));
-            List<Data> values = new ArrayList<Data>();
-            for (Object result : results.values()) {
-                values.addAll(((MapValueCollection) getService().toObject(result)).getValues());
-            }
-            return values;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -809,7 +755,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
             }
-            if(numberOfAffectedEntries > 0 ){
+            if (numberOfAffectedEntries > 0) {
                 publishMapEvent(numberOfAffectedEntries, EntryEventType.CLEAR_ALL);
             }
         } catch (Throwable t) {
@@ -823,7 +769,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (interceptor instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) interceptor).setHazelcastInstance(nodeEngine.getHazelcastInstance());
         }
-        String id = mapService.addInterceptor(name, interceptor);
+        String id = mapService.getMapServiceContext().addInterceptor(name, interceptor);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
@@ -844,7 +790,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public void removeMapInterceptorInternal(String id) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
-        mapService.removeInterceptor(name, id);
+        mapService.getMapServiceContext().removeInterceptor(name, id);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (Member member : members) {
             try {
@@ -863,32 +809,33 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     public String addLocalEntryListener(final EntryListener listener) {
         final MapService mapService = getService();
-        return mapService.addLocalEventListener(listener, name);
+        return mapService.getMapServiceContext().addLocalEventListener(listener, name);
     }
 
     public String addLocalEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, boolean includeValue) {
+
         final MapService mapService = getService();
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
-        return mapService.addLocalEventListener(listener, eventFilter, name);
+        return mapService.getMapServiceContext().addLocalEventListener(listener, eventFilter, name);
     }
 
     protected String addEntryListenerInternal(
             final EntryListener listener, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         final MapService mapService = getService();
-        return mapService.addEventListener(listener, eventFilter, name);
+        return mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
     }
 
     protected String addEntryListenerInternal(
             EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         final MapService mapService = getService();
-        return mapService.addEventListener(listener, eventFilter, name);
+        return mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
     }
 
     protected boolean removeEntryListenerInternal(String id) {
         final MapService mapService = getService();
-        return mapService.removeEventListener(name, id);
+        return mapService.getMapServiceContext().removeEventListener(name, id);
     }
 
     protected EntryView getEntryViewInternal(final Data key) {
@@ -898,29 +845,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         getEntryViewOperation.setServiceName(SERVICE_NAME);
         try {
             Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, getEntryViewOperation, partitionId);
-            Object o = getService().toObject(f.get());
+            Object o = getService().getMapServiceContext().toObject(f.get());
             return (EntryView) o;
         } catch (Throwable t) {
             throw new RuntimeException(t);
-        }
-    }
-
-    protected Set<Entry<Data, Data>> entrySetInternal() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        try {
-            Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME,
-                            new BinaryOperationFactory(new MapEntrySetOperation(name), nodeEngine));
-            Set<Entry<Data, Data>> entrySet = new HashSet<Entry<Data, Data>>();
-            for (Object result : results.values()) {
-                Set entries = ((MapEntrySet) getService().toObject(result)).getEntrySet();
-                if (entries != null) {
-                    entrySet.addAll(entries);
-                }
-            }
-            return entrySet;
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -943,6 +871,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     public Map executeOnKeysInternal(Set<Data> keys, EntryProcessor entryProcessor) {
+        // todo: WHY are we not forwarding to executeOnKeysInternal(keys,entrprocessor, null)
+        // or some other kind of fake callback. Now there is a lot of duplication
         Map result = new HashMap();
         final NodeEngine nodeEngine = getNodeEngine();
         final Collection<Integer> partitionsForKeys = getPartitionsForKeys(keys);
@@ -955,7 +885,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     final MapService service = getService();
                     final MapEntrySet mapEntrySet = (MapEntrySet) o;
                     for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
-                        result.put(service.toObject(entry.getKey()), service.toObject(entry.getValue()));
+                        result.put(service.getMapServiceContext().toObject(entry.getKey()), service.getMapServiceContext().toObject(entry.getValue()));
                     }
                 }
             }
@@ -990,32 +920,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     /**
      * {@link IMap#executeOnEntries(EntryProcessor)}
      */
+    //todo: this method is untested
     public Map executeOnEntries(EntryProcessor entryProcessor) {
-        Map result = new HashMap();
-        try {
-            NodeEngine nodeEngine = getNodeEngine();
-            Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new PartitionWideEntryOperationFactory(name, entryProcessor));
-            for (Object o : results.values()) {
-                if (o != null) {
-                    final MapService service = getService();
-                    final MapEntrySet mapEntrySet = (MapEntrySet) o;
-                    for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
-                        final Data key = entry.getKey();
-                        result.put(service.toObject(entry.getKey()), service.toObject(entry.getValue()));
-                        invalidateNearCache(key);
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-        return result;
+        return executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
     }
 
     /**
      * {@link IMap#executeOnEntries(EntryProcessor, Predicate)}
      */
+    //todo: this method is untested
     public Map executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         Map result = new HashMap();
         try {
@@ -1032,7 +945,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     final MapEntrySet mapEntrySet = (MapEntrySet) o;
                     for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
                         final Data key = entry.getKey();
-                        result.put(service.toObject(key), service.toObject(entry.getValue()));
+                        result.put(service.getMapServiceContext().toObject(key), service.getMapServiceContext().toObject(entry.getValue()));
                         invalidateNearCache(key);
                     }
                 }
@@ -1246,14 +1159,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     public LocalMapStats getLocalMapStats() {
-        return getService().createLocalMapStats(name);
+        return getService().getMapServiceContext().getLocalMapStatsProvider().createLocalMapStats(name);
     }
 
     private boolean isKeyInNearCache(Data key) {
         final MapService mapService = getService();
         final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Object cached = mapService.getFromNearCache(name, key);
+            Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null && !cached.equals(NearCache.NULL_OBJECT)) {
                 return true;
             }
@@ -1265,22 +1178,22 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (key == null) {
             return;
         }
-        getService().invalidateNearCache(name, key);
+        getService().getMapServiceContext().getNearCacheProvider().invalidateNearCache(name, key);
     }
 
     private void invalidateNearCache(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        getService().invalidateNearCache(name, keys);
+        getService().getMapServiceContext().getNearCacheProvider().invalidateNearCache(name, keys);
     }
 
     private void clearNearCache() {
-        getService().clearNearCache(name);
+        getService().getMapServiceContext().getNearCacheProvider().clearNearCache(name);
     }
 
     private void publishMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
-        getService().publishMapEvent(getNodeEngine().getThisAddress(),
+        getService().getMapServiceContext().getMapEventPublisher().publishMapEvent(getNodeEngine().getThisAddress(),
                 name, eventType, numberOfAffectedEntries);
     }
 
@@ -1288,10 +1201,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
+    @Override
     public final String getName() {
         return name;
     }
 
+    @Override
     public final String getServiceName() {
         return SERVICE_NAME;
     }
@@ -1309,11 +1224,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             if (response instanceof Throwable) {
                 executionCallback.onFailure((Throwable) response);
             } else {
-                executionCallback.onResponse(getService().toObject(response));
+                executionCallback.onResponse(getService().getMapServiceContext().toObject(response));
             }
         }
 
     }
-
 }
 

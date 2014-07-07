@@ -76,4 +76,14 @@ public class ClientReplicatedMapContainsKeyRequest
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "containsKey";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
 }

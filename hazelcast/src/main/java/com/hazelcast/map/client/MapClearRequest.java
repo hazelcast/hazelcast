@@ -77,15 +77,21 @@ public class MapClearRequest extends AllPartitionsClientRequest implements Porta
             totalAffectedEntries += (Integer) affectedEntries;
         }
         final MapService service = getService();
-        final Address thisAddress = service.getNodeEngine().getThisAddress();
+        final Address thisAddress = service.getMapServiceContext().getNodeEngine().getThisAddress();
         if (totalAffectedEntries > 0) {
-            service.publishMapEvent(thisAddress, name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+            service.getMapServiceContext().getMapEventPublisher()
+                    .publishMapEvent(thisAddress, name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
         }
         return null;
     }
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
     @Override

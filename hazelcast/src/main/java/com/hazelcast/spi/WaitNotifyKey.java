@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi;
 
+/**
+ * A key for a wait notify object e.g. an ICondition.
+ */
 public interface WaitNotifyKey {
 
     String getServiceName();

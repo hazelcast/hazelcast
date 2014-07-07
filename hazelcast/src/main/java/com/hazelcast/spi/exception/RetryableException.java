@@ -16,6 +16,10 @@
 
 package com.hazelcast.spi.exception;
 
+/**
+ * Marker interface for exceptions to indicate that an operation can be retried. E.g. a map.get send to a machine
+ * where the partition has just moved to another machine.
+ */
 public interface RetryableException {
 
 }

@@ -29,9 +29,6 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 5/23/13
- */
 public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
 
     private final String name;

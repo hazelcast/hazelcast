@@ -17,11 +17,11 @@ Below is an example queue store configuration:
 
 ```xml
 <queue-store>
-    <class-name>com.hazelcast.QueueStoreImpl</class-name>
-    <properties>
-        <property name="binary">false</property>
-        <property name="memory-limit">10000</property>
-        <property name="bulk-load">500</property>
-    </properties>
+  <class-name>com.hazelcast.QueueStoreImpl</class-name>
+  <properties>
+    <property name="binary">false</property>
+    <property name="memory-limit">10000</property>
+    <property name="bulk-load">500</property>
+  </properties>
 </queue-store>
 ```

@@ -99,6 +99,11 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         if (submitToKey) {
             return "submitToKey";

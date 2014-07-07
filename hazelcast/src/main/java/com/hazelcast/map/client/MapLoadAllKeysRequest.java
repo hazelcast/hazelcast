@@ -36,7 +36,8 @@ public class MapLoadAllKeysRequest extends InvocationClientRequest {
         setSingleConnection();
         final MapService mapService = getService();
         final DistributedObject distributedObject
-                = mapService.getNodeEngine().getProxyService().getDistributedObject(MapService.SERVICE_NAME, name);
+                = mapService.getMapServiceContext().getNodeEngine().getProxyService()
+                .getDistributedObject(MapService.SERVICE_NAME, name);
         final MapProxyImpl mapProxy = (MapProxyImpl) distributedObject;
         mapProxy.loadAll(replaceExistingValues);
         final ClientEndpoint endpoint = getEndpoint();
@@ -73,6 +74,11 @@ public class MapLoadAllKeysRequest extends InvocationClientRequest {
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         replaceExistingValues = reader.readBoolean("r");
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
     @Override

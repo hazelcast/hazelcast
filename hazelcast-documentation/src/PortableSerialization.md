@@ -19,37 +19,37 @@ A sample Portable implementation of a Foo class would look like the following.
 
 ```java
 public class Foo implements Portable{
-    final static int ID = 5;
+  final static int ID = 5;
 
-    private String foo;
+  private String foo;
 
-    public String getFoo() {
-        return foo;
-    }
+  public String getFoo() {
+    return foo;
+  }
 
-    public void setFoo(String foo) {
-        this.foo = foo;
-    }
+  public void setFoo( String foo ) {
+    this.foo = foo;
+  }
 
-    @Override
-    public int getFactoryId() {
-        return 1;
-    }
+  @Override
+  public int getFactoryId() {
+    return 1;
+  }
 
-    @Override
-    public int getClassId() {
-        return ID;
-    }
+  @Override
+  public int getClassId() {
+    return ID;
+  }
 
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("foo", foo);
-    }
+  @Override
+  public void writePortable( PortableWriter writer ) throws IOException {
+    writer.writeUTF( "foo", foo );
+  }
 
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        foo = reader.readUTF("foo");
-    }
+  @Override
+  public void readPortable( PortableReader reader ) throws IOException {
+    foo = reader.readUTF( "foo" );
+  }
 }        
 ```
 
@@ -60,12 +60,13 @@ A sample `Factory` could be implemented as following:
 ```java
 public class MyPortableFactory implements PortableFactory {
 
-    @Override
-    public Portable create(int classId) {
-        if (Foo.ID == classId)
-            return new Foo();
-        else return null;
-     }
+  @Override
+  public Portable create( int classId ) {
+    if ( Foo.ID == classId )
+      return new Foo();
+    else
+      return null;
+  }
 }            
 ```
 
@@ -74,18 +75,20 @@ The last step is to register the `Factory` to the `SerializationConfig`. Below a
 
 ```java
 Config config = new Config();
-config.getSerializationConfig().addPortableFactory(1, new MyPortableFactory());
+config.getSerializationConfig().addPortableFactory( 1, new MyPortableFactory() );
 ```
 
 
 ```xml
 <hazelcast>
-    <serialization>
-        <portable-version>0</portable-version>
-        <portable-factories>
-            <portable-factory factory-id="1">com.hazelcast.nio.serialization.MyPortableFactory</portable-factory>
-        </portable-factories>
-    </serialization>
+  <serialization>
+    <portable-version>0</portable-version>
+    <portable-factories>
+      <portable-factory factory-id="1">
+          com.hazelcast.nio.serialization.MyPortableFactory
+      </portable-factory>
+    </portable-factories>
+  </serialization>
 </hazelcast>
 ```
 
@@ -100,20 +103,21 @@ Portable serialization supports versioning. Version can be provided declarativel
 
 ```xml
 <serialization>
-   <portable-version>1</portable-version>
-   <portable-factories>
-      <portable-factory factory-id="1">PortableFactoryImpl
-         </portable-factory>
-   </portable-factories>
+  <portable-version>1</portable-version>
+  <portable-factories>
+    <portable-factory factory-id="1">
+        PortableFactoryImpl
+    </portable-factory>
+  </portable-factories>
 </serialization>
 ```
 
 Things to consider related to versioning is given below:
 
--	It is important to change the version whenever an update is performed in the serialized fields of a class (e.g. increment the version).
--	Assume that, for example, a client performs a Portable deserialization on a field. If that Portable is updated by removing that field on the cluster side, this may lead to a problem.
--	Portable serialization does not use reflection and hence, fields in the class and in the serialized content are not automatically mapped. So, field renaming is a simpler process. Also, since the class ID is stored, renaming the Portable does not lead to problems.
--	Types of fields need to be updated carefully. Yet, Hazelcast performs basic type upgradings (e.g. `int` to `float`).
+- It is important to change the version whenever an update is performed in the serialized fields of a class (e.g. increment the version).
+- Assume that, for example, a client performs a Portable deserialization on a field. If that Portable is updated by removing that field on the cluster side, this may lead to a problem.
+- Portable serialization does not use reflection and hence, fields in the class and in the serialized content are not automatically mapped. So, field renaming is a simpler process. Also, since the class ID is stored, renaming the Portable does not lead to problems.
+- Types of fields need to be updated carefully. Yet, Hazelcast performs basic type upgradings (e.g. `int` to `float`).
 
 ### DistributedObject Serialization
 

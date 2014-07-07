@@ -19,6 +19,7 @@ package com.hazelcast.security.permission;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
@@ -28,6 +29,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.topic.TopicService;
 
 import java.security.Permission;
@@ -84,6 +86,10 @@ public final class ActionConstants {
             return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME + name, actions);
         } else if (MapReduceService.SERVICE_NAME.equals(serviceName)) {
             return new MapReducePermission(name, actions);
+        } else if (ReplicatedMapService.SERVICE_NAME.equals(serviceName)) {
+            return new ReplicatedMapPermission(name, actions);
+        } else if (AtomicReferenceService.SERVICE_NAME.equals(serviceName)) {
+            return new AtomicReferencePermission(name, actions);
         }
         throw new IllegalArgumentException("No service matched!!!");
     }

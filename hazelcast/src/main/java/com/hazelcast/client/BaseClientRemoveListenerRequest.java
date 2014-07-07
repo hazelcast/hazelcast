@@ -63,6 +63,11 @@ public abstract class BaseClientRemoveListenerRequest extends CallableClientRequ
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public Object[] getParameters() {
         return new Object[]{registrationId};
     }

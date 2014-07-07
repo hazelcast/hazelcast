@@ -46,11 +46,16 @@ public class ClientReplicatedMapClearRequest
 
     @Override
     public int getClassId() {
-        return ReplicatedMapPortableHook.REMOVE;
+        return ReplicatedMapPortableHook.CLEAR;
     }
 
     @Override
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "clear";
     }
 }

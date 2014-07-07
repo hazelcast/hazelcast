@@ -23,12 +23,13 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.map.mapstore.MapStoreManager;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.DataRecordFactory;
 import com.hazelcast.map.record.ObjectRecordFactory;
 import com.hazelcast.map.record.OffHeapRecordFactory;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordFactory;
-import com.hazelcast.map.mapstore.MapStoreManager;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -59,7 +60,7 @@ public class MapContainer extends MapContainerSupport {
 
     private final String name;
     private final RecordFactory recordFactory;
-    private final MapService mapService;
+    private final MapServiceContext mapServiceContext;
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
     private final IndexService indexService = new IndexService();
@@ -72,12 +73,12 @@ public class MapContainer extends MapContainerSupport {
     private MapStoreWrapper storeWrapper;
     private MapStoreManager mapStoreManager;
 
-    public MapContainer(final String name, final MapConfig mapConfig, final MapService mapService) {
+    public MapContainer(final String name, final MapConfig mapConfig, final MapServiceContext mapServiceContext) {
         super(mapConfig);
         this.name = name;
-        this.mapService = mapService;
+        this.mapServiceContext = mapServiceContext;
         this.partitioningStrategy = createPartitioningStrategy();
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         recordFactory = createRecordFactory(nodeEngine);
         initMapStoreOperations(nodeEngine);
         initWanReplication(nodeEngine);
@@ -175,7 +176,7 @@ public class MapContainer extends MapContainerSupport {
         String wanReplicationRefName = wanReplicationRef.getName();
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
-        wanMergePolicy = mapService.getMergePolicy(wanReplicationRef.getMergePolicy());
+        wanMergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
@@ -185,7 +186,7 @@ public class MapContainer extends MapContainerSupport {
             strategy = partitioningStrategyConfig.getPartitioningStrategy();
             if (strategy == null && partitioningStrategyConfig.getPartitioningStrategyClass() != null) {
                 try {
-                    strategy = ClassLoaderUtil.newInstance(mapService.getNodeEngine().getConfigClassLoader(),
+                    strategy = ClassLoaderUtil.newInstance(mapServiceContext.getNodeEngine().getConfigClassLoader(),
                             partitioningStrategyConfig.getPartitioningStrategyClass());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
@@ -202,11 +203,11 @@ public class MapContainer extends MapContainerSupport {
             return;
         }
         for (Object key : keys) {
-            Data dataKey = mapService.toData(key, partitioningStrategy);
+            Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
             initialKeys.put(dataKey, key);
         }
         // remove the keys remains more than 20 minutes.
-        mapService.getNodeEngine().getExecutionService().schedule(new Runnable() {
+        mapServiceContext.getNodeEngine().getExecutionService().schedule(new Runnable() {
             @Override
             public void run() {
                 initialKeys.clear();
@@ -255,6 +256,23 @@ public class MapContainer extends MapContainerSupport {
         interceptors.remove(interceptor);
     }
 
+    public Record createRecord(Data key, Object value, long ttl, long now) {
+        Record record = getRecordFactory().newRecord(key, value);
+        record.setLastAccessTime(now);
+        record.setLastUpdateTime(now);
+        record.setCreationTime(now);
+        final long configTTLSeconds = mapConfig.getTimeToLiveSeconds();
+        final long configTTLMillis
+                = mapServiceContext.convertTime(configTTLSeconds, TimeUnit.SECONDS);
+
+        if (ttl < 0L && configTTLMillis > 0L) {
+            record.setTtl(configTTLMillis);
+        } else if (ttl > 0L) {
+            record.setTtl(ttl);
+        }
+        return record;
+    }
+
     public String getName() {
         return name;
     }
@@ -291,8 +309,7 @@ public class MapContainer extends MapContainerSupport {
         return recordFactory;
     }
 
-    public MapService getMapService() {
-        return mapService;
+    public MapServiceContext getMapServiceContext() {
+        return mapServiceContext;
     }
-
 }

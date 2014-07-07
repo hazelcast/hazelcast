@@ -16,6 +16,9 @@
 
 package com.hazelcast.spi;
 
+/**
+ * Abstract implementation of the WaitNotifyKey.
+ */
 public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
 
     private final String service;

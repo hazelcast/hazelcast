@@ -76,4 +76,14 @@ public abstract class AtomicLongRequest extends PartitionClientRequest implement
     public Permission getRequiredPermission() {
         return new AtomicLongPermission(name, ActionConstants.ACTION_MODIFY);
     }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{delta};
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

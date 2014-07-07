@@ -51,7 +51,7 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
         MapService mapService = getService();
         for (Object o : map.values()) {
             if (o != null) {
-                MapEntrySet entrySet = (MapEntrySet) mapService.toObject(o);
+                MapEntrySet entrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(o);
                 Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
                     result.add(entry);
@@ -118,6 +118,11 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
     @Override
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
     @Override

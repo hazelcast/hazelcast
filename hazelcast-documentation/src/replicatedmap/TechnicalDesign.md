@@ -4,7 +4,7 @@
 There are several technical design decisions that worth mentioning. We strongly suggest reading the following section
 to be aware of the configurable behavior.
 
-** Initial provisioning **
+**Initial provisioning**
 
 If a new member joins, there are two ways of handling the initial provisioning that is executed to replicate all existing
 values to the new member.
@@ -18,7 +18,7 @@ might not be initialized by another member yet and might be seen as an old updat
 The second way is to have a synchronous initial fill up which blocks every read or write access to the map until the
 fill up operation is finished. This way should be used with caution since it might block your application from operation.
 
-** Replication delay **
+**Replication delay**
 
 By default, the replication of values is delayed by 100 millis when no current waiting replication is found. This is used
 to collect multiple updates and to minimize the operations overhead on replication. A hard limit of 1000 replications
@@ -27,7 +27,7 @@ short time.
 The delay is configurable and a value of "0" means immediate replication. That way, you can configure the trade off between
 replication overhead and time for the value to be replicated.
 
-** Concurrency Level **
+**Concurrency Level**
 
 The concurrency level configuration is used to define the number of mutexes and segments inside the replicated map storage.
 A mutex/segment is chosen by calculating the `hashCode` of the key and using module by the concurrency level. If multiple

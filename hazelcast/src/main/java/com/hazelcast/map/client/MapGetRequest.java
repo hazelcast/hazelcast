@@ -67,9 +67,10 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
     protected void afterResponse() {
         final long latency = System.currentTimeMillis() - startTime;
         final MapService mapService = getService();
-        MapContainer mapContainer = mapService.getMapContainer(name);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getLocalMapStatsImpl(name).incrementGets(latency);
+            mapService.getMapServiceContext().getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(name).incrementGets(latency);
         }
     }
 
@@ -107,6 +108,11 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
 
     public MapPermission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
     @Override

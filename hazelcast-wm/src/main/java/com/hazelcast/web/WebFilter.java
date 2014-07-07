@@ -639,7 +639,8 @@ public class WebFilter implements Filter {
                 throw new NullPointerException("name must not be null");
             }
             if (value == null) {
-                throw new IllegalArgumentException("value must not be null");
+                removeAttribute(name);
+                return;
             }
             if (deferredWrite) {
                 LocalCacheEntry entry = localCache.get(name);

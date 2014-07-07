@@ -97,6 +97,11 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getMethodName() {
         return "tryRemove";
     }

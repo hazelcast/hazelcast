@@ -37,7 +37,7 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
     @Override
     public void beforeRun() throws Exception {
         mapService = getService();
-        recordStore = mapService.getRecordStore(getPartitionId(), name);
+        recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
     }
 
     public void run() {
@@ -46,7 +46,8 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
 
     @Override
     public String toString() {
-        return "ClearBackupOperation{" +
-                '}';
+        return "ClearBackupOperation{"
+                + '}';
+
     }
 }

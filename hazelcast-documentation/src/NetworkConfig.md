@@ -13,25 +13,25 @@ For the none-multicast option, all or subset of nodes' hostnames and/or IP addre
 
 ```xml
 <hazelcast>
+  ...
+  <network>
+    <port auto-increment="true">5701</port>
+    <join>
+      <multicast enabled="false">
+        <multicast-group>224.2.2.3</multicast-group>
+        <multicast-port>54327</multicast-port>
+      </multicast>
+      <tcp-ip enabled="true">
+        <member>machine1</member>
+        <member>machine2</member>
+        <member>machine3:5799</member>
+        <member>192.168.1.0-7</member>
+        <member>192.168.1.21</member>
+      </tcp-ip>
+    </join>
     ...
-    <network>
-        <port auto-increment="true">5701</port>
-        <join>
-            <multicast enabled="false">
-                <multicast-group>224.2.2.3</multicast-group>
-                <multicast-port>54327</multicast-port>
-            </multicast>
-            <tcp-ip enabled="true">
-                <member>machine1</member>
-                <member>machine2</member>
-                <member>machine3:5799</member>
-                <member>192.168.1.0-7</member>
-                <member>192.168.1.21</member>
-            </tcp-ip>
-        </join>
-        ...
-    </network>
-    ...
+  </network>
+  ...
 </hazelcast>
 ```
 
@@ -51,19 +51,19 @@ There is also a tag, `required-member`, to specify a particular cluster member w
 
 ```xml
 <hazelcast>
+  ...
+  <network>
+    <join>
+      <tcp-ip enabled="true">
+        <required-member>192.168.1.21</required-member>
+        <member>machine2</member>
+        <member>machine3:5799</member>
+        <member>192.168.1.0-7</member>
+      </tcp-ip>
+    </join>
     ...
-    <network>
-        <join>
-            <tcp-ip enabled="true">
-                <required-member>192.168.1.21</required-member>
-                <member>machine2</member>
-                <member>machine3:5799</member>
-                <member>192.168.1.0-7</member>
-            </tcp-ip>
-        </join>
-        ...
-    </network>
-    ...
+  </network>
+  ...
 </hazelcast>
 ```
 

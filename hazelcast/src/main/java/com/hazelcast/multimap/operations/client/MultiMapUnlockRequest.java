@@ -73,6 +73,11 @@ public class MultiMapUnlockRequest extends AbstractUnlockRequest {
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public String getDistributedObjectType() {
         return MultiMapService.SERVICE_NAME;
     }

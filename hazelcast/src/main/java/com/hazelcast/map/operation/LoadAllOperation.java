@@ -1,5 +1,6 @@
 package com.hazelcast.map.operation;
 
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -18,7 +19,7 @@ import java.util.List;
  */
 public class LoadAllOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-    private Collection<Data> keys;
+    private List<Data> keys;
 
     private boolean replaceExistingValues;
 
@@ -26,7 +27,7 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
         keys = Collections.emptyList();
     }
 
-    public LoadAllOperation(String name, Collection<Data> keys, boolean replaceExistingValues) {
+    public LoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues) {
         super(name);
         this.keys = keys;
         this.replaceExistingValues = replaceExistingValues;
@@ -35,13 +36,14 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
     @Override
     public void run() throws Exception {
         final int partitionId = getPartitionId();
-        final RecordStore recordStore = mapService.getRecordStore(partitionId, name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         keys = selectThisPartitionsKeys(this.keys);
         recordStore.loadAllFromStore(keys, replaceExistingValues);
     }
 
-    private Collection<Data> selectThisPartitionsKeys(Collection<Data> keys) {
-        final InternalPartitionService partitionService = mapService.getNodeEngine().getPartitionService();
+    private List<Data> selectThisPartitionsKeys(Collection<Data> keys) {
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final InternalPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         final int partitionId = getPartitionId();
         List<Data> dataKeys = null;
         for (Data key : keys) {

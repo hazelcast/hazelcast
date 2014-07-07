@@ -216,7 +216,6 @@
         <module name="ArrayTrailingComma"/>
         <module name="CovariantEquals"/>
         <module name="DeclarationOrder"/>
-        <!-- module name="ParameterAssignment"/ -->
         <module name="ExplicitInitialization"/>
         <module name="DefaultComesLast"/>
         <module name="FallThrough"/>

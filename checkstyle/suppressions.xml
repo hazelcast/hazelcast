@@ -132,27 +132,17 @@
     <suppress checks="" files="com.hazelcast.client.proxy.ClientQueueProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMultiMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMapProxy"/>
+    <suppress checks="" files="com.hazelcast.client.HazelcastClient"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.HazelcastClientProxy"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.client.HazelcastClient"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.HazelcastClient"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.HazelcastClient"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.HazelcastClient"/>
-    <suppress checks="MethodCount" files="com.hazelcast.client.HazelcastClient"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.ClientPortableFactory"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.client.connection.nio.ClientWriteHandler"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.client.connection.nio.ClientReadHandler"/>
-    <suppress checks="" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.config.ClientConfig"/>
-    <suppress checks="" files="com.hazelcast.client.config.ClientProperties"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.client.connection.nio.ClientAbstractIOSelector"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.connection.nio.ClientConnection"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.ClientEngineImpl"/>
+    <suppress checks="" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.client[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.client.ClientTypes"/>
-    <suppress checks="JavadocType" files="com.hazelcast.client.ClientDataSerializerHook"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
 
     <!-- Monitor -->
@@ -228,7 +218,8 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.spi[\\/]"/>
     <suppress checks="MethodCount" files="com.hazelcast.spi.Operation"/>
-
+    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiDataSerializerHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiPortableHook"/>
     <!-- since this class needs to manage services, it knows about them. So it is fine to have lots
@@ -240,19 +231,16 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.EventServiceImpl"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-
-    <!-- SPI unresolved -->
-    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-    <suppress checks="Todo" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
+    <!-- the invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocation"/>
+    <!-- the partition-invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicPartitionInvocation"/>
+
+    <!-- these need to be solved-->
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocation"/>
-    <suppress checks="ParameterAssignment" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
-    <suppress checks="Todo" files="com.hazelcast.spi.impl.BasicOperationService"/>
 
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
@@ -485,22 +473,17 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.MapPortableHook"/>
     <suppress checks="ExecutableStatementCount" files="com.hazelcast.map.MapPortableHook"/>
     <suppress checks="MethodLengthCheck" files="com.hazelcast.map.MapDataSerializerHook"/>
-
-
     <suppress checks="MethodCountCheck" files="com.hazelcast.map.RecordStore"/>
-    <suppress checks="NPathComplexityCheck" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
-    <suppress checks="InnerAssignment" files="com.hazelcast.map.writebehind.WriteBehindQueueManager"/>
+    <suppress checks="MethodCountCheck" files="com.hazelcast.map.DefaultRecordStore"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
 
-    <suppress checks="" files="com.hazelcast.map.MapService"/>
-    <suppress checks="" files="com.hazelcast.map.DefaultRecordStore"/>
-    <suppress checks="" files="com.hazelcast.map.eviction.EvictionHelper"/>
-    <suppress checks="" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
-
-    <!-- map.operation-->
-    <suppress checks="" files="com.hazelcast.map.operation[\\/]"/>
     <!-- map.proxy-->
     <suppress checks="" files="com.hazelcast.map.proxy[\\/]"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.tx.TransactionalMapProxySupport"/>
+
+    <!-- build utils -->
+    <!-- Taken from JBOSS project, suppress checkstyles -->
+    <suppress checks="" files="com.hazelcast.buildutils.ElementParser"/>
 
 </suppressions>
 

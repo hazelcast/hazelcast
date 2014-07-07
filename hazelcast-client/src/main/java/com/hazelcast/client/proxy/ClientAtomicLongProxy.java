@@ -34,9 +34,6 @@ import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-/**
- * @author ali 5/24/13
- */
 public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     private final String name;

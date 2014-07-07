@@ -74,7 +74,7 @@ public class MapSizeRequest extends AllPartitionsClientRequest implements Portab
         int total = 0;
         MapService mapService = getService();
         for (Object result : map.values()) {
-            Integer size = (Integer) mapService.toObject(result);
+            Integer size = (Integer) mapService.getMapServiceContext().toObject(result);
             total += size;
         }
         return total;
@@ -82,6 +82,11 @@ public class MapSizeRequest extends AllPartitionsClientRequest implements Portab
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
     @Override

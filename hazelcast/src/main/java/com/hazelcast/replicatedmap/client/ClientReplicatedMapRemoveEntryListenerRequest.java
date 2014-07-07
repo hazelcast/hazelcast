@@ -66,4 +66,14 @@ public class ClientReplicatedMapRemoveEntryListenerRequest
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(getName(), ActionConstants.ACTION_LISTEN);
     }
+
+    @Override
+    public String getMethodName() {
+        return "removeEntryListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{registrationId};
+    }
 }

@@ -79,7 +79,7 @@ map.removeEntryListener( listenerId );
 - `tryRemove(K key, long timeout, TimeUnit timeunit)` returns boolean indicating whether operation is successful.
 - `tryLockAndGet(K key, long time, TimeUnit timeunit)` is removed.
 - `putAndUnlock(K key, V value)` is removed.
-- `lockMap(long time, TimeUnit timeunit)` and `unlockMap()` are removed
+- `lockMap(long time, TimeUnit timeunit)` and `unlockMap()` are removed.
 - `getMapEntry(K key)` is renamed as `getEntryView(K key)`. The returned object's type, MapEntry class is renamed as EntryView.
 - There is no predefined names for merge policies. You just give the full class name of the merge policy implementation.
 
@@ -90,11 +90,11 @@ map.removeEntryListener( listenerId );
 Also MergePolicy interface has been renamed to MapMergePolicy and also returning null from the implemented `merge()` method causes the existing entry to be removed.
 
 - **IQueue changes:**
-There is no change on IQueue API but there are changes on how `IQueue` is configured. With Hazelcast 3.0 there will not be backing map configuration for queue. Settings like backup count will be directly configured on queue config. For queue configuration details, please see [Distributed Queue](#distributed-queue) page.
+There is no change on IQueue API but there are changes on how `IQueue` is configured. With Hazelcast 3.0 there will not be backing map configuration for queue. Settings like backup count will be directly configured on queue config. For queue configuration details, please see [Queue](#queue).
 - **Transaction API change:**
-In Hazelcast 3.0, transaction API is completely different. Please see [Distributed Transactions](#transactions).
+In Hazelcast 3.0, transaction API is completely different. Please see [Transactions](#transactions).
 - **ExecutorService API change:**
-Classes MultiTask and DistributedTask have been removed. All the functionality is supported by the newly presented interface IExecutorService. Please see [Distributed Execution](#distributed-execution).
+Classes MultiTask and DistributedTask have been removed. All the functionality is supported by the newly presented interface IExecutorService. Please see [Executor Service](#executor-service).
 - **LifeCycleService API:**
 The lifecycle has been simplified. `pause()`, `resume()`, `restart()` methods have been removed.
 - **AtomicNumber:**

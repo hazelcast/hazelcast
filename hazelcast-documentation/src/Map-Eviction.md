@@ -5,28 +5,26 @@ Unless you delete the map entries manually or use an eviction policy, they will 
 
 ```xml
 <hazelcast>
-    <map name="default">
-        ...
-        <time-to-live-seconds>0</time-to-live-seconds>
-        <max-idle-seconds>0</max-idle-seconds>
-        <eviction-policy>LRU</eviction-policy>
-        <max-size policy="PER_NODE">5000</max-size>
-        <eviction-percentage>25</eviction-percentage>
-        ...
-    </map>
+  <map name="default">
+    ...
+    <time-to-live-seconds>0</time-to-live-seconds>
+    <max-idle-seconds>0</max-idle-seconds>
+    <eviction-policy>LRU</eviction-policy>
+    <max-size policy="PER_NODE">5000</max-size>
+    <eviction-percentage>25</eviction-percentage>
+    ...
+  </map>
 </hazelcast>
 ```
 
 Let's describe each property. 
 
 -	`time-to-live`: Maximum time in seconds for each entry to stay in the map. If it is not 0, entries that are older than and not updated for this time are evicted automatically. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0 and it means infinite. Moreover, if it is not 0, entries are evicted regardless of the set `eviction-policy`.  
-
 -	`max-idle-seconds`: Maximum time in seconds for each entry to stay idle in the map. Entries that are idle for more than this time are evicted automatically. An entry is idle if no `get`, `put` or `containsKey` is called. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0 and it means infinite.
 -	`eviction-policy`: Valid values are described below.
 	- NONE: Default policy. If set, no items will be evicted and the property `max-size` will be ignored.  Of course, you still can combine it with `time-to-live-seconds` and `max-idle-seconds`.
 	- LRU: Least Recently Used.
 	- LFU: Least Frequently Used.	
-
 
 -	`max-size`: Maximum size of the map. When maximum size is reached, map is evicted based on the policy defined. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0. If you want `max-size` to work, `eviction-policy` property must be set to a value other than NONE. Its attributes are described below.
 	- **`PER_NODE`**: Maximum number of map entries in each JVM. This is the default policy.	
@@ -51,13 +49,25 @@ Let's describe each property.
 #### Sample Eviction Configuration
 
 ```xml
-<map name="documents"><max-size policy="PER_NODE">10000</max-size>
-<eviction -policy>LRU</eviction -policy> 
-<max-idle-seconds>60</max-idle-seconds></map>```
-In the above sample, `documents` map starts to evict its entries from a member when the map size exceeds 10000 in that member. Then, the entries least recently used will be evicted. And, the entries not used for more than 60 seconds will be evicted as well.
-#### Evicting Specific Entries
-Above explained eviction policies and configurations apply to all the entries of a map. The entries that meet the specified eviction conditions are evicted.
-But, you may particularly want to evict some specific map entries.  In this case, you can use the `ttl` and `timeunit` parameters of the method `map.put()`. A sample code line is given below.
-`myMap.put("1", "John", 50, TimeUnit.SECONDS)`
-So, the map entry with the key "1" will be evicted in 50 seconds after it is put into `myMap`.
+<map name="documents">
+  <max-size policy="PER_NODE">10000</max-size>
+  <eviction -policy>LRU</eviction -policy> 
+  <max-idle-seconds>60</max-idle-seconds>
+</map>
+```
+
+In the above sample, `documents` map starts to evict its entries from a member when the map size exceeds 10000 in that member. Then, the entries least recently used will be evicted. And, the entries not used for more than 60 seconds will be evicted as well.
+
+
+#### Evicting Specific Entries
+
+
+Above explained eviction policies and configurations apply to all the entries of a map. The entries that meet the specified eviction conditions are evicted.
+
+
+But, you may particularly want to evict some specific map entries.  In this case, you can use the `ttl` and `timeunit` parameters of the method `map.put()`. A sample code line is given below.
+
+`myMap.put( "1", "John", 50, TimeUnit.SECONDS )`
+
+So, the map entry with the key "1" will be evicted in 50 seconds after it is put into `myMap`.
 

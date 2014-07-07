@@ -25,10 +25,11 @@ import java.security.AccessControlException;
 public class DummySecurityInterceptor implements SecurityInterceptor {
 
     @Override
-    public void before(final Credentials credentials, final String serviceName, final String methodName, final Parameters parameters) throws AccessControlException {
+    public void before(Credentials credentials, String objectType, String objectName,
+                       String methodName, Parameters parameters) throws AccessControlException {
     }
 
     @Override
-    public void after(final Credentials credentials, final String serviceName, final String methodName, final Parameters parameters) {
+    public void after(Credentials credentials, String objectType, String objectName, String methodName, Parameters parameters) {
     }
 }

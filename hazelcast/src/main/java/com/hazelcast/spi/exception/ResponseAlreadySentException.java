@@ -18,6 +18,10 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.core.HazelcastException;
 
+/**
+ * A HazelcastException indicating that there is some kind of system error causing a response to be send
+ * multiple times for some operation.
+ */
 public class ResponseAlreadySentException extends HazelcastException {
 
     public ResponseAlreadySentException() {

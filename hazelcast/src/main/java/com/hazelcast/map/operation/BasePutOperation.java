@@ -19,8 +19,11 @@ package com.hazelcast.map.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryViews;
+import com.hazelcast.map.MapEventPublisher;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -43,20 +46,28 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public void afterRun() {
-        mapService.interceptAfterPut(name, dataValue);
-        if (eventType == null) {
-            eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        }
-        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        mapServiceContext.interceptAfterPut(name, dataValue);
+        eventType = getEventType();
+        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             Record record = recordStore.getRecord(dataKey);
             if (record == null) {
                 return;
             }
-            final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
-            mapService.publishWanReplicationUpdate(name, entryView);
+            final Data valueConvertedData = mapServiceContext.toData(dataValue);
+            final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, valueConvertedData, record);
+            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
         }
+    }
+
+    private EntryEventType getEventType() {
+        if (eventType == null) {
+            eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
+        }
+        return eventType;
     }
 
     public boolean shouldBackup() {
@@ -65,7 +76,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public Operation getBackupOperation() {
         Record record = recordStore.getRecord(dataKey);
-        RecordInfo replicationInfo = mapService.createRecordInfo(record);
+        RecordInfo replicationInfo = Records.buildRecordInfo(record);
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
     }
 

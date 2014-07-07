@@ -19,7 +19,7 @@ package com.hazelcast.map.operation;
 import com.hazelcast.nio.serialization.Data;
 
 public class DeleteOperation extends BaseRemoveOperation {
-    boolean success = false;
+    boolean success;
 
     public DeleteOperation(String name, Data dataKey) {
         super(name, dataKey);

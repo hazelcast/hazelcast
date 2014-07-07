@@ -74,11 +74,11 @@ public class ClientProperties {
      */
     public static final String PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT = "250";
 
-    public final ClientProperty heartbeatTimeout;
-    public final ClientProperty heartbeatInterval;
-    public final ClientProperty maxFailedHeartbeatCount;
-    public final ClientProperty retryCount;
-    public final ClientProperty retryWaitTime;
+    private final ClientProperty heartbeatTimeout;
+    private final ClientProperty heartbeatInterval;
+    private final ClientProperty maxFailedHeartbeatCount;
+    private final ClientProperty retryCount;
+    private final ClientProperty retryWaitTime;
 
 
     public ClientProperties(ClientConfig clientConfig) {
@@ -88,6 +88,26 @@ public class ClientProperties {
                 , PROP_MAX_FAILED_HEARTBEAT_COUNT, PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
         retryCount = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_COUNT, PROP_REQUEST_RETRY_COUNT_DEFAULT);
         retryWaitTime = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
+    }
+
+    public ClientProperty getHeartbeatTimeout() {
+        return heartbeatTimeout;
+    }
+
+    public ClientProperty getHeartbeatInterval() {
+        return heartbeatInterval;
+    }
+
+    public ClientProperty getMaxFailedHeartbeatCount() {
+        return maxFailedHeartbeatCount;
+    }
+
+    public ClientProperty getRetryCount() {
+        return retryCount;
+    }
+
+    public ClientProperty getRetryWaitTime() {
+        return retryWaitTime;
     }
 
     public static class ClientProperty {

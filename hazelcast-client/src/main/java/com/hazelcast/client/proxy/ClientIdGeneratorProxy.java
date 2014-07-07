@@ -23,9 +23,6 @@ import com.hazelcast.core.IdGenerator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 5/28/13
- */
 public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
 
 

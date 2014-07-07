@@ -21,6 +21,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * Default {@link com.hazelcast.spi.ObjectNamespace} implementation.
+ */
 public final class DefaultObjectNamespace implements ObjectNamespace {
 
     private String service;

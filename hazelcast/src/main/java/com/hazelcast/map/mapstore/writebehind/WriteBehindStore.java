@@ -152,11 +152,14 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             final Object key = iterator.next();
             final Data dataKey = toData(key);
             if (hasWaitingWriteBehindDeleteOperation(dataKey)) {
+                iterator.remove();
                 continue;
             }
             final Object valueFromStagingArea = getFromEvictionStagingArea(dataKey);
-            map.put(dataKey, valueFromStagingArea);
-            iterator.remove();
+            if (valueFromStagingArea != null) {
+                map.put(dataKey, valueFromStagingArea);
+                iterator.remove();
+            }
         }
         map.putAll(super.loadAll(keys));
         return map;
@@ -179,14 +182,12 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      */
     @Override
     public boolean loadable(Data key, long lastUpdateTime, long now) {
-        if (hasWaitingWriteBehindDeleteOperation(key) || isInEvictionStagingArea(key, now)) {
+        if (hasWaitingWriteBehindDeleteOperation(key)
+                || isInEvictionStagingArea(key, now)
+                || hasOperationInWriteBehindQueue(lastUpdateTime, now)) {
             return false;
         }
-        final long scheduledStoreTime = lastUpdateTime + writeDelayTime;
-        if (now < scheduledStoreTime) {
-            return false;
-        }
-        return false;
+        return true;
     }
 
     @Override
@@ -213,6 +214,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     private boolean hasWaitingWriteBehindDeleteOperation(Data key) {
         return writeBehindWaitingDeletions.contains(key);
+    }
+
+    private boolean hasOperationInWriteBehindQueue(long lastUpdateTime, long now) {
+        final long scheduledStoreTime = lastUpdateTime + writeDelayTime;
+        return now < scheduledStoreTime;
     }
 
     private WriteBehindQueue<DelayedEntry> createWriteBehindQueue(int maxPerNodeWriteBehindQueueSize,

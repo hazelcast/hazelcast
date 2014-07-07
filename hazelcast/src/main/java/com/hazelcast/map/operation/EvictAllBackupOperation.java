@@ -18,7 +18,7 @@ public class EvictAllBackupOperation extends AbstractMapOperation implements Bac
 
     @Override
     public void run() throws Exception {
-        final RecordStore recordStore = mapService.getExistingRecordStore(getPartitionId(), name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getExistingRecordStore(getPartitionId(), name);
         //if there is no recordStore, then there is nothing to evict.
         if (recordStore == null) {
             return;

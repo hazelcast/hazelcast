@@ -29,7 +29,7 @@ public class MapFlushOperation extends AbstractMapOperation implements Partition
     }
 
     public void run() {
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
         recordStore.flush();
     }
 

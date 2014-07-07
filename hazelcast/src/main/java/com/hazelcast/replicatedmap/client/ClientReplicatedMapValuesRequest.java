@@ -52,4 +52,9 @@ public class ClientReplicatedMapValuesRequest
     public Permission getRequiredPermission() {
         return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_READ);
     }
+
+    @Override
+    public String getMethodName() {
+        return "values";
+    }
 }

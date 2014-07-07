@@ -11,26 +11,26 @@ LoginModule implementations should create an instance of `com.hazelcast.security
 
 ```java
 public class CustomLoginModule implements LoginModule {
-    CallbackHandler callbackHandler;
-    Subject subject;
+  CallbackHandler callbackHandler;
+  Subject subject;
     
-    public final void initialize(Subject subject, CallbackHandler callbackHandler,
-        Map<String, ?> sharedState, Map<String, ?> options) {
-        this.subject = subject;
-        this.callbackHandler = callbackHandler;
-    }
+  public void initialize( Subject subject, CallbackHandler callbackHandler,
+                          Map<String, ?> sharedState, Map<String, ?> options ) {
+    this.subject = subject;
+    this.callbackHandler = callbackHandler;
+  }
 
-    public final boolean login() throws LoginException {
-        CredentialsCallback callback = new CredentialsCallback();
-        try {
-            callbackHandler.handle(new Callback[]{callback});
-            credentials = cb.getCredentials();
-        } catch (Exception e) {
-            throw new LoginException(e.getMessage());
-        }
-        ...
+  public final boolean login() throws LoginException {
+    CredentialsCallback callback = new CredentialsCallback();
+    try {
+      callbackHandler.handle( new Callback[] { callback } );
+      credentials = cb.getCredentials();
+    } catch ( Exception e ) {
+      throw new LoginException( e.getMessage() );
     }
-...
+    ...
+  }
+  ...
 }
 ```
 
@@ -38,15 +38,15 @@ To use default Hazelcast permission policy, an instance of `com.hazelcast.securi
 
 ```java
 public class MyCustomLoginModule implements LoginModule {
-...
-    public boolean commit() throws LoginException {
-        ...
-        final Principal principal = new ClusterPrincipal(credentials);
-        subject.getPrincipals().add(principal);
-        
-        return true;
-    }
+  ...
+  public boolean commit() throws LoginException {
     ...
+    Principal principal = new ClusterPrincipal( credentials );
+    subject.getPrincipals().add( principal );
+        
+    return true;
+  }
+  ...
 }
 ```
 
@@ -57,15 +57,14 @@ package com.hazelcast.security;
 ...
 public abstract class ClusterLoginModule implements LoginModule {
 
-    protected abstract boolean onLogin() throws LoginException;
-    protected abstract boolean onCommit() throws LoginException;
-    protected abstract boolean onAbort() throws LoginException;
-    protected abstract boolean onLogout() throws LoginException;
-
+  protected abstract boolean onLogin() throws LoginException;
+  protected abstract boolean onCommit() throws LoginException;
+  protected abstract boolean onAbort() throws LoginException;
+  protected abstract boolean onLogout() throws LoginException;
 }
 ```
 <br></br>
 
-<font color='red'>***Related Information***:</font>
+***RELATED INFORMATION***
 
 *Please refer to [JAAS Reference Guide](http://docs.oracle.com/javase/7/docs/technotes/guides/security/jaas/JAASRefGuide.html) for further information.*

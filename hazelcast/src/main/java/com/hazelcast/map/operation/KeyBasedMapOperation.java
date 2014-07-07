@@ -33,7 +33,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     protected String name;
     protected Data dataKey;
     protected long threadId;
-    protected Data dataValue = null;
+    protected Data dataValue;
     protected long ttl = -1;
 
     protected transient MapService mapService;
@@ -97,8 +97,8 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     @Override
     public final void beforeRun() throws Exception {
         mapService = getService();
-        mapContainer = mapService.getMapContainer(name);
-        partitionContainer = mapService.getPartitionContainer(getPartitionId());
+        mapContainer = mapService.getMapServiceContext().getMapContainer(name);
+        partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
         recordStore = partitionContainer.getRecordStore(name);
         innerBeforeRun();
     }
@@ -118,7 +118,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     protected final void invalidateNearCaches() {
         if (mapContainer.isNearCacheEnabled()
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-            mapService.invalidateAllNearCaches(name, dataKey);
+            mapService.getMapServiceContext().getNearCacheProvider().invalidateAllNearCaches(name, dataKey);
         }
     }
 

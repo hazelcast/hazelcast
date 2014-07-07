@@ -31,6 +31,9 @@ import com.hazelcast.storage.Storage;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
+/**
+ * The NodeEngine is the internal heart of a member. Most of the services can be found here.
+ */
 public interface NodeEngine {
 
     OperationService getOperationService();

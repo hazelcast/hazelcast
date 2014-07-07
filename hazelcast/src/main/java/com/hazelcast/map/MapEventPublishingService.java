@@ -1,39 +1,44 @@
 package com.hazelcast.map;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.logging.Level;
 
 /**
- * Dispatches mapEvents to appropriate methods of given listener
+ * Contains map service event publishing service functionality.
+ *
+ * @see com.hazelcast.spi.EventPublishingService
  */
-class MapEventsDispatcher {
+class MapEventPublishingService implements EventPublishingService<EventData, EntryListener> {
 
-    private final ILogger logger = Logger.getLogger(MapEventsDispatcher.class);
+    private MapServiceContext mapServiceContext;
+    private NodeEngine nodeEngine;
+    private ILogger logger;
 
-    private final ClusterService clusterService;
-    private final MapService mapService;
-
-    public MapEventsDispatcher(MapService mapService, ClusterService clusterService) {
-        this.mapService = mapService;
-        this.clusterService = clusterService;
+    protected MapEventPublishingService(MapServiceContext mapServiceContext) {
+        this.mapServiceContext = mapServiceContext;
+        this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.logger = nodeEngine.getLogger(getClass());
     }
+
 
     private void incrementEventStats(IMapEvent event) {
         final String mapName = event.getName();
-        MapContainer mapContainer = mapService.getMapContainer(mapName);
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getLocalMapStatsImpl(mapName).incrementReceivedEvents();
+            mapServiceContext.getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(mapName).incrementReceivedEvents();
         }
     }
 
+    @Override
     public void dispatchEvent(EventData eventData, EntryListener listener) {
         if (eventData instanceof EntryEventData) {
             dispatchEntryEventData(eventData, listener);
@@ -70,7 +75,7 @@ class MapEventsDispatcher {
     }
 
     private Member getMemberOrNull(EventData eventData) {
-        final Member member = clusterService.getMember(eventData.getCaller());
+        final Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         if (member == null) {
             if (logger.isLoggable(Level.INFO)) {
                 logger.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());
@@ -82,7 +87,7 @@ class MapEventsDispatcher {
     private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
         return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
                 entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(),
-                mapService.getSerializationService());
+                nodeEngine.getSerializationService());
     }
 
     private void dispatch0(IMapEvent event, EntryListener listener) {
@@ -109,5 +114,4 @@ class MapEventsDispatcher {
                 throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
         }
     }
-
 }

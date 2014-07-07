@@ -112,7 +112,21 @@ public class ClientNearCache<K> {
                 request = new MapAddEntryListenerRequest(mapName, false);
                 handler = new EventHandler<PortableEntryEvent>() {
                     public void handle(PortableEntryEvent event) {
-                        cache.remove(event.getKey());
+                        switch (event.getEventType()) {
+                            case ADDED:
+                            case REMOVED:
+                            case UPDATED:
+                            case EVICTED:
+                                final Data key = event.getKey();
+                                cache.remove(key);
+                                break;
+                            case CLEAR_ALL:
+                            case EVICT_ALL:
+                                cache.clear();
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+                        }
                     }
 
                     @Override
@@ -209,6 +223,10 @@ public class ClientNearCache<K> {
                 throw ExceptionUtil.rethrow(e);
             }
         }
+    }
+
+    public void invalidate() {
+        cache.clear();
     }
 
     public void invalidate(K key) {

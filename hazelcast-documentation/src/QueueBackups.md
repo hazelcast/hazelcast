@@ -6,12 +6,12 @@ A sample configuration is shown below.
 
 ```xml
 <hazelcast>
-    ...
-    <queue name="tasks">
-         <max-size>10</max-size>
-        <backup-count>1</backup-count>
-        <async-backup-count>1</async-backup-count>
-     </queue>
+  ...
+  <queue name="tasks">
+    <max-size>10</max-size>
+    <backup-count>1</backup-count>
+    <async-backup-count>1</async-backup-count>
+  </queue>
 </hazelcast>
 ```
 

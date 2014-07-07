@@ -1,6 +1,6 @@
 package com.hazelcast.map.eviction;
 
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.operation.ClearExpiredOperation;
@@ -9,6 +9,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,14 +32,17 @@ public class ExpirationManager {
 
     private static final TimeUnit UNIT = TimeUnit.SECONDS;
 
-    private final MapService mapService;
+    private final NodeEngine nodeEngine;
 
-    public ExpirationManager(MapService mapService) {
-        this.mapService = mapService;
+    private final MapServiceContext mapServiceContext;
+
+    public ExpirationManager(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.mapServiceContext = mapServiceContext;
     }
 
     public void start() {
-        mapService.getNodeEngine().getExecutionService()
+        nodeEngine.getExecutionService()
                 .scheduleAtFixedRate(new ClearExpiredRecordsTask(), INITIAL_DELAY, PERIOD, UNIT);
     }
 
@@ -64,8 +68,7 @@ public class ExpirationManager {
 
         public void run() {
             final long now = Clock.currentTimeMillis();
-            final MapService mapService = ExpirationManager.this.mapService;
-            final NodeEngine nodeEngine = mapService.getNodeEngine();
+            final NodeEngine nodeEngine = ExpirationManager.this.nodeEngine;
             final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
             List<PartitionContainer> partitionContainers = Collections.emptyList();
             boolean createLazy = true;
@@ -73,7 +76,7 @@ public class ExpirationManager {
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
                 InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
                 if (partition.isOwnerOrBackup(nodeEngine.getThisAddress())) {
-                    final PartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
+                    final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
                     if (isContainerEmpty(partitionContainer)) {
                         continue;
                     }
@@ -113,7 +116,7 @@ public class ExpirationManager {
             for (PartitionContainer container : partitionIds) {
                 // mark partition container as has on going expiration operation.
                 container.setHasRunningCleanup(true);
-                OperationService operationService = mapService.getNodeEngine().getOperationService();
+                OperationService operationService = ExpirationManager.this.nodeEngine.getOperationService();
                 operationService.executeOperation(createExpirationOperation(EXPIRATION_PERCENTAGE,
                         container.getPartitionId()));
             }
@@ -133,7 +136,7 @@ public class ExpirationManager {
 
         private int getMaxCleanupOperationCountInOneRound() {
             final int times = 3;
-            return times * mapService.getNodeEngine().getOperationService().getPartitionOperationThreadCount();
+            return times * ExpirationManager.this.nodeEngine.getOperationService().getPartitionOperationThreadCount();
         }
 
         private boolean isContainerEmpty(PartitionContainer container) {
@@ -169,14 +172,13 @@ public class ExpirationManager {
     }
 
     private Operation createExpirationOperation(int expirationPercentage, int partitionId) {
-        final MapService mapService = this.mapService;
         final ClearExpiredOperation clearExpiredOperation = new ClearExpiredOperation(expirationPercentage);
         clearExpiredOperation
-                .setNodeEngine(mapService.getNodeEngine())
-                .setCallerUuid(mapService.getNodeEngine().getLocalMember().getUuid())
+                .setNodeEngine(nodeEngine)
+                .setCallerUuid(nodeEngine.getLocalMember().getUuid())
                 .setPartitionId(partitionId)
                 .setValidateTarget(false)
-                .setService(mapService);
+                .setService(mapServiceContext.getService());
         return clearExpiredOperation;
     }
 

@@ -15,6 +15,7 @@
  */
 
 /**
- * Contains interfaces/classes related to MongoDB.
+ * This module contains Maven and other build additions that are used by
+ * Hazelcast to build bundle modules
  */
-package com.hazelcast.spring.mongodb;
+package com.hazelcast.buildutils;
