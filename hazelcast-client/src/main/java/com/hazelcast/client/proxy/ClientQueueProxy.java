@@ -19,21 +19,42 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.core.*;
+import com.hazelcast.client.spi.impl.ClientQueueIterator;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.queue.client.*;
-import com.hazelcast.queue.proxy.QueueIterator;
+import com.hazelcast.queue.client.AddAllRequest;
+import com.hazelcast.queue.client.AddListenerRequest;
+import com.hazelcast.queue.client.ClearRequest;
+import com.hazelcast.queue.client.CompareAndRemoveRequest;
+import com.hazelcast.queue.client.ContainsRequest;
+import com.hazelcast.queue.client.DrainRequest;
+import com.hazelcast.queue.client.IteratorRequest;
+import com.hazelcast.queue.client.OfferRequest;
+import com.hazelcast.queue.client.PeekRequest;
+import com.hazelcast.queue.client.PollRequest;
+import com.hazelcast.queue.client.RemainingCapacityRequest;
+import com.hazelcast.queue.client.RemoveListenerRequest;
+import com.hazelcast.queue.client.RemoveRequest;
+import com.hazelcast.queue.client.SizeRequest;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author ali 5/19/13
  */
-public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
+public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> {
 
     private final String name;
 
@@ -46,10 +67,10 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         final AddListenerRequest request = new AddListenerRequest(name, includeValue);
         EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
             public void handle(PortableItemEvent portableItemEvent) {
-                E item = includeValue ? (E)getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
+                E item = includeValue ? (E) getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
                 Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
                 ItemEvent<E> itemEvent = new ItemEvent<E>(name, portableItemEvent.getEventType(), item, member);
-                if (portableItemEvent.getEventType() == ItemEventType.ADDED){
+                if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {
                     listener.itemRemoved(itemEvent);
@@ -87,7 +108,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
      *
      * @param e the element to add
      * @return <tt>true</tt> if the element was added to this queue.
-     *         <tt>false</tt> if there is not enough capacity to insert the element.
+     * <tt>false</tt> if there is not enough capacity to insert the element.
      * @throws HazelcastException if client loses the connected node.
      */
     public boolean offer(E e) {
@@ -148,7 +169,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         PortableCollection result = invoke(request);
         Collection<Data> coll = result.getCollection();
         for (Data data : coll) {
-            E e = (E)getContext().getSerializationService().toObject(data);
+            E e = (E) getContext().getSerializationService().toObject(data);
             c.add(e);
         }
         return coll.size();
@@ -197,7 +218,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         IteratorRequest request = new IteratorRequest(name);
         PortableCollection result = invoke(request);
         Collection<Data> coll = result.getCollection();
-        return new QueueIterator<E>(coll.iterator(), getContext().getSerializationService(), false);
+        return new ClientQueueIterator<E>(coll.iterator(), getContext(), name, getPartitionKey(), false);
     }
 
     public Object[] toArray() {
@@ -222,7 +243,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         }
         int i = 0;
         for (Data data : coll) {
-            ts[i++] = (T)getContext().getSerializationService().toObject(data);
+            ts[i++] = (T) getContext().getSerializationService().toObject(data);
         }
         return ts;
     }
@@ -260,11 +281,11 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     protected void onDestroy() {
     }
 
-    protected  <T> T invoke(ClientRequest req){
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getPartitionKey());
     }
 
-    protected  <T> T invokeInterruptibly(ClientRequest req)throws InterruptedException{
+    protected <T> T invokeInterruptibly(ClientRequest req) throws InterruptedException {
         return super.invokeInterruptibly(req, getPartitionKey());
     }
 
