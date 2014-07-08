@@ -118,7 +118,7 @@ public class ClientExecutorServiceTest {
 
         try {
             future.get(1, TimeUnit.SECONDS);
-        } catch (final TimeoutException ignored) {
+        } catch (TimeoutException ignored) {
         }
 
         assertFalse(future.isDone());
@@ -134,7 +134,7 @@ public class ClientExecutorServiceTest {
 
         try {
             future.get(1, TimeUnit.SECONDS);
-        } catch (final TimeoutException ignored) {
+        } catch (TimeoutException ignored) {
         }
 
         assertTrue(future.cancel(true));
@@ -150,7 +150,7 @@ public class ClientExecutorServiceTest {
         final Future future = service.submit(task);
         try {
             future.get(1, TimeUnit.SECONDS);
-        } catch (final TimeoutException ignored) {
+        } catch (TimeoutException ignored) {
         }
         future.cancel(true);
 

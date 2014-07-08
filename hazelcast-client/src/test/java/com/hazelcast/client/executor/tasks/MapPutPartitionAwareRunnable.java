@@ -38,7 +38,7 @@ public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializab
     @SuppressWarnings("unused")
     public MapPutPartitionAwareRunnable(){}
 
-    public MapPutPartitionAwareRunnable(final String mapName, final P partitionKey) {
+    public MapPutPartitionAwareRunnable(String mapName, P partitionKey) {
         this.mapName = mapName;
         this.partitionKey = partitionKey;
     }
@@ -52,12 +52,12 @@ public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializab
     }
 
     @Override
-    public void writeData(final ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
     }
 
     @Override
-    public void readData(final ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
     }
 
@@ -67,7 +67,7 @@ public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializab
     }
 
     @Override
-    public void setHazelcastInstance(final HazelcastInstance hazelcastInstance) {
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         instance = hazelcastInstance;
     }
 
@@ -75,7 +75,7 @@ public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializab
         return mapName;
     }
 
-    public void setMapName(final String mapName) {
+    public void setMapName(String mapName) {
         this.mapName = mapName;
     }
 }

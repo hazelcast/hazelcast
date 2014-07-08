@@ -48,12 +48,12 @@ public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInst
     }
 
     @Override
-    public void writeData(final ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
     }
 
     @Override
-    public void readData(final ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
     }
 
@@ -66,7 +66,7 @@ public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInst
         return mapName;
     }
 
-    public void setMapName(final String mapName) {
+    public void setMapName(String mapName) {
         this.mapName = mapName;
     }
 }

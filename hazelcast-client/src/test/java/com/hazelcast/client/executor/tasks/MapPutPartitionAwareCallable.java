@@ -38,7 +38,7 @@ public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSeri
     @SuppressWarnings("unused")
     public MapPutPartitionAwareCallable(){}
 
-    public MapPutPartitionAwareCallable(final String mapName, final P partitionKey) {
+    public MapPutPartitionAwareCallable(String mapName, P partitionKey) {
         this.mapName = mapName;
         this.partitionKey = partitionKey;
     }
@@ -54,12 +54,12 @@ public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSeri
     }
 
     @Override
-    public void writeData(final ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
     }
 
     @Override
-    public void readData(final ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
     }
 
@@ -69,7 +69,7 @@ public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSeri
     }
 
     @Override
-    public void setHazelcastInstance(final HazelcastInstance hazelcastInstance) {
+    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         instance = hazelcastInstance;
     }
 
@@ -77,7 +77,7 @@ public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSeri
         return mapName;
     }
 
-    public void setMapName(final String mapName) {
+    public void setMapName(String mapName) {
         this.mapName = mapName;
     }
 }

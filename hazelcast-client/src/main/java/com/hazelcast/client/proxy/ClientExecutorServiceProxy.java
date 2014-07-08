@@ -521,13 +521,13 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         private final Map<Member, Object> values;
         private final AtomicInteger members;
 
-        private MultiExecutionCallbackWrapper(final int memberSize, final MultiExecutionCallback multiExecutionCallback) {
+        private MultiExecutionCallbackWrapper(int memberSize, MultiExecutionCallback multiExecutionCallback) {
             this.multiExecutionCallback = multiExecutionCallback;
             this.values = Collections.synchronizedMap(new HashMap<Member, Object>(memberSize));
             this.members = new AtomicInteger(memberSize);
         }
 
-        public void onResponse(final Member member, final Object value) {
+        public void onResponse(Member member, Object value) {
             multiExecutionCallback.onResponse(member, value);
             values.put(member, value);
 
@@ -537,7 +537,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             }
         }
 
-        public void onComplete(final Map<Member, Object> values) {
+        public void onComplete(Map<Member, Object> values) {
             multiExecutionCallback.onComplete(values);
         }
     }

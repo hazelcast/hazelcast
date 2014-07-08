@@ -118,7 +118,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
         }
     }
 
-    private void runClient(final Task task, final int executions) throws InterruptedException, ExecutionException {
+    private void runClient(Task task, int executions) throws InterruptedException, ExecutionException {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
