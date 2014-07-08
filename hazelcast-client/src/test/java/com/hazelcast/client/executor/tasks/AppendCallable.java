@@ -29,7 +29,8 @@ public class AppendCallable implements Callable<String>, DataSerializable{
 
     private String msg;
 
-    public AppendCallable() {}
+    public AppendCallable() {
+    }
 
     public AppendCallable(String msg) {
         this.msg = msg;

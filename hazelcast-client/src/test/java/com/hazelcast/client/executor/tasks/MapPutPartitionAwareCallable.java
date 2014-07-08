@@ -36,7 +36,8 @@ public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSeri
     public P partitionKey;
 
     @SuppressWarnings("unused")
-    public MapPutPartitionAwareCallable(){}
+    public MapPutPartitionAwareCallable() {
+    }
 
     public MapPutPartitionAwareCallable(String mapName, P partitionKey) {
         this.mapName = mapName;
@@ -45,9 +46,9 @@ public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSeri
 
     @Override
     public T call() throws Exception {
-        final Member member = instance.getCluster().getLocalMember();
+        Member member = instance.getCluster().getLocalMember();
 
-        final IMap<String, String> map = instance.getMap(mapName);
+        IMap<String, String> map = instance.getMap(mapName);
         map.put(member.getUuid(), member.getUuid() + "value");
 
         return (T) member.getUuid();

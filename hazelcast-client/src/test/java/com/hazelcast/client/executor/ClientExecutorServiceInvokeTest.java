@@ -60,22 +60,22 @@ public class ClientExecutorServiceInvokeTest {
 
     @Test
     public void testInvokeAll() throws Throwable {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String msg = randomString();
-        final Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        IExecutorService service = client.getExecutorService(randomString());
+        String msg = randomString();
+        Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
         collection.add(new AppendCallable(msg));
         collection.add(new AppendCallable(msg));
 
-        final List<Future<String>> results =  service.invokeAll(collection);
-        for (final Future<String> result : results) {
+        List<Future<String>> results =  service.invokeAll(collection);
+        for (Future<String> result : results) {
             assertEquals(msg + AppendCallable.APPENDAGE, result.get());
         }
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokeAll_withTimeOut() throws Throwable {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        IExecutorService service = client.getExecutorService(randomString());
+        Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
         collection.add(new AppendCallable());
         collection.add(new AppendCallable());
 
@@ -84,8 +84,8 @@ public class ClientExecutorServiceInvokeTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokeAny() throws Throwable {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        IExecutorService service = client.getExecutorService(randomString());
+        Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
         collection.add(new AppendCallable());
         collection.add(new AppendCallable());
 
@@ -94,8 +94,8 @@ public class ClientExecutorServiceInvokeTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokeAnyTimeOut() throws Throwable {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        IExecutorService service = client.getExecutorService(randomString());
+        Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
         collection.add(new AppendCallable());
         collection.add(new AppendCallable());
         service.invokeAny(collection, 1, TimeUnit.MINUTES);

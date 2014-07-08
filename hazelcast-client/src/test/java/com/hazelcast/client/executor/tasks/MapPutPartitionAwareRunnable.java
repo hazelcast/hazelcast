@@ -36,7 +36,8 @@ public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializab
     public P partitionKey;
 
     @SuppressWarnings("unused")
-    public MapPutPartitionAwareRunnable(){}
+    public MapPutPartitionAwareRunnable() {
+    }
 
     public MapPutPartitionAwareRunnable(String mapName, P partitionKey) {
         this.mapName = mapName;
@@ -45,9 +46,9 @@ public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializab
 
     @Override
     public void run() {
-        final Member member = instance.getCluster().getLocalMember();
+        Member member = instance.getCluster().getLocalMember();
 
-        final IMap<String, String> map = instance.getMap(mapName);
+        IMap<String, String> map = instance.getMap(mapName);
         map.put(member.getUuid(), member.getUuid()+"value");
     }
 
