@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
@@ -23,7 +24,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
@@ -543,7 +543,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Set<K> keySet() {
-       return keySet(TruePredicate.INSTANCE);
+        return keySet(TruePredicate.INSTANCE);
     }
 
     @Override
@@ -700,18 +700,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return dataKeys;
     }
 
-    private Data toData(Object o) {
-        return getService().getMapServiceContext().toData(o);
-    }
-
-    private Data toData(Object o, PartitioningStrategy partitioningStrategy) {
-        return getService().getMapServiceContext().toData(o, partitionStrategy);
-    }
-
-    private Object toObject(Object o) {
-        return getService().getMapServiceContext().toObject(o);
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
@@ -721,3 +709,4 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return sb.toString();
     }
 }
+

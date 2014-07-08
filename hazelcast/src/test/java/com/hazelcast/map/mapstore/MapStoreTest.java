@@ -24,7 +24,6 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
@@ -44,7 +43,6 @@ import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -1191,13 +1189,18 @@ public class MapStoreTest extends HazelcastTestSupport {
                 .insert("key3", 47);
 
         HazelcastInstance instance = createHazelcastInstance(newConfig(testMapStore, 0));
-        IMap map = instance.getMap("default");
+        final IMap map = instance.getMap("default");
 
-        Set result = map.keySet();
-        assertEquals(3, result.size());
-        assertTrue(result.contains("key1"));
-        assertTrue(result.contains("key2"));
-        assertTrue(result.contains("key3"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Set result = map.keySet();
+                assertTrue(result.contains("key1"));
+                assertTrue(result.contains("key2"));
+                assertTrue(result.contains("key3"));
+            }
+        });
+
     }
 
     static class ProcessingStore extends MapStoreAdapter<Integer, Employee> implements PostProcessingMapStore {
