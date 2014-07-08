@@ -48,8 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -520,12 +518,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private static final class MultiExecutionCallbackWrapper implements MultiExecutionCallback {
 
         private final MultiExecutionCallback multiExecutionCallback;
-        private final ConcurrentMap<Member, Object> values;
+        private final Map<Member, Object> values;
         private final AtomicInteger members;
 
         private MultiExecutionCallbackWrapper(final int memberSize, final MultiExecutionCallback multiExecutionCallback) {
             this.multiExecutionCallback = multiExecutionCallback;
-            this.values = new ConcurrentMemberObjectHashMapWithNullSupport(memberSize);
+            this.values = Collections.synchronizedMap(new HashMap<Member, Object>(memberSize));
             this.members = new AtomicInteger(memberSize);
         }
 
@@ -541,26 +539,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         public void onComplete(final Map<Member, Object> values) {
             multiExecutionCallback.onComplete(values);
-        }
-    }
-
-    private static final class ConcurrentMemberObjectHashMapWithNullSupport extends ConcurrentHashMap<Member, Object> {
-
-        private static final Object NULL_OBJECT = new Object();
-
-        public ConcurrentMemberObjectHashMapWithNullSupport(final int memberSize) {
-            super(memberSize);
-        }
-
-        @Override
-        public Object put(final Member key, final Object value) {
-            return super.put(key, (value == null) ? NULL_OBJECT : value);
-        }
-
-        @Override
-        public Object get(final Object key) {
-            final Object value = super.get(key);
-            return (value == NULL_OBJECT) ? null : value;
         }
     }
 

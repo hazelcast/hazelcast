@@ -404,8 +404,8 @@ public class ClientExecutorServiceSubmitTest {
             }
 
             public void onComplete(final Map<Member, Object> values) {
-                for (Member member : values.keySet()) {
-                    Object value = values.get(member);
+                for (final Member member : values.keySet()) {
+                    final Object value = values.get(member);
                     if (value.equals(msg + AppendCallable.APPENDAGE)) {
                         completeLatch.countDown();
                     }
@@ -433,8 +433,8 @@ public class ClientExecutorServiceSubmitTest {
             }
 
             public void onComplete(final Map<Member, Object> values) {
-                for (Member member : values.keySet()) {
-                    Object value = values.get(member);
+                for (final Member member : values.keySet()) {
+                    final Object value = values.get(member);
                     if (value == null) {
                         completeLatch.countDown();
                     }
