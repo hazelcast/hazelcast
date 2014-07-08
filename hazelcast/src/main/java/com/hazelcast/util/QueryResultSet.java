@@ -150,11 +150,29 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("QueryResultSet{");
-        sb.append("entries=").append(entries);
-        sb.append(", iterationType=").append(iterationType);
-        sb.append(", data=").append(data);
-        sb.append('}');
-        return sb.toString();
+        return "QueryResultSet{"
+                + "entries=" + entries()
+                + ", iterationType=" + iterationType
+                + ", data=" + data
+                + '}';
+
+    }
+
+    private String entries() {
+        final Iterator i = iterator();
+        if (!i.hasNext()) {
+            return "[]";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        for (;;) {
+            Object e = i.next();
+            sb.append(e == this ? "(this Collection)" : e);
+            if (!i.hasNext()) {
+                return sb.append(']').toString();
+            }
+            sb.append(", ");
+        }
     }
 }
