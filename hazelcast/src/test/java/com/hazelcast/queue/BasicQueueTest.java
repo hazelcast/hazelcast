@@ -422,6 +422,23 @@ public class BasicQueueTest extends HazelcastTestSupport {
         assertTrue(notCalled.get());
     }
 
+    @Test
+    public void testQueueRemoveFromIterator() {
+        IQueue<String> queue = createHazelcastInstance().getQueue(randomString());
+        queue.add("one");
+        queue.add("two");
+        queue.add("three");
+        queue.add("four");
+
+        Iterator<String> iterator = queue.iterator();
+        while(iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
+        }
+        assertEquals(0, queue.size());
+
+    }
+
     private IQueue getQueue(HazelcastInstance[] instances, String name) {
         final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getQueue(name);

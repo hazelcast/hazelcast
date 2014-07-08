@@ -23,6 +23,8 @@ if (task != null) {
 
 FIFO ordering will apply to all queue operations cluster wide. User objects (such as `MyTask` in the example above), that are (en/de)queued have to be `Serializable`. By configuring `max-size` for queue, one can obtain a bounded queue.
 
+There is no batching while iterating over Queue, all items will be copied to local and iteration will occur locally.
+
 A sample configuration is shown below.
 
 ```xml

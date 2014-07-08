@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -28,8 +29,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 
@@ -100,19 +103,28 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (eventType == __NO_NEED_TO_FIRE_EVENT) {
             return;
         }
-        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(oldValue), dataValue);
+        InMemoryFormat format = mapContainer.getMapConfig().getInMemoryFormat();
+        EventService eventService = mapService.getNodeEngine().getEventService();
+        String serviceName = getServiceName();
+        if (eventService.hasEventRegistration(serviceName,name)){
+            if (format == InMemoryFormat.OBJECT && eventType != EntryEventType.REMOVED) {
+                oldValue = null;
+            }
+            mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(oldValue), dataValue);
+        }
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             if (EntryEventType.REMOVED.equals(eventType)) {
                 mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(dataKey);
-                final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey,mapService.toData(dataValue),record);
+                final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey, mapService.toData(dataValue), record);
                 mapService.publishWanReplicationUpdate(name, entryView);
             }
         }
 
     }
+
 
     @Override
     public void onWaitExpire() {
