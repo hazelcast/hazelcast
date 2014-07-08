@@ -96,7 +96,7 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     }
 
     /**
-     * Creates a hazelcast configuration based on the {@link #getConfigLocation()}
+     * Creates a hazelcast configuration based on the {@link #getConfigurationLocation()}
      *
      * @return the created hazelcast configuration
      * @throws ResourceAdapterInternalException If there was a problem with the configuration creation
@@ -142,16 +142,16 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     /**
      * Called by the container
      *
-     * @param configLocation Hazelcast's configuration location
+     * @param configurationLocation Hazelcast's configuration location
      */
-    public void setConfigLocation(String configLocation) {
-        this.configurationLocation = configLocation;
+    public void setConfigurationLocation(String configurationLocation) {
+        this.configurationLocation = configurationLocation;
     }
 
     /**
      * @return The configured hazelcast configuration location via RAR deployment descriptor
      */
-    public String getConfigLocation() {
+    public String getConfigurationLocation() {
         return configurationLocation;
     }
 
