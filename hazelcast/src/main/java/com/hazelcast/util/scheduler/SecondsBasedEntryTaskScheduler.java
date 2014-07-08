@@ -308,7 +308,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
      * Returns associated scheduled entry.
      */
     private ScheduledEntry<K, V> cleanUpOnCancel(Object key, Integer second, ConcurrentMap<Object, ScheduledEntry<K,
-            V>> entries){
+            V>> entries) {
         final ScheduledEntry<K, V> result = entries.remove(key);
         if (entries.isEmpty()) {
             scheduledEntries.remove(second);
