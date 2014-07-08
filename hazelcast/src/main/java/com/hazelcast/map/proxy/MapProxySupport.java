@@ -1043,16 +1043,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Set queryLocal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         if (predicate instanceof PagingPredicate) {
-            return getQuerySupport().queryLocalMemberWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
+            return getMapQuerySupport().queryLocalMemberWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
         }
-        return getQuerySupport().queryLocalMember(name, predicate, iterationType, dataResult);
+        return getMapQuerySupport().queryLocalMember(name, predicate, iterationType, dataResult);
     }
 
     protected Set query(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         if (predicate instanceof PagingPredicate) {
-            return getQuerySupport().queryWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
+            return getMapQuerySupport().queryWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
         }
-        return getQuerySupport().query(name, predicate, iterationType, dataResult);
+        return getMapQuerySupport().query(name, predicate, iterationType, dataResult);
     }
 
     public void addIndex(final String attribute, final boolean ordered) {
@@ -1115,7 +1115,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private MapContextQuerySupport getQuerySupport() {
+    private MapContextQuerySupport getMapQuerySupport() {
         return getService().getMapServiceContext().getMapContextQuerySupport();
     }
 

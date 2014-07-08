@@ -95,7 +95,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
     @Override
     public Set queryLocalMember(String mapName, final Predicate predicate,
                                 final IterationType iterationType, final boolean dataResult) {
-        checkNotPagingPredicate(predicate);
+        checkIfNotPagingPredicate(predicate);
         final NodeEngine nodeEngine = this.nodeEngine;
         final List<Integer> partitionIds = getLocalPartitionIds(nodeEngine);
         final SerializationService serializationService = nodeEngine.getSerializationService();
@@ -206,7 +206,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
     @Override
     public Set query(String mapName, final Predicate predicate,
                      final IterationType iterationType, final boolean dataResult) {
-        checkNotPagingPredicate(predicate);
+        checkIfNotPagingPredicate(predicate);
         final NodeEngine nodeEngine = this.nodeEngine;
         final SerializationService serializationService = nodeEngine.getSerializationService();
         final Set<Integer> partitionIds = getAllPartitionIds(nodeEngine);
@@ -351,7 +351,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
         return list;
     }
 
-    private void checkNotPagingPredicate(Predicate predicate) {
+    private void checkIfNotPagingPredicate(Predicate predicate) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Predicate should not be a type of paging predicate");
         }
