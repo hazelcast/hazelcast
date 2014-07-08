@@ -519,46 +519,48 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private static final class MultiExecutionCallbackWrapper implements MultiExecutionCallback {
 
-        private static final Object NULL_OBJECT = new Object();
-
         private final MultiExecutionCallback multiExecutionCallback;
         private final ConcurrentMap<Member, Object> values;
-        private final ConcurrentMap<Member, Object> nullValues;
         private final AtomicInteger members;
 
         private MultiExecutionCallbackWrapper(final int memberSize, final MultiExecutionCallback multiExecutionCallback) {
             this.multiExecutionCallback = multiExecutionCallback;
-            this.values = new ConcurrentHashMap<Member, Object>(memberSize);
-            this.nullValues = new ConcurrentHashMap<Member, Object>();
+            this.values = new ConcurrentMemberObjectHashMapWithNullSupport(memberSize);
             this.members = new AtomicInteger(memberSize);
         }
 
         public void onResponse(final Member member, final Object value) {
             multiExecutionCallback.onResponse(member, value);
-            if (value == null) {
-                nullValues.put(member, NULL_OBJECT);
-            } else {
-                values.put(member, value);
-            }
+            values.put(member, value);
 
             int waitingResponse = members.decrementAndGet();
             if (waitingResponse == 0) {
-                if (nullValues.size() > 0)
-                {
-                    final Map<Member, Object> valuesCopy = new HashMap<Member, Object>(values);
-                    for (final Member key : nullValues.keySet())
-                    {
-                        valuesCopy.put(key, null);
-                    }
-                    onComplete(valuesCopy);
-                } else {
-                    onComplete(values);
-                }
+                onComplete(values);
             }
         }
 
         public void onComplete(final Map<Member, Object> values) {
             multiExecutionCallback.onComplete(values);
+        }
+    }
+
+    private static final class ConcurrentMemberObjectHashMapWithNullSupport extends ConcurrentHashMap<Member, Object> {
+
+        private static final Object NULL_OBJECT = new Object();
+
+        public ConcurrentMemberObjectHashMapWithNullSupport(final int memberSize) {
+            super(memberSize);
+        }
+
+        @Override
+        public Object put(final Member key, final Object value) {
+            return super.put(key, (value == null) ? NULL_OBJECT : value);
+        }
+
+        @Override
+        public Object get(final Object key) {
+            final Object value = super.get(key);
+            return (value == NULL_OBJECT) ? null : value;
         }
     }
 
