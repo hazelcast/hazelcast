@@ -11,7 +11,7 @@ Entry processor enables fast in-memory operations on a map without having to wor
 
 Hazelcast sends the entry processor to each cluster member and these members apply it to map entries. So, if you add more members, your processing is completed faster.
 
-If entry processing is the major operation for a map and the map consists of complex objects, then using `OBJECT` as `in-memory-format` is recommended to minimize serialization cost. By default, the entry value is stored as a byte array (BINARY format), but when it is stored as an object (OBJECT format), then entry processor is applied directly on the object. In that case, no serialization or deserialization is performed.
+If entry processing is the major operation for a map and the map consists of complex objects, then using `OBJECT` as `in-memory-format` is recommended to minimize serialization cost. By default, the entry value is stored as a byte array (BINARY format), but when it is stored as an object (OBJECT format), then entry processor is applied directly on the object. In that case, no serialization or deserialization is performed. But in case of entry listeners; old value of the updated entry will be null if the event fired with entry processor and in-memory-format is OBJECT.
 
 There are below methods in IMap interface for entry processing:
 
