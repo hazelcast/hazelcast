@@ -9,8 +9,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.map.mapstore.writebehind.ReachedMaxSizeException;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -23,13 +26,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static junit.framework.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class ClientMapStoreTest {
+public class ClientMapStoreTest extends HazelcastTestSupport{
 
     static final String MAP_NAME = "clientMapStoreLoad";
     Config nodeConfig;
@@ -114,6 +118,96 @@ public class ClientMapStoreTest {
         assertEquals(SimpleMapStore.MAX_KEYS, client2.mapSize);
     }
 
+    @Test
+    public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception{
+        Config config = new Config();
+        MapConfig mapConfig = new MapConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+
+        final MapStoreBackup store = new MapStoreBackup();
+        final int delaySeconds = 4;
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(store);
+        mapStoreConfig.setWriteDelaySeconds(delaySeconds);
+
+        mapConfig.setName(MAP_NAME);
+
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.addMapConfig(mapConfig);
+
+        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final IMap map = client.getMap(MAP_NAME);
+
+
+        final int max = getMaxCapacity(server) + 1;
+        for(int i=0; i<max; i++){
+            map.putAsync(i, i);
+        }
+
+        Thread.sleep(1000 * (delaySeconds + 1));
+        assertEquals(max - 1, map.size());
+    }
+
+    @Test (expected = ReachedMaxSizeException.class )
+    public void mapStore_OperationQueue_AtMaxCapacity_Test() throws Exception{
+        Config config = new Config();
+        MapConfig mapConfig = new MapConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+
+        final MapStoreBackup store = new MapStoreBackup();
+        final int longDelaySec = 60;
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(store);
+        mapStoreConfig.setWriteDelaySeconds(longDelaySec);
+
+        mapConfig.setName(MAP_NAME);
+
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.addMapConfig(mapConfig);
+
+        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        final IMap map = client.getMap(MAP_NAME);
+
+        final int mapStoreQ_MaxCapacity = getMaxCapacity(server) + 1;
+        for(int i=0; i<mapStoreQ_MaxCapacity; i++){
+            map.put(i, i);
+        }
+    }
+
+
+    @Test
+    public void destroyMap_configedWith_MapStore() throws Exception{
+        Config config = new Config();
+        MapConfig mapConfig = new MapConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+
+        final MapStoreBackup store = new MapStoreBackup();
+        final int delaySeconds = 4;
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(store);
+        mapStoreConfig.setWriteDelaySeconds(delaySeconds);
+
+        mapConfig.setName(MAP_NAME);
+
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        config.addMapConfig(mapConfig);
+
+        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        IMap map = client.getMap(MAP_NAME);
+
+        for(int i=0; i<1; i++){
+            map.putAsync(i, i);
+        }
+
+        map.destroy();
+    }
+
+
     static class SimpleMapStore implements MapStore<String, String>, MapLoader<String, String> {
 
         public static final int MAX_KEYS = 30;
@@ -177,5 +271,60 @@ public class ClientMapStoreTest {
             IMap<String, String> map = client.getMap(ClientMapStoreTest.MAP_NAME);
             mapSize = map.size();
         }
+    }
+
+    public class MapStoreBackup implements MapStore<Object, Object> {
+
+        public final Map store = new ConcurrentHashMap();
+
+        @Override
+        public void store(Object key, Object value) {
+            store.put(key, value);
+        }
+
+        @Override
+        public void storeAll(Map<Object, Object> map) {
+            for (Map.Entry<Object, Object> kvp : map.entrySet()) {
+                store.put(kvp.getKey(), kvp.getValue());
+            }
+        }
+
+        @Override
+        public void delete(Object key) {
+            store.remove(key);
+        }
+
+        @Override
+        public void deleteAll(Collection<Object> keys) {
+            for (Object key : keys) {
+                store.remove(key);
+            }
+        }
+
+        @Override
+        public Object load(Object key) {
+            return store.get(key);
+        }
+
+        @Override
+        public Map<Object, Object> loadAll(Collection<Object> keys) {
+            Map result = new HashMap();
+            for (Object key : keys) {
+                final Object v = store.get(key);
+                if (v != null) {
+                    result.put(key, v);
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public Set<Object> loadAllKeys() {
+            return store.keySet();
+        }
+    }
+
+    private int getMaxCapacity(HazelcastInstance node) {
+        return getNode(node).getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
     }
 }

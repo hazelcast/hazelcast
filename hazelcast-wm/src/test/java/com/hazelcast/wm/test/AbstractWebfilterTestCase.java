@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.URL;
 import java.util.Map.Entry;
 import java.util.Random;
 
@@ -83,8 +84,9 @@ public abstract class AbstractWebfilterTestCase {
 
     @Before
     public void setup() throws Exception {
-        final String baseDir = new File("").getAbsolutePath().replace("\\", "/");
-        final String sourceDir = baseDir + (baseDir.toLowerCase().endsWith("target") ? "/../src/test/webapp" : "/src/test/webapp");
+        final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
+        final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
+        final String sourceDir = baseDir + "/../../src/test/webapp";
         hz = Hazelcast.newHazelcastInstance(new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
         serverPort1 = availablePort();
         serverPort2 = availablePort();
