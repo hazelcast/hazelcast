@@ -106,7 +106,7 @@ public final class VersionCheck {
 
     private void doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
         final ClassLoader cl = getClass().getClassLoader();
-        String downloadId = "NULL";
+        String downloadId = "maven";
         InputStream is = null;
         try {
 
@@ -127,7 +127,7 @@ public final class VersionCheck {
             IOUtil.closeResource(is);
         }
 
-        String urlStr = "http://www.hazelcast.com/version.jsp?version=" + version
+        String urlStr = "http://versioncheck.hazelcast.com/version.jsp?version=" + version
                 + "&m=" + hazelcastNode.getLocalMember().getUuid()
                 + "&e=" + isEnterprise
                 + "&l=" + toMD5String(hazelcastNode.getConfig().getLicenseKey())
@@ -159,6 +159,7 @@ public final class VersionCheck {
         try {
             URL url = new URL(urlStr);
             URLConnection conn = url.openConnection();
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
             conn.setConnectTimeout(TIMEOUT * 2);
             conn.setReadTimeout(TIMEOUT * 2);
             in = new BufferedInputStream(conn.getInputStream());
