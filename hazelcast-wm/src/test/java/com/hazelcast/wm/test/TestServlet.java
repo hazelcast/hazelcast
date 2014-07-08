@@ -47,6 +47,10 @@ public class TestServlet extends HttpServlet {
             session.invalidate();
             resp.getWriter().write("true");
 
+        } else if (req.getRequestURI().endsWith("update-and-read-same-request")) {
+            session.setAttribute("key", "value-updated");
+            Object value = session.getAttribute("key");
+            resp.getWriter().write(value == null ? "null" : value.toString());
         } else if (req.getRequestURI().endsWith("update")) {
             session.setAttribute("key", "value-updated");
             resp.getWriter().write("true");
