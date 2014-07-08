@@ -3,6 +3,8 @@
 
 ![](images/enterprise-onlycopy.jpg)
 
+***NOTE:*** *This feature is supported for Hazelcast Enterprise 3.3 or higher.*
+
 #### Overview
 
 Session Replication with Hazelcast Enterprise is a container specific module where no application change is required to enable session replication for JEE Web Applications. 
