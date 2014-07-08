@@ -144,8 +144,14 @@ public class MapPredicateTest extends HazelcastTestSupport {
     }
 
     private IMap getMapWithNodeCount(int nodeCount) {
+        if (nodeCount < 1) {
+            throw new IllegalArgumentException("node count < 1");
+        }
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        final HazelcastInstance node = factory.newHazelcastInstance();
+        HazelcastInstance node = null;
+        for (int i = 0; i < nodeCount; i++) {
+            node = factory.newHazelcastInstance();
+        }
         return node.getMap(randomMapName());
     }
 
