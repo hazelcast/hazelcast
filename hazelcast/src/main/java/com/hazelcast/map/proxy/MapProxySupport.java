@@ -217,14 +217,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final Data value = (Data) invokeOperation(key, operation);
 
         if (nearCacheEnabled) {
-            if (notOwnerPartitionFor(key) || cacheKeyAnyway()) {
+            if (notOwnerPartitionForKey(key) || cacheKeyAnyway()) {
                 return putNearCache(key, value);
             }
         }
         return value;
     }
 
-    private boolean notOwnerPartitionFor(Data key) {
+    private boolean notOwnerPartitionForKey(Data key) {
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -687,7 +687,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     result.put(mapService.getMapServiceContext().toObject(entry.getKey()),
                             mapService.getMapServiceContext().toObject(entry.getValue()));
                     if (nearCacheEnabled) {
-                        if (notOwnerPartitionFor(entry.getKey())
+                        if (notOwnerPartitionForKey(entry.getKey())
                                 || cacheKeyAnyway()) {
                             putNearCache(entry.getKey(), entry.getValue());
                         }
