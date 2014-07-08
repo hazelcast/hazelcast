@@ -22,6 +22,7 @@ import com.hazelcast.client.executor.tasks.GetMemberUuidTask;
 import com.hazelcast.client.executor.tasks.MapPutPartitionAwareCallable;
 import com.hazelcast.client.executor.tasks.MapPutPartitionAwareRunnable;
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
+import com.hazelcast.client.executor.tasks.NullCallable;
 import com.hazelcast.client.executor.tasks.SelectAllMembers;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
@@ -179,7 +180,7 @@ public class ClientExecutorServiceSubmitTest {
         });
         final Map map = client.getMap(mapName);
 
-        assertOpenEventually(responseLatch);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(1, map.size());
     }
 
@@ -204,8 +205,8 @@ public class ClientExecutorServiceSubmitTest {
         });
         final Map map = client.getMap(mapName);
 
-        assertOpenEventually(responseLatch);
-        assertOpenEventually(completeLatch);
+        assertOpenEventually("responseLatch", responseLatch);
+        assertOpenEventually("completeLatch", completeLatch);
         assertEquals(CLUSTER_SIZE, map.size());
     }
 
@@ -229,7 +230,7 @@ public class ClientExecutorServiceSubmitTest {
             public void onFailure(final Throwable t) {}
         });
 
-        assertOpenEventually(responseLatch);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(member.getUuid(), result.get());
     }
 
@@ -282,7 +283,7 @@ public class ClientExecutorServiceSubmitTest {
         });
         final IMap map = client.getMap(mapName);
 
-        assertOpenEventually(responseLatch);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(1, map.size());
     }
 
@@ -307,8 +308,8 @@ public class ClientExecutorServiceSubmitTest {
         });
         final IMap map = client.getMap(mapName);
 
-        assertOpenEventually(responseLatch);
-        assertOpenEventually(completeLatch);
+        assertOpenEventually("responseLatch", responseLatch);
+        assertOpenEventually("completeLatch", completeLatch);
         assertEquals(CLUSTER_SIZE, map.size());
     }
 
@@ -331,7 +332,7 @@ public class ClientExecutorServiceSubmitTest {
             public void onFailure(final Throwable t) {}
         });
 
-        assertOpenEventually(responseLatch);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(msg + AppendCallable.APPENDAGE, result.get());
     }
 
@@ -357,8 +358,8 @@ public class ClientExecutorServiceSubmitTest {
             }
         });
 
-        assertOpenEventually(responseLatch);
-        assertOpenEventually(completeLatch);
+        assertOpenEventually("responseLatch", responseLatch);
+        assertOpenEventually("completeLatch", completeLatch);
     }
 
     @Test
@@ -381,8 +382,8 @@ public class ClientExecutorServiceSubmitTest {
         });
         final IMap map = client.getMap(mapName);
 
-        assertOpenEventually(responseLatch);
-        assertOpenEventually(completeLatch);
+        assertOpenEventually("responseLatch", responseLatch);
+        assertOpenEventually("completeLatch", completeLatch);
         assertEquals(CLUSTER_SIZE, map.size());
     }
 
@@ -411,8 +412,38 @@ public class ClientExecutorServiceSubmitTest {
                 }
             }
         });
-        assertOpenEventually(responseLatch);
-        assertOpenEventually(completeLatch);
+
+        assertOpenEventually("responseLatch", responseLatch);
+        assertOpenEventually("completeLatch", completeLatch);
+    }
+
+    @Test
+    public void submitCallableWithNullResultToAllMembers_withMultiExecutionCallback() throws Exception {
+        final IExecutorService service = client.getExecutorService(randomString());
+
+        final CountDownLatch responseLatch = new CountDownLatch(CLUSTER_SIZE);
+        final CountDownLatch completeLatch = new CountDownLatch(CLUSTER_SIZE);
+        final Callable callable = new NullCallable();
+
+        service.submitToAllMembers(callable, new MultiExecutionCallback() {
+            public void onResponse(final Member member, final Object value) {
+                if (value == null) {
+                    responseLatch.countDown();
+                }
+            }
+
+            public void onComplete(final Map<Member, Object> values) {
+                for (Member member : values.keySet()) {
+                    Object value = values.get(member);
+                    if (value == null) {
+                        completeLatch.countDown();
+                    }
+                }
+            }
+        });
+
+        assertOpenEventually("responseLatch", responseLatch);
+        assertOpenEventually("completeLatch", completeLatch);
     }
 
     @Test
@@ -472,7 +503,7 @@ public class ClientExecutorServiceSubmitTest {
         });
         final IMap map = client.getMap(mapName);
 
-        assertOpenEventually(responseLatch);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(1, map.size());
     }
 
@@ -494,7 +525,7 @@ public class ClientExecutorServiceSubmitTest {
             public void onFailure(final Throwable t) {}
         });
 
-        assertOpenEventually(responseLatch);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(msg + AppendCallable.APPENDAGE, result.get());
     }
 
@@ -527,7 +558,7 @@ public class ClientExecutorServiceSubmitTest {
         });
         final IMap map = client.getMap(mapName);
 
-        assertOpenEventually(responseLatch);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(1, map.size());
     }
 
@@ -549,7 +580,7 @@ public class ClientExecutorServiceSubmitTest {
             public void onFailure(Throwable t) {}
         });
 
-        assertOpenEventually(responseLatch, 5);
+        assertOpenEventually("responseLatch", responseLatch, 5);
         assertEquals(msg + AppendCallable.APPENDAGE, result.get());
     }
 
@@ -618,7 +649,7 @@ public class ClientExecutorServiceSubmitTest {
         });
         final IMap map = client.getMap(mapName);
 
-        assertOpenEventually(responseLatch);
+        assertOpenEventually("responseLatch", responseLatch);
         assertTrue(map.containsKey(member.getUuid()));
     }
 
@@ -661,7 +692,7 @@ public class ClientExecutorServiceSubmitTest {
             public void onFailure(final Throwable t) {}
         });
 
-        assertOpenEventually(responseLatch);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(member.getUuid(), result.get());
         assertTrue(map.containsKey(member.getUuid()));
     }
