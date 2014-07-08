@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestEnvironment;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -35,8 +33,6 @@ import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,9 +41,7 @@ import java.net.URL;
 import java.util.Map.Entry;
 import java.util.Random;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
-public abstract class AbstractWebfilterTestCase {
+public abstract class AbstractWebFilterTest {
 
     static {
         final String logging = "hazelcast.logging.type";
@@ -81,6 +75,11 @@ public abstract class AbstractWebfilterTestCase {
     protected Server server1;
     protected Server server2;
     protected HazelcastInstance hz;
+
+    protected AbstractWebFilterTest(String serverXml1, String serverXml2) {
+        this.serverXml1 = serverXml1;
+        this.serverXml2 = serverXml2;
+    }
 
     @Before
     public void setup() throws Exception {
