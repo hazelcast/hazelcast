@@ -1116,8 +1116,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             return time;
         }
         long timeInMillis = timeunit.toMillis(time);
-        if (time > 0 && timeInMillis == 0)
+        if (time > 0 && timeInMillis == 0) {
             timeInMillis = 1;
+        }
         return timeInMillis;
     }
 
