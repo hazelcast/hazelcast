@@ -16,6 +16,16 @@
 
 package com.hazelcast.map;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
@@ -31,19 +41,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -171,7 +172,23 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapWideEviction() throws InterruptedException {
+    public void testMapWideEvictionForSingleNode() throws InterruptedException {
+        checkMapWideEviction(1);
+    }
+
+
+    @Test
+    public void testMapWideEvictionForTwoNodes() throws InterruptedException {
+        checkMapWideEviction(2);
+    }
+
+
+    @Test
+    public void testMapWideEvictionForThreeNodes() throws InterruptedException {
+        checkMapWideEviction(3);
+    }
+
+    private void checkMapWideEviction(final int n) throws InterruptedException {
         final int size = 10000;
         Config cfg = new Config();
         final MapConfig mc = cfg.getMapConfig("testMapWideEviction");
@@ -181,15 +198,16 @@ public class EvictionTest extends HazelcastTestSupport {
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
-        final int n = 3;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
 
         final IMap map = instances[0].getMap("testMapWideEviction");
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size * (n*2); i++) {
             map.put(i, i);
         }
+
         Thread.sleep(2000);
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
