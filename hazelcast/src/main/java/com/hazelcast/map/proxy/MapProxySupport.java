@@ -33,9 +33,11 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.NearCache;
 import com.hazelcast.map.QueryEventFilter;
 import com.hazelcast.map.QueryResult;
@@ -1200,7 +1202,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected MapConfig getMapConfig(){
-        return getService().getMapServiceContext().getMapContainer(name).getMapConfig();
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+        return mapContainer.getMapConfig();
     }
 
 
