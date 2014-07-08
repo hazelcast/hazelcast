@@ -28,7 +28,7 @@ public class ClientExecutionPoolSizeLowTest {
     static HazelcastInstance server1;
     static HazelcastInstance server2;
     static HazelcastInstance client;
-    static IMap map;
+    static IMap<Integer, Integer> map;
 
     @Before
     public void init() {

@@ -46,9 +46,9 @@ public class ClientRoundRobinLBTest {
 
     @Test
     public void testRoundRobinLB_withoutMembers() {
-        RoundRobinLB lb = new RoundRobinLB();
-        Member m = lb.next();
-        assertNull(m);
+        RoundRobinLB roundRobinLB = new RoundRobinLB();
+        Member member = roundRobinLB.next();
+        assertNull(member);
     }
 
     @Test

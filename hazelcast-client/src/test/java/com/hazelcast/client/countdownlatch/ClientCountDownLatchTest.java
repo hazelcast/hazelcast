@@ -39,13 +39,13 @@ public class ClientCountDownLatchTest {
 
     static final String name = "test";
     static HazelcastInstance hz;
-    static ICountDownLatch l;
+    static ICountDownLatch latch;
 
     @Before
     public void init() {
         Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient();
-        l = hz.getCountDownLatch(name);
+        latch = hz.getCountDownLatch(name);
     }
 
     @After
@@ -56,14 +56,14 @@ public class ClientCountDownLatchTest {
 
     @Test
     public void testLatch() throws Exception {
-        assertTrue(l.trySetCount(20));
-        assertFalse(l.trySetCount(10));
-        assertEquals(20, l.getCount());
+        assertTrue(latch.trySetCount(20));
+        assertFalse(latch.trySetCount(10));
+        assertEquals(20, latch.getCount());
 
         new Thread(){
             public void run() {
-                for (int i=0; i<20; i++){
-                    l.countDown();
+                for (int i=0; i<20; i++) {
+                    latch.countDown();
                     try {
                         Thread.sleep(60);
                     } catch (InterruptedException e) {
@@ -73,8 +73,7 @@ public class ClientCountDownLatchTest {
             }
         }.start();
 
-        assertFalse(l.await(1, TimeUnit.SECONDS));
-
-        assertTrue(l.await(5, TimeUnit.SECONDS));
+        assertFalse(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 }

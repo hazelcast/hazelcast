@@ -45,7 +45,7 @@ public class ClientSetTest {
     static final String name = "test";
     static HazelcastInstance hz;
     static HazelcastInstance server;
-    static ISet set;
+    static ISet<String> set;
 
     @BeforeClass
     public static void init(){
@@ -69,16 +69,15 @@ public class ClientSetTest {
 
     @Test
     public void testAddAll() {
-        List l = new ArrayList();
-        l.add("item1");
-        l.add("item2");
+        List<String> tempList = new ArrayList<String>();
+        tempList.add("item1");
+        tempList.add("item2");
 
-        assertTrue(set.addAll(l));
+        assertTrue(set.addAll(tempList));
         assertEquals(2, set.size());
 
-        assertFalse(set.addAll(l));
+        assertFalse(set.addAll(tempList));
         assertEquals(2, set.size());
-
     }
 
     @Test
@@ -91,10 +90,8 @@ public class ClientSetTest {
         assertFalse(set.add("item3"));
         assertEquals(3, set.size());
 
-
         assertFalse(set.remove("item4"));
         assertTrue(set.remove("item3"));
-
     }
 
     @Test
@@ -104,12 +101,12 @@ public class ClientSetTest {
         assertTrue(set.add("item3"));
         assertTrue(set.add("item4"));
 
-        Iterator iter = set.iterator();
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertFalse(iter.hasNext());
+        Iterator iterator = set.iterator();
+        assertTrue(((String)iterator.next()).startsWith("item"));
+        assertTrue(((String)iterator.next()).startsWith("item"));
+        assertTrue(((String)iterator.next()).startsWith("item"));
+        assertTrue(((String)iterator.next()).startsWith("item"));
+        assertFalse(iterator.hasNext());
     }
 
     @Test
@@ -122,13 +119,13 @@ public class ClientSetTest {
         assertFalse(set.contains("item5"));
         assertTrue(set.contains("item2"));
 
-        List l = new ArrayList();
-        l.add("item6");
-        l.add("item3");
+        List<String> tempList = new ArrayList<String>();
+        tempList.add("item6");
+        tempList.add("item3");
 
-        assertFalse(set.containsAll(l));
+        assertFalse(set.containsAll(tempList));
         assertTrue(set.add("item6"));
-        assertTrue(set.containsAll(l));
+        assertTrue(set.containsAll(tempList));
     }
 
     @Test
@@ -138,37 +135,32 @@ public class ClientSetTest {
         assertTrue(set.add("item3"));
         assertTrue(set.add("item4"));
 
-        List l = new ArrayList();
-        l.add("item4");
-        l.add("item3");
+        List<String> tempList = new ArrayList<String>();
+        tempList.add("item4");
+        tempList.add("item3");
 
-        assertTrue(set.removeAll(l));
+        assertTrue(set.removeAll(tempList));
         assertEquals(2, set.size());
-        assertFalse(set.removeAll(l));
-        assertEquals(2, set.size());
-
-        l.clear();
-        l.add("item1");
-        l.add("item2");
-        assertFalse(set.retainAll(l));
+        assertFalse(set.removeAll(tempList));
         assertEquals(2, set.size());
 
-        l.clear();
-        assertTrue(set.retainAll(l));
+        tempList.clear();
+        tempList.add("item1");
+        tempList.add("item2");
+        assertFalse(set.retainAll(tempList));
+        assertEquals(2, set.size());
+
+        tempList.clear();
+        assertTrue(set.retainAll(tempList));
         assertEquals(0, set.size());
-
     }
 
     @Test
     public void testListener() throws Exception {
-
-//        final ISet tempSet = server.getSet(name);
-        final ISet tempSet = set;
-
+        final ISet<String> tempSet = set;
         final CountDownLatch latch = new CountDownLatch(6);
 
-        ItemListener listener = new ItemListener() {
-
+        ItemListener<String> listener = new ItemListener<String>() {
             public void itemAdded(ItemEvent itemEvent) {
                 latch.countDown();
             }
@@ -176,7 +168,7 @@ public class ClientSetTest {
             public void itemRemoved(ItemEvent item) {
             }
         };
-        String registrationId = tempSet.addItemListener(listener, true);
+        tempSet.addItemListener(listener, true);
 
         new Thread(){
             public void run() {
@@ -187,6 +179,5 @@ public class ClientSetTest {
             }
         }.start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
-
     }
 }

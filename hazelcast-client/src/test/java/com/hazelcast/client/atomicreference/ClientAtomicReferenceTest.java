@@ -134,7 +134,6 @@ public class ClientAtomicReferenceTest {
         assertTrue(serverReference.isNull());
     }
 
-
     @Test
     public void setAndGet() throws Exception {
         assertNull(clientReference.setAndGet(null));

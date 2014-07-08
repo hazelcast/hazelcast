@@ -41,13 +41,13 @@ public class ClientIdGeneratorTest {
 
     static final String name = "test";
     static HazelcastInstance hz;
-    static IdGenerator i;
+    static IdGenerator idGenerator;
 
     @BeforeClass
     public static void init() {
         Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
-        i = hz.getIdGenerator(name);
+        idGenerator = hz.getIdGenerator(name);
     }
 
     @AfterClass
@@ -58,10 +58,9 @@ public class ClientIdGeneratorTest {
 
     @Test
     public void testGenerator() throws Exception {
-        assertTrue(i.init(3569));
-        assertFalse(i.init(4569));
-        assertEquals(3570, i.newId());
+        assertTrue(idGenerator.init(3569));
+        assertFalse(idGenerator.init(4569));
+        assertEquals(3570, idGenerator.newId());
     }
-
 
 }

@@ -18,8 +18,9 @@ public class SimpleClientInterceptor implements MapInterceptor, Portable {
 
     @Override
     public Object interceptGet(Object value) {
-        if (value == null)
+        if (value == null) {
             return null;
+        }
         return value + ":";
     }
 
@@ -38,8 +39,9 @@ public class SimpleClientInterceptor implements MapInterceptor, Portable {
 
     @Override
     public Object interceptRemove(Object removedValue) {
-        if (removedValue.equals("ISTANBUL"))
+        if (removedValue.equals("ISTANBUL")) {
             throw new RuntimeException("you can not remove this");
+        }
         return removedValue;
     }
 
