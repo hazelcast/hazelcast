@@ -96,7 +96,7 @@ HazelcastCacheRegionFactory uses standard Hazelcast Distributed Maps. Therefore,
 
 ***NOTE:*** *If you use HazelcastCacheRegionFactory, you can see your maps on [Management Center](#management-center).*
 
-With HazelcastCacheRegionFactory , all of the following caches are distributed across Hazelcast Cluster.
+With HazelcastCacheRegionFactory, all of the following caches are distributed across Hazelcast Cluster.
 
 - Entity Cache
 - Collection Cache
@@ -115,7 +115,7 @@ If your operations are mostly read ones, then this option is a better one regard
 
 ***NOTE:*** *If you use HazelcastLocalCacheRegionFactory, you cannot see your maps on [Management Center](#management-center).*
 
-With HazelcastLocalCacheRegionFactory , all of the following caches are not distributed and kept locally in the Hazelcast Node.
+With HazelcastLocalCacheRegionFactory, all of the following caches are not distributed and kept locally in the Hazelcast Node.
 
 - Entity Cache
 - Collection Cache
@@ -140,7 +140,7 @@ With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. Yo
 Shutting down `HazelcastInstance` can be disabled during `SessionFactory.close()`. To achieve this set the Hibernate property `hibernate.cache.hazelcast.shutdown_on_session_factory_close` to false. *(In this case Hazelcast property `hazelcast.shutdownhook.enabled` should not be set to false.)* Default value is `true`.
 
 
-##### CLIENT/SERVER
+##### Client/Server
 
 -   You can set up Hazelcast to connect to the cluster as Native Client. Native client is not a member; it connects to one of the cluster members and delegates all cluster wide operations to it. When the relied cluster member dies, client will transparently switch to another live member.
 

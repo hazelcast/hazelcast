@@ -30,7 +30,7 @@ Latest tested versions are **6.0.39** and **7.0.40**.
  - Tomcat instance must be running with Java 1.6 or higher.
  - Session objects that need to be clustered have to be Serializable.
 
-#### P2P Deployment
+#### P2P (Peer-to-Peer) Deployment
 
 This launches embedded Hazelcast Node in each server instance.
 
@@ -40,38 +40,39 @@ This type of deployment is the simplest approach. You can just configure your To
 
 ***Sample Configuration to use Hazelcast Session Replication***
 
-- Download Hazelcast Enterprise 3.3+ zip file from hazelcast.com.
-- update `hazelcast.xml` with provided Hazelcast Enterprise License Key.- 
-- Add `hazelcast-all-<version>-ee.jar`, `hazelcast-sessions-tomcat6-<version>.jar` and `hazelcast.xml` to $CATALINA_HOME/lib/ folder.
+- Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
+- Update `hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
+- Put `hazelcast-all-`<*version*>`-ee.jar`, `hazelcast-sessions-tomcat6-`<*version*>`.jar` and `hazelcast.xml` to the folder `$CATALINA_HOME/lib/`.
 
-- put `<Listener>` tag into the `$CATALINA_HOME$/conf/server.xml` as shown below.
+- Put `<Listener>` tag into the `$CATALINA_HOME$/conf/server.xml` as shown below.
 
  ```xml
 <Server>
 	...
- <Listener className="com.hazelcast.session.P2PLifecycleListener"/>
+    <Listener className="com.hazelcast.session.P2PLifecycleListener"/>
     ...
 </Server>
 ```
 
-- put `<Manager>` tag into the `$CATALINA_HOME$/conf/context.xml` as shown below.
+- Put `<Manager>` tag into the `$CATALINA_HOME$/conf/context.xml` as shown below.
 
-```xml
+ ```xml
 <Context>
 	...
-  <Manager className="com.hazelcast.session.HazelcastSessionManager"/>
+    <Manager className="com.hazelcast.session.HazelcastSessionManager"/>
     ...
 </Context>
 ```
 
-- start Tomcat instances with a configured load balancer and deploy web application.
+- Start Tomcat instances with a configured load balancer and deploy web application.
 
 ***Optional <Listener> Parameters***
-- add `configLocation` attribute into <Listener> tag. (optional, if not provided, hazelcast.xml in the classpath is used by default, URL or full filesystem path as a configLocation value is also supported)
+
+- Add `configLocation` attribute into `<Listener>` tag. It is optional. If not provided, `hazelcast.xml` in the classpath is used by default. URL or full filesystem path as a `configLocation` value is also supported.
 
 <br></br>
 
-#### Client-Server Deployment
+#### Client/Server Deployment
 
 In this deployment type, Tomcat instances work as clients to an existing Hazelcast Cluster.
 
@@ -84,28 +85,29 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 
 ***Sample Configuration to use Hazelcast Session Replication***
 
-- Download Hazelcast Enterprise 3.3+ zip file from hazelcast.com.
-- unzip the zip file into $HAZELCAST_ENTERPRISE_ROOT folder
-- put *$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-<version>.jar* and *$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-tomcat6-<version>.jar* into $CATALINA_HOME/lib/ folder.
+- Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
+- Unzip the Hazelcast Enteprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar` and `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-tomcat6-`<*version*>`.jar` to the folder `$CATALINA_HOME/lib/`.
 
 - Update `<Manager>` tag in the `$CATALINA_HOME$/conf/context.xml` as shown below.
 
-```xml
+  ```xml
 <Context>
-  <Manager className="com.hazelcast.session.HazelcastSessionManager"
+     <Manager className="com.hazelcast.session.HazelcastSessionManager"
       clientOnly="true"/>
 </Context>
 ```
-- launch an Hazelcast Instance using $HAZELCAST_ENTERPRISE_ROOT/bin/server.sh or $HAZELCAST_ENTERPRISE_ROOT/bin/server.bat
-- start Tomcat instances with a configured load balancer and deploy web application.
+- Launch a Hazelcast Instance using `$HAZELCAST_ENTERPRISE_ROOT/bin/server.sh` or `$HAZELCAST_ENTERPRISE_ROOT/bin/server.bat`.
+
+- Start Tomcat instances with a configured load balancer and deploy web application.
 
 
 #### Optional <Manager> Parameters
 
-<Manager> Tag is used both in P2P and Client/Server mode. Following parameters are used to configure Tomcat Session Replication Module to better serve your needs.
+`<Manager>` tag is used both in P2P and Client/Server mode. Following parameters are used to configure Tomcat Session Replication Module to better serve your needs.
 
-- add `mapName` attribute into <Manager> tag. (default value is *default Hazelcast Distributed Map*, use this attribute if you have specially configured map for special cases like WAN Replication, Eviction, MapStore, etc.)
-- add `sticky` attribute into <Manager> tag (default value is *true*)
+- Add `mapName` attribute into `<Manager>` tag. Its default value is *default Hazelcast Distributed Map*. Use this attribute if you have specially configured map for special cases like WAN Replication, Eviction, MapStore, etc.
+- Add `sticky` attribute into `<Manager>` tag. Its default value is *true*.
 
 <br></br>
 
