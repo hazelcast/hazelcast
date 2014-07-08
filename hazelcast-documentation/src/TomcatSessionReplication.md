@@ -43,8 +43,9 @@ This type of deployment is the simplest approach. You can just configure your To
 ***Sample Configuration to use Hazelcast Session Replication***
 
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
-- Update `hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
-- Put `hazelcast-all-`<*version*>`-ee.jar`, `hazelcast-sessions-tomcat6-`<*version*>`.jar` and `hazelcast.xml` to the folder `$CATALINA_HOME/lib/`.
+- Unzip the Hazelcast Enteprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
+- Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-all-`<*version*>`-ee.jar`, `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` and `hazelcast.xml` to the folder `$CATALINA_HOME/lib/`.
 
 - Put `<Listener>` tag into the `$CATALINA_HOME$/conf/server.xml` as shown below.
 
@@ -68,7 +69,7 @@ This type of deployment is the simplest approach. You can just configure your To
 
 - Start Tomcat instances with a configured load balancer and deploy web application.
 
-***Optional <Listener> Parameters***
+***Optional Listener Tag Parameters***
 
 - Add `configLocation` attribute into `<Listener>` tag. It is optional. If not provided, `hazelcast.xml` in the classpath is used by default. URL or full filesystem path as a `configLocation` value is also supported.
 
@@ -89,7 +90,7 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enteprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar` and `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-tomcat6-`<*version*>`.jar` to the folder `$CATALINA_HOME/lib/`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar` and `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` to the folder `$CATALINA_HOME/lib/`.
 
 - Update `<Manager>` tag in the `$CATALINA_HOME$/conf/context.xml` as shown below.
 
@@ -104,7 +105,7 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 - Start Tomcat instances with a configured load balancer and deploy web application.
 
 
-#### Optional <Manager> Parameters
+#### Optional Manager Tag Parameters
 
 `<Manager>` tag is used both in P2P and Client/Server mode. Following parameters are used to configure Tomcat Session Replication Module to better serve your needs.
 
