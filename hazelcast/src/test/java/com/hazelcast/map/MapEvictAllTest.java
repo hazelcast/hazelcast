@@ -4,10 +4,10 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -74,16 +74,7 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         assertEquals(0, countDownLatch.getCount());
     }
 
-    /**
-     * Fails rarely but randomly at line:
-     * assertEquals(0, map1.getLocalMapStats().getHeapCost());
-     *
-     * java.lang.AssertionError:
-     * Expected :0
-     * Actual   :value differs, e.g. 13440, 107016, 37296
-     */
     @Test
-    @Category(ProblematicTest.class)
     public void testEvictAll_onBackup() throws Exception {
         int numberOfEntries = 10000;
         String mapName = randomMapName();
@@ -91,8 +82,8 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(5);
         HazelcastInstance node1 = instanceFactory.newHazelcastInstance();
         HazelcastInstance node2 = instanceFactory.newHazelcastInstance();
-        IMap<Integer, Integer> map1 = node1.getMap(mapName);
-        IMap<Integer, Integer> map2 = node2.getMap(mapName);
+        final IMap<Integer, Integer> map1 = node1.getMap(mapName);
+        final IMap<Integer, Integer> map2 = node2.getMap(mapName);
         map1.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void mapEvicted(MapEvent event) {
@@ -110,8 +101,18 @@ public class MapEvictAllTest extends HazelcastTestSupport {
 
         assertOpenEventually(countDownLatch);
         assertEquals(0, countDownLatch.getCount());
-        assertEquals(0, map1.getLocalMapStats().getHeapCost());
-        assertEquals(0, map2.getLocalMapStats().getHeapCost());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, map1.getLocalMapStats().getHeapCost());
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, map2.getLocalMapStats().getHeapCost());
+            }
+        });
     }
 
 }
