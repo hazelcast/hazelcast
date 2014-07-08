@@ -160,17 +160,10 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         if (entries == null) {
             return null;
         }
-        result = entries.remove(key);
-        if (entries.isEmpty()) {
-            scheduledEntries.remove(second);
-
-            ScheduledFuture removed = scheduledTaskMap.remove(second);
-            if (removed != null) {
-                removed.cancel(false);
-            }
-        }
+        result = cleanUpOnCancel(key, second, entries);
         return result;
     }
+
 
     @Override
     public ScheduledEntry<K, V> get(K key) {
@@ -206,15 +199,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             if (entries == null) {
                 continue;
             }
-            result = entries.remove(timeKey);
-            if (entries.isEmpty()) {
-                scheduledEntries.remove(second);
-
-                ScheduledFuture removed = scheduledTaskMap.remove(second);
-                if (removed != null) {
-                    removed.cancel(false);
-                }
-            }
+            result = cleanUpOnCancel(timeKey, second, entries);
         }
         return result;
     }
@@ -308,16 +293,32 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private void removeKeyFromSecond(Object key, Integer existingSecond) {
         ConcurrentMap<Object, ScheduledEntry<K, V>> scheduledKeys = scheduledEntries.get(existingSecond);
         if (scheduledKeys != null) {
-            scheduledKeys.remove(key);
-            if (scheduledKeys.isEmpty()) {
-                scheduledEntries.remove(existingSecond);
+            cleanUpOnCancel(key, existingSecond, scheduledKeys);
+        }
+    }
 
-                ScheduledFuture removed = scheduledTaskMap.remove(existingSecond);
-                if (removed != null) {
-                    removed.cancel(false);
-                }
+
+    /**
+     * Removes entry from from being evicted.
+     *
+     * Cleans up parent container (second based hashmap) if it doesn't hold anymore items.
+     *
+     * Cancels associated scheduler if there are no more items to remove for this second.
+     *
+     * Returns associated scheduled entry.
+     */
+    private ScheduledEntry<K, V> cleanUpOnCancel(Object key, Integer second, ConcurrentMap<Object, ScheduledEntry<K,
+            V>> entries){
+        final ScheduledEntry<K, V> result = entries.remove(key);
+        if (entries.isEmpty()) {
+            scheduledEntries.remove(second);
+
+            ScheduledFuture removed = scheduledTaskMap.remove(second);
+            if (removed != null) {
+                removed.cancel(false);
             }
         }
+        return result;
     }
 
     private void schedule(final Integer second, final int delaySeconds) {
