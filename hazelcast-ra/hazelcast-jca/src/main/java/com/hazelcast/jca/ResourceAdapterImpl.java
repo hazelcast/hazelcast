@@ -136,6 +136,16 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
 	public String getConfigurationLocation() {
 		return configurationLocation;
 	}
+
+    @Deprecated
+    public void setConfigLocation(String configLocation) {
+        this.configurationLocation = configLocation;
+    }
+
+    @Deprecated
+    public String getConfigLocation() {
+        return configurationLocation;
+    }
 	
 	@Override
 	public int hashCode() {
