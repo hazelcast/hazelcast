@@ -277,6 +277,24 @@ public class ClientQueueTest {
     }
 
     @Test
+    public void testQueueRemoveFromIterator() {
+        IQueue<String> queue = client.getQueue(randomString());
+        queue.add("one");
+        queue.add("two");
+        queue.add("three");
+        queue.add("four");
+
+        Iterator<String> iterator = queue.iterator();
+        while(iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
+        }
+        assertEquals(0, queue.size());
+
+    }
+
+
+    @Test
     public void testToArray(){
         final int maxItems = 19;
         final IQueue q = client.getQueue(randomString());

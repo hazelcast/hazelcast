@@ -33,9 +33,11 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.NearCache;
 import com.hazelcast.map.QueryEventFilter;
 import com.hazelcast.map.QueryResult;
@@ -128,7 +130,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
     protected final String name;
-    protected final MapConfig mapConfig;
     protected final LocalMapStatsImpl localMapStats;
     protected final LockProxySupport lockSupport;
     protected final PartitioningStrategy partitionStrategy;
@@ -136,7 +137,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected MapProxySupport(final String name, final MapService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);
         this.name = name;
-        mapConfig = service.getMapServiceContext().getMapContainer(name).getMapConfig();
         partitionStrategy = service.getMapServiceContext().getMapContainer(name).getPartitioningStrategy();
         localMapStats = service.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
@@ -150,7 +150,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private void initializeMapStoreLoad() {
-        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        MapStoreConfig mapStoreConfig = getMapConfig().getMapStoreConfig();
         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
             MapStoreConfig.InitialLoadMode initialLoadMode = mapStoreConfig.getInitialLoadMode();
             if (initialLoadMode.equals(MapStoreConfig.InitialLoadMode.EAGER)) {
@@ -160,7 +160,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private void initializeIndexes() {
-        for (MapIndexConfig index : mapConfig.getMapIndexConfigs()) {
+        for (MapIndexConfig index : getMapConfig().getMapIndexConfigs()) {
             if (index.getAttribute() != null) {
                 addIndex(index.getAttribute(), index.isOrdered());
             }
@@ -169,7 +169,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     private void initializeListeners() {
         final NodeEngine nodeEngine = getNodeEngine();
-        List<EntryListenerConfig> listenerConfigs = mapConfig.getEntryListenerConfigs();
+        List<EntryListenerConfig> listenerConfigs = getMapConfig().getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;
             if (listenerConfig.getImplementation() != null) {
@@ -201,7 +201,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         // now there is a lot of duplication.
 
         final MapService mapService = getService();
-        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        final boolean nearCacheEnabled = getMapConfig().isNearCacheEnabled();
         if (nearCacheEnabled) {
             Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
@@ -214,8 +214,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
         NodeEngine nodeEngine = getNodeEngine();
         // todo action for read-backup true is not well tested.
-        if (mapConfig.isReadBackupData()) {
-            int backupCount = mapConfig.getTotalBackupCount();
+        if (getMapConfig().isReadBackupData()) {
+            int backupCount = getMapConfig().getTotalBackupCount();
             InternalPartitionService partitionService = mapService.getMapServiceContext().getNodeEngine().getPartitionService();
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
@@ -235,7 +235,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (nearCacheEnabled) {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                    .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
+                    .equals(nodeEngine.getClusterService().getThisAddress()) || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
                 return mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, result);
             }
         }
@@ -246,7 +246,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        final boolean nearCacheEnabled = getMapConfig().isNearCacheEnabled();
         if (nearCacheEnabled) {
             Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
@@ -271,7 +271,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     if (nearCacheEnabled) {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
                         if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                                .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
+                                .equals(nodeEngine.getClusterService().getThisAddress()) || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
                             mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, response);
                         }
                     }
@@ -322,7 +322,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Future f;
             Object o;
             OperationService operationService = nodeEngine.getOperationService();
-            if (mapConfig.isStatisticsEnabled()) {
+            if (getMapConfig().isStatisticsEnabled()) {
                 long time = System.currentTimeMillis();
                 f = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -591,7 +591,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         Map<Object, Object> result = new HashMap<Object, Object>();
-        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        final boolean nearCacheEnabled = getMapConfig().isNearCacheEnabled();
         if (nearCacheEnabled) {
             final Iterator<Data> iterator = keys.iterator();
             while (iterator.hasNext()) {
@@ -620,7 +620,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     if (nearCacheEnabled) {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
                         if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                                .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
+                                .equals(nodeEngine.getClusterService().getThisAddress()) || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
                             mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, entry.getKey(), entry.getValue());
                         }
                     }
@@ -1164,7 +1164,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     private boolean isKeyInNearCache(Data key) {
         final MapService mapService = getService();
-        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
+        final boolean nearCacheEnabled = getMapConfig().isNearCacheEnabled();
         if (nearCacheEnabled) {
             Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null && !cached.equals(NearCache.NULL_OBJECT)) {
@@ -1200,6 +1200,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
+
+    protected MapConfig getMapConfig(){
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+        return mapContainer.getMapConfig();
+    }
+
 
     @Override
     public final String getName() {

@@ -169,8 +169,25 @@ public final class TransactionOptions implements DataSerializable {
         return sb.toString();
     }
 
+    /**
+     * The type of transaction. With the type you have influence on how much guarantee you get
+     * when a member crashes when a transaction is committing.
+     */
     public enum TransactionType {
-        TWO_PHASE(1), LOCAL(2);
+
+        /**
+         * The two phase commit is more than the classic two phase commit (if you want a regular two phase commit,
+         * use local). Before it commits, it copies the commit-log to other members, so in case of member failure,
+         * another member can complete the commit.
+         */
+        TWO_PHASE(1),
+
+        /**
+         * Unlike the name suggests, local is a two phase commit. So first all cohorts are asked
+         * to prepare if everyone agrees then all cohorts are asked to commit. The problem happens when
+         * during the commit phase one or more members crash, that the system could be left in an inconsistent state.
+         */
+        LOCAL(2);
 
         private final int value;
 

@@ -1,6 +1,7 @@
 package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
@@ -37,7 +38,9 @@ public class ClientMultiMapListenerStressTest {
 
     @BeforeClass
     public static void init() {
-        server = Hazelcast.newHazelcastInstance();
+        Config cfg = new Config();
+        cfg.setProperty("hazelcast.event.queue.capacity", "5000000");
+        server = Hazelcast.newHazelcastInstance(cfg);
     }
 
     @AfterClass
@@ -46,7 +49,6 @@ public class ClientMultiMapListenerStressTest {
         Hazelcast.shutdownAll();
     }
 
-    @Category(ProblematicTest.class)
     @Test
     public void listenerAddStressTest() throws InterruptedException {
         final PutItemsThread[] putThreads = new PutItemsThread[NUMBER_OF_CLIENTS * THREADS_PER_CLIENT];
