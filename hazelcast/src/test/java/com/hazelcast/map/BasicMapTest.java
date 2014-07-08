@@ -539,11 +539,18 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
-        HashSet<String> actual = new HashSet<String>();
-        actual.add("key1");
-        actual.add("key2");
-        actual.add("key3");
-        assertEquals(map.keySet(), actual);
+
+        List<String> listExpected = new ArrayList<String>();
+        listExpected.add("key1");
+        listExpected.add("key2");
+        listExpected.add("key3");
+
+        final List<String> list = new ArrayList<String>(map.keySet());
+
+        Collections.sort(list);
+        Collections.sort(listExpected);
+
+        assertEquals(listExpected, list);
     }
 
     @Test
@@ -552,11 +559,18 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
-        HashSet<String> actual = new HashSet<String>();
-        actual.add("key1");
-        actual.add("key2");
-        actual.add("key3");
-        assertEquals(map.keySet(), actual);
+
+        List<String> listExpected = new ArrayList<String>();
+        listExpected.add("key1");
+        listExpected.add("key2");
+        listExpected.add("key3");
+
+        final List<String> list = new ArrayList<String>(map.keySet());
+
+        Collections.sort(list);
+        Collections.sort(listExpected);
+
+        assertEquals(listExpected, list);
     }
 
     @Test
@@ -567,14 +581,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key3", "value3");
         map.put("key4", "value3");
         List<String> values = new ArrayList<String>(map.values());
-        List<String> actual = new ArrayList<String>();
-        actual.add("value1");
-        actual.add("value2");
-        actual.add("value3");
-        actual.add("value3");
+        List<String> expected = new ArrayList<String>();
+        expected.add("value1");
+        expected.add("value2");
+        expected.add("value3");
+        expected.add("value3");
         Collections.sort(values);
-        Collections.sort(actual);
-        assertEquals(values, actual);
+        Collections.sort(expected);
+        assertEquals(expected, values);
     }
 
     @Test
