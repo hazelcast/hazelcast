@@ -48,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -518,12 +520,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private static final class MultiExecutionCallbackWrapper implements MultiExecutionCallback {
 
         private final MultiExecutionCallback multiExecutionCallback;
-        private final Map<Member, Object> values;
+        private final ConcurrentMap<Member, Object> values;
         private final AtomicInteger members;
 
         private MultiExecutionCallbackWrapper(final int memberSize, final MultiExecutionCallback multiExecutionCallback) {
             this.multiExecutionCallback = multiExecutionCallback;
-            this.values = new HashMap<Member, Object>(memberSize);
+            this.values = new ConcurrentHashMap<Member, Object>(memberSize);
             this.members = new AtomicInteger(memberSize);
         }
 

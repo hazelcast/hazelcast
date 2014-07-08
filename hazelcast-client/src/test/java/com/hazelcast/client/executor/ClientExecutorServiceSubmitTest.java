@@ -34,7 +34,6 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -50,8 +49,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
@@ -234,20 +233,14 @@ public class ClientExecutorServiceSubmitTest {
         assertEquals(member.getUuid(), result.get());
     }
 
-    /**
-     * fails randomly.
-     * Example stack trace is here:
-     * https://hazelcast-l337.ci.cloudbees.com/job/Hazelcast-3.x-OpenJDK7/com.hazelcast$hazelcast-client/133/testReport/com.hazelcast.client.executor/ClientExecutorServiceSubmitTest/submitCallableToMember_withMultiExecutionCallback/
-     */
     @Test
-    @Category(ProblematicTest.class)
     public void submitCallableToMember_withMultiExecutionCallback() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final CountDownLatch responseLatch = new CountDownLatch(CLUSTER_SIZE);
         final CountDownLatch completeLatch = new CountDownLatch(CLUSTER_SIZE);
         final String msg = randomString();
-        final Callable callable = new AppendCallable(msg);
+        final Callable<String> callable = new AppendCallable(msg);
         final Collection<Member> collection = instance2.getCluster().getMembers();
 
         service.submitToMembers(callable, collection, new MultiExecutionCallback() {
