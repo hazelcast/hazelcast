@@ -1,8 +1,10 @@
 package com.hazelcast.map;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,7 +29,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testMapKeySet() {
-        IMap<String, String> map = getMap("testMapKeySet");
+        IMap<String, String> map = getMapWithNodeCount(3);
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
@@ -47,7 +49,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testMapLocalKeySet() {
-        IMap<String, String> map = getMap("testMapKeySet");
+        IMap<String, String> map = getMapWithNodeCount(3);
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
@@ -67,7 +69,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testMapValues() {
-        IMap<String, String> map = getMap("testMapValues");
+        IMap<String, String> map = getMapWithNodeCount(3);
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
@@ -85,7 +87,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void valuesToArray() {
-        IMap<String, String> map = getMap("valuesToArray");
+        IMap<String, String> map = getMapWithNodeCount(3);
         assertEquals(0, map.size());
         map.put("a", "1");
         map.put("b", "2");
@@ -115,7 +117,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testMapEntrySetWhenRemoved() {
-        IMap<String, String> map = getMap("testMapEntrySetWhenRemoved");
+        IMap<String, String> map = getMapWithNodeCount(3);
         map.put("Hello", "World");
         map.remove("Hello");
         Set<IMap.Entry<String, String>> set = map.entrySet();
@@ -126,7 +128,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testEntrySet() {
-        final IMap<Object, Object> map = getMap("testEntrySet");
+        final IMap<Object, Object> map = getMapWithNodeCount(3);
         map.put(1, 1);
         map.put(2, 2);
         map.put(3, 3);
@@ -141,8 +143,10 @@ public class MapPredicateTest extends HazelcastTestSupport {
         assertEquals(entrySet, map.entrySet());
     }
 
-    private IMap getMap(String mapName) {
-        return createHazelcastInstance().getMap(mapName);
+    private IMap getMapWithNodeCount(int nodeCount) {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance node = factory.newHazelcastInstance();
+        return node.getMap(randomMapName());
     }
 
 }
