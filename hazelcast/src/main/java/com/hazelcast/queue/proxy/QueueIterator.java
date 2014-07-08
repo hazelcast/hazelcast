@@ -18,33 +18,22 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-
-import com.hazelcast.queue.QueueService;
-import com.hazelcast.queue.RemoveOperation;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
 import java.util.Iterator;
 
 /**
- * @author ali 12/18/12
+ * Iterator for the Queue.
+ *
+ * @param <E>
  */
 public class QueueIterator<E> implements Iterator<E> {
 
     private final Iterator<Data> iterator;
-    private NodeEngine nodeEngine;
-    private final int partitionId;
-    private final String name;
     private final SerializationService serializationService;
     private final boolean binary;
-    private transient Data lastReturned;
 
-    public QueueIterator(Iterator<Data> iterator, NodeEngine nodeEngine, int partitionId, String name, boolean binary) {
+    public QueueIterator(Iterator<Data> iterator, SerializationService serializationService, boolean binary) {
         this.iterator = iterator;
-        this.nodeEngine = nodeEngine;
-        this.partitionId = partitionId;
-        this.name = name;
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = serializationService;
         this.binary = binary;
     }
 
@@ -53,22 +42,14 @@ public class QueueIterator<E> implements Iterator<E> {
     }
 
     public E next() {
-        lastReturned = iterator.next();
+        Data item = iterator.next();
         if (binary) {
-            return (E) lastReturned;
+            return (E) item;
         }
-        return (E) serializationService.toObject(lastReturned);
+        return (E) serializationService.toObject(item);
     }
 
     public void remove() {
-        iterator.remove();
-        final OperationService operationService = nodeEngine.getOperationService();
-        final RemoveOperation removeOperation = new RemoveOperation(name, lastReturned);
-        final InternalCompletableFuture<Object> future = operationService.invokeOnPartition(
-                QueueService.SERVICE_NAME,
-                removeOperation,
-                partitionId
-        );
-        future.getSafely();
+        throw new UnsupportedOperationException("remove() is not supported!");
     }
 }

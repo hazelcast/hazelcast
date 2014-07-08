@@ -19,7 +19,6 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ClientQueueIterator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
@@ -42,6 +41,7 @@ import com.hazelcast.queue.client.RemainingCapacityRequest;
 import com.hazelcast.queue.client.RemoveListenerRequest;
 import com.hazelcast.queue.client.RemoveRequest;
 import com.hazelcast.queue.client.SizeRequest;
+import com.hazelcast.queue.proxy.QueueIterator;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import java.util.ArrayList;
@@ -218,7 +218,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
         IteratorRequest request = new IteratorRequest(name);
         PortableCollection result = invoke(request);
         Collection<Data> coll = result.getCollection();
-        return new ClientQueueIterator<E>(coll.iterator(), getContext(), name, getPartitionKey(), false);
+        return new QueueIterator<E>(coll.iterator(), getContext().getSerializationService(), false);
     }
 
     public Object[] toArray() {
