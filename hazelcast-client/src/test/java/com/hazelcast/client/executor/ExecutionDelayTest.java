@@ -69,7 +69,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
     @Test
     public void testExecutorOneNodeFailsUnexpectedly() throws InterruptedException, ExecutionException {
         final int executions = 20;
-        ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
+        final ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
             ex.schedule(new Runnable() {
                 @Override
@@ -78,8 +78,9 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
                 }
             }, 1000, TimeUnit.MILLISECONDS);
 
-            Task task = new Task();
+            final Task task = new Task();
             runClient(task, executions);
+
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() {
@@ -94,7 +95,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
     @Test
     public void testExecutorOneNodeShutdown() throws InterruptedException, ExecutionException {
         final int executions = 20;
-        ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
+        final ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
             ex.schedule(new Runnable() {
                 @Override
@@ -103,7 +104,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
                 }
             }, 1000, TimeUnit.MILLISECONDS);
 
-            Task task = new Task();
+            final Task task = new Task();
             runClient(task, executions);
 
             assertTrueEventually(new AssertTask() {
@@ -117,19 +118,19 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
         }
     }
 
-    private void runClient(Task task, int executions) throws InterruptedException, ExecutionException {
+    private void runClient(final Task task, final int executions) throws InterruptedException, ExecutionException {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        IExecutorService executor = client.getExecutorService("executor");
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final IExecutorService executor = client.getExecutorService("executor");
         for (int i = 0; i < executions; i++) {
-            Future future = executor.submitToKeyOwner(task, i);
+            final Future future = executor.submitToKeyOwner(task, i);
             future.get();
             Thread.sleep(100);
         }
     }
 
-    private static class Task implements Serializable, Callable {
+    private static class Task implements Callable, Serializable {
         @Override
         public Object call() throws Exception {
             counter.incrementAndGet();

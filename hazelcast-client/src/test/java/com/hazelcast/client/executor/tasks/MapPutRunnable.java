@@ -32,26 +32,29 @@ public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInst
 
     public String mapName;
 
+    @SuppressWarnings("unused")
     public MapPutRunnable(){}
 
     public MapPutRunnable(String mapName) {
         this.mapName = mapName;
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
+    @Override
+    public void run() {
+        final Member member = instance.getCluster().getLocalMember();
+
+        final IMap<String, String> map = instance.getMap(mapName);
+        map.put(member.getUuid(), member.getUuid()+"value");
+    }
+
+    @Override
+    public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
+    @Override
+    public void readData(final ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-    }
-
-    public void run() {
-        Member member = instance.getCluster().getLocalMember();
-
-        IMap map = instance.getMap(mapName);
-
-        map.put(member.getUuid(), member.getUuid()+"value");
     }
 
     @Override
@@ -63,7 +66,7 @@ public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInst
         return mapName;
     }
 
-    public void setMapName(String mapName) {
+    public void setMapName(final String mapName) {
         this.mapName = mapName;
     }
 }

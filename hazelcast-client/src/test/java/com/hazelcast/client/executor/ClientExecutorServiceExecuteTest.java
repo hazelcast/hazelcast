@@ -64,7 +64,7 @@ public class ClientExecutorServiceExecuteTest {
         final IExecutorService service = client.getExecutorService(randomString());
         final String mapName = randomString();
 
-        service.execute( new MapPutRunnable(mapName));
+        service.execute(new MapPutRunnable(mapName));
         final IMap map = client.getMap(mapName);
 
         assertSizeEventually(1, map);
@@ -84,8 +84,9 @@ public class ClientExecutorServiceExecuteTest {
 
     @Test(expected = NullPointerException.class)
     public void testExecute_whenTaskNull() {
-        IExecutorService service = client.getExecutorService(randomString());
-        service.execute( null );
+        final IExecutorService service = client.getExecutorService(randomString());
+
+        service.execute(null);
     }
 
     @Test
@@ -135,6 +136,7 @@ public class ClientExecutorServiceExecuteTest {
     @Test(expected = NullPointerException.class)
     public void testExecuteOnMember_WhenMemberNull() {
         IExecutorService service = client.getExecutorService(randomString());
+
         service.executeOnMember(new MapPutRunnable("map"), null);
     }
 
@@ -142,7 +144,7 @@ public class ClientExecutorServiceExecuteTest {
     public void testExecuteOnMembers() {
         final IExecutorService service = client.getExecutorService(randomString());
         final String mapName = randomString();
-        final Collection collection = new ArrayList();
+        final Collection<Member> collection = new ArrayList<Member>();
         final Member member1 = instance1.getCluster().getLocalMember();
         final Member member3 = instance3.getCluster().getLocalMember();
         collection.add(member1);
@@ -163,7 +165,7 @@ public class ClientExecutorServiceExecuteTest {
     public void testExecuteOnMembers_withEmptyCollection() {
         final IExecutorService service = client.getExecutorService(randomString());
         final String mapName = randomString();
-        final Collection collection = new ArrayList();
+        final Collection<Member> collection = new ArrayList<Member>();
 
         service.executeOnMembers(new MapPutRunnable(mapName), collection);
 
@@ -173,8 +175,9 @@ public class ClientExecutorServiceExecuteTest {
 
     @Test(expected = NullPointerException.class)
     public void testExecuteOnMembers_WhenCollectionNull() {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection collection = null;
+        final IExecutorService service = client.getExecutorService(randomString());
+        final Collection<Member> collection = null;
+
         service.executeOnMembers(new MapPutRunnable("task"), collection);
     }
 
@@ -192,8 +195,9 @@ public class ClientExecutorServiceExecuteTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testExecuteOnMembers_whenSelectorNull() {
-        IExecutorService service = client.getExecutorService(randomString());
-        MemberSelector selector = null;
+        final IExecutorService service = client.getExecutorService(randomString());
+        final MemberSelector selector = null;
+
         service.executeOnMembers(new MapPutRunnable("task"), selector);
     }
 

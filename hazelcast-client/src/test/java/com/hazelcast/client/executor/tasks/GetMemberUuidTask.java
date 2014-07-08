@@ -29,16 +29,17 @@ public class GetMemberUuidTask implements Callable<String>, DataSerializable, Ha
 
     private HazelcastInstance node;
 
+    @Override
     public String call() throws Exception {
         return node.getCluster().getLocalMember().getUuid();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
-
     }
 
     @Override

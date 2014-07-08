@@ -11,6 +11,7 @@ public class CancellationAwareTask implements Callable<Boolean>, Serializable {
         this.sleepTime = sleepTime;
     }
 
+    @Override
     public Boolean call() throws InterruptedException {
         Thread.sleep(sleepTime);
         return Boolean.TRUE;

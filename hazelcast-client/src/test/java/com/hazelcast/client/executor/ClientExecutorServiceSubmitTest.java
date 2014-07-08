@@ -84,16 +84,16 @@ public class ClientExecutorServiceSubmitTest {
     @Test(expected = NullPointerException.class)
     public void testSubmitCallableNullTask() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
-        Callable callable = null;
+        final Callable<String> callable = null;
 
-        final Future<String> f = service.submit(callable);
+        service.submit(callable);
     }
 
     @Test
     public void testSubmitCallableToMember() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
-        final Callable getUuidCallable = new GetMemberUuidTask();
+        final Callable<String> getUuidCallable = new GetMemberUuidTask();
         final Member member = instance2.getCluster().getLocalMember();
 
         final Future<String> result = service.submitToMember(getUuidCallable, member);
@@ -105,12 +105,12 @@ public class ClientExecutorServiceSubmitTest {
     public void testSubmitCallableToMembers() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
-        final Callable getUuidCallable = new GetMemberUuidTask();
-        final Collection collection = instance2.getCluster().getMembers();
+        final Callable<String> getUuidCallable = new GetMemberUuidTask();
+        final Collection<Member> collection = instance2.getCluster().getMembers();
 
         final Map<Member, Future<String>> map = service.submitToMembers(getUuidCallable, collection);
 
-        for (Member member : map.keySet()) {
+        for (final Member member : map.keySet()) {
             final Future<String> result = map.get(member);
             String uuid = result.get();
 
@@ -123,7 +123,7 @@ public class ClientExecutorServiceSubmitTest {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String msg = randomString();
-        final Callable callable = new AppendCallable(msg);
+        final Callable<String> callable = new AppendCallable(msg);
         final MemberSelector selectAll = new SelectAllMembers();
 
         final Future<String> f = service.submit(callable, selectAll);
@@ -135,12 +135,12 @@ public class ClientExecutorServiceSubmitTest {
     public void testSubmitCallableToMembers_withMemberSelector() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
-        final Callable getUuidCallable = new GetMemberUuidTask();
+        final Callable<String> getUuidCallable = new GetMemberUuidTask();
         final MemberSelector selectAll = new SelectAllMembers();
 
         final Map<Member, Future<String>> map = service.submitToMembers(getUuidCallable, selectAll);
 
-        for (Member member : map.keySet()) {
+        for (final Member member : map.keySet()) {
             final Future<String> result = map.get(member);
             String uuid = result.get();
 
@@ -153,10 +153,10 @@ public class ClientExecutorServiceSubmitTest {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String msg = randomString();
-        final Callable callable = new AppendCallable(msg);
+        final Callable<String> callable = new AppendCallable(msg);
 
         final Map<Member, Future<String>> map = service.submitToAllMembers(callable);
-        for (Member member : map.keySet()) {
+        for (final Member member : map.keySet()) {
             final Future<String> result = map.get(member);
             assertEquals(msg + AppendCallable.APPENDAGE, result.get());
         }
@@ -172,15 +172,13 @@ public class ClientExecutorServiceSubmitTest {
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
         service.submitToMember(runnable, member, new ExecutionCallback() {
-            public void onResponse(Object response) {
+            public void onResponse(final Object response) {
                 responseLatch.countDown();
             }
 
-            public void onFailure(Throwable t) {
-
-            }
+            public void onFailure(final Throwable t) {}
         });
-        Map map = client.getMap(mapName);
+        final Map map = client.getMap(mapName);
 
         assertOpenEventually(responseLatch);
         assertEquals(1, map.size());
@@ -192,20 +190,20 @@ public class ClientExecutorServiceSubmitTest {
 
         final String mapName = randomString();
         final Runnable runnable = new MapPutRunnable(mapName);
-        final Collection collection = instance2.getCluster().getMembers();
+        final Collection<Member> collection = instance2.getCluster().getMembers();
         final CountDownLatch responseLatch = new CountDownLatch(CLUSTER_SIZE);
         final CountDownLatch completeLatch = new CountDownLatch(1);
 
         service.submitToMembers(runnable, collection, new MultiExecutionCallback() {
-            public void onResponse(Member member, Object value) {
+            public void onResponse(final Member member, final Object value) {
                 responseLatch.countDown();
             }
 
-            public void onComplete(Map<Member, Object> values) {
+            public void onComplete(final Map<Member, Object> values) {
                 completeLatch.countDown();
             }
         });
-        Map map = client.getMap(mapName);
+        final Map map = client.getMap(mapName);
 
         assertOpenEventually(responseLatch);
         assertOpenEventually(completeLatch);
@@ -223,20 +221,18 @@ public class ClientExecutorServiceSubmitTest {
 
         service.submitToMember(getUuidCallable, member, new ExecutionCallback() {
             @Override
-            public void onResponse(Object response) {
+            public void onResponse(final Object response) {
                 result.set(response);
                 responseLatch.countDown();
             }
 
             @Override
-            public void onFailure(Throwable t) {
-            }
+            public void onFailure(final Throwable t) {}
         });
 
         assertOpenEventually(responseLatch);
         assertEquals(member.getUuid(), result.get());
     }
-
 
     /**
      * fails randomly.
@@ -252,18 +248,18 @@ public class ClientExecutorServiceSubmitTest {
         final CountDownLatch completeLatch = new CountDownLatch(CLUSTER_SIZE);
         final String msg = randomString();
         final Callable callable = new AppendCallable(msg);
-        final Collection collection = instance2.getCluster().getMembers();
+        final Collection<Member> collection = instance2.getCluster().getMembers();
 
         service.submitToMembers(callable, collection, new MultiExecutionCallback() {
-            public void onResponse(Member member, Object value) {
+            public void onResponse(final Member member, final Object value) {
                 if (value.equals(msg + AppendCallable.APPENDAGE)) {
                     responseLatch.countDown();
                 }
             }
 
-            public void onComplete(Map<Member, Object> values) {
-                for (Member member : values.keySet()) {
-                    Object value = values.get(member);
+            public void onComplete(final Map<Member, Object> values) {
+                for (final Member member : values.keySet()) {
+                    final Object value = values.get(member);
                     if (value.equals(msg + AppendCallable.APPENDAGE)) {
                         completeLatch.countDown();
                     }
@@ -271,8 +267,8 @@ public class ClientExecutorServiceSubmitTest {
             }
         });
 
-        assertOpenEventually(responseLatch);
-        assertOpenEventually(completeLatch);
+        assertOpenEventually("responseLatch", responseLatch);
+        assertOpenEventually("completeLatch", completeLatch);
     }
 
     @Test
@@ -285,15 +281,13 @@ public class ClientExecutorServiceSubmitTest {
         final MemberSelector selector = new SelectAllMembers();
 
         service.submit(runnable, selector, new ExecutionCallback() {
-            public void onResponse(Object response) {
+            public void onResponse(final Object response) {
                 responseLatch.countDown();
             }
 
-            public void onFailure(Throwable t) {
-
-            }
+            public void onFailure(final Throwable t) {}
         });
-        IMap map = client.getMap(mapName);
+        final IMap map = client.getMap(mapName);
 
         assertOpenEventually(responseLatch);
         assertEquals(1, map.size());
@@ -310,15 +304,15 @@ public class ClientExecutorServiceSubmitTest {
         final MemberSelector selector = new SelectAllMembers();
 
         service.submitToMembers(runnable, selector, new MultiExecutionCallback() {
-            public void onResponse(Member member, Object value) {
+            public void onResponse(final Member member, final Object value) {
                 responseLatch.countDown();
             }
 
-            public void onComplete(Map<Member, Object> values) {
+            public void onComplete(final Map<Member, Object> values) {
                 completeLatch.countDown();
             }
         });
-        IMap map = client.getMap(mapName);
+        final IMap map = client.getMap(mapName);
 
         assertOpenEventually(responseLatch);
         assertOpenEventually(completeLatch);
@@ -336,14 +330,12 @@ public class ClientExecutorServiceSubmitTest {
         final AtomicReference<Object> result = new AtomicReference<Object>();
 
         service.submit(runnable, selector, new ExecutionCallback() {
-            public void onResponse(Object response) {
+            public void onResponse(final Object response) {
                 result.set(response);
                 responseLatch.countDown();
             }
 
-            public void onFailure(Throwable t) {
-
-            }
+            public void onFailure(final Throwable t) {}
         });
 
         assertOpenEventually(responseLatch);
@@ -361,13 +353,13 @@ public class ClientExecutorServiceSubmitTest {
         final MemberSelector selector = new SelectAllMembers();
 
         service.submitToMembers(callable, selector, new MultiExecutionCallback() {
-            public void onResponse(Member member, Object value) {
+            public void onResponse(final Member member, final Object value) {
                 if (value.equals(msg + AppendCallable.APPENDAGE)) {
                     responseLatch.countDown();
                 }
             }
 
-            public void onComplete(Map<Member, Object> values) {
+            public void onComplete(final Map<Member, Object> values) {
                 completeLatch.countDown();
             }
         });
@@ -386,15 +378,15 @@ public class ClientExecutorServiceSubmitTest {
         final Runnable runnable = new MapPutRunnable(mapName);
 
         service.submitToAllMembers(runnable, new MultiExecutionCallback() {
-            public void onResponse(Member member, Object value) {
+            public void onResponse(final Member member, final Object value) {
                 responseLatch.countDown();
             }
 
-            public void onComplete(Map<Member, Object> values) {
+            public void onComplete(final Map<Member, Object> values) {
                 completeLatch.countDown();
             }
         });
-        IMap map = client.getMap(mapName);
+        final IMap map = client.getMap(mapName);
 
         assertOpenEventually(responseLatch);
         assertOpenEventually(completeLatch);
@@ -411,13 +403,13 @@ public class ClientExecutorServiceSubmitTest {
         final Callable callable = new AppendCallable(msg);
 
         service.submitToAllMembers(callable, new MultiExecutionCallback() {
-            public void onResponse(Member member, Object value) {
+            public void onResponse(final Member member, final Object value) {
                 if (value.equals(msg + AppendCallable.APPENDAGE)) {
                     responseLatch.countDown();
                 }
             }
 
-            public void onComplete(Map<Member, Object> values) {
+            public void onComplete(final Map<Member, Object> values) {
                 for (Member member : values.keySet()) {
                     Object value = values.get(member);
                     if (value.equals(msg + AppendCallable.APPENDAGE)) {
@@ -446,7 +438,7 @@ public class ClientExecutorServiceSubmitTest {
 
     @Test
     public void testSubmitRunnable_WithResult() throws ExecutionException, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
+        final IExecutorService service = client.getExecutorService(randomString());
 
         final String mapName = randomString();
         final Object givenResult = "givenResult";
@@ -479,15 +471,13 @@ public class ClientExecutorServiceSubmitTest {
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
         service.submit(runnable, new ExecutionCallback() {
-            public void onResponse(Object response) {
+            public void onResponse(final Object response) {
                 responseLatch.countDown();
             }
 
-            public void onFailure(Throwable t) {
-
-            }
+            public void onFailure(final Throwable t) {}
         });
-        IMap map = client.getMap(mapName);
+        final IMap map = client.getMap(mapName);
 
         assertOpenEventually(responseLatch);
         assertEquals(1, map.size());
@@ -498,19 +488,17 @@ public class ClientExecutorServiceSubmitTest {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String msg = randomString();
-        final Callable callable = new AppendCallable(msg);
-        final AtomicReference result = new AtomicReference();
+        final Callable<String> callable = new AppendCallable(msg);
+        final AtomicReference<String> result = new AtomicReference<String>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
-        service.submit(callable, new ExecutionCallback() {
-            public void onResponse(Object response) {
+        service.submit(callable, new ExecutionCallback<String>() {
+            public void onResponse(final String response) {
                 result.set(response);
                 responseLatch.countDown();
             }
 
-            public void onFailure(Throwable t) {
-
-            }
+            public void onFailure(final Throwable t) {}
         });
 
         assertOpenEventually(responseLatch);
@@ -522,7 +510,7 @@ public class ClientExecutorServiceSubmitTest {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String msg = randomString();
-        final Callable callable = new AppendCallable(msg);
+        final Callable<String> callable = new AppendCallable(msg);
 
         final Future<String> result = service.submitToKeyOwner(callable, "key");
 
@@ -542,11 +530,9 @@ public class ClientExecutorServiceSubmitTest {
                 responseLatch.countDown();
             }
 
-            public void onFailure(Throwable t) {
-
-            }
+            public void onFailure(Throwable t) {}
         });
-        IMap map = client.getMap(mapName);
+        final IMap map = client.getMap(mapName);
 
         assertOpenEventually(responseLatch);
         assertEquals(1, map.size());
@@ -557,24 +543,22 @@ public class ClientExecutorServiceSubmitTest {
         final IExecutorService service = client.getExecutorService(randomString());
 
         final String msg = randomString();
-        final Callable callable = new AppendCallable(msg);
+        final Callable<String> callable = new AppendCallable(msg);
         final CountDownLatch responseLatch = new CountDownLatch(1);
-        final AtomicReference result = new AtomicReference();
+        final AtomicReference<String> result = new AtomicReference<String>();
 
-        service.submitToKeyOwner(callable, "key", new ExecutionCallback() {
-            public void onResponse(Object response) {
+        service.submitToKeyOwner(callable, "key", new ExecutionCallback<String>() {
+            public void onResponse(final String response) {
                 result.set(response);
                 responseLatch.countDown();
             }
 
-            public void onFailure(Throwable t) {
-            }
+            public void onFailure(Throwable t) {}
         });
 
         assertOpenEventually(responseLatch, 5);
         assertEquals(msg + AppendCallable.APPENDAGE, result.get());
     }
-
 
     @Test
     public void submitRunnablePartitionAware() throws Exception {
@@ -586,8 +570,7 @@ public class ClientExecutorServiceSubmitTest {
 
         //this task should execute on a node owning the given key argument,
         //the action is to put the UUid of the executing node into a map with the given name
-        final Runnable runnable = new MapPutPartitionAwareRunnable(mapName, key);
-        final CountDownLatch responseLatch = new CountDownLatch(1);
+        final Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
 
         service.submit(runnable);
         final IMap map = client.getMap(mapName);
@@ -608,9 +591,9 @@ public class ClientExecutorServiceSubmitTest {
         final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
         final Member member = instance2.getCluster().getLocalMember();
 
-        final Runnable runnable = new MapPutPartitionAwareRunnable(mapName, key);
+        final Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
 
-        Future result = service.submit(runnable, expectedResult);
+        final Future result = service.submit(runnable, expectedResult);
         final IMap map = client.getMap(mapName);
 
         assertEquals(expectedResult, result.get());
@@ -625,11 +608,10 @@ public class ClientExecutorServiceSubmitTest {
     public void submitRunnablePartitionAware_withExecutionCallback() throws Exception {
         final IExecutorService service = client.getExecutorService(randomString());
 
-        final String expectedResult = "result";
         final String mapName = randomString();
         final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
         final Member member = instance2.getCluster().getLocalMember();
-        final Runnable runnable = new MapPutPartitionAwareRunnable(mapName, key);
+        final Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
         service.submit(runnable, new ExecutionCallback() {
@@ -639,9 +621,7 @@ public class ClientExecutorServiceSubmitTest {
             }
 
             @Override
-            public void onFailure(Throwable t) {
-
-            }
+            public void onFailure(Throwable t) {}
         });
         final IMap map = client.getMap(mapName);
 
@@ -658,8 +638,8 @@ public class ClientExecutorServiceSubmitTest {
         final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
         final Member member = instance2.getCluster().getLocalMember();
 
-        final Callable runnable = new MapPutPartitionAwareCallable(mapName, key);
-        final Future result = service.submit(runnable);
+        final Callable<String> callable = new MapPutPartitionAwareCallable<String, String>(mapName, key);
+        final Future<String> result = service.submit(callable);
 
         assertEquals(member.getUuid(), result.get());
         assertTrue(map.containsKey(member.getUuid()));
@@ -674,19 +654,18 @@ public class ClientExecutorServiceSubmitTest {
         final String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
         final Member member = instance2.getCluster().getLocalMember();
 
-        final Callable runnable = new MapPutPartitionAwareCallable(mapName, key);
+        final Callable<String> runnable = new MapPutPartitionAwareCallable<String, String>(mapName, key);
 
-        final AtomicReference result = new AtomicReference();
+        final AtomicReference<String> result = new AtomicReference<String>();
         final CountDownLatch responseLatch = new CountDownLatch(1);
-        service.submit(runnable, new ExecutionCallback() {
-            public void onResponse(Object response) {
+
+        service.submit(runnable, new ExecutionCallback<String>() {
+            public void onResponse(final String response) {
                 result.set(response);
                 responseLatch.countDown();
             }
 
-            public void onFailure(Throwable t) {
-
-            }
+            public void onFailure(final Throwable t) {}
         });
 
         assertOpenEventually(responseLatch);

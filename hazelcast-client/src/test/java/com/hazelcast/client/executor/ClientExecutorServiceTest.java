@@ -28,18 +28,13 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.concurrent.RejectedExecutionException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -50,7 +45,6 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientExecutorServiceTest {
 
-    static final int CLUSTER_SIZE = 3;
     static HazelcastInstance instance1;
     static HazelcastInstance instance2;
     static HazelcastInstance instance3;
@@ -72,26 +66,30 @@ public class ClientExecutorServiceTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testGetLocalExecutorStats() throws Throwable, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
+    public void testGetLocalExecutorStats() throws Throwable {
+        final IExecutorService service = client.getExecutorService(randomString());
+
         service.getLocalExecutorStats();
     }
 
     @Test
     public void testIsTerminated() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
+
         assertFalse(service.isTerminated());
     }
 
     @Test
     public void testIsShutdown() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
+
         assertFalse(service.isShutdown());
     }
 
     @Test
     public void testShutdownNow() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
+
         service.shutdownNow();
 
         assertTrueEventually(new AssertTask() {
@@ -103,24 +101,24 @@ public class ClientExecutorServiceTest {
 
     @Test(expected = TimeoutException.class)
     public void testCancellationAwareTask_whenTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
-        IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        final IExecutorService service = client.getExecutorService(randomString());
+        final CancellationAwareTask task = new CancellationAwareTask(5000);
 
-        Future future = service.submit(task);
+        final Future future = service.submit(task);
 
         future.get(1, TimeUnit.SECONDS);
     }
 
     @Test
     public void testFutureAfterCancellationAwareTaskTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
-        IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        final IExecutorService service = client.getExecutorService(randomString());
+        final CancellationAwareTask task = new CancellationAwareTask(5000);
 
-        Future future = service.submit(task);
+        final Future future = service.submit(task);
 
         try {
             future.get(1, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
+        } catch (final TimeoutException ignored) {
         }
 
         assertFalse(future.isDone());
@@ -129,14 +127,14 @@ public class ClientExecutorServiceTest {
 
     @Test
     public void testCancelFutureAfterCancellationAwareTaskTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
-        IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        final IExecutorService service = client.getExecutorService(randomString());
+        final CancellationAwareTask task = new CancellationAwareTask(5000);
 
-        Future future = service.submit(task);
+        final Future future = service.submit(task);
 
         try {
             future.get(1, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
+        } catch (final TimeoutException ignored) {
         }
 
         assertTrue(future.cancel(true));
@@ -146,13 +144,13 @@ public class ClientExecutorServiceTest {
 
     @Test(expected = CancellationException.class)
     public void testGetFutureAfterCancel() throws InterruptedException, ExecutionException, TimeoutException {
-        IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        final IExecutorService service = client.getExecutorService(randomString());
+        final CancellationAwareTask task = new CancellationAwareTask(5000);
 
-        Future future = service.submit(task);
+        final Future future = service.submit(task);
         try {
             future.get(1, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
+        } catch (final TimeoutException ignored) {
         }
         future.cancel(true);
 
@@ -161,19 +159,19 @@ public class ClientExecutorServiceTest {
 
     @Test(expected = ExecutionException.class)
     public void testSubmitFailingCallableException() throws ExecutionException, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
-        final Future<String> f = service.submit(new FailingCallable());
+        final IExecutorService service = client.getExecutorService(randomString());
+        final Future<String> failingFuture = service.submit(new FailingCallable());
 
-        f.get();
+        failingFuture.get();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testSubmitFailingCallableReasonExceptionCause() throws Throwable {
-        IExecutorService service = client.getExecutorService(randomString());
-        final Future<String> f = service.submit(new FailingCallable());
+        final IExecutorService service = client.getExecutorService(randomString());
+        final Future<String> failingFuture = service.submit(new FailingCallable());
 
         try {
-            f.get();
+            failingFuture.get();
         } catch (ExecutionException e) {
             throw e.getCause();
         }

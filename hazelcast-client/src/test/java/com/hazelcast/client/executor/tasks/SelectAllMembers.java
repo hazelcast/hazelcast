@@ -5,7 +5,7 @@ import com.hazelcast.core.MemberSelector;
 
 public class SelectAllMembers implements MemberSelector {
     @Override
-    public boolean select(Member member) {
+    public boolean select(final Member member) {
         return true;
     }
 }

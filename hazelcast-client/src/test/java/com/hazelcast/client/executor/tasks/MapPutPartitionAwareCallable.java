@@ -28,30 +28,48 @@ import java.io.IOException;
  * the action is to put the UUid of the executing node into a map with the given name
  * and return that UUid
  */
-public class MapPutPartitionAwareCallable implements Callable, DataSerializable, PartitionAware, HazelcastInstanceAware {
+public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSerializable, PartitionAware<P>, HazelcastInstanceAware {
 
     private HazelcastInstance instance;
 
     public String mapName;
-    public Object partitionKey;
+    public P partitionKey;
 
+    @SuppressWarnings("unused")
     public MapPutPartitionAwareCallable(){}
 
-    public MapPutPartitionAwareCallable(String mapName, Object partitionKey) {
+    public MapPutPartitionAwareCallable(final String mapName, final P partitionKey) {
         this.mapName = mapName;
         this.partitionKey = partitionKey;
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
+    @Override
+    public T call() throws Exception {
+        final Member member = instance.getCluster().getLocalMember();
+
+        final IMap<String, String> map = instance.getMap(mapName);
+        map.put(member.getUuid(), member.getUuid() + "value");
+
+        return (T) member.getUuid();
+    }
+
+    @Override
+    public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
+    @Override
+    public void readData(final ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
     }
 
     @Override
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+    public P getPartitionKey() {
+        return partitionKey;
+    }
+
+    @Override
+    public void setHazelcastInstance(final HazelcastInstance hazelcastInstance) {
         instance = hazelcastInstance;
     }
 
@@ -59,22 +77,7 @@ public class MapPutPartitionAwareCallable implements Callable, DataSerializable,
         return mapName;
     }
 
-    public void setMapName(String mapName) {
+    public void setMapName(final String mapName) {
         this.mapName = mapName;
-    }
-
-    @Override
-    public Object getPartitionKey() {
-        return partitionKey;
-    }
-
-    @Override
-    public Object call() throws Exception {
-        Member member = instance.getCluster().getLocalMember();
-
-        IMap map = instance.getMap(mapName);
-
-        map.put(member.getUuid(), member.getUuid()+"value");
-        return member.getUuid();
     }
 }

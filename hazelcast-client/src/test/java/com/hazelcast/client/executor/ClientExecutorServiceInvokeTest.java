@@ -17,11 +17,11 @@
 package com.hazelcast.client.executor;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.executor.tasks.*;
-import com.hazelcast.core.*;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.client.executor.tasks.AppendCallable;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -32,12 +32,12 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.HazelcastTestSupport.*;
-import static org.junit.Assert.*;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -60,43 +60,44 @@ public class ClientExecutorServiceInvokeTest {
 
     @Test
     public void testInvokeAll() throws Throwable {
-        IExecutorService service = client.getExecutorService(randomString());
-        String msg = randomString();
-        Collection c = new ArrayList();
-        c.add(new AppendCallable(msg));
-        c.add(new AppendCallable(msg));
+        final IExecutorService service = client.getExecutorService(randomString());
+        final String msg = randomString();
+        final Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        collection.add(new AppendCallable(msg));
+        collection.add(new AppendCallable(msg));
 
-        List<Future> results =  service.invokeAll(c);
-        for(Future result : results){
-            assertEquals(msg + AppendCallable.APPENDAGE,  result.get() );
+        final List<Future<String>> results =  service.invokeAll(collection);
+        for (final Future<String> result : results) {
+            assertEquals(msg + AppendCallable.APPENDAGE, result.get());
         }
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testInvokeAll_withTimeOut() throws Throwable {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection c = new ArrayList();
-        c.add(new AppendCallable());
-        c.add(new AppendCallable());
-        service.invokeAll(c, 1, TimeUnit.MINUTES);
+        final IExecutorService service = client.getExecutorService(randomString());
+        final Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        collection.add(new AppendCallable());
+        collection.add(new AppendCallable());
+
+        service.invokeAll(collection, 1, TimeUnit.MINUTES);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAny() throws Throwable, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection c = new ArrayList();
-        c.add(new AppendCallable());
-        c.add(new AppendCallable());
-        service.invokeAny(c);
+    public void testInvokeAny() throws Throwable {
+        final IExecutorService service = client.getExecutorService(randomString());
+        final Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        collection.add(new AppendCallable());
+        collection.add(new AppendCallable());
+
+        service.invokeAny(collection);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testInvokeAnyTimeOut() throws Throwable, InterruptedException {
-        IExecutorService service = client.getExecutorService(randomString());
-        Collection c = new ArrayList();
-        c.add(new AppendCallable());
-        c.add(new AppendCallable());
-        service.invokeAny(c, 1, TimeUnit.MINUTES);
+    public void testInvokeAnyTimeOut() throws Throwable {
+        final IExecutorService service = client.getExecutorService(randomString());
+        final Collection<Callable<String>> collection = new ArrayList<Callable<String>>();
+        collection.add(new AppendCallable());
+        collection.add(new AppendCallable());
+        service.invokeAny(collection, 1, TimeUnit.MINUTES);
     }
-
 }
