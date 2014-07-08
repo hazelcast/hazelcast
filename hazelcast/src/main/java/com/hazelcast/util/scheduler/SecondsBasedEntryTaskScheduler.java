@@ -16,8 +16,6 @@
 
 package com.hazelcast.util.scheduler;
 
-import com.hazelcast.util.Clock;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,6 +28,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import com.hazelcast.util.Clock;
 
 /**
  * Schedule execution of an entry for seconds later.
@@ -162,6 +162,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
         result = entries.remove(key);
         if (entries.isEmpty()) {
+            scheduledEntries.remove(second);
+
             ScheduledFuture removed = scheduledTaskMap.remove(second);
             if (removed != null) {
                 removed.cancel(false);
@@ -206,6 +208,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             }
             result = entries.remove(timeKey);
             if (entries.isEmpty()) {
+                scheduledEntries.remove(second);
+
                 ScheduledFuture removed = scheduledTaskMap.remove(second);
                 if (removed != null) {
                     removed.cancel(false);
@@ -306,6 +310,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         if (scheduledKeys != null) {
             scheduledKeys.remove(key);
             if (scheduledKeys.isEmpty()) {
+                scheduledEntries.remove(existingSecond);
+
                 ScheduledFuture removed = scheduledTaskMap.remove(existingSecond);
                 if (removed != null) {
                     removed.cancel(false);
