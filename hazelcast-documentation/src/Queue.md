@@ -21,5 +21,7 @@ if ( task != null ) {
 }
 ```
 
-FIFO ordering will apply to all queue operations cluster wide. User objects (such as `MyTask` in the example above), that are (en/de)queued have to be `Serializable`. 
+FIFO ordering will apply to all queue operations cluster wide. User objects (such as `MyTask` in the example above), that are (en/de)queued have to be `Serializable`.
+
+There is no batching while iterating over Queue, items will be copied to local and iteration will occur locally.
 
