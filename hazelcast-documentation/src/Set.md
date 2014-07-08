@@ -8,7 +8,7 @@ Hazelcast Set is distributed and concurrent implementation of `java.util.Set`.
 * Hazelcast Set does not preserve the order of elements.
 * Hazelcast Set is non-partitioned data structure where values and each backup is represented by its own single partition.
 * Hazelcast Set cannot be scaled beyond the capacity of a single machine.
-* There is no batching while iterating over Set, items will be copied to local and iteration will occur locally.
+* There is no batching while iterating over Set, all items will be copied to local and iteration will occur locally.
 * Equals method implementation of Hazelcast Set uses serialized byte version of objects compared to `java.util.HashSet`.
 
 ### Sample Set Code
