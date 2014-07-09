@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.scheduler;
 
+import com.hazelcast.util.Clock;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,8 +30,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import com.hazelcast.util.Clock;
 
 /**
  * Schedule execution of an entry for seconds later.
@@ -163,7 +163,6 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         result = cleanUpOnCancel(key, second, entries);
         return result;
     }
-
 
     @Override
     public ScheduledEntry<K, V> get(K key) {
@@ -301,11 +300,15 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     /**
      * Removes entry from being scheduled to be evicted.
      *
-     * Cleans up parent container (second based hashmap) if it doesn't hold anymore items.
+     * Cleans up parent container (second -> entries map) if it doesn't hold anymore items more this second.
      *
-     * Cancels associated scheduler if there are no more items to remove for this second.
+     * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
      *
      * Returns associated scheduled entry.
+     *
+     * @param key entry key
+     * @param second second at which this entry was scheduled to be evicted
+     * @param entries entries which were already scheduled to be evicted for this second
      */
     private ScheduledEntry<K, V> cleanUpOnCancel(Object key, Integer second, ConcurrentMap<Object, ScheduledEntry<K,
             V>> entries) {
