@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,34 @@
 
 package com.hazelcast.web;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
+/**
+ * Pairs with {@link WebFilter} to notify it of {@code HttpSession} timeouts.
+ */
 public class SessionListener implements HttpSessionListener {
-    public void sessionCreated(HttpSessionEvent httpSessionEvent) {
+
+    private static final ILogger LOGGER = Logger.getLogger(SessionListener.class);
+
+    public void sessionCreated(HttpSessionEvent event) {
     }
 
-    public void sessionDestroyed(HttpSessionEvent httpSessionEvent) {
-        WebFilter.destroyOriginalSession(httpSessionEvent.getSession());
+    public void sessionDestroyed(HttpSessionEvent event) {
+        HttpSession session = event.getSession();
+
+        ServletContext servletContext = session.getServletContext();
+        WebFilter webFilter = (WebFilter) servletContext.getAttribute(WebFilter.class.getName());
+        if (webFilter == null) {
+            LOGGER.warning("The " + WebFilter.class.getName() + " could not be found. " + getClass().getName()
+                    + " should be paired with a " + WebFilter.class.getName() + ".");
+        } else {
+            webFilter.destroyOriginalSession(session);
+        }
     }
 }

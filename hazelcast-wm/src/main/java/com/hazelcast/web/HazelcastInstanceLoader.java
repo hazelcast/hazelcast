@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ final class HazelcastInstanceLoader {
     private static final int DEFAULT_CONNECTION_ATTEMPT_LIMIT = 3;
 
     private HazelcastInstanceLoader() {
-
     }
 
     public static HazelcastInstance createInstance(final FilterConfig filterConfig, final Properties properties)
