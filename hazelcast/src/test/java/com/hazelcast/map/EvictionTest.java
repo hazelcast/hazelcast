@@ -802,4 +802,24 @@ public class EvictionTest extends HazelcastTestSupport {
             }
         });
     }
+
+
+    /**
+     * Test for the issue 2659.
+     * Eviction event is fired for an object already removed
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testEvictionForNanosTTL() throws InterruptedException {
+        final IMap<String, String> map = createHazelcastInstance().getMap(randomMapName());
+        map.put("foo", "bar", 1, TimeUnit.NANOSECONDS);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map.get("foo"));
+            }
+        }, 30);
+    }
 }
