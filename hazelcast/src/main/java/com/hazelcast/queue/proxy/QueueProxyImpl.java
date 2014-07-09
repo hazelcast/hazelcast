@@ -148,7 +148,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     public Iterator<E> iterator() {
         final NodeEngine nodeEngine = getNodeEngine();
-        return new QueueIterator<E>(listInternal().iterator(), nodeEngine, partitionId, name, false);
+        return new QueueIterator<E>(listInternal().iterator(), nodeEngine.getSerializationService(), false);
     }
 
     public Object[] toArray() {
