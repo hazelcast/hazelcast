@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -76,9 +77,10 @@ public class MapReplicationOperation extends AbstractOperation {
                 mapInitialLoadInfo.put(name, replicaIndex > 0 || recordStore.isLoaded());
             }
             // now prepare data to migrate records
-            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>();
-            for (Entry<Data, Record> recordEntry : recordStore.getReadonlyRecordMap().entrySet()) {
-                Record record = recordEntry.getValue();
+            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
+            final Iterator<Record> iterator = recordStore.valueIterator();
+            while (iterator.hasNext()) {
+                final Record record = iterator.next();
                 RecordReplicationInfo recordReplicationInfo;
                 recordReplicationInfo = createRecordReplicationInfo(record, mapService);
                 recordSet.add(recordReplicationInfo);

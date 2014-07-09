@@ -33,7 +33,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Arrays;
-import java.util.Map;
+import java.util.Iterator;
 
 /**
  * Eviction helper methods.
@@ -73,10 +73,9 @@ public final class EvictionHelper {
     public static void removeEvictableRecords(final RecordStore recordStore, int evictableSize, final MapConfig mapConfig,
                                               final MapServiceContext mapServiceContext) {
         final MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
-        final Map<Data, Record> entries = recordStore.getReadonlyRecordMap();
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
-        long[] criterias = createAndPopulateEvictionCriteriaArray(entries, evictionPolicy);
+        long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy);
         if (criterias == null) {
             return;
         }
@@ -85,7 +84,9 @@ public final class EvictionHelper {
         final int evictableBaseIndex = getEvictionStartIndex(criterias, evictableSize);
         final long criteriaValue = criterias[evictableBaseIndex];
         int evictedRecordCounter = 0;
-        for (final Record record : entries.values()) {
+        final Iterator<Record> iterator = recordStore.valueIterator();
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
             final long value = getEvictionCriteriaValue(record, evictionPolicy);
             if (value <= criteriaValue) {
                 final Data tmpKey = record.getKey();
@@ -103,12 +104,14 @@ public final class EvictionHelper {
         }
     }
 
-    private static long[] createAndPopulateEvictionCriteriaArray(Map<Data, Record> entries,
+    private static long[] createAndPopulateEvictionCriteriaArray(RecordStore recordStore,
                                                                  MapConfig.EvictionPolicy evictionPolicy) {
-        final int size = entries.size();
+        final int size = recordStore.size();
         long[] criterias = null;
         int index = 0;
-        for (final Record record : entries.values()) {
+        final Iterator<Record> iterator = recordStore.valueIterator();
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
             if (criterias == null) {
                 criterias = new long[size];
             }

@@ -23,6 +23,7 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -109,22 +110,29 @@ public interface RecordStore {
 
     void deleteRecord(Data key);
 
-    Map<Data, Record> getReadonlyRecordMap();
+    /**
+     * Iterates over record store values.
+     *
+     * @return read only iterator for map values.
+     */
+    Iterator<Record> valueIterator();
 
     /**
      * Returns records map.
+     *
+     * @see com.hazelcast.map.RecordStoreLoader
      */
     Map<Data, Record> getRecordMap();
 
     /**
-     * Returns read only records map by waiting map store load.
+     * Iterates over record store values but first waits map store load.
      * If an operation needs to wait a data source to load like querying
      * in {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
-     * this method can be used to return a read-only view of key-value pairs.
+     * this method can be used to return a read-only iterator.
      *
-     * @return read only record map.
+     * @return read only iterator for map values.
      */
-    Map<Data, Record> getReadonlyRecordMapByWaitingMapStoreLoad();
+    Iterator<Record> loadAwareValueIterator();
 
     Set<Data> keySet();
 
