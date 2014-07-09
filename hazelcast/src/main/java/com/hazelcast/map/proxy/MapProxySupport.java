@@ -201,6 +201,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                         }
                     }
                 }
+
                 @Override
                 public void onFailure(Throwable t) {
                 }
@@ -1113,10 +1114,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
-        return timeunit != null ? timeunit.toMillis(time) : time;
+        if (timeunit == null) {
+            return time;
+        }
+        long timeInMillis = timeunit.toMillis(time);
+        if (time > 0 && timeInMillis == 0) {
+            timeInMillis = 1;
+        }
+        return timeInMillis;
     }
 
-    protected MapConfig getMapConfig(){
+    protected MapConfig getMapConfig() {
         final MapService mapService = getService();
         final MapContainer mapContainer = mapService.getMapContainer(name);
         return mapContainer.getMapConfig();
