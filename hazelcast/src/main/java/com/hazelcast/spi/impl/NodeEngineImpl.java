@@ -70,7 +70,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = new WanReplicationService(node);
+        wanReplicationService = new WanReplicationService(this);
     }
 
     @PrivateApi

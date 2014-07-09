@@ -16,6 +16,7 @@
 
 package com.hazelcast.wan;
 
+import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.instance.Node;
@@ -24,13 +25,16 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.CoreService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
+import com.hazelcast.spi.impl.ExecutionServiceImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
-
+import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.util.executor.StripedRunnable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 
 public class WanReplicationService implements CoreService {
 
@@ -40,10 +44,17 @@ public class WanReplicationService implements CoreService {
     private final ILogger logger;
 
     private final Map<String, WanReplicationDelegate> wanReplications = new ConcurrentHashMap<String, WanReplicationDelegate>(2);
+    private final StripedExecutor executor;
 
-    public WanReplicationService(Node node) {
-        this.node = node;
+    public WanReplicationService(NodeEngineImpl nodeEngine) {
+        this.node = nodeEngine.getNode();
         this.logger = node.getLogger(WanReplicationService.class.getName());
+        final ExecutionServiceImpl executionService = (ExecutionServiceImpl) nodeEngine.getExecutionService();
+        this.executor = new StripedExecutor(
+                executionService.getCachedExecutor(),
+                ExecutorConfig.DEFAULT_POOL_SIZE,
+                ExecutorConfig.DEFAULT_QUEUE_CAPACITY
+        );
     }
 
     @SuppressWarnings("SynchronizeOnThis")
@@ -83,8 +94,7 @@ public class WanReplicationService implements CoreService {
     }
 
     public void handleEvent(final Packet packet) {
-        // todo execute in which thread
-        node.nodeEngine.getExecutionService().execute("hz:wan", new Runnable() {
+        executor.execute(new StripedRunnable() {
             @Override
             public void run() {
                 final Data data = packet.getData();
@@ -96,6 +106,11 @@ public class WanReplicationService implements CoreService {
                 } catch (Exception e) {
                     logger.severe(e);
                 }
+            }
+
+            @Override
+            public int getKey() {
+                return packet.getPartitionId();
             }
         });
     }
@@ -113,6 +128,7 @@ public class WanReplicationService implements CoreService {
                 }
             }
             wanReplications.clear();
+            executor.shutdown();
         }
     }
 }
