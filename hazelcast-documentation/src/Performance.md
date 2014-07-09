@@ -141,10 +141,11 @@ public static class OrderDeletionTask
         IMap<OrderKey, Order> orderMap = hazelcastInstance.getMap("orders");
         mapCustomers.lock( customerId );
         Customer customer = mapCustomers.get( customerId );
-        final Set<OrderKey> orderKeys = orderMap.localKeySet(Predicates.equal("customerId", customerId));
+        final Predicate predicate = Predicates.equal("customerId", customerId);
+        final Set<OrderKey> orderKeys = orderMap.localKeySet(predicate);
         int orderCount = orderKeys.size();
         for (OrderKey key : orderKeys) {
-            if(key.orderId == orderId){
+            if (key.orderId == orderId) {
                 orderCount--;
                 orderMap.delete(key);
             }
@@ -169,5 +170,4 @@ Benefits of doing the same operation with distributed `ExecutorService` based on
 
 
 <br> </br>
-
 
