@@ -1,9 +1,8 @@
 # Performance
 
-
-
-
 ## Data Affinity
+
+Data affinity is to ensure that related entries exist on the same node. If related data is on the same node, operations can be executed without the cost of extra network call and extra wire data. This feature is provided by using same partition keys for related data.
 
 **Co-location of related data and computation**
 
@@ -11,12 +10,12 @@ Hazelcast has a standard way of finding out which member owns/manages each key o
 
 ```java    
 HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
-Map mapa = hazelcastInstance.getMap( "mapa" );
-Map mapb = hazelcastInstance.getMap( "mapb" );
-Map mapc = hazelcastInstance.getMap( "mapc" );
-mapa.put( "key1", value );
-mapb.get( "key1" );
-mapc.remove( "key1" );
+Map mapA = hazelcastInstance.getMap( "mapA" );
+Map mapB = hazelcastInstance.getMap( "mapB" );
+Map mapC = hazelcastInstance.getMap( "mapC" );
+mapA.put( "key1", value );
+mapB.get( "key1" );
+mapC.remove( "key1" );
 // since map names are different, operation will be manipulating
 // different entries, but the operation will take place on the
 // same member since the keys ("key1") are the same
@@ -34,19 +33,19 @@ So, when the keys are the same, then entries are stored on the same node. But we
 
 ```java
 public class OrderKey implements Serializable, PartitionAware {
-  int customerId;
-  int orderId;
+  private final long customerId;
+  private final long orderId;
 
-  public OrderKey( int orderId, int customerId ) {
+  public OrderKey( long orderId, long customerId ) {
     this.customerId = customerId;
     this.orderId = orderId;
   }
 
-  public int getCustomerId() {
+  public long getCustomerId() {
     return customerId;
   }
 
-  public int getOrderId() {
+  public long getOrderId() {
     return orderId;
   }
 
@@ -79,33 +78,38 @@ mapOrders.put( new OrderKey( 23, 1 ), order );
 ```
 
 
-Assume that you have a customers map where `customerId` is the key and the customer object is the value, customer object contains the customer's orders, and you want to remove one of the orders of a customer and return the number of remaining orders. Here is how you would normally do it:
+Assume that you have a customers map where `customerId` is the key and the customer object is the value and you want to remove one of the orders of a customer and return the number of remaining orders. Here is how you would normally do it:
 
 ```java
 public static int removeOrder( long customerId, long orderId ) throws Exception {
   IMap<Long, Customer> mapCustomers = instance.getMap( "customers" );
+  IMap mapOrders = hazelcastInstance.getMap( "orders" )
   mapCustomers.lock( customerId );
-  Customer customer = mapCustomers.get( customerId );
-  customer.removeOrder( orderId );
-  mapCustomers.put( customerId, customer );
+  mapOrders.remove(orderId);
+  Set orders = orderMap.keySet(Predicates.equal("customerId", customerId));
   mapCustomers.unlock( customerId );
-  return customer.getOrderCount();
+  return orders.size();
 }
 ```
 
 There are couple of things you should consider:
 
-1.  There are four distributed operations there: lock, get, put, unlock. Can you reduce the number of distributed operations?
+1.  There are four distributed operations there: lock, remove, keySet, unlock. Can you reduce 
+the number of distributed operations?
 
-2.  Customer object may not be that big, but can you not have to pass that object through the wire? Notice that, customer object is being passed through the wire twice; get and put.
+2.  Customer object may not be that big, but can you not have to pass that object through the 
+wire? Think about a scenario which you set order count to customer object for fast access, so you 
+should do a get and a put as a result customer object is being passed through the wire twice.
 
 So instead, why not moving the computation over to the member (JVM) where your customer data actually is. Here is how you can do this with distributed executor service:
 
 1.  Send a `PartitionAware` `Callable` task.
 
-2.  `Callable` does the deletion of the order right there and returns with the remaining order count.
+2.  `Callable` does the deletion of the order right there and returns with the remaining 
+order count.
 
-3.  Upon completion of the `Callable` task, return the result (remaining order count). Plus, you do not have to wait until the task is completed; since distributed executions are asynchronous, you can do other things in the meantime.
+3.  Upon completion of the `Callable` task, return the result (remaining order count). Plus, you 
+do not have to wait until the task is completed; since distributed executions are asynchronous, you can do other things in the meantime.
 
 Here is a sample code:
 
@@ -137,13 +141,21 @@ public static class OrderDeletionTask
     }
     
     public Integer call () {
-        IMap<Long, Customer> mapCustomers = hazelcastInstance.getMap( "customers" );
+        Map<Long, Customer> customerMap = hazelcastInstance.getMap("customers");
+        IMap<OrderKey, Order> orderMap = hazelcastInstance.getMap("orders");
         mapCustomers.lock( customerId );
         Customer customer = mapCustomers.get( customerId );
-        customer.removeOrder( orderId );
-        mapCustomers.put( customerId, customer );
+        final Predicate predicate = Predicates.equal("customerId", customerId);
+        final Set<OrderKey> orderKeys = orderMap.localKeySet(predicate);
+        int orderCount = orderKeys.size();
+        for (OrderKey key : orderKeys) {
+            if (key.orderId == orderId) {
+                orderCount--;
+                orderMap.delete(key);
+            }
+        }
         mapCustomers.unlock( customerId );
-        return customer.getOrderCount();
+        return orderCount;
     }
 
     public Object getPartitionKey() {
@@ -162,5 +174,4 @@ Benefits of doing the same operation with distributed `ExecutorService` based on
 
 
 <br> </br>
-
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,31 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.util.Map.Entry;
 
-public class InvalidateEntryProcessor extends AbstractEntryProcessor<String, Object> implements DataSerializable {
+/**
+ * Invalidates all attributes for a {@link DestroySessionEntryProcessor destroyed} session, removing them
+ * from the clustered map.
+ */
+public class InvalidateSessionAttributesEntryProcessor extends AbstractWebDataEntryProcessor<Object> {
+
     private String sessionId;
 
     // Serialization Constructor
-    public InvalidateEntryProcessor() {
-        super(true);
+    public InvalidateSessionAttributesEntryProcessor() {
     }
 
-    public InvalidateEntryProcessor(String sessionId) {
+    public InvalidateSessionAttributesEntryProcessor(String sessionId) {
             this.sessionId = sessionId;
+    }
+
+    @Override
+    public int getId() {
+        return WebDataSerializerHook.INVALIDATE_SESSION_ATTRIBUTES_ID;
     }
 
     @Override
@@ -45,16 +52,16 @@ public class InvalidateEntryProcessor extends AbstractEntryProcessor<String, Obj
                 entry.setValue(null);
             }
         }
-        return false;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(sessionId);
+        return null;
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         sessionId = in.readUTF();
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(sessionId);
     }
 }

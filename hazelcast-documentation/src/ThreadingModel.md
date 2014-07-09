@@ -168,3 +168,4 @@ to become available. When a response is calculated, the future is looked up, and
 In the future, this will be optimized to reduce the amount of expensive systems calls like `lock.acquire`/`notify` and the expensive
 interaction with the operation-queue. Probably, we will add support for a caller-runs mode, so that an operation is directly executed on
 the calling thread.
+

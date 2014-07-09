@@ -66,15 +66,14 @@ Then add below properties into your Hibernate configuration file (e.g. `hibernat
 
 -   You can define custom named Hazelcast configuration XML file with one of these Hibernate configuration properties.
 
-	-	```xml
+```xml
 <property name="hibernate.cache.provider_configuration_file_resource_path">
   hazelcast-custom-config.xml
 </property>
 ```
 
-	or
 
-	-	```xml
+```xml
 <property name="hibernate.cache.hazelcast.configuration_file_path">
   hazelcast-custom-config.xml
 </property>
