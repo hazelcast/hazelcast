@@ -40,7 +40,7 @@ This launches embedded Hazelcast Node in each server instance.
 
 This type of deployment is the simplest approach. You can just configure your Tomcat and launch. There is no need for an  external Hazelcast cluster.
 
-***Sample Configuration to use Hazelcast Session Replication***
+***Sample P2P Configuration to use Hazelcast Session Replication***
 
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enteprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
@@ -86,7 +86,7 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 -	The architecture is completely independent. Complete reboot of Tomcat instances.
 <br></br>
 
-***Sample Configuration to use Hazelcast Session Replication***
+***Sample Client/Server Configuration to use Hazelcast Session Replication***
 
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enteprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
