@@ -130,7 +130,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public void txnPollBackupReserve(long itemId, String transactionId) {
         QueueItem item = getBackupMap().remove(itemId);
         if (item == null) {
-            logger.warning("txnCommitPoll operation-> No txn item for itemId: " + itemId);
+            logger.warning("Backup reserve failed, itemId: " + itemId);
             return;
         }
         txMap.put(itemId, new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
