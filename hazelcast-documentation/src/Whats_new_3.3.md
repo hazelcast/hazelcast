@@ -12,7 +12,7 @@ This section provides the new features introduced with Hazelcast 3.3 release.
 - Replicated Map implemented: Please see [Replicated Map](#replicated-map-beta)
 - WAN Replication improved: Added configurable replication queue size [WAN Replication Queue Size](#wan-replication-queue-size).
 - Data Aggregation implemented: Added common data aggregations, please find [Aggregators](#aggregators) documentation.
-- EvictAll and LoadAll features for IMap: 
+- EvictAll and LoadAll features for IMap: evictAll and loadAll methods have been introduced to be able to evict all entries except the locked ones and that loads all or a set of keys from a configured map store, respectively.
 
 
 
