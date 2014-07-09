@@ -406,9 +406,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                 nextRecord = iterator.next();
                 nextRecord = nullIfExpired(nextRecord);
                 if (nextRecord != null) {
-                    break;
+                    return;
                 }
             }
+            nextRecord = null;
         }
     }
 }
