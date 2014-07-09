@@ -24,6 +24,9 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
+/**
+ * Pairs with {@link WebFilter} to notify it of {@code HttpSession} timeouts.
+ */
 public class SessionListener implements HttpSessionListener {
 
     private static final ILogger LOGGER = Logger.getLogger(SessionListener.class);
@@ -37,8 +40,8 @@ public class SessionListener implements HttpSessionListener {
         ServletContext servletContext = session.getServletContext();
         WebFilter webFilter = (WebFilter) servletContext.getAttribute(WebFilter.class.getName());
         if (webFilter == null) {
-            LOGGER.warning("The " + WebFilter.class.getName() + " could not be found. " + getClass().getName() +
-                    " should be paired with a " + WebFilter.class.getName() + ".");
+            LOGGER.warning("The " + WebFilter.class.getName() + " could not be found. " + getClass().getName()
+                    + " should be paired with a " + WebFilter.class.getName() + ".");
         } else {
             webFilter.destroyOriginalSession(session);
         }

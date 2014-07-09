@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
  * Tests to verify that sessions are correctly removed from the map when timed out by multiple nodes.
  * <p/>
  * This test is classified as "slow" because the "fastest" session expiration supported by the servlet spec is still
- * 1 minute. That means this test needs to run for multiple minutes to verify cleanup.
+ * 1 minute. That means this test needs to run for close to two minutes to verify cleanup.
  *
  * @since 3.3
  */
@@ -46,7 +46,7 @@ public class WebFilterSessionCleanupTest extends AbstractWebFilterTest {
         super("session-cleanup.xml", "session-cleanup.xml");
     }
 
-    @Test
+    @Test(timeout = 130000)
     public void testSessionTimeout() throws Exception {
         IMap<String, Object> map = hz.getMap("default");
         CookieStore cookieStore = new BasicCookieStore();
