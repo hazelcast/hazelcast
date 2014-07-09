@@ -186,7 +186,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V put(K key, V value) {
-        return put(key, value, -1, TimeUnit.SECONDS);
+        return put(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -259,7 +259,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Future<V> putAsync(final K key, final V value) {
-        return putAsync(key, value, -1, TimeUnit.SECONDS);
+        return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -335,7 +335,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V putIfAbsent(K key, V value) {
-        return putIfAbsent(key, value, -1, TimeUnit.SECONDS);
+        return putIfAbsent(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -923,7 +923,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void set(K key, V value) {
-        set(key, value, -1, TimeUnit.SECONDS);
+        set(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override

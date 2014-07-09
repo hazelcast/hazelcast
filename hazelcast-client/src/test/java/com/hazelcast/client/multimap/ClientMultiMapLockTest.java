@@ -294,7 +294,7 @@ public class ClientMultiMapLockTest {
     public void testLockTTL_whenNegativeTimeout() throws Exception {
         final MultiMap mm = client.getMultiMap(randomString());
         final Object key = "Key";
-        mm.lock(key, -1, TimeUnit.SECONDS);
+        mm.lock(key, -1, TimeUnit.MILLISECONDS);
     }
 
     @Test
