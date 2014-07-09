@@ -30,6 +30,7 @@ import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -98,21 +99,14 @@ public final class VersionCheck {
     }
 
     private void doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
-        final ClassLoader cl = getClass().getClassLoader();
         String downloadId = "source";
         InputStream is = null;
         try {
-
-            final Enumeration<URL> resources = cl.getResources("hazelcast-download.properties");
-            while (resources.hasMoreElements()) {
-                final URL url = resources.nextElement();
-                is = url.openStream();
-                Manifest manifest = new Manifest(is);
-                final Attributes mainAttributes = manifest.getMainAttributes();
-                downloadId = mainAttributes.getValue("hazelcastDownloadId");
-                if (downloadId != null) {
-                    break;
-                }
+            is = getClass().getClassLoader().getResourceAsStream("hazelcast-download.properties");
+            if (is != null) {
+                final Properties properties = new Properties();
+                properties.load(is);
+                downloadId = properties.getProperty("hazelcastDownloadId");
             }
         } catch (IOException ignored) {
 
