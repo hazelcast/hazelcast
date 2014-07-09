@@ -299,7 +299,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
 
     /**
-     * Removes entry from from being evicted.
+     * Removes entry from being scheduled to be evicted.
      *
      * Cleans up parent container (second based hashmap) if it doesn't hold anymore items.
      *
