@@ -99,11 +99,11 @@ public final class VersionCheck {
 
     private void doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
         final ClassLoader cl = getClass().getClassLoader();
-        String downloadId = "maven";
+        String downloadId = "source";
         InputStream is = null;
         try {
 
-            final Enumeration<URL> resources = cl.getResources("META-INF/MANIFEST.MF");
+            final Enumeration<URL> resources = cl.getResources("hazelcast-download.properties");
             while (resources.hasMoreElements()) {
                 final URL url = resources.nextElement();
                 is = url.openStream();
