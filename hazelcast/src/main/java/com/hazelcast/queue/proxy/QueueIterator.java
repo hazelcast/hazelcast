@@ -18,11 +18,11 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-
 import java.util.Iterator;
 
 /**
  * Iterator for the Queue.
+ *
  * @param <E>
  */
 public class QueueIterator<E> implements Iterator<E> {
@@ -44,15 +44,15 @@ public class QueueIterator<E> implements Iterator<E> {
 
     @Override
     public E next() {
-        Data data = iterator.next();
+        Data item = iterator.next();
         if (binary) {
-            return (E) data;
+            return (E) item;
         }
-        return (E) serializationService.toObject(data);
+        return (E) serializationService.toObject(item);
     }
 
     @Override
     public void remove() {
-        iterator.remove();
+        throw new UnsupportedOperationException("remove() is not supported!");
     }
 }

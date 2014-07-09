@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wm.test;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-
-public class Value implements Serializable {
-    private void writeObject(ObjectOutputStream stream)
-            throws IOException {
-        System.out.println("WRITE OBJECT");
-    }
-
-    private void readObject(ObjectInputStream stream)
-            throws IOException {
-        System.out.println("READ OBJECT");
-    }
-}
+/**
+ * Contains map proxy implementation and support classes.
+ */
+package com.hazelcast.map.proxy;

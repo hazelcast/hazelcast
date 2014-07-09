@@ -34,13 +34,15 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapContainer;
+import com.hazelcast.map.MapContextQuerySupport;
 import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.MapEventPublisher;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.NearCache;
+import com.hazelcast.map.NearCacheProvider;
 import com.hazelcast.map.QueryEventFilter;
-import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.operation.AddIndexOperation;
 import com.hazelcast.map.operation.AddInterceptorOperation;
 import com.hazelcast.map.operation.BasePutOperation;
@@ -65,8 +67,6 @@ import com.hazelcast.map.operation.PutAllOperation;
 import com.hazelcast.map.operation.PutIfAbsentOperation;
 import com.hazelcast.map.operation.PutOperation;
 import com.hazelcast.map.operation.PutTransientOperation;
-import com.hazelcast.map.operation.QueryOperation;
-import com.hazelcast.map.operation.QueryPartitionOperation;
 import com.hazelcast.map.operation.RemoveIfSameOperation;
 import com.hazelcast.map.operation.RemoveInterceptorOperation;
 import com.hazelcast.map.operation.RemoveOperation;
@@ -80,14 +80,11 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -102,8 +99,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
-import com.hazelcast.util.SortedQueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
@@ -195,52 +190,124 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    // this operation returns the object in data format except it is got from near-cache and near-cache memory format is object.
+    // this operation returns the object in data format except
+    // it is got from near-cache and near-cache memory format is object.
     protected Object getInternal(Data key) {
         // todo: why does this method not make use of getAsyncInternal and just do a get on it?
         // now there is a lot of duplication.
-
-        final MapService mapService = getService();
-        final boolean nearCacheEnabled = getMapConfig().isNearCacheEnabled();
+        final MapConfig mapConfig = getMapConfig();
+        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
-            if (cached != null) {
-                if (NearCache.NULL_OBJECT.equals(cached)) {
-                    cached = null;
+            final Object fromNearCache = getFromNearCache(key);
+            if (fromNearCache != null) {
+                if (isCachedAsNullInNearCache(fromNearCache)) {
+                    return null;
                 }
-                mapService.getMapServiceContext().interceptAfterGet(name, cached);
-                return cached;
+                return fromNearCache;
             }
         }
-        NodeEngine nodeEngine = getNodeEngine();
         // todo action for read-backup true is not well tested.
-        if (getMapConfig().isReadBackupData()) {
-            int backupCount = getMapConfig().getTotalBackupCount();
-            InternalPartitionService partitionService = mapService.getMapServiceContext().getNodeEngine().getPartitionService();
-            for (int i = 0; i <= backupCount; i++) {
-                int partitionId = partitionService.getPartitionId(key);
-                InternalPartition partition = partitionService.getPartition(partitionId);
-                if (nodeEngine.getThisAddress().equals(partition.getReplicaAddress(i))) {
-                    Object val = mapService.getMapServiceContext().getPartitionContainer(partitionId).getRecordStore(name).get(key);
-                    if (val != null) {
-                        mapService.getMapServiceContext().interceptAfterGet(name, val);
-                        // this serialization step is needed not to expose the object, see issue 1292
-                        return mapService.getMapServiceContext().toData(val);
-                    }
+        if (mapConfig.isReadBackupData()) {
+            final Object fromBackup = readBackupDataOrNull(key);
+            if (fromBackup != null) {
+                return fromBackup;
+            }
+        }
+        final GetOperation operation = new GetOperation(name, key);
+        final Data value = (Data) invokeOperation(key, operation);
+
+        if (nearCacheEnabled) {
+            if (notOwnerPartitionForKey(key) || cacheKeyAnyway()) {
+                return putNearCache(key, value);
+            }
+        }
+        return value;
+    }
+
+    private boolean notOwnerPartitionForKey(Data key) {
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        return !nodeEngine.getPartitionService().getPartitionOwner(partitionId)
+                .equals(nodeEngine.getClusterService().getThisAddress());
+    }
+
+    private boolean cacheKeyAnyway() {
+        return getMapConfig().getNearCacheConfig().isCacheLocalEntries();
+    }
+
+    private Object putNearCache(Data key, Data value) {
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        return nearCacheProvider.putNearCache(name, key, value);
+    }
+
+
+    private Object getFromNearCache(Data key) {
+        if (!getMapConfig().isNearCacheEnabled()) {
+            return null;
+        }
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        final Object cached = nearCacheProvider.getFromNearCache(name, key);
+        if (cached == null) {
+            return null;
+        }
+        mapServiceContext.interceptAfterGet(name, cached);
+        return cached;
+    }
+
+    private void getFromNearCache(Map<Object, Object> resultMap, Collection<Data> keys) {
+        if (!getMapConfig().isNearCacheEnabled()) {
+            return;
+        }
+        final MapService mapService = getService();
+        final Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            Data key = iterator.next();
+            final Object fromNearCache = getFromNearCache(key);
+            if (fromNearCache == null) {
+                continue;
+            }
+            if (!isCachedAsNullInNearCache(fromNearCache)) {
+                resultMap.put(mapService.getMapServiceContext().toObject(key),
+                        mapService.getMapServiceContext().toObject(fromNearCache));
+            }
+            iterator.remove();
+        }
+    }
+
+    private boolean isCachedAsNullInNearCache(Object cached) {
+        if (cached == null) {
+            return false;
+        }
+        return NearCache.NULL_OBJECT.equals(cached);
+    }
+
+    private Object readBackupDataOrNull(Data key) {
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final int backupCount = getMapConfig().getTotalBackupCount();
+        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        for (int i = 0; i <= backupCount; i++) {
+            int partitionId = partitionService.getPartitionId(key);
+            InternalPartition partition = partitionService.getPartition(partitionId);
+            if (nodeEngine.getThisAddress().equals(partition.getReplicaAddress(i))) {
+                Object val = mapServiceContext.getPartitionContainer(partitionId).getRecordStore(name).get(key);
+                if (val != null) {
+                    mapServiceContext.interceptAfterGet(name, val);
+                    // this serialization step is needed not to expose the object, see issue 1292
+                    return mapServiceContext.toData(val);
                 }
             }
         }
-        GetOperation operation = new GetOperation(name, key);
-        Data result = (Data) invokeOperation(key, operation);
-        if (nearCacheEnabled) {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                    .equals(nodeEngine.getClusterService().getThisAddress()) || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
-                return mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, result);
-            }
-        }
-        return result;
+        return null;
     }
+
 
     protected ICompletableFuture<Data> getAsyncInternal(final Data key) {
         final NodeEngine nodeEngine = getNodeEngine();
@@ -263,7 +330,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         GetOperation operation = new GetOperation(name, key);
         try {
             final OperationService operationService = nodeEngine.getOperationService();
-            final InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId).setResultDeserialized(false);
+            final InvocationBuilder invocationBuilder
+                    = operationService.createInvocationBuilder(SERVICE_NAME,
+                    operation, partitionId).setResultDeserialized(false);
             final InternalCompletableFuture<Data> future = invocationBuilder.invoke();
             future.andThen(new ExecutionCallback<Data>() {
                 @Override
@@ -271,7 +340,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     if (nearCacheEnabled) {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
                         if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                                .equals(nodeEngine.getClusterService().getThisAddress()) || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
+                                .equals(nodeEngine.getClusterService().getThisAddress())
+                                || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
                             mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, response);
                         }
                     }
@@ -348,13 +418,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected ICompletableFuture<Data> putAsyncInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
+    protected ICompletableFuture<Data> putAsyncInternal(final Data key, final Data value,
+                                                        final long ttl, final TimeUnit timeunit) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            ICompletableFuture<Data> future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            ICompletableFuture<Data> future
+                    = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             invalidateNearCache(key);
             return future;
         } catch (Throwable t) {
@@ -467,7 +539,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         RemoveOperation operation = new RemoveOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            ICompletableFuture<Data> future = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            ICompletableFuture<Data> future
+                    = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             invalidateNearCache(key);
             return future;
         } catch (Throwable t) {
@@ -512,7 +585,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 if (retrySet.size() > 0) {
                     results = retryPartitions(retrySet);
                     iterator = results.entrySet().iterator();
-                    Thread.sleep(1000);
+                    final int oneSecond = 1000;
+                    Thread.sleep(oneSecond);
                     retrySet.clear();
                 } else {
                     isFinished = true;
@@ -588,22 +662,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Collections.emptyMap();
+        }
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         Map<Object, Object> result = new HashMap<Object, Object>();
         final boolean nearCacheEnabled = getMapConfig().isNearCacheEnabled();
         if (nearCacheEnabled) {
-            final Iterator<Data> iterator = keys.iterator();
-            while (iterator.hasNext()) {
-                Data key = iterator.next();
-                Object cachedValue = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
-                if (cachedValue != null) {
-                    if (!NearCache.NULL_OBJECT.equals(cachedValue)) {
-                        result.put(mapService.getMapServiceContext().toObject(key), mapService.getMapServiceContext().toObject(cachedValue));
-                    }
-                    iterator.remove();
-                }
-            }
+            getFromNearCache(result, keys);
         }
         if (keys.isEmpty()) {
             return result;
@@ -614,14 +681,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             responses = nodeEngine.getOperationService()
                     .invokeOnPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys), partitions);
             for (Object response : responses.values()) {
-                Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) mapService.getMapServiceContext().toObject(response)).getEntrySet();
+                Set<Map.Entry<Data, Data>> entries
+                        = ((MapEntrySet) mapService.getMapServiceContext().toObject(response)).getEntrySet();
                 for (Entry<Data, Data> entry : entries) {
-                    result.put(mapService.getMapServiceContext().toObject(entry.getKey()), mapService.getMapServiceContext().toObject(entry.getValue()));
+                    result.put(mapService.getMapServiceContext().toObject(entry.getKey()),
+                            mapService.getMapServiceContext().toObject(entry.getValue()));
                     if (nearCacheEnabled) {
-                        int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
-                        if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                                .equals(nodeEngine.getClusterService().getThisAddress()) || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
-                            mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, entry.getKey(), entry.getValue());
+                        if (notOwnerPartitionForKey(entry.getKey())
+                                || cacheKeyAnyway()) {
+                            putNearCache(entry.getKey(), entry.getValue());
                         }
                     }
                 }
@@ -636,7 +704,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     private Collection<Integer> getPartitionsForKeys(Set<Data> keys) {
         InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitions = partitionService.getPartitionCount();
-        int capacity = Math.min(partitions, keys.size()); //todo: is there better way to estimate size?
+        //todo: is there better way to estimate size?
+        int capacity = Math.min(partitions, keys.size());
         Set<Integer> partitionIds = new HashSet<Integer>(capacity);
 
         Iterator<Data> iterator = keys.iterator();
@@ -679,7 +748,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             if (tooManyEntries) {
                 List<Future> futures = new LinkedList<Future>();
-                Map<Integer, MapEntrySet> entryMap = new HashMap<Integer, MapEntrySet>(nodeEngine.getPartitionService().getPartitionCount());
+                Map<Integer, MapEntrySet> entryMap
+                        = new HashMap<Integer, MapEntrySet>(nodeEngine.getPartitionService().getPartitionCount());
                 for (Entry entry : entries.entrySet()) {
                     if (entry.getKey() == null) {
                         throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
@@ -812,7 +882,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return mapService.getMapServiceContext().addLocalEventListener(listener, name);
     }
 
-    public String addLocalEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, boolean includeValue) {
+    public String addLocalEntryListenerInternal(EntryListener listener, Predicate predicate,
+                                                final Data key, boolean includeValue) {
 
         final MapService mapService = getService();
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
@@ -885,7 +956,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     final MapService service = getService();
                     final MapEntrySet mapEntrySet = (MapEntrySet) o;
                     for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
-                        result.put(service.getMapServiceContext().toObject(entry.getKey()), service.getMapServiceContext().toObject(entry.getValue()));
+                        result.put(service.getMapServiceContext().toObject(entry.getKey()),
+                                service.getMapServiceContext().toObject(entry.getValue()));
                     }
                 }
             }
@@ -945,7 +1017,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     final MapEntrySet mapEntrySet = (MapEntrySet) o;
                     for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
                         final Data key = entry.getKey();
-                        result.put(service.getMapServiceContext().toObject(key), service.getMapServiceContext().toObject(entry.getValue()));
+                        result.put(service.getMapServiceContext().toObject(key),
+                                service.getMapServiceContext().toObject(entry.getValue()));
                         invalidateNearCache(key);
                     }
                 }
@@ -956,199 +1029,37 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
-    protected Set queryLocal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        OperationService operationService = nodeEngine.getOperationService();
-        final SerializationService ss = nodeEngine.getSerializationService();
-        List<Integer> partitionIds = nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
-        PagingPredicate pagingPredicate = null;
-        if (predicate instanceof PagingPredicate) {
-            pagingPredicate = (PagingPredicate) predicate;
-            pagingPredicate.setIterationType(iterationType);
-            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
-                pagingPredicate.previousPage();
-                query(pagingPredicate, iterationType, dataResult);
-                pagingPredicate.nextPage();
-            }
-        }
-        Set result;
-        if (pagingPredicate == null) {
-            result = new QueryResultSet(ss, iterationType, dataResult);
-        } else {
-            result = new SortedQueryResultSet(pagingPredicate.getComparator(), iterationType, pagingPredicate.getPageSize());
-        }
-
-        List<Integer> returnedPartitionIds = new ArrayList<Integer>();
-        try {
-            Future future = operationService
-                    .invokeOnTarget(SERVICE_NAME,
-                            new QueryOperation(name, predicate),
-                            nodeEngine.getThisAddress());
-            QueryResult queryResult = (QueryResult) future.get();
-            if (queryResult != null) {
-                returnedPartitionIds = queryResult.getPartitionIds();
-                if (pagingPredicate == null) {
-                    result.addAll(queryResult.getResult());
-                } else {
-                    for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
-                        Object key = ss.toObject(queryResultEntry.getKeyData());
-                        Object value = ss.toObject(queryResultEntry.getValueData());
-                        result.add(new AbstractMap.SimpleImmutableEntry(key, value));
-                    }
-                }
-            }
-
-            if (returnedPartitionIds.size() == partitionIds.size()) {
-                if (pagingPredicate != null) {
-                    PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
-                }
-                return result;
-            }
-            List<Integer> missingList = new ArrayList<Integer>();
-            for (Integer partitionId : partitionIds) {
-                if (!returnedPartitionIds.contains(partitionId)) {
-                    missingList.add(partitionId);
-                }
-            }
-            List<Future> futures = new ArrayList<Future>(missingList.size());
-            for (Integer pid : missingList) {
-                QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-                queryPartitionOperation.setPartitionId(pid);
-                try {
-                    Future f =
-                            operationService.invokeOnPartition(SERVICE_NAME, queryPartitionOperation, pid);
-                    futures.add(f);
-                } catch (Throwable t) {
-                    throw ExceptionUtil.rethrow(t);
-                }
-            }
-            for (Future f : futures) {
-                QueryResult qResult = (QueryResult) f.get();
-                if (pagingPredicate == null) {
-                    result.addAll(qResult.getResult());
-                } else {
-                    for (QueryResultEntry queryResultEntry : qResult.getResult()) {
-                        Object key = ss.toObject(queryResultEntry.getKeyData());
-                        Object value = ss.toObject(queryResultEntry.getValueData());
-                        result.add(new AbstractMap.SimpleImmutableEntry(key, value));
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-        return result;
+    protected Object toObject(Object obj) {
+        return getService().getMapServiceContext().toObject(obj);
     }
 
+    protected Data toData(Object obj) {
+        return getService().getMapServiceContext().toData(obj);
+    }
+
+    protected Data toData(Object o, PartitioningStrategy partitioningStrategy) {
+        return getService().getMapServiceContext().toData(o, partitioningStrategy);
+    }
+
+    protected Set queryLocal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
+        if (predicate instanceof PagingPredicate) {
+            return getMapQuerySupport().queryLocalMemberWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
+        }
+        return getMapQuerySupport().queryLocalMember(name, predicate, iterationType, dataResult);
+    }
 
     protected Set query(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
-
-        final NodeEngine nodeEngine = getNodeEngine();
-        OperationService operationService = nodeEngine.getOperationService();
-        final SerializationService ss = nodeEngine.getSerializationService();
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        Set<Integer> plist = new HashSet<Integer>(partitionCount);
-        PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
-            pagingPredicate = (PagingPredicate) predicate;
-            pagingPredicate.setIterationType(iterationType);
-            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
-                pagingPredicate.previousPage();
-                query(pagingPredicate, iterationType, dataResult);
-                pagingPredicate.nextPage();
-            }
+            return getMapQuerySupport().queryWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
         }
-        Set result;
-        if (pagingPredicate == null) {
-            result = new QueryResultSet(ss, iterationType, dataResult);
-        } else {
-            result = new SortedQueryResultSet(pagingPredicate.getComparator(), iterationType, pagingPredicate.getPageSize());
-        }
-        List<Integer> missingList = new ArrayList<Integer>();
-        try {
-            List<Future> flist = new ArrayList<Future>();
-            for (MemberImpl member : members) {
-                Future future = operationService
-                        .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
-                flist.add(future);
-            }
-            for (Future future : flist) {
-                QueryResult queryResult = (QueryResult) future.get();
-                if (queryResult != null) {
-                    final List<Integer> partitionIds = queryResult.getPartitionIds();
-                    if (partitionIds != null) {
-                        plist.addAll(partitionIds);
-                        if (pagingPredicate == null) {
-                            result.addAll(queryResult.getResult());
-                        } else {
-                            for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
-                                Object key = ss.toObject(queryResultEntry.getKeyData());
-                                Object value = ss.toObject(queryResultEntry.getValueData());
-                                result.add(new AbstractMap.SimpleImmutableEntry(key, value));
-                            }
-                        }
-                    }
-                }
-            }
-            if (plist.size() == partitionCount) {
-                if (pagingPredicate != null) {
-                    PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
-                }
-                return result;
-            }
-            for (int i = 0; i < partitionCount; i++) {
-                if (!plist.contains(i)) {
-                    missingList.add(i);
-                }
-            }
-        } catch (Throwable t) {
-            missingList.clear();
-            for (int i = 0; i < partitionCount; i++) {
-                if (!plist.contains(i)) {
-                    missingList.add(i);
-                }
-            }
-        }
-
-        try {
-            List<Future> futures = new ArrayList<Future>(missingList.size());
-            for (Integer pid : missingList) {
-                QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-                queryPartitionOperation.setPartitionId(pid);
-                try {
-                    Future f =
-                            operationService.invokeOnPartition(SERVICE_NAME, queryPartitionOperation, pid);
-                    futures.add(f);
-                } catch (Throwable t) {
-                    throw ExceptionUtil.rethrow(t);
-                }
-            }
-            for (Future future : futures) {
-                QueryResult queryResult = (QueryResult) future.get();
-                if (pagingPredicate == null) {
-                    result.addAll(queryResult.getResult());
-                } else {
-                    for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
-                        Object key = ss.toObject(queryResultEntry.getKeyData());
-                        Object value = ss.toObject(queryResultEntry.getValueData());
-                        result.add(new AbstractMap.SimpleImmutableEntry(key, value));
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-        if (pagingPredicate != null) {
-            PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
-        }
-        return result;
+        return getMapQuerySupport().query(name, predicate, iterationType, dataResult);
     }
-
 
     public void addIndex(final String attribute, final boolean ordered) {
         final NodeEngine nodeEngine = getNodeEngine();
-        if (attribute == null) throw new IllegalArgumentException("Attribute name cannot be null");
+        if (attribute == null) {
+            throw new IllegalArgumentException("Attribute name cannot be null");
+        }
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
             nodeEngine.getOperationService()
@@ -1193,7 +1104,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private void publishMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
-        getService().getMapServiceContext().getMapEventPublisher().publishMapEvent(getNodeEngine().getThisAddress(),
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        mapEventPublisher.publishMapEvent(getNodeEngine().getThisAddress(),
                 name, eventType, numberOfAffectedEntries);
     }
 
@@ -1201,13 +1115,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    protected MapConfig getMapConfig(){
+    private MapContextQuerySupport getMapQuerySupport() {
+        return getService().getMapServiceContext().getMapContextQuerySupport();
+    }
+
+    private MapConfig getMapConfig() {
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final MapContainer mapContainer = mapServiceContext.getMapContainer(name);
         return mapContainer.getMapConfig();
     }
-
 
     @Override
     public final String getName() {

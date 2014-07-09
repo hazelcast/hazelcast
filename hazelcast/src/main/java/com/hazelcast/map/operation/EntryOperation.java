@@ -16,21 +16,23 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EntryViews;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.MapEventPublisher;
-import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 
@@ -99,16 +101,23 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         }
     }
 
-
     public void afterRun() throws Exception {
         super.afterRun();
         if (eventType == NO_NEED_TO_FIRE_EVENT) {
             return;
         }
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-        final Data oldValueAsData = mapServiceContext.toData(oldValue);
-        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValueAsData, dataValue);
+        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        String serviceName = mapServiceContext.serviceName();
+        InMemoryFormat format = mapContainer.getMapConfig().getInMemoryFormat();
+        EventService eventService = mapServiceContext.getNodeEngine().getEventService();
+        if (eventService.hasEventRegistration(serviceName, name)) {
+            if (format == InMemoryFormat.OBJECT && eventType != EntryEventType.REMOVED) {
+                oldValue = null;
+            }
+            mapService.getMapServiceContext().getMapEventPublisher().
+                    publishEvent(getCallerAddress(), name, eventType, dataKey, mapServiceContext.toData(oldValue), dataValue);
+        }
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             if (EntryEventType.REMOVED.equals(eventType)) {

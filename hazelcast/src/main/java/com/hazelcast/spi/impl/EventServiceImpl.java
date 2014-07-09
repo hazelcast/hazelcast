@@ -265,6 +265,15 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public boolean hasEventRegistration(String serviceName, String topic) {
+        final EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment != null) {
+            return segment.hasRegistration(topic);
+        }
+        return false;
+    }
+
+    @Override
     public void publishEvent(String serviceName, EventRegistration registration, Object event, int orderKey) {
         if (!(registration instanceof Registration)) {
             throw new IllegalArgumentException();
@@ -492,6 +501,11 @@ public class EventServiceImpl implements EventService {
 
         int incrementPublish() {
             return totalPublishes.incrementAndGet();
+        }
+
+        boolean hasRegistration(String topic) {
+            Collection<Registration> topicRegistrations = registrations.get(topic);
+            return !(topicRegistrations == null || topicRegistrations.isEmpty());
         }
     }
 

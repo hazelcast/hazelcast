@@ -77,6 +77,18 @@
                                 <transformer
                                         implementation="com.hazelcast.buildutils.HazelcastManifestTransformer">
                                     <mainClass>com.hazelcast.console.ConsoleApp</mainClass>
+
+                                    <overrideInstructions>
+                                        <Import-Package>
+                                            org.hibernate.*;resolution:=optional,
+                                            org.springframework.*;resolution:=optional,
+                                            javax.servlet.*;resolution:=optional,
+                                            javax.security.*;resolution:=optional,
+                                            org.slf4j.*;resolution:=optional,
+                                            org.apache.log4j.*;resolution:=optional,
+                                            javax.script.*;resolution:=optional
+                                        </Import-Package>
+                                    </overrideInstructions>
                                 </transformer>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>

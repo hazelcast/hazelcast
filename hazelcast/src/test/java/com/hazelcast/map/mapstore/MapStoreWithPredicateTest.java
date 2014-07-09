@@ -4,6 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,13 +37,18 @@ public class MapStoreWithPredicateTest extends HazelcastTestSupport {
 
         Config config = newConfig(testMapStore, 0);
         HazelcastInstance instance = createHazelcastInstance(config);
-        IMap map = instance.getMap("default");
+        final IMap map = instance.getMap("default");
 
-        Set expected = map.keySet(Predicates.greaterThan("value", 1));
-        assertEquals(3, expected.size());
-        assertTrue(expected.contains("key1"));
-        assertTrue(expected.contains("key2"));
-        assertTrue(expected.contains("key3"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Set expected = map.keySet(Predicates.greaterThan("value", 1));
+                assertEquals(3, expected.size());
+                assertTrue(expected.contains("key1"));
+                assertTrue(expected.contains("key2"));
+                assertTrue(expected.contains("key3"));
+            }
+        });
     }
 
 
@@ -58,13 +64,19 @@ public class MapStoreWithPredicateTest extends HazelcastTestSupport {
 
         Config config = newConfig(testMapStore, 0);
         HazelcastInstance instance = createHazelcastInstance(config);
-        IMap map = instance.getMap("default");
+        final IMap map = instance.getMap("default");
 
-        final Collection values = map.values(Predicates.greaterThan("value", 1));
-        assertEquals(3, values.size());
-        assertTrue(values.contains(17));
-        assertTrue(values.contains(37));
-        assertTrue(values.contains(47));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final Collection values = map.values(Predicates.greaterThan("value", 1));
+                assertEquals(3, values.size());
+                assertTrue(values.contains(17));
+                assertTrue(values.contains(37));
+                assertTrue(values.contains(47));
+            }
+        });
+
     }
 
     @Test
@@ -79,10 +91,15 @@ public class MapStoreWithPredicateTest extends HazelcastTestSupport {
 
         Config config = newConfig(testMapStore, 0);
         HazelcastInstance instance = createHazelcastInstance(config);
-        IMap map = instance.getMap("default");
+        final IMap map = instance.getMap("default");
 
-        final Set<Map.Entry> entrySet = map.entrySet(Predicates.greaterThan("value", 1));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final Set<Map.Entry> entrySet = map.entrySet(Predicates.greaterThan("value", 1));
+                assertEquals(3, entrySet.size());
+            }
+        });
 
-        assertEquals(3, entrySet.size());
     }
 }
