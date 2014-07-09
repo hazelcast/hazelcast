@@ -35,6 +35,8 @@ class AbstractCacheRecord<V> implements CacheRecord<V> {
         this.expirationTime = expirationTime;
     }
 
+    public AbstractCacheRecord() {}
+
     @Override
     public Data getKey() {
         return key;

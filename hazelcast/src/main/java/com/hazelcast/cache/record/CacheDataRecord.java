@@ -20,6 +20,9 @@ import com.hazelcast.nio.serialization.Data;
 
 class CacheDataRecord extends AbstractCacheRecord<Data> {
 
+    CacheDataRecord(){
+        super();
+    }
 
     CacheDataRecord(Data key, Data value, long expiryTime) {
         super(key, value, expiryTime);

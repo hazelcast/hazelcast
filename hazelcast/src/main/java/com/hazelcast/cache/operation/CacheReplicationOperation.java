@@ -21,6 +21,7 @@ import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
 import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -37,19 +38,21 @@ import java.util.Map;
  */
 public final class CacheReplicationOperation extends AbstractOperation {
 
-    final Map<String, Map<Data, CacheRecord>> source;
-    final Map<String, Map<Data, CacheRecord>> destination;
+    Map<String, Map<Data, CacheRecord>> data;
+
+    public CacheReplicationOperation() {
+        data = new HashMap<String, Map<Data, CacheRecord>>();
+    }
 
     public CacheReplicationOperation(CachePartitionSegment segment, int replicaIndex) {
-        source = new HashMap<String, Map<Data, CacheRecord>>();
-        destination = null;
+        data = new HashMap<String, Map<Data, CacheRecord>>();
 
         Iterator<ICacheRecordStore> iter = segment.cacheIterator();
         while (iter.hasNext()) {
             ICacheRecordStore next = iter.next();
             CacheConfig cacheConfig = next.getConfig();
             if (cacheConfig.getAsyncBackupCount() + cacheConfig.getBackupCount() >= replicaIndex) {
-                source.put(next.getName(), next.getReadOnlyRecords());
+                data.put(next.getName(), next.getReadOnlyRecords());
             }
         }
     }
@@ -62,7 +65,7 @@ public final class CacheReplicationOperation extends AbstractOperation {
     @Override
     public void run() throws Exception {
         CacheService service = getService();
-        for (Map.Entry<String, Map<Data, CacheRecord>> entry : destination.entrySet()) {
+        for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
             ICacheRecordStore cache = service.getOrCreateCache(entry.getKey(), getPartitionId());
             Map<Data, CacheRecord> map = entry.getValue();
 
@@ -75,7 +78,7 @@ public final class CacheReplicationOperation extends AbstractOperation {
                 cache.setRecord(key, record);
             }
         }
-        destination.clear();
+        data.clear();
     }
 
     @Override
@@ -86,11 +89,11 @@ public final class CacheReplicationOperation extends AbstractOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        int count = source.size();
+        int count = data.size();
         out.writeInt(count);
         if (count > 0) {
             long now = Clock.currentTimeMillis();
-            for (Map.Entry<String, Map<Data, CacheRecord>> entry : source.entrySet()) {
+            for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
                 Map<Data, CacheRecord> cacheMap = entry.getValue();
                 int subCount = cacheMap.size();
                 out.writeInt(subCount);
@@ -104,11 +107,9 @@ public final class CacheReplicationOperation extends AbstractOperation {
                             key.writeData(out);
                             out.writeObject(record);
                         }
-                        subCount--;
                     }
-                    if (subCount != 0) {
-                        throw new AssertionError("Cache iteration error, count is not zero!" + subCount);
-                    }
+                    //empty data will terminate the iteration for read
+                    new Data().writeData(out);
                 }
             }
         }
@@ -124,10 +125,14 @@ public final class CacheReplicationOperation extends AbstractOperation {
                 if (subCount > 0) {
                     String name = in.readUTF();
                     Map<Data, CacheRecord> m = new HashMap<Data, CacheRecord>(subCount);
-                    destination.put(name, m);
+                    data.put(name, m);
                     for (int j = 0; j < subCount; j++) {
                         final Data key = new Data();
                         key.readData(in);
+                        if(key.bufferSize() == 0){
+                            //empty data received so reading done here
+                            break;
+                        }
                         final CacheRecord record = in.readObject();
                         m.put(key, record);
                     }
@@ -137,7 +142,7 @@ public final class CacheReplicationOperation extends AbstractOperation {
     }
 
     public boolean isEmpty() {
-        return source == null || source.isEmpty();
+        return data == null || data.isEmpty();
     }
 
 }
