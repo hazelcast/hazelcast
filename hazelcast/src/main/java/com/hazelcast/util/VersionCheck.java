@@ -32,11 +32,8 @@ import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
 /**
  * Checks version of hazelcast with central server.
@@ -116,7 +113,7 @@ public final class VersionCheck {
                 downloadId = properties.getProperty("hazelcastDownloadId");
             }
         } catch (IOException ignored) {
-
+            EmptyStatement.ignore(ignored);
         } finally {
             IOUtil.closeResource(is);
         }

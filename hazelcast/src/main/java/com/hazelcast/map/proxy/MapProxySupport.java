@@ -1113,7 +1113,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
         if (timeunit == null) {
-            return time;
+            ExceptionUtil.rethrow(new NullPointerException("Timeunit should not be null"));
         }
         long timeInMillis = timeunit.toMillis(time);
         if (time > 0 && timeInMillis == 0) {
