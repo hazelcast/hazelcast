@@ -806,7 +806,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testGetAllOnExpiredKeys() throws Exception {
+    public void testOnExpiredKeys_getAll() throws Exception {
         final IMap<Integer, Integer> map = getMapWithExpiredKeys();
         final Set<Integer> keys = Collections.singleton(1);
         final Map<Integer, Integer> all = map.getAll(keys);
@@ -815,30 +815,27 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testValuesOnExpiredKeys() throws Exception {
+    public void testOnExpiredKeys_values() throws Exception {
         final IMap<Integer, Integer> map = getMapWithExpiredKeys();
         final Collection<Integer> values = map.values();
 
         assertEquals(0, values.size());
-
     }
 
     @Test
-    public void testKeySetOnExpiredKeys() throws Exception {
+    public void testOnExpiredKeys_keySet() throws Exception {
         final IMap<Integer, Integer> map = getMapWithExpiredKeys();
         final Set<Integer> keySet = map.keySet();
 
         assertEquals(0, keySet.size());
-
     }
 
     @Test
-    public void testEntrySetOnExpiredKeys() throws Exception {
+    public void testOnExpiredKeys_entrySet() throws Exception {
         final IMap<Integer, Integer> map = getMapWithExpiredKeys();
         final Set<Map.Entry<Integer, Integer>> entries = map.entrySet();
 
         assertEquals(0, entries.size());
-
     }
 
     private IMap<Integer, Integer> getMapWithExpiredKeys() {
@@ -846,6 +843,8 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, Integer> map = instance.getMap(mapName);
         map.put(1, 1, 100, TimeUnit.MILLISECONDS);
+        map.put(2, 1, 100, TimeUnit.MILLISECONDS);
+        map.put(3, 1, 100, TimeUnit.MILLISECONDS);
         sleepSeconds(1);
         return map;
     }

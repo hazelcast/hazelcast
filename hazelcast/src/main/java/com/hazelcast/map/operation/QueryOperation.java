@@ -198,7 +198,7 @@ public class QueryOperation extends AbstractMapOperation {
             final PartitionContainer container = mapService.getMapServiceContext().getPartitionContainer(partition);
             final RecordStore recordStore = container.getRecordStore(name);
             LinkedList<QueryableEntry> partitionResult = new LinkedList<QueryableEntry>();
-            final Iterator<Record> iterator = recordStore.loadAwareValueIterator();
+            final Iterator<Record> iterator = recordStore.loadAwareIterator();
             while (iterator.hasNext()) {
                 final Record record = iterator.next();
                 final Data key = record.getKey();

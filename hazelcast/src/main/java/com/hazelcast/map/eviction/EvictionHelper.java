@@ -84,7 +84,7 @@ public final class EvictionHelper {
         final int evictableBaseIndex = getEvictionStartIndex(criterias, evictableSize);
         final long criteriaValue = criterias[evictableBaseIndex];
         int evictedRecordCounter = 0;
-        final Iterator<Record> iterator = recordStore.valueIterator();
+        final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             final long value = getEvictionCriteriaValue(record, evictionPolicy);
@@ -109,7 +109,7 @@ public final class EvictionHelper {
         final int size = recordStore.size();
         long[] criterias = null;
         int index = 0;
-        final Iterator<Record> iterator = recordStore.valueIterator();
+        final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             if (criterias == null) {

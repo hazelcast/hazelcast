@@ -56,7 +56,7 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         IndexService indexService = mapContainer.getIndexService();
         SerializationService ss = getNodeEngine().getSerializationService();
         Index index = indexService.addOrGetIndex(attributeName, ordered);
-        final Iterator<Record> iterator = recordStore.valueIterator();
+        final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             Data key = record.getKey();

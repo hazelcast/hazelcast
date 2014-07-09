@@ -115,7 +115,17 @@ public interface RecordStore {
      *
      * @return read only iterator for map values.
      */
-    Iterator<Record> valueIterator();
+    Iterator<Record> iterator();
+
+    /**
+     * Iterates over record store values but first waits map store to load.
+     * If an operation needs to wait a data source load like query operations
+     * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
+     * this method can be used to return a read-only iterator.
+     *
+     * @return read only iterator for map values.
+     */
+    Iterator<Record> loadAwareIterator();
 
     /**
      * Returns records map.
@@ -123,16 +133,6 @@ public interface RecordStore {
      * @see com.hazelcast.map.RecordStoreLoader
      */
     Map<Data, Record> getRecordMap();
-
-    /**
-     * Iterates over record store values but first waits map store load.
-     * If an operation needs to wait a data source to load like querying
-     * in {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
-     * this method can be used to return a read-only iterator.
-     *
-     * @return read only iterator for map values.
-     */
-    Iterator<Record> loadAwareValueIterator();
 
     Set<Data> keySet();
 

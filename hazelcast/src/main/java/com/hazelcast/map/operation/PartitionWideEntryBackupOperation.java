@@ -47,7 +47,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     public void run() {
         Map.Entry entry;
         RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
-        final Iterator<Record> iterator = recordStore.valueIterator();
+        final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             Data dataKey = record.getKey();

@@ -57,7 +57,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
         final SerializationService serializationService = nodeEngine.getSerializationService();
         final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         List<QueryEntry> list = new LinkedList<QueryEntry>();
-        final Iterator<Record> iterator = recordStore.loadAwareValueIterator();
+        final Iterator<Record> iterator = recordStore.loadAwareIterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             Data key = record.getKey();

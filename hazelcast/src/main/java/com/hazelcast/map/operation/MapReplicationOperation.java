@@ -78,7 +78,7 @@ public class MapReplicationOperation extends AbstractOperation {
             }
             // now prepare data to migrate records
             Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
-            final Iterator<Record> iterator = recordStore.valueIterator();
+            final Iterator<Record> iterator = recordStore.iterator();
             while (iterator.hasNext()) {
                 final Record record = iterator.next();
                 RecordReplicationInfo recordReplicationInfo;

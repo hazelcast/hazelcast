@@ -74,7 +74,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
         final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
         final LocalMapStatsImpl mapStats
                 = mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name);
-        final Iterator<Record> iterator = recordStore.valueIterator();
+        final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             final long start = System.currentTimeMillis();

@@ -96,7 +96,7 @@ public class LocalMapStatsProvider {
         long ownedEntryMemoryCost = 0;
         long hits = 0;
 
-        final Iterator<Record> iterator = recordStore.valueIterator();
+        final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             hits += getHits(record);
@@ -175,7 +175,7 @@ public class LocalMapStatsProvider {
     }
 
     private long getMemoryCost(RecordStore recordStore) {
-        final Iterator<Record> iterator = recordStore.valueIterator();
+        final Iterator<Record> iterator = recordStore.iterator();
         long cost = 0L;
         while (iterator.hasNext()) {
             final Record record = iterator.next();

@@ -46,7 +46,7 @@ class MapSplitBrainHandler implements SplitBrainHandlerService {
                         records = new ArrayList<Record>();
                         recordMap.put(mapContainer, records);
                     }
-                    final Iterator<Record> iterator = recordStore.valueIterator();
+                    final Iterator<Record> iterator = recordStore.iterator();
                     while (iterator.hasNext()) {
                         final Record record = iterator.next();
                         records.add(record);

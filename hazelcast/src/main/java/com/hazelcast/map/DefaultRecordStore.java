@@ -139,50 +139,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public Iterator<Record> valueIterator() {
+    public Iterator<Record> iterator() {
         return new ReadOnlyRecordIterator(records.values());
     }
 
     @Override
-    public Iterator<Record> loadAwareValueIterator() {
+    public Iterator<Record> loadAwareIterator() {
         checkIfLoaded();
-        return valueIterator();
-    }
-
-    /**
-     * Handles expired records.
-     */
-    private final class ReadOnlyRecordIterator implements Iterator<Record> {
-
-        private final Iterator<Record> iterator;
-
-        private Record nextRecord;
-
-        private ReadOnlyRecordIterator(Collection<Record> values) {
-            this.iterator = values.iterator();
-        }
-
-        @Override
-        public boolean hasNext() {
-            while (iterator.hasNext()) {
-                nextRecord = iterator.next();
-                nextRecord = nullIfExpired(nextRecord);
-                if (nextRecord != null) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public Record next() {
-            return nextRecord;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("remove() not supported");
-        }
+        return iterator();
     }
 
     @Override
