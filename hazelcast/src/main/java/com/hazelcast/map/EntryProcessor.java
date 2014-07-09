@@ -44,7 +44,7 @@ public interface EntryProcessor<K, V> extends Serializable {
      * Process the entry without worrying about concurrency.
      * <p/>
      *
-     * @param entry entry to be processes
+     * @param entry entry to be processed
      * @return result of the process
      */
     Object process(Map.Entry<K, V> entry);
