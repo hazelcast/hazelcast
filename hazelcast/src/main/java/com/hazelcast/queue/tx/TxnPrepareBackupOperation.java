@@ -18,6 +18,7 @@ package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.BackupOperation;
@@ -44,13 +45,13 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
     }
 
     public void run() throws Exception {
-        if (pollOperation){
-            response = getOrCreateContainer().txnPollBackupReserve(itemId, transactionId);
+        QueueContainer container = getOrCreateContainer();
+        if (pollOperation) {
+            container.txnPollBackupReserve(itemId, transactionId);
+        } else {
+            container.txnOfferBackupReserve(itemId, transactionId);
         }
-        else {
-            getOrCreateContainer().txnOfferBackupReserve(itemId, transactionId);
-            response = true;
-        }
+        response = true;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

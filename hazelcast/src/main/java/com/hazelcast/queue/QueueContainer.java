@@ -127,13 +127,13 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return item;
     }
 
-    public boolean txnPollBackupReserve(long itemId, String transactionId) {
+    public void txnPollBackupReserve(long itemId, String transactionId) {
         QueueItem item = getBackupMap().remove(itemId);
         if (item == null) {
-            throw new TransactionException("Backup reserve failed: " + itemId);
+            logger.warning("txnCommitPoll operation-> No txn item for itemId: " + itemId);
+            return;
         }
         txMap.put(itemId, new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
-        return true;
     }
 
     public Data txnCommitPoll(long itemId) {
