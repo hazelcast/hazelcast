@@ -19,7 +19,7 @@ import java.util.Properties;
 public class HazelcastCacheManager implements CacheManager {
 
     protected final HazelcastInstance hazelcastInstance;
-    protected final CachingProvider cachingProvider;
+    protected final HazelcastCachingProvider cachingProvider;
 
     private final URI uri;
     private final WeakReference<ClassLoader> classLoaderReference;
@@ -201,7 +201,7 @@ public class HazelcastCacheManager implements CacheManager {
 
     @Override
     public void close() {
-//        closeTriggered=true;
+        closeTriggered=true;
 
         HazelcastInstance hz = hazelcastInstance;
         Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
@@ -210,7 +210,8 @@ public class HazelcastCacheManager implements CacheManager {
                 distributedObject.destroy();
             }
         }
-//        hz.shutdown();
+        hz.shutdown();
+        cachingProvider.releaseCacheManager(uri,classLoaderReference.get());
     }
 
     @Override
