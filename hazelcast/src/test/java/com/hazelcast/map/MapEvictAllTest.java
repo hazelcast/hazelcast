@@ -4,6 +4,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -23,41 +24,44 @@ public class MapEvictAllTest extends HazelcastTestSupport {
     @Test
     public void testEvictAll_firesEvent() throws Exception {
         final CountDownLatch countDownLatch = new CountDownLatch(1000);
-        final HazelcastInstance node = createHazelcastInstance();
-        final IMap map = node.getMap(randomMapName());
-        map.addLocalEntryListener(new EntryAdapter() {
+        HazelcastInstance node = createHazelcastInstance();
+        IMap<Integer, Integer> map = node.getMap(randomMapName());
+        map.addLocalEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void mapEvicted(MapEvent event) {
-                final int numberOfEntries = event.getNumberOfEntriesAffected();
+                int numberOfEntries = event.getNumberOfEntriesAffected();
                 for (int i = 0; i < numberOfEntries; i++) {
                     countDownLatch.countDown();
                 }
             }
         });
+
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
         }
         map.evictAll();
+
         assertOpenEventually(countDownLatch);
     }
 
     @Test
     public void testEvictAll_preserveLockedKeys() throws Exception {
-        final int numberOfEntries = 1000;
-        final int numberOfLockedKeys = 123;
-        final int expectedNumberOfEvictedKeys = numberOfEntries - numberOfLockedKeys;
+        int numberOfEntries = 1000;
+        int numberOfLockedKeys = 123;
+        int expectedNumberOfEvictedKeys = numberOfEntries - numberOfLockedKeys;
         final CountDownLatch countDownLatch = new CountDownLatch(expectedNumberOfEvictedKeys);
-        final HazelcastInstance node = createHazelcastInstance();
-        final IMap map = node.getMap(randomMapName());
-        map.addLocalEntryListener(new EntryAdapter() {
+        HazelcastInstance node = createHazelcastInstance();
+        IMap<Integer, Integer> map = node.getMap(randomMapName());
+        map.addLocalEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void mapEvicted(MapEvent event) {
-                final int numberOfEntries = event.getNumberOfEntriesAffected();
+                int numberOfEntries = event.getNumberOfEntriesAffected();
                 for (int i = 0; i < numberOfEntries; i++) {
                     countDownLatch.countDown();
                 }
             }
         });
+
         for (int i = 0; i < numberOfEntries; i++) {
             map.put(i, i);
         }
@@ -70,35 +74,45 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         assertEquals(0, countDownLatch.getCount());
     }
 
-
     @Test
     public void testEvictAll_onBackup() throws Exception {
-        final String mapName = randomMapName();
-        final CountDownLatch countDownLatch = new CountDownLatch(10000);
-        final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(5);
-        final HazelcastInstance node1 = instanceFactory.newHazelcastInstance();
-        final HazelcastInstance node2 = instanceFactory.newHazelcastInstance();
-        final IMap map1 = node1.getMap(mapName);
-        final IMap map2 = node2.getMap(mapName);
-        map1.addEntryListener(new EntryAdapter() {
+        int numberOfEntries = 10000;
+        String mapName = randomMapName();
+        final CountDownLatch countDownLatch = new CountDownLatch(numberOfEntries);
+        TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(5);
+        HazelcastInstance node1 = instanceFactory.newHazelcastInstance();
+        HazelcastInstance node2 = instanceFactory.newHazelcastInstance();
+        final IMap<Integer, Integer> map1 = node1.getMap(mapName);
+        final IMap<Integer, Integer> map2 = node2.getMap(mapName);
+        map1.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void mapEvicted(MapEvent event) {
-                final int numberOfEntries = event.getNumberOfEntriesAffected();
+                int numberOfEntries = event.getNumberOfEntriesAffected();
                 for (int i = 0; i < numberOfEntries; i++) {
                     countDownLatch.countDown();
                 }
             }
         }, false);
-        for (int i = 0; i < 10000; i++) {
+
+        for (int i = 0; i < numberOfEntries; i++) {
             map1.put(i, i);
         }
         map1.evictAll();
+
         assertOpenEventually(countDownLatch);
         assertEquals(0, countDownLatch.getCount());
-        assertEquals(0, map1.getLocalMapStats().getHeapCost());
-        assertEquals(0, map2.getLocalMapStats().getHeapCost());
-
-
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, map1.getLocalMapStats().getHeapCost());
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, map2.getLocalMapStats().getHeapCost());
+            }
+        });
     }
 
 }

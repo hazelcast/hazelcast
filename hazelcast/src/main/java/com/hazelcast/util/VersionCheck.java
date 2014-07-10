@@ -32,10 +32,8 @@ import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Enumeration;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
 /**
  * Checks version of hazelcast with central server.
@@ -105,24 +103,17 @@ public final class VersionCheck {
     }
 
     private void doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
-        final ClassLoader cl = getClass().getClassLoader();
-        String downloadId = "maven";
+        String downloadId = "source";
         InputStream is = null;
         try {
-
-            final Enumeration<URL> resources = cl.getResources("META-INF/MANIFEST.MF");
-            while (resources.hasMoreElements()) {
-                final URL url = resources.nextElement();
-                is = url.openStream();
-                Manifest manifest = new Manifest(is);
-                final Attributes mainAttributes = manifest.getMainAttributes();
-                downloadId = mainAttributes.getValue("hazelcastDownloadId");
-                if (downloadId != null) {
-                    break;
-                }
+            is = getClass().getClassLoader().getResourceAsStream("hazelcast-download.properties");
+            if (is != null) {
+                final Properties properties = new Properties();
+                properties.load(is);
+                downloadId = properties.getProperty("hazelcastDownloadId");
             }
         } catch (IOException ignored) {
-             EmptyStatement.ignore(ignored);
+            EmptyStatement.ignore(ignored);
         } finally {
             IOUtil.closeResource(is);
         }

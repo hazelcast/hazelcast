@@ -84,7 +84,7 @@ echo "Creating concatenated markdown file for pdf/single html."
 for file in $INDEX
 do
  cat $file >> $MERGED_FILE_NAME
- printf "\n" >> $MERGED_FILE_NAME
+ printf "\n\n\n" >> $MERGED_FILE_NAME
 done 
 
 if [[ -e "./title.txt" ]]; then

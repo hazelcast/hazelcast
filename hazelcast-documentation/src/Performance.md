@@ -2,7 +2,7 @@
 
 ## Data Affinity
 
-Data affinity is to ensure related entries are exist on the same node. If related data is on the same node, operations can be executed without the cost of extra network call and extra wire data. This feature is provided by using same partition keys for related data.
+Data affinity is to ensure that related entries exist on the same node. If related data is on the same node, operations can be executed without the cost of extra network call and extra wire data. This feature is provided by using same partition keys for related data.
 
 **Co-location of related data and computation**
 
@@ -94,18 +94,22 @@ public static int removeOrder( long customerId, long orderId ) throws Exception 
 
 There are couple of things you should consider:
 
-1.  There are four distributed operations there: lock, remove, keySet, unlock. Can you reduce the number of distributed operations?
+1.  There are four distributed operations there: lock, remove, keySet, unlock. Can you reduce 
+the number of distributed operations?
 
-2.  Customer object may not be that big, but can you not have to pass that object through the wire? Think about a scenario which you set order count to customer object for fast access,
- so you should do a get and a put as a result customer object is being passed through the wire twice.
+2.  Customer object may not be that big, but can you not have to pass that object through the 
+wire? Think about a scenario which you set order count to customer object for fast access, so you 
+should do a get and a put as a result customer object is being passed through the wire twice.
 
 So instead, why not moving the computation over to the member (JVM) where your customer data actually is. Here is how you can do this with distributed executor service:
 
 1.  Send a `PartitionAware` `Callable` task.
 
-2.  `Callable` does the deletion of the order right there and returns with the remaining order count.
+2.  `Callable` does the deletion of the order right there and returns with the remaining 
+order count.
 
-3.  Upon completion of the `Callable` task, return the result (remaining order count). Plus, you do not have to wait until the task is completed; since distributed executions are asynchronous, you can do other things in the meantime.
+3.  Upon completion of the `Callable` task, return the result (remaining order count). Plus, you 
+do not have to wait until the task is completed; since distributed executions are asynchronous, you can do other things in the meantime.
 
 Here is a sample code:
 
