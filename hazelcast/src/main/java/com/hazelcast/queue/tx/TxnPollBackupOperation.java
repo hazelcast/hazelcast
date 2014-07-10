@@ -39,7 +39,8 @@ public class TxnPollBackupOperation extends QueueOperation {
     }
 
     public void run() throws Exception {
-        response = getOrCreateContainer().txnCommitPollBackup(itemId);
+        getOrCreateContainer().txnCommitPollBackup(itemId);
+        response = true;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
