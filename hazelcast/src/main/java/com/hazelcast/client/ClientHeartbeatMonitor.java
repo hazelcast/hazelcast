@@ -3,6 +3,7 @@ package com.hazelcast.client;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.util.Clock;
 
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -37,7 +38,7 @@ public class ClientHeartbeatMonitor implements Runnable {
             final Connection connection = clientEndpoint.getConnection();
             final long lastTimePackageReceived = connection.lastReadTime();
             final long timeoutInMillis = TimeUnit.SECONDS.toMillis(heartbeatTimeoutSeconds);
-            final long currentTimeInMillis = System.currentTimeMillis();
+            final long currentTimeInMillis = Clock.currentTimeMillis();
             if (lastTimePackageReceived + timeoutInMillis < currentTimeInMillis) {
                 if (memberUuid.equals(clientEndpoint.getPrincipal().getOwnerUuid())) {
                     logger.log(Level.WARNING, "Client heartbeat is timed out , closing connection to " + connection);
