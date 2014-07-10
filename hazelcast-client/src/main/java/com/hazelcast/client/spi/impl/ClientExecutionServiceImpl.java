@@ -77,12 +77,10 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
     }
 
-    @Override
     public void executeInternal(Runnable command) {
         internalExecutor.execute(command);
     }
 
-    @Override
     public <T> ICompletableFuture<T> submitInternal(final Callable<T> command) {
         CompletableFutureTask futureTask = new CompletableFutureTask(command, internalExecutor);
         internalExecutor.submit(futureTask);
@@ -112,7 +110,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
         return scheduledExecutor.schedule(new Runnable() {
             public void run() {
-                executeInternal(command);
+                execute(command);
             }
         }, delay, unit);
     }
@@ -121,7 +119,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                executeInternal(command);
+                execute(command);
             }
         }, initialDelay, period, unit);
     }
@@ -130,7 +128,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                executeInternal(command);
+                execute(command);
             }
         }, initialDelay, period, unit);
     }

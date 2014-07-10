@@ -33,10 +33,10 @@ import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.config.GroupConfig;
@@ -120,7 +120,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private volatile ClientPrincipal principal;
     private final AtomicInteger callIdIncrementer = new AtomicInteger();
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
-    private final ClientExecutionService executionService;
+    private final ClientExecutionServiceImpl executionService;
     private ClientInvocationServiceImpl invocationService;
     private final AddressTranslator addressTranslator;
 
@@ -151,7 +151,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
 
         smartRouting = networkConfig.isSmartRouting();
-        executionService = client.getClientExecutionService();
+        executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         credentials = initCredentials(config);
         router = new Router(loadBalancer);
         inSelector = new ClientInSelectorImpl(client.getThreadGroup());
@@ -474,11 +474,38 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     public void handlePacket(ClientPacket packet) {
         final ClientConnection conn = (ClientConnection) packet.getConn();
         conn.incrementPacketCount();
-        executionService.execute(new ClientPacketProcessor(packet));
+        executionService.executeInternal(new ClientPacketProcessor(packet));
     }
 
     public int newCallId() {
         return callIdIncrementer.incrementAndGet();
+    }
+
+    private class ClientEventProcessor implements Runnable {
+        final int callId;
+        final ClientConnection conn;
+        final Data response;
+
+        private ClientEventProcessor(int callId, ClientConnection conn, Data response) {
+            this.callId = callId;
+            this.conn = conn;
+            this.response = response;
+        }
+
+        @Override
+        public void run() {
+            handleEvent(response, callId, conn);
+        }
+
+        private void handleEvent(Data event, int callId, ClientConnection conn) {
+            final EventHandler eventHandler = conn.getEventHandler(callId);
+            final Object eventObject = getSerializationService().toObject(event);
+            if (eventHandler == null) {
+                LOGGER.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
+                return;
+            }
+            eventHandler.handle(eventObject);
+        }
     }
 
     private class ClientPacketProcessor implements Runnable {
@@ -496,7 +523,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             final int callId = clientResponse.getCallId();
             final Data response = clientResponse.getResponse();
             if (clientResponse.isEvent()) {
-                handleEvent(response, callId, conn);
+                executionService.execute(new ClientEventProcessor(callId, conn, response));
             } else {
                 handlePacket(response, clientResponse.isError(), callId, conn);
             }
@@ -513,16 +540,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 response = getSerializationService().toObject(response);
             }
             future.notify(response);
-        }
-
-        private void handleEvent(Data event, int callId, ClientConnection conn) {
-            final EventHandler eventHandler = conn.getEventHandler(callId);
-            final Object eventObject = getSerializationService().toObject(event);
-            if (eventHandler == null) {
-                LOGGER.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
-                return;
-            }
-            eventHandler.handle(eventObject);
         }
     }
 

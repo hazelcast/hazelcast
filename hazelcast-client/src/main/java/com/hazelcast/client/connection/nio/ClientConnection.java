@@ -303,7 +303,7 @@ public class ClientConnection implements Connection, Closeable {
         }
         if (connectionManager.isLive()) {
             try {
-                executionService.executeInternal(new CleanResourcesTask());
+                executionService.execute(new CleanResourcesTask());
             } catch (RejectedExecutionException e) {
                 logger.warning("Execution rejected ", e);
             }
