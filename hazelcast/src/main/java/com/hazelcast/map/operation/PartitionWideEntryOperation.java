@@ -43,7 +43,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.AbstractMap;
-import java.util.Map;
+import java.util.Iterator;
 
 /**
  * GOTCHA : This operation does not load missing keys from mapstore for now.
@@ -74,17 +74,17 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
         final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
         final LocalMapStatsImpl mapStats
                 = mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name);
-        final Map<Data, Record> records = recordStore.getReadonlyRecordMap();
-        for (final Map.Entry<Data, Record> recordEntry : records.entrySet()) {
+        final Iterator<Record> iterator = recordStore.iterator();
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
             final long start = System.currentTimeMillis();
-            final Data dataKey = recordEntry.getKey();
-            final Record record = recordEntry.getValue();
+            final Data key = record.getKey();
             final Object valueBeforeProcess = record.getValue();
             final Object valueBeforeProcessObject = mapService.getMapServiceContext().toObject(valueBeforeProcess);
-            Object objectKey = mapService.getMapServiceContext().toObject(record.getKey());
+            Object objectKey = mapService.getMapServiceContext().toObject(key);
             if (getPredicate() != null) {
                 final SerializationService ss = getNodeEngine().getSerializationService();
-                QueryEntry queryEntry = new QueryEntry(ss, dataKey, objectKey, valueBeforeProcessObject);
+                QueryEntry queryEntry = new QueryEntry(ss, key, objectKey, valueBeforeProcessObject);
                 if (!getPredicate().apply(queryEntry)) {
                     continue;
                 }
@@ -95,12 +95,12 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
             Data dataValue = null;
             if (result != null) {
                 dataValue = mapService.getMapServiceContext().toData(result);
-                response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, dataValue));
+                response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, dataValue));
             }
 
             EntryEventType eventType;
             if (valueAfterProcess == null) {
-                recordStore.remove(dataKey);
+                recordStore.remove(key);
                 mapStats.incrementRemoves(getLatencyFrom(start));
                 eventType = EntryEventType.REMOVED;
             } else {
@@ -117,10 +117,10 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
                 }
                 // todo if this is a read only operation, record access operations should be done.
                 if (eventType != NO_NEED_TO_FIRE_EVENT) {
-                    recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
+                    recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(key, valueAfterProcess));
                 }
             }
-            fireEvent(dataKey, dataValue, valueBeforeProcess, valueAfterProcess, recordStore, eventType);
+            fireEvent(key, dataValue, valueBeforeProcess, valueAfterProcess, recordStore, eventType);
         }
     }
 

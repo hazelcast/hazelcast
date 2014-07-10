@@ -13,6 +13,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -45,7 +46,11 @@ class MapSplitBrainHandler implements SplitBrainHandlerService {
                         records = new ArrayList<Record>();
                         recordMap.put(mapContainer, records);
                     }
-                    records.addAll(recordStore.getReadonlyRecordMap().values());
+                    final Iterator<Record> iterator = recordStore.iterator();
+                    while (iterator.hasNext()) {
+                        final Record record = iterator.next();
+                        records.add(record);
+                    }
                 }
                 // clear all records either owned or backup
                 recordStore.reset();

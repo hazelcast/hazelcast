@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -821,5 +822,49 @@ public class EvictionTest extends HazelcastTestSupport {
                 assertNull(map.get("foo"));
             }
         }, 30);
+    }
+
+    @Test
+    public void testOnExpiredKeys_getAll() throws Exception {
+        final IMap<Integer, Integer> map = getMapWithExpiredKeys();
+        final Set<Integer> keys = Collections.singleton(1);
+        final Map<Integer, Integer> all = map.getAll(keys);
+
+        assertEquals(0, all.size());
+    }
+
+    @Test
+    public void testOnExpiredKeys_values() throws Exception {
+        final IMap<Integer, Integer> map = getMapWithExpiredKeys();
+        final Collection<Integer> values = map.values();
+
+        assertEquals(0, values.size());
+    }
+
+    @Test
+    public void testOnExpiredKeys_keySet() throws Exception {
+        final IMap<Integer, Integer> map = getMapWithExpiredKeys();
+        final Set<Integer> keySet = map.keySet();
+
+        assertEquals(0, keySet.size());
+    }
+
+    @Test
+    public void testOnExpiredKeys_entrySet() throws Exception {
+        final IMap<Integer, Integer> map = getMapWithExpiredKeys();
+        final Set<Map.Entry<Integer, Integer>> entries = map.entrySet();
+
+        assertEquals(0, entries.size());
+    }
+
+    private IMap<Integer, Integer> getMapWithExpiredKeys() {
+        final String mapName = randomMapName();
+        HazelcastInstance instance = createHazelcastInstance();
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+        map.put(1, 1, 100, TimeUnit.MILLISECONDS);
+        map.put(2, 1, 100, TimeUnit.MILLISECONDS);
+        map.put(3, 1, 100, TimeUnit.MILLISECONDS);
+        sleepSeconds(1);
+        return map;
     }
 }

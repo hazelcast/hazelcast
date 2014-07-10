@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -197,7 +198,9 @@ public class QueryOperation extends AbstractMapOperation {
             final PartitionContainer container = mapService.getMapServiceContext().getPartitionContainer(partition);
             final RecordStore recordStore = container.getRecordStore(name);
             LinkedList<QueryableEntry> partitionResult = new LinkedList<QueryableEntry>();
-            for (Record record : recordStore.getReadonlyRecordMapByWaitingMapStoreLoad().values()) {
+            final Iterator<Record> iterator = recordStore.loadAwareIterator();
+            while (iterator.hasNext()) {
+                final Record record = iterator.next();
                 final Data key = record.getKey();
                 final Object value = getValueOrCachedValue(record);
                 if (value == null) {

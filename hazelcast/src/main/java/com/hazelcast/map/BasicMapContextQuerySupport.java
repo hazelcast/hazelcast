@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -53,11 +54,12 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
         final QueryResult result = new QueryResult();
         final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
         final RecordStore recordStore = container.getRecordStore(mapName);
-        final Map<Data, Record> records = recordStore.getReadonlyRecordMapByWaitingMapStoreLoad();
         final SerializationService serializationService = nodeEngine.getSerializationService();
         final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         List<QueryEntry> list = new LinkedList<QueryEntry>();
-        for (Record record : records.values()) {
+        final Iterator<Record> iterator = recordStore.loadAwareIterator();
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
             Data key = record.getKey();
             Object value = record.getValue();
             if (value == null) {

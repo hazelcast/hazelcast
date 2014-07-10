@@ -5,7 +5,9 @@ import com.hazelcast.map.eviction.EvictionHelper;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
@@ -362,5 +364,52 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected void accessRecord(Record record, long now) {
         super.accessRecord(record, now);
         increaseRecordEvictionCriteriaNumber(record, mapContainer.getMapConfig().getEvictionPolicy());
+    }
+
+
+    /**
+     * Read only iterator. Iterates by checking whether a record expired or not.
+     */
+    protected final class ReadOnlyRecordIterator implements Iterator<Record> {
+
+        private final Iterator<Record> iterator;
+        private Record nextRecord;
+        private Record lastReturned;
+
+        protected ReadOnlyRecordIterator(Collection<Record> values) {
+            this.iterator = values.iterator();
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return nextRecord != null;
+        }
+
+        @Override
+        public Record next() {
+            if (nextRecord == null) {
+                throw new NoSuchElementException();
+            }
+            lastReturned = nextRecord;
+            advance();
+            return lastReturned;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("remove() not supported");
+        }
+
+        private void advance() {
+            while (iterator.hasNext()) {
+                nextRecord = iterator.next();
+                nextRecord = nullIfExpired(nextRecord);
+                if (nextRecord != null) {
+                    return;
+                }
+            }
+            nextRecord = null;
+        }
     }
 }

@@ -26,8 +26,10 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class PartitionWideEntryBackupOperation extends AbstractMapOperation implements BackupOperation, PartitionAwareOperation {
@@ -45,10 +47,10 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     public void run() {
         Map.Entry entry;
         RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
-        Map<Data, Record> records = recordStore.getReadonlyRecordMap();
-        for (Map.Entry<Data, Record> recordEntry : records.entrySet()) {
-            Data dataKey = recordEntry.getKey();
-            Record record = recordEntry.getValue();
+        final Iterator<Record> iterator = recordStore.iterator();
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
+            Data dataKey = record.getKey();
             Object objectKey = mapService.getMapServiceContext().toObject(record.getKey());
             Object valueBeforeProcess = mapService.getMapServiceContext().toObject(record.getValue());
             if (getPredicate() != null) {
