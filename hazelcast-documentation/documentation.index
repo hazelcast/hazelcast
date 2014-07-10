@@ -64,6 +64,7 @@ src/IntegratedClustering.md
 	src/WebSessionReplication.md
 		src/TomcatSessionReplication.md
 	src/SpringIntegration.md
+src/JCache.md
 src/Storage.md
 src/Clients.md
 #	src/ClientTypes.md
