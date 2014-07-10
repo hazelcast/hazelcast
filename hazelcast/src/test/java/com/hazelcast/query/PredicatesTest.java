@@ -274,7 +274,7 @@ public class PredicatesTest {
         }
 
         @Override
-        public Comparable getAttribute(String attributeName) throws com.hazelcast.query.impl.QueryException {
+        public Comparable getAttribute(String attributeName) throws QueryException {
             return null;
         }
 

@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.query.QueryException;
+
 import java.util.Map;
 
 /**

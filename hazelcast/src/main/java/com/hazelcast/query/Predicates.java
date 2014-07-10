@@ -27,7 +27,6 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryException;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;

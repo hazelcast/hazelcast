@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.query.QueryException;
 import com.hazelcast.util.EmptyStatement;
 
 import java.lang.reflect.Field;
