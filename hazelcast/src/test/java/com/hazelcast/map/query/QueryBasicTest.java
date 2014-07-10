@@ -869,22 +869,28 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
     @Test
     public void testSqlQueryUsing__KeyField() {
-        HazelcastInstance hz = createHazelcastInstance();
-        IMap<Object, Object> map = hz.getMap(randomMapName());
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        Object key = 1;
+        IMap<Object, Object> map = hz2.getMap(randomMapName());
+
+        Object key = generateKeyOwnedBy(hz1);
         Object value = "value";
         map.put(key, value);
 
-        Collection<Object> values = map.values(new SqlPredicate("__key = 1"));
+        Collection<Object> values = map.values(new SqlPredicate("__key = '" + key + "'"));
         assertEquals(1, values.size());
         assertEquals(value, values.iterator().next());
     }
 
     @Test
     public void testSqlQueryUsingNested__KeyField() {
-        HazelcastInstance hz = createHazelcastInstance();
-        IMap<Object, Object> map = hz.getMap(randomMapName());
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        IMap<Object, Object> map = hz2.getMap(randomMapName());
 
         Object key = new CustomAttribute(12, 123L);
         Object value = "value";
@@ -897,8 +903,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
     @Test
     public void testSqlQueryUsingPortable__KeyField() {
-        HazelcastInstance hz = createHazelcastInstance();
-        IMap<Object, Object> map = hz.getMap(randomMapName());
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        IMap<Object, Object> map = hz2.getMap(randomMapName());
 
         Object key = new ChildPortableObject(123L);
         Object value = "value";
@@ -947,10 +956,15 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     private void testQueryUsingPortableObject(Config config, String mapName) {
-        HazelcastInstance hz = createHazelcastInstance(config);
-        IMap<Object, Object> map = hz.getMap(mapName);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
-        map.put(1, new ParentPortableObject(1L));
+        IMap<Object, Object> map = hz2.getMap(mapName);
+
+        Object key = generateKeyOwnedBy(hz1);
+        map.put(key, new ParentPortableObject(1L));
+
         Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
         assertEquals(1, values.size());
     }
@@ -967,9 +981,28 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
     @Test
     public void testQueryUsingNestedPortableObject() {
-        HazelcastInstance hz = createHazelcastInstance();
-        IMap<Object, Object> map = hz.getMap(randomMapName());
-        map.put(1, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
+        testQueryUsingNestedPortableObject(new Config(), randomMapName());
+    }
+
+    @Test
+    public void testQueryUsingNestedPortableObjectWithIndex() {
+        String name = randomMapName();
+        Config config = new Config();
+        config.addMapConfig(new MapConfig(name).addMapIndexConfig(new MapIndexConfig("child.timestamp", false))
+                .addMapIndexConfig(new MapIndexConfig("child.child.timestamp", true)));
+
+        testQueryUsingNestedPortableObject(config, name);
+    }
+
+    private void testQueryUsingNestedPortableObject(Config config, String name) {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        IMap<Object, Object> map = hz2.getMap(name);
+
+        Object key = generateKeyOwnedBy(hz1);
+        map.put(key, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
 
         Collection<Object> values = map.values(new SqlPredicate("child.timestamp > 0"));
         assertEquals(1, values.size());

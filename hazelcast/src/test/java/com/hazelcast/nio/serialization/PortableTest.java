@@ -353,7 +353,7 @@ public class PortableTest {
 
         @Override
         public int getFactoryId() {
-            return 1;
+            return 2;
         }
 
         @Override
@@ -384,7 +384,7 @@ public class PortableTest {
 
         @Override
         public int getFactoryId() {
-            return 1;
+            return 3;
         }
 
         @Override
