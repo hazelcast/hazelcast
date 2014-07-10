@@ -48,11 +48,11 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
     public void run() throws Exception {
         QueueContainer container = getOrCreateContainer();
         if (pollOperation) {
-            response = container.txnPollBackupReserve(itemId, transactionId);
+            container.txnPollBackupReserve(itemId, transactionId);
         } else {
             container.txnOfferBackupReserve(itemId, transactionId);
-            response = true;
         }
+        response = true;
     }
 
     @Override
