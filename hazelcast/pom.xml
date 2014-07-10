@@ -136,6 +136,10 @@
                         </manifest>
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
+                    <excludes>
+                        <exclude>**/*.sh</exclude>
+                        <exclude>**/*.bat</exclude>
+                    </excludes>
                 </configuration>
                 <executions>
                     <execution>
