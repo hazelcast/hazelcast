@@ -63,7 +63,7 @@ public class CacheRecordStore implements ICacheRecordStore {
 
     private boolean hasExpiringEntry = false;
     private boolean isStatisticsEnabled = false;
-    private boolean isEventsEnabled = false;
+    private boolean isEventsEnabled = true;
     private boolean isWriteThrough = false;
     private boolean isReadThrough = false;
 
@@ -606,7 +606,6 @@ public class CacheRecordStore implements ICacheRecordStore {
 
         public void run() {
             if (hasExpiringEntry) {
-
                 evictExpiredRecords();
             }
         }
