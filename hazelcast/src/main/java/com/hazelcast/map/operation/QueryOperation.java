@@ -23,7 +23,6 @@ import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.QueryResult;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
@@ -101,7 +100,6 @@ public class QueryOperation extends AbstractMapOperation {
 
     protected void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final NodeEngine nodeEngine = getNodeEngine();
-        final SerializationService ss = nodeEngine.getSerializationService();
         final ExecutorService executor
                 = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
         final List<Future<Collection<QueryableEntry>>> lsFutures
@@ -122,7 +120,6 @@ public class QueryOperation extends AbstractMapOperation {
 
     protected void runParallelForPaging(List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final NodeEngine nodeEngine = getNodeEngine();
-        final SerializationService ss = nodeEngine.getSerializationService();
         final ExecutorService executor
                 = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
         final List<Future<Collection<QueryableEntry>>> lsFutures
@@ -178,7 +175,7 @@ public class QueryOperation extends AbstractMapOperation {
 
     private final class PartitionCallable implements Callable<Collection<QueryableEntry>> {
 
-        int partition;
+        final int partition;
 
         private PartitionCallable(int partitionId) {
             this.partition = partitionId;

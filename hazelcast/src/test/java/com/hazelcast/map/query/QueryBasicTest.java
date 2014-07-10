@@ -6,13 +6,11 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -24,7 +22,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +35,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
+import static com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
+import static com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.State;
 import static com.hazelcast.query.SampleObjects.Value;
@@ -819,7 +819,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 1000 * 60)
-    public void testMultipleOrPredicatesIssue885WithIndex2() {
+    public void testMultipleOrPredicatesIssue885WithDoubleIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(new Config());
         factory.newHazelcastInstance(new Config());
@@ -868,12 +868,54 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueryPortableObjectWithoutIndex() {
+    public void testSqlQueryUsing__KeyField() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IMap<Object, Object> map = hz.getMap(randomMapName());
+
+        Object key = 1;
+        Object value = "value";
+        map.put(key, value);
+
+        Collection<Object> values = map.values(new SqlPredicate("__key = 1"));
+        assertEquals(1, values.size());
+        assertEquals(value, values.iterator().next());
+    }
+
+    @Test
+    public void testSqlQueryUsingNested__KeyField() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IMap<Object, Object> map = hz.getMap(randomMapName());
+
+        Object key = new CustomAttribute(12, 123L);
+        Object value = "value";
+        map.put(key, value);
+
+        Collection<Object> values = map.values(new SqlPredicate("__key.age = 12 and __key.height = 123"));
+        assertEquals(1, values.size());
+        assertEquals(value, values.iterator().next());
+    }
+
+    @Test
+    public void testSqlQueryUsingPortable__KeyField() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IMap<Object, Object> map = hz.getMap(randomMapName());
+
+        Object key = new ChildPortableObject(123L);
+        Object value = "value";
+        map.put(key, value);
+
+        Collection<Object> values = map.values(new SqlPredicate("__key.timestamp = 123"));
+        assertEquals(1, values.size());
+        assertEquals(value, values.iterator().next());
+    }
+
+    @Test
+    public void testQueryPortableObject() {
         testQueryUsingPortableObject(new Config(), randomMapName());
     }
 
     @Test
-    public void testQueryPortableObjectWithoutIndexAndOptimizeQueries() {
+    public void testQueryPortableObjectAndOptimizeQueries() {
         String name = randomMapName();
         Config config = new Config();
         config.addMapConfig(new MapConfig(name).setOptimizeQueries(true));
@@ -908,72 +950,31 @@ public class QueryBasicTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         IMap<Object, Object> map = hz.getMap(mapName);
 
-        map.put(1, new NestedObject(1L));
+        map.put(1, new ParentPortableObject(1L));
         Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
         assertEquals(1, values.size());
     }
 
-    public static class OuterObject implements Portable {
+    @Test(expected = QueryException.class)
+    public void testQueryPortableField() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IMap<Object, Object> map = hz.getMap(randomMapName());
 
-        private NestedObject nested;
-
-        public OuterObject(NestedObject nested) {
-            this.nested = nested;
-        }
-
-        public NestedObject getNested() {
-            return nested;
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 1;
-        }
-
-        @Override
-        public int getClassId() {
-            return 1;
-        }
-
-        @Override
-        public void readPortable(PortableReader reader) throws IOException {
-        }
-
-        @Override
-        public void writePortable(PortableWriter writer) throws IOException {
-            writer.writePortable("nested", nested);
-        }
+        map.put(1, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
+        Collection<Object> values = map.values(new SqlPredicate("child > 0"));
+        values.size();
     }
 
-    public static class NestedObject implements Portable {
+    @Test
+    public void testQueryUsingNestedPortableObject() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IMap<Object, Object> map = hz.getMap(randomMapName());
+        map.put(1, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
 
-        private long timestamp;
+        Collection<Object> values = map.values(new SqlPredicate("child.timestamp > 0"));
+        assertEquals(1, values.size());
 
-        public NestedObject(long timestamp) {
-            this.timestamp = timestamp;
-        }
-
-        public long getTimestamp() {
-            return timestamp;
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 1;
-        }
-
-        @Override
-        public int getClassId() {
-            return 2;
-        }
-
-        @Override
-        public void readPortable(PortableReader reader) throws IOException {
-        }
-
-        @Override
-        public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeLong("timestamp", timestamp);
-        }
+        values = map.values(new SqlPredicate("child.child.timestamp > 0"));
+        assertEquals(1, values.size());
     }
 }

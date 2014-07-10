@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 /**
@@ -82,24 +81,13 @@ public final class ReflectionHelper {
         GETTER_CACHE.clear();
     }
 
-    public static AttributeType getAttributeType(QueryableEntry entry, String attribute) {
-        return getAttributeType(createGetter(entry, attribute).getReturnType());
+    public static AttributeType getAttributeType(Object value, String attribute) {
+        return getAttributeType(createGetter(value, attribute).getReturnType());
     }
 
-    private static Getter createGetter(QueryableEntry entry, String attribute) {
-        String paramAttribute = attribute;
-        Object obj;
-        if (paramAttribute.startsWith(KEY_ATTRIBUTE_NAME)) {
-            obj = entry.getKey();
-            if (paramAttribute.length() > KEY_ATTRIBUTE_NAME.length()) {
-                paramAttribute = paramAttribute.substring(KEY_ATTRIBUTE_NAME.length() + 1);
-            }
-        } else {
-            obj = entry.getValue();
-        }
-
+    private static Getter createGetter(Object obj, String attribute) {
         Class clazz = obj.getClass();
-        final String cacheKey = clazz.getName() + ":" + paramAttribute;
+        final String cacheKey = clazz.getName() + ":" + attribute;
         Getter getter = GETTER_CACHE.get(cacheKey);
         if (getter != null) {
             return getter;
@@ -108,7 +96,7 @@ public final class ReflectionHelper {
         try {
             Getter parent = null;
             List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
-            for (final String name : paramAttribute.split("\\.")) {
+            for (final String name : attribute.split("\\.")) {
                 Getter localGetter = null;
                 possibleMethodNames.clear();
                 possibleMethodNames.add(name);
@@ -172,8 +160,8 @@ public final class ReflectionHelper {
         }
     }
 
-    public static Comparable extractValue(QueryEntry queryEntry, String attributeName, Object object) throws Exception {
-        return (Comparable) createGetter(queryEntry, attributeName).getValue(object);
+    public static Comparable extractValue(Object object, String attributeName) throws Exception {
+        return (Comparable) createGetter(object, attributeName).getValue(object);
     }
 
     private abstract static class Getter {
