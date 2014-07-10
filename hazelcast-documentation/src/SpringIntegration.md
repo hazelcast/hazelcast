@@ -44,7 +44,7 @@ You can declare Hazelcast Objects using the default Spring *beans* namespace. Yo
 
 Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add namespace *xmlns:hz="http://www.hazelcast.com/schema/spring"* to `beans` tag in context file so that *hz* namespace shortcut can be used as a bean declaration.
 
-Here is an example schema definition for Hazelcast 3.3.x :
+Here is an example schema definition for Hazelcast 3.3.x:
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -56,14 +56,14 @@ Here is an example schema definition for Hazelcast 3.3.x :
                 http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
 ```
 
-**hazelcast-spring xsd Schemas**
+***hazelcast-spring*** **XSD Schemas**
 
-Each hazelcast minor release has its own xsd schemas. All available schemas are listed as follows:
+Each hazelcast minor release has its own XSD schemas. Below is the list of all available schemas:
 
-- hazelcast-spring-3.3.xsd
-- hazelcast-spring-3.2.xsd
-- hazelcast-spring-3.1.xsd
-- hazelcast-spring-3.0.xsd
+- `hazelcast-spring-3.3.xsd`
+- `hazelcast-spring-3.2.xsd`
+- `hazelcast-spring-3.1.xsd`
+- `hazelcast-spring-3.0.xsd`
 
 
 #### Supported Configurations with *hazelcast* Namespace
@@ -296,7 +296,7 @@ Assert.assertTrue( value.init );
 
 **ExecutorService Example:**
 
-- Create a Callable Class called SomeTask which contains Spring Bean definitions like ApplicaitonContext, SomeBean.
+- Create a Callable Class called SomeTask which contains Spring Bean definitions like ApplicationContext, SomeBean.
 
 
 ```java
@@ -367,11 +367,11 @@ As of version 3.1, Spring Framework provides support for adding caching into an 
 
 #### Annotation Based Spring Cache Configuration
 
-Annotation Based Configuration does not require any xml definition.
+Annotation Based Configuration does not require any XML definition.
 
-- implement a CachingConfiguration class with related Annotations
+- Implement a `CachingConfiguration` class with related Annotations.
 
-```java
+   ```java
 @Configuration
 @EnableCaching
 public class CachingConfiguration implements CachingConfigurer{
@@ -387,15 +387,15 @@ public class CachingConfiguration implements CachingConfigurer{
     }
 ```
 
-- launch Application Context and register CachingConfiguration
+- Launch Application Context and register `CachingConfiguration`.
 
-```
+   ```java
 AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 context.register(CachingConfiguration.class);
 context.refresh();
 ```
 
-for an example application, please see [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-samples).
+For an example application, please see [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/spring-data-integration/src/main/java/com/hazelcast/spring/mongodb).
 
 For more information about Spring Cache, please see [Spring Cache Abstraction](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html).
 
