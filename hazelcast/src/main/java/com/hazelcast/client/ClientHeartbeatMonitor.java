@@ -16,6 +16,7 @@ public class ClientHeartbeatMonitor implements Runnable {
     private final ClientEngine clientEngine;
     private final long heartbeatTimeoutSeconds;
     private final ILogger logger = Logger.getLogger(ClientHeartbeatMonitor.class);
+    private final int defaultHeartbeatTimeout = 60;
 
     public ClientHeartbeatMonitor(long heartbeatTimeoutSeconds,
                                   ClientEndpointManager endpointManager,
@@ -23,7 +24,7 @@ public class ClientHeartbeatMonitor implements Runnable {
 
         clientEndpointManager = endpointManager;
         this.clientEngine = clientEngine;
-        this.heartbeatTimeoutSeconds = heartbeatTimeoutSeconds <= 0 ? 60 : heartbeatTimeoutSeconds;
+        this.heartbeatTimeoutSeconds = heartbeatTimeoutSeconds <= 0 ? defaultHeartbeatTimeout : heartbeatTimeoutSeconds;
     }
 
 

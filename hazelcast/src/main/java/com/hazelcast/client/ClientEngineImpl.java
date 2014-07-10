@@ -83,16 +83,17 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
     private static final int THREADS_PER_CORE = 10;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
+    private static final int DEFAULT_CLIENT_HEART_BEAT_INTERVAL_SECONDS = 10;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
-    private final SerializationService serializationService;
 
+    private final SerializationService serializationService;
     // client uuid -> member uuid
     private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
-    private final ClientEndpointManager endpointManager;
 
+    private final ClientEndpointManager endpointManager;
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
@@ -109,7 +110,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         long heartbeatIntervalSeconds = node.groupProperties.CLIENT_HEARTBEAT_INTERVAL_SECONDS.getInteger();
         long heartbeatNoHeartBeatsSeconds = node.groupProperties.CLIENT_MAX_NO_HEARTBEAT_SECONDS.getInteger();
 
-        heartbeatIntervalSeconds = heartbeatIntervalSeconds <= 0 ? 10 : heartbeatIntervalSeconds;
+        heartbeatIntervalSeconds = heartbeatIntervalSeconds <= 0 ? DEFAULT_CLIENT_HEART_BEAT_INTERVAL_SECONDS
+                : heartbeatIntervalSeconds;
 
         ClientHeartbeatMonitor heartBeatMonitor =
                 new ClientHeartbeatMonitor(heartbeatNoHeartBeatsSeconds, endpointManager, this);
