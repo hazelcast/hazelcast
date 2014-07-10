@@ -106,6 +106,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 coreSize * THREADS_PER_CORE, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
                 ExecutorType.CONCRETE);
         this.logger = node.getLogger(ClientEngine.class);
+        long heartbeatIntervalSeconds = node.groupProperties.CLIENT_HEARTBEAT_INTERVAL_SECONDS.getInteger();
+        long heartbeatNoHeartBeatsSeconds = node.groupProperties.CLIENT_MAX_NO_HEARTBEAT_SECONDS.getInteger();
+
+        heartbeatIntervalSeconds = heartbeatIntervalSeconds <= 0 ? 10 : heartbeatIntervalSeconds;
+
+        ClientHeartbeatMonitor heartBeatMonitor =
+                new ClientHeartbeatMonitor(heartbeatNoHeartBeatsSeconds, endpointManager, this);
+        final ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService.scheduleWithFixedDelay(heartBeatMonitor, heartbeatIntervalSeconds,
+                heartbeatIntervalSeconds, TimeUnit.SECONDS);
     }
 
     //needed for testing purposes
@@ -248,7 +258,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     public Collection<Client> getClients() {
         final HashSet<Client> clients = new HashSet<Client>();
-        for (ClientEndpoint endpoint : endpointManager.values()) {
+        for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
             if (!endpoint.isFirstConnection()) {
                 clients.add(endpoint);
             }
@@ -267,7 +277,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     @Override
     public void shutdown(boolean terminate) {
-        for (ClientEndpoint endpoint : endpointManager.values()) {
+        for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
             try {
                 endpoint.destroy();
             } catch (LoginException e) {

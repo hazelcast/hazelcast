@@ -115,7 +115,7 @@ public class ClientEndpointManager {
 
     }
 
-    Collection<ClientEndpoint> values() {
+    Collection<ClientEndpoint> getEndpoints() {
         return endpoints.values();
     }
 
