@@ -127,9 +127,11 @@ public class MultipleEntryOperation extends AbstractMapOperation
                 mapEventPublisher.publishWanReplicationRemove(name, key, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(key);
-                Data tempValue = mapServiceContext.toData(dataValue);
-                final EntryView entryView = EntryViews.createSimpleEntryView(key, tempValue, record);
-                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                if (record != null) {
+                    Data tempValue = mapServiceContext.toData(dataValue);
+                    final EntryView entryView = EntryViews.createSimpleEntryView(key, tempValue, record);
+                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                }
             }
         }
     }

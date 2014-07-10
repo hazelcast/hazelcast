@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
 public class MergeOperation extends BasePutOperation {
@@ -72,7 +73,11 @@ public class MergeOperation extends BasePutOperation {
         if (dataValue == null) {
             return new RemoveBackupOperation(name, dataKey);
         } else {
-            RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
+            RecordInfo replicationInfo = null;
+            final Record record = recordStore.getRecord(dataKey);
+            if (record != null) {
+                replicationInfo = Records.buildRecordInfo(record);
+            }
             return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
         }
     }

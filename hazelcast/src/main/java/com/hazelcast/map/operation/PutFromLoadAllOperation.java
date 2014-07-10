@@ -70,6 +70,9 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
     }
 
     private void publishWanReplicationEvent(Data key, Data value, Record record) {
+        if (record == null) {
+            return;
+        }
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             final EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
             mapService.getMapServiceContext().getMapEventPublisher().publishWanReplicationUpdate(name, entryView);
