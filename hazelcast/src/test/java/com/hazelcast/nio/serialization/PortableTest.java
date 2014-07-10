@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -253,7 +254,153 @@ public class PortableTest {
         final TestObject1 testObject1 = new TestObject1(testObject2s);
 
         ss.toData(testObject1);
+    }
 
+    @Test
+    public void testSerializationService_createPortableReader() throws IOException {
+        SerializationService serializationService = new SerializationServiceBuilder().build();
+
+        ChildPortableObject child = new ChildPortableObject(System.nanoTime());
+        ParentPortableObject parent = new ParentPortableObject(System.currentTimeMillis(), child);
+        GrandParentPortableObject grandParent = new GrandParentPortableObject(System.nanoTime(), parent);
+
+        Data data = serializationService.toData(grandParent);
+        PortableReader reader = serializationService.createPortableReader(data);
+
+        assertEquals(grandParent.timestamp, reader.readLong("timestamp"));
+        assertEquals(parent.timestamp, reader.readLong("child.timestamp"));
+        assertEquals(child.timestamp, reader.readLong("child.child.timestamp"));
+    }
+
+    @Test
+    public void testClassDefinition_getNestedField() throws IOException {
+        SerializationService serializationService = new SerializationServiceBuilder().build();
+        PortableContext portableContext = serializationService.getPortableContext();
+
+        ChildPortableObject child = new ChildPortableObject(System.nanoTime());
+        ParentPortableObject parent = new ParentPortableObject(System.currentTimeMillis(), child);
+        GrandParentPortableObject grandParent = new GrandParentPortableObject(System.nanoTime(), parent);
+
+        Data data = serializationService.toData(grandParent);
+        ClassDefinition classDefinition = data.getClassDefinition();
+
+        FieldDefinition fd = portableContext.getFieldDefinition(classDefinition, "child");
+        assertNotNull(fd);
+        assertEquals(FieldType.PORTABLE, fd.getType());
+
+        fd = portableContext.getFieldDefinition(classDefinition, "child.child");
+        assertNotNull(fd);
+        assertEquals(FieldType.PORTABLE, fd.getType());
+
+        fd = portableContext.getFieldDefinition(classDefinition, "child.child.timestamp");
+        assertNotNull(fd);
+        assertEquals(FieldType.LONG, fd.getType());
+
+    }
+
+    public static class GrandParentPortableObject implements Portable {
+
+        private long timestamp;
+        private ParentPortableObject child;
+
+        public GrandParentPortableObject(long timestamp) {
+            this.timestamp = timestamp;
+            child = new ParentPortableObject(timestamp);
+        }
+
+        public GrandParentPortableObject(long timestamp, ParentPortableObject child) {
+            this.timestamp = timestamp;
+            this.child = child;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 1;
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            timestamp = reader.readLong("timestamp");
+            child = reader.readPortable("child");
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeLong("timestamp", timestamp);
+            writer.writePortable("child", child);
+        }
+    }
+
+    public static class ParentPortableObject implements Portable {
+
+        private long timestamp;
+        private ChildPortableObject child;
+
+        public ParentPortableObject(long timestamp) {
+            this.timestamp = timestamp;
+            child = new ChildPortableObject(timestamp);
+        }
+
+        public ParentPortableObject(long timestamp, ChildPortableObject child) {
+            this.timestamp = timestamp;
+            this.child = child;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 2;
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            timestamp = reader.readLong("timestamp");
+            child = reader.readPortable("child");
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeLong("timestamp", timestamp);
+            writer.writePortable("child", child);
+        }
+    }
+
+    public static class ChildPortableObject implements Portable {
+
+        private long timestamp;
+
+        public ChildPortableObject(long timestamp) {
+            this.timestamp = timestamp;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 3;
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            timestamp = reader.readLong("timestamp");
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeLong("timestamp", timestamp);
+        }
     }
 
     private class TestObject1 implements Portable {

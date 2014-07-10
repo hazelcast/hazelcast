@@ -21,11 +21,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.HashSet;
-import java.util.HashMap;
+import java.util.Set;
 
 class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
 
@@ -52,11 +52,11 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         nestedClassDefinitions.add(cd);
     }
 
-    public FieldDefinition get(String name) {
+    public FieldDefinition getField(String name) {
         return fieldDefinitionsMap.get(name);
     }
 
-    public FieldDefinition get(int fieldIndex) {
+    public FieldDefinition getField(int fieldIndex) {
         return fieldDefinitions.get(fieldIndex);
     }
 
@@ -73,7 +73,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     public FieldType getFieldType(String fieldName) {
-        final FieldDefinition fd = get(fieldName);
+        final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
             return fd.getType();
         }
@@ -81,7 +81,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     public int getFieldClassId(String fieldName) {
-        final FieldDefinition fd = get(fieldName);
+        final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
             return fd.getClassId();
         }
@@ -89,7 +89,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     public int getFieldVersion(String fieldName) {
-        final FieldDefinition fd = get(fieldName);
+        final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
             return fd.getVersion();
         }
@@ -165,7 +165,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
             return false;
         }
         for (FieldDefinition fd : fieldDefinitions) {
-            FieldDefinition fd2 = that.get(fd.getName());
+            FieldDefinition fd2 = that.getField(fd.getName());
             if (fd2 == null) {
                 return false;
             }

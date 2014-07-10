@@ -36,11 +36,11 @@ public final class BinaryClassDefinitionProxy extends BinaryClassDefinition impl
         return cd != null ? cd : context.createClassDefinition(factoryId, getBinary());
     }
 
-    public FieldDefinition get(String name) {
+    public FieldDefinition getField(String name) {
         throw new UnsupportedOperationException();
     }
 
-    public FieldDefinition get(int fieldIndex) {
+    public FieldDefinition getField(int fieldIndex) {
         throw new UnsupportedOperationException();
     }
 
