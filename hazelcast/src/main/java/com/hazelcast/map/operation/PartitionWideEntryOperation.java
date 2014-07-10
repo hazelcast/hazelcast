@@ -79,7 +79,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
         final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
-            final long start = mapServiceContext.getNow();
+            final long start = Clock.currentTimeMillis();
             final Data key = record.getKey();
             final Object valueBeforeProcess = record.getValue();
             final Object valueBeforeProcessObject = mapServiceContext.toObject(valueBeforeProcess);

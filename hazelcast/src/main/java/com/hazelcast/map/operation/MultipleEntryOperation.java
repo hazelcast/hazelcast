@@ -71,7 +71,7 @@ public class MultipleEntryOperation extends AbstractMapOperation
             if (partitionService.getPartitionId(key) != getPartitionId()) {
                 continue;
             }
-            long start = mapServiceContext.getNow();
+            long start = Clock.currentTimeMillis();
             Object objectKey = mapServiceContext.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
             final Object valueBeforeProcess = mapEntry.getValue();
