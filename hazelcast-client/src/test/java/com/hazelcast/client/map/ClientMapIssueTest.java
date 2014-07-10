@@ -34,6 +34,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,18 +54,32 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ClientMapIssueTest extends HazelcastTestSupport {
 
+    HazelcastInstance instance1;
+    HazelcastInstance instance2;
+
+    HazelcastInstance client1;
+
+    @Before
+    public void setup() {
+        instance1 = Hazelcast.newHazelcastInstance();
+        instance2 = Hazelcast.newHazelcastInstance();
+        client1 = HazelcastClient.newHazelcastClient();
+    }
+
     @After
-    public void reset() {
-        HazelcastClient.shutdownAll();
+    public void teardown() {
+        instance1.shutdown();
+        instance2.shutdown();
+        client1.shutdown();
         Hazelcast.shutdownAll();
+        HazelcastClient.shutdownAll();
     }
 
     @Test
     public void testListenerRegistrations() throws Exception {
-        final String mapName = "testListener";
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client1 = HazelcastClient.newHazelcastClient();
-        final IMap<Object, Object> map = client1.getMap(mapName);
+        String mapName = "testListener";
+
+        IMap<Object, Object> map = client1.getMap(mapName);
         map.addEntryListener(new EntryListener<Object, Object>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
@@ -92,32 +107,29 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
             }
         }, true);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
         instance1.getLifecycleService().terminate();
         instance1 = Hazelcast.newHazelcastInstance();
-        final Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
+
+        Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
         original.setAccessible(true);
-        final HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(instance1);
-        final EventService eventService = impl.node.nodeEngine.getEventService();
-        final Collection<EventRegistration> regs = eventService.getRegistrations(MapService.SERVICE_NAME, mapName);
+        HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(instance1);
+        EventService eventService = impl.node.nodeEngine.getEventService();
+        Collection<EventRegistration> regs = eventService.getRegistrations(MapService.SERVICE_NAME, mapName);
+
         assertEquals("there should be only one registrations", 1, regs.size());
     }
 
     @Test
     public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
-
-        final ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        final IMap<String, String> m = client.getMap("m");
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-
-        m.put("elif", "Elif");
-        m.put("ali", "Ali");
-        m.put("alev", "Alev");
-
+        final IMap<String, String> map = client.getMap("m");
+        map.put("elif", "Elif");
+        map.put("ali", "Ali");
+        map.put("alev", "Alev");
 
         instance1.getLifecycleService().terminate();
         instance2.getLifecycleService().terminate();
@@ -126,7 +138,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         new Thread() {
             public void run() {
                 try {
-                    m.get("ali");
+                    map.get("ali");
                 } catch (Exception ignored) {
                     latch.countDown();
                 }
@@ -134,83 +146,56 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         }.start();
 
         assertOpenEventually(latch);
-
     }
 
     @Test
     public void testMapPagingEntries() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        IMap<Integer, Integer> map = client1.getMap("map");
 
-        final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        final IMap<Integer, Integer> map = client.getMap("map");
-
-        final int size = 50;
-        final int pageSize = 5;
+        int size = 50;
+        int pageSize = 5;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
 
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.nextPage();
 
-        final Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
+        Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
         assertEquals(pageSize, entries.size());
-
-
     }
 
     @Test
     public void testMapPagingValues() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        IMap<Integer, Integer> map = client1.getMap("map");
 
-        final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        final IMap<Integer, Integer> map = client.getMap("map");
-
-        final int size = 50;
-        final int pageSize = 5;
+        int size = 50;
+        int pageSize = 5;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
 
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.nextPage();
 
-        final Collection<Integer> values = map.values(predicate);
+        Collection<Integer> values = map.values(predicate);
         assertEquals(pageSize, values.size());
-
-
     }
 
     @Test
     public void testMapPagingKeySet() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        IMap<Integer, Integer> map = client1.getMap("map");
 
-        final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        final IMap<Integer, Integer> map = client.getMap("map");
-
-        final int size = 50;
-        final int pageSize = 5;
+        int size = 50;
+        int pageSize = 5;
         for (int i = 0; i < size; i++) {
             map.put(size - i, i);
         }
 
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.nextPage();
 
-        final Set<Integer> values = map.keySet(predicate);
+        Set<Integer> values = map.keySet(predicate);
         assertEquals(pageSize, values.size());
-
-
     }
-
-
 }

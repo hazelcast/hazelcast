@@ -19,11 +19,9 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-
 /**
  * User: danny Date: 11/26/13
  */
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SimpleClientMapInterceptorTest {
@@ -33,7 +31,6 @@ public class SimpleClientMapInterceptorTest {
     static HazelcastInstance client;
 
     static SimpleClientInterceptor interceptor;
-
 
     @BeforeClass
     public static void init() {
@@ -57,8 +54,7 @@ public class SimpleClientMapInterceptorTest {
 
     @Test
     public void clientMapInterceptorTestIssue1238() throws InterruptedException {
-
-        final IMap<Object, Object> map = client.getMap("clientMapInterceptorTest");
+        IMap<Object, Object> map = client.getMap("clientMapInterceptorTest");
 
         String id = map.addInterceptor(interceptor);
 
@@ -71,13 +67,10 @@ public class SimpleClientMapInterceptorTest {
         map.put(7, "Hong Kong");
 
         map.remove(1);
-
-
         try {
             map.remove(2);
             fail();
         } catch (Exception ignore) {
-
         }
 
         assertEquals(map.size(), 6);
@@ -101,5 +94,4 @@ public class SimpleClientMapInterceptorTest {
         assertEquals(map.get(6), "CAIRO");
         assertEquals(map.get(7), "HONG KONG");
     }
-
 }
