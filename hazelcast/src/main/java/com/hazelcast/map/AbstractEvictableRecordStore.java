@@ -126,9 +126,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             if (isReachable(record, now)) {
                 continue;
             }
-            //!!! get entry value here because evict0(key) nulls the record value.
+            //!!! get entry value here because evictInternal(key) nulls the record value.
             final Object value = record.getValue();
-            evict0(key);
+            evictInternal(key);
             evictedCount++;
             initExpirationIterator();
 
@@ -242,7 +242,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
     }
 
-    abstract Object evict0(Data key);
+    abstract Object evictInternal(Data key);
 
 
     /**
