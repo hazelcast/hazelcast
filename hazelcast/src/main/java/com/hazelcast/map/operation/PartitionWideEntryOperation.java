@@ -142,9 +142,11 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
             if (EntryEventType.REMOVED.equals(eventType)) {
                 mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
-                Record r = recordStore.getRecord(dataKey);
-                final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValue, r);
-                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                Record record = recordStore.getRecord(dataKey);
+                if (record != null) {
+                    final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValue, record);
+                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                }
             }
         }
     }

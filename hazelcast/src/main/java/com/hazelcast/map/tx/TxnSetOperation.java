@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
+
 import java.io.IOException;
 
 /**
@@ -92,7 +93,11 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     public Operation getBackupOperation() {
-        RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
+        final Record record = recordStore.getRecord(dataKey);
+        RecordInfo replicationInfo = null;
+        if (record != null) {
+            replicationInfo = Records.buildRecordInfo(record);
+        }
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true);
     }
 

@@ -75,8 +75,11 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public Operation getBackupOperation() {
+        RecordInfo replicationInfo = null;
         Record record = recordStore.getRecord(dataKey);
-        RecordInfo replicationInfo = Records.buildRecordInfo(record);
+        if (record != null) {
+            replicationInfo = Records.buildRecordInfo(record);
+        }
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
     }
 
