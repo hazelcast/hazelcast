@@ -39,7 +39,7 @@ import static org.junit.Assert.assertNull;
 public class ClientRandomLBTest {
 
     @AfterClass
-    public static void destroy() {
+    public static void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }

@@ -50,7 +50,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     }
 
     @After
-    public void tearDown() {
+    public void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -84,7 +84,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOneClientKickOffMapStoreLoad_ThenNodeJoins() {
+    public void testOneClient_KickOffMapStoreLoad_ThenNodeJoins() {
         Hazelcast.newHazelcastInstance(nodeConfig);
 
         ClientThread client1 = new ClientThread();
@@ -136,7 +136,6 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IMap<Integer, Integer> map = client.getMap(MAP_NAME);
-
 
         int max = getMaxCapacity(server) + 1;
         for (int i = 0; i < max; i++) {

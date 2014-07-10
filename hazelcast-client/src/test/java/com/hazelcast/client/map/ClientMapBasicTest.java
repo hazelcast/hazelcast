@@ -56,17 +56,17 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapBasicTest {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private static HazelcastInstance server;
+    private static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
+    public static void beforeClass() {
         server = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -731,7 +731,6 @@ public class ClientMapBasicTest {
         boolean result = map.tryRemove(key, 1, TimeUnit.SECONDS);
         assertFalse(result);
     }
-
 
     @Test(expected = NullPointerException.class)
     public void testDelete_whenKeyNull() {

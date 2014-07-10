@@ -39,29 +39,26 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientLockWithTerminationTest {
 
-    private HazelcastInstance node1;
-    private HazelcastInstance node2;
+    private HazelcastInstance server;
     private HazelcastInstance client1;
     private HazelcastInstance client2;
     private String keyOwnedByNode1;
 
     @Before
     public void setup() throws InterruptedException {
-        node1 = Hazelcast.newHazelcastInstance();
-        node2 = Hazelcast.newHazelcastInstance();
+        server = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
+
         client1 = HazelcastClient.newHazelcastClient();
         client2 = HazelcastClient.newHazelcastClient();
-        keyOwnedByNode1 = HazelcastTestSupport.generateKeyOwnedBy(node1);
+
+        keyOwnedByNode1 = HazelcastTestSupport.generateKeyOwnedBy(server);
     }
 
     @After
     public void tearDown() throws IOException {
-        node1.shutdown();
-        node2.shutdown();
-        client1.shutdown();
-        client2.shutdown();
-        Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -83,7 +80,7 @@ public class ClientLockWithTerminationTest {
         ILock lock = client1.getLock(keyOwnedByNode1);
         lock.lock();
 
-        node1.getLifecycleService().terminate();
+        server.getLifecycleService().terminate();
 
         lock = client2.getLock(keyOwnedByNode1);
         boolean lockObtained = lock.tryLock();

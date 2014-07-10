@@ -39,20 +39,20 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientIdGeneratorTest {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static IdGenerator idGenerator;
+    private static final String name = "test";
+
+    private static IdGenerator idGenerator;
 
     @BeforeClass
-    public static void init() {
+    public static void beforeClass() {
         Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
-        idGenerator = hz.getIdGenerator(name);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
+        idGenerator = client.getIdGenerator(name);
     }
 
     @AfterClass
-    public static void destroy() {
-        hz.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
@@ -62,5 +62,4 @@ public class ClientIdGeneratorTest {
         assertFalse(idGenerator.init(4569));
         assertEquals(3570, idGenerator.newId());
     }
-
 }

@@ -54,25 +54,22 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ClientMapIssueTest extends HazelcastTestSupport {
 
-    HazelcastInstance instance1;
-    HazelcastInstance instance2;
+    private HazelcastInstance server1;
+    private HazelcastInstance server2;
 
-    HazelcastInstance client1;
+    private HazelcastInstance client1;
 
     @Before
     public void setup() {
-        instance1 = Hazelcast.newHazelcastInstance();
-        instance2 = Hazelcast.newHazelcastInstance();
+        server1 = Hazelcast.newHazelcastInstance();
+        server2 = Hazelcast.newHazelcastInstance();
         client1 = HazelcastClient.newHazelcastClient();
     }
 
     @After
     public void teardown() {
-        instance1.shutdown();
-        instance2.shutdown();
-        client1.shutdown();
-        Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -99,21 +96,19 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
             @Override
             public void mapEvicted(MapEvent event) {
-
             }
 
             @Override
             public void mapCleared(MapEvent event) {
-
             }
         }, true);
 
-        instance1.getLifecycleService().terminate();
-        instance1 = Hazelcast.newHazelcastInstance();
+        server1.getLifecycleService().terminate();
+        server1 = Hazelcast.newHazelcastInstance();
 
         Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
         original.setAccessible(true);
-        HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(instance1);
+        HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(server1);
         EventService eventService = impl.node.nodeEngine.getEventService();
         Collection<EventRegistration> regs = eventService.getRegistrations(MapService.SERVICE_NAME, mapName);
 
@@ -131,8 +126,8 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         map.put("ali", "Ali");
         map.put("alev", "Alev");
 
-        instance1.getLifecycleService().terminate();
-        instance2.getLifecycleService().terminate();
+        server1.getLifecycleService().terminate();
+        server2.getLifecycleService().terminate();
 
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {

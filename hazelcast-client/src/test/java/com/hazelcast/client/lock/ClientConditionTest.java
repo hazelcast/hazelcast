@@ -30,28 +30,25 @@ public class ClientConditionTest extends HazelcastTestSupport {
 
     private static final String name = "test";
 
-    private static HazelcastInstance server;
     private static HazelcastInstance client;
     private static ILock lock;
 
     @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
+    public static void beforeClass() {
+        Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
         lock = client.getLock(name);
     }
 
     @AfterClass
-    public static void destroy() {
-        server.shutdown();
-        client.shutdown();
-        Hazelcast.shutdownAll();
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Before
     @After
-    public void clear() throws IOException {
+    public void reset() throws IOException {
         lock.forceUnlock();
     }
 
@@ -120,7 +117,6 @@ public class ClientConditionTest extends HazelcastTestSupport {
                         lock.unlock();
                         finalLatch.countDown();
                     }
-
                 }
             }).start();
         }
@@ -132,7 +128,6 @@ public class ClientConditionTest extends HazelcastTestSupport {
         finalLatch.await(1, TimeUnit.MINUTES);
         assertEquals(threadCount * 2, count.get());
     }
-
 
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testDestroyLockWhenOtherWaitingOnConditionAwait() {

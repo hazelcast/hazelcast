@@ -24,21 +24,18 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ClientConcurrentLockTest {
 
-    private static HazelcastInstance server;
     private static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
+    public static void beforeClass() {
+        Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
-        server.shutdown();
-        client.shutdown();
-        Hazelcast.shutdownAll();
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test

@@ -9,6 +9,8 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -23,12 +25,29 @@ import static org.junit.Assert.assertFalse;
 @Category(QuickTest.class)
 public class ClientMapEvictAllTest extends HazelcastTestSupport {
 
+    private String mapName;
+
+    private HazelcastInstance client;
+
+    @Before
+    public void setup() {
+        mapName = randomMapName();
+
+        Hazelcast.newHazelcastInstance(null);
+
+        client = HazelcastClient.newHazelcastClient();
+    }
+
+    @After
+    public void teardown() {
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
+
     @Test
     public void evictAll_firesEvent() throws Exception {
-        String mapName = randomMapName();
-        HazelcastInstance server1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance server2 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        Hazelcast.newHazelcastInstance(null);
+
         IMap<Object, Object> map = client.getMap(mapName);
 
         final CountDownLatch evictedEntryCount = new CountDownLatch(3);
@@ -49,14 +68,10 @@ public class ClientMapEvictAllTest extends HazelcastTestSupport {
 
         assertOpenEventually(evictedEntryCount);
         assertEquals(0, map.size());
-        closeResources(client, server1, server2);
     }
 
     @Test
     public void evictAll_firesOnlyOneEvent() throws Exception {
-        String mapName = randomMapName();
-        HazelcastInstance server1 = Hazelcast.newHazelcastInstance(null);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         IMap<Object, Object> map = client.getMap(mapName);
 
         final CountDownLatch eventCount = new CountDownLatch(2);
@@ -64,7 +79,6 @@ public class ClientMapEvictAllTest extends HazelcastTestSupport {
             @Override
             public void mapEvicted(MapEvent event) {
                 eventCount.countDown();
-
             }
         }, true);
 
@@ -75,15 +89,5 @@ public class ClientMapEvictAllTest extends HazelcastTestSupport {
 
         assertFalse(eventCount.await(10, TimeUnit.SECONDS));
         assertEquals(1, eventCount.getCount());
-        closeResources(client, server1);
-    }
-
-    private static void closeResources(HazelcastInstance... instances) {
-        if (instances == null) {
-            return;
-        }
-        for (HazelcastInstance instance : instances) {
-            instance.shutdown();
-        }
     }
 }

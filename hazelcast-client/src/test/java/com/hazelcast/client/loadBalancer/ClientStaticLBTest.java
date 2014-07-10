@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 public class ClientStaticLBTest {
 
     @AfterClass
-    public static void destroy() {
+    public static void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -46,8 +46,10 @@ public class ClientStaticLBTest {
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
         HazelcastInstance server = factory.newHazelcastInstance();
         Member member = server.getCluster().getLocalMember();
+
         StaticLB staticLIB = new StaticLB(member);
         Member nextMember = staticLIB.next();
+
         assertEquals(member, nextMember);
     }
 }

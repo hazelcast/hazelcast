@@ -58,20 +58,20 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     private static IMap<Integer, Integer> map;
 
     @BeforeClass
-    public static void createInstances() {
+    public static void beforeClass() {
         Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void shutdownInstances() {
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Before
-    public void init() {
+    public void setup() {
         map = client.getMap(randomString());
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -79,7 +79,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
     @After
-    public void reset() {
+    public void teardown() {
         map.destroy();
     }
 
@@ -102,10 +102,11 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGoTo_previousPage_BeforeTheStart() {
+    public void testGoTo_PreviousPage_BeforeTheStart() {
         PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.previousPage();
 
+        map.values(predicate);
         Collection<Integer> values = map.values(predicate);
 
         assertIterableEquals(values, 0, 1, 2, 3, 4);
@@ -118,6 +119,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
             predicate.nextPage();
         }
 
+        map.values(predicate);
         Collection<Integer> values = map.values(predicate);
 
         assertEquals(size / pageSize - 1, predicate.getPage());
@@ -256,5 +258,4 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
             }
         }
     }
-
 }

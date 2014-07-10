@@ -17,19 +17,25 @@
 package com.hazelcast.client.atomiclong;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -39,27 +45,27 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class ClientAtomicLongTest {
 
-    static final String name = "test1";
-    static HazelcastInstance client;
-    static HazelcastInstance server;
-    static IAtomicLong counter;
+    private static final String name = "atomicLongTest";
+
+    private static IAtomicLong counter;
 
     @BeforeClass
-    public static void init(){
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    public static void beforeClass(){
+        Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
         counter = client.getAtomicLong(name);
     }
 
     @AfterClass
-    public static void destroy() {
-        client.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Before
     @After
-    public void clear() throws IOException {
+    public void reset() throws IOException {
         counter.set(0);
     }
 
@@ -78,126 +84,104 @@ public class ClientAtomicLongTest {
         assertEquals(3, counter.getAndIncrement());
         assertEquals(4, counter.getAndSet(9));
         assertEquals(10, counter.incrementAndGet());
-
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void apply_whenCalledWithNullFunction() {
-        IAtomicLong hzCounter = client.getAtomicLong("apply_whenCalledWithNullFunction");
-
-        hzCounter.apply(null);
+        counter.apply(null);
     }
 
     @Test
     public void apply() {
-        IAtomicLong hzCounter = client.getAtomicLong("apply");
-
-        assertEquals(new Long(1), hzCounter.apply(new AddOneFunction()));
-        assertEquals(0, hzCounter.get());
+        assertEquals(new Long(1), counter.apply(new AddOneFunction()));
+        assertEquals(0, counter.get());
     }
 
     @Test
     public void apply_whenException() {
-        IAtomicLong hzCounter = client.getAtomicLong("apply_whenException");
-        hzCounter.set(1);
+        counter.set(1);
         try {
-            hzCounter.apply(new FailingFunction());
+            counter.apply(new FailingFunction());
             fail();
-        } catch (AtomicLongRuntimeException ignored) {
+        } catch (ClientAtomicLongTestRuntimeException ignored) {
         }
 
-        assertEquals(1, hzCounter.get());
+        assertEquals(1, counter.get());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void alter_whenCalledWithNullFunction() {
-        IAtomicLong hzCounter = client.getAtomicLong("alter_whenCalledWithNullFunction");
-
-        hzCounter.alter(null);
+        counter.alter(null);
     }
 
     @Test
     public void alter_whenException() {
-        IAtomicLong hzCounter = client.getAtomicLong("alter_whenException");
-        hzCounter.set(10);
-
+        counter.set(10);
         try {
-            hzCounter.alter(new FailingFunction());
+            counter.alter(new FailingFunction());
             fail();
-        } catch (AtomicLongRuntimeException ignored) {
+        } catch (ClientAtomicLongTestRuntimeException ignored) {
         }
 
-        assertEquals(10, hzCounter.get());
+        assertEquals(10, counter.get());
     }
 
     @Test
     public void alter() {
-        IAtomicLong hzCounter = client.getAtomicLong("alter");
+        counter.set(10);
+        counter.alter(new AddOneFunction());
 
-        hzCounter.set(10);
-        hzCounter.alter(new AddOneFunction());
-        assertEquals(11, hzCounter.get());
-
+        assertEquals(11, counter.get());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void alterAndGet_whenCalledWithNullFunction() {
-        IAtomicLong hzCounter = client.getAtomicLong("alterAndGet_whenCalledWithNullFunction");
-
-        hzCounter.alterAndGet(null);
+        counter.alterAndGet(null);
     }
 
     @Test
     public void alterAndGet_whenException() {
-        IAtomicLong hzCounter = client.getAtomicLong("alterAndGet_whenException");
-        hzCounter.set(10);
-
+        counter.set(10);
         try {
-            hzCounter.alterAndGet(new FailingFunction());
+            counter.alterAndGet(new FailingFunction());
             fail();
-        } catch (AtomicLongRuntimeException ignored) {
+        } catch (ClientAtomicLongTestRuntimeException ignored) {
         }
 
-        assertEquals(10, hzCounter.get());
+        assertEquals(10, counter.get());
     }
 
     @Test
     public void alterAndGet() {
-        IAtomicLong hzCounter = client.getAtomicLong("alterAndGet");
+        counter.set(10);
 
-        hzCounter.set(10);
-        assertEquals(11, hzCounter.alterAndGet(new AddOneFunction()));
-        assertEquals(11, hzCounter.get());
+        assertEquals(11, counter.alterAndGet(new AddOneFunction()));
+        assertEquals(11, counter.get());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void getAndAlter_whenCalledWithNullFunction() {
-        IAtomicLong hzCounter = client.getAtomicLong("getAndAlter_whenCalledWithNullFunction");
-
-        hzCounter.getAndAlter(null);
+        counter.getAndAlter(null);
     }
 
     @Test
     public void getAndAlter_whenException() {
-        IAtomicLong hzCounter = client.getAtomicLong("getAndAlter_whenException");
-        hzCounter.set(10);
-
+        counter.set(10);
         try {
-            hzCounter.getAndAlter(new FailingFunction());
+            counter.getAndAlter(new FailingFunction());
             fail();
-        } catch (AtomicLongRuntimeException ignored) {
+        } catch (ClientAtomicLongTestRuntimeException ignored) {
         }
 
-        assertEquals(10, hzCounter.get());
+        assertEquals(10, counter.get());
     }
 
     @Test
     public void getAndAlter() {
-        IAtomicLong hzCounter = client.getAtomicLong("getAndAlter");
+        counter.set(10);
 
-        hzCounter.set(10);
-        assertEquals(10, hzCounter.getAndAlter(new AddOneFunction()));
-        assertEquals(11, hzCounter.get());
+        assertEquals(10, counter.getAndAlter(new AddOneFunction()));
+        assertEquals(11, counter.get());
     }
 
     private static class AddOneFunction implements IFunction<Long, Long> {
@@ -210,10 +194,10 @@ public class ClientAtomicLongTest {
     private static class FailingFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
-            throw new AtomicLongRuntimeException();
+            throw new ClientAtomicLongTestRuntimeException();
         }
     }
 
-    private static class AtomicLongRuntimeException extends RuntimeException {
+    private static class ClientAtomicLongTestRuntimeException extends RuntimeException {
     }
 }

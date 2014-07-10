@@ -26,7 +26,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
@@ -402,7 +401,6 @@ public class ClientIssueTest extends HazelcastTestSupport {
         }
 
         public void afterGet(Object value) {
-
         }
 
         public Object interceptPut(Object oldValue, Object newValue) {

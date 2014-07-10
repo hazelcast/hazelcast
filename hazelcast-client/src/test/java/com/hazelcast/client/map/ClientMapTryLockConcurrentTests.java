@@ -23,17 +23,16 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapTryLockConcurrentTests {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
+    public static void beforeClass() {
+        Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }

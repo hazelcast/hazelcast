@@ -28,7 +28,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
     private HazelcastInstance client;
 
     @Before
-    public void launchHazelcastServer() {
+    public void setup() {
         Hazelcast.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.setGroupConfig(new GroupConfig("dev", "dev-pass"));
@@ -37,7 +37,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
     }
 
     @After
-    public void shutdownHazelcastServer() {
+    public void teardown() {
         Hazelcast.shutdownAll();
     }
 

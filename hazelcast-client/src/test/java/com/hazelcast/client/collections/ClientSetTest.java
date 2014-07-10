@@ -42,28 +42,27 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ClientSetTest {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static HazelcastInstance server;
-    static ISet<String> set;
+    private static final String name = "test";
+
+    private static ISet<String> set;
 
     @BeforeClass
-    public static void init(){
+    public static void beforeClass(){
         Config config = new Config();
-        server = Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient(null);
-        set = hz.getSet(name);
+        Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
+        set = client.getSet(name);
     }
 
     @AfterClass
-    public static void destroy() {
-        hz.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Before
     @After
-    public void clear() throws IOException {
+    public void reset() throws IOException {
         set.clear();
     }
 
@@ -157,7 +156,6 @@ public class ClientSetTest {
 
     @Test
     public void testListener() throws Exception {
-        final ISet<String> tempSet = set;
         final CountDownLatch latch = new CountDownLatch(6);
 
         ItemListener<String> listener = new ItemListener<String>() {
@@ -168,16 +166,18 @@ public class ClientSetTest {
             public void itemRemoved(ItemEvent item) {
             }
         };
-        tempSet.addItemListener(listener, true);
+        String listenerID = set.addItemListener(listener, true);
 
         new Thread(){
             public void run() {
                 for (int i=0; i<5; i++){
-                    tempSet.add("item" + i);
+                    set.add("item" + i);
                 }
-                tempSet.add("done");
+                set.add("done");
             }
         }.start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
+
+        set.removeItemListener(listenerID);
     }
 }

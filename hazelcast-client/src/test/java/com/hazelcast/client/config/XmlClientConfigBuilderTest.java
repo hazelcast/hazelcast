@@ -64,25 +64,31 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class XmlClientConfigBuilderTest {
 
-    ClientConfig clientConfig;
+    private ClientConfig clientConfig;
 
     @Before
-    public void init() throws IOException {
+    public void setup() throws IOException {
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-full.xml");
         clientConfig = new XmlClientConfigBuilder(schemaResource).build();
 
+        reset();
     }
 
     @After
-    @Before
-    public void after() {
+    public void teardown() {
+        reset();
+    }
+
+    private void reset() {
         System.clearProperty("hazelcast.client.config");
     }
 
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
         File file = File.createTempFile("foo", "bar");
-        file.delete();
+        if (!file.delete()) {
+            fail();
+        }
         System.setProperty("hazelcast.client.config", file.getAbsolutePath());
 
         new XmlClientConfigBuilder();
@@ -105,7 +111,6 @@ public class XmlClientConfigBuilderTest {
         writer.close();
 
         System.setProperty("hazelcast.client.config", file.getAbsolutePath());
-
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
         assertEquals("foobar", config.getGroupConfig().getName());
@@ -120,7 +125,6 @@ public class XmlClientConfigBuilderTest {
     @Test
     public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
         System.setProperty("hazelcast.client.config", "classpath:test-hazelcast-client.xml");
-
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
         assertEquals("foobar", config.getGroupConfig().getName());
@@ -128,7 +132,7 @@ public class XmlClientConfigBuilderTest {
 
     @Test
     public void testGroupConfig() {
-        final GroupConfig groupConfig = clientConfig.getGroupConfig();
+        GroupConfig groupConfig = clientConfig.getGroupConfig();
         assertEquals("dev", groupConfig.getName());
         assertEquals("dev-pass", groupConfig.getPassword());
     }
@@ -140,24 +144,21 @@ public class XmlClientConfigBuilderTest {
         assertEquals("6", clientConfig.getProperty("hazelcast.client.retry.count"));
     }
 
-
     @Test
     public void testNetworkConfig() {
-
-        final ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         assertEquals(2, networkConfig.getAddresses().size());
         assertTrue(networkConfig.getAddresses().contains("127.0.0.1"));
         assertTrue(networkConfig.getAddresses().contains("127.0.0.2"));
-
         assertTrue(networkConfig.isSmartRouting());
         assertTrue(networkConfig.isRedoOperation());
 
-        final SocketInterceptorConfig socketInterceptorConfig = networkConfig.getSocketInterceptorConfig();
+        SocketInterceptorConfig socketInterceptorConfig = networkConfig.getSocketInterceptorConfig();
         assertTrue(socketInterceptorConfig.isEnabled());
         assertEquals("com.hazelcast.examples.MySocketInterceptor", socketInterceptorConfig.getClassName());
         assertEquals("bar", socketInterceptorConfig.getProperty("foo"));
 
-        final ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
+        ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
         assertTrue(awsConfig.isEnabled());
         assertTrue(awsConfig.isInsideAws());
         assertEquals("TEST_ACCESS_KEY", awsConfig.getAccessKey());
@@ -172,25 +173,25 @@ public class XmlClientConfigBuilderTest {
 
     @Test
     public void testSerializationConfig() {
-        final SerializationConfig serializationConfig = clientConfig.getSerializationConfig();
+        SerializationConfig serializationConfig = clientConfig.getSerializationConfig();
         assertEquals(3, serializationConfig.getPortableVersion());
 
-        final Map<Integer, String> dsClasses = serializationConfig.getDataSerializableFactoryClasses();
+        Map<Integer, String> dsClasses = serializationConfig.getDataSerializableFactoryClasses();
         assertEquals(1, dsClasses.size());
         assertEquals("com.hazelcast.examples.DataSerializableFactory", dsClasses.get(1));
 
-        final Map<Integer, String> pfClasses = serializationConfig.getPortableFactoryClasses();
+        Map<Integer, String> pfClasses = serializationConfig.getPortableFactoryClasses();
         assertEquals(1, pfClasses.size());
         assertEquals("com.hazelcast.examples.PortableFactory", pfClasses.get(2));
 
-        final Collection<SerializerConfig> serializerConfigs = serializationConfig.getSerializerConfigs();
+        Collection<SerializerConfig> serializerConfigs = serializationConfig.getSerializerConfigs();
         assertEquals(1, serializerConfigs.size());
-        final SerializerConfig serializerConfig = serializerConfigs.iterator().next();
 
+        SerializerConfig serializerConfig = serializerConfigs.iterator().next();
         assertEquals("com.hazelcast.examples.DummyType", serializerConfig.getTypeClassName());
         assertEquals("com.hazelcast.examples.SerializerFactory", serializerConfig.getClassName());
 
-        final GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
+        GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
         assertEquals("com.hazelcast.examples.GlobalSerializerFactory", globalSerializerConfig.getClassName());
 
         assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
@@ -203,7 +204,7 @@ public class XmlClientConfigBuilderTest {
 
     @Test
     public void testProxyFactories() {
-        final List<ProxyFactoryConfig> pfc = clientConfig.getProxyFactoryConfigs();
+        List<ProxyFactoryConfig> pfc = clientConfig.getProxyFactoryConfigs();
         assertEquals(3, pfc.size());
         assertTrue(pfc.contains(new ProxyFactoryConfig("com.hazelcast.examples.ProxyXYZ1", "sampleService1")));
         assertTrue(pfc.contains(new ProxyFactoryConfig("com.hazelcast.examples.ProxyXYZ2", "sampleService1")));
@@ -214,7 +215,7 @@ public class XmlClientConfigBuilderTest {
     public void testNearCacheConfigs() {
         assertNull(clientConfig.getNearCacheConfig("undefined"));
         assertEquals(1, clientConfig.getNearCacheConfigMap().size());
-        final NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("asd");
+        NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("asd");
 
         assertEquals(2000, nearCacheConfig.getMaxSize());
         assertEquals(90, nearCacheConfig.getTimeToLiveSeconds());
@@ -227,14 +228,14 @@ public class XmlClientConfigBuilderTest {
     @Test
     public void testLeftovers() {
         assertEquals(40, clientConfig.getExecutorPoolSize());
-
-        assertEquals("com.hazelcast.security.UsernamePasswordCredentials",
-                clientConfig.getSecurityConfig().getCredentialsClassname());
+        assertEquals(
+                "com.hazelcast.security.UsernamePasswordCredentials",
+                clientConfig.getSecurityConfig().getCredentialsClassname()
+        );
         assertEquals(40, clientConfig.getExecutorPoolSize());
-
         assertEquals("com.hazelcast.client.util.RandomLB", clientConfig.getLoadBalancer().getClass().getName());
 
-        final List<ListenerConfig> listenerConfigs = clientConfig.getListenerConfigs();
+        List<ListenerConfig> listenerConfigs = clientConfig.getListenerConfigs();
         assertEquals(3, listenerConfigs.size());
         assertTrue(listenerConfigs.contains(new ListenerConfig("com.hazelcast.examples.MembershipListener")));
         assertTrue(listenerConfigs.contains(new ListenerConfig("com.hazelcast.examples.InstanceListener")));

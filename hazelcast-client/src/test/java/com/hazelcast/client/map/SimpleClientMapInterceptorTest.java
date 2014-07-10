@@ -26,18 +26,16 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class SimpleClientMapInterceptorTest {
 
-    static HazelcastInstance server1;
-    static HazelcastInstance server2;
-    static HazelcastInstance client;
+    private static HazelcastInstance client;
 
-    static SimpleClientInterceptor interceptor;
+    private static SimpleClientInterceptor interceptor;
 
     @BeforeClass
-    public static void init() {
+    public static void beforeClass() {
         Config config = new Config();
         config.getSerializationConfig().addPortableFactory(PortableHelpersFactory.ID, new PortableHelpersFactory());
-        server1 = Hazelcast.newHazelcastInstance(config);
-        server2 = Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig().addPortableFactory(PortableHelpersFactory.ID, new PortableHelpersFactory());
@@ -47,8 +45,8 @@ public class SimpleClientMapInterceptorTest {
     }
 
     @AfterClass
-    public static void destroy() {
-        client.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 

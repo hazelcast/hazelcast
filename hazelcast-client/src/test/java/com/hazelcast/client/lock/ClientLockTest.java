@@ -45,30 +45,26 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientLockTest {
 
-    static final String name = "test";
+    private static final String name = "test";
 
-    static HazelcastInstance server;
-    static HazelcastInstance client;
-    static ILock lock;
+    private static ILock lock;
 
     @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    public static void beforeClass() {
+        Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         lock = client.getLock(name);
     }
 
     @AfterClass
-    public static void destroy() {
-        server.shutdown();
-        client.shutdown();
-        Hazelcast.shutdownAll();
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Before
     @After
-    public void clear() throws IOException {
+    public void reset() throws IOException {
         lock.forceUnlock();
     }
 

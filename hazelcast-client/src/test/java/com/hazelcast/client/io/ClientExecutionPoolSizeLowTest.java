@@ -24,29 +24,28 @@ import static org.junit.Assert.assertEquals;
 @Category(SlowTest.class)
 public class ClientExecutionPoolSizeLowTest {
 
-    static final int COUNT = 1000;
-    static HazelcastInstance server1;
-    static HazelcastInstance server2;
-    static HazelcastInstance client;
-    static IMap<Integer, Integer> map;
+    private static final int COUNT = 1000;
+
+    private HazelcastInstance server1;
+    private HazelcastInstance server2;
+    private IMap<Integer, Integer> map;
 
     @Before
-    public void init() {
+    public void setup() {
         Config config = new Config();
         server1 = Hazelcast.newHazelcastInstance(config);
+        server2 = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
         clientConfig.getNetworkConfig().setRedoOperation(true);
-        client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        server2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         map = client.getMap(randomString());
     }
 
     @After
-    public void destroy() {
+    public void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -94,5 +93,4 @@ public class ClientExecutionPoolSizeLowTest {
         }
         assertSizeEventually(COUNT, map);
     }
-
 }

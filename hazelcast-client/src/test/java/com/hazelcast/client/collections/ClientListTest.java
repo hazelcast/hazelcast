@@ -44,27 +44,27 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientListTest {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static IList<String> list;
+    private static final String name = "test";
+
+    private static IList<String> list;
 
     @BeforeClass
-    public static void init(){
+    public static void beforeClass(){
         Config config = new Config();
         Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient();
-        list = hz.getList(name);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        list = client.getList(name);
     }
 
     @AfterClass
-    public static void destroy() {
-        hz.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Before
     @After
-    public void clear() throws IOException {
+    public void reset() throws IOException {
         list.clear();
     }
 
@@ -197,7 +197,6 @@ public class ClientListTest {
 
     @Test
     public void testListener() throws Exception {
-        final IList<String> tempList = list;
         final CountDownLatch latch = new CountDownLatch(6);
 
         ItemListener<String> listener = new ItemListener<String>() {
@@ -208,16 +207,18 @@ public class ClientListTest {
             public void itemRemoved(ItemEvent item) {
             }
         };
-        tempList.addItemListener(listener, true);
+        String listenerID = list.addItemListener(listener, true);
 
         new Thread(){
             public void run() {
                 for (int i=0; i<5; i++){
-                    tempList.add("item" + i);
+                    list.add("item" + i);
                 }
-                tempList.add("done");
+                list.add("done");
             }
         }.start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
+
+        list.removeItemListener(listenerID);
     }
 }

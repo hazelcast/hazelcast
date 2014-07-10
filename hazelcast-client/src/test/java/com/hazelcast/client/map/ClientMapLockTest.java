@@ -43,17 +43,17 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapLockTest {
 
-    static HazelcastInstance client;
     static HazelcastInstance server;
+    static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
+    public static void beforeClass() {
         server = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }

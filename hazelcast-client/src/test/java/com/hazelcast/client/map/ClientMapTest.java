@@ -71,14 +71,14 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapTest {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private static HazelcastInstance server;
+    private static HazelcastInstance client;
 
-    static TestMapStore flushMapStore = new TestMapStore();
-    static TestMapStore transientMapStore = new TestMapStore();
+    private static TestMapStore flushMapStore = new TestMapStore();
+    private static TestMapStore transientMapStore = new TestMapStore();
 
     @BeforeClass
-    public static void init() {
+    public static void beforeClass() {
         Config config = new Config();
         config.getMapConfig("flushMap").
                 setMapStoreConfig(new MapStoreConfig()
@@ -94,8 +94,8 @@ public class ClientMapTest {
     }
 
     @AfterClass
-    public static void destroy() {
-        client.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
