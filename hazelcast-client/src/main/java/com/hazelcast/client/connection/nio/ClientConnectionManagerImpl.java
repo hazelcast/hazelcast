@@ -31,9 +31,9 @@ import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -98,8 +98,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private volatile ClientPrincipal principal;
     private final AtomicInteger callIdIncrementer = new AtomicInteger();
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
-    private final ClientExecutionService executionService;
-
+    private final ClientExecutionServiceImpl executionService;
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
 
@@ -128,7 +127,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         this.smartRouting = networkConfig.isSmartRouting();
-        this.executionService = client.getClientExecutionService();
+        this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.credentials = c;
         router = new Router(loadBalancer);
         inSelector = new ClientInSelectorImpl(client.getThreadGroup());
@@ -408,11 +407,38 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public void handlePacket(ClientPacket packet) {
         final ClientConnection conn = (ClientConnection) packet.getConn();
         conn.incrementPacketCount();
-        executionService.execute(new ClientPacketProcessor(packet));
+        executionService.executeInternal(new ClientPacketProcessor(packet));
     }
 
     public int newCallId() {
         return callIdIncrementer.incrementAndGet();
+    }
+
+    private class ClientEventProcessor implements Runnable {
+        final int callId;
+        final ClientConnection conn;
+        final Data response;
+
+        private ClientEventProcessor(int callId, ClientConnection conn, Data response) {
+            this.callId = callId;
+            this.conn = conn;
+            this.response = response;
+        }
+
+        @Override
+        public void run() {
+            handleEvent(response, callId, conn);
+        }
+
+        private void handleEvent(Data event, int callId, ClientConnection conn) {
+            final EventHandler eventHandler = conn.getEventHandler(callId);
+            final Object eventObject = getSerializationService().toObject(event);
+            if (eventHandler == null) {
+                logger.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
+                return;
+            }
+            eventHandler.handle(eventObject);
+        }
     }
 
     private class ClientPacketProcessor implements Runnable {
@@ -430,7 +456,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             final int callId = clientResponse.getCallId();
             final Data response = clientResponse.getResponse();
             if (clientResponse.isEvent()) {
-                handleEvent(response, callId, conn);
+                executionService.execute(new ClientEventProcessor(callId, conn, response));
             } else {
                 handlePacket(response, clientResponse.isError(), callId, conn);
             }
@@ -447,16 +473,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 response = getSerializationService().toObject(response);
             }
             future.notify(response);
-        }
-
-        private void handleEvent(Data event, int callId, ClientConnection conn) {
-            final EventHandler eventHandler = conn.getEventHandler(callId);
-            final Object eventObject = getSerializationService().toObject(event);
-            if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
-                return;
-            }
-            eventHandler.handle(eventObject);
         }
     }
 
