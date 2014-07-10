@@ -31,10 +31,14 @@ public class ClientHeartbeatMonitor implements Runnable {
     public void run() {
         final String memberUuid = clientEngine.getLocalMember().getUuid();
         for (ClientEndpoint clientEndpoint : clientEndpointManager.getEndpoints()) {
+            if (clientEndpoint.isFirstConnection()) {
+                continue;
+            }
             final Connection connection = clientEndpoint.getConnection();
             final long lastTimePackageReceived = connection.lastReadTime();
             final long timeoutInMillis = TimeUnit.SECONDS.toMillis(heartbeatTimeoutSeconds);
-            if (lastTimePackageReceived + timeoutInMillis < System.currentTimeMillis()) {
+            final long currentTimeInMillis = System.currentTimeMillis();
+            if (lastTimePackageReceived + timeoutInMillis < currentTimeInMillis) {
                 if (memberUuid.equals(clientEndpoint.getPrincipal().getOwnerUuid())) {
                     logger.log(Level.WARNING, "Client heartbeat is timed out , closing connection to " + connection);
                     connection.close();
