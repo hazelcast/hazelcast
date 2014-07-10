@@ -63,6 +63,7 @@ Each hazelcast minor release has its own xsd schemas. All available schemas are 
 - hazelcast-spring-3.3.xsd
 - hazelcast-spring-3.2.xsd
 - hazelcast-spring-3.1.xsd
+- hazelcast-spring-3.0.xsd
 
 
 #### Supported Configurations with *hazelcast* Namespace
