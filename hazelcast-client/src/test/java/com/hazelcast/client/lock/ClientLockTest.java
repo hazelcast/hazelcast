@@ -22,7 +22,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -30,7 +34,9 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/28/13
@@ -40,54 +46,58 @@ import static org.junit.Assert.*;
 public class ClientLockTest {
 
     static final String name = "test";
-    static HazelcastInstance hz;
-    static ILock l;
+
+    static HazelcastInstance server;
+    static HazelcastInstance client;
+    static ILock lock;
 
     @BeforeClass
     public static void init() {
-        Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient();
-        l = hz.getLock(name);
+        server = Hazelcast.newHazelcastInstance();
+        client = HazelcastClient.newHazelcastClient();
+        lock = client.getLock(name);
     }
 
     @AfterClass
     public static void destroy() {
-        hz.shutdown();
+        server.shutdown();
+        client.shutdown();
         Hazelcast.shutdownAll();
+        HazelcastClient.shutdownAll();
     }
 
     @Before
     @After
     public void clear() throws IOException {
-        l.forceUnlock();
+        lock.forceUnlock();
     }
 
     @Test
     public void testLock() throws Exception {
-        l.lock();
+        lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                if (!l.tryLock()) {
+                if (!lock.tryLock()) {
                     latch.countDown();
                 }
             }
         }.start();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
-        l.forceUnlock();
+        lock.forceUnlock();
     }
 
     @Test
     public void testLockTtl() throws Exception {
-        l.lock(3, TimeUnit.SECONDS);
+        lock.lock(3, TimeUnit.SECONDS);
         final CountDownLatch latch = new CountDownLatch(2);
         new Thread() {
             public void run() {
-                if (!l.tryLock()) {
+                if (!lock.tryLock()) {
                     latch.countDown();
                 }
                 try {
-                    if (l.tryLock(5, TimeUnit.SECONDS)) {
+                    if (lock.tryLock(5, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -96,18 +106,18 @@ public class ClientLockTest {
             }
         }.start();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-        l.forceUnlock();
+        lock.forceUnlock();
     }
 
     @Test
     public void testTryLock() throws Exception {
 
-        assertTrue(l.tryLock(2, TimeUnit.SECONDS));
+        assertTrue(lock.tryLock(2, TimeUnit.SECONDS));
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
                 try {
-                    if (!l.tryLock(2, TimeUnit.SECONDS)) {
+                    if (!lock.tryLock(2, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -117,13 +127,13 @@ public class ClientLockTest {
         }.start();
         assertTrue(latch.await(100, TimeUnit.SECONDS));
 
-        assertTrue(l.isLocked());
+        assertTrue(lock.isLocked());
 
         final CountDownLatch latch2 = new CountDownLatch(1);
         new Thread() {
             public void run() {
                 try {
-                    if (l.tryLock(20, TimeUnit.SECONDS)) {
+                    if (lock.tryLock(20, TimeUnit.SECONDS)) {
                         latch2.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -132,51 +142,51 @@ public class ClientLockTest {
             }
         }.start();
         Thread.sleep(1000);
-        l.unlock();
+        lock.unlock();
         assertTrue(latch2.await(100, TimeUnit.SECONDS));
-        assertTrue(l.isLocked());
-        l.forceUnlock();
+        assertTrue(lock.isLocked());
+        lock.forceUnlock();
     }
 
     @Test
     public void testForceUnlock() throws Exception {
-        l.lock();
+        lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                l.forceUnlock();
+                lock.forceUnlock();
                 latch.countDown();
             }
         }.start();
         assertTrue(latch.await(100, TimeUnit.SECONDS));
-        assertFalse(l.isLocked());
+        assertFalse(lock.isLocked());
     }
 
     @Test
     public void testStats() throws InterruptedException {
-        l.lock();
-        assertTrue(l.isLocked());
-        assertTrue(l.isLockedByCurrentThread());
-        assertEquals(1, l.getLockCount());
+        lock.lock();
+        assertTrue(lock.isLocked());
+        assertTrue(lock.isLockedByCurrentThread());
+        assertEquals(1, lock.getLockCount());
 
-        l.unlock();
-        assertFalse(l.isLocked());
-        assertEquals(0, l.getLockCount());
-        assertEquals(-1L, l.getRemainingLeaseTime());
+        lock.unlock();
+        assertFalse(lock.isLocked());
+        assertEquals(0, lock.getLockCount());
+        assertEquals(-1L, lock.getRemainingLeaseTime());
 
-        l.lock(1, TimeUnit.MINUTES);
-        assertTrue(l.isLocked());
-        assertTrue(l.isLockedByCurrentThread());
-        assertEquals(1, l.getLockCount());
-        assertTrue(l.getRemainingLeaseTime() > 1000 * 30);
+        lock.lock(1, TimeUnit.MINUTES);
+        assertTrue(lock.isLocked());
+        assertTrue(lock.isLockedByCurrentThread());
+        assertEquals(1, lock.getLockCount());
+        assertTrue(lock.getRemainingLeaseTime() > 1000 * 30);
 
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                assertTrue(l.isLocked());
-                assertFalse(l.isLockedByCurrentThread());
-                assertEquals(1, l.getLockCount());
-                assertTrue(l.getRemainingLeaseTime() > 1000 * 30);
+                assertTrue(lock.isLocked());
+                assertFalse(lock.isLockedByCurrentThread());
+                assertEquals(1, lock.getLockCount());
+                assertTrue(lock.getRemainingLeaseTime() > 1000 * 30);
                 latch.countDown();
             }
         }.start();

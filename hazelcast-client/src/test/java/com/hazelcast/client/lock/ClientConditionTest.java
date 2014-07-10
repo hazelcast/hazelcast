@@ -1,13 +1,19 @@
 package com.hazelcast.client.lock;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICondition;
+import com.hazelcast.core.ILock;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -20,23 +26,27 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientConditionTest extends HazelcastTestSupport{
+public class ClientConditionTest extends HazelcastTestSupport {
+
     private static final String name = "test";
+
+    private static HazelcastInstance server;
     private static HazelcastInstance client;
     private static ILock lock;
-    private static HazelcastInstance hz;
 
     @BeforeClass
     public static void init() {
-        hz = Hazelcast.newHazelcastInstance();
+        server = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
         lock = client.getLock(name);
     }
 
     @AfterClass
     public static void destroy() {
+        server.shutdown();
         client.shutdown();
         Hazelcast.shutdownAll();
+        HazelcastClient.shutdownAll();
     }
 
     @Before
@@ -47,12 +57,12 @@ public class ClientConditionTest extends HazelcastTestSupport{
 
     @Test
     public void testLockConditionSimpleUsage() throws InterruptedException {
-        final String name = "testLockConditionSimpleUsage";
+        String name = "testLockConditionSimpleUsage";
         final ILock lock = client.getLock(name);
         final ICondition condition = lock.newCondition(name + "c");
         final AtomicInteger count = new AtomicInteger(0);
 
-        Thread t = new Thread(new Runnable() {
+        Thread thread = new Thread(new Runnable() {
             public void run() {
                 lock.lock();
                 try {
@@ -69,7 +79,7 @@ public class ClientConditionTest extends HazelcastTestSupport{
                 }
             }
         });
-        t.start();
+        thread.start();
         Thread.sleep(1000);
 
         assertEquals(false, lock.isLocked());
@@ -77,21 +87,22 @@ public class ClientConditionTest extends HazelcastTestSupport{
         assertEquals(true, lock.isLocked());
         condition.signal();
         lock.unlock();
-        t.join();
+        thread.join();
         assertEquals(2, count.get());
     }
 
     @Test
     public void testLockConditionSignalAll() throws InterruptedException {
-        final String name = "testLockConditionSimpleUsage";
+        String name = "testLockConditionSimpleUsage";
         final ILock lock = client.getLock(name);
         final ICondition condition = lock.newCondition(name + "c");
         final AtomicInteger count = new AtomicInteger(0);
-        final int k = 50;
 
-        final CountDownLatch awaitLatch = new CountDownLatch(k);
-        final CountDownLatch finalLatch = new CountDownLatch(k);
-        for (int i = 0; i < k; i++) {
+        int threadCount = 50;
+        final CountDownLatch awaitLatch = new CountDownLatch(threadCount);
+        final CountDownLatch finalLatch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
             new Thread(new Runnable() {
                 public void run() {
                     lock.lock();
@@ -119,7 +130,7 @@ public class ClientConditionTest extends HazelcastTestSupport{
         condition.signalAll();
         lock.unlock();
         finalLatch.await(1, TimeUnit.MINUTES);
-        assertEquals(k * 2, count.get());
+        assertEquals(threadCount * 2, count.get());
     }
 
 
@@ -145,30 +156,30 @@ public class ClientConditionTest extends HazelcastTestSupport{
         try {
             latch.countDown();
             condition.await();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
         lock.unlock();
     }
 
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalConditionUsageWithoutAcquiringLock() {
-        final ICondition condition = lock.newCondition("condition");
+        ICondition condition = lock.newCondition("condition");
         try {
             condition.await();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
     }
 
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalConditionUsageSignalToNonAwaiter() {
-        final ICondition condition = lock.newCondition("condition");
+        ICondition condition = lock.newCondition("condition");
         condition.signal();
     }
 
     @Test
     public void testConditionUsage() throws InterruptedException {
         lock.lock();
-        final ICondition condition = lock.newCondition("condition");
+        ICondition condition = lock.newCondition("condition");
         condition.await(1, TimeUnit.SECONDS);
         lock.unlock();
     }
