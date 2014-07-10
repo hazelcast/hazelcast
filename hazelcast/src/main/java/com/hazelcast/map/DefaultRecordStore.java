@@ -379,10 +379,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public Object evict(Data key) {
         checkIfLoaded();
-        return evict0(key);
+        return evictInternal(key);
     }
 
-    Object evict0(Data key) {
+    Object evictInternal(Data key) {
         Record record = records.get(key);
         Object value = null;
         if (record != null) {
@@ -401,14 +401,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     public int evictAll() {
         checkIfLoaded();
         final int size = size();
-        final Set<Data> keysToPreserve = evictAll0();
+        final Set<Data> keysToPreserve = evictAllInternal();
         removeIndexByPreservingKeys(keysToPreserve);
         return size - keysToPreserve.size();
     }
 
     @Override
     public void evictAllBackup() {
-        evictAll0();
+        evictAllInternal();
     }
 
     /**
@@ -416,7 +416,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
      *
      * @return preserved keys.
      */
-    private Set<Data> evictAll0() {
+    private Set<Data> evictAllInternal() {
         resetSizeEstimator();
         resetAccessSequenceNumber();
 
@@ -426,8 +426,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             keysToPreserve = recordsToPreserve.keySet();
             updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
         }
+        addToStagingArea(recordsToPreserve);
         clearRecordsMap(recordsToPreserve);
         return keysToPreserve;
+    }
+
+    private void addToStagingArea(Map<Data, Record> excludeRecords) {
+        final long now = getNow();
+        Iterator<Record> iterator = records.values().iterator();
+        while (iterator.hasNext()) {
+            Record record = iterator.next();
+            if (excludeRecords == null || !excludeRecords.containsKey(record.getKey())) {
+                final Data key = record.getKey();
+                final Object value = record.getValue();
+                mapDataStore.addStagingArea(key, value, now);
+            }
+        }
     }
 
     /**

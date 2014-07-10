@@ -125,6 +125,34 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         assertEquals(100, map.get(1));
     }
 
+    @Test
+    public void evictAll_then_loadAll_onSameKey() throws Exception {
+        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .withBackupCount(0)
+                .withWriteDelaySeconds(100)
+                .withPartitionCount(1)
+                .build();
+
+        map.put(1, 100);
+
+        final Map<Integer, Integer> fill = new HashMap<Integer, Integer>();
+        fill.put(1, -1);
+        mapStore.storeAll(fill);
+
+        map.evictAll();
+
+        final Set<Object> loadKeys = new HashSet<Object>();
+        loadKeys.add(1);
+
+        map.loadAll(loadKeys, true);
+
+        assertEquals(100, map.get(1));
+    }
+
+
     private void assertFinalValueEquals(final int expected, final int actual) {
         assertTrueEventually(new AssertTask() {
             @Override
