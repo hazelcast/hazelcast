@@ -306,6 +306,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 boolean promote = false;
                 if (deadAddress.equals(partition.getOwner()) && thisAddress.equals(partition.getReplicaAddress(1))) {
                     promote = true;
+                    partition.setMigrating(true);
                 }
                 // shift partition table up.
                 partition.onDeadAddress(deadAddress);
@@ -1546,7 +1547,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         partitionService.clearPartitionReplica(partitionId, replicaIndex);
                     }
                 } else if (thisAddress.equals(newAddress)) {
-                    partitionService.clearPartitionReplica(partitionId, replicaIndex);
                     partitionService.forcePartitionReplicaSync(partitionId, replicaIndex);
                 }
             }

@@ -36,10 +36,18 @@ final class PromoteFromBackupOperation extends AbstractOperation
     @Override
     public void run() throws Exception {
         logPromotingPartition();
+        try {
+            PartitionMigrationEvent event = createPartitionMigrationEvent();
+            sendToAllMigrationAwareServices(event);
+        } finally {
+            clearPartitionMigratingFlag();
+        }
+    }
 
-        PartitionMigrationEvent event = createPartitionMigrationEvent();
-
-        sendToAllMigrationAwareServices(event);
+    private void clearPartitionMigratingFlag() {
+        InternalPartitionServiceImpl service = getService();
+        InternalPartitionImpl partition = service.getPartition(getPartitionId());
+        partition.setMigrating(false);
     }
 
     private void sendToAllMigrationAwareServices(PartitionMigrationEvent event) {
