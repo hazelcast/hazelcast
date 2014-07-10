@@ -792,7 +792,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     putInternal(mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
                             mapService.getMapServiceContext().toData(entry.getValue()),
                             -1,
-                            TimeUnit.SECONDS);
+                            TimeUnit.MILLISECONDS);
                 }
             }
         } catch (Exception e) {
@@ -1112,9 +1112,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
-        if (timeunit == null) {
-            return time;
-        }
         long timeInMillis = timeunit.toMillis(time);
         if (time > 0 && timeInMillis == 0) {
             timeInMillis = 1;
