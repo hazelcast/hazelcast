@@ -132,7 +132,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
                            Object valueAfterProcess, EntryEventType eventType) {
         final String mapName = name;
         final MapServiceContext mapServiceContext = getMapServiceContext();
-        if (mapServiceContext.hasRegisteredListener(mapName) || eventType == NO_NEED_TO_FIRE_EVENT) {
+        if (!mapServiceContext.hasRegisteredListener(mapName) || eventType == NO_NEED_TO_FIRE_EVENT) {
             return;
         }
         final Data oldValue = mapServiceContext.toData(valueBeforeProcess);
