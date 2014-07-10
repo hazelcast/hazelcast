@@ -9,7 +9,9 @@ import com.hazelcast.map.EntryViews;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.MapEventPublisher;
+import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapServiceContext;
+import com.hazelcast.map.NearCacheProvider;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -57,7 +59,7 @@ public class MultipleEntryOperation extends AbstractMapOperation
 
     @Override
     public void run() throws Exception {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final MapServiceContext mapServiceContext = getMapServiceContext();
         response = new MapEntrySet();
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         final RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
@@ -69,7 +71,7 @@ public class MultipleEntryOperation extends AbstractMapOperation
             if (partitionService.getPartitionId(key) != getPartitionId()) {
                 continue;
             }
-            long start = System.currentTimeMillis();
+            long start = mapServiceContext.getNow();
             Object objectKey = mapServiceContext.toObject(key);
             final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
             final Object valueBeforeProcess = mapEntry.getValue();
@@ -104,36 +106,56 @@ public class MultipleEntryOperation extends AbstractMapOperation
                     recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(key, valueAfterProcess));
                 }
             }
-            fireEvent(key, valueBeforeProcess, valueAfterProcess, dataValue, recordStore, eventType);
+            fireEvent(key, valueBeforeProcess, valueAfterProcess, eventType);
+            invalidateNearCache(key);
+            publishWanReplicationEvent(key, dataValue, recordStore, eventType);
         }
     }
 
-    private void fireEvent(Data key, Object valueBeforeProcess, Object valueAfterProcess, Data dataValue,
-                           RecordStore recordStore,
+    private void fireEvent(Data key, Object valueBeforeProcess, Object valueAfterProcess,
                            EntryEventType eventType) {
-        if (eventType == NO_NEED_TO_FIRE_EVENT) {
+        final String mapName = name;
+        final MapServiceContext mapServiceContext = getMapServiceContext();
+        if (mapServiceContext.hasRegisteredListener(mapName) || eventType == NO_NEED_TO_FIRE_EVENT) {
             return;
         }
-        final MapServiceContext mapServiceContext = recordStore.getMapContainer().getMapServiceContext();
         final Data oldValue = mapServiceContext.toData(valueBeforeProcess);
         final Data value = mapServiceContext.toData(valueAfterProcess);
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
-        if (mapServiceContext.getNearCacheProvider().isNearCacheAndInvalidationEnabled(name)) {
-            mapServiceContext.getNearCacheProvider().invalidateAllNearCaches(name, key);
+        mapEventPublisher.publishEvent(getCallerAddress(), mapName, eventType, key, oldValue, value);
+    }
+
+    private void invalidateNearCache(Data key) {
+        final String mapName = name;
+        final MapServiceContext mapServiceContext = getMapServiceContext();
+        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
+            nearCacheProvider.invalidateAllNearCaches(mapName, key);
         }
+    }
+
+    private void publishWanReplicationEvent(Data key, Data dataValue,
+                                            RecordStore recordStore, EntryEventType eventType) {
+        final String mapName = name;
+        final MapServiceContext mapServiceContext = getMapServiceContext();
+        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             if (EntryEventType.REMOVED.equals(eventType)) {
-                mapEventPublisher.publishWanReplicationRemove(name, key, Clock.currentTimeMillis());
+                mapEventPublisher.publishWanReplicationRemove(mapName, key, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(key);
                 if (record != null) {
                     Data tempValue = mapServiceContext.toData(dataValue);
                     final EntryView entryView = EntryViews.createSimpleEntryView(key, tempValue, record);
-                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                    mapEventPublisher.publishWanReplicationUpdate(mapName, entryView);
                 }
             }
         }
+    }
+
+    private MapServiceContext getMapServiceContext() {
+        final MapService mapService = getService();
+        return mapService.getMapServiceContext();
     }
 
     @Override
