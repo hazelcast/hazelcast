@@ -20,12 +20,13 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.IMap;
 
+@SuppressWarnings("unused")
 public abstract class AbstractClientMapReduceJobTest {
 
     protected ClientConfig buildClientConfig() {
-        ClientConfig config = new XmlClientConfigBuilder().build();
-        return config;
+        return new XmlClientConfigBuilder().build();
     }
 
     protected Config buildConfig() {
@@ -34,4 +35,26 @@ public abstract class AbstractClientMapReduceJobTest {
         return config;
     }
 
+    protected void populateMap(IMap<Integer, Integer> map, int count) {
+        for (int i = 0; i < count; i++) {
+            map.put(i, i);
+        }
+    }
+
+    protected int calculateExceptedResult(int count) {
+        int expectedResult = 0;
+        for (int i = 0; i < count; i++) {
+            expectedResult += i;
+        }
+        return expectedResult;
+    }
+
+    protected int[] calculateExpectedResult(int arraySize, int count) {
+        int[] expectedResults = new int[arraySize];
+        for (int i = 0; i < count; i++) {
+            int index = i % arraySize;
+            expectedResults[index] += i;
+        }
+        return expectedResults;
+    }
 }

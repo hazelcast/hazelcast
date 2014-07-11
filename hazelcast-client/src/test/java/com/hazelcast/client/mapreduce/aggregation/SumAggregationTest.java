@@ -34,9 +34,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class SumAggregationTest
-        extends AbstractAggregationTest {
-
+public class SumAggregationTest extends AbstractAggregationTest {
     @Test
     public void testBigDecimalSum()
             throws Exception {
@@ -49,8 +47,8 @@ public class SumAggregationTest
         }, BigDecimal.class);
 
         BigDecimal expectation = BigDecimal.ZERO;
-        for (int i = 0; i < values.length; i++) {
-            expectation = expectation.add(values[i]);
+        for (BigDecimal value : values) {
+            expectation = expectation.add(value);
         }
 
         Aggregation<String, BigDecimal, BigDecimal> aggregation = Aggregations.bigDecimalSum();
@@ -59,8 +57,7 @@ public class SumAggregationTest
     }
 
     @Test
-    public void testBigIntegerSum()
-            throws Exception {
+    public void testBigIntegerSum() throws Exception {
 
         BigInteger[] values = buildPlainValues(new ValueProvider<BigInteger>() {
             @Override
@@ -70,8 +67,8 @@ public class SumAggregationTest
         }, BigInteger.class);
 
         BigInteger expectation = BigInteger.ZERO;
-        for (int i = 0; i < values.length; i++) {
-            expectation = expectation.add(values[i]);
+        for (BigInteger value : values) {
+            expectation = expectation.add(value);
         }
 
         Aggregation<String, BigInteger, BigInteger> aggregation = Aggregations.bigIntegerSum();
@@ -80,9 +77,7 @@ public class SumAggregationTest
     }
 
     @Test
-    public void testDoubleSum()
-            throws Exception {
-
+    public void testDoubleSum() throws Exception {
         Double[] values = buildPlainValues(new ValueProvider<Double>() {
             @Override
             public Double provideRandom(Random random) {
@@ -91,8 +86,8 @@ public class SumAggregationTest
         }, Double.class);
 
         double expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i];
+        for (Double value : values) {
+            expectation += value;
         }
 
         Aggregation<String, Double, Double> aggregation = Aggregations.doubleSum();
@@ -101,9 +96,7 @@ public class SumAggregationTest
     }
 
     @Test
-    public void testIntegerSum()
-            throws Exception {
-
+    public void testIntegerSum() throws Exception {
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
             public Integer provideRandom(Random random) {
@@ -112,8 +105,8 @@ public class SumAggregationTest
         }, Integer.class);
 
         int expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i];
+        for (Integer value : values) {
+            expectation += value;
         }
 
         Aggregation<String, Integer, Integer> aggregation = Aggregations.integerSum();
@@ -122,9 +115,7 @@ public class SumAggregationTest
     }
 
     @Test
-    public void testLongSum()
-            throws Exception {
-
+    public void testLongSum() throws Exception {
         Long[] values = buildPlainValues(new ValueProvider<Long>() {
             @Override
             public Long provideRandom(Random random) {
@@ -133,8 +124,8 @@ public class SumAggregationTest
         }, Long.class);
 
         long expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i];
+        for (Long value : values) {
+            expectation += value;
         }
 
         Aggregation<String, Long, Long> aggregation = Aggregations.longSum();
@@ -143,9 +134,7 @@ public class SumAggregationTest
     }
 
     @Test
-    public void testBigDecimalSumWithExtractor()
-            throws Exception {
-
+    public void testBigDecimalSumWithExtractor() throws Exception {
         Value<BigDecimal>[] values = buildValues(new ValueProvider<BigDecimal>() {
             @Override
             public BigDecimal provideRandom(Random random) {
@@ -154,8 +143,8 @@ public class SumAggregationTest
         });
 
         BigDecimal expectation = BigDecimal.ZERO;
-        for (int i = 0; i < values.length; i++) {
-            expectation = expectation.add(values[i].value);
+        for (Value<BigDecimal> value : values) {
+            expectation = expectation.add(value.value);
         }
 
         Aggregation<String, BigDecimal, BigDecimal> aggregation = Aggregations.bigDecimalSum();
@@ -164,9 +153,7 @@ public class SumAggregationTest
     }
 
     @Test
-    public void testBigIntegerSumWithExtractor()
-            throws Exception {
-
+    public void testBigIntegerSumWithExtractor() throws Exception {
         Value<BigInteger>[] values = buildValues(new ValueProvider<BigInteger>() {
             @Override
             public BigInteger provideRandom(Random random) {
@@ -175,8 +162,8 @@ public class SumAggregationTest
         });
 
         BigInteger expectation = BigInteger.ZERO;
-        for (int i = 0; i < values.length; i++) {
-            expectation = expectation.add(values[i].value);
+        for (Value<BigInteger> value : values) {
+            expectation = expectation.add(value.value);
         }
 
         Aggregation<String, BigInteger, BigInteger> aggregation = Aggregations.bigIntegerSum();
@@ -185,9 +172,7 @@ public class SumAggregationTest
     }
 
     @Test
-    public void testDoubleSumWithExtractor()
-            throws Exception {
-
+    public void testDoubleSumWithExtractor() throws Exception {
         Value<Double>[] values = buildValues(new ValueProvider<Double>() {
             @Override
             public Double provideRandom(Random random) {
@@ -196,8 +181,8 @@ public class SumAggregationTest
         });
 
         double expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i].value;
+        for (Value<Double> value : values) {
+            expectation += value.value;
         }
 
         Aggregation<String, Double, Double> aggregation = Aggregations.doubleSum();
@@ -206,9 +191,7 @@ public class SumAggregationTest
     }
 
     @Test
-    public void testIntegerSumWithExtractor()
-            throws Exception {
-
+    public void testIntegerSumWithExtractor() throws Exception {
         Value<Integer>[] values = buildValues(new ValueProvider<Integer>() {
             @Override
             public Integer provideRandom(Random random) {
@@ -217,8 +200,8 @@ public class SumAggregationTest
         });
 
         int expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i].value;
+        for (Value<Integer> value : values) {
+            expectation += value.value;
         }
 
         Aggregation<String, Integer, Integer> aggregation = Aggregations.integerSum();
@@ -227,9 +210,7 @@ public class SumAggregationTest
     }
 
     @Test
-    public void testLongSumWithExtractor()
-            throws Exception {
-
+    public void testLongSumWithExtractor() throws Exception {
         Value<Long>[] values = buildValues(new ValueProvider<Long>() {
             @Override
             public Long provideRandom(Random random) {
@@ -238,8 +219,8 @@ public class SumAggregationTest
         });
 
         long expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i].value;
+        for (Value<Long> value : values) {
+            expectation += value.value;
         }
 
         Aggregation<String, Long, Long> aggregation = Aggregations.longSum();
@@ -247,9 +228,7 @@ public class SumAggregationTest
         assertEquals(expectation, result);
     }
 
-    private <T, R> R testSum(T[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
-
+    private <T, R> R testSum(T[] values, Aggregation<String, T, R> aggregation) throws Exception {
         String mapName = randomMapName();
         IMap<String, T> map = HAZELCAST_INSTANCE.getMap(mapName);
 
@@ -261,9 +240,7 @@ public class SumAggregationTest
         return map.aggregate(supplier, aggregation);
     }
 
-    private <T, R> R testSumWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
-
+    private <T, R> R testSumWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation) throws Exception {
         String mapName = randomMapName();
         IMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMap(mapName);
 

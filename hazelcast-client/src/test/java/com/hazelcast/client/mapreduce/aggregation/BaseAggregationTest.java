@@ -35,13 +35,10 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class BaseAggregationTest
-        extends AbstractAggregationTest {
+public class BaseAggregationTest  extends AbstractAggregationTest {
 
     @Test
-    public void testCountAggregation()
-            throws Exception {
-
+    public void testCountAggregation() throws Exception {
         String mapName = randomMapName();
         IMap<String, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
 
@@ -63,8 +60,7 @@ public class BaseAggregationTest
     }
 
     @Test
-    public void testDistinctValuesAggregation()
-            throws Exception {
+    public void testDistinctValuesAggregation() throws Exception {
 
         final String[] probes = {"Dog", "Food", "Champion", "Hazelcast", "Security", "Integer", "Random", "System"};
         Set<String> expectation = new HashSet<String>(Arrays.asList(probes));
@@ -88,6 +84,5 @@ public class BaseAggregationTest
         Aggregation<String, String, Set<String>> aggregation = Aggregations.distinctValues();
         Set<String> distinctValues = map.aggregate(supplier, aggregation);
         assertEquals(expectation, distinctValues);
-
     }
 }
