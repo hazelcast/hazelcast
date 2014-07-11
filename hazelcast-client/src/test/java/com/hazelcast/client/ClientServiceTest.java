@@ -198,11 +198,11 @@ public class ClientServiceTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_IO_THREAD_COUNT, "1");
 
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
 
         int clientCount = 10;
-        ClientDisconnectedListenerLatch listenerLatch = new ClientDisconnectedListenerLatch(clientCount);
+        ClientDisconnectedListenerLatch listenerLatch = new ClientDisconnectedListenerLatch(2 * clientCount);
         hz.getClientService().addClientListener(listenerLatch);
         hz2.getClientService().addClientListener(listenerLatch);
 
@@ -230,8 +230,19 @@ public class ClientServiceTest extends HazelcastTestSupport {
             }
 
             assertOpenEventually(listenerLatch, 30);
-            assertTrue(hz.getClientService().getConnectedClients().isEmpty());
-            assertTrue(hz2.getClientService().getConnectedClients().isEmpty());
+
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(0, hz.getClientService().getConnectedClients().size());
+                }
+            }, 10);
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(0, hz2.getClientService().getConnectedClients().size());
+                }
+            }, 10);
         } finally {
             ex.shutdown();
         }
