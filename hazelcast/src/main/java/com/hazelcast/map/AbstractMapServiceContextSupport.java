@@ -5,6 +5,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 
@@ -205,6 +206,14 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
     @Override
     public boolean removeEventListener(String mapName, String registrationId) {
         return nodeEngine.getEventService().deregisterListener(mapServiceContext.serviceName(), mapName, registrationId);
+    }
+
+    @Override
+    public boolean hasRegisteredListener(String name) {
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
+        final EventService eventService = mapServiceContext.getNodeEngine().getEventService();
+        final String serviceName = mapServiceContext.serviceName();
+        return eventService.hasEventRegistration(serviceName, name);
     }
 }
 

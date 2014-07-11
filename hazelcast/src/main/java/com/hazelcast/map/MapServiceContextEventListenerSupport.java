@@ -15,4 +15,6 @@ public interface MapServiceContextEventListenerSupport {
     String addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName);
 
     boolean removeEventListener(String mapName, String registrationId);
+
+    boolean hasRegisteredListener(String mapName);
 }
