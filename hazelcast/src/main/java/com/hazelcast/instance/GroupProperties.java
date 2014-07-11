@@ -98,7 +98,6 @@ public class GroupProperties {
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
     public static final String PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY = "hazelcast.map.write.behind.queue.capacity";
     public static final String PROP_ENTERPRISE_WAN_REP_QUEUESIZE = "hazelcast.enterprise.wanrep.queuesize";
-    public static final String PROP_CLIENT_HEARTBEAT_INTERVAL_SECONDS = "hazelcast.client.heartbeat.interval.seconds";
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
 
     public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;
@@ -232,8 +231,6 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_WAN_REP_QUEUESIZE;
 
-    public final GroupProperty CLIENT_HEARTBEAT_INTERVAL_SECONDS;
-
     public final GroupProperty CLIENT_MAX_NO_HEARTBEAT_SECONDS;
 
     /**
@@ -312,7 +309,6 @@ public class GroupProperties {
         MAP_WRITE_BEHIND_QUEUE_CAPACITY
                 = new GroupProperty(config, PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY, "50000");
         ENTERPRISE_WAN_REP_QUEUESIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUESIZE, "100000");
-        CLIENT_HEARTBEAT_INTERVAL_SECONDS = new GroupProperty(config, PROP_CLIENT_HEARTBEAT_INTERVAL_SECONDS, "10");
         CLIENT_MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "60");
     }
 
