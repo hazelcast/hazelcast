@@ -20,10 +20,8 @@ import java.io.Serializable;
 import java.util.concurrent.Callable;
 
 public class NullCallable implements Callable<String>, Serializable {
-
     @Override
     public String call() throws Exception {
         return null;
     }
-
 }

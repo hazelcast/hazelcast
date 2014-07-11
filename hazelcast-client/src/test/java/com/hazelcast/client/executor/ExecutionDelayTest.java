@@ -48,20 +48,21 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ExecutionDelayTest extends HazelcastTestSupport {
 
-    private static final int NODES = 3;
-    private final List<HazelcastInstance> hzs = new ArrayList<HazelcastInstance>(NODES);
-    static final AtomicInteger counter = new AtomicInteger();
+    private static final int CLUSTER_SIZE = 3;
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+
+    private final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(CLUSTER_SIZE);
 
     @Before
-    public void init() {
-        counter.set(0);
-        for (int i = 0; i < NODES; i++) {
-            hzs.add(Hazelcast.newHazelcastInstance());
+    public void setup() {
+        for (int i = 0; i < CLUSTER_SIZE; i++) {
+            instances.add(Hazelcast.newHazelcastInstance());
         }
+        COUNTER.set(0);
     }
 
     @After
-    public void destroy() throws InterruptedException {
+    public void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -74,7 +75,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
             ex.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    hzs.get(1).getLifecycleService().terminate();
+                    instances.get(1).getLifecycleService().terminate();
                 }
             }, 1000, TimeUnit.MILLISECONDS);
 
@@ -84,7 +85,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() {
-                    assertEquals(executions, counter.get());
+                    assertEquals(executions, COUNTER.get());
                 }
             });
         } finally {
@@ -100,7 +101,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
             ex.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    hzs.get(1).shutdown();
+                    instances.get(1).shutdown();
                 }
             }, 1000, TimeUnit.MILLISECONDS);
 
@@ -110,7 +111,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() {
-                    assertEquals(executions, counter.get());
+                    assertEquals(executions, COUNTER.get());
                 }
             });
         } finally {
@@ -133,7 +134,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
     private static class Task implements Callable, Serializable {
         @Override
         public Object call() throws Exception {
-            counter.incrementAndGet();
+            COUNTER.incrementAndGet();
             return null;
         }
     }

@@ -30,7 +30,7 @@ public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInst
 
     private HazelcastInstance instance;
 
-    public String mapName;
+    private String mapName;
 
     @SuppressWarnings("unused")
     public MapPutRunnable() {

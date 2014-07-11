@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-
 /**
  * this task should execute on a node owning the given partitionKey argument,
  * the action is to put the UUid of the executing node into a map with the given name
@@ -32,8 +31,8 @@ public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializab
 
     private HazelcastInstance instance;
 
-    public String mapName;
-    public P partitionKey;
+    private String mapName;
+    private P partitionKey;
 
     @SuppressWarnings("unused")
     public MapPutPartitionAwareRunnable() {

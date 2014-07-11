@@ -43,17 +43,16 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ClientExecutorServiceInvokeTest {
 
-    static HazelcastInstance instance1;
-    static HazelcastInstance client;
+    private static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
-        instance1 = Hazelcast.newHazelcastInstance();
+    public static void beforeClass() {
+        Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }

@@ -50,23 +50,19 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientExecutorServiceTest {
 
-    static HazelcastInstance instance1;
-    static HazelcastInstance instance2;
-    static HazelcastInstance instance3;
-
-    static HazelcastInstance client;
+    private static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
-        instance1 = Hazelcast.newHazelcastInstance();
-        instance2 = Hazelcast.newHazelcastInstance();
-        instance3 = Hazelcast.newHazelcastInstance();
+    public static void beforeClass() {
+        Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
-        client.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 

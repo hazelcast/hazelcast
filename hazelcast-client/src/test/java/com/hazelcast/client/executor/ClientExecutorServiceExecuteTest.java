@@ -38,24 +38,24 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientExecutorServiceExecuteTest {
 
-    static final int CLUSTER_SIZE = 3;
-    static HazelcastInstance instance1;
-    static HazelcastInstance instance2;
-    static HazelcastInstance instance3;
+    private static final int CLUSTER_SIZE = 3;
 
-    static HazelcastInstance client;
+    private static HazelcastInstance server1;
+    private static HazelcastInstance server2;
+
+    private static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
-        instance1 = Hazelcast.newHazelcastInstance();
-        instance2 = Hazelcast.newHazelcastInstance();
-        instance3 = Hazelcast.newHazelcastInstance();
+    public static void beforeClass() {
+        server1 = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
+        server2 = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
-        client.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
@@ -94,9 +94,9 @@ public class ClientExecutorServiceExecuteTest {
         IExecutorService service = client.getExecutorService(randomString());
         String mapName = randomString();
 
-        Member member = instance1.getCluster().getLocalMember();
+        Member member = server1.getCluster().getLocalMember();
         final String targetUuid = member.getUuid();
-        String key = generateKeyOwnedBy(instance1);
+        String key = generateKeyOwnedBy(server1);
 
         service.executeOnKeyOwner(new MapPutRunnable(mapName), key);
 
@@ -120,7 +120,7 @@ public class ClientExecutorServiceExecuteTest {
         IExecutorService service = client.getExecutorService(randomString());
         String mapName = randomString();
 
-        Member member = instance1.getCluster().getLocalMember();
+        Member member = server1.getCluster().getLocalMember();
         final String targetUuid = member.getUuid();
 
         service.executeOnMember(new MapPutRunnable(mapName), member);
@@ -146,10 +146,10 @@ public class ClientExecutorServiceExecuteTest {
         IExecutorService service = client.getExecutorService(randomString());
         String mapName = randomString();
         Collection<Member> collection = new ArrayList<Member>();
-        final Member member1 = instance1.getCluster().getLocalMember();
-        final Member member3 = instance3.getCluster().getLocalMember();
+        final Member member1 = server1.getCluster().getLocalMember();
+        final Member member2 = server2.getCluster().getLocalMember();
         collection.add(member1);
-        collection.add(member3);
+        collection.add(member2);
 
         service.executeOnMembers(new MapPutRunnable(mapName), collection);
 
@@ -157,7 +157,7 @@ public class ClientExecutorServiceExecuteTest {
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
                 assertTrue(map.containsKey(member1.getUuid()));
-                assertTrue(map.containsKey(member3.getUuid()));
+                assertTrue(map.containsKey(member2.getUuid()));
             }
         });
     }

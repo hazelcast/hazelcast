@@ -61,23 +61,22 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientExecutorServiceSubmitTest {
 
-    static final int CLUSTER_SIZE = 3;
-    static HazelcastInstance instance1;
-    static HazelcastInstance instance2;
-    static HazelcastInstance instance3;
-    static HazelcastInstance client;
+    private static final int CLUSTER_SIZE = 3;
+
+    private static HazelcastInstance server;
+    private static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
-        instance1 = Hazelcast.newHazelcastInstance();
-        instance2 = Hazelcast.newHazelcastInstance();
-        instance3 = Hazelcast.newHazelcastInstance();
+    public static void beforeClass() {
+        Hazelcast.newHazelcastInstance();
+        server = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
-        client.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
@@ -94,7 +93,7 @@ public class ClientExecutorServiceSubmitTest {
         IExecutorService service = client.getExecutorService(randomString());
 
         Callable<String> getUuidCallable = new GetMemberUuidTask();
-        Member member = instance2.getCluster().getLocalMember();
+        Member member = server.getCluster().getLocalMember();
 
         Future<String> result = service.submitToMember(getUuidCallable, member);
 
@@ -106,10 +105,9 @@ public class ClientExecutorServiceSubmitTest {
         IExecutorService service = client.getExecutorService(randomString());
 
         Callable<String> getUuidCallable = new GetMemberUuidTask();
-        Collection<Member> collection = instance2.getCluster().getMembers();
+        Collection<Member> collection = server.getCluster().getMembers();
 
         Map<Member, Future<String>> map = service.submitToMembers(getUuidCallable, collection);
-
         for (Member member : map.keySet()) {
             Future<String> result = map.get(member);
             String uuid = result.get();
@@ -139,7 +137,6 @@ public class ClientExecutorServiceSubmitTest {
         MemberSelector selectAll = new SelectAllMembers();
 
         Map<Member, Future<String>> map = service.submitToMembers(getUuidCallable, selectAll);
-
         for (Member member : map.keySet()) {
             Future<String> result = map.get(member);
             String uuid = result.get();
@@ -168,7 +165,7 @@ public class ClientExecutorServiceSubmitTest {
 
         String mapName = randomString();
         Runnable runnable = new MapPutRunnable(mapName);
-        Member member = instance2.getCluster().getLocalMember();
+        Member member = server.getCluster().getLocalMember();
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
         service.submitToMember(runnable, member, new ExecutionCallback() {
@@ -191,7 +188,7 @@ public class ClientExecutorServiceSubmitTest {
 
         String mapName = randomString();
         Runnable runnable = new MapPutRunnable(mapName);
-        Collection<Member> collection = instance2.getCluster().getMembers();
+        Collection<Member> collection = server.getCluster().getMembers();
         final CountDownLatch responseLatch = new CountDownLatch(CLUSTER_SIZE);
         final CountDownLatch completeLatch = new CountDownLatch(1);
 
@@ -216,7 +213,7 @@ public class ClientExecutorServiceSubmitTest {
         IExecutorService service = client.getExecutorService(randomString());
 
         Callable getUuidCallable = new GetMemberUuidTask();
-        Member member = instance2.getCluster().getLocalMember();
+        Member member = server.getCluster().getLocalMember();
         final CountDownLatch responseLatch = new CountDownLatch(1);
         final AtomicReference<Object> result = new AtomicReference<Object>();
 
@@ -244,7 +241,7 @@ public class ClientExecutorServiceSubmitTest {
         final CountDownLatch completeLatch = new CountDownLatch(CLUSTER_SIZE);
         final String msg = randomString();
         Callable<String> callable = new AppendCallable(msg);
-        Collection<Member> collection = instance2.getCluster().getMembers();
+        Collection<Member> collection = server.getCluster().getMembers();
 
         service.submitToMembers(callable, collection, new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
@@ -597,8 +594,8 @@ public class ClientExecutorServiceSubmitTest {
         IExecutorService service = client.getExecutorService(randomString());
 
         String mapName = randomString();
-        String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
-        final Member member = instance2.getCluster().getLocalMember();
+        String key = HazelcastTestSupport.generateKeyOwnedBy(server);
+        final Member member = server.getCluster().getLocalMember();
 
         //this task should execute on a node owning the given key argument,
         //the action is to put the UUid of the executing node into a map with the given name
@@ -620,8 +617,8 @@ public class ClientExecutorServiceSubmitTest {
 
         String expectedResult = "result";
         String mapName = randomString();
-        String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
-        final Member member = instance2.getCluster().getLocalMember();
+        String key = HazelcastTestSupport.generateKeyOwnedBy(server);
+        final Member member = server.getCluster().getLocalMember();
 
         Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
 
@@ -641,8 +638,8 @@ public class ClientExecutorServiceSubmitTest {
         IExecutorService service = client.getExecutorService(randomString());
 
         String mapName = randomString();
-        String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
-        Member member = instance2.getCluster().getLocalMember();
+        String key = HazelcastTestSupport.generateKeyOwnedBy(server);
+        Member member = server.getCluster().getLocalMember();
         Runnable runnable = new MapPutPartitionAwareRunnable<String>(mapName, key);
         final CountDownLatch responseLatch = new CountDownLatch(1);
 
@@ -668,8 +665,8 @@ public class ClientExecutorServiceSubmitTest {
 
         String mapName = randomString();
         IMap map = client.getMap(mapName);
-        String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
-        Member member = instance2.getCluster().getLocalMember();
+        String key = HazelcastTestSupport.generateKeyOwnedBy(server);
+        Member member = server.getCluster().getLocalMember();
 
         Callable<String> callable = new MapPutPartitionAwareCallable<String, String>(mapName, key);
         Future<String> result = service.submit(callable);
@@ -684,8 +681,8 @@ public class ClientExecutorServiceSubmitTest {
 
         String mapName = randomString();
         IMap map = client.getMap(mapName);
-        String key = HazelcastTestSupport.generateKeyOwnedBy(instance2);
-        Member member = instance2.getCluster().getLocalMember();
+        String key = HazelcastTestSupport.generateKeyOwnedBy(server);
+        Member member = server.getCluster().getLocalMember();
 
         Callable<String> runnable = new MapPutPartitionAwareCallable<String, String>(mapName, key);
 
