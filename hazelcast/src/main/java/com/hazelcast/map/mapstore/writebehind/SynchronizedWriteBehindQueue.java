@@ -124,6 +124,13 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
+    public List<E> filterItems(long now) {
+        synchronized (mutex) {
+            return queue.filterItems(now);
+        }
+    }
+
+    @Override
     public Iterator<E> iterator() {
         synchronized (mutex) {
             return queue.iterator();

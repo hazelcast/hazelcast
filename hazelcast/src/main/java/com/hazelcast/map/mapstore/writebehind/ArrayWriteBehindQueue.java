@@ -122,6 +122,11 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
+    public List<T> filterItems(long now) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Iterator<T> iterator() {
         return list.iterator();
     }

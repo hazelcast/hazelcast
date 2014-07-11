@@ -216,8 +216,18 @@ public class StoreWorker implements Runnable {
         }
     }
 
+
     private static List<DelayedEntry> filterItemsLessThanOrEqualToTime(WriteBehindQueue<DelayedEntry> queue,
                                                                        long now) {
+        if (queue == null || queue.size() == 0) {
+            return Collections.emptyList();
+        }
+
+        return queue.filterItems(now);
+    }
+
+    private static List<DelayedEntry> filterItemsLessThanOrEqualToTime2(WriteBehindQueue<DelayedEntry> queue,
+                                                                        long now) {
         if (queue == null || queue.size() == 0) {
             return Collections.emptyList();
         }

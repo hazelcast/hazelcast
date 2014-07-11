@@ -4,6 +4,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,24 +14,24 @@ import java.util.Set;
 /**
  * A write-behind queue which supports write coalescing.
  */
-class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry<Data, Object>> {
+class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
-    protected final Map<Data, DelayedEntry<Data, Object>> queue;
+    protected final Map<Data, DelayedEntry> queue;
 
     public CoalescedWriteBehindQueue() {
-        queue = new LinkedHashMap<Data, DelayedEntry<Data, Object>>();
+        queue = new LinkedHashMap<Data, DelayedEntry>();
     }
 
-    public CoalescedWriteBehindQueue(Map<Data, DelayedEntry<Data, Object>> queue) {
+    public CoalescedWriteBehindQueue(Map<Data, DelayedEntry> queue) {
         this.queue = queue;
     }
 
     @Override
-    public boolean offer(DelayedEntry<Data, Object> delayedEntry) {
+    public boolean offer(DelayedEntry delayedEntry) {
         if (delayedEntry == null) {
             return false;
         }
-        final Data key = delayedEntry.getKey();
+        final Data key = (Data) delayedEntry.getKey();
         if (queue.containsKey(key)) {
             queue.remove(key);
         }
@@ -58,41 +59,41 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry<Data, O
     }
 
     @Override
-    public WriteBehindQueue<DelayedEntry<Data, Object>> getSnapShot() {
+    public WriteBehindQueue<DelayedEntry> getSnapShot() {
         return new CoalescedWriteBehindQueue(queue);
     }
 
     @Override
-    public void addFront(Collection<DelayedEntry<Data, Object>> collection) {
+    public void addFront(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
         final LinkedHashMap<Data, DelayedEntry> newQueue = new LinkedHashMap<Data, DelayedEntry>();
-        final Iterator<DelayedEntry<Data, Object>> iterator = collection.iterator();
+        final Iterator<DelayedEntry> iterator = collection.iterator();
         while (iterator.hasNext()) {
-            final DelayedEntry<Data, Object> next = iterator.next();
-            newQueue.put(next.getKey(), next);
+            final DelayedEntry next = iterator.next();
+            newQueue.put((Data) next.getKey(), next);
         }
         newQueue.putAll(queue);
     }
 
     @Override
-    public void addEnd(Collection<DelayedEntry<Data, Object>> collection) {
+    public void addEnd(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
-        for (DelayedEntry<Data, Object> entry : collection) {
-            queue.put(entry.getKey(), entry);
+        for (DelayedEntry entry : collection) {
+            queue.put((Data) entry.getKey(), entry);
         }
     }
 
     @Override
-    public void removeAll(Collection<DelayedEntry<Data, Object>> collection) {
+    public void removeAll(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
-        for (DelayedEntry<Data, Object> entry : collection) {
-            final Data entryKey = entry.getKey();
+        for (DelayedEntry entry : collection) {
+            final Data entryKey = (Data) entry.getKey();
             final Object entryValue = entry.getValue();
             final DelayedEntry delayedEntry = queue.get(entryKey);
             if (delayedEntry == null) {
@@ -106,8 +107,8 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry<Data, O
     }
 
     @Override
-    public List<DelayedEntry<Data, Object>> removeAll() {
-        final List<DelayedEntry<Data, Object>> delayedEntries = asList();
+    public List<DelayedEntry> removeAll() {
+        final List<DelayedEntry> delayedEntries = asList();
         queue.clear();
         return delayedEntries;
     }
@@ -118,14 +119,32 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry<Data, O
     }
 
     @Override
-    public List<DelayedEntry<Data, Object>> asList() {
-        final Collection<DelayedEntry<Data, Object>> values = queue.values();
-        return new ArrayList<DelayedEntry<Data, Object>>(values);
+    public List<DelayedEntry> asList() {
+        final Collection<DelayedEntry> values = queue.values();
+        return new ArrayList<DelayedEntry>(values);
     }
 
     @Override
-    public Iterator<DelayedEntry<Data, Object>> iterator() {
-        final Collection<DelayedEntry<Data, Object>> values = queue.values();
+    public Iterator<DelayedEntry> iterator() {
+        final Collection<DelayedEntry> values = queue.values();
         return values.iterator();
+    }
+
+    @Override
+    public List<DelayedEntry> filterItems(long now) {
+        List<DelayedEntry> delayedEntries = null;
+        final Collection<DelayedEntry> values = queue.values();
+        for (DelayedEntry e : values) {
+            if (delayedEntries == null) {
+                delayedEntries = new ArrayList<DelayedEntry>();
+            }
+            if (e.getStoreTime() <= now) {
+                delayedEntries.add(e);
+            }
+        }
+        if (delayedEntries == null) {
+            return Collections.emptyList();
+        }
+        return delayedEntries;
     }
 }

@@ -1,7 +1,5 @@
 package com.hazelcast.map.mapstore.writebehind;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +49,8 @@ class BoundedCoalescedWriteBehindQueue extends CoalescedWriteBehindQueue {
     }
 
     @Override
-    public List<DelayedEntry<Data, Object>> removeAll() {
-        final List<DelayedEntry<Data, Object>> removes = super.removeAll();
+    public List<DelayedEntry> removeAll() {
+        final List<DelayedEntry> removes = super.removeAll();
         final int size = removes.size();
         decrementPerNodeMaxSize(size);
         return removes;
@@ -66,7 +64,7 @@ class BoundedCoalescedWriteBehindQueue extends CoalescedWriteBehindQueue {
     }
 
     @Override
-    public WriteBehindQueue<DelayedEntry<Data, Object>> getSnapShot() {
+    public WriteBehindQueue<DelayedEntry> getSnapShot() {
         if (queue == null || queue.isEmpty()) {
             return WriteBehindQueues.emptyWriteBehindQueue();
         }
@@ -74,7 +72,7 @@ class BoundedCoalescedWriteBehindQueue extends CoalescedWriteBehindQueue {
     }
 
     @Override
-    public void addFront(Collection<DelayedEntry<Data, Object>> collection) {
+    public void addFront(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
@@ -90,7 +88,7 @@ class BoundedCoalescedWriteBehindQueue extends CoalescedWriteBehindQueue {
     }
 
     @Override
-    public void addEnd(Collection<DelayedEntry<Data, Object>> collection) {
+    public void addEnd(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
@@ -106,7 +104,7 @@ class BoundedCoalescedWriteBehindQueue extends CoalescedWriteBehindQueue {
     }
 
     @Override
-    public void removeAll(Collection<DelayedEntry<Data, Object>> collection) {
+    public void removeAll(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }

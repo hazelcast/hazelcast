@@ -116,6 +116,11 @@ public final class WriteBehindQueues {
         }
 
         @Override
+        public List filterItems(long now) {
+            return Collections.emptyList();
+        }
+
+        @Override
         public Iterator<T> iterator() {
             throw new UnsupportedOperationException();
         }

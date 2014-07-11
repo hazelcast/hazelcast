@@ -91,5 +91,13 @@ public interface WriteBehindQueue<E> extends Iterable<E> {
      */
     List<E> asList();
 
+    /**
+     * Returns list of entries smaller than specific time.
+     *
+     * @param now now in millis.
+     * @return entries to process according to time.
+     */
+    List<E> filterItems(long now);
+
 }
 
