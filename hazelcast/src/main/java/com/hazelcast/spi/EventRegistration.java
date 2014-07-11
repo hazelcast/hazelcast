@@ -22,16 +22,34 @@ import com.hazelcast.nio.serialization.DataSerializable;
 /**
  * The result of a Event Registration.
  *
- * @author mdogan 12/14/12
  */
 public interface EventRegistration extends DataSerializable {
 
+    /**
+     * Returns event registration id.
+     * @return event registration id
+     */
     String getId();
 
+    /**
+     * Returns {@link EventFilter} attached to this registration.
+     *
+     * @return event filter attached to this registration
+     */
     EventFilter getFilter();
 
+    /**
+     * Returns subscriber of this registration.
+     *
+     * @return subscriber of this registration
+     */
     Address getSubscriber();
 
+    /**
+     * Returns true if this registration is for locally fired events only.
+     *
+     * @return true if this registration is local only, false otherwise.
+     */
     boolean isLocalOnly();
 
 }
