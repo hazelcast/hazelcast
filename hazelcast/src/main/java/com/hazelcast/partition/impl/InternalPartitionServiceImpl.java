@@ -351,6 +351,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             boolean promote = false;
             if (deadAddress.equals(partition.getOwnerOrNull()) && thisAddress.equals(partition.getReplicaAddress(1))) {
                 promote = true;
+                partition.setMigrating(true);
             }
             // shift partition table up.
             partition.onDeadAddress(deadAddress);
@@ -817,7 +818,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             } else {
                 if (logger.isFinestEnabled()) {
                     logger.finest("This node is now owner of partition, cannot sync replica -> partitionId: " + partitionId
-                                    + ", replicaIndex: " + replicaIndex + ", partition-info: " + partitionImpl);
+                            + ", replicaIndex: " + replicaIndex + ", partition-info: " + partitionImpl);
                 }
                 return true;
             }
@@ -1026,7 +1027,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return true;
         }
 
-        if (getMemberGroupsSize() < 2)  {
+        if (getMemberGroupsSize() < 2) {
             return true;
         }
 
@@ -1742,7 +1743,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         partitionService.clearPartitionReplica(partitionId, replicaIndex);
                     }
                 } else if (thisAddress.equals(newAddress)) {
-                    partitionService.clearPartitionReplica(partitionId, replicaIndex);
                     partitionService.forcePartitionReplicaSync(partitionId, replicaIndex);
                 }
             }
