@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @param <E> Type of entry to be stored.
  */
-public interface WriteBehindQueue<E> {
+public interface WriteBehindQueue<E> extends Iterable<E> {
 
     /**
      * adds to the end.
@@ -39,25 +39,6 @@ public interface WriteBehindQueue<E> {
      * removes head of the queue.
      */
     void removeFirst();
-
-    /**
-     * Reads item at that index in queue.
-     *
-     * @param index index of item.
-     * @return item at index or <tt>null</tt>
-     * if index is out of bounds.
-     */
-    E get(int index);
-
-    /**
-     * Removes item in that index from queue.
-     *
-     * @param index index of item.
-     * @return item removed or <tt>null</tt>
-     * if index is out of bounds.
-     */
-    E remove(int index);
-
 
     int size();
 
@@ -84,6 +65,14 @@ public interface WriteBehindQueue<E> {
 
 
     /**
+     * Removes all items in collection from queue.
+     *
+     * @param collection collection to be removed.
+     */
+    void removeAll(Collection<E> collection);
+
+
+    /**
      * Removes and returns all items in this queue.
      *
      * @return removed items in this queue.
@@ -102,10 +91,5 @@ public interface WriteBehindQueue<E> {
      */
     List<E> asList();
 
-    /**
-     * Shrinks the size. This can be used to minimize
-     * the storage of an <tt>WriteBehindQueue</tt> instance.
-     */
-    void shrink();
 }
 

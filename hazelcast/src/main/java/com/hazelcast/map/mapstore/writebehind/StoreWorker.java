@@ -30,6 +30,7 @@ import com.hazelcast.util.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -116,10 +117,38 @@ public class StoreWorker implements Runnable {
         }
         if (!entries.isEmpty()) {
             final Map<Integer, List<DelayedEntry>> failsPerPartition = writeBehindProcessor.process(entries);
-            removeProcessedEntries(mapName, partitionToEntryCountHolder);
+            removeProcessed(mapName, getEntryPerPartitionMap(entries));
             addFailsToQueue(mapName, failsPerPartition);
             lastRunTime = now;
         }
+    }
+
+    private void removeProcessed(String mapName, Map<Integer, List<DelayedEntry>> entryListPerPartition) {
+        for (Map.Entry<Integer, List<DelayedEntry>> entry : entryListPerPartition.entrySet()) {
+            final int partitionId = entry.getKey();
+            final RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
+            if (recordStore == null) {
+                continue;
+            }
+            final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
+            final List<DelayedEntry> entries = entry.getValue();
+            queue.removeAll(entries);
+        }
+    }
+
+
+    private Map<Integer, List<DelayedEntry>> getEntryPerPartitionMap(List<DelayedEntry> entries) {
+        final Map<Integer, List<DelayedEntry>> entryListPerPartition = new HashMap<Integer, List<DelayedEntry>>();
+        for (DelayedEntry entry : entries) {
+            final int partitionId = entry.getPartitionId();
+            List<DelayedEntry> delayedEntries = entryListPerPartition.get(partitionId);
+            if (delayedEntries == null) {
+                delayedEntries = new ArrayList<DelayedEntry>();
+                entryListPerPartition.put(partitionId, delayedEntries);
+            }
+            delayedEntries.add(entry);
+        }
+        return entryListPerPartition;
     }
 
     /**
@@ -136,7 +165,7 @@ public class StoreWorker implements Runnable {
         final Address owner = partition.getOwnerOrNull();
         if (owner != null && !owner.equals(thisAddress)) {
             writeBehindProcessor.callBeforeStoreListeners(delayedEntries);
-            removeProcessed(queue, delayedEntries.size());
+            removeProcessed(mapName, getEntryPerPartitionMap(delayedEntries));
             writeBehindProcessor.callAfterStoreListeners(delayedEntries);
         }
     }
@@ -192,18 +221,20 @@ public class StoreWorker implements Runnable {
         if (queue == null || queue.size() == 0) {
             return Collections.emptyList();
         }
-        List<DelayedEntry> delayedEntries = Collections.emptyList();
-        DelayedEntry e;
-        int i = 0;
-        while ((e = queue.get(i)) != null) {
-            if (i == 0) {
-                // init when needed.
+        List<DelayedEntry> delayedEntries = null;
+        final Iterator<DelayedEntry> iterator = queue.iterator();
+        while (iterator.hasNext()) {
+            final DelayedEntry e = iterator.next();
+            if (delayedEntries == null) {
                 delayedEntries = new ArrayList<DelayedEntry>();
             }
             if (e.getStoreTime() <= now) {
                 delayedEntries.add(e);
             }
-            i++;
+        }
+
+        if (delayedEntries == null) {
+            return Collections.emptyList();
         }
         return delayedEntries;
     }

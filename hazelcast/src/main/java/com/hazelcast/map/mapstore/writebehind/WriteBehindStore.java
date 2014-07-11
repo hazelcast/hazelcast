@@ -68,6 +68,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         this.evictionStagingArea = createEvictionStagingArea();
     }
 
+    // TODO when mode is not write-coalescing, clone value objects. this is for EntryProcessors in object memory format.
     @Override
     public Object add(Data key, Object value, long now) {
         cleanupEvictionStagingArea(now);
@@ -264,7 +265,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     private long getNextItemsStoreTimeInWriteBehindQueue() {
-        final DelayedEntry firstEntryInQueue = writeBehindQueue.get(0);
+        DelayedEntry firstEntryInQueue = null;
+        final Iterator<DelayedEntry> iterator = writeBehindQueue.iterator();
+        if (iterator.hasNext()) {
+            firstEntryInQueue = iterator.next();
+        }
         if (firstEntryInQueue == null) {
             return 0L;
         }

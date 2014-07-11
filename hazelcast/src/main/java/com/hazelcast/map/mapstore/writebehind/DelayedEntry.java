@@ -70,11 +70,14 @@ public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
         return new DelayedEntry<K, V>(key, null, storeTime, partitionId);
     }
 
-    /**
-     * Used for tests.
-     */
-    public static <K, V> DelayedEntry<K, V> createEmpty() {
-        return new DelayedEntry<K, V>(null, null, 0L, 0);
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
     }
 
     @Override
@@ -87,10 +90,5 @@ public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
                 + '}';
     }
 
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (value == null ? 0 : value.hashCode());
-        return result;
-    }
+
 }

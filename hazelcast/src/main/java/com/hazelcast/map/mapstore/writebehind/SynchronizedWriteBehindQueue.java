@@ -17,6 +17,7 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -29,7 +30,6 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     private final WriteBehindQueue<E> queue;
 
     private final Object mutex;
-
 
     SynchronizedWriteBehindQueue(WriteBehindQueue<E> queue) {
         if (queue == null) {
@@ -53,19 +53,6 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         }
     }
 
-    @Override
-    public E get(int index) {
-        synchronized (mutex) {
-            return queue.get(index);
-        }
-    }
-
-    @Override
-    public E remove(int index) {
-        synchronized (mutex) {
-            return queue.remove(index);
-        }
-    }
 
     @Override
     public int size() {
@@ -109,6 +96,13 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
+    public void removeAll(Collection<E> collection) {
+        synchronized (mutex) {
+            queue.removeAll(collection);
+        }
+    }
+
+    @Override
     public List<E> removeAll() {
         synchronized (mutex) {
             return queue.removeAll();
@@ -130,9 +124,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public void shrink() {
+    public Iterator<E> iterator() {
         synchronized (mutex) {
-            queue.shrink();
+            return queue.iterator();
         }
     }
 }

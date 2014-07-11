@@ -1499,7 +1499,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int numIterations = 10;
         final int writeDelaySeconds = 3;
         // create map store implementation
-        final RecordingMapStore store = new RecordingMapStore(numIterations, numIterations);
+        final RecordingMapStore store = new RecordingMapStore(0, 1);
         // create hazelcast config
         final Config config = newConfig(mapName, store, writeDelaySeconds);
         // start hazelcast instance

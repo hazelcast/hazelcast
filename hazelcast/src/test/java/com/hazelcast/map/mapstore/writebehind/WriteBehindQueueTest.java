@@ -1,8 +1,12 @@
 package com.hazelcast.map.mapstore.writebehind;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -124,15 +128,17 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         fillQueue(queue, 1000);
 
         for (int i = 0; i < 1000; i++) {
-            queue.removeFirst();
+            queue.removeAll();
         }
 
         assertEquals(0, queue.size());
     }
 
     private void fillQueue(WriteBehindQueue queue, int numberOfItems) {
+        SerializationService ss1 = new SerializationServiceBuilder().build();
+        final long storeTime = Clock.currentTimeMillis();
         for (int i = 0; i < numberOfItems; i++) {
-            final DelayedEntry<Object, Object> e = DelayedEntry.createEmpty();
+            final DelayedEntry<Data, Object> e = DelayedEntry.createWithNullValue(ss1.toData(i), storeTime, i);
             queue.offer(e);
         }
     }

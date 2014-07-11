@@ -18,6 +18,7 @@ package com.hazelcast.map.mapstore.writebehind;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,12 +30,8 @@ public final class WriteBehindQueues {
     private WriteBehindQueues() {
     }
 
-    public static <T> WriteBehindQueue<T> createBoundedArrayWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
-        return new BoundedArrayWriteBehindQueue<T>(maxSizePerNode, counter);
-    }
-
     public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
-        return (WriteBehindQueue<T>) createSafeWriteBehindQueue(createBoundedArrayWriteBehindQueue(maxSizePerNode, counter));
+        return (WriteBehindQueue<T>) createSafeWriteBehindQueue(createBoundedCoalescedWriteBehindQueue(maxSizePerNode, counter));
     }
 
     public static <T> WriteBehindQueue<T> emptyWriteBehindQueue() {
@@ -43,6 +40,10 @@ public final class WriteBehindQueues {
 
     public static <T> WriteBehindQueue<T> createSafeWriteBehindQueue(WriteBehindQueue<T> queue) {
         return new SynchronizedWriteBehindQueue<T>(queue);
+    }
+
+    public static WriteBehindQueue createBoundedCoalescedWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
+        return new BoundedCoalescedWriteBehindQueue(maxSizePerNode, counter);
     }
 
     /**
@@ -70,16 +71,6 @@ public final class WriteBehindQueues {
         }
 
         @Override
-        public T get(int index) {
-            throw new IndexOutOfBoundsException("Index: " + index);
-        }
-
-        @Override
-        public T remove(int index) {
-            return null;
-        }
-
-        @Override
         public int size() {
             return 0;
         }
@@ -92,6 +83,11 @@ public final class WriteBehindQueues {
         @Override
         public WriteBehindQueue<T> getSnapShot() {
             return WriteBehindQueues.emptyWriteBehindQueue();
+        }
+
+        @Override
+        public void removeAll(Collection<T> collection) {
+
         }
 
         @Override
@@ -120,8 +116,8 @@ public final class WriteBehindQueues {
         }
 
         @Override
-        public void shrink() {
-
+        public Iterator<T> iterator() {
+            throw new UnsupportedOperationException();
         }
     }
 

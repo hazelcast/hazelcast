@@ -1,17 +1,13 @@
 package com.hazelcast.map.mapstore.writebehind;
 
-import java.util.ArrayList;
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * A bounded queue which throws {@link com.hazelcast.map.mapstore.writebehind.ReachedMaxSizeException}
- * when it reaches max size.
- *
- * @param <T> Type of entry to be queued.
- */
-class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
+class BoundedCoalescedWriteBehindQueue extends CoalescedWriteBehindQueue {
 
     /**
      * Per node write behind queue item counter.
@@ -23,26 +19,29 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
      */
     private final int maxSize;
 
-    BoundedArrayWriteBehindQueue(int maxSize, AtomicInteger writeBehindQueueItemCounter) {
+    BoundedCoalescedWriteBehindQueue(int maxSize, AtomicInteger writeBehindQueueItemCounter) {
         super();
         this.maxSize = maxSize;
         this.writeBehindQueueItemCounter = writeBehindQueueItemCounter;
     }
 
-    BoundedArrayWriteBehindQueue(List<T> list, int maxSize, AtomicInteger writeBehindQueueItemCounter) {
-        super(list);
+    BoundedCoalescedWriteBehindQueue(Map map, int maxSize, AtomicInteger writeBehindQueueItemCounter) {
+        super(map);
         this.maxSize = maxSize;
         this.writeBehindQueueItemCounter = writeBehindQueueItemCounter;
     }
 
     @Override
-    public boolean offer(T t) {
+    public boolean offer(DelayedEntry entry) {
+        if (entry == null) {
+            return false;
+        }
         final int currentPerNodeCount = currentPerNodeCount();
         if (hasReachedMaxSize(currentPerNodeCount)) {
             throw new ReachedMaxSizeException("Queue already reached per node max capacity [" + maxSize + "]");
         }
         incrementPerNodeMaxSize();
-        return super.offer(t);
+        return super.offer(entry);
     }
 
     @Override
@@ -52,8 +51,8 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     }
 
     @Override
-    public List<T> removeAll() {
-        final List<T> removes = super.removeAll();
+    public List<DelayedEntry<Data, Object>> removeAll() {
+        final List<DelayedEntry<Data, Object>> removes = super.removeAll();
         final int size = removes.size();
         decrementPerNodeMaxSize(size);
         return removes;
@@ -67,15 +66,15 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     }
 
     @Override
-    public WriteBehindQueue<T> getSnapShot() {
-        if (list == null || list.isEmpty()) {
+    public WriteBehindQueue<DelayedEntry<Data, Object>> getSnapShot() {
+        if (queue == null || queue.isEmpty()) {
             return WriteBehindQueues.emptyWriteBehindQueue();
         }
-        return new BoundedArrayWriteBehindQueue<T>(new ArrayList<T>(list), maxSize, writeBehindQueueItemCounter);
+        return new BoundedCoalescedWriteBehindQueue(queue, maxSize, writeBehindQueueItemCounter);
     }
 
     @Override
-    public void addFront(Collection<T> collection) {
+    public void addFront(Collection<DelayedEntry<Data, Object>> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
@@ -91,7 +90,7 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     }
 
     @Override
-    public void addEnd(Collection<T> collection) {
+    public void addEnd(Collection<DelayedEntry<Data, Object>> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
@@ -107,8 +106,12 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     }
 
     @Override
-    public void removeAll(Collection<T> collection) {
-        throw new UnsupportedOperationException();
+    public void removeAll(Collection<DelayedEntry<Data, Object>> collection) {
+        if (collection == null || collection.isEmpty()) {
+            return;
+        }
+        super.removeAll(collection);
+        decrementPerNodeMaxSize(collection.size());
     }
 
     private boolean hasReachedMaxSize(int size) {

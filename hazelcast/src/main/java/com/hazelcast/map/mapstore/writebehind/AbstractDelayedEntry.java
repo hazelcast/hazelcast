@@ -25,7 +25,6 @@ abstract class AbstractDelayedEntry<K> {
 
     protected final long storeTime;
 
-    // TODO really need this?
     private final int partitionId;
 
     protected AbstractDelayedEntry(K key, long storeTime, int partitionId) {
@@ -50,7 +49,24 @@ abstract class AbstractDelayedEntry<K> {
     public int hashCode() {
         int result = 1;
         result = 31 * result + (key == null ? 0 : key.hashCode());
-        result = 31 * result + (int) (storeTime ^ (storeTime >>> 32));
         return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AbstractDelayedEntry that = (AbstractDelayedEntry) o;
+
+        if (key != null ? !key.equals(that.key) : that.key != null) {
+            return false;
+        }
+
+        return true;
     }
 }
