@@ -16,20 +16,28 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.ReflectionHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.query.Predicates.AndPredicate;
+import static com.hazelcast.query.Predicates.EqualPredicate;
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
@@ -43,6 +51,7 @@ import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.regex;
 import static com.hazelcast.query.SampleObjects.Employee;
+import static com.hazelcast.query.SampleObjects.Value;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Map.Entry;
@@ -51,7 +60,45 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class PredicatesTest {
+public class PredicatesTest extends HazelcastTestSupport {
+
+    @Test
+    public void testAndPredicate_whenFirstIndexAwarePredicateIsNotIndexed() throws Exception {
+        final HazelcastInstance instance = createHazelcastInstance();
+        final IMap<Object, Object> map = instance.getMap("map");
+        map.addIndex("name", false);
+        String name = randomString();
+        map.put("key", new Value(name));
+
+        final ShouldExecuteOncePredicate indexAwareNotIndexedPredicate = new ShouldExecuteOncePredicate();
+        final EqualPredicate equalPredicate = new EqualPredicate("name", name);
+        final AndPredicate andPredicate = new AndPredicate(indexAwareNotIndexedPredicate, equalPredicate);
+        map.values(andPredicate);
+    }
+
+    static class ShouldExecuteOncePredicate implements IndexAwarePredicate {
+
+        boolean executed = false;
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            if (!executed) {
+                executed = true;
+                return true;
+            }
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Set<QueryableEntry> filter(final QueryContext queryContext) {
+            return null;
+        }
+
+        @Override
+        public boolean isIndexed(final QueryContext queryContext) {
+            return false;
+        }
+    }
 
     @Test
     public void testEqual() {
