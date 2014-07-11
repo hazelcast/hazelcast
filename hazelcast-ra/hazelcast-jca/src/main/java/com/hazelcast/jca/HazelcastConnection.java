@@ -64,7 +64,7 @@ public interface HazelcastConnection extends Connection {
     /**
      * @see HazelcastInstance#getExecutorService(String)
      */
-    ExecutorService getExecutorService(String name);
+    IExecutorService getExecutorService(String name);
 
     /**
      * @see HazelcastInstance#getAtomicLong(String)
