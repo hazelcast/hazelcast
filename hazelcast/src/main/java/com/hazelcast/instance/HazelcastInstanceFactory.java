@@ -96,9 +96,7 @@ public final class HazelcastInstanceFactory {
         }
 
         try {
-            HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, new DefaultNodeContext());
-            future.set(hz);
-            return hz;
+            return constructHazelcastInstance(config, name, new DefaultNodeContext(), future);
         } catch (Throwable t) {
             INSTANCE_MAP.remove(name, future);
             future.setFailure(t);
@@ -135,9 +133,7 @@ public final class HazelcastInstanceFactory {
         }
 
         try {
-            HazelcastInstanceProxy hz = constructHazelcastInstance(config, name, nodeContext);
-            future.set(hz);
-            return hz;
+            return constructHazelcastInstance(config, name, nodeContext, future);
         } catch (Throwable t) {
             INSTANCE_MAP.remove(name, future);
             future.setFailure(t);
@@ -146,7 +142,7 @@ public final class HazelcastInstanceFactory {
     }
 
     private static HazelcastInstanceProxy constructHazelcastInstance(Config config, String instanceName,
-                                                                     NodeContext nodeContext) {
+                                                                     NodeContext nodeContext, InstanceFuture future) {
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         HazelcastInstanceProxy proxy;
@@ -174,6 +170,7 @@ public final class HazelcastInstanceFactory {
                 }
             }
             awaitMinimalClusterSize(hazelcastInstance, node, firstMember);
+            future.set(proxy);
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
