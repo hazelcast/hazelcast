@@ -25,6 +25,7 @@ import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.EventService;
 
 import java.util.Collection;
 
@@ -101,6 +102,8 @@ public interface IOService {
     boolean isClient();
 
     void executeAsync(Runnable runnable);
+
+    EventService getEventService();
 
     Collection<Integer> getOutboundPorts();
 
