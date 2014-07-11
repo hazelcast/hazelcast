@@ -28,14 +28,14 @@ import org.junit.runners.Suite;
  * @author mdogan 5/28/13
  */
 
-@Ignore//TODO
+@Ignore //TODO
 @RunWith(Categories.class)
 @Categories.IncludeCategory(ClientCompatibleTest.class)
 @Suite.SuiteClasses({})
 public class ClientCompatibleTestsSuit {
 
     @BeforeClass
-    public static void setUp() {
+    public static void beforeClass() {
         System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
         System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_CLIENT, "true");
 

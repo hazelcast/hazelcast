@@ -26,7 +26,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
@@ -48,7 +47,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -68,40 +66,38 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * @ali 7/3/13
+ * ali 7/3/13
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientIssueTest extends HazelcastTestSupport {
 
     @After
-    @Before
-    public void cleanup() throws Exception {
+    public void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testInitialMemberListener() throws InterruptedException {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
-        final ClientConfig clientConfig = new ClientConfig();
-        final CountDownLatch latch1 = new CountDownLatch(1);
-        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new StaticMemberListener(latch1)));
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        ClientConfig clientConfig = new ClientConfig();
+        CountDownLatch beforeStartingLatch = new CountDownLatch(1);
+        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new StaticMemberListener(beforeStartingLatch)));
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        assertTrue("Before starting", latch1.await(5, TimeUnit.SECONDS));
+        assertTrue("Before starting", beforeStartingLatch.await(5, TimeUnit.SECONDS));
 
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        client.getCluster().addMembershipListener(new StaticMemberListener(latch2));
+        CountDownLatch afterStartingLatch = new CountDownLatch(1);
+        client.getCluster().addMembershipListener(new StaticMemberListener(afterStartingLatch));
 
-        assertTrue("After starting", latch2.await(5, TimeUnit.SECONDS));
+        assertTrue("After starting", afterStartingLatch.await(5, TimeUnit.SECONDS));
     }
 
-    static class StaticMemberListener implements MembershipListener, InitialMembershipListener {
-
-        final CountDownLatch latch;
+    private static class StaticMemberListener implements MembershipListener, InitialMembershipListener {
+        CountDownLatch latch;
 
         StaticMemberListener(CountDownLatch latch) {
             this.latch = latch;
@@ -123,22 +119,22 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testClientPortConnection() {
-        final Config config1 = new Config();
+        Config config1 = new Config();
         config1.getGroupConfig().setName("foo");
         config1.getNetworkConfig().setPort(5701);
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
-        instance1.getMap("map").put("key", "value");
+        HazelcastInstance server1 = Hazelcast.newHazelcastInstance(config1);
+        server1.getMap("map").put("key", "value");
 
-        final Config config2 = new Config();
+        Config config2 = new Config();
         config2.getGroupConfig().setName("bar");
         config2.getNetworkConfig().setPort(5702);
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config2);
+        Hazelcast.newHazelcastInstance(config2);
 
-        final ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setName("bar");
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        final IMap<Object, Object> map = client.getMap("map");
+        IMap<Object, Object> map = client.getMap("map");
         assertNull(map.put("key", "value"));
         assertEquals(1, map.size());
     }
@@ -148,18 +144,16 @@ public class ClientIssueTest extends HazelcastTestSupport {
      */
     @Test
     public void testIssue493() throws Exception {
-
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
-
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        final ILock lock = client.getLock("lock");
+        ILock lock = client.getLock("lock");
 
-        for (int k = 0; k < 10; k++) {
+        for (int i = 0; i < 10; i++) {
             lock.lock();
             try {
                 Thread.sleep(100);
@@ -169,32 +163,32 @@ public class ClientIssueTest extends HazelcastTestSupport {
         }
 
         lock.lock();
-        hz1.shutdown();
+        server.shutdown();
         lock.unlock();
     }
 
     @Test
     @Category(ProblematicTest.class)
     public void testOperationRedo() throws Exception {
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setRedoOperation(true);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        final Thread thread = new Thread() {
+        Thread thread = new Thread() {
             public void run() {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                hz1.getLifecycleService().terminate();
+                server.getLifecycleService().terminate();
             }
         };
 
-        final IMap map = client.getMap("m");
+        IMap<Integer, String> map = client.getMap("mapName");
         thread.start();
         int expected = 1000;
         for (int i = 0; i < expected; i++) {
@@ -206,26 +200,26 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testOperationRedo_smartRoutingDisabled() throws Exception {
-        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setRedoOperation(true);
         clientConfig.setSmartRouting(false);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        final Thread thread = new Thread() {
+        Thread thread = new Thread() {
             public void run() {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                hz1.getLifecycleService().terminate();
+                server.getLifecycleService().terminate();
             }
         };
 
-        final IMap map = client.getMap("m");
+        IMap<Integer, Integer> map = client.getMap("m");
         thread.start();
         int expected = 1000;
         for (int i = 0; i < expected; i++) {
@@ -237,18 +231,20 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testGetDistributedObjectsIssue678() {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        hz.getQueue("queue");
-        hz.getMap("map");
-        hz.getSemaphore("s");
-        final HazelcastInstance instance = HazelcastClient.newHazelcastClient();
-        final Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        server.getQueue("queue");
+        server.getMap("map");
+        server.getSemaphore("s");
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        Collection<DistributedObject> distributedObjects = client.getDistributedObjects();
+
         assertEquals(3, distributedObjects.size());
     }
 
     @Test
     public void testMapDestroyIssue764() throws Exception {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         assertEquals(0, client.getDistributedObjects().size());
@@ -258,7 +254,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
         assertEquals(1, client.getDistributedObjects().size());
         map.destroy();
 
-        assertEquals(0, instance.getDistributedObjects().size());
+        assertEquals(0, server.getDistributedObjects().size());
         assertEquals(0, client.getDistributedObjects().size());
     }
 
@@ -267,21 +263,21 @@ public class ClientIssueTest extends HazelcastTestSupport {
      */
     @Test
     public void testIssue821() {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
-        final IMap<Object, Object> map = client.getMap("default");
+        IMap<Object, Object> map = client.getMap("default");
 
         map.put("key1", "value1");
 
-        instance.shutdown();
+        server.shutdown();
 
         try {
             map.get("key1");
             fail();
         } catch (Exception ignored) {
         }
-        assertFalse(instance.getLifecycleService().isRunning());
+        assertFalse(server.getLifecycleService().isRunning());
     }
 
     @Test
@@ -292,27 +288,27 @@ public class ClientIssueTest extends HazelcastTestSupport {
         list.offer(LifecycleState.CLIENT_CONNECTED);
         list.offer(LifecycleState.CLIENT_DISCONNECTED);
         list.offer(LifecycleState.CLIENT_CONNECTED);
-
-
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         final CountDownLatch latch = new CountDownLatch(list.size());
+
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+
         LifecycleListener listener = new LifecycleListener() {
             public void stateChanged(LifecycleEvent event) {
-                final LifecycleState state = list.poll();
+                LifecycleState state = list.poll();
                 if (state != null && state.equals(event.getState())) {
                     latch.countDown();
                 }
             }
         };
-        final ListenerConfig listenerConfig = new ListenerConfig(listener);
-        final ClientConfig clientConfig = new ClientConfig();
+        ListenerConfig listenerConfig = new ListenerConfig(listener);
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(listenerConfig);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastClient.newHazelcastClient(clientConfig);
 
         Thread.sleep(100);
 
-        instance.shutdown();
+        server.shutdown();
 
         Thread.sleep(800);
 
@@ -322,13 +318,14 @@ public class ClientIssueTest extends HazelcastTestSupport {
     }
 
     /**
-     * add membership listener
+     * Add membership listener
      */
     @Test
     public void testIssue1181() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
+
         Hazelcast.newHazelcastInstance();
-        final ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new InitialMembershipListener() {
             public void init(InitialMembershipEvent event) {
                 for (int i = 0; i < event.getMembers().size(); i++) {
@@ -337,33 +334,29 @@ public class ClientIssueTest extends HazelcastTestSupport {
             }
 
             public void memberAdded(MembershipEvent membershipEvent) {
-
             }
 
             public void memberRemoved(MembershipEvent membershipEvent) {
-
             }
 
             public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-
             }
         }));
         HazelcastClient.newHazelcastClient(clientConfig);
+
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
     public void testInterceptor() throws InterruptedException {
+        Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap("map");
+        MapInterceptorImpl interceptor = new MapInterceptorImpl();
 
-        final IMap<Object, Object> map = client.getMap("map");
-        final MapInterceptorImpl interceptor = new MapInterceptorImpl();
-
-        final String id = map.addInterceptor(interceptor);
+        String id = map.addInterceptor(interceptor);
         assertNotNull(id);
-
 
         map.put("key1", "value");
         assertEquals("value", map.get("key1"));
@@ -375,7 +368,6 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
         assertEquals("val", map.get("key1"));
 
-
         map.put("key2", "oldValue");
         assertEquals("oldValue", map.get("key2"));
         map.put("key2", "newValue");
@@ -384,13 +376,9 @@ public class ClientIssueTest extends HazelcastTestSupport {
         map.put("key3", "value2");
         assertEquals("value2", map.get("key3"));
         assertEquals("removeIntercepted", map.remove("key3"));
-
-
     }
 
-    static class MapInterceptorImpl implements MapInterceptor {
-
-
+    private static class MapInterceptorImpl implements MapInterceptor {
         MapInterceptorImpl() {
         }
 
@@ -402,7 +390,6 @@ public class ClientIssueTest extends HazelcastTestSupport {
         }
 
         public void afterGet(Object value) {
-
         }
 
         public Object interceptPut(Object oldValue, Object newValue) {
@@ -424,58 +411,56 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
         public void afterRemove(Object value) {
         }
-
     }
 
     @Test
     public void testClientPortableWithoutRegisteringToNode() {
         Hazelcast.newHazelcastInstance();
-        final SerializationConfig serializationConfig = new SerializationConfig();
+        SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(5, new PortableFactory() {
             public Portable create(int classId) {
                 return new SamplePortable();
             }
         });
-        final ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.setSerializationConfig(serializationConfig);
 
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        final IMap<Integer, SamplePortable> sampleMap = client.getMap(randomString());
+        IMap<Integer, SamplePortable> sampleMap = client.getMap(randomString());
         sampleMap.put(1, new SamplePortable(666));
-        final SamplePortable samplePortable = sampleMap.get(1);
-        assertEquals(666, samplePortable.a);
+        SamplePortable samplePortable = sampleMap.get(1);
+        assertEquals(666, samplePortable.getMember());
     }
 
     @Test
     public void testCredentials() {
-        final Config config = new Config();
+        Config config = new Config();
         config.getGroupConfig().setName("foo").setPassword("bar");
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
 
-        final ClientConfig clientConfig = new ClientConfig();
-        final ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig();
+        ClientConfig clientConfig = new ClientConfig();
+        ClientSecurityConfig securityConfig = clientConfig.getSecurityConfig();
         securityConfig.setCredentialsClassname(MyCredentials.class.getName());
 
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
+        HazelcastClient.newHazelcastClient(clientConfig);
     }
 
-    public static class MyCredentials extends UsernamePasswordCredentials {
-
+    private static class MyCredentials extends UsernamePasswordCredentials {
         public MyCredentials() {
             super("foo", "bar");
         }
     }
 
+    @Test
     public void testListenerReconnect() throws InterruptedException {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         final CountDownLatch latch = new CountDownLatch(2);
 
-        final IMap<Object, Object> m = client.getMap("m");
-        final String id = m.addEntryListener(new EntryAdapter() {
+        final IMap<Object, Object> map = client.getMap("m");
+        String id = map.addEntryListener(new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
             }
@@ -487,17 +472,17 @@ public class ClientIssueTest extends HazelcastTestSupport {
         }, true);
 
 
-        m.put("key1", "value1");
+        map.put("key1", "value1");
 
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
-        instance1.shutdown();
+        server.shutdown();
 
-        final Thread thread = new Thread() {
+        Thread thread = new Thread() {
             @Override
             public void run() {
                 while (!isInterrupted()) {
-                    m.put("key2", "value2");
+                    map.put("key2", "value2");
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException ignored) {
@@ -509,45 +494,51 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
         assertOpenEventually(latch, 10);
         thread.interrupt();
-        assertTrue(m.removeEntryListener(id));
-        assertFalse(m.removeEntryListener("foo"));
+        assertTrue(map.removeEntryListener(id));
+        assertFalse(map.removeEntryListener("foo"));
     }
 
-    static class SamplePortable implements Portable {
-        public int a;
+    private static class SamplePortable implements Portable {
+        private int member;
 
-        public SamplePortable(int a) {
-            this.a = a;
+        public SamplePortable(int member) {
+            this.member = member;
         }
 
         public SamplePortable() {
-
         }
 
+        public int getMember() {
+            return member;
+        }
+
+        @Override
         public int getFactoryId() {
             return 5;
         }
 
+        @Override
         public int getClassId() {
             return 6;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeInt("a", a);
+            writer.writeInt("member", member);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
-            a = reader.readInt("a");
+            member = reader.readInt("member");
         }
     }
 
     @Test
     public void testNearCache_WhenRegisteredNodeIsDead() {
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
 
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-
-        final ClientConfig clientConfig = new ClientConfig();
-        final String mapName = randomMapName();
+        ClientConfig clientConfig = new ClientConfig();
+        String mapName = randomMapName();
 
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
 
@@ -555,14 +546,14 @@ public class ClientIssueTest extends HazelcastTestSupport {
         nearCacheConfig.setInvalidateOnChange(true);
         clientConfig.addNearCacheConfig(nearCacheConfig);
 
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        final IMap<Object, Object> map = client.getMap(mapName);
+        IMap<Object, Object> map = client.getMap(mapName);
 
         map.put("a", "b");
         map.get("a"); //put to nearCache
 
-        instance.shutdown();
+        server.shutdown();
         Hazelcast.newHazelcastInstance();
 
         assertEquals(null, map.get("a"));
@@ -579,22 +570,20 @@ public class ClientIssueTest extends HazelcastTestSupport {
     }
 
     private void testLock_WhenClientAndOwnerNodeDiesTogether(boolean smart) throws InterruptedException {
-
         Hazelcast.newHazelcastInstance();
-        final ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(smart);
 
-        final int tryCount = 5;
+        int tryCount = 5;
 
         for (int i = 0; i < tryCount; i++) {
-            final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-            final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+            HazelcastInstance server = Hazelcast.newHazelcastInstance();
+            HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-            final ILock lock = client.getLock("lock");
+            ILock lock = client.getLock("lock");
             assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
             client.getLifecycleService().terminate(); //with client is dead, lock should be released.
-            instance.getLifecycleService().terminate();
+            server.getLifecycleService().terminate();
         }
     }
-
 }

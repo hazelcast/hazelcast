@@ -23,7 +23,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import org.junit.Ignore;
 
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,25 +37,29 @@ public class SimpleMapTestFromClient {
         System.setProperty("hazelcast.version.check.enabled", "false");
         System.setProperty("hazelcast.socket.bind.any", "false");
 
-        Random rand = new Random();
-        int g1 = rand.nextInt(255);
-        int g2 = rand.nextInt(255);
-        int g3 = rand.nextInt(255);
-//        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
+        //Random rand = new Random();
+        //int g1 = rand.nextInt(255);
+        //int g2 = rand.nextInt(255);
+        //int g3 = rand.nextInt(255);
+        //System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
     }
+
+    public static final int STATS_SECONDS = 10;
 
     public static int THREAD_COUNT = 40;
     public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
-    public static final int STATS_SECONDS = 10;
+
     public static int GET_PERCENTAGE = 40;
     public static int PUT_PERCENTAGE = 40;
 
     public static void main(String[] args) {
-        final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {
             for (String arg : args) {
@@ -76,7 +79,7 @@ public class SimpleMapTestFromClient {
         } else {
             System.out.println("Help: sh test.sh t200 v130 p10 g85 ");
             System.out.println("    // means 200 threads, value-size 130 bytes, 10% put, 85% get");
-            System.out.println("");
+            System.out.println();
         }
         System.out.println("Starting Test with ");
         System.out.println("      Thread Count: " + THREAD_COUNT);
@@ -112,12 +115,10 @@ public class SimpleMapTestFromClient {
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
-                        System.out.println("cluster size:"
-                                + client.getCluster().getMembers().size());
+                        System.out.println("cluster size:" + client.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();
                         System.out.println(currentStats);
-                        System.out.println("Operations per Second : " + currentStats.total()
-                                / STATS_SECONDS);
+                        System.out.println("Operations per Second : " + currentStats.total() / STATS_SECONDS);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -126,10 +127,10 @@ public class SimpleMapTestFromClient {
         });
     }
 
-    public static class Stats {
-        public AtomicLong puts = new AtomicLong();
-        public AtomicLong gets = new AtomicLong();
-        public AtomicLong removes = new AtomicLong();
+    private static class Stats {
+        private AtomicLong puts = new AtomicLong();
+        private AtomicLong gets = new AtomicLong();
+        private AtomicLong removes = new AtomicLong();
 
         public Stats getAndReset() {
             long putsNow = puts.getAndSet(0);
@@ -146,6 +147,7 @@ public class SimpleMapTestFromClient {
             return puts.get() + gets.get() + removes.get();
         }
 
+        @Override
         public String toString() {
             return "total= " + total() + ", gets:" + gets.get() + ", puts: " + puts.get() + ", removes:" + removes.get();
         }
