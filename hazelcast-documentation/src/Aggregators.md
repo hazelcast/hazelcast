@@ -1,9 +1,9 @@
 
 ## Aggregators
 
-Based on the Hazelcast MapReduce framework, Aggregators are ready-to-use data aggregations. Those are typical operations like
-sum up values, finding minimum or maximum values, calculating averages and other operations as you expect them to be available in
-the relational database world.  
+Based on the Hazelcast MapReduce framework, Aggregators are ready-to-use data aggregations. These are typical operations like
+sum up values, finding minimum or maximum values, calculating averages and other operations that you would expect to be available 
+in the relational database world.  
 
 Aggregation operations are implemented, as mentioned above, on top of the MapReduce framework and therefore all operations can be
 achieved using pure map-reduce calls but using the Aggregation feature is more convenient for a big set of standard operations.
@@ -27,7 +27,7 @@ upcoming Java versions. In addition, the whole Aggregations API has full Java 8 
 
 For illustration of the differences in Java 6 and 7 in comparison to Java 8, we  will have a quick look at both sourcecode
 examples. After that, the documentation will focus on using Java 8 syntax to keep examples short and easy to understand but still
-offers some hints what it looks like on Java 6 or 7 style.
+offer some hints as to what it looks like in Java 6 or 7.
 
 The first basic example will produce the sum of some `int` values stored in a Hazelcast IMap. This is a very basic example not yet
 using a lot of the functionality of the Aggregations framework but will already perfectly show the main difference.
@@ -41,14 +41,14 @@ for ( int i = 0; i < 1000; i++ ) {
 }
 ```
 
-Since our demo data are now prepared we can have a look at how to produce the sums in different Java versions.
+With our demo data prepared we can have a look at how to produce the sums in different Java versions.
 
 #### Aggregations and Java 6 or Java 7
 
 Since Java 6 and 7, as mentioned earlier, are not as strong on resolving generics as Java 8 we need to be a bit more verbose
-on what we write or you might want to consider using raw types but breaking the type safety to ease this process.
+with what we write or you might want to consider using raw types but breaking the type safety to ease this process.
 
-For a short introduction on what the following lines mean have a quick look at the sourcecode comments. We will deeper dig into
+For a short introduction on what the following lines mean have a quick look at the sourcecode comments. We will dig deeper into
 the different options in a bit. 
 
 ```java
@@ -137,8 +137,8 @@ class DivisiblePredicate implements Predicate<String, Integer> {
 }
 ```
 
-Besides from the fact that a `Supplier` is used for filtering, it is also used to extract or transform data before supplying them
-to the aggregation operation itself. We will now look into a short example on how to transform the input value to a string.
+As well as filtering, `Supplier` is also used to extract or transform data before providing it
+to the aggregation operation itself. The following short example shows how to transform an input value to a string.
  
 ```java
 Supplier<String, Integer, String> supplier = Supplier.all(
@@ -149,9 +149,9 @@ Supplier<String, Integer, String> supplier = Supplier.all(
 A Java 6 / 7 example will follow up below in the following section.
 
 Apart from the fact we transformed the input value of type `int` (or Integer) to a string, we can see that the generic information
-of the resulting `Supplier` has changed as well. This indicates that we now would have an aggregation working on string values.
+of the resulting `Supplier` has changed as well. This indicates that we now have an aggregation working on string values.
 
-Another bit to say about the `Supplier` is that it is possible to chain multiple filtering rules, so let's combine all of the
+Another feature of `Supplier` is its ability to chain multiple filtering rules, so let's combine all of the
 above examples into one rule set:
 
 ```java
@@ -185,7 +185,7 @@ class MyCustomSupplier extends Supplier<String, Integer, String> {
 ```
 
 `Supplier`s are expected to return null from the `apply` method whenever the input value should not be mapped to the aggregation
-process. This can be used, as seen above, to implement filter rules directly. Anyways, trying to implement filters using the
+process. This can be used, as seen above, to implement filter rules directly. Implementing filters using the
 `KeyPredicate` and `Predicate` interfaces might be more convenient.
 
 To use your own `Supplier`, just pass it to the aggregate method or use it in combination with other `Supplier`s.
@@ -211,7 +211,7 @@ the chosen `Aggregation`. This interface can also be implemented with your aggre
 find deeper information on this, please have a look at [Implementing Aggregations](#implementing-aggregations).
 
 A common predefined set of aggregations are provided by the `com.hazelcast.mapreduce.aggregation.Aggregations` class. This class
-contains typesafe aggregations of the following types:
+contains type safe aggregations of the following types:
 
  - Average (Integer, Long, Double, BigInteger, BigDecimal)
  - Sum (Integer, Long, Double, BigInteger, BigDecimal)
@@ -220,8 +220,8 @@ contains typesafe aggregations of the following types:
  - DistinctValues
  - Count
 
-Those aggregations are a lot like their counterparts on relational databases. Said that we can mostly translate them to their
-direct SQL like way of describing them:
+Those aggregations are a lot like their counterparts on relational databases and can be equated to SQL statements as set out
+below.
  
 ##### Average #####
 
@@ -327,7 +327,7 @@ class AgeExtractor implements PropertyExtractor<Person, Integer> {
 ```
 
 In this example, we extract the value from the person's age attribute and so the value type changes from Person to `Integer` which
-again is reflected in the generics information to stay typesafe.
+again is reflected in the generics information to stay type safe.
 
 `PropertyExtractor`s are meant to be used for any kind of transformation of data, you might even want to have multiple
 transformation steps chained one after another.
@@ -348,9 +348,9 @@ For `MultiMap` it is very similar:
 
 - `hz::aggregation-multimap-` and concatenated the name of the multimap
 
-Knowing that we can configure the `JobTracker` in the Hazelcast configuration file as expected and as name we use the previously
-built name due to the specification. For more information on configuration of the `JobTracker` please see
-[JobTracker Configuration](#jobtracker-configuration). 
+knowing that (the specification of the name), we can configure the `JobTracker` as expected 
+(as described in the Jobtracker section) using the naming spec we just learned For more information on configuration of the 
+`JobTracker` please see [JobTracker Configuration](#jobtracker-configuration). 
 
 To finish this section, let's have a quick example for the above naming specs:
 
@@ -418,7 +418,7 @@ class SalaryYear implements Serializable {
 }
 ```
 
-On the other hand, our data structures, the two `IMap`s and the `MultiMap`, are defined as the following:
+The two `IMap`s and the `MultiMap`, they are both keyed by the string of email and are defined as follows:
 
 ```java
 IMap<String, Employee> employees = hz.getMap( "employees" );
@@ -443,6 +443,8 @@ int avgSalary = salaries.aggregate( Supplier.all( extractor ),
 That's it. Internally, we created a map-reduce task based on the predefined aggregation and fire it up immediately. Currently, all
 aggregation calls are blocking operations, so it is not yet possible to execute the aggregation in a reactive way (using
 `com.hazelcast.core.ICompletableFuture`) but this will be part of one of the upcoming versions.
+
+#### Map Join Example
 
 The following example is already a bit more complex, so we only want to have our US based employees selected into the average
 salary calculation, so we need to execute some kind of a join operation between the employees and salaries maps.
@@ -476,10 +478,11 @@ int avgSalary = salaries.aggregate( Supplier.fromKeyPredicate(
                                     ), Aggregations.integerAvg() );
 ```
 
-As mentioned before, this example already was a bit more sophisticated. For our next example, we will do some grouping based on
-the different worldwide offices. Currently, a group aggregator is not yet available, that means we need a small workaround to
-achieve this goal. In later versions of the Aggregations API this will not be sufficient anymore since it will be available out of
-the box by a much more convenient way.
+#### Grouping Example
+
+For our next example, we will do some grouping based on the different worldwide offices. Currently, a group aggregator is not yet 
+available, that means we need a small workaround to achieve this goal. In later versions of the Aggregations API this will not be 
+required anymore since it will be available out of the box in a much more convenient way.
 
 So again, let's start with our filter. This time we want to filter based on an office name and we again need to do some data joins
 to achieve this kind of filtering. 
@@ -534,6 +537,8 @@ for ( String office : officeAssignment.keySet() ) {
   avgSalariesPerOffice.put( office, avgSalary );
 }
 ```
+
+#### Simple Count Example
 
 After the previous example, we want to fade out from this section by executing one final, easy but nice aggregation. We
 just want to know how many employees we currently have on a worldwide basis. Before reading the next lines of sourcecode, you
