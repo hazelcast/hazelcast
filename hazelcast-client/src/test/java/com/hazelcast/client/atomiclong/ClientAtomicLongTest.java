@@ -50,7 +50,7 @@ public class ClientAtomicLongTest {
     private static IAtomicLong counter;
 
     @BeforeClass
-    public static void beforeClass(){
+    public static void beforeClass() {
         Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
@@ -93,7 +93,7 @@ public class ClientAtomicLongTest {
 
     @Test
     public void apply() {
-        assertEquals(new Long(1), counter.apply(new AddOneFunction()));
+        assertEquals(Long.valueOf(1), counter.apply(new AddOneFunction()));
         assertEquals(0, counter.get());
     }
 
@@ -187,7 +187,7 @@ public class ClientAtomicLongTest {
     private static class AddOneFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
-            return input+1;
+            return input + 1;
         }
     }
 

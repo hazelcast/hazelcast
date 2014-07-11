@@ -1,30 +1,30 @@
 package com.hazelcast.client.map;
 
-        import com.hazelcast.client.HazelcastClient;
-        import com.hazelcast.config.Config;
-        import com.hazelcast.core.Hazelcast;
-        import com.hazelcast.core.HazelcastInstance;
-        import com.hazelcast.core.IMap;
-        import com.hazelcast.core.MapStore;
-        import com.hazelcast.map.mapstore.MapStoreTest;
-        import com.hazelcast.test.HazelcastSerialClassRunner;
-        import com.hazelcast.test.HazelcastTestSupport;
-        import com.hazelcast.test.annotation.QuickTest;
-        import org.junit.After;
-        import org.junit.Before;
-        import org.junit.Test;
-        import org.junit.experimental.categories.Category;
-        import org.junit.runner.RunWith;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.map.mapstore.MapStoreTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-        import java.util.Collection;
-        import java.util.HashMap;
-        import java.util.HashSet;
-        import java.util.Map;
-        import java.util.Set;
-        import java.util.concurrent.ConcurrentHashMap;
-        import java.util.concurrent.ConcurrentMap;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-        import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
