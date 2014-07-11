@@ -291,7 +291,7 @@ public class ProxyServiceImpl
                             logger.warning("Error while initializing proxy: " + proxy, e);
                         }
                     }
-                    nodeEngine.eventService.executeEvent(new ProxyEventProcessor(CREATED, serviceName, proxy));
+                    nodeEngine.eventService.executeEventCallback(new ProxyEventProcessor(CREATED, serviceName, proxy));
                     if (publishEvent) {
                         publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
                     }
@@ -306,7 +306,7 @@ public class ProxyServiceImpl
             final DistributedObjectFuture proxyFuture = proxies.remove(name);
             if (proxyFuture != null) {
                 DistributedObject proxy = proxyFuture.get();
-                nodeEngine.eventService.executeEvent(new ProxyEventProcessor(DESTROYED, serviceName, proxy));
+                nodeEngine.eventService.executeEventCallback(new ProxyEventProcessor(DESTROYED, serviceName, proxy));
                 if (publishEvent) {
                     publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name));
                 }
@@ -397,7 +397,7 @@ public class ProxyServiceImpl
         }
 
         public int getKey() {
-            return object.getId().hashCode();
+            return object.getName().hashCode();
         }
     }
 
