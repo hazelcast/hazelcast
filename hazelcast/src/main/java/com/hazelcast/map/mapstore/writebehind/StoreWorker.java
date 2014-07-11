@@ -30,7 +30,6 @@ import com.hazelcast.util.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -170,18 +169,6 @@ public class StoreWorker implements Runnable {
         }
     }
 
-    private void removeProcessedEntries(String mapName, Map<Integer, Integer> partitionToEntryCountHolder) {
-        for (Map.Entry<Integer, Integer> entry : partitionToEntryCountHolder.entrySet()) {
-            final Integer partitionId = entry.getKey();
-            final RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
-            if (recordStore == null) {
-                continue;
-            }
-            final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
-            removeProcessed(queue, partitionToEntryCountHolder.get(partitionId));
-        }
-    }
-
     private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {
         final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         return partitionContainer.getExistingRecordStore(mapName);
@@ -206,17 +193,6 @@ public class StoreWorker implements Runnable {
         }
     }
 
-    private void removeProcessed(WriteBehindQueue<DelayedEntry> queue, int numberOfEntriesProcessed) {
-        if (queue == null || queue.size() == 0 || numberOfEntriesProcessed < 1) {
-            return;
-        }
-
-        for (int j = 0; j < numberOfEntriesProcessed; j++) {
-            queue.removeFirst();
-        }
-    }
-
-
     private static List<DelayedEntry> filterItemsLessThanOrEqualToTime(WriteBehindQueue<DelayedEntry> queue,
                                                                        long now) {
         if (queue == null || queue.size() == 0) {
@@ -224,29 +200,6 @@ public class StoreWorker implements Runnable {
         }
 
         return queue.filterItems(now);
-    }
-
-    private static List<DelayedEntry> filterItemsLessThanOrEqualToTime2(WriteBehindQueue<DelayedEntry> queue,
-                                                                        long now) {
-        if (queue == null || queue.size() == 0) {
-            return Collections.emptyList();
-        }
-        List<DelayedEntry> delayedEntries = null;
-        final Iterator<DelayedEntry> iterator = queue.iterator();
-        while (iterator.hasNext()) {
-            final DelayedEntry e = iterator.next();
-            if (delayedEntries == null) {
-                delayedEntries = new ArrayList<DelayedEntry>();
-            }
-            if (e.getStoreTime() <= now) {
-                delayedEntries.add(e);
-            }
-        }
-
-        if (delayedEntries == null) {
-            return Collections.emptyList();
-        }
-        return delayedEntries;
     }
 
     private WriteBehindQueue<DelayedEntry> getWriteBehindQueue(RecordStore recordStore) {

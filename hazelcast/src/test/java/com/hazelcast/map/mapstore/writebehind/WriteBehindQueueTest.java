@@ -127,9 +127,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
         fillQueue(queue, 1000);
 
-        for (int i = 0; i < 1000; i++) {
-            queue.removeAll();
-        }
+        queue.removeAll();
 
         assertEquals(0, queue.size());
     }
