@@ -37,17 +37,23 @@ import java.util.concurrent.CountDownLatch;
 @Category(QuickTest.class)
 public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
+    private HazelcastInstance server;
+    private HazelcastInstance client;
+
     @Before
+    public void setup() {
+        server = Hazelcast.newHazelcastInstance();
+        client = HazelcastClient.newHazelcastClient();
+    }
+
     @After
-    public void cleanup(){
+    public void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void destroyedNotReceivedOnClient() throws Exception {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         final CountDownLatch createdLatch = new CountDownLatch(1);
         final CountDownLatch destroyedLatch = new CountDownLatch(1);
         client.addDistributedObjectListener(new DistributedObjectListener() {
@@ -61,11 +67,13 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
                 destroyedLatch.countDown();
             }
         });
-        final String name = randomString();
-        final ITopic<Object> topic = instance.getTopic(name);
+        String name = randomString();
+        ITopic<Object> topic = server.getTopic(name);
+
         assertOpenEventually(createdLatch, 10);
+
         topic.destroy();
+
         assertOpenEventually(destroyedLatch, 10);
     }
-
 }
