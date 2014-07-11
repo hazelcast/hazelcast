@@ -467,6 +467,7 @@
                                 <include>com/hazelcast/transaction/*</include>
                                 <include>com/hazelcast/mapreduce/*</include>
                                 <include>com/hazelcast/jca/**</include>
+                                <include>com/hazelcast/buildutils/**</include>
 
                                 <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
                                 <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>
