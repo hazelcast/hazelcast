@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,10 +59,11 @@ public class TestServlet extends HttpServlet {
             session.setAttribute("key", "value-updated");
             Object value = session.getAttribute("key");
             resp.getWriter().write(value == null ? "null" : value.toString());
+
         } else if (req.getRequestURI().endsWith("names")) {
             List<String> names = Collections.list(session.getAttributeNames());
             String nameList = names.toString();
-            //return comma seperated list of attribute names
+            // Return comma-separated list of attribute names
             resp.getWriter().write(nameList.substring(1, nameList.length() - 1).replace(", ", ","));
 
         } else if (req.getRequestURI().endsWith("reload")) {
