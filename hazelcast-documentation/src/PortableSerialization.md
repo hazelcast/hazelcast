@@ -95,15 +95,17 @@ config.getSerializationConfig().addPortableFactory( 1, new MyPortableFactory() )
 
 Note that the `id` that is passed to the `SerializationConfig` is same as the `factoryId` that `Foo` class returns.
 
-A few warnings when using portable :
+A few warnings when using portable:
 
-- One need to careful when serializing null portables. Hazelcast lazily creates a class definition of portable internally
-when user first serializes. This class definition is stored and used later for deserializing that portable class. When
-user try to serialize a null portable and if there is no class definition exists at the moment hazelcast throws an
+One needs to be careful when serializing null portables. Hazelcast lazily creates a class definition of portable internally
+when the user first serializes. This class definition is stored and used later for deserializing that portable class. When
+the user tries to serialize a null portable and if there is no class definition exists at the moment, Hazelcast throws an
 exception saying that "com.hazelcast.nio.serialization.HazelcastSerializationException: Cannot write null portable
-without explicitly registering class definition!" . There are two solutions to get rid of that exception. First way, user can put
-a non-null portable class of same type before any other operation. Second way, a class definition can be registered manually
-in serialization config in following way.
+without explicitly registering class definition!". 
+
+There are two solutions to get rid of this exception. First way, the user can put
+a non-null portable class of the same type before any other operation. Second way, a class definition can be registered manually
+in serialization config as shown below.
 
 ```java
 Config config = new Config();
