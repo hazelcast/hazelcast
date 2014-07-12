@@ -33,29 +33,28 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class ClientAtomicReferenceTest {
 
-    static final String name = "test1";
-    static HazelcastInstance client;
-    static HazelcastInstance server;
-    static IAtomicReference<String> clientReference;
-    static IAtomicReference<String> serverReference;
+    private static final String name = "atomicReferenceTest";
+
+    private static IAtomicReference<String> clientReference;
+    private static IAtomicReference<String> serverReference;
 
     @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    public static void beforeClass() {
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
         clientReference = client.getAtomicReference(name);
         serverReference = server.getAtomicReference(name);
     }
 
     @AfterClass
-    public static void destroy() {
-        client.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Before
     @After
-    public void after() {
+    public void reset() {
         serverReference.set(null);
     }
 
@@ -133,7 +132,6 @@ public class ClientAtomicReferenceTest {
         assertEquals("bar", clientReference.getAndSet(null));
         assertTrue(serverReference.isNull());
     }
-
 
     @Test
     public void setAndGet() throws Exception {

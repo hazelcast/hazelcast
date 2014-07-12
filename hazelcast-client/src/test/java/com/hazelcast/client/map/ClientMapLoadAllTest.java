@@ -10,6 +10,8 @@ import com.hazelcast.map.mapstore.MapStoreTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,53 +30,63 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ClientMapLoadAllTest extends HazelcastTestSupport {
 
+    private String mapName;
+
+    private HazelcastInstance client;
+
+    @Before
+    public void setup()
+    {
+        mapName = randomMapName();
+
+        Config config = createNewConfig(mapName);
+        Hazelcast.newHazelcastInstance(config);
+
+        client = HazelcastClient.newHazelcastClient();
+    }
+
+    @After
+    public void teardown()
+    {
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
+
     @Test
     public void testLoadAll_givenKeys() throws Exception {
-        final String mapName = randomMapName();
-        final Config config = createNewConfig(mapName);
-        final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        final IMap<Object, Object> map = client.getMap(mapName);
+        IMap<Integer, Integer> map = client.getMap(mapName);
         populateMap(map, 1000);
         map.evictAll();
-        final Set keysToLoad = selectKeysToLoad(10, 910);
+
+        Set<Integer> keysToLoad = selectKeysToLoad(10, 910);
         map.loadAll(keysToLoad, true);
 
         assertEquals(900, map.size());
         assertRangeLoaded(map, 10, 910);
-
-        closeResources(client, server);
     }
 
     @Test
     public void testLoadAll_allKeys() throws Exception {
-        final String mapName = randomMapName();
-        final Config config = createNewConfig(mapName);
-        final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        final IMap<Object, Object> map = client.getMap(mapName);
+        IMap<Integer, Integer> map = client.getMap(mapName);
         populateMap(map, 1000);
         map.evictAll();
         map.loadAll(true);
 
         assertEquals(1000, map.size());
-
-        closeResources(client, server);
     }
 
     private static Config createNewConfig(String mapName) {
-        final SimpleStore simpleStore = new SimpleStore();
-        return MapStoreTest.newConfig(mapName, simpleStore, 0);
+        return MapStoreTest.newConfig(mapName, new SimpleStore(), 0);
     }
 
-    private static void populateMap(IMap map, int itemCount) {
+    private static void populateMap(IMap<Integer, Integer> map, int itemCount) {
         for (int i = 0; i < itemCount; i++) {
             map.put(i, i);
         }
     }
 
-    private static Set selectKeysToLoad(int rangeStart, int rangeEnd) {
-        final Set keysToLoad = new HashSet();
+    private static Set<Integer> selectKeysToLoad(int rangeStart, int rangeEnd) {
+        Set<Integer> keysToLoad = new HashSet<Integer>();
         for (int i = rangeStart; i < rangeEnd; i++) {
             keysToLoad.add(i);
         }
@@ -87,18 +99,8 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
         }
     }
 
-    private static void closeResources(HazelcastInstance... instances) {
-        if (instances == null) {
-            return;
-        }
-        for (HazelcastInstance instance : instances) {
-            instance.shutdown();
-        }
-    }
-
-
-    private static class SimpleStore implements MapStore {
-        private ConcurrentMap store = new ConcurrentHashMap();
+    private static class SimpleStore implements MapStore<Object, Object> {
+        private final ConcurrentMap<Object, Object> store = new ConcurrentHashMap<Object, Object>();
 
         @Override
         public void store(Object key, Object value) {
@@ -106,24 +108,21 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void storeAll(Map map) {
-            final Set<Map.Entry> entrySet = map.entrySet();
+        public void storeAll(Map<Object, Object> map) {
+            Set<Map.Entry<Object, Object>> entrySet = map.entrySet();
             for (Map.Entry entry : entrySet) {
-                final Object key = entry.getKey();
-                final Object value = entry.getValue();
+                Object key = entry.getKey();
+                Object value = entry.getValue();
                 store(key, value);
             }
-
         }
 
         @Override
         public void delete(Object key) {
-
         }
 
         @Override
         public void deleteAll(Collection keys) {
-
         }
 
         @Override
@@ -132,19 +131,18 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Map loadAll(Collection keys) {
-            final Map map = new HashMap();
+        public Map<Object, Object> loadAll(Collection<Object> keys) {
+            Map<Object, Object> map = new HashMap<Object, Object>();
             for (Object key : keys) {
-                final Object value = load(key);
+                Object value = load(key);
                 map.put(key, value);
             }
             return map;
         }
 
         @Override
-        public Set loadAllKeys() {
+        public Set<Object> loadAllKeys() {
             return store.keySet();
         }
     }
-
 }

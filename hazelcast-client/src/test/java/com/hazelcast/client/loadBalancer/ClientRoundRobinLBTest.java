@@ -39,16 +39,17 @@ import static org.junit.Assert.assertNull;
 public class ClientRoundRobinLBTest {
 
     @AfterClass
-    public static void destroy() {
+    public static void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testRoundRobinLB_withoutMembers() {
-        RoundRobinLB lb = new RoundRobinLB();
-        Member m = lb.next();
-        assertNull(m);
+        RoundRobinLB roundRobinLB = new RoundRobinLB();
+        Member member = roundRobinLB.next();
+
+        assertNull(member);
     }
 
     @Test

@@ -44,40 +44,40 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientListTest {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static IList list;
+    private static final String name = "test";
+
+    private static IList<String> list;
 
     @BeforeClass
-    public static void init(){
+    public static void beforeClass(){
         Config config = new Config();
         Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient();
-        list = hz.getList(name);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        list = client.getList(name);
     }
 
     @AfterClass
-    public static void destroy() {
-        hz.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Before
     @After
-    public void clear() throws IOException {
+    public void reset() throws IOException {
         list.clear();
     }
 
     @Test
     public void testAddAll() {
-        List l = new ArrayList();
-        l.add("item1");
-        l.add("item2");
+        List<String> tempList = new ArrayList<String>();
+        tempList.add("item1");
+        tempList.add("item2");
 
-        assertTrue(list.addAll(l));
+        assertTrue(list.addAll(tempList));
         assertEquals(2, list.size());
 
-        assertTrue(list.addAll(1, l));
+        assertTrue(list.addAll(1, tempList));
         assertEquals(4, list.size());
 
         assertEquals("item1", list.get(0));
@@ -90,10 +90,10 @@ public class ClientListTest {
     public void testAddSetRemove() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
-        list.add(0,"item3");
+        list.add(0, "item3");
         assertEquals(3, list.size());
-        Object o = list.set(2, "item4");
-        assertEquals("item2", o);
+        Object item = list.set(2, "item4");
+        assertEquals("item2", item);
 
         assertEquals(3, list.size());
         assertEquals("item3", list.get(0));
@@ -103,8 +103,8 @@ public class ClientListTest {
         assertFalse(list.remove("item2"));
         assertTrue(list.remove("item3"));
 
-        o = list.remove(1);
-        assertEquals("item4", o);
+        item = list.remove(1);
+        assertEquals("item4", item);
 
         assertEquals(1, list.size());
         assertEquals("item1", list.get(0));
@@ -131,22 +131,22 @@ public class ClientListTest {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item4"));
 
-        Iterator iter = list.iterator();
-        assertEquals("item1",iter.next());
-        assertEquals("item2",iter.next());
-        assertEquals("item1",iter.next());
-        assertEquals("item4",iter.next());
-        assertFalse(iter.hasNext());
+        Iterator iterator = list.iterator();
+        assertEquals("item1", iterator.next());
+        assertEquals("item2", iterator.next());
+        assertEquals("item1",iterator.next());
+        assertEquals("item4", iterator.next());
+        assertFalse(iterator.hasNext());
 
         ListIterator listIterator = list.listIterator(2);
         assertEquals("item1",listIterator.next());
         assertEquals("item4",listIterator.next());
         assertFalse(listIterator.hasNext());
 
-        List l = list.subList(1, 3);
-        assertEquals(2, l.size());
-        assertEquals("item2", l.get(0));
-        assertEquals("item1", l.get(1));
+        List<String> tempList = list.subList(1, 3);
+        assertEquals(2, tempList.size());
+        assertEquals("item2", tempList.get(0));
+        assertEquals("item1", tempList.get(1));
     }
 
     @Test
@@ -159,13 +159,13 @@ public class ClientListTest {
         assertFalse(list.contains("item3"));
         assertTrue(list.contains("item2"));
 
-        List l = new ArrayList();
-        l.add("item4");
-        l.add("item3");
+        List<String> tempList = new ArrayList<String>();
+        tempList.add("item4");
+        tempList.add("item3");
 
-        assertFalse(list.containsAll(l));
+        assertFalse(list.containsAll(tempList));
         assertTrue(list.add("item3"));
-        assertTrue(list.containsAll(l));
+        assertTrue(list.containsAll(tempList));
     }
 
     @Test
@@ -175,37 +175,31 @@ public class ClientListTest {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item4"));
 
-        List l = new ArrayList();
-        l.add("item4");
-        l.add("item3");
+        List<String> tempList = new ArrayList<String>();
+        tempList.add("item4");
+        tempList.add("item3");
 
-        assertTrue(list.removeAll(l));
+        assertTrue(list.removeAll(tempList));
         assertEquals(3, list.size());
-        assertFalse(list.removeAll(l));
-        assertEquals(3, list.size());
-
-        l.clear();
-        l.add("item1");
-        l.add("item2");
-        assertFalse(list.retainAll(l));
+        assertFalse(list.removeAll(tempList));
         assertEquals(3, list.size());
 
-        l.clear();
-        assertTrue(list.retainAll(l));
+        tempList.clear();
+        tempList.add("item1");
+        tempList.add("item2");
+        assertFalse(list.retainAll(tempList));
+        assertEquals(3, list.size());
+
+        tempList.clear();
+        assertTrue(list.retainAll(tempList));
         assertEquals(0, list.size());
-
     }
 
     @Test
     public void testListener() throws Exception {
-
-//        final ISet tempSet = server.getSet(name);
-        final IList tempList = list;
-
         final CountDownLatch latch = new CountDownLatch(6);
 
-        ItemListener listener = new ItemListener() {
-
+        ItemListener<String> listener = new ItemListener<String>() {
             public void itemAdded(ItemEvent itemEvent) {
                 latch.countDown();
             }
@@ -213,17 +207,18 @@ public class ClientListTest {
             public void itemRemoved(ItemEvent item) {
             }
         };
-        String registrationId = tempList.addItemListener(listener, true);
+        String listenerID = list.addItemListener(listener, true);
 
         new Thread(){
             public void run() {
                 for (int i=0; i<5; i++){
-                    tempList.add("item" + i);
+                    list.add("item" + i);
                 }
-                tempList.add("done");
+                list.add("done");
             }
         }.start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
 
+        list.removeItemListener(listenerID);
     }
 }

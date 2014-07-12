@@ -22,13 +22,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/28/13
@@ -37,33 +41,33 @@ import static org.junit.Assert.*;
 @Category(QuickTest.class)
 public class ClientCountDownLatchTest {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static ICountDownLatch l;
+    private static final String name = "test";
+
+    private ICountDownLatch latch;
 
     @Before
-    public void init() {
+    public void setup() {
         Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient();
-        l = hz.getCountDownLatch(name);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        latch = client.getCountDownLatch(name);
     }
 
     @After
-    public void stop(){
-        hz.shutdown();
+    public void teardown() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testLatch() throws Exception {
-        assertTrue(l.trySetCount(20));
-        assertFalse(l.trySetCount(10));
-        assertEquals(20, l.getCount());
+        assertTrue(latch.trySetCount(20));
+        assertFalse(latch.trySetCount(10));
+        assertEquals(20, latch.getCount());
 
-        new Thread(){
+        new Thread() {
             public void run() {
-                for (int i=0; i<20; i++){
-                    l.countDown();
+                for (int i = 0; i < 20; i++) {
+                    latch.countDown();
                     try {
                         Thread.sleep(60);
                     } catch (InterruptedException e) {
@@ -73,8 +77,7 @@ public class ClientCountDownLatchTest {
             }
         }.start();
 
-        assertFalse(l.await(1, TimeUnit.SECONDS));
-
-        assertTrue(l.await(5, TimeUnit.SECONDS));
+        assertFalse(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 }

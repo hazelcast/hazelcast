@@ -5,7 +5,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -24,17 +23,16 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapTryLockConcurrentTests {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
+    public static void beforeClass() {
+        Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -50,25 +48,25 @@ public class ClientMapTryLockConcurrentTests {
     }
 
     private void concurrent_MapTryLock(boolean withTimeOut) throws InterruptedException {
-        final int maxThreads = 8;
-        final IMap<String, Integer> map = client.getMap(randomString());
-        final String upKey = "upKey";
-        final String downKey = "downKey";
+        int maxThreads = 8;
+        IMap<String, Integer> map = client.getMap(randomString());
+        String upKey = "upKey";
+        String downKey = "downKey";
 
         map.put(upKey, 0);
         map.put(downKey, 0);
 
         Thread threads[] = new Thread[maxThreads];
-        for ( int i=0; i< threads.length; i++ ) {
+        for (int i = 0; i < threads.length; i++) {
 
-            Thread t;
-            if(withTimeOut){
-               t = new MapTryLockTimeOutThread(map, upKey, downKey);
-            }else{
-                t = new MapTryLockThread(map, upKey, downKey);
+            Thread thread;
+            if (withTimeOut) {
+                thread = new MapTryLockTimeOutThread(map, upKey, downKey);
+            } else {
+                thread = new MapTryLockThread(map, upKey, downKey);
             }
-            t.start();
-            threads[i] = t;
+            thread.start();
+            threads[i] = thread;
         }
 
         assertJoinable(threads);
@@ -79,78 +77,78 @@ public class ClientMapTryLockConcurrentTests {
         assertTrue("concurrent access to locked code caused wrong total", upTotal + downTotal == 0);
     }
 
-    static class MapTryLockThread extends TestHelper {
+    private static class MapTryLockThread extends TestHelper {
 
-        public MapTryLockThread(IMap map, String upKey, String downKey){
+        public MapTryLockThread(IMap<String, Integer> map, String upKey, String downKey) {
             super(map, upKey, downKey);
         }
 
-        public void doRun() throws Exception{
-            if(map.tryLock(upKey)){
-                try{
-                    if(map.tryLock(downKey)){
+        public void doRun() throws Exception {
+            if (map.tryLock(upKey)) {
+                try {
+                    if (map.tryLock(downKey)) {
                         try {
                             work();
-                        }finally {
+                        } finally {
                             map.unlock(downKey);
                         }
                     }
-                }finally {
+                } finally {
                     map.unlock(upKey);
                 }
             }
         }
     }
 
-    static class MapTryLockTimeOutThread extends TestHelper {
+    private static class MapTryLockTimeOutThread extends TestHelper {
 
-        public MapTryLockTimeOutThread(IMap map, String upKey, String downKey){
-           super(map, upKey, downKey);
+        public MapTryLockTimeOutThread(IMap<String, Integer> map, String upKey, String downKey) {
+            super(map, upKey, downKey);
         }
 
-        public void doRun() throws Exception{
-            if(map.tryLock(upKey, 1, TimeUnit.MILLISECONDS)){
-                try{
-                    if(map.tryLock(downKey, 1, TimeUnit.MILLISECONDS )){
+        public void doRun() throws Exception {
+            if (map.tryLock(upKey, 1, TimeUnit.MILLISECONDS)) {
+                try {
+                    if (map.tryLock(downKey, 1, TimeUnit.MILLISECONDS)) {
                         try {
                             work();
-                        }finally {
+                        } finally {
                             map.unlock(downKey);
                         }
                     }
-                }finally {
+                } finally {
                     map.unlock(upKey);
                 }
             }
         }
     }
 
-    static abstract class TestHelper extends Thread {
-        protected static final int ITERATIONS = 1000*10;
+    private static abstract class TestHelper extends Thread {
+        protected static final int ITERATIONS = 1000 * 10;
         protected final Random random = new Random();
         protected final IMap<String, Integer> map;
         protected final String upKey;
         protected final String downKey;
 
-        public TestHelper(IMap map, String upKey, String downKey){
+        public TestHelper(IMap<String, Integer> map, String upKey, String downKey) {
             this.map = map;
             this.upKey = upKey;
             this.downKey = downKey;
         }
 
         public void run() {
-            try{
-                for ( int i=0; i < ITERATIONS; i++ ) {
+            try {
+                for (int i = 0; i < ITERATIONS; i++) {
                     doRun();
                 }
-            }catch(Exception e){
+            } catch (Exception e) {
                 throw new RuntimeException("Test Thread crashed with ", e);
             }
         }
 
-        abstract void doRun()throws Exception;
+        abstract void doRun() throws Exception;
 
-        public void work(){
+        public void work() {
             int upTotal = map.get(upKey);
             int downTotal = map.get(downKey);
 

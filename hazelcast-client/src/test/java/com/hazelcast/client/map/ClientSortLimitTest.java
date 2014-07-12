@@ -51,26 +51,27 @@ import static junit.framework.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ClientSortLimitTest extends HazelcastTestSupport {
 
-    static HazelcastInstance client;
-    static IMap map;
-    static int pageSize = 5;
-    static int size = 50;
+    private static final int pageSize = 5;
+    private static final int size = 50;
+
+    private static HazelcastInstance client;
+    private static IMap<Integer, Integer> map;
 
     @BeforeClass
-    public static void createInstances(){
+    public static void beforeClass() {
         Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void shutdownInstances(){
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Before
-    public void init(){
+    public void setup() {
         map = client.getMap(randomString());
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -78,57 +79,57 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
     @After
-    public void reset(){
+    public void teardown() {
         map.destroy();
     }
 
     @Test
     public void testWithoutAnchor() {
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.nextPage();
         predicate.nextPage();
+
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 10, 11, 12, 13, 14);
-        predicate.previousPage();
 
+        predicate.previousPage();
         values = map.values(predicate);
         assertIterableEquals(values, 5, 6, 7, 8, 9);
-        predicate.previousPage();
 
+        predicate.previousPage();
         values = map.values(predicate);
         assertIterableEquals(values, 0, 1, 2, 3, 4);
-
     }
 
     @Test
-    public void testGoTo_previousPage_BeforeTheStart() {
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
+    public void testGoTo_PreviousPage_BeforeTheStart() {
+        PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.previousPage();
 
+        map.values(predicate);
         Collection<Integer> values = map.values(predicate);
-        values = map.values(predicate);
+
         assertIterableEquals(values, 0, 1, 2, 3, 4);
     }
 
     @Test
     public void testGoTo_NextPage_AfterTheEnd() {
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
-
-        for ( int i=0; i < size/pageSize; i++ ) {
+        PagingPredicate predicate = new PagingPredicate(pageSize);
+        for (int i = 0; i < size / pageSize; i++) {
             predicate.nextPage();
         }
 
+        map.values(predicate);
         Collection<Integer> values = map.values(predicate);
-        values = map.values(predicate);
 
-        assertEquals( size/pageSize - 1, predicate.getPage());
+        assertEquals(size / pageSize - 1, predicate.getPage());
         assertIterableEquals(values, 45, 46, 47, 48, 49);
     }
 
     @Test
     public void testPagingWithoutFilteringAndComparator() {
         Set<Integer> set = new HashSet<Integer>();
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        PagingPredicate predicate = new PagingPredicate(pageSize);
 
         Collection<Integer> values = map.values(predicate);
         while (values.size() > 0) {
@@ -143,9 +144,9 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
 
     @Test
     public void testPagingWithFilteringAndComparator() {
-        final Predicate lessEqual = Predicates.lessEqual("this", 8);
-        final TestComparator comparator = new TestComparator(false, IterationType.VALUE);
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, comparator, pageSize);
+        Predicate lessEqual = Predicates.lessEqual("this", 8);
+        TestComparator comparator = new TestComparator(false, IterationType.VALUE);
+        PagingPredicate predicate = new PagingPredicate(lessEqual, comparator, pageSize);
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 8, 7, 6, 5, 4);
@@ -167,13 +168,12 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {   // keys [50-1] values [0-49]
             map.put(size - i, i);
         }
-        final Predicate lessEqual = Predicates.lessEqual("this", 8);    // less than 8
-        final TestComparator comparator = new TestComparator(true, IterationType.KEY);  //ascending keys
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, comparator, pageSize);
+        Predicate lessEqual = Predicates.lessEqual("this", 8);    // less than 8
+        TestComparator comparator = new TestComparator(true, IterationType.KEY);  //ascending keys
+        PagingPredicate predicate = new PagingPredicate(lessEqual, comparator, pageSize);
 
         Set<Integer> keySet = map.keySet(predicate);
         assertIterableEquals(keySet, 42, 43, 44, 45, 46);
-
 
         predicate.nextPage();
         assertEquals(46, predicate.getAnchor().getKey());
@@ -192,9 +192,9 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
             map.put(i, i - size);
         }
 
-        final Predicate lessEqual = Predicates.lessEqual("this", 8); // entries which has value less than 8
-        final TestComparator comparator = new TestComparator(true, IterationType.VALUE); //ascending values
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, comparator, pageSize); //pageSize = 5
+        Predicate lessEqual = Predicates.lessEqual("this", 8); // entries which has value less than 8
+        TestComparator comparator = new TestComparator(true, IterationType.VALUE); //ascending values
+        PagingPredicate predicate = new PagingPredicate(lessEqual, comparator, pageSize); //pageSize = 5
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 0, 0, 1, 1, 2);
@@ -213,10 +213,10 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNextPageAfterResultSetEmpty(){
-        final Predicate lessEqual = Predicates.lessEqual("this", 3); // entries which has value less than 3
-        final TestComparator comparator = new TestComparator(true, IterationType.VALUE); //ascending values
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, comparator, pageSize); //pageSize = 5
+    public void testNextPageAfterResultSetEmpty() {
+        Predicate lessEqual = Predicates.lessEqual("this", 3); // entries which has value less than 3
+        TestComparator comparator = new TestComparator(true, IterationType.VALUE); //ascending values
+        PagingPredicate predicate = new PagingPredicate(lessEqual, comparator, pageSize); //pageSize = 5
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 0, 1, 2, 3);
@@ -230,14 +230,10 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         assertEquals(0, values.size());
     }
 
-    static class TestComparator implements Comparator<Map.Entry>, Serializable {
+    private static class TestComparator implements Comparator<Map.Entry>, Serializable {
 
-        int ascending = 1;
-
-        IterationType iterationType = IterationType.ENTRY;
-
-        TestComparator() {
-        }
+        private final int ascending;
+        private final IterationType iterationType;
 
         TestComparator(boolean ascending, IterationType iterationType) {
             this.ascending = ascending ? 1 : -1;
@@ -262,5 +258,4 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
             }
         }
     }
-
 }

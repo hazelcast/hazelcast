@@ -24,43 +24,45 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientLockWithTerminationTest {
-    private HazelcastInstance node1;
-    private HazelcastInstance node2;
+
+    private HazelcastInstance server;
     private HazelcastInstance client1;
     private HazelcastInstance client2;
     private String keyOwnedByNode1;
 
     @Before
     public void setup() throws InterruptedException {
-        node1 = Hazelcast.newHazelcastInstance();
-        node2 = Hazelcast.newHazelcastInstance();
+        server = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
+
         client1 = HazelcastClient.newHazelcastClient();
         client2 = HazelcastClient.newHazelcastClient();
-        keyOwnedByNode1 = HazelcastTestSupport.generateKeyOwnedBy(node1);
+
+        keyOwnedByNode1 = HazelcastTestSupport.generateKeyOwnedBy(server);
     }
 
     @After
     public void tearDown() throws IOException {
-        Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testLockOnClientCrash() throws InterruptedException {
+    public void testLockOnClient_withClientCrash() throws InterruptedException {
         ILock lock = client1.getLock(keyOwnedByNode1);
         lock.lock();
 
@@ -78,7 +80,7 @@ public class ClientLockWithTerminationTest {
         ILock lock = client1.getLock(keyOwnedByNode1);
         lock.lock();
 
-        node1.getLifecycleService().terminate();
+        server.getLifecycleService().terminate();
 
         lock = client2.getLock(keyOwnedByNode1);
         boolean lockObtained = lock.tryLock();
