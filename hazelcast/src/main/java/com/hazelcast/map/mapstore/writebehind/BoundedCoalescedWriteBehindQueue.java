@@ -123,10 +123,6 @@ class BoundedCoalescedWriteBehindQueue extends CoalescedWriteBehindQueue {
         return writeBehindQueueItemCounter.intValue();
     }
 
-    private void incrementPerNodeMaxSize() {
-        writeBehindQueueItemCounter.incrementAndGet();
-    }
-
     private void incrementPerNodeMaxSize(int count) {
         writeBehindQueueItemCounter.addAndGet(count);
     }
