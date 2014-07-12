@@ -38,8 +38,11 @@ class BoundedCoalescedWriteBehindQueue extends CoalescedWriteBehindQueue {
         if (hasReachedMaxSize(currentPerNodeCount)) {
             throw new ReachedMaxSizeException("Queue already reached per node max capacity [" + maxSize + "]");
         }
-        incrementPerNodeMaxSize();
-        return super.offer(entry);
+        final int beforeOffer = queue.size();
+        final boolean result = super.offer(entry);
+        final int afterOffer = queue.size();
+        incrementPerNodeMaxSize(afterOffer - beforeOffer);
+        return result;
     }
 
     @Override
