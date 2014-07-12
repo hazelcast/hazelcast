@@ -484,11 +484,6 @@ public final class Predicates {
                         } else {
                             otherIndexedResults.add(s);
                         }
-                    } else {
-                        if (lsNoIndexPredicates == null) {
-                            lsNoIndexPredicates = new LinkedList<Predicate>();
-                            lsNoIndexPredicates.add(predicate);
-                        }
                     }
                 }
                 if (!indexed) {

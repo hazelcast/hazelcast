@@ -602,7 +602,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 }
             }
         }
-        if (keys.isEmpty()) {
+        if (keySet.isEmpty()) {
             return result;
         }
         MapGetAllRequest request = new MapGetAllRequest(name, keySet);
