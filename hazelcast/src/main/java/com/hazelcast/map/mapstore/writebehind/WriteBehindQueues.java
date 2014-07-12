@@ -30,8 +30,12 @@ public final class WriteBehindQueues {
     private WriteBehindQueues() {
     }
 
-    public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
-        return (WriteBehindQueue<T>) createSafeWriteBehindQueue(createBoundedCoalescedWriteBehindQueue(maxSizePerNode, counter));
+    public static <T> WriteBehindQueue<T> createBoundedArrayWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
+        return new BoundedArrayWriteBehindQueue<T>(maxSizePerNode, counter);
+    }
+
+    public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue() {
+        return (WriteBehindQueue<T>) createSafeWriteBehindQueue(createCoalescedWriteBehindQueue());
     }
 
     public static <T> WriteBehindQueue<T> emptyWriteBehindQueue() {
@@ -42,8 +46,8 @@ public final class WriteBehindQueues {
         return new SynchronizedWriteBehindQueue<T>(queue);
     }
 
-    public static WriteBehindQueue createBoundedCoalescedWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
-        return new BoundedCoalescedWriteBehindQueue(maxSizePerNode, counter);
+    public static WriteBehindQueue createCoalescedWriteBehindQueue() {
+        return new CoalescedWriteBehindQueue();
     }
 
     /**

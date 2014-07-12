@@ -9,7 +9,6 @@ import com.hazelcast.map.mapstore.writethrough.WriteThroughStore;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Factory class responsible for creating various daa store implementations.
@@ -37,11 +36,8 @@ public final class MapDataStores {
         final SerializationService serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         final int writeDelaySeconds = mapContainer.getMapConfig().getMapStoreConfig().getWriteDelaySeconds();
         final long millis = mapServiceContext.convertTime(writeDelaySeconds, TimeUnit.SECONDS);
-        final int capacity = mapServiceContext.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
-        final AtomicInteger writeBehindQueueItemCounter = mapServiceContext.getWriteBehindQueueItemCounter();
         final WriteBehindStore mapDataStore
-                = new WriteBehindStore(store, serializationService, millis,
-                partitionId, capacity, writeBehindQueueItemCounter);
+                = new WriteBehindStore(store, serializationService, millis, partitionId);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
         return (MapDataStore<K, V>) mapDataStore;
     }

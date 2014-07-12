@@ -1,6 +1,7 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -27,6 +28,8 @@ public class TestMapUsingMapStoreBuilder<K, V> {
     private int writeDelaySeconds = 0;
 
     private int writeBatchSize = 1;
+
+    private InMemoryFormat inMemoryFormat = InMemoryFormat.BINARY;
 
     private TestMapUsingMapStoreBuilder() {
     }
@@ -82,6 +85,11 @@ public class TestMapUsingMapStoreBuilder<K, V> {
         return this;
     }
 
+    public TestMapUsingMapStoreBuilder<K, V> withInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        this.inMemoryFormat = inMemoryFormat;
+        return this;
+    }
+
 
     public TestMapUsingMapStoreBuilder<K, V> withWriteBatchSize(int writeBatchSize) {
         this.writeBatchSize = writeBatchSize;
@@ -102,7 +110,7 @@ public class TestMapUsingMapStoreBuilder<K, V> {
         final Config config = new Config();
         config.getMapConfig(mapName)
                 .setBackupCount(backupCount)
-                .setMapStoreConfig(mapStoreConfig);
+                .setMapStoreConfig(mapStoreConfig).setInMemoryFormat(inMemoryFormat);
 
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
         // nodes.

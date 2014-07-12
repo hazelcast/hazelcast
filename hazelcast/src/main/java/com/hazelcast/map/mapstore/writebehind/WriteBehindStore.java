@@ -14,7 +14,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TODO Holds current write behind state and should be included in migrations.
@@ -59,12 +58,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private long lastCleanupTime;
 
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
-                            long writeDelayTime, int partitionId, int maxPerNodeWriteBehindQueueSize,
-                            AtomicInteger writeBehindItemCounter) {
+                            long writeDelayTime, int partitionId) {
         super(store, serializationService);
         this.writeDelayTime = writeDelayTime;
         this.partitionId = partitionId;
-        this.writeBehindQueue = createWriteBehindQueue(maxPerNodeWriteBehindQueueSize, writeBehindItemCounter);
+        this.writeBehindQueue = createWriteBehindQueue();
         this.evictionStagingArea = createEvictionStagingArea();
     }
 
@@ -222,9 +220,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return now < scheduledStoreTime;
     }
 
-    private WriteBehindQueue<DelayedEntry> createWriteBehindQueue(int maxPerNodeWriteBehindQueueSize,
-                                                                  AtomicInteger writeBehindItemCounter) {
-        return WriteBehindQueues.createDefaultWriteBehindQueue(maxPerNodeWriteBehindQueueSize, writeBehindItemCounter);
+    private WriteBehindQueue<DelayedEntry> createWriteBehindQueue() {
+        return WriteBehindQueues.createDefaultWriteBehindQueue();
     }
 
     private Map<Data, DelayedEntry> createEvictionStagingArea() {
