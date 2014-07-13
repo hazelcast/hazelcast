@@ -239,8 +239,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         if (stagingArea.isEmpty() || !inEvictableTimeWindow(now)) {
             return;
         }
-        final long nextItemsStoreTimeInWriteBehindQueue = getNextItemsStoreTimeInWriteBehindQueue();
         final int size = stagingArea.size();
+        if (size == 0) {
+            return;
+        }
+        final long nextItemsStoreTimeInWriteBehindQueue = getNextItemsStoreTimeInWriteBehindQueue();
         final int evictionPercentage = 20;
         int maxAllowedIterationCount = getMaxIterationCount(size, evictionPercentage);
         initStagingAreaIterator();

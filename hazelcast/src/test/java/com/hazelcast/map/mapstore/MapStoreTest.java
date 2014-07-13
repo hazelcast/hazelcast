@@ -39,10 +39,13 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -511,6 +514,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
         //wait for all store ops.
         assertOpenEventually(testMapStore.storeLatch);
+        assertEquals(0, writeBehindQueueSize(node1, mapName));
         // init before eviction.
         testMapStore.storeLatch = new CountDownLatch(populationCount);
         //evict.
@@ -550,6 +554,24 @@ public class MapStoreTest extends HazelcastTestSupport {
         testMapStore.deleteLatch.await(10, TimeUnit.SECONDS);
         //check map size
         assertEquals(0, map.size());
+    }
+
+    private int writeBehindQueueSize(HazelcastInstance node, String mapName){
+        int size = 0;
+        final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        for (int i = 0; i < partitionCount; i++) {
+            final RecordStore recordStore = mapServiceContext.getExistingRecordStore(i, mapName);
+            if(recordStore == null){
+                continue;
+            }
+            final MapDataStore<Data, Object> mapDataStore
+                    =recordStore.getMapDataStore();
+             size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
+        }
+        return size;
     }
 
 
