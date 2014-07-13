@@ -47,6 +47,13 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
+    public E get(E e) {
+        synchronized (mutex) {
+            return queue.get(e);
+        }
+    }
+
+    @Override
     public void removeFirst() {
         synchronized (mutex) {
             queue.removeFirst();

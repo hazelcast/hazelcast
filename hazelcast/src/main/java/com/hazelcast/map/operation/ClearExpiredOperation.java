@@ -65,7 +65,7 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
         }
         final MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
         if (mapDataStore instanceof WriteBehindStore) {
-            ((WriteBehindStore) mapDataStore).cleanupEvictionStagingArea(now);
+            ((WriteBehindStore) mapDataStore).cleanupStagingArea(now);
         }
     }
 

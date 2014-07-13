@@ -40,6 +40,11 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     }
 
     @Override
+    public DelayedEntry get(DelayedEntry entry) {
+        return queue.get(entry.getKey());
+    }
+
+    @Override
     public void removeFirst() {
         final Set<Data> keySet = queue.keySet();
         for (Data key : keySet) {

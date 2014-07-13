@@ -27,4 +27,11 @@ public interface WriteBehindProcessor<E> {
     void addStoreListener(StoreListener storeListener);
 
     Collection flush(WriteBehindQueue queue);
+
+    /**
+     * Flush a key directly to map store.
+     *
+     * @param key to be flushed.
+     */
+    void flush(E key);
 }

@@ -71,6 +71,11 @@ public final class WriteBehindQueues {
         }
 
         @Override
+        public T get(T t) {
+            return null;
+        }
+
+        @Override
         public void removeFirst() {
         }
 

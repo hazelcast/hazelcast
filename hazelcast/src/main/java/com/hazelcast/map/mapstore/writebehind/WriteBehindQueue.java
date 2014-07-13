@@ -36,6 +36,14 @@ public interface WriteBehindQueue<E> extends Iterable<E> {
     boolean offer(E e);
 
     /**
+     * Gets item.
+     *
+     * @param e item to be offered
+     * @return corresponding item from queue or null.
+     */
+    E get(E e);
+
+    /**
      * removes head of the queue.
      */
     void removeFirst();

@@ -50,6 +50,11 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
+    public T get(T t) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void removeFirst() {
         if (list.isEmpty()) {
             return;
