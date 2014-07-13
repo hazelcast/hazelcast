@@ -514,7 +514,13 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
         //wait for all store ops.
         assertOpenEventually(testMapStore.storeLatch);
-        assertEquals(0, writeBehindQueueSize(node1, mapName));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, writeBehindQueueSize(node1, mapName));
+            }
+        });
+
         // init before eviction.
         testMapStore.storeLatch = new CountDownLatch(populationCount);
         //evict.
