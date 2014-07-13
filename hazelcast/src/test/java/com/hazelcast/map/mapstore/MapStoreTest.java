@@ -510,7 +510,7 @@ public class MapStoreTest extends HazelcastTestSupport {
             map.put(i, "value" + i);
         }
         //wait for all store ops.
-        assertTrue(testMapStore.storeLatch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(testMapStore.storeLatch);
         // init before eviction.
         testMapStore.storeLatch = new CountDownLatch(populationCount);
         //evict.
