@@ -51,4 +51,20 @@ public class QueueConfigTest {
         QueueConfig queueConfig = new QueueConfig().setName(name);
         assertEquals(name, queueConfig.getName());
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testQueueMaxSize_whenSetToZero(){
+        new QueueConfig().setMaxSize(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testQueueMaxSize_whenSetToNegative(){
+        new QueueConfig().setMaxSize(-1);
+    }
+
+    @Test
+    public void testQueueMaxSize_whenSetToPositive(){
+        final QueueConfig queueConfig = new QueueConfig().setMaxSize(1);
+        assertEquals(1, queueConfig.getMaxSize());
+    }
 }
