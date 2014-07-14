@@ -149,7 +149,7 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size>0</max-size>
+        <!--<max-size>0</max-size>-->
 
         <backup-count>0</backup-count>
         <async-backup-count>0</async-backup-count>
