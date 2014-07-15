@@ -292,7 +292,7 @@ public abstract class HazelcastTestSupport {
         return TestUtil.getNode(hz);
     }
 
-    protected static void warmUpPartitions(HazelcastInstance... instances) {
+    public static void warmUpPartitions(HazelcastInstance... instances) {
         try {
             TestUtil.warmUpPartitions(instances);
         } catch (InterruptedException e) {
