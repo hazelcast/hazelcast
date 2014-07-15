@@ -34,7 +34,7 @@ public class MemberAttributeConfig {
     public Map<String, Object> getAttributes() {
         return attributes;
     }
-    
+
     public void setAttributes(Map<String, Object> attributes) {
         this.attributes.clear();
         if (attributes != null) {
