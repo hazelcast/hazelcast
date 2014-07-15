@@ -60,7 +60,7 @@ public class ClientLockWithTerminationTest {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
-                                                                          g
+
     @Test
     public void testLockOnClientCrash() throws InterruptedException {
         ILock lock = client1.getLock(keyOwnedByNode2);
