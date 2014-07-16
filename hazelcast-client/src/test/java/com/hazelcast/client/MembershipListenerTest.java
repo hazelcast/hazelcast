@@ -34,32 +34,37 @@ import static org.junit.Assert.assertFalse;
 @Category(QuickTest.class)
 public class MembershipListenerTest extends HazelcastTestSupport {
 
-    private HazelcastInstance server1 = null;
-    private HazelcastInstance client = null;
+    private HazelcastInstance server1;
+    private HazelcastInstance server2;
+
+    private HazelcastInstance client;
+
+    private MemberShipEventLogger listener;
 
     @Before
     public void setup() {
         server1 = Hazelcast.newHazelcastInstance();
+
         client = HazelcastClient.newHazelcastClient();
 
+        listener = new MemberShipEventLogger();
     }
 
     @After
-    public void tearDown() {
+    public void teardown() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     @Category(ProblematicTest.class)
     public void whenMemberAdded_thenMemberAddedEvent() throws Exception {
-        final MemberShipEventLoger listener = new MemberShipEventLoger();
-
         client.getCluster().addMembershipListener(listener);
 
-        //start a second server and verify that the listener receives it.
-        final HazelcastInstance server2 = Hazelcast.newHazelcastInstance();
+        // Start a second server and verify that the listener receives it
+        server2 = Hazelcast.newHazelcastInstance();
 
-        //verify that the listener receives member added event.
+        // Verify that the listener receives member added event
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
@@ -74,24 +79,22 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     @Test
     public void whenMemberRemoved_thenMemberRemovedEvent() throws Exception {
-        final MemberShipEventLoger listener = new MemberShipEventLoger();
-
-        //start a second server and verify that the listener receives it.
-        final HazelcastInstance server2 = Hazelcast.newHazelcastInstance();
+        // Start a second server and verify that the listener receives it
+        server2 = Hazelcast.newHazelcastInstance();
 
         client.getCluster().addMembershipListener(listener);
 
-        final Member server2Member = server2.getCluster().getLocalMember();
+        final Member memberServer2 = server2.getCluster().getLocalMember();
         server2.shutdown();
 
-        //verify that the correct member removed event was received.
+        // Verify that the correct member removed event was received
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 assertEquals(1, listener.events.size());
                 MembershipEvent event = listener.events.get(0);
                 assertEquals(MembershipEvent.MEMBER_REMOVED, event.getEventType());
-                assertEquals(server2Member, event.getMember());
+                assertEquals(memberServer2, event.getMember());
                 assertEquals(getMembers(server1), event.getMembers());
             }
         });
@@ -99,19 +102,17 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     @Test
     public void removedPhantomListener_thenFalse() throws Exception {
-        assertFalse(client.getCluster().removeMembershipListener("_IamNotHear_"));
+        assertFalse(client.getCluster().removeMembershipListener("_NOT_EXISTS_"));
     }
 
     @Test(expected = NullPointerException.class)
     public void removedNullListener_thenException() throws Exception {
-
         assertFalse(client.getCluster().removeMembershipListener(null));
     }
 
 
     @Test(expected = java.lang.NullPointerException.class)
     public void addNullListener_thenException() throws Exception {
-
         client.getCluster().addMembershipListener(null);
     }
 
@@ -123,10 +124,8 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         return result;
     }
 
-
-    private class MemberShipEventLoger implements MembershipListener {
-
-        private List<MembershipEvent> events = new Vector<MembershipEvent>();
+    private class MemberShipEventLogger implements MembershipListener {
+        private final List<MembershipEvent> events = new Vector<MembershipEvent>();
 
         public void memberAdded(MembershipEvent event) {
             events.add(event);

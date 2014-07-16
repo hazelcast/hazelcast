@@ -31,8 +31,7 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Random;
 
-public class AbstractAggregationTest
-        extends HazelcastTestSupport {
+public class AbstractAggregationTest extends HazelcastTestSupport {
 
     private static final int VALUES_COUNT = 10000;
     private static final Random RANDOM = new Random();
@@ -40,7 +39,7 @@ public class AbstractAggregationTest
     protected static HazelcastInstance HAZELCAST_INSTANCE;
 
     @BeforeClass
-    public static void startup() {
+    public static void beforeClass() {
         Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
 
@@ -48,16 +47,16 @@ public class AbstractAggregationTest
     }
 
     @AfterClass
-    public static void teardown() {
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @After
-    public void cleanup() {
+    public void teardown() {
         for (DistributedObject object : HAZELCAST_INSTANCE.getDistributedObjects()) {
             if (object instanceof IMap) {
-                ((IMap) object).destroy();
+                object.destroy();
             }
         }
     }
@@ -67,6 +66,7 @@ public class AbstractAggregationTest
         return min + RANDOM.nextInt(delta);
     }
 
+    @SuppressWarnings("unchecked")
     protected static <T> T[] buildPlainValues(ValueProvider<T> valueProvider, Class<T> type) {
         T[] values = (T[]) Array.newInstance(type, VALUES_COUNT);
         for (int i = 0; i < VALUES_COUNT; i++) {
@@ -75,6 +75,7 @@ public class AbstractAggregationTest
         return values;
     }
 
+    @SuppressWarnings("unchecked")
     protected static <T> Value<T>[] buildValues(ValueProvider<T> valueProvider) {
         Value<T>[] values = new Value[VALUES_COUNT];
         for (int i = 0; i < VALUES_COUNT; i++) {
@@ -92,8 +93,7 @@ public class AbstractAggregationTest
         T provideRandom(Random random);
     }
 
-    public static class ValuePropertyExtractor<T>
-            implements PropertyExtractor<Value<T>, T>, Serializable {
+    protected static class ValuePropertyExtractor<T> implements PropertyExtractor<Value<T>, T>, Serializable {
 
         @Override
         public T extract(Value<T> value) {
@@ -101,8 +101,8 @@ public class AbstractAggregationTest
         }
     }
 
-    public static class Value<T>
-            implements Serializable {
+    @SuppressWarnings("unused")
+    protected static class Value<T> implements Serializable {
 
         public T value;
 

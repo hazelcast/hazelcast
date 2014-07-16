@@ -25,33 +25,30 @@ public class ProxyEqualityTest {
 
     private static final String atomicName = "foo";
 
-    private static final String groupAName = "GroupA";
-    private static final String groupBName = "GroupB";
+    private static final String nameGroupA = "GroupA";
+    private static final String nameGroupB = "GroupB";
 
+    private static HazelcastInstance client1GroupA;
+    private static HazelcastInstance client2GroupA;
 
-    static HazelcastInstance client1GroupA;
-    static HazelcastInstance client2GroupA;
-    static HazelcastInstance server1GroupA;
-
-    static HazelcastInstance client1GroupB;
-    static HazelcastInstance server1GroupB;
-
+    private static HazelcastInstance client1GroupB;
 
     @BeforeClass
-    public static void setup() throws Exception {
+    public static void beforeClass() {
+        // Setup group A
         Config config = new Config();
-        config.getGroupConfig().setName(groupAName);
-        server1GroupA = Hazelcast.newHazelcastInstance(config);
+        config.getGroupConfig().setName(nameGroupA);
+        Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(config.getGroupConfig().getName()));
         client1GroupA = HazelcastClient.newHazelcastClient(clientConfig);
         client2GroupA = HazelcastClient.newHazelcastClient(clientConfig);
 
-        //setup Group B
+        // Setup group B
         config = new Config();
-        config.getGroupConfig().setName(groupBName);
-        server1GroupB = Hazelcast.newHazelcastInstance(config);
+        config.getGroupConfig().setName(nameGroupB);
+        Hazelcast.newHazelcastInstance(config);
 
         clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(config.getGroupConfig().getName()));
@@ -59,44 +56,40 @@ public class ProxyEqualityTest {
     }
 
     @AfterClass
-    public static void cleanup() throws Exception {
+    public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testTwoClientProxiesFromTheSameInstanceAreEquals() {
+        ClientProxy equalsProxy1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
+        ClientProxy equalsProxy2 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
 
-        ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-
-        assertEquals(ref1, ref2);
+        assertEquals(equalsProxy1, equalsProxy2);
     }
 
     @Test
     public void testProxiesAreCached() {
+        ClientProxy sameProxy1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
+        ClientProxy sameProxy2 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
 
-        ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-
-        assertSame(ref1, ref2);
-    }
-
-    @Test
-    public void testTwoClientProxiesFromDifferentInstancesAreNotEquals() {
-
-        ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client1GroupB.getAtomicLong(atomicName);
-
-        assertNotEquals(ref1, ref2);
+        assertSame(sameProxy1, sameProxy2);
     }
 
     @Test
     public void testTwoClientProxiesFromTwoDifferentClientsConnectedToTheSameInstanceAreNotEquals() {
+        ClientProxy proxy1FromSameGroup = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
+        ClientProxy proxy2FromSameGroup = (ClientProxy) client2GroupA.getAtomicLong(atomicName);
 
-        ClientProxy ref1 = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
-        ClientProxy ref2 = (ClientProxy) client2GroupA.getAtomicLong(atomicName);
+        assertNotEquals(proxy1FromSameGroup, proxy2FromSameGroup);
+    }
 
-        assertNotEquals(ref1, ref2);
+    @Test
+    public void testTwoClientProxiesFromDifferentInstancesAreNotEquals() {
+        ClientProxy proxyFromGroupA = (ClientProxy) client1GroupA.getAtomicLong(atomicName);
+        ClientProxy proxyFromGroupB = (ClientProxy) client1GroupB.getAtomicLong(atomicName);
+
+        assertNotEquals(proxyFromGroupA, proxyFromGroupB);
     }
 }

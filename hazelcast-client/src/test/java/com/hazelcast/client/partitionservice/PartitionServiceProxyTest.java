@@ -17,59 +17,67 @@
 package com.hazelcast.client.partitionservice;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.MigrationListener;
+import com.hazelcast.core.Partition;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.transaction.xa.XAResource;
-
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PartitionServiceProxyTest {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private static HazelcastInstance server;
+    private static HazelcastInstance client;
+
+    private PartitionService clientPartitionService;
+    private PartitionService serverPartitionService;
 
     @BeforeClass
-    public static void init(){
+    public static void beforeClass() {
         server = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient(null);
     }
 
     @AfterClass
-    public static void destroy(){
-        client.shutdown();
-        server.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
+
+    @Before
+    public void setup() {
+        clientPartitionService = client.getPartitionService();
+        serverPartitionService = server.getPartitionService();
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testAddMigrationListener() throws Exception {
-        PartitionService p = client.getPartitionService();
-        p.addMigrationListener(new DumMigrationListener());
+        clientPartitionService.addMigrationListener(new DumMigrationListener());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRemoveMigrationListener() throws Exception {
-        PartitionService p = client.getPartitionService();
-        p.removeMigrationListener("");
+        clientPartitionService.removeMigrationListener("");
     }
 
     @Test
     public void testRandomPartitionKeyNotNull() {
-        PartitionService p = client.getPartitionService();
-        String key = p.randomPartitionKey();
+        String key = clientPartitionService.randomPartitionKey();
         assertNotNull(key);
     }
 
@@ -77,10 +85,7 @@ public class PartitionServiceProxyTest {
     public void testGetPartition() {
         String key = "Key";
 
-        PartitionService clientPartitionService = client.getPartitionService();
-        Partition clientPartition  = clientPartitionService.getPartition(key);
-
-        PartitionService serverPartitionService = server.getPartitionService();
+        Partition clientPartition = clientPartitionService.getPartition(key);
         Partition serverPartition = serverPartitionService.getPartition(key);
 
         assertEquals(clientPartition.getPartitionId(), serverPartition.getPartitionId());
@@ -88,12 +93,7 @@ public class PartitionServiceProxyTest {
 
     @Test
     public void testGetPartitions() {
-        String key = "Key";
-
-        PartitionService clientPartitionService = client.getPartitionService();
         Set<Partition> clientPartitions = clientPartitionService.getPartitions();
-
-        PartitionService serverPartitionService = server.getPartitionService();
         Set<Partition> serverPartitions = serverPartitionService.getPartitions();
 
         assertEquals(clientPartitions.size(), serverPartitions.size());

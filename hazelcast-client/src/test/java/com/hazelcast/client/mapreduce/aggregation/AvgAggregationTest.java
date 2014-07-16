@@ -34,13 +34,10 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class AvgAggregationTest
-        extends AbstractAggregationTest {
+public class AvgAggregationTest extends AbstractAggregationTest {
 
     @Test
-    public void testBigDecimalAvg()
-            throws Exception {
-
+    public void testBigDecimalAvg() throws Exception {
         BigDecimal[] values = buildPlainValues(new ValueProvider<BigDecimal>() {
             @Override
             public BigDecimal provideRandom(Random random) {
@@ -49,8 +46,8 @@ public class AvgAggregationTest
         }, BigDecimal.class);
 
         BigDecimal expectation = BigDecimal.ZERO;
-        for (int i = 0; i < values.length; i++) {
-            expectation = expectation.add(values[i]);
+        for (BigDecimal value : values) {
+            expectation = expectation.add(value);
         }
         expectation = expectation.divide(BigDecimal.valueOf(values.length));
 
@@ -60,9 +57,7 @@ public class AvgAggregationTest
     }
 
     @Test
-    public void testBigIntegerAvg()
-            throws Exception {
-
+    public void testBigIntegerAvg() throws Exception {
         BigInteger[] values = buildPlainValues(new ValueProvider<BigInteger>() {
             @Override
             public BigInteger provideRandom(Random random) {
@@ -71,8 +66,8 @@ public class AvgAggregationTest
         }, BigInteger.class);
 
         BigInteger expectation = BigInteger.ZERO;
-        for (int i = 0; i < values.length; i++) {
-            expectation = expectation.add(values[i]);
+        for (BigInteger value : values) {
+            expectation = expectation.add(value);
         }
         expectation = expectation.divide(BigInteger.valueOf(values.length));
 
@@ -82,9 +77,7 @@ public class AvgAggregationTest
     }
 
     @Test
-    public void testDoubleAvg()
-            throws Exception {
-
+    public void testDoubleAvg() throws Exception {
         Double[] values = buildPlainValues(new ValueProvider<Double>() {
             @Override
             public Double provideRandom(Random random) {
@@ -93,8 +86,8 @@ public class AvgAggregationTest
         }, Double.class);
 
         double expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i];
+        for (Double value : values) {
+            expectation += value;
         }
         expectation = expectation / values.length;
 
@@ -104,9 +97,7 @@ public class AvgAggregationTest
     }
 
     @Test
-    public void testIntegerAvg()
-            throws Exception {
-
+    public void testIntegerAvg() throws Exception {
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
             public Integer provideRandom(Random random) {
@@ -115,8 +106,8 @@ public class AvgAggregationTest
         }, Integer.class);
 
         int expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i];
+        for (Integer value : values) {
+            expectation += value;
         }
         expectation = (int) ((double) expectation / values.length);
 
@@ -126,9 +117,7 @@ public class AvgAggregationTest
     }
 
     @Test
-    public void testLongAvg()
-            throws Exception {
-
+    public void testLongAvg() throws Exception {
         Long[] values = buildPlainValues(new ValueProvider<Long>() {
             @Override
             public Long provideRandom(Random random) {
@@ -137,8 +126,8 @@ public class AvgAggregationTest
         }, Long.class);
 
         long expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i];
+        for (Long value : values) {
+            expectation += value;
         }
         expectation = (long) ((double) expectation / values.length);
 
@@ -148,8 +137,7 @@ public class AvgAggregationTest
     }
 
     @Test
-    public void testBigDecimalAvgWithExtractor()
-            throws Exception {
+    public void testBigDecimalAvgWithExtractor() throws Exception {
 
         Value<BigDecimal>[] values = buildValues(new ValueProvider<BigDecimal>() {
             @Override
@@ -159,8 +147,8 @@ public class AvgAggregationTest
         });
 
         BigDecimal expectation = BigDecimal.ZERO;
-        for (int i = 0; i < values.length; i++) {
-            expectation = expectation.add(values[i].value);
+        for (Value<BigDecimal> value : values) {
+            expectation = expectation.add(value.value);
         }
         expectation = expectation.divide(BigDecimal.valueOf(values.length));
 
@@ -170,9 +158,7 @@ public class AvgAggregationTest
     }
 
     @Test
-    public void testBigIntegerAvgWithExtractor()
-            throws Exception {
-
+    public void testBigIntegerAvgWithExtractor() throws Exception {
         Value<BigInteger>[] values = buildValues(new ValueProvider<BigInteger>() {
             @Override
             public BigInteger provideRandom(Random random) {
@@ -181,8 +167,8 @@ public class AvgAggregationTest
         });
 
         BigInteger expectation = BigInteger.ZERO;
-        for (int i = 0; i < values.length; i++) {
-            expectation = expectation.add(values[i].value);
+        for (Value<BigInteger> value : values) {
+            expectation = expectation.add(value.value);
         }
         expectation = expectation.divide(BigInteger.valueOf(values.length));
 
@@ -192,9 +178,7 @@ public class AvgAggregationTest
     }
 
     @Test
-    public void testDoubleAvgWithExtractor()
-            throws Exception {
-
+    public void testDoubleAvgWithExtractor() throws Exception {
         Value<Double>[] values = buildValues(new ValueProvider<Double>() {
             @Override
             public Double provideRandom(Random random) {
@@ -203,8 +187,8 @@ public class AvgAggregationTest
         });
 
         double expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i].value;
+        for (Value<Double> value : values) {
+            expectation += value.value;
         }
         expectation = expectation / values.length;
 
@@ -214,9 +198,7 @@ public class AvgAggregationTest
     }
 
     @Test
-    public void testIntegerAvgWithExtractor()
-            throws Exception {
-
+    public void testIntegerAvgWithExtractor() throws Exception {
         Value<Integer>[] values = buildValues(new ValueProvider<Integer>() {
             @Override
             public Integer provideRandom(Random random) {
@@ -225,8 +207,8 @@ public class AvgAggregationTest
         });
 
         int expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i].value;
+        for (Value<Integer> value : values) {
+            expectation += value.value;
         }
         expectation = (int) ((double) expectation / values.length);
 
@@ -236,9 +218,7 @@ public class AvgAggregationTest
     }
 
     @Test
-    public void testLongAvgWithExtractor()
-            throws Exception {
-
+    public void testLongAvgWithExtractor() throws Exception {
         Value<Long>[] values = buildValues(new ValueProvider<Long>() {
             @Override
             public Long provideRandom(Random random) {
@@ -247,8 +227,8 @@ public class AvgAggregationTest
         });
 
         long expectation = 0;
-        for (int i = 0; i < values.length; i++) {
-            expectation += values[i].value;
+        for (Value<Long> value : values) {
+            expectation += value.value;
         }
         expectation = (long) ((double) expectation / values.length);
 
@@ -257,9 +237,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    private <T, R> R testAvg(T[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
-
+    private <T, R> R testAvg(T[] values, Aggregation<String, T, R> aggregation) throws Exception {
         String mapName = randomMapName();
         IMap<String, T> map = HAZELCAST_INSTANCE.getMap(mapName);
 
@@ -271,9 +249,7 @@ public class AvgAggregationTest
         return map.aggregate(supplier, aggregation);
     }
 
-    private <T, R> R testAvgWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
-
+    private <T, R> R testAvgWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation) throws Exception {
         String mapName = randomMapName();
         IMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMap(mapName);
 

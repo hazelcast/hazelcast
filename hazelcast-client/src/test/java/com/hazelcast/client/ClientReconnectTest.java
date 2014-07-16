@@ -41,17 +41,23 @@ import static org.junit.Assert.assertNull;
 @Category(QuickTest.class)
 public class ClientReconnectTest extends HazelcastTestSupport {
 
-    @After
+    private HazelcastInstance server;
+    private HazelcastInstance client;
+
     @Before
-    public void cleanup() throws Exception {
+    public void setup() {
+        server = Hazelcast.newHazelcastInstance();
+        client = HazelcastClient.newHazelcastClient();
+    }
+
+    @After
+    public void teardown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testClientReconnectOnClusterDown() throws Exception {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+    public void testClientReconnectOnClusterDown() {
         final CountDownLatch connectedLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
@@ -59,18 +65,19 @@ public class ClientReconnectTest extends HazelcastTestSupport {
                 connectedLatch.countDown();
             }
         });
+
         IMap<String, String> m = client.getMap("default");
-        h1.shutdown();
+
+        server.shutdown();
         Hazelcast.newHazelcastInstance();
+
         assertOpenEventually(connectedLatch, 10);
         assertNull(m.put("test", "test"));
         assertEquals("test", m.get("test"));
     }
 
     @Test
-    public void testClientReconnectOnClusterDownWithEntryListeners() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+    public void testClientReconnectOnClusterDownWithEntryListeners() {
         final CountDownLatch connectedLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
@@ -78,19 +85,21 @@ public class ClientReconnectTest extends HazelcastTestSupport {
                 connectedLatch.countDown();
             }
         });
-        final IMap<String, String> m = client.getMap("default");
+
+        IMap<String, String> m = client.getMap("default");
         final CountDownLatch latch = new CountDownLatch(1);
-        final EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
+        EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
             public void onEntryEvent(EntryEvent<String, String> event) {
                 latch.countDown();
             }
         };
         m.addEntryListener(listener, true);
-        h1.shutdown();
+
+        server.shutdown();
         Hazelcast.newHazelcastInstance();
+
         assertOpenEventually(connectedLatch, 10);
         m.put("key", "value");
         assertOpenEventually(latch, 10);
     }
-
 }

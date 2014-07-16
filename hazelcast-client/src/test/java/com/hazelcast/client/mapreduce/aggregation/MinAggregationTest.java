@@ -34,13 +34,9 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class MinAggregationTest
-        extends AbstractAggregationTest {
-
+public class MinAggregationTest  extends AbstractAggregationTest {
     @Test
-    public void testBigDecimalMin()
-            throws Exception {
-
+    public void testBigDecimalMin() throws Exception {
         BigDecimal[] values = buildPlainValues(new ValueProvider<BigDecimal>() {
             @Override
             public BigDecimal provideRandom(Random random) {
@@ -60,9 +56,7 @@ public class MinAggregationTest
     }
 
     @Test
-    public void testBigIntegerMin()
-            throws Exception {
-
+    public void testBigIntegerMin() throws Exception {
         BigInteger[] values = buildPlainValues(new ValueProvider<BigInteger>() {
             @Override
             public BigInteger provideRandom(Random random) {
@@ -82,9 +76,7 @@ public class MinAggregationTest
     }
 
     @Test
-    public void testDoubleMin()
-            throws Exception {
-
+    public void testDoubleMin() throws Exception {
         Double[] values = buildPlainValues(new ValueProvider<Double>() {
             @Override
             public Double provideRandom(Random random) {
@@ -93,8 +85,7 @@ public class MinAggregationTest
         }, Double.class);
 
         double expectation = Double.MAX_VALUE;
-        for (int i = 0; i < values.length; i++) {
-            double value = values[i];
+        for (Double value : values) {
             if (value < expectation) {
                 expectation = value;
             }
@@ -106,9 +97,7 @@ public class MinAggregationTest
     }
 
     @Test
-    public void testIntegerMin()
-            throws Exception {
-
+    public void testIntegerMin() throws Exception {
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
             public Integer provideRandom(Random random) {
@@ -117,8 +106,7 @@ public class MinAggregationTest
         }, Integer.class);
 
         int expectation = Integer.MAX_VALUE;
-        for (int i = 0; i < values.length; i++) {
-            int value = values[i];
+        for (Integer value : values) {
             if (value < expectation) {
                 expectation = value;
             }
@@ -130,9 +118,7 @@ public class MinAggregationTest
     }
 
     @Test
-    public void testLongMin()
-            throws Exception {
-
+    public void testLongMin() throws Exception {
         Long[] values = buildPlainValues(new ValueProvider<Long>() {
             @Override
             public Long provideRandom(Random random) {
@@ -141,8 +127,7 @@ public class MinAggregationTest
         }, Long.class);
 
         long expectation = Long.MAX_VALUE;
-        for (int i = 0; i < values.length; i++) {
-            long value = values[i];
+        for (Long value : values) {
             if (value < expectation) {
                 expectation = value;
             }
@@ -154,9 +139,7 @@ public class MinAggregationTest
     }
 
     @Test
-    public void testBigDecimalMinWithExtractor()
-            throws Exception {
-
+    public void testBigDecimalMinWithExtractor() throws Exception {
         Value<BigDecimal>[] values = buildValues(new ValueProvider<BigDecimal>() {
             @Override
             public BigDecimal provideRandom(Random random) {
@@ -176,9 +159,7 @@ public class MinAggregationTest
     }
 
     @Test
-    public void testBigIntegerMinWithExtractor()
-            throws Exception {
-
+    public void testBigIntegerMinWithExtractor() throws Exception {
         Value<BigInteger>[] values = buildValues(new ValueProvider<BigInteger>() {
             @Override
             public BigInteger provideRandom(Random random) {
@@ -198,8 +179,7 @@ public class MinAggregationTest
     }
 
     @Test
-    public void testDoubleMinWithExtractor()
-            throws Exception {
+    public void testDoubleMinWithExtractor() throws Exception {
 
         Value<Double>[] values = buildValues(new ValueProvider<Double>() {
             @Override
@@ -209,10 +189,9 @@ public class MinAggregationTest
         });
 
         double expectation = Double.MAX_VALUE;
-        for (int i = 0; i < values.length; i++) {
-            double value = values[i].value;
-            if (value < expectation) {
-                expectation = value;
+        for (Value<Double> value : values) {
+            if (value.value < expectation) {
+                expectation = value.value;
             }
         }
 
@@ -222,9 +201,7 @@ public class MinAggregationTest
     }
 
     @Test
-    public void testIntegerMinWithExtractor()
-            throws Exception {
-
+    public void testIntegerMinWithExtractor() throws Exception {
         Value<Integer>[] values = buildValues(new ValueProvider<Integer>() {
             @Override
             public Integer provideRandom(Random random) {
@@ -233,10 +210,9 @@ public class MinAggregationTest
         });
 
         int expectation = Integer.MAX_VALUE;
-        for (int i = 0; i < values.length; i++) {
-            int value = values[i].value;
-            if (value < expectation) {
-                expectation = value;
+        for (Value<Integer> value : values) {
+            if (value.value < expectation) {
+                expectation = value.value;
             }
         }
 
@@ -246,9 +222,7 @@ public class MinAggregationTest
     }
 
     @Test
-    public void testLongMinWithExtractor()
-            throws Exception {
-
+    public void testLongMinWithExtractor() throws Exception {
         Value<Long>[] values = buildValues(new ValueProvider<Long>() {
             @Override
             public Long provideRandom(Random random) {
@@ -257,10 +231,9 @@ public class MinAggregationTest
         });
 
         long expectation = Long.MAX_VALUE;
-        for (int i = 0; i < values.length; i++) {
-            long value = values[i].value;
-            if (value < expectation) {
-                expectation = value;
+        for (Value<Long> value : values) {
+            if (value.value < expectation) {
+                expectation = value.value;
             }
         }
 
@@ -269,9 +242,7 @@ public class MinAggregationTest
         assertEquals(expectation, result);
     }
 
-    private <T, R> R testMin(T[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
-
+    private <T, R> R testMin(T[] values, Aggregation<String, T, R> aggregation) throws Exception {
         String mapName = randomMapName();
         IMap<String, T> map = HAZELCAST_INSTANCE.getMap(mapName);
 
@@ -283,9 +254,7 @@ public class MinAggregationTest
         return map.aggregate(supplier, aggregation);
     }
 
-    private <T, R> R testMinWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation)
-            throws Exception {
-
+    private <T, R> R testMinWithExtractor(Value<T>[] values, Aggregation<String, T, R> aggregation) throws Exception {
         String mapName = randomMapName();
         IMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMap(mapName);
 

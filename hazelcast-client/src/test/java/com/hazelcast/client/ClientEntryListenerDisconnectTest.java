@@ -19,27 +19,31 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClientEntryListenerDisconnectTest {
 
-    private static int adds = 0;
-    private static int evictionsNull = 0;
+    private static final AtomicInteger ENTRY_ADDED = new AtomicInteger(0);
+    private static final AtomicInteger ENTRY_EVICTED = new AtomicInteger(0);
 
     private ClientEntryListenerDisconnectTest() {
     }
 
     public static void main(String[] args) throws InterruptedException {
-
         Config config = new Config();
         config.setGroupConfig(new GroupConfig("test", "test"));
         config.getNetworkConfig().setPort(6701);
 
-        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
-        IMap<Integer, GenericEvent> map = hazelcastInstance.getMap("test");
+        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+        IMap<Integer, GenericEvent> map = server.getMap("test");
         map.addIndex("userId", false);
 
         Hazelcast.newHazelcastInstance(config);
@@ -54,12 +58,14 @@ public class ClientEntryListenerDisconnectTest {
         IMap<Integer, GenericEvent> mapClient = client.getMap("test");
 
         mapClient.addEntryListener(new EntryAdapter<Integer, GenericEvent>() {
-
             public void entryAdded(EntryEvent<Integer, GenericEvent> event) {
-                adds++;
+                ENTRY_ADDED.incrementAndGet();
             }
+
             public void entryEvicted(EntryEvent<Integer, GenericEvent> event) {
-                if (event.getValue() == null) evictionsNull++;
+                if (event.getValue() == null) {
+                    ENTRY_EVICTED.incrementAndGet();
+                }
             }
         }, true);
 
@@ -70,7 +76,7 @@ public class ClientEntryListenerDisconnectTest {
         Thread.sleep(20);
         mapClient.remove(1);
 
-        hazelcastInstance.getLifecycleService().terminate();
+        server.getLifecycleService().terminate();
 
         Thread.sleep(15000);
 
@@ -81,8 +87,8 @@ public class ClientEntryListenerDisconnectTest {
 
         Thread.sleep(15000);
 
-        hazelcastInstance = Hazelcast.newHazelcastInstance(config);
-        map = hazelcastInstance.getMap("test");
+        server = Hazelcast.newHazelcastInstance(config);
+        map = server.getMap("test");
 
         map.put(4, new GenericEvent(4), 1, TimeUnit.SECONDS);
         map.put(5, new GenericEvent(5), 5, TimeUnit.SECONDS);
@@ -91,8 +97,8 @@ public class ClientEntryListenerDisconnectTest {
 
         Thread.sleep(10000);
 
-        if (evictionsNull != 0) {
-            System.out.println("ERROR: got " + evictionsNull + " evictions with null values");
+        if (ENTRY_EVICTED.get() != 0) {
+            System.out.println("ERROR: got " + ENTRY_EVICTED + " evictions with null values");
         } else {
             System.out.println("OK");
         }
@@ -101,8 +107,8 @@ public class ClientEntryListenerDisconnectTest {
 
         Thread.sleep(5000);
 
-        if (adds != 8) {
-            System.out.println("ERROR: got " + adds + " instead of 8");
+        if (ENTRY_ADDED.get() != 8) {
+            System.out.println("ERROR: got " + ENTRY_ADDED + " instead of 8");
         } else {
             System.out.println("OK");
         }
@@ -110,8 +116,8 @@ public class ClientEntryListenerDisconnectTest {
         System.exit(0);
     }
 
+    @SuppressWarnings("unused")
     private static class GenericEvent implements Serializable {
-
         private static final long serialVersionUID = -933111044641052844L;
 
         private int userId;
