@@ -15,7 +15,7 @@ Some example usages are listed below. Hazelcast can be used:
 
 
 
--	As a cloud-wide scheduler of certain processes that need to be performed on some nodes.
+-	As a cloud-wide scheduler of certain processes that need to be performed on some nodes,
 
 
 

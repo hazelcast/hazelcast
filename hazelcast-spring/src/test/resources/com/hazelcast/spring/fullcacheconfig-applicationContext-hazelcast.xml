@@ -232,6 +232,16 @@
                     <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject2" implementation="dummySerializer"/>
                 </hz:serializers>
             </hz:serialization>
+            <hz:member-attributes>
+		<hz:attribute name="cluster.group.name">spring-group</hz:attribute>
+		<hz:attribute name="cluster.port.int" type="int">5700</hz:attribute>
+		<hz:attribute name="cluster.port.long" type="long">5700</hz:attribute>
+		<hz:attribute name="cluster.port.short" type="short">5700</hz:attribute>
+		<hz:attribute name="attribute.byte" type="byte">111</hz:attribute>
+		<hz:attribute name="attribute.boolean" type="boolean">true</hz:attribute>
+		<hz:attribute name="attribute.double" type="double">0.0d</hz:attribute>
+		<hz:attribute name="attribute.float" type="float">1234.5678</hz:attribute>
+            </hz:member-attributes>
         </hz:config>
     </hz:hazelcast>
 

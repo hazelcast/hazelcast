@@ -22,18 +22,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -42,7 +41,7 @@ public class ClientLockWithTerminationTest {
     private HazelcastInstance node2;
     private HazelcastInstance client1;
     private HazelcastInstance client2;
-    private String keyOwnedByNode1;
+    private String keyOwnedByNode2;
 
     @Before
     public void setup() throws InterruptedException {
@@ -50,37 +49,38 @@ public class ClientLockWithTerminationTest {
         node2 = Hazelcast.newHazelcastInstance();
         client1 = HazelcastClient.newHazelcastClient();
         client2 = HazelcastClient.newHazelcastClient();
-        keyOwnedByNode1 = HazelcastTestSupport.generateKeyOwnedBy(node1);
+
+        HazelcastTestSupport.warmUpPartitions(node2);
+        keyOwnedByNode2 = HazelcastTestSupport.generateKeyOwnedBy(node2);
     }
 
     @After
     public void tearDown() throws IOException {
-        Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
     public void testLockOnClientCrash() throws InterruptedException {
-        ILock lock = client1.getLock(keyOwnedByNode1);
+        ILock lock = client1.getLock(keyOwnedByNode2);
         lock.lock();
 
         client1.getLifecycleService().terminate();
 
-        lock = client2.getLock(keyOwnedByNode1);
+        lock = client2.getLock(keyOwnedByNode2);
         boolean lockObtained = lock.tryLock();
 
         assertTrue("Lock was Not Obtained, lock should be released on client crash", lockObtained);
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testLockOnClient_withNodeCrash() throws InterruptedException {
-        ILock lock = client1.getLock(keyOwnedByNode1);
+        ILock lock = client1.getLock(keyOwnedByNode2);
         lock.lock();
 
-        node1.getLifecycleService().terminate();
+        node2.getLifecycleService().terminate();
 
-        lock = client2.getLock(keyOwnedByNode1);
+        lock = client2.getLock(keyOwnedByNode2);
         boolean lockObtained = lock.tryLock();
 
         assertFalse("Lock was obtained by 2 different clients ", lockObtained);
