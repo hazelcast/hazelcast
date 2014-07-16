@@ -16,30 +16,29 @@ This section provides the new features introduced with Hazelcast 3.3 release.
 
 ### Fixes
 
-**3.3-RC2 Fixes**
+**RC2 Fixes**
 
 This section lists issues solved for Hazelcast 3.3-RC2 release.
 
--	NPE exception in MapStoreTest [#2956](https://github.com/hazelcast/hazelcast/issues/2956)
--	All read operations of map should respect expired keys [#2946](https://github.com/hazelcast/hazelcast/issues/2946)
--	WebFilter does not clean up timed-	out sessions [#2930](https://github.com/hazelcast/hazelcast/issues/2930)
--	Fixes data loss issue when partition table is being synced and a node gracefully shutdown [#2908](https://github.com/hazelcast/hazelcast/issues/2908)
--	evictAll should flush to staging area [#2969](https://github.com/hazelcast/hazelcast/issues/2969)
--	MapStoreConfig, implementation instance not set, when configed via XML [#2898](https://github.com/hazelcast/hazelcast/issues/2898)
--	Fixed AddSessionEntryProcessor [#2955](https://github.com/hazelcast/hazelcast/issues/2955)
--   added StripedExecutor to the WanReplicationService [#2947](https://github.com/hazelcast/hazelcast/issues/2947)
--	Data loss fix in hazelcast-wm module [#2927](https://github.com/hazelcast/hazelcast/issues/2927)
--	Fix leaking empty concurrent hashmaps [#2929](https://github.com/hazelcast/hazelcast/issues/2929)
--	configured event queue capacity [#2924](https://github.com/hazelcast/hazelcast/issues/2924)
--	close the owner connection if heartbeat timeout when client is smart [#2916](https://github.com/hazelcast/hazelcast/issues/2916)
--	client closes owner connection when a connection to same address is closed [#2921](https://github.com/hazelcast/hazelcast/issues/2921)
--	set application buffer size to not exceed tls record size [#2914](https://github.com/hazelcast/hazelcast/issues/2914)
--	LocalMapStats doesn't record stats about locked entries in 3.x [#2876](https://github.com/hazelcast/hazelcast/issues/2876)
--	Concurrency security interceptor [#2874](https://github.com/hazelcast/hazelcast/issues/2874)
--	Client hangs during split if split occurs due to network error [#2850](https://github.com/hazelcast/hazelcast/issues/2850)
--	Network connection loss does not release lock (Again) [#2818](https://github.com/hazelcast/hazelcast/issues/2818)
--	hazelcast is not wget-able [#2814](https://github.com/hazelcast/hazelcast/issues/2814)
--	MapStoreConfig, implementation instance not set, when configed via XML [#2898](https://github.com/hazelcast/hazelcast/issues/2898)
+-	NPE exception in MapStoreTest [[#2956]](https://github.com/hazelcast/hazelcast/issues/2956).
+-	All read operations of map should respect expired keys [[#2946]](https://github.com/hazelcast/hazelcast/issues/2946).
+-	WebFilter does not clean up timed-	out sessions [[#2930]](https://github.com/hazelcast/hazelcast/issues/2930).
+-	Fixes data loss issue when partition table is being synced and a node is gracefully shutdown [[#2908]](https://github.com/hazelcast/hazelcast/issues/2908).
+-	`evictAll` should flush to staging area [#2969](https://github.com/hazelcast/hazelcast/issues/2969).
+-	MapStoreConfig; implementation instance is not set, when configured via XML [[#2898]](https://github.com/hazelcast/hazelcast/issues/2898).
+-	Fixed `AddSessionEntryProcessor` [[#2955]](https://github.com/hazelcast/hazelcast/issues/2955).
+-   Added `StripedExecutor` to WanReplicationService [[#2947]](https://github.com/hazelcast/hazelcast/issues/2947).
+-	Data loss fix in *hazelcast-wm* module [[#2927]](https://github.com/hazelcast/hazelcast/issues/2927).
+-	Fix leaking empty concurrent hashmaps [[#2929]](https://github.com/hazelcast/hazelcast/issues/2929).
+-	Configured event queue capacity [[#2924]](https://github.com/hazelcast/hazelcast/issues/2924).
+-	Close the owner connection if heartbeat timeout when client is smart [[#2916]](https://github.com/hazelcast/hazelcast/issues/2916).
+-	Client closes owner connection when a connection to the same address is closed [[#2921]](https://github.com/hazelcast/hazelcast/issues/2921).
+-	Set application buffer size to not exceed `tls` record size [[#2914]](https://github.com/hazelcast/hazelcast/issues/2914).
+-	LocalMapStats does not record stats about locked entries in 3.x [[#2876]](https://github.com/hazelcast/hazelcast/issues/2876).
+-	Concurrency security interceptor [[#2874]](https://github.com/hazelcast/hazelcast/issues/2874).
+-	Client hangs during split, if split occurs due to network error [[#2850]](https://github.com/hazelcast/hazelcast/issues/2850).
+-	Network connection loss does not release lock [[#2818]](https://github.com/hazelcast/hazelcast/issues/2818).
+-	It is not possible to copy the link from *http://hazelcast.org/download/* and run `wget` on it [[#2814]](https://github.com/hazelcast/hazelcast/issues/2814).
 
 
 
