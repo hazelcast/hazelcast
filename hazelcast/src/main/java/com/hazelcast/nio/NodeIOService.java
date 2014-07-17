@@ -29,6 +29,7 @@ import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -225,6 +226,11 @@ public class NodeIOService implements IOService {
     @Override
     public void executeAsync(final Runnable runnable) {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, runnable);
+    }
+
+    @Override
+    public EventService getEventService() {
+        return nodeEngine.getEventService();
     }
 
     @Override

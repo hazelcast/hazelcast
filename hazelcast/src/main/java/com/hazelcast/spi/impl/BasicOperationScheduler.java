@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.NIOThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
@@ -163,12 +164,17 @@ public final class BasicOperationScheduler {
     }
 
     boolean isAllowedToRunInCurrentThread(int partitionId) {
+        Thread currentThread = Thread.currentThread();
+
+        // IO threads are not allowed to run any operation
+        if (currentThread instanceof NIOThread) {
+            return false;
+        }
+
         //todo: do we want to allow non partition specific tasks to be run on a partitionSpecific operation thread?
         if (partitionId < 0) {
             return true;
         }
-
-        Thread currentThread = Thread.currentThread();
 
         //we are only allowed to execute partition aware actions on an OperationThread.
         if (!(currentThread instanceof OperationThread)) {
@@ -198,6 +204,11 @@ public final class BasicOperationScheduler {
                 return toPartitionThreadIndex(partitionId) == threadId;
             }
             return true;
+        }
+
+        // IO threads are not allowed to run any operation
+        if (currentThread instanceof NIOThread) {
+            return false;
         }
 
         return true;
