@@ -18,7 +18,6 @@ package com.hazelcast.map.mapstore.writebehind;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -76,6 +75,11 @@ public final class WriteBehindQueues {
         }
 
         @Override
+        public T getFirst() {
+            return null;
+        }
+
+        @Override
         public void removeFirst() {
         }
 
@@ -127,11 +131,6 @@ public final class WriteBehindQueues {
         @Override
         public List filterItems(long now) {
             return Collections.emptyList();
-        }
-
-        @Override
-        public Iterator<T> iterator() {
-            throw new UnsupportedOperationException();
         }
     }
 

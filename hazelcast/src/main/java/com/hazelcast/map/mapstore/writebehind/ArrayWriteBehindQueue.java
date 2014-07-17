@@ -19,7 +19,6 @@ package com.hazelcast.map.mapstore.writebehind;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -51,6 +50,11 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
 
     @Override
     public T get(T t) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public T getFirst() {
         throw new UnsupportedOperationException();
     }
 
@@ -131,8 +135,4 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Iterator<T> iterator() {
-        return list.iterator();
-    }
 }

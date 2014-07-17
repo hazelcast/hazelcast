@@ -45,6 +45,15 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     }
 
     @Override
+    public DelayedEntry getFirst() {
+        final Iterator<DelayedEntry> iterator = queue.values().iterator();
+        if (iterator.hasNext()) {
+            return iterator.next();
+        }
+        return null;
+    }
+
+    @Override
     public void removeFirst() {
         final Set<Data> keySet = queue.keySet();
         for (Data key : keySet) {
@@ -127,12 +136,6 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     public List<DelayedEntry> asList() {
         final Collection<DelayedEntry> values = queue.values();
         return new ArrayList<DelayedEntry>(values);
-    }
-
-    @Override
-    public Iterator<DelayedEntry> iterator() {
-        final Collection<DelayedEntry> values = queue.values();
-        return values.iterator();
     }
 
     @Override

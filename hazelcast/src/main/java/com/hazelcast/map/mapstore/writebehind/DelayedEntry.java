@@ -51,7 +51,7 @@ public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
      * @param <K>       the key type.
      * @param <V>       the value type.
      * @return new delayed entry object with a null key.
-     * @see WriteBehindStore#evictionStagingArea
+     * @see WriteBehindStore#stagingArea
      */
     public static <K, V> DelayedEntry<K, V> createWithNullKey(V value, long storeTime) {
         return new DelayedEntry<K, V>(null, value, storeTime, 0);

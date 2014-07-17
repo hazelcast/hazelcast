@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @param <E> Type of entry to be stored.
  */
-public interface WriteBehindQueue<E> extends Iterable<E> {
+public interface WriteBehindQueue<E> {
 
     /**
      * adds to the end.
@@ -42,6 +42,13 @@ public interface WriteBehindQueue<E> extends Iterable<E> {
      * @return corresponding item from queue or null.
      */
     E get(E e);
+
+    /**
+     * Gets first item in queue.
+     *
+     * @return corresponding item from queue or null.
+     */
+    E getFirst();
 
     /**
      * removes head of the queue.

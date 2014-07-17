@@ -272,11 +272,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     private long getNextItemsStoreTimeInWriteBehindQueue() {
-        DelayedEntry firstEntryInQueue = null;
-        final Iterator<DelayedEntry> iterator = writeBehindQueue.iterator();
-        if (iterator.hasNext()) {
-            firstEntryInQueue = iterator.next();
-        }
+        final DelayedEntry firstEntryInQueue = writeBehindQueue.getFirst();
         if (firstEntryInQueue == null) {
             return 0L;
         }

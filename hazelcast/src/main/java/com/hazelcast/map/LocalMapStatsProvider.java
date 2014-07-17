@@ -87,7 +87,7 @@ public class LocalMapStatsProvider {
      */
     private void addOwnerPartitionStats(LocalMapStatsImpl localMapStats, String mapName, int partitionId) {
         final RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
-        if (recordStore == null) {
+        if (!hasRecords(recordStore)) {
             return;
         }
         int lockedEntryCount = 0;
@@ -122,7 +122,8 @@ public class LocalMapStatsProvider {
     }
 
     /**
-     * Return 1 if locked, otherwise 0;
+     * Return 1 if locked, otherwise 0.
+     * Used to find {@link LocalMapStatsImpl#lockedEntryCount}.
      */
     private int isLocked(Record record, RecordStore recordStore) {
         if (recordStore.isLocked(record.getKey())) {
@@ -149,7 +150,7 @@ public class LocalMapStatsProvider {
             }
             if (gotReplicaAddress(replicaAddress, thisAddress)) {
                 RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
-                if (recordStore != null) {
+                if (hasRecords(recordStore)) {
                     heapCost += recordStore.getHeapCost();
                     backupEntryCount += recordStore.size();
                     backupEntryMemoryCost += getMemoryCost(recordStore);
@@ -159,6 +160,10 @@ public class LocalMapStatsProvider {
         localMapStats.incrementHeapCost(heapCost);
         localMapStats.incrementBackupEntryCount(backupEntryCount);
         localMapStats.incrementBackupEntryMemoryCost(backupEntryMemoryCost);
+    }
+
+    private boolean hasRecords(RecordStore recordStore) {
+        return recordStore != null && recordStore.size() > 0;
     }
 
     private boolean notGotReplicaAddress(Address replicaAddress, ClusterService clusterService, int backupCount) {

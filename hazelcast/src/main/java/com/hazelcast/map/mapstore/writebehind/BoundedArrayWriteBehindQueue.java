@@ -46,6 +46,11 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     }
 
     @Override
+    public T getFirst() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void removeFirst() {
         super.removeFirst();
         decrementPerNodeMaxSize();

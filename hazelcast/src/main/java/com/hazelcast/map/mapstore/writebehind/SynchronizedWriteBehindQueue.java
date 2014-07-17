@@ -17,7 +17,6 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -50,6 +49,13 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     public E get(E e) {
         synchronized (mutex) {
             return queue.get(e);
+        }
+    }
+
+    @Override
+    public E getFirst() {
+        synchronized (mutex) {
+            return queue.getFirst();
         }
     }
 
@@ -137,10 +143,4 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         }
     }
 
-    @Override
-    public Iterator<E> iterator() {
-        synchronized (mutex) {
-            return queue.iterator();
-        }
-    }
 }
