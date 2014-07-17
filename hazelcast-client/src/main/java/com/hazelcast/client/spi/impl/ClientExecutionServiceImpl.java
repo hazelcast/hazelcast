@@ -24,7 +24,16 @@ import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author mdogan 5/16/13
@@ -38,7 +47,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ScheduledExecutorService scheduledExecutor;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
-        if (poolSize <= 0){
+        if (poolSize <= 0) {
             poolSize = Runtime.getRuntime().availableProcessors();
         }
         internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
@@ -67,12 +76,10 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
     }
 
-    @Override
     public void executeInternal(Runnable command) {
         internalExecutor.execute(command);
     }
 
-    @Override
     public <T> ICompletableFuture<T> submitInternal(final Callable<T> command) {
         CompletableFutureTask futureTask = new CompletableFutureTask(command, internalExecutor);
         internalExecutor.submit(futureTask);
@@ -102,7 +109,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
         return scheduledExecutor.schedule(new Runnable() {
             public void run() {
-                executeInternal(command);
+                execute(command);
             }
         }, delay, unit);
     }
@@ -111,7 +118,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                executeInternal(command);
+                execute(command);
             }
         }, initialDelay, period, unit);
     }
@@ -120,7 +127,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                executeInternal(command);
+                execute(command);
             }
         }, initialDelay, period, unit);
     }
