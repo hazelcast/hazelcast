@@ -15,6 +15,7 @@
 |[Chapter 9 - Hazelcast JCache Implementation](#hazelcast-jcache-implementation)||Added as a new chapter.|
 |[Chapter 11 - Clients](#clients)|[Java Client](#java-client)|Client configuration related to AWS added.|
 |[Chapter 12 - Serialization](#serialization)||All sections under this chapter re-written and enhanced. Also added HazelcastInstanceAware, Stream & ByteArray Serializer, Serializable & Externalizable sections.|
+||[Null Portable Serialization](#null-portable-serialization)| Added as a new section.|
 |[Chapter 13 - Management](#management)|[Clustered JMX](#clustered-jmx)|Added as a new section explaining how to monitor the statistics of distributed objects from a JMX interface (Enterprise Only feature).|
 ||[Cluster Utilities](#cluster-utilities)|[Member Attributes](#member-attributes) added as a new section.|
 ||[Clustered REST](#clustered-rest)|Added as a new section (Enterprise Only feature).|
