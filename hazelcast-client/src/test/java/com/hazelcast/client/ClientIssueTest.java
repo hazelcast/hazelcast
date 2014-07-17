@@ -620,7 +620,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
             map1.put(i, i);
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually("dadas", latch);
     }
 
 }

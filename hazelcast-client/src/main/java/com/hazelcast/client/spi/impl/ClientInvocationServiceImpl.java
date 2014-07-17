@@ -24,8 +24,8 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
@@ -174,7 +174,7 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         future.setConnection(connection);
         final SerializationService ss = client.getSerializationService();
         final Data data = ss.toData(future.getRequest());
-        if (!connection.write(new DataAdapter(data))) {
+        if (!connection.write(new Packet(data, ss.getPortableContext()))) {
             final int callId = future.getRequest().getCallId();
             connection.deRegisterCallId(callId);
             connection.deRegisterEventHandler(callId);

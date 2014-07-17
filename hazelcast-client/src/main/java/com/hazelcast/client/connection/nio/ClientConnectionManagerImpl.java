@@ -33,8 +33,6 @@ import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
@@ -53,7 +51,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -471,78 +469,15 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return false;
     }
 
-    public void handlePacket(ClientPacket packet) {
+    public void handlePacket(Packet packet) {
         final ClientConnection conn = (ClientConnection) packet.getConn();
         conn.incrementPacketCount();
-        executionService.executeInternal(new ClientPacketProcessor(packet));
+        executionService.execute(packet);
     }
 
     public int newCallId() {
         return callIdIncrementer.incrementAndGet();
     }
-
-    private class ClientEventProcessor implements Runnable {
-        final int callId;
-        final ClientConnection conn;
-        final Data response;
-
-        private ClientEventProcessor(int callId, ClientConnection conn, Data response) {
-            this.callId = callId;
-            this.conn = conn;
-            this.response = response;
-        }
-
-        @Override
-        public void run() {
-            handleEvent(response, callId, conn);
-        }
-
-        private void handleEvent(Data event, int callId, ClientConnection conn) {
-            final EventHandler eventHandler = conn.getEventHandler(callId);
-            final Object eventObject = getSerializationService().toObject(event);
-            if (eventHandler == null) {
-                LOGGER.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
-                return;
-            }
-            eventHandler.handle(eventObject);
-        }
-    }
-
-    private class ClientPacketProcessor implements Runnable {
-
-        final ClientPacket packet;
-
-        ClientPacketProcessor(ClientPacket packet) {
-            this.packet = packet;
-        }
-
-        @Override
-        public void run() {
-            final ClientConnection conn = (ClientConnection) packet.getConn();
-            final ClientResponse clientResponse = getSerializationService().toObject(packet.getData());
-            final int callId = clientResponse.getCallId();
-            final Data response = clientResponse.getResponse();
-            if (clientResponse.isEvent()) {
-                executionService.execute(new ClientEventProcessor(callId, conn, response));
-            } else {
-                handlePacket(response, clientResponse.isError(), callId, conn);
-            }
-            conn.decrementPacketCount();
-        }
-
-        private void handlePacket(Object response, boolean isError, int callId, ClientConnection conn) {
-            final ClientCallFuture future = conn.deRegisterCallId(callId);
-            if (future == null) {
-                LOGGER.warning("No call for callId: " + callId + ", response: " + response);
-                return;
-            }
-            if (isError) {
-                response = getSerializationService().toObject(response);
-            }
-            future.notify(response);
-        }
-    }
-
 
     public class ManagerAuthenticator implements Authenticator {
 

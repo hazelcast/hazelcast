@@ -110,7 +110,7 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void handleClientPacket(ClientPacket p) {
+    public void handleClientPacket(Packet p) {
         node.clientEngine.handlePacket(p);
     }
 
@@ -290,12 +290,12 @@ public class NodeIOService implements IOService {
 
     private Set<Integer> getPorts(NetworkConfig networkConfig) {
         return networkConfig.getOutboundPorts() == null
-                    ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
+                ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
     }
 
     private Collection<String> getPortDefinitions(NetworkConfig networkConfig) {
         return networkConfig.getOutboundPortDefinitions() == null
-                    ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
+                ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
     }
 }
 

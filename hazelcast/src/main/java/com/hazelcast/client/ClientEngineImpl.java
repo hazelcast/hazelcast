@@ -25,11 +25,10 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -118,7 +117,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return endpointManager.size();
     }
 
-    public void handlePacket(ClientPacket packet) {
+    public void handlePacket(Packet packet) {
         executor.execute(new ClientPacketProcessor(packet));
     }
 
@@ -144,14 +143,20 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     void sendResponse(ClientEndpoint endpoint, Object response, int callId, boolean isError, boolean isEvent) {
         Data data = serializationService.toData(response);
-        ClientResponse clientResponse = new ClientResponse(data, callId, isError, isEvent);
-        sendResponse(endpoint, clientResponse);
+        ClientResponse clientResponse = new ClientResponse(data, callId, isError);
+        sendResponse(endpoint, clientResponse, isEvent);
     }
 
-    private void sendResponse(ClientEndpoint endpoint, ClientResponse response) {
+    private void sendResponse(ClientEndpoint endpoint, ClientResponse response, boolean isEvent) {
         Data resultData = serializationService.toData(response);
         Connection conn = endpoint.getConnection();
-        conn.write(new DataAdapter(resultData, serializationService.getPortableContext()));
+        final Packet packet = new Packet(resultData, serializationService.getPortableContext());
+        if (isEvent) {
+            packet.setHeader(Packet.HEADER_EVENT);
+        } else {
+            packet.setHeader(Packet.HEADER_CLIENT_REQUEST);
+        }
+        conn.write(packet);
     }
 
     @Override
@@ -295,9 +300,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     private final class ClientPacketProcessor implements Runnable {
-        final ClientPacket packet;
+        final Packet packet;
 
-        private ClientPacketProcessor(ClientPacket packet) {
+        private ClientPacketProcessor(Packet packet) {
             this.packet = packet;
         }
 
