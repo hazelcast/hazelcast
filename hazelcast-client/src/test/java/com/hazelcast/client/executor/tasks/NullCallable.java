@@ -16,38 +16,12 @@
 
 package com.hazelcast.client.executor.tasks;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
+import java.io.Serializable;
 import java.util.concurrent.Callable;
 
-public class AppendCallable implements Callable<String>, DataSerializable{
-
-    public static final String APPENDAGE = ":CallableResult";
-
-    private String msg;
-
-    public AppendCallable() {
-    }
-
-    public AppendCallable(String msg) {
-        this.msg = msg;
-    }
-
+public class NullCallable implements Callable<String>, Serializable {
     @Override
     public String call() throws Exception {
-        return msg + APPENDAGE;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(msg);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        msg = in.readUTF();
+        return null;
     }
 }
