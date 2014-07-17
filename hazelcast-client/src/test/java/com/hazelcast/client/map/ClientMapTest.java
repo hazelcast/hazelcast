@@ -20,7 +20,6 @@ import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -842,21 +841,13 @@ public class ClientMapTest {
     }
 
     @Test
-    public void testOperationAfterDestroy() throws Exception {
+    public void testPutAfterDestroy() throws Exception {
         final String mapName = randomMapName();
         final IMap<Object, Object> clientMap = client.getMap(mapName);
         clientMap.destroy();
-        assertFalse(server.getDistributedObjects().contains(clientMap));
+        assertFalse(client.getDistributedObjects().contains(clientMap));
         clientMap.put(1, 1);
-        assertTrue(client.getDistributedObjects().contains(clientMap));
-
-        boolean foundInRemote = false;
-        for (DistributedObject distributedObject : server.getDistributedObjects()) {
-            if (distributedObject instanceof IMap) {
-                foundInRemote = distributedObject.getName().equals(mapName);
-            }
-        }
-        assertTrue(foundInRemote);
+        assertEquals(1, clientMap.get(1));
     }
 
     private static final class TestPredicate implements Predicate<Object, Object>, Serializable {
