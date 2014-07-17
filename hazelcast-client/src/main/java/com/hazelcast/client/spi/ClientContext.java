@@ -78,6 +78,10 @@ public final class ClientContext {
         proxyManager.removeProxy(proxy.getServiceName(), proxy.getName());
     }
 
+    public void getProxy(String serviceName, String objectName) {
+        proxyManager.getProxy(serviceName, objectName);
+    }
+
     public ClientConfig getClientConfig() {
         return clientConfig;
     }
