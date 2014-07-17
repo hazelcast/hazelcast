@@ -20,6 +20,7 @@ import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -60,6 +61,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -867,7 +869,7 @@ public class ClientMapTest {
         final IMap<Object, Object> serverMap = server.getMap("A");
         final IMap<Object, Object> clientMap = client.getMap("A");
         final CountDownLatch latch = new CountDownLatch(1);
-        clientMap.addEntryListener(new EntryAdapter<Object, Object>(){
+        clientMap.addEntryListener(new EntryAdapter<Object, Object>() {
             public void entryRemoved(EntryEvent<Object, Object> event) {
                 latch.countDown();
             }
@@ -875,6 +877,24 @@ public class ClientMapTest {
         serverMap.put("A", "B");
         clientMap.delete("A");
         assertOpenEventually(latch, 10);
+    }
+
+    @Test
+    public void testOperationAfterDestroy() throws Exception {
+        final String mapName = randomMapName();
+        final IMap<Object, Object> clientMap = client.getMap(mapName);
+        clientMap.destroy();
+        assertFalse(server.getDistributedObjects().contains(clientMap));
+        clientMap.put(1, 1);
+        assertTrue(client.getDistributedObjects().contains(clientMap));
+
+        boolean foundInRemote = false;
+        for (DistributedObject distributedObject : server.getDistributedObjects()) {
+            if (distributedObject instanceof IMap) {
+                foundInRemote = distributedObject.getName().equals(mapName);
+            }
+        }
+        assertTrue(foundInRemote);
     }
 
     private static final class TestPredicate implements Predicate<Object, Object>, Serializable {
