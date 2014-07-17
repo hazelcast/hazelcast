@@ -61,8 +61,6 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected final ClientContext getContext() {
-        //recreates proxy if destroyed.
-        context.getProxy(serviceName, objectName);
         return context;
     }
 

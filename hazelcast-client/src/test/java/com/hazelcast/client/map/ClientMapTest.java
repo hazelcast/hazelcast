@@ -879,24 +879,6 @@ public class ClientMapTest {
         assertOpenEventually(latch, 10);
     }
 
-    @Test
-    public void testOperationAfterDestroy() throws Exception {
-        final String mapName = randomMapName();
-        final IMap<Object, Object> clientMap = client.getMap(mapName);
-        clientMap.destroy();
-        assertFalse(server.getDistributedObjects().contains(clientMap));
-        clientMap.put(1, 1);
-        assertTrue(client.getDistributedObjects().contains(clientMap));
-
-        boolean foundInRemote = false;
-        for (DistributedObject distributedObject : server.getDistributedObjects()) {
-            if (distributedObject instanceof IMap) {
-                foundInRemote = distributedObject.getName().equals(mapName);
-            }
-        }
-        assertTrue(foundInRemote);
-    }
-
     private static final class TestPredicate implements Predicate<Object, Object>, Serializable {
 
         @Override
