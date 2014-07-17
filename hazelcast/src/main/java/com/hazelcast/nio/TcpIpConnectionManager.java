@@ -27,12 +27,17 @@ import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.executor.StripedRunnable;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -248,15 +253,34 @@ public class TcpIpConnectionManager implements ConnectionManager {
             }
             return false;
         }
+        if (registerConnectionEndpoint(connection, remoteEndPoint, thisAddress)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean registerConnectionEndpoint(final TcpIpConnection connection,
+            final Address remoteEndPoint, Address thisAddress) {
+
         if (!remoteEndPoint.equals(thisAddress)) {
             if (!connection.isClient()) {
                 connection.setMonitor(getConnectionMonitor(remoteEndPoint, true));
             }
             connectionsMap.put(remoteEndPoint, connection);
             connectionsInProgress.remove(remoteEndPoint);
-            for (ConnectionListener listener : connectionListeners) {
-                listener.connectionAdded(connection);
-            }
+            ioService.getEventService().executeEventCallback(new StripedRunnable() {
+                @Override
+                public void run() {
+                    for (ConnectionListener listener : connectionListeners) {
+                        listener.connectionAdded(connection);
+                    }
+                }
+
+                @Override
+                public int getKey() {
+                    return remoteEndPoint.hashCode();
+                }
+            });
             return true;
         }
         return false;
@@ -335,7 +359,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return monitor;
     }
 
-    public void destroyConnection(Connection connection) {
+    @Override
+    public void destroyConnection(final Connection connection) {
         if (connection == null) {
             return;
         }
@@ -349,9 +374,19 @@ public class TcpIpConnectionManager implements ConnectionManager {
             final Connection existingConn = connectionsMap.get(endPoint);
             if (existingConn == connection && live) {
                 connectionsMap.remove(endPoint);
-                for (ConnectionListener listener : connectionListeners) {
-                    listener.connectionRemoved(connection);
-                }
+                ioService.getEventService().executeEventCallback(new StripedRunnable() {
+                    @Override
+                    public void run() {
+                        for (ConnectionListener listener : connectionListeners) {
+                            listener.connectionRemoved(connection);
+                        }
+                    }
+
+                    @Override
+                    public int getKey() {
+                        return endPoint.hashCode();
+                    }
+                });
             }
         }
         if (connection.live()) {

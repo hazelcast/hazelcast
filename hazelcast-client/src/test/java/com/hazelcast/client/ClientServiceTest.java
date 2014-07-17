@@ -17,15 +17,18 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientService;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -37,7 +40,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -168,7 +174,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
     public void testClientListenerForBothNodes() {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
-        final ClientListenerLatch clientListenerLatch = new ClientListenerLatch(2);
+        final ClientConnectedListenerLatch clientListenerLatch = new ClientConnectedListenerLatch(2);
 
         final ClientService clientService1 = instance1.getClientService();
         clientService1.addClientListener(clientListenerLatch);
@@ -187,6 +193,61 @@ public class ClientServiceTest extends HazelcastTestSupport {
         assertOpenEventually(clientListenerLatch, 5);
     }
 
+    @Test
+    public void testClientListenerDisconnected() throws InterruptedException {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_IO_THREAD_COUNT, "1");
+
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+
+        int clientCount = 10;
+        ClientDisconnectedListenerLatch listenerLatch = new ClientDisconnectedListenerLatch(2 * clientCount);
+        hz.getClientService().addClientListener(listenerLatch);
+        hz2.getClientService().addClientListener(listenerLatch);
+
+        Collection<HazelcastInstance> clients = new LinkedList<HazelcastInstance>();
+        for (int i = 0; i < clientCount; i++) {
+            HazelcastInstance client = HazelcastClient.newHazelcastClient();
+            IMap<Object, Object> map = client.getMap(randomMapName());
+
+            map.addEntryListener(new EntryAdapter<Object, Object>(), true);
+            map.put(generateKeyOwnedBy(hz), "value");
+            map.put(generateKeyOwnedBy(hz2), "value");
+
+            clients.add(client);
+        }
+
+        ExecutorService ex = Executors.newFixedThreadPool(4);
+        try {
+            for (final HazelcastInstance client : clients) {
+                ex.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        client.shutdown();
+                    }
+                });
+            }
+
+            assertOpenEventually(listenerLatch, 30);
+
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(0, hz.getClientService().getConnectedClients().size());
+                }
+            }, 10);
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(0, hz2.getClientService().getConnectedClients().size());
+                }
+            }, 10);
+        } finally {
+            ex.shutdown();
+        }
+    }
+
     private void assertClientConnected(ClientService... services) {
         for (final ClientService service : services) {
             assertTrueEventually(new AssertTask() {
@@ -198,9 +259,9 @@ public class ClientServiceTest extends HazelcastTestSupport {
         }
     }
 
-    public static class ClientListenerLatch extends CountDownLatch implements ClientListener {
+    static class ClientConnectedListenerLatch extends CountDownLatch implements ClientListener {
 
-        public ClientListenerLatch(int count) {
+        public ClientConnectedListenerLatch(int count) {
             super(count);
         }
 
@@ -214,5 +275,20 @@ public class ClientServiceTest extends HazelcastTestSupport {
         }
     }
 
+    static class ClientDisconnectedListenerLatch extends CountDownLatch implements ClientListener {
+
+        public ClientDisconnectedListenerLatch(int count) {
+            super(count);
+        }
+
+        @Override
+        public void clientConnected(Client client) {
+        }
+
+        @Override
+        public void clientDisconnected(Client client) {
+            countDown();
+        }
+    }
 
 }

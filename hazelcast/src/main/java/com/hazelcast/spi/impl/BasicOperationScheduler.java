@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.NIOThread;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
 import com.hazelcast.util.executor.ExecutorType;
@@ -85,8 +86,14 @@ public final class BasicOperationScheduler {
     }
 
     boolean isAllowedToRunInCurrentThread(int partitionId) {
+        Thread currentThread = Thread.currentThread();
+
+        // IO threads are not allowed to run any operation
+        if (currentThread instanceof NIOThread) {
+            return false;
+        }
+
         if (partitionId > -1) {
-            Thread currentThread = Thread.currentThread();
             if (currentThread instanceof PartitionThread) {
                 int threadId = ((BasicOperationScheduler.PartitionThread) currentThread).threadId;
                 return toPartitionThreadIndex(partitionId) == threadId;
@@ -104,6 +111,11 @@ public final class BasicOperationScheduler {
                 return toPartitionThreadIndex(partitionId) == threadId;
             }
             return true;
+        }
+
+        // IO threads are not allowed to run any operation
+        if (currentThread instanceof NIOThread) {
+            return false;
         }
         return true;
     }

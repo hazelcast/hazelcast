@@ -246,7 +246,13 @@ public class EventServiceImpl implements EventService {
         return false;
     }
 
+    @Override
+    public void publishEvent(String serviceName, String topic, Object event, int orderKey) {
+        Collection<EventRegistration> registrations = getRegistrations(serviceName, topic);
+        publishEvent(serviceName, registrations, event, orderKey);
+    }
 
+    @Override
     public void publishEvent(String serviceName, EventRegistration registration, Object event, int orderKey) {
         if (!(registration instanceof Registration)) {
             throw new IllegalArgumentException();
@@ -331,14 +337,14 @@ public class EventServiceImpl implements EventService {
         return nodeEngine.getThisAddress().equals(reg.getSubscriber());
     }
 
-    @PrivateApi
-    void executeEvent(Runnable eventRunnable) {
+    @Override
+    public void executeEventCallback(Runnable callback) {
         if (nodeEngine.isActive()) {
             try {
-                eventExecutor.execute(eventRunnable);
+                eventExecutor.execute(callback);
             } catch (RejectedExecutionException e) {
                 if (eventExecutor.isLive()) {
-                    logger.warning("EventQueue overloaded! Failed to execute event process: " + eventRunnable);
+                    logger.warning("EventQueue overloaded! Failed to execute event callback: " + callback);
                 }
             }
         }
@@ -768,7 +774,7 @@ public class EventServiceImpl implements EventService {
 
         public void run() throws Exception {
             EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
-            eventService.executeEvent(eventService.new EventPacketProcessor(eventPacket, orderKey));
+            eventService.executeEventCallback(eventService.new EventPacketProcessor(eventPacket, orderKey));
         }
 
         public boolean returnsResponse() {
