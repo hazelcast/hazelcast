@@ -191,7 +191,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         Maximum size.
-                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                        Any positive integer. Default is Integer.MAX_VALUE.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

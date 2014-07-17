@@ -26,7 +26,7 @@ public class QueueConfig {
     /**
      * Default value of maximum size of Queue
      */
-    public static final int DEFAULT_MAX_SIZE = 0;
+    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     /**
      * Default value of sycronous backup count
      */
@@ -82,15 +82,15 @@ public class QueueConfig {
     }
 
     public int getMaxSize() {
-        return maxSize == 0 ? Integer.MAX_VALUE : maxSize;
+        return maxSize;
     }
 
     public QueueConfig setMaxSize(int maxSize) {
-        if (maxSize < 0) {
-            throw new IllegalArgumentException("Size of the queue can not be a negative value!");
+        if (maxSize > 0) {
+            this.maxSize = maxSize;
+            return this;
         }
-        this.maxSize = maxSize;
-        return this;
+        throw new IllegalArgumentException("Size of the queue should be a positive value!");
     }
 
     public int getTotalBackupCount() {
