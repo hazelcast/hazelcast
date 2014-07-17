@@ -62,11 +62,9 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected final ClientContext getContext() {
-        final ClientContext ctx = context;
-        if (ctx == null) {
-            throw new DistributedObjectDestroyedException(serviceName, objectName);
-        }
-        return ctx;
+        //recreates proxy if destroyed.
+        context.getProxy(serviceName, objectName);
+        return context;
     }
 
     protected final void setContext(ClientContext context) {
@@ -93,13 +91,12 @@ public abstract class ClientProxy implements DistributedObject {
     public final void destroy() {
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
+        context.removeProxy(this);
         try {
             context.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        context.removeProxy(this);
-        context = null;
     }
 
     protected abstract void onDestroy();
