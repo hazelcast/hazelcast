@@ -20,11 +20,6 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public Object addStagingArea(Object key, Object value, long now) {
-        return value;
-    }
-
-    @Override
     public Object addBackup(Object key, Object value, long now) {
         return value;
     }
@@ -67,6 +62,11 @@ class EmptyMapDataStore implements MapDataStore {
     @Override
     public Collection flush() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public Object flush(Object key, Object value, long now) {
+        return value;
     }
 
     @Override

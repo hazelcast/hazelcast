@@ -10,13 +10,12 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.map.mapstore.writebehind.ReachedMaxSizeException;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,12 +27,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static junit.framework.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class ClientMapStoreTest extends HazelcastTestSupport{
+public class ClientMapStoreTest extends HazelcastTestSupport {
 
     static final String MAP_NAME = "clientMapStoreLoad";
     Config nodeConfig;
@@ -119,7 +117,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport{
     }
 
     @Test
-    public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception{
+    public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -141,7 +139,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport{
 
 
         final int max = getMaxCapacity(server) + 1;
-        for(int i=0; i<max; i++){
+        for (int i = 0; i < max; i++) {
             map.putAsync(i, i);
         }
 
@@ -149,8 +147,12 @@ public class ClientMapStoreTest extends HazelcastTestSupport{
         assertEquals(max - 1, map.size());
     }
 
-    @Test (expected = ReachedMaxSizeException.class )
-    public void mapStore_OperationQueue_AtMaxCapacity_Test() throws Exception{
+    // Default impl. of write-behind-queue has no capacity it is bounded by number of elements in a map.
+    // we can open this test, when we have a configuration parameter for write-coalescing.
+    // for now this test should be ignored since default mode is write-coalescing.
+    @Test(expected = ReachedMaxSizeException.class)
+    @Ignore
+    public void mapStore_OperationQueue_AtMaxCapacity_Test() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -172,14 +174,14 @@ public class ClientMapStoreTest extends HazelcastTestSupport{
         final IMap map = client.getMap(MAP_NAME);
 
         final int mapStoreQ_MaxCapacity = getMaxCapacity(server) + 1;
-        for(int i=0; i<mapStoreQ_MaxCapacity; i++){
+        for (int i = 0; i < mapStoreQ_MaxCapacity; i++) {
             map.put(i, i);
         }
     }
 
 
     @Test
-    public void destroyMap_configedWith_MapStore() throws Exception{
+    public void destroyMap_configedWith_MapStore() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -200,7 +202,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport{
 
         IMap map = client.getMap(MAP_NAME);
 
-        for(int i=0; i<1; i++){
+        for (int i = 0; i < 1; i++) {
             map.putAsync(i, i);
         }
 
@@ -232,7 +234,9 @@ public class ClientMapStoreTest extends HazelcastTestSupport{
         public Set<String> loadAllKeys() {
             Set<String> keys = new HashSet<String>();
 
-            for (int k = 0; k < MAX_KEYS; k++) { keys.add("key" + k); }
+            for (int k = 0; k < MAX_KEYS; k++) {
+                keys.add("key" + k);
+            }
 
             return keys;
         }

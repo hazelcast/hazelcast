@@ -33,8 +33,8 @@ public final class WriteBehindQueues {
         return new BoundedArrayWriteBehindQueue<T>(maxSizePerNode, counter);
     }
 
-    public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
-        return (WriteBehindQueue<T>) createSafeWriteBehindQueue(createBoundedArrayWriteBehindQueue(maxSizePerNode, counter));
+    public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue() {
+        return (WriteBehindQueue<T>) createSafeWriteBehindQueue(createCoalescedWriteBehindQueue());
     }
 
     public static <T> WriteBehindQueue<T> emptyWriteBehindQueue() {
@@ -43,6 +43,10 @@ public final class WriteBehindQueues {
 
     public static <T> WriteBehindQueue<T> createSafeWriteBehindQueue(WriteBehindQueue<T> queue) {
         return new SynchronizedWriteBehindQueue<T>(queue);
+    }
+
+    public static WriteBehindQueue createCoalescedWriteBehindQueue() {
+        return new CoalescedWriteBehindQueue();
     }
 
     /**
@@ -66,17 +70,17 @@ public final class WriteBehindQueues {
         }
 
         @Override
-        public void removeFirst() {
-        }
-
-        @Override
-        public T get(int index) {
-            throw new IndexOutOfBoundsException("Index: " + index);
-        }
-
-        @Override
-        public T remove(int index) {
+        public T get(T t) {
             return null;
+        }
+
+        @Override
+        public T getFirst() {
+            return null;
+        }
+
+        @Override
+        public void removeFirst() {
         }
 
         @Override
@@ -92,6 +96,11 @@ public final class WriteBehindQueues {
         @Override
         public WriteBehindQueue<T> getSnapShot() {
             return WriteBehindQueues.emptyWriteBehindQueue();
+        }
+
+        @Override
+        public void removeAll(Collection<T> collection) {
+
         }
 
         @Override
@@ -120,8 +129,8 @@ public final class WriteBehindQueues {
         }
 
         @Override
-        public void shrink() {
-
+        public List filterItems(long now) {
+            return Collections.emptyList();
         }
     }
 

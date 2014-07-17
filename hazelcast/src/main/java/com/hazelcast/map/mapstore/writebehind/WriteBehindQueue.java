@@ -36,28 +36,24 @@ public interface WriteBehindQueue<E> {
     boolean offer(E e);
 
     /**
+     * Gets item.
+     *
+     * @param e item to be offered
+     * @return corresponding item from queue or null.
+     */
+    E get(E e);
+
+    /**
+     * Gets first item in queue.
+     *
+     * @return corresponding item from queue or null.
+     */
+    E getFirst();
+
+    /**
      * removes head of the queue.
      */
     void removeFirst();
-
-    /**
-     * Reads item at that index in queue.
-     *
-     * @param index index of item.
-     * @return item at index or <tt>null</tt>
-     * if index is out of bounds.
-     */
-    E get(int index);
-
-    /**
-     * Removes item in that index from queue.
-     *
-     * @param index index of item.
-     * @return item removed or <tt>null</tt>
-     * if index is out of bounds.
-     */
-    E remove(int index);
-
 
     int size();
 
@@ -84,6 +80,14 @@ public interface WriteBehindQueue<E> {
 
 
     /**
+     * Removes all items in collection from queue.
+     *
+     * @param collection collection to be removed.
+     */
+    void removeAll(Collection<E> collection);
+
+
+    /**
      * Removes and returns all items in this queue.
      *
      * @return removed items in this queue.
@@ -103,9 +107,12 @@ public interface WriteBehindQueue<E> {
     List<E> asList();
 
     /**
-     * Shrinks the size. This can be used to minimize
-     * the storage of an <tt>WriteBehindQueue</tt> instance.
+     * Returns list of entries smaller than specific time.
+     *
+     * @param now now in millis.
+     * @return entries to process according to time.
      */
-    void shrink();
+    List<E> filterItems(long now);
+
 }
 

@@ -30,7 +30,6 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
 
     private final Object mutex;
 
-
     SynchronizedWriteBehindQueue(WriteBehindQueue<E> queue) {
         if (queue == null) {
             throw new NullPointerException();
@@ -47,25 +46,26 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
+    public E get(E e) {
+        synchronized (mutex) {
+            return queue.get(e);
+        }
+    }
+
+    @Override
+    public E getFirst() {
+        synchronized (mutex) {
+            return queue.getFirst();
+        }
+    }
+
+    @Override
     public void removeFirst() {
         synchronized (mutex) {
             queue.removeFirst();
         }
     }
 
-    @Override
-    public E get(int index) {
-        synchronized (mutex) {
-            return queue.get(index);
-        }
-    }
-
-    @Override
-    public E remove(int index) {
-        synchronized (mutex) {
-            return queue.remove(index);
-        }
-    }
 
     @Override
     public int size() {
@@ -109,6 +109,13 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
+    public void removeAll(Collection<E> collection) {
+        synchronized (mutex) {
+            queue.removeAll(collection);
+        }
+    }
+
+    @Override
     public List<E> removeAll() {
         synchronized (mutex) {
             return queue.removeAll();
@@ -130,9 +137,10 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public void shrink() {
+    public List<E> filterItems(long now) {
         synchronized (mutex) {
-            queue.shrink();
+            return queue.filterItems(now);
         }
     }
+
 }

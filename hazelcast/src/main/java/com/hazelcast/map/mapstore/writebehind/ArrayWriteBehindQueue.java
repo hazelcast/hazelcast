@@ -49,29 +49,21 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
+    public T get(T t) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public T getFirst() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void removeFirst() {
         if (list.isEmpty()) {
             return;
         }
         list.remove(0);
-    }
-
-    @Override
-    public T get(int index) {
-        final int size = list.size();
-        if (index >= size || index < 0) {
-            return null;
-        }
-        return list.get(index);
-    }
-
-    @Override
-    public T remove(int index) {
-        final int size = list.size();
-        if (index >= size || index < 0) {
-            return null;
-        }
-        return list.remove(index);
     }
 
     @Override
@@ -114,6 +106,11 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
+    public void removeAll(Collection<T> collection) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public List<T> removeAll() {
         final List<T> list = asList();
         this.list.clear();
@@ -134,7 +131,8 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
-    public void shrink() {
-        ((ArrayList) list).trimToSize();
+    public List<T> filterItems(long now) {
+        throw new UnsupportedOperationException();
     }
+
 }
