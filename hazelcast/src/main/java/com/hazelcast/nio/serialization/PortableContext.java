@@ -36,6 +36,8 @@ public interface PortableContext {
 
     ClassDefinition lookupOrRegisterClassDefinition(Portable portable) throws IOException;
 
+    FieldDefinition getFieldDefinition(ClassDefinition cd, String name);
+
     ManagedContext getManagedContext();
 
 }

@@ -22,8 +22,11 @@ import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class DefaultPortableReader implements PortableReader {
+
+    private static final Pattern NESTED_FIELD_PATTERN = Pattern.compile("\\.");
 
     protected final ClassDefinition cd;
     private final PortableSerializer serializer;
@@ -65,24 +68,20 @@ public class DefaultPortableReader implements PortableReader {
         return cd.getFieldClassId(fieldName);
     }
 
-    public int getFieldVersion(String fieldName) {
-        return cd.getFieldVersion(fieldName);
-    }
-
     public int readInt(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
+        int pos = readPosition(fieldName, FieldType.INT);
         return in.readInt(pos);
     }
 
     public long readLong(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
+        int pos = readPosition(fieldName, FieldType.LONG);
         return in.readLong(pos);
     }
 
     public String readUTF(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fieldName);
+            int pos = readPosition(fieldName, FieldType.UTF);
             in.position(pos);
             return in.readUTF();
         } finally {
@@ -91,39 +90,39 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     public boolean readBoolean(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
+        int pos = readPosition(fieldName, FieldType.BOOLEAN);
         return in.readBoolean(pos);
     }
 
     public byte readByte(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
+        int pos = readPosition(fieldName, FieldType.BYTE);
         return in.readByte(pos);
     }
 
     public char readChar(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
+        int pos = readPosition(fieldName, FieldType.CHAR);
         return in.readChar(pos);
     }
 
     public double readDouble(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
+        int pos = readPosition(fieldName, FieldType.DOUBLE);
         return in.readDouble(pos);
     }
 
     public float readFloat(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
+        int pos = readPosition(fieldName, FieldType.FLOAT);
         return in.readFloat(pos);
     }
 
     public short readShort(String fieldName) throws IOException {
-        int pos = getPosition(fieldName);
+        int pos = readPosition(fieldName, FieldType.SHORT);
         return in.readShort(pos);
     }
 
     public byte[] readByteArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fieldName);
+            int pos = readPosition(fieldName, FieldType.BYTE_ARRAY);
             in.position(pos);
             return IOUtil.readByteArray(in);
         } finally {
@@ -134,7 +133,7 @@ public class DefaultPortableReader implements PortableReader {
     public char[] readCharArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fieldName);
+            int pos = readPosition(fieldName, FieldType.CHAR_ARRAY);
             in.position(pos);
             return in.readCharArray();
         } finally {
@@ -145,7 +144,7 @@ public class DefaultPortableReader implements PortableReader {
     public int[] readIntArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fieldName);
+            int pos = readPosition(fieldName, FieldType.INT_ARRAY);
             in.position(pos);
             return in.readIntArray();
         } finally {
@@ -156,7 +155,7 @@ public class DefaultPortableReader implements PortableReader {
     public long[] readLongArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fieldName);
+            int pos = readPosition(fieldName, FieldType.LONG_ARRAY);
             in.position(pos);
             return in.readLongArray();
         } finally {
@@ -167,7 +166,7 @@ public class DefaultPortableReader implements PortableReader {
     public double[] readDoubleArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fieldName);
+            int pos = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
             in.position(pos);
             return in.readDoubleArray();
         } finally {
@@ -178,7 +177,7 @@ public class DefaultPortableReader implements PortableReader {
     public float[] readFloatArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fieldName);
+            int pos = readPosition(fieldName, FieldType.FLOAT_ARRAY);
             in.position(pos);
             return in.readFloatArray();
         } finally {
@@ -189,7 +188,7 @@ public class DefaultPortableReader implements PortableReader {
     public short[] readShortArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fieldName);
+            int pos = readPosition(fieldName, FieldType.SHORT_ARRAY);
             in.position(pos);
             return in.readShortArray();
         } finally {
@@ -198,13 +197,16 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     public Portable readPortable(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
         }
+        if (fd.getType() != FieldType.PORTABLE) {
+            throw new HazelcastSerializationException("Not a Portable field: " + fieldName);
+        }
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fd);
+            int pos = readPosition(fd);
             in.position(pos);
             final boolean isNull = in.readBoolean();
             if (!isNull) {
@@ -222,13 +224,16 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     public Portable[] readPortableArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
         }
+        if (fd.getType() != FieldType.PORTABLE_ARRAY) {
+            throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
+        }
         final int currentPos = in.position();
         try {
-            int pos = getPosition(fd);
+            int pos = readPosition(fd);
             in.position(pos);
             final int len = in.readInt();
             final Portable[] portables = new Portable[len];
@@ -247,18 +252,56 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
-    protected int getPosition(String fieldName) throws IOException {
+    private int readPosition(String fieldName, FieldType type) throws IOException {
         if (raw) {
             throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
         }
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            throw throwUnknownFieldException(fieldName);
+            return readNestedPosition(fieldName, type);
         }
-        return getPosition(fd);
+        if (fd.getType() != type) {
+            throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
+        }
+        return readPosition(fd);
     }
 
-    protected int getPosition(FieldDefinition fd) throws IOException {
+    private int readNestedPosition(String fieldName, FieldType type) throws IOException {
+        String[] fieldNames = NESTED_FIELD_PATTERN.split(fieldName);
+        if (fieldNames.length > 1) {
+            FieldDefinition fd = null;
+            DefaultPortableReader reader = this;
+
+            for (int i = 0; i < fieldNames.length; i++) {
+                fd = reader.cd.getField(fieldNames[i]);
+                if (fd == null) {
+                    break;
+                }
+                if (i == fieldNames.length - 1) {
+                    break;
+                }
+
+                int pos = reader.readPosition(fd);
+                in.position(pos);
+                boolean isNull = in.readBoolean();
+                if (isNull) {
+                    throw new NullPointerException("Parent field is null: " + fieldNames[i]);
+                }
+                reader = serializer
+                        .createReader(in, fd.getFactoryId(), fd.getClassId(), fd.getVersion());
+            }
+            if (fd == null) {
+                throw throwUnknownFieldException(fieldName);
+            }
+            if (fd.getType() != type) {
+                throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
+            }
+            return reader.readPosition(fd);
+        }
+        throw throwUnknownFieldException(fieldName);
+    }
+
+    private int readPosition(FieldDefinition fd) throws IOException {
         return in.readInt(offset + fd.getIndex() * 4);
     }
 
@@ -274,4 +317,5 @@ public class DefaultPortableReader implements PortableReader {
     void end() throws IOException {
         in.position(finalPosition);
     }
+
 }
