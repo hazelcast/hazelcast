@@ -33,7 +33,6 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public static final int HEADER_EVENT = 2;
     public static final int HEADER_WAN_REPLICATION = 3;
     public static final int HEADER_URGENT = 4;
-    public static final int HEADER_CLIENT_REQUEST = 5;
 
     private static final int ST_VERSION = 11;
     private static final int ST_HEADER = 12;

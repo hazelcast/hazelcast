@@ -153,8 +153,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         final Packet packet = new Packet(resultData, serializationService.getPortableContext());
         if (isEvent) {
             packet.setHeader(Packet.HEADER_EVENT);
-        } else {
-            packet.setHeader(Packet.HEADER_CLIENT_REQUEST);
         }
         conn.write(packet);
     }
