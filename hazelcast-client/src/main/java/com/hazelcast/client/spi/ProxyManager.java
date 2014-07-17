@@ -37,7 +37,6 @@ import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
-import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -240,14 +239,12 @@ public final class ProxyManager {
 
             }
         };
-        final ClientContext clientContext = new ClientContext(client, this);
-        return ListenerUtil.listen(clientContext, request, null, eventHandler);
+        return client.getListenerService().listen(request, null, eventHandler);
     }
 
     public boolean removeDistributedObjectListener(String id) {
         final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
-        final ClientContext clientContext = new ClientContext(client, this);
-        return ListenerUtil.stopListening(clientContext, request, id);
+        return client.getListenerService().stopListening(request, id);
     }
 
     private static class ClientProxyFuture {

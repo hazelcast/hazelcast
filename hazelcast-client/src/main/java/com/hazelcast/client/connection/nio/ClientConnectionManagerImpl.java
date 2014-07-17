@@ -36,6 +36,7 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.SSLConfig;
@@ -82,6 +83,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOUT_DEFAULT;
@@ -472,7 +474,14 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     public void handlePacket(Packet packet) {
         final ClientConnection conn = (ClientConnection) packet.getConn();
         conn.incrementPacketCount();
-        executionService.execute(packet);
+        if (packet.isHeaderSet(Packet.HEADER_CLIENT_REQUEST)) {
+            invocationService.handlePacket(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
+            final ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+            listenerService.handleEventPacket(packet);
+        } else {
+            LOGGER.log(Level.WARNING, "client response packet header is invalid. Dropping the packet ");
+        }
     }
 
     public int newCallId() {
