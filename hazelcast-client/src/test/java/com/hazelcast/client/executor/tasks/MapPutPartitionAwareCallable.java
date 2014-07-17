@@ -28,26 +28,45 @@ import java.io.IOException;
  * the action is to put the UUid of the executing node into a map with the given name
  * and return that UUid
  */
-public class MapPutPartitionAwareCallable implements Callable, DataSerializable, PartitionAware, HazelcastInstanceAware {
+public class MapPutPartitionAwareCallable<T, P> implements Callable<T>, DataSerializable, PartitionAware<P>, HazelcastInstanceAware {
 
     private HazelcastInstance instance;
 
     public String mapName;
-    public Object partitionKey;
+    public P partitionKey;
 
-    public MapPutPartitionAwareCallable(){}
+    @SuppressWarnings("unused")
+    public MapPutPartitionAwareCallable() {
+    }
 
-    public MapPutPartitionAwareCallable(String mapName, Object partitionKey) {
+    public MapPutPartitionAwareCallable(String mapName, P partitionKey) {
         this.mapName = mapName;
         this.partitionKey = partitionKey;
     }
 
+    @Override
+    public T call() throws Exception {
+        Member member = instance.getCluster().getLocalMember();
+
+        IMap<String, String> map = instance.getMap(mapName);
+        map.put(member.getUuid(), member.getUuid() + "value");
+
+        return (T) member.getUuid();
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
+    }
+
+    @Override
+    public P getPartitionKey() {
+        return partitionKey;
     }
 
     @Override
@@ -61,20 +80,5 @@ public class MapPutPartitionAwareCallable implements Callable, DataSerializable,
 
     public void setMapName(String mapName) {
         this.mapName = mapName;
-    }
-
-    @Override
-    public Object getPartitionKey() {
-        return partitionKey;
-    }
-
-    @Override
-    public Object call() throws Exception {
-        Member member = instance.getCluster().getLocalMember();
-
-        IMap map = instance.getMap(mapName);
-
-        map.put(member.getUuid(), member.getUuid()+"value");
-        return member.getUuid();
     }
 }

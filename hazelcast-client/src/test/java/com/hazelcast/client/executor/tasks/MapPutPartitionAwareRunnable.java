@@ -23,39 +23,47 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-
 /**
  * this task should execute on a node owning the given partitionKey argument,
  * the action is to put the UUid of the executing node into a map with the given name
  */
-public class MapPutPartitionAwareRunnable implements Runnable, DataSerializable, PartitionAware, HazelcastInstanceAware {
+public class MapPutPartitionAwareRunnable<P> implements Runnable, DataSerializable, PartitionAware<P>, HazelcastInstanceAware {
 
     private HazelcastInstance instance;
 
-    public String mapName;
-    public Object partitionKey;
+    private String mapName;
+    private P partitionKey;
 
-    public MapPutPartitionAwareRunnable(){}
+    @SuppressWarnings("unused")
+    public MapPutPartitionAwareRunnable() {
+    }
 
-    public MapPutPartitionAwareRunnable(String mapName, Object partitionKey) {
+    public MapPutPartitionAwareRunnable(String mapName, P partitionKey) {
         this.mapName = mapName;
         this.partitionKey = partitionKey;
     }
 
+    @Override
+    public void run() {
+        Member member = instance.getCluster().getLocalMember();
+
+        IMap<String, String> map = instance.getMap(mapName);
+        map.put(member.getUuid(), member.getUuid()+"value");
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
     }
 
-    public void run() {
-        Member member = instance.getCluster().getLocalMember();
-
-        IMap map = instance.getMap(mapName);
-
-        map.put(member.getUuid(), member.getUuid()+"value");
+    @Override
+    public P getPartitionKey() {
+        return partitionKey;
     }
 
     @Override
@@ -69,10 +77,5 @@ public class MapPutPartitionAwareRunnable implements Runnable, DataSerializable,
 
     public void setMapName(String mapName) {
         this.mapName = mapName;
-    }
-
-    @Override
-    public Object getPartitionKey() {
-        return partitionKey;
     }
 }

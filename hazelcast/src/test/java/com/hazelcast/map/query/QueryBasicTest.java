@@ -2,12 +2,15 @@ package com.hazelcast.map.query;
 
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -32,6 +35,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
+import static com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
+import static com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.State;
 import static com.hazelcast.query.SampleObjects.Value;
@@ -813,7 +819,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 1000 * 60)
-    public void testMultipleOrPredicatesIssue885WithIndex2() {
+    public void testMultipleOrPredicatesIssue885WithDoubleIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(new Config());
         factory.newHazelcastInstance(new Config());
@@ -861,4 +867,147 @@ public class QueryBasicTest extends HazelcastTestSupport {
         assertEquals(3, values.size());
     }
 
+    @Test
+    public void testSqlQueryUsing__KeyField() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        IMap<Object, Object> map = hz2.getMap(randomMapName());
+
+        Object key = generateKeyOwnedBy(hz1);
+        Object value = "value";
+        map.put(key, value);
+
+        Collection<Object> values = map.values(new SqlPredicate("__key = '" + key + "'"));
+        assertEquals(1, values.size());
+        assertEquals(value, values.iterator().next());
+    }
+
+    @Test
+    public void testSqlQueryUsingNested__KeyField() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        IMap<Object, Object> map = hz2.getMap(randomMapName());
+
+        Object key = new CustomAttribute(12, 123L);
+        Object value = "value";
+        map.put(key, value);
+
+        Collection<Object> values = map.values(new SqlPredicate("__key.age = 12 and __key.height = 123"));
+        assertEquals(1, values.size());
+        assertEquals(value, values.iterator().next());
+    }
+
+    @Test
+    public void testSqlQueryUsingPortable__KeyField() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        IMap<Object, Object> map = hz2.getMap(randomMapName());
+
+        Object key = new ChildPortableObject(123L);
+        Object value = "value";
+        map.put(key, value);
+
+        Collection<Object> values = map.values(new SqlPredicate("__key.timestamp = 123"));
+        assertEquals(1, values.size());
+        assertEquals(value, values.iterator().next());
+    }
+
+    @Test
+    public void testQueryPortableObject() {
+        testQueryUsingPortableObject(new Config(), randomMapName());
+    }
+
+    @Test
+    public void testQueryPortableObjectAndOptimizeQueries() {
+        String name = randomMapName();
+        Config config = new Config();
+        config.addMapConfig(new MapConfig(name).setOptimizeQueries(true));
+
+        testQueryUsingPortableObject(config, name);
+    }
+
+    @Test
+    public void testQueryPortableObjectWithIndex() {
+        String name = randomMapName();
+        Config config = new Config();
+        MapConfig mapConfig = new MapConfig(name)
+                .addMapIndexConfig(new MapIndexConfig("timestamp", true));
+        config.addMapConfig(mapConfig);
+
+        testQueryUsingPortableObject(config, name);
+    }
+
+    @Test
+    public void testQueryPortableObjectWithIndexAndOptimizeQueries() {
+        String name = randomMapName();
+        Config config = new Config();
+        MapConfig mapConfig = new MapConfig(name)
+                .setOptimizeQueries(true)
+                .addMapIndexConfig(new MapIndexConfig("timestamp", true));
+        config.addMapConfig(mapConfig);
+
+        testQueryUsingPortableObject(config, name);
+    }
+
+    private void testQueryUsingPortableObject(Config config, String mapName) {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        IMap<Object, Object> map = hz2.getMap(mapName);
+
+        Object key = generateKeyOwnedBy(hz1);
+        map.put(key, new ParentPortableObject(1L));
+
+        Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
+        assertEquals(1, values.size());
+    }
+
+    @Test(expected = QueryException.class)
+    public void testQueryPortableField() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IMap<Object, Object> map = hz.getMap(randomMapName());
+
+        map.put(1, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
+        Collection<Object> values = map.values(new SqlPredicate("child > 0"));
+        values.size();
+    }
+
+    @Test
+    public void testQueryUsingNestedPortableObject() {
+        testQueryUsingNestedPortableObject(new Config(), randomMapName());
+    }
+
+    @Test
+    public void testQueryUsingNestedPortableObjectWithIndex() {
+        String name = randomMapName();
+        Config config = new Config();
+        config.addMapConfig(new MapConfig(name).addMapIndexConfig(new MapIndexConfig("child.timestamp", false))
+                .addMapIndexConfig(new MapIndexConfig("child.child.timestamp", true)));
+
+        testQueryUsingNestedPortableObject(config, name);
+    }
+
+    private void testQueryUsingNestedPortableObject(Config config, String name) {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        IMap<Object, Object> map = hz2.getMap(name);
+
+        Object key = generateKeyOwnedBy(hz1);
+        map.put(key, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
+
+        Collection<Object> values = map.values(new SqlPredicate("child.timestamp > 0"));
+        assertEquals(1, values.size());
+
+        values = map.values(new SqlPredicate("child.child.timestamp > 0"));
+        assertEquals(1, values.size());
+    }
 }

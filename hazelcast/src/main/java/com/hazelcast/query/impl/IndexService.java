@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryException;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

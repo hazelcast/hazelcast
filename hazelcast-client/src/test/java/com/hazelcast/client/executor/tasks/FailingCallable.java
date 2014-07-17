@@ -25,13 +25,16 @@ import java.util.concurrent.Callable;
 
 public class FailingCallable implements Callable<String>, DataSerializable {
 
+    @Override
     public String call() throws Exception {
         throw new IllegalStateException();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
     }
 }
