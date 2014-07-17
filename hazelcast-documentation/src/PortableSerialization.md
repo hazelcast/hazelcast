@@ -95,25 +95,6 @@ config.getSerializationConfig().addPortableFactory( 1, new MyPortableFactory() )
 
 Note that the `id` that is passed to the `SerializationConfig` is same as the `factoryId` that `Foo` class returns.
 
-A few warnings when using portable:
-
-One needs to be careful when serializing null portables. Hazelcast lazily creates a class definition of portable internally
-when the user first serializes. This class definition is stored and used later for deserializing that portable class. When
-the user tries to serialize a null portable and if there is no class definition exists at the moment, Hazelcast throws an
-exception saying that "com.hazelcast.nio.serialization.HazelcastSerializationException: Cannot write null portable
-without explicitly registering class definition!". 
-
-There are two solutions to get rid of this exception. First way, the user can put
-a non-null portable class of the same type before any other operation. Second way, a class definition can be registered manually
-in serialization config as shown below.
-
-```java
-Config config = new Config();
-final ClassDefinition classDefinition = new ClassDefinitionBuilder(Foo.factoryId, Foo.getClassId)
-                       .addUTFField("foo").build();
-config.getSerializationConfig().addClassDefinition(classDefinition);
-Hazelcast.newHazelcastInstance(config);
-```
 
 ### Versions
 
@@ -138,6 +119,27 @@ Things to consider related to versioning is given below:
 - Assume that, for example, a client performs a Portable deserialization on a field. If that Portable is updated by removing that field on the cluster side, this may lead to a problem.
 - Portable serialization does not use reflection and hence, fields in the class and in the serialized content are not automatically mapped. So, field renaming is a simpler process. Also, since the class ID is stored, renaming the Portable does not lead to problems.
 - Types of fields need to be updated carefully. Yet, Hazelcast performs basic type upgradings (e.g. `int` to `float`).
+
+### Null Portable Serialization
+
+One needs to be careful when serializing null portables. Hazelcast lazily creates a class definition of portable internally
+when the user first serializes. This class definition is stored and used later for deserializing that portable class. When
+the user tries to serialize a null portable and if there is no class definition at the moment, Hazelcast throws an
+exception saying that `com.hazelcast.nio.serialization.HazelcastSerializationException: Cannot write null portable
+without explicitly registering class definition!`. 
+
+There are two solutions to get rid of this exception. First way, the user can put
+a non-null portable class of the same type before any other operation. Second way, a class definition can be registered manually
+in serialization config as shown below.
+
+```java
+Config config = new Config();
+final ClassDefinition classDefinition = new ClassDefinitionBuilder(Foo.factoryId, Foo.getClassId)
+                       .addUTFField("foo").build();
+config.getSerializationConfig().addClassDefinition(classDefinition);
+Hazelcast.newHazelcastInstance(config);
+```
+
 
 ### DistributedObject Serialization
 
