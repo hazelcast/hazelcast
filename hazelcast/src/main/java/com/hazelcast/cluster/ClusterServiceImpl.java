@@ -103,7 +103,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final long waitMillisBeforeJoin;
 
-    private final long maxWaitSecondsBeforeJoin;
+    private final long maxWaitMillisBeforeJoin;
 
     private final long maxNoHeartbeatMillis;
 
@@ -144,7 +144,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         thisMember = node.getLocalMember();
         setMembers(thisMember);
         waitMillisBeforeJoin = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
-        maxWaitSecondsBeforeJoin = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger();
+        maxWaitMillisBeforeJoin = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         maxNoHeartbeatMillis = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         maxNoMasterConfirmationMillis = node.groupProperties.MAX_NO_MASTER_CONFIRMATION_SECONDS.getInteger() * 1000L;
         icmpEnabled = node.groupProperties.ICMP_ENABLED.getBoolean();
@@ -225,6 +225,16 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             }
         }
         return valid;
+    }
+
+    private boolean isValidJoinRequest(JoinRequest joinRequest) {
+        boolean validJoinRequest;
+        try {
+            validJoinRequest = validateJoinMessage(joinRequest);
+        } catch (Exception e) {
+            validJoinRequest = false;
+        }
+        return validJoinRequest;
     }
 
     private void logIfConnectionToEndpointIsMissing(MemberImpl member) {
@@ -488,103 +498,135 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    void handleJoinRequest(JoinRequestOperation joinRequest) {
+    void handleJoinRequest(JoinRequestOperation op) {
+        if (!node.joined() || !node.isActive()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Node is not ready to process join request...");
+            }
+            return;
+        }
+
         lock.lock();
         try {
-            final JoinRequest joinMessage = joinRequest.getMessage();
-            final long now = Clock.currentTimeMillis();
+            JoinRequest joinRequest = op.getRequest();
+            long now = Clock.currentTimeMillis();
             if (logger.isFinestEnabled()) {
-                String msg = "Handling join from " + joinMessage.getAddress() + ", inProgress: " + joinInProgress
+                String msg = "Handling join from " + joinRequest.getAddress() + ", inProgress: " + joinInProgress
                         + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
                 logger.finest(msg);
             }
-            boolean validJoinRequest;
-            try {
-                validJoinRequest = validateJoinMessage(joinMessage);
-            } catch (Exception e) {
-                validJoinRequest = false;
-            }
-            final Connection conn = joinRequest.getConnection();
-            if (validJoinRequest) {
-                final MemberImpl member = getMember(joinMessage.getAddress());
-                if (member != null) {
-                    if (joinMessage.getUuid().equals(member.getUuid())) {
-                        if (logger.isFinestEnabled()) {
-                            String message = "Ignoring join request, member already exists.. => " + joinMessage;
-                            logger.finest(message);
-                        }
-                        // send members update back to node trying to join again...
-                        nodeEngine.getOperationService().send(new MemberInfoUpdateOperation(createMemberInfos(getMemberList(), true), getClusterTime(), false),
-                                member.getAddress());
-                        return;
-                    }
-                    // If this node is master then remove old member and process join request.
-                    // If requesting address is equal to master node's address, that means master node
-                    // somehow disconnected and wants to join back.
-                    // So drop old member and process join request if this node becomes master.
-                    if (node.isMaster() || member.getAddress().equals(node.getMasterAddress())) {
-                        logger.warning("New join request has been received from an existing endpoint! => " + member
-                                + " Removing old member and processing join request...");
-                        doRemoveAddress(member.getAddress(), false);
-                    }
-                }
-                final boolean multicastEnabled = node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
-                if (!multicastEnabled && node.isActive() && node.joined() && node.getMasterAddress() != null && !node.isMaster()) {
-                    sendMasterAnswer(joinMessage);
-                }
-                if (node.isMaster() && node.joined() && node.isActive()) {
-                    final MemberInfo newMemberInfo = new MemberInfo(joinMessage.getAddress(), joinMessage.getUuid(), joinMessage.getAttributes());
-                    if (node.securityContext != null && !setJoins.contains(newMemberInfo)) {
-                        final Credentials cr = joinMessage.getCredentials();
-                        ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
-                        if (cr == null) {
-                            securityLogger.severe("Expecting security credentials " +
-                                    "but credentials could not be found in JoinRequest!");
-                            nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), joinMessage.getAddress());
-                            return;
-                        } else {
-                            try {
-                                LoginContext lc = node.securityContext.createMemberLoginContext(cr);
-                                lc.login();
-                            } catch (LoginException e) {
-                                securityLogger.severe("Authentication has failed for " + cr.getPrincipal()
-                                        + '@' + cr.getEndpoint() + " => (" + e.getMessage() +
-                                        ")");
-                                securityLogger.finest(e);
-                                nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), joinMessage.getAddress());
-                                return;
-                            }
-                        }
-                    }
-                    if (!joinInProgress) {
-                        if (firstJoinRequest != 0 && now - firstJoinRequest >= maxWaitSecondsBeforeJoin * 1000) {
-                            startJoin();
-                        } else {
-                            if (setJoins.add(newMemberInfo)) {
-                                sendMasterAnswer(joinMessage);
-                                if (firstJoinRequest == 0) {
-                                    firstJoinRequest = now;
-                                }
-                                if (now - firstJoinRequest < maxWaitSecondsBeforeJoin * 1000) {
-                                    timeToStartJoin = now + waitMillisBeforeJoin;
-                                }
-                            }
-                            if (now > timeToStartJoin) {
-                                startJoin();
-                            }
-                        }
-                    }
-                }
-            } else {
+
+            Connection conn = op.getConnection();
+            if (!isValidJoinRequest(joinRequest)) {
+                logger.info("Received an invalid join request from " + joinRequest.getAddress());
                 conn.close();
+                return;
+            }
+
+            if (isJoinRequestFromAnExistingMember(joinRequest)) {
+                return;
+            }
+
+            if (!node.isMaster()) {
+                if (!isMulticastEnabled()) {
+                    sendMasterAnswer(joinRequest.getAddress());
+                }
+                return;
+            }
+
+            MemberInfo memberInfo = new MemberInfo(joinRequest.getAddress(), joinRequest.getUuid(),
+                    joinRequest.getAttributes());
+
+            try {
+                checkSecureLogin(joinRequest, memberInfo);
+            } catch (Exception e) {
+                ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
+                sentAuthenticationFailure(joinRequest.getAddress());
+                securityLogger.severe(e);
+                return;
+            }
+
+            if (!joinInProgress) {
+                if (firstJoinRequest == 0) {
+                    firstJoinRequest = now;
+                }
+                if (setJoins.add(memberInfo)) {
+                    sendMasterAnswer(joinRequest.getAddress());
+                    if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
+                        timeToStartJoin = now + waitMillisBeforeJoin;
+                    }
+                }
+                if (now > timeToStartJoin) {
+                    startJoin();
+                }
             }
         } finally {
             lock.unlock();
         }
     }
 
-    private void sendMasterAnswer(final JoinRequest joinRequest) {
-        nodeEngine.getOperationService().send(new SetMasterOperation(node.getMasterAddress()), joinRequest.getAddress());
+    private void sentAuthenticationFailure(Address target) {
+        nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), target);
+    }
+
+    private void checkSecureLogin(JoinRequest joinRequest, MemberInfo newMemberInfo) {
+        if (node.securityContext != null && !setJoins.contains(newMemberInfo)) {
+            Credentials cr = joinRequest.getCredentials();
+            if (cr == null) {
+                throw new SecurityException("Expecting security credentials " +
+                        "but credentials could not be found in JoinRequest!");
+            } else {
+                try {
+                    LoginContext lc = node.securityContext.createMemberLoginContext(cr);
+                    lc.login();
+                } catch (LoginException e) {
+                    throw new SecurityException(
+                            "Authentication has failed for " + cr.getPrincipal() + '@' + cr.getEndpoint()
+                                    + " => (" + e.getMessage() + ")");
+                }
+            }
+        }
+    }
+
+    private boolean isMulticastEnabled() {
+        return node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
+    }
+
+    private boolean isJoinRequestFromAnExistingMember(JoinRequest joinRequest) {
+        MemberImpl member = getMember(joinRequest.getAddress());
+        if (member != null) {
+            if (joinRequest.getUuid().equals(member.getUuid())) {
+                if (logger.isFinestEnabled()) {
+                    String message = "Ignoring join request, member already exists.. => " + joinRequest;
+                    logger.finest(message);
+                }
+                // send members update back to node trying to join again...
+                Operation op = new MemberInfoUpdateOperation(createMemberInfos(getMemberList(), true),
+                        getClusterTime(), false);
+                nodeEngine.getOperationService().send(op, member.getAddress());
+                return true;
+            }
+            // If this node is master then remove old member and process join request.
+            // If requesting address is equal to master node's address, that means master node
+            // somehow disconnected and wants to join back.
+            // So drop old member and process join request if this node becomes master.
+            if (node.isMaster() || member.getAddress().equals(node.getMasterAddress())) {
+                logger.warning("New join request has been received from an existing endpoint! => " + member
+                        + " Removing old member and processing join request...");
+                doRemoveAddress(member.getAddress(), false);
+            }
+        }
+        return false;
+    }
+
+    private void sendMasterAnswer(Address target) {
+        Address masterAddress = node.getMasterAddress();
+        if (masterAddress == null) {
+            logger.info("Cannot send master answer to " + target + " since master node is not known yet");
+            return;
+        }
+        SetMasterOperation op = new SetMasterOperation(masterAddress);
+        nodeEngine.getOperationService().send(op, target);
     }
 
     void handleMaster(Address masterAddress) {
