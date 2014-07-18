@@ -100,6 +100,19 @@ public class ClientExecutorServiceTest {
         });
     }
 
+    @Test
+    public void testShutdownMultipleTimes() throws InterruptedException, ExecutionException, TimeoutException {
+        final IExecutorService service = client.getExecutorService(randomString());
+        service.shutdownNow();
+        service.shutdown();
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertTrue(service.isShutdown());
+            }
+        });
+    }
+
     @Test(expected = TimeoutException.class)
     public void testCancellationAwareTask_whenTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());

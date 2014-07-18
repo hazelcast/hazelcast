@@ -435,14 +435,14 @@ public final class HazelcastClient implements HazelcastInstance {
     @Deprecated
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
         if (id instanceof String) {
-            return (T) proxyManager.getProxy(serviceName, (String) id);
+            return (T) proxyManager.getOrCreateProxy(serviceName, (String) id);
         }
         throw new IllegalArgumentException("'id' must be type of String!");
     }
 
     @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
-        return (T) proxyManager.getProxy(serviceName, name);
+        return (T) proxyManager.getOrCreateProxy(serviceName, name);
     }
 
     @Override

@@ -163,7 +163,7 @@ public final class ProxyManager {
         }
     }
 
-    public ClientProxy getProxy(String service, String id) {
+    public ClientProxy getOrCreateProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
         ClientProxyFuture proxyFuture = proxies.get(ns);
         if (proxyFuture != null) {
@@ -190,9 +190,9 @@ public final class ProxyManager {
         return clientProxy;
     }
 
-    public ClientProxy removeProxy(String service, String id) {
+    public void removeProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
-        return proxies.remove(ns).get();
+        proxies.remove(ns);
     }
 
     private void initialize(ClientProxy clientProxy) throws Exception {
@@ -224,7 +224,7 @@ public final class ProxyManager {
                 ClientProxyFuture future = proxies.get(ns);
                 ClientProxy proxy = future == null ? null : future.get();
                 if (proxy == null) {
-                    proxy = getProxy(e.getServiceName(), e.getName());
+                    proxy = getOrCreateProxy(e.getServiceName(), e.getName());
                 }
 
                 DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);

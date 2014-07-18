@@ -24,7 +24,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
@@ -62,11 +61,7 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     protected final ClientContext getContext() {
-        final ClientContext ctx = context;
-        if (ctx == null) {
-            throw new DistributedObjectDestroyedException(serviceName, objectName);
-        }
-        return ctx;
+        return context;
     }
 
     protected final void setContext(ClientContext context) {
@@ -95,22 +90,12 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public final void destroy() {
-        ClientContext clientContext = this.context;
-        if (clientContext == null) {
-            return;
-        }
-
-        // we are going to do a cas to prevent multiple/concurrent destroy calls from succeeding. Only one needs to
-        // succeed, in this case the one that is able to set the context to null.
-        if (!CONTEXT_UPDATER.compareAndSet(this, clientContext, null)) {
-            return;
-        }
 
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
-        clientContext.removeProxy(this);
+        context.removeProxy(this);
         try {
-            clientContext.getInvocationService().invokeOnRandomTarget(request).get();
+            context.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
