@@ -69,7 +69,7 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public boolean update(final Object key, final Object value, final Object currentVersion,
-                       final Object previousVersion, final SoftLock lock) {
+                          final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
             logger.warning("Cache lock could not be acquired!");
             return false;
@@ -82,7 +82,7 @@ public class IMapRegionCache implements RegionCache {
                         try {
                             final CacheEntry previousEntry = (CacheEntry) map.get(key);
                             if (previousEntry == null ||
-                                versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                                    versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
                                 map.set(key, value);
                                 return true;
                             } else {
@@ -131,12 +131,7 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public void clear() {
-        // clear all cache and destroy proxies
-        // when a new operation done over this proxy
-        // Hazelcast will initialize and create map again.
-        map.destroy();
-        // create Hazelcast internal proxies, has no effect on map operations
-        hazelcastInstance.getMap(name);
+        map.clear();
     }
 
     public long size() {
@@ -166,7 +161,9 @@ public class IMapRegionCache implements RegionCache {
         }
     }
 
-    private static final SoftLock LOCK_SUCCESS = new SoftLock() {};
+    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
+    };
 
-    private static final SoftLock LOCK_FAILURE = new SoftLock() {};
+    private static final SoftLock LOCK_FAILURE = new SoftLock() {
+    };
 }
