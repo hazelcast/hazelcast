@@ -3,8 +3,6 @@ package com.hazelcast.map;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordStatistics;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 
 /**
  * A class providing static factory methods that create various entry view objects.

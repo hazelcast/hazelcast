@@ -21,8 +21,6 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
-import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
