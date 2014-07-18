@@ -34,14 +34,14 @@ Latest tested versions are **6.0.39** and **7.0.40**.
 
 ##### How Tomcat Session Replication works
 
-Tomcat Session Replication in Hazelcast Enterprise is a Hazelcast Module where each created HttpSession Object is kept in Hazelcast Distributed Map. Additionally, if configured with Sticky Sessions, each Tomcat Instance has its own local copy of Session for performance boost. 
+Tomcat Session Replication in Hazelcast Enterprise is a Hazelcast Module where each created `HttpSession` Object is kept in Hazelcast Distributed Map. Additionally, if configured with Sticky Sessions, each Tomcat Instance has its own local copy of Session for performance boost. 
 
-As the sessions are in Hazelcast Distributed Map, you can use all the available features offered by Hazelcast Distributed Map implementation e.g. MapStore,WAN Replication etc.
+As the sessions are in Hazelcast Distributed Map, you can use all the available features offered by Hazelcast Distributed Map implementation such as MapStore and WAN Replication.
 
-Tomcat Web Sessions run in two different Mode :
+Tomcat Web Sessions run in two different modes:
 
-- P2P where all Tomcat instances launch its own Hazelcast Instance and join to the Hazelcast Cluster
-- Client/Server mode where all Tomcat instances put/retrieve the session data to/from an existing Hazelcast Cluster
+- **P2P** where all Tomcat instances launch its own Hazelcast Instance and join to the Hazelcast Cluster and,
+- **Client/Server** mode where all Tomcat instances put/retrieve the session data to/from an existing Hazelcast Cluster.
 
 #### P2P (Peer-to-Peer) Deployment
 

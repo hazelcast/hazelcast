@@ -396,8 +396,10 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     void heartBeatingSucceed() {
-        if (failedHeartBeat != 0) {
-            if (failedHeartBeat >= connectionManager.maxFailedHeartbeatCount) {
+        final int lastFailedHeartBeat = failedHeartBeat;
+        failedHeartBeat = 0;
+        if (lastFailedHeartBeat != 0) {
+            if (lastFailedHeartBeat >= connectionManager.maxFailedHeartbeatCount) {
                 try {
                     final RemoveAllListeners request = new RemoveAllListeners();
                     final ICompletableFuture future = invocationService.send(request, ClientConnection.this);
@@ -406,7 +408,6 @@ public class ClientConnection implements Connection, Closeable {
                     logger.warning("Clearing listeners upon recovering from heart-attack failed", e);
                 }
             }
-            failedHeartBeat = 0;
         }
     }
 
