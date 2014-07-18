@@ -19,6 +19,7 @@ package com.hazelcast.map.mapstore;
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -35,7 +36,7 @@ import static org.junit.Assert.*;
 /**
  * @author sozal 7/17/14
  */
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MapClassLoaderTest extends HazelcastTestSupport {
 
