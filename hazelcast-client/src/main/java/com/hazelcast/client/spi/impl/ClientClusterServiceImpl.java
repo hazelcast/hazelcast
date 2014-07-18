@@ -231,7 +231,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     void fireMembershipEvent(final MembershipEvent event) {
-        client.getClientExecutionService().executeInternal(new Runnable() {
+        client.getClientExecutionService().execute(new Runnable() {
             public void run() {
                 for (MembershipListener listener : listeners.values()) {
                     if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
@@ -245,7 +245,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     void fireMemberAttributeEvent(final MemberAttributeEvent event) {
-        client.getClientExecutionService().executeInternal(new Runnable() {
+        client.getClientExecutionService().execute(new Runnable() {
             @Override
             public void run() {
                 for (MembershipListener listener : listeners.values()) {

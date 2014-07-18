@@ -18,12 +18,11 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
@@ -64,19 +63,19 @@ public class MockSimpleClient implements SimpleClient {
 
     public void send(Object o) throws IOException {
         Data data = serializationService.toData(o);
-        ClientPacket packet = new ClientPacket(data);
+        Packet packet = new Packet(data, serializationService.getPortableContext());
         packet.setConn(connection);
         clientEngine.handlePacket(packet);
     }
 
     public Object receive() throws IOException {
-        DataAdapter adapter;
+        Packet packet;
         try {
-            adapter = (DataAdapter) connection.q.take();
+            packet = (Packet) connection.q.take();
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }
-        ClientResponse clientResponse = serializationService.toObject(adapter.getData());
+        ClientResponse clientResponse = serializationService.toObject(packet.getData());
         return serializationService.toObject(clientResponse.getResponse());
     }
 

@@ -48,6 +48,7 @@ class ClusterListenerThread extends Thread {
     private final Collection<AddressProvider> addressProviders;
     private HazelcastClient client;
     private ClientConnectionManagerImpl connectionManager;
+    private ClientListenerServiceImpl clientListenerService;
 
 
     public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
@@ -59,6 +60,7 @@ class ClusterListenerThread extends Thread {
         this.client = client;
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
+        this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
     }
 
     public void await() throws InterruptedException {
@@ -82,7 +84,7 @@ class ClusterListenerThread extends Thread {
                         return;
                     }
                 }
-                getInvocationService().triggerFailedListeners();
+                clientListenerService.triggerFailedListeners();
                 loadInitialMemberList();
                 listenMembershipEvents();
             } catch (Exception e) {

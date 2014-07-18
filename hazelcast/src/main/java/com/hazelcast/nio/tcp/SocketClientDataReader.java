@@ -17,9 +17,9 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.ClientTypes;
-import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
@@ -31,7 +31,7 @@ class SocketClientDataReader implements SocketReader {
 
     final TcpIpConnection connection;
     final IOService ioService;
-    ClientPacket packet;
+    Packet packet;
     boolean connectionTypeSet;
 
     public SocketClientDataReader(TcpIpConnection connection) {
@@ -48,7 +48,7 @@ class SocketClientDataReader implements SocketReader {
                 connectionTypeSet = true;
             }
             if (packet == null) {
-                packet = new ClientPacket(ioService.getPortableContext());
+                packet = new Packet(ioService.getPortableContext());
             }
             boolean complete = packet.readFrom(inBuffer);
             if (complete) {

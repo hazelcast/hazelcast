@@ -20,7 +20,6 @@ import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.logging.Logger;
@@ -138,7 +137,7 @@ public class ClientNearCache<K> {
                 throw new IllegalStateException("Near cache is not available for this type of data structure");
             }
             //TODO callback
-            registrationId = ListenerUtil.listen(context, request, null, handler);
+            registrationId = context.getListenerService().listen(request, null, handler);
         } catch (Exception e) {
             Logger.getLogger(ClientNearCache.class).
                     severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
@@ -287,7 +286,7 @@ public class ClientNearCache<K> {
             } else {
                 throw new IllegalStateException("Near cache is not available for this type of data structure");
             }
-            ListenerUtil.stopListening(context, request, registrationId);
+            context.getListenerService().stopListening(request, registrationId);
         }
         cache.clear();
     }

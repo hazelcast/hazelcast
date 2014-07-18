@@ -26,7 +26,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
@@ -595,6 +594,33 @@ public class ClientIssueTest extends HazelcastTestSupport {
             client.getLifecycleService().terminate(); //with client is dead, lock should be released.
             instance.getLifecycleService().terminate();
         }
+    }
+
+    @Test
+    public void testDeadlock_WhenDoingOperationFromListeners() {
+        Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(new ClientConfig().setExecutorPoolSize(1));
+
+        final int putCount = 1000;
+
+        final CountDownLatch latch = new CountDownLatch(putCount);
+
+        final IMap<Object, Object> map1 = client.getMap(randomMapName());
+        final IMap<Object, Object> map2 = client.getMap(randomMapName());
+
+        map1.addEntryListener(new EntryAdapter<Object, Object>() {
+            @Override
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                map2.put(1, 1);
+                latch.countDown();
+            }
+        }, false);
+
+        for (int i = 0; i < putCount; i++) {
+            map1.put(i, i);
+        }
+
+        assertOpenEventually("dadas", latch);
     }
 
 }
