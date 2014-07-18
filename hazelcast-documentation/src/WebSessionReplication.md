@@ -176,10 +176,10 @@ If the value for `deferred-write` is set as **true**, Hazelcast will cache the s
 
 #### SessionId Generation
 
-SessionId generation is done by Hazelcast Web Session Module if session replication is configured in the web application. Default cookie name for the sessionId is `hazelcast.sessionId` and this is configurable with `cookie-name` parameter in the web.xml file of the application.
-`hazelcast.sessionId` is just UUID without “-“ char and with “HZ” chars in front of it i.e. HZ6F2D036789E4404893E99C05D8CA70C7
+SessionId generation is done by Hazelcast Web Session Module if session replication is configured in the web application. Default cookie name for the sessionId is `hazelcast.sessionId` and this is configurable with `cookie-name` parameter in the `web.xml` file of the application.
+`hazelcast.sessionId` is just a UUID prefixed with “HZ” character and without “-“ character, e.g. `HZ6F2D036789E4404893E99C05D8CA70C7`.
 
-When called by the target application, the value of HttpSession.getId() is the same as the value of `hazelcast.sessionId`
+When called by the target application, the value of `HttpSession.getId()` is the same as the value of `hazelcast.sessionId`.
 
 #### sticky-session
 
