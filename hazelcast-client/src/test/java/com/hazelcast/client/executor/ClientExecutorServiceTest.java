@@ -28,7 +28,6 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.concurrent.RejectedExecutionException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,6 +37,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -50,7 +50,6 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientExecutorServiceTest {
 
-    static final int CLUSTER_SIZE = 3;
     static HazelcastInstance instance1;
     static HazelcastInstance instance2;
     static HazelcastInstance instance3;
@@ -93,6 +92,19 @@ public class ClientExecutorServiceTest {
     public void testShutdownNow() throws InterruptedException, ExecutionException, TimeoutException {
         final IExecutorService service = client.getExecutorService(randomString());
         service.shutdownNow();
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertTrue(service.isShutdown());
+            }
+        });
+    }
+
+    @Test
+    public void testShutdownMultipleTimes() throws InterruptedException, ExecutionException, TimeoutException {
+        final IExecutorService service = client.getExecutorService(randomString());
+        service.shutdownNow();
+        service.shutdown();
 
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
