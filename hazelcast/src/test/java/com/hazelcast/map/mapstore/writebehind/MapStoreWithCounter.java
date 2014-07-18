@@ -2,11 +2,8 @@ package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.core.MapStore;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +15,8 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
     protected AtomicInteger countStore = new AtomicInteger(0);
     protected AtomicInteger countDelete = new AtomicInteger(0);
-    protected List<AtomicInteger> batchOpCountList = Collections.synchronizedList(new ArrayList<AtomicInteger>());
+    protected AtomicInteger batchCounter = new AtomicInteger(0);
+    protected Map<Integer, Integer> batchOpCountMap = new ConcurrentHashMap<Integer, Integer>();
 
 
     public MapStoreWithCounter() {
@@ -32,7 +30,7 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
     @Override
     public void storeAll(Map<K, V> map) {
-        batchOpCountList.add(new AtomicInteger(map.size()));
+        batchOpCountMap.put(batchCounter.incrementAndGet(), map.size());
 
         countStore.addAndGet(map.size());
         for (Map.Entry<K, V> kvp : map.entrySet()) {
@@ -84,8 +82,8 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
         return countDelete.intValue();
     }
 
-    public List<AtomicInteger> getBatchStoreOpCount() {
-        return batchOpCountList;
+    public Map<Integer, Integer> getBatchOpCountMap() {
+        return batchOpCountMap;
     }
 
     public int size() {
@@ -95,9 +93,9 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
     public int findNumberOfBatchsEqualWriteBatchSize(int writeBatchsize) {
         int count = 0;
-        final List<AtomicInteger> batchStoreOpCount = getBatchStoreOpCount();
-        for (AtomicInteger atomicInteger : batchStoreOpCount) {
-            final int value = atomicInteger.intValue();
+        final Map<Integer, Integer> batchOpCountMap = getBatchOpCountMap();
+        final Collection<Integer> values = batchOpCountMap.values();
+        for (Integer value : values) {
             if (value == writeBatchsize) {
                 count++;
             }
