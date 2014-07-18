@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.map.mapstore.writebehind.WriteBehindQueues.createBoundedArrayWriteBehindQueue;
+import static com.hazelcast.map.mapstore.writebehind.WriteBehindQueues.createSafeBoundedArrayWriteBehindQueue;
 import static com.hazelcast.map.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
 import static org.junit.Assert.assertEquals;
 
@@ -149,7 +149,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     private WriteBehindQueue createBoundedWBQ(AtomicInteger counter) {
         final int maxSizePerNode = 1000;
-        return createBoundedArrayWriteBehindQueue(maxSizePerNode, counter);
+        return createSafeBoundedArrayWriteBehindQueue(maxSizePerNode, counter);
     }
 
     private WriteBehindQueue createWBQ() {

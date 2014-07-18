@@ -8,10 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A bounded queue which throws {@link com.hazelcast.map.mapstore.writebehind.ReachedMaxSizeException}
  * when it reaches max size.
- *
- * @param <T> Type of entry to be queued.
+ * Used when non-write-coalescing mode is on.
+ * Means this implementation is used if we need to store all changes on a key.
  */
-class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
+class BoundedArrayWriteBehindQueue extends ArrayWriteBehindQueue {
 
     /**
      * Per node write behind queue item counter.
@@ -29,25 +29,20 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
         this.writeBehindQueueItemCounter = writeBehindQueueItemCounter;
     }
 
-    BoundedArrayWriteBehindQueue(List<T> list, int maxSize, AtomicInteger writeBehindQueueItemCounter) {
+    BoundedArrayWriteBehindQueue(List<DelayedEntry> list, int maxSize, AtomicInteger writeBehindQueueItemCounter) {
         super(list);
         this.maxSize = maxSize;
         this.writeBehindQueueItemCounter = writeBehindQueueItemCounter;
     }
 
     @Override
-    public boolean offer(T t) {
+    public boolean offer(DelayedEntry delayedEntry) {
         final int currentPerNodeCount = currentPerNodeCount();
         if (hasReachedMaxSize(currentPerNodeCount)) {
             throw new ReachedMaxSizeException("Queue already reached per node max capacity [" + maxSize + "]");
         }
         incrementPerNodeMaxSize();
-        return super.offer(t);
-    }
-
-    @Override
-    public T getFirst() {
-        throw new UnsupportedOperationException();
+        return super.offer(delayedEntry);
     }
 
     @Override
@@ -57,8 +52,8 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     }
 
     @Override
-    public List<T> removeAll() {
-        final List<T> removes = super.removeAll();
+    public List<DelayedEntry> removeAll() {
+        final List<DelayedEntry> removes = super.removeAll();
         final int size = removes.size();
         decrementPerNodeMaxSize(size);
         return removes;
@@ -72,15 +67,16 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     }
 
     @Override
-    public WriteBehindQueue<T> getSnapShot() {
+    public WriteBehindQueue<DelayedEntry> getSnapShot() {
         if (list == null || list.isEmpty()) {
             return WriteBehindQueues.emptyWriteBehindQueue();
         }
-        return new BoundedArrayWriteBehindQueue<T>(new ArrayList<T>(list), maxSize, writeBehindQueueItemCounter);
+        return new BoundedArrayWriteBehindQueue(new ArrayList<DelayedEntry>(list),
+                maxSize, writeBehindQueueItemCounter);
     }
 
     @Override
-    public void addFront(Collection<T> collection) {
+    public void addFront(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
@@ -96,7 +92,7 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     }
 
     @Override
-    public void addEnd(Collection<T> collection) {
+    public void addEnd(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
@@ -112,8 +108,12 @@ class BoundedArrayWriteBehindQueue<T> extends ArrayWriteBehindQueue<T> {
     }
 
     @Override
-    public void removeAll(Collection<T> collection) {
-        throw new UnsupportedOperationException();
+    public void removeAll(Collection<DelayedEntry> collection) {
+        if (collection == null || collection.isEmpty()) {
+            return;
+        }
+        super.removeAll(collection);
+        decrementPerNodeMaxSize(collection.size());
     }
 
     private boolean hasReachedMaxSize(int size) {
