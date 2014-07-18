@@ -85,7 +85,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public V put(final K k, final V v) {
-        return put(k, v, -1, null);
+        return put(k, v, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -117,7 +117,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public V putIfAbsent(final K k, final V v) {
-        return putIfAbsent(k, v, -1, null);
+        return putIfAbsent(k, v, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -306,7 +306,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Future putAsync(final K key, final V value) {
-        return putAsync(key, value, -1, null);
+        return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override

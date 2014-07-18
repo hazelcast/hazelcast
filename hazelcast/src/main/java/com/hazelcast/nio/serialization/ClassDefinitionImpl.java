@@ -21,11 +21,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.HashSet;
-import java.util.HashMap;
+import java.util.Set;
 
 class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
 
@@ -52,11 +52,11 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         nestedClassDefinitions.add(cd);
     }
 
-    public FieldDefinition get(String name) {
+    public FieldDefinition getField(String name) {
         return fieldDefinitionsMap.get(name);
     }
 
-    public FieldDefinition get(int fieldIndex) {
+    public FieldDefinition getField(int fieldIndex) {
         return fieldDefinitions.get(fieldIndex);
     }
 
@@ -73,7 +73,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     public FieldType getFieldType(String fieldName) {
-        final FieldDefinition fd = get(fieldName);
+        final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
             return fd.getType();
         }
@@ -81,7 +81,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     public int getFieldClassId(String fieldName) {
-        final FieldDefinition fd = get(fieldName);
+        final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
             return fd.getClassId();
         }
@@ -89,7 +89,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     public int getFieldVersion(String fieldName) {
-        final FieldDefinition fd = get(fieldName);
+        final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
             return fd.getVersion();
         }
@@ -128,10 +128,22 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         }
     }
 
+    @Override
     public int getFieldCount() {
         return fieldDefinitions.size();
     }
 
+    void setVersionIfNotSet(int version) {
+        if (getVersion() < 0) {
+            this.version = version;
+            for (FieldDefinition fd : fieldDefinitions) {
+                ((FieldDefinitionImpl) fd).setVersionIfNotSet(version);
+            }
+        }
+    }
+
+    //CHECKSTYLE:OFF
+    //Generated equals method has too high NPath Complexity
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -149,9 +161,22 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         if (version != that.version) {
             return false;
         }
+        if (getFieldCount() != that.getFieldCount()) {
+            return false;
+        }
+        for (FieldDefinition fd : fieldDefinitions) {
+            FieldDefinition fd2 = that.getField(fd.getName());
+            if (fd2 == null) {
+                return false;
+            }
+            if (!fd.equals(fd2)) {
+                return false;
+            }
+        }
 
         return true;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {

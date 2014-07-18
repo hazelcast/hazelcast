@@ -29,22 +29,17 @@ import java.util.Set;
 public interface ClassDefinition extends DataSerializable {
 
     /**
-     * @return factory id
-     */
-    int getFactoryId();
-
-    /**
      * @param name name of the field
      * @return field definition by given name or null
      */
-    FieldDefinition get(String name);
+    FieldDefinition getField(String name);
 
     /**
      * @param fieldIndex index of the field
      * @return field definition by given index
      * @throws java.lang.IndexOutOfBoundsException
      */
-    FieldDefinition get(int fieldIndex);
+    FieldDefinition getField(int fieldIndex);
 
     /**
      * @param fieldName field name
@@ -82,6 +77,11 @@ public interface ClassDefinition extends DataSerializable {
      * @return total field count
      */
     int getFieldCount();
+
+    /**
+     * @return factory id
+     */
+    int getFactoryId();
 
     /**
      * @return class id

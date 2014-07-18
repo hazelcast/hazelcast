@@ -67,14 +67,22 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
-        recordInfo.writeData(out);
+        if (recordInfo != null) {
+            out.writeBoolean(true);
+            recordInfo.writeData(out);
+        } else {
+            out.writeBoolean(false);
+        }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
-        recordInfo = new RecordInfo();
-        recordInfo.readData(in);
+        boolean hasRecordInfo = in.readBoolean();
+        if (hasRecordInfo) {
+            recordInfo = new RecordInfo();
+            recordInfo.readData(in);
+        }
     }
 
     @Override

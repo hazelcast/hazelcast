@@ -39,9 +39,9 @@ public class AddSessionEntryProcessor extends AbstractWebDataEntryProcessor<Inte
     public Object process(Map.Entry<String, Integer> entry) {
         Integer startingValue = entry.getValue();
         if (startingValue == null) {
-            entry.setValue(1);
+            startingValue = 0;
         }
-
+        entry.setValue(++startingValue);
         return startingValue;
     }
 }

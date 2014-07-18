@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Responsible for loading keys from configured map store.
  */
-public class DefaultRecordStoreLoader implements RecordStoreLoader {
+class BasicRecordStoreLoader implements RecordStoreLoader {
 
     private final AtomicBoolean loaded;
     private final ILogger logger;
@@ -41,7 +41,7 @@ public class DefaultRecordStoreLoader implements RecordStoreLoader {
     private final RecordStore recordStore;
     private final int partitionId;
 
-    public DefaultRecordStoreLoader(RecordStore recordStore) {
+    public BasicRecordStoreLoader(RecordStore recordStore) {
         this.recordStore = recordStore;
         final MapContainer mapContainer = recordStore.getMapContainer();
         this.name = mapContainer.getName();

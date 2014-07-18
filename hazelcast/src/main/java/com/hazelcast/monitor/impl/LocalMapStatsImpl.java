@@ -31,6 +31,9 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
 
+/**
+ * Default implementation of {@link LocalMapStats}
+ */
 public class LocalMapStatsImpl
         implements LocalMapStats, IdentifiedDataSerializable {
 
@@ -117,7 +120,7 @@ public class LocalMapStatsImpl
         lockedEntryCount = 0;
         dirtyEntryCount = 0;
         backupCount = 0;
-        HITS_UPDATER.set(this, 0);
+        hits = 0;
     }
 
     @Override

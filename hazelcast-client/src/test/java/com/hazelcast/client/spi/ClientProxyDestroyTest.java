@@ -4,7 +4,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -13,6 +13,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -33,12 +37,10 @@ public class ClientProxyDestroyTest {
         Hazelcast.shutdownAll();
     }
 
-    @Test(expected = DistributedObjectDestroyedException.class)
+    @Test
     public void testUsageAfterDestroy() {
         IAtomicLong proxy = newClientProxy();
         proxy.destroy();
-
-        //since the object is destroyed, getting the value from the atomic long should fail
         proxy.get();
     }
 
@@ -51,5 +53,15 @@ public class ClientProxyDestroyTest {
 
     private IAtomicLong newClientProxy() {
         return client.getAtomicLong(HazelcastTestSupport.randomString());
+    }
+
+    @Test
+    public void testOperationAfterDestroy() throws Exception {
+        final String mapName = randomMapName();
+        final IMap<Object, Object> clientMap = client.getMap(mapName);
+        clientMap.destroy();
+        assertFalse(client.getDistributedObjects().contains(clientMap));
+        clientMap.put(1, 1);
+        assertEquals(1, clientMap.get(1));
     }
 }

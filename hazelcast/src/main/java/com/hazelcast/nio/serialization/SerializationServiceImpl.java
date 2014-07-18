@@ -179,7 +179,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private void registerClassDefinition(ClassDefinition cd, Map<Integer,
             ClassDefinition> classDefMap, boolean checkClassDefErrors) {
         for (int i = 0; i < cd.getFieldCount(); i++) {
-            FieldDefinition fd = cd.get(i);
+            FieldDefinition fd = cd.getField(i);
             if (fd.getType() == FieldType.PORTABLE || fd.getType() == FieldType.PORTABLE_ARRAY) {
                 int classId = fd.getClassId();
                 ClassDefinition nestedCd = classDefMap.get(classId);

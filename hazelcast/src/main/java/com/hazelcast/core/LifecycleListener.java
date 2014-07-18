@@ -27,9 +27,8 @@ import java.util.EventListener;
  */
 public interface LifecycleListener extends EventListener {
     /**
-     * Called when instance's state changes
+     * Called when instance's state changes. No blocking calls should be made in this method.
      * @param event Lifecycle event
-     *
      */
     void stateChanged(LifecycleEvent event);
 }

@@ -78,7 +78,8 @@ public interface IMap<K, V>
      * <p>                                                                                      ˆ
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s class.
+     * defined in <tt>key</tt>'s class.  The <tt>key</tt> will be searched for first in memory and if not
+     * found, and if one is attributed, will then attempt to load the key via a {@link MapLoader}.
      * </p>
      *
      * @throws NullPointerException if the specified key is null

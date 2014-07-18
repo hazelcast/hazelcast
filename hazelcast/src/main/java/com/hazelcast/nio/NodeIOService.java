@@ -29,6 +29,7 @@ import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -110,7 +111,7 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void handleClientPacket(ClientPacket p) {
+    public void handleClientPacket(Packet p) {
         node.clientEngine.handlePacket(p);
     }
 
@@ -228,6 +229,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public EventService getEventService() {
+        return nodeEngine.getEventService();
+    }
+
+    @Override
     public Data toData(Object obj) {
         return nodeEngine.toData(obj);
     }
@@ -290,12 +296,12 @@ public class NodeIOService implements IOService {
 
     private Set<Integer> getPorts(NetworkConfig networkConfig) {
         return networkConfig.getOutboundPorts() == null
-                    ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
+                ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
     }
 
     private Collection<String> getPortDefinitions(NetworkConfig networkConfig) {
         return networkConfig.getOutboundPortDefinitions() == null
-                    ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
+                ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
     }
 }
 

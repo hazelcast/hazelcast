@@ -30,28 +30,32 @@ public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInst
 
     private HazelcastInstance instance;
 
-    public String mapName;
+    private String mapName;
 
-    public MapPutRunnable(){}
+    @SuppressWarnings("unused")
+    public MapPutRunnable() {
+    }
 
     public MapPutRunnable(String mapName) {
         this.mapName = mapName;
     }
 
+    @Override
+    public void run() {
+        Member member = instance.getCluster().getLocalMember();
+
+        IMap<String, String> map = instance.getMap(mapName);
+        map.put(member.getUuid(), member.getUuid()+"value");
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-    }
-
-    public void run() {
-        Member member = instance.getCluster().getLocalMember();
-
-        IMap map = instance.getMap(mapName);
-
-        map.put(member.getUuid(), member.getUuid()+"value");
     }
 
     @Override

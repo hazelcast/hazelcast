@@ -6,7 +6,6 @@ import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
@@ -14,7 +13,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Map;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -88,7 +87,7 @@ public class LocalMapStatsProvider {
      */
     private void addOwnerPartitionStats(LocalMapStatsImpl localMapStats, String mapName, int partitionId) {
         final RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
-        if (recordStore == null) {
+        if (!hasRecords(recordStore)) {
             return;
         }
         int lockedEntryCount = 0;
@@ -96,9 +95,10 @@ public class LocalMapStatsProvider {
         long lastUpdateTime = 0;
         long ownedEntryMemoryCost = 0;
         long hits = 0;
-        final Map<Data, Record> records = recordStore.getReadonlyRecordMap();
 
-        for (Record record : records.values()) {
+        final Iterator<Record> iterator = recordStore.iterator();
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
             hits += getHits(record);
             ownedEntryMemoryCost += record.getCost();
             lockedEntryCount += isLocked(record, recordStore);
@@ -113,7 +113,7 @@ public class LocalMapStatsProvider {
         localMapStats.setLastAccessTime(lastAccessTime);
         localMapStats.setLastUpdateTime(lastUpdateTime);
         localMapStats.incrementHeapCost(recordStore.getHeapCost());
-        localMapStats.incrementOwnedEntryCount(records.size());
+        localMapStats.incrementOwnedEntryCount(recordStore.size());
     }
 
     private long getHits(Record record) {
@@ -122,7 +122,8 @@ public class LocalMapStatsProvider {
     }
 
     /**
-     * Return 1 if locked, otherwise 0;
+     * Return 1 if locked, otherwise 0.
+     * Used to find {@link LocalMapStatsImpl#lockedEntryCount}.
      */
     private int isLocked(Record record, RecordStore recordStore) {
         if (recordStore.isLocked(record.getKey())) {
@@ -149,18 +150,20 @@ public class LocalMapStatsProvider {
             }
             if (gotReplicaAddress(replicaAddress, thisAddress)) {
                 RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
-                if (recordStore != null) {
-                    Map<Data, Record> records = recordStore.getReadonlyRecordMap();
-
+                if (hasRecords(recordStore)) {
                     heapCost += recordStore.getHeapCost();
-                    backupEntryCount += records.size();
-                    backupEntryMemoryCost += getMemoryCost(records);
+                    backupEntryCount += recordStore.size();
+                    backupEntryMemoryCost += getMemoryCost(recordStore);
                 }
             }
         }
         localMapStats.incrementHeapCost(heapCost);
         localMapStats.incrementBackupEntryCount(backupEntryCount);
         localMapStats.incrementBackupEntryMemoryCost(backupEntryMemoryCost);
+    }
+
+    private boolean hasRecords(RecordStore recordStore) {
+        return recordStore != null && recordStore.size() > 0;
     }
 
     private boolean notGotReplicaAddress(Address replicaAddress, ClusterService clusterService, int backupCount) {
@@ -176,9 +179,11 @@ public class LocalMapStatsProvider {
                 + ", replica: " + replica + " has no owner!");
     }
 
-    private long getMemoryCost(Map<Data, Record> records) {
+    private long getMemoryCost(RecordStore recordStore) {
+        final Iterator<Record> iterator = recordStore.iterator();
         long cost = 0L;
-        for (Record record : records.values()) {
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
             cost += record.getCost();
         }
         return cost;

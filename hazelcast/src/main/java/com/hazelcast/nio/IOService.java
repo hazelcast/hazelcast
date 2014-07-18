@@ -25,6 +25,7 @@ import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.EventService;
 
 import java.util.Collection;
 
@@ -52,7 +53,7 @@ public interface IOService {
 
     void handleMemberPacket(Packet p);
 
-    void handleClientPacket(ClientPacket p);
+    void handleClientPacket(Packet p);
 
     TextCommandService getTextCommandService();
 
@@ -95,6 +96,8 @@ public interface IOService {
     boolean isClient();
 
     void executeAsync(Runnable runnable);
+
+    EventService getEventService();
 
     Collection<Integer> getOutboundPorts();
 

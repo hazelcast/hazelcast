@@ -11,6 +11,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -73,7 +74,9 @@ class MapMigrationAwareService implements MigrationAwareService {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
-                for (Record record : recordStore.getReadonlyRecordMap().values()) {
+                final Iterator<Record> iterator = recordStore.iterator();
+                while (iterator.hasNext()) {
+                    final Record record = iterator.next();
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
                         indexService.removeEntryIndex(record.getKey());
                     } else {

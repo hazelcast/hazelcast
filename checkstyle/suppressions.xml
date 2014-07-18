@@ -10,9 +10,6 @@
     <suppress checks="StrictDuplicateCode" files=".java" lines="1-15"/>
 
 
-    <!-- <suppress checks="" files="com.hazelcast.client[\\/]"/> not completed -->
-
-
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
     <suppress checks="FileLengthCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodCountCheck" files="ConsoleApp.java"/>
@@ -139,6 +136,7 @@
     <suppress checks="MethodCount" files="com.hazelcast.client.config.ClientConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.connection.nio.ClientConnection"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.ClientEngineImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.ClientEngineImpl"/>
     <suppress checks="" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
@@ -316,6 +314,7 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.executor.ExecutorServiceProxy"/>
     <!-- the invokeAll is so scary that Peter doesn't dare to touch it. Need get someone involved who write it-->
     <suppress checks="" files="com.hazelcast.executor.ExecutorServiceProxy"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.executor.ExecutorPortableHook"/>
 
     <!-- Collections -->
     <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>

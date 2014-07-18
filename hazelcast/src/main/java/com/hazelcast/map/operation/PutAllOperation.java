@@ -89,9 +89,11 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 keysToInvalidate.add(dataKey);
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
                     Record record = recordStore.getRecord(dataKey);
-                    final Data dataValueAsData = mapServiceContext.toData(dataValue);
-                    final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
-                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                    if (record != null) {
+                        final Data dataValueAsData = mapServiceContext.toData(dataValue);
+                        final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
+                        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                    }
                 }
                 backupEntrySet.add(entry);
                 RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));

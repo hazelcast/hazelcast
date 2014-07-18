@@ -25,11 +25,10 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -83,16 +82,17 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
     private static final int THREADS_PER_CORE = 10;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
+    private static final int HEART_BEAT_CHECK_INTERVAL_SECONDS = 10;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
-    private final SerializationService serializationService;
 
+    private final SerializationService serializationService;
     // client uuid -> member uuid
     private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
-    private final ClientEndpointManager endpointManager;
 
+    private final ClientEndpointManager endpointManager;
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
@@ -106,6 +106,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 coreSize * THREADS_PER_CORE, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
                 ExecutorType.CONCRETE);
         this.logger = node.getLogger(ClientEngine.class);
+        long heartbeatNoHeartBeatsSeconds = node.groupProperties.CLIENT_MAX_NO_HEARTBEAT_SECONDS.getInteger();
+
+        ClientHeartbeatMonitor heartBeatMonitor =
+                new ClientHeartbeatMonitor(heartbeatNoHeartBeatsSeconds, endpointManager, this);
+        final ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService.scheduleWithFixedDelay(heartBeatMonitor, HEART_BEAT_CHECK_INTERVAL_SECONDS,
+                HEART_BEAT_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     //needed for testing purposes
@@ -118,7 +125,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return endpointManager.size();
     }
 
-    public void handlePacket(ClientPacket packet) {
+    public void handlePacket(Packet packet) {
         executor.execute(new ClientPacketProcessor(packet));
     }
 
@@ -144,14 +151,18 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     void sendResponse(ClientEndpoint endpoint, Object response, int callId, boolean isError, boolean isEvent) {
         Data data = serializationService.toData(response);
-        ClientResponse clientResponse = new ClientResponse(data, callId, isError, isEvent);
-        sendResponse(endpoint, clientResponse);
+        ClientResponse clientResponse = new ClientResponse(data, callId, isError);
+        sendResponse(endpoint, clientResponse, isEvent);
     }
 
-    private void sendResponse(ClientEndpoint endpoint, ClientResponse response) {
+    private void sendResponse(ClientEndpoint endpoint, ClientResponse response, boolean isEvent) {
         Data resultData = serializationService.toData(response);
         Connection conn = endpoint.getConnection();
-        conn.write(new DataAdapter(resultData, serializationService.getPortableContext()));
+        final Packet packet = new Packet(resultData, serializationService.getPortableContext());
+        if (isEvent) {
+            packet.setHeader(Packet.HEADER_EVENT);
+        }
+        conn.write(packet);
     }
 
     @Override
@@ -248,7 +259,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     public Collection<Client> getClients() {
         final HashSet<Client> clients = new HashSet<Client>();
-        for (ClientEndpoint endpoint : endpointManager.values()) {
+        for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
             if (!endpoint.isFirstConnection()) {
                 clients.add(endpoint);
             }
@@ -267,7 +278,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     @Override
     public void shutdown(boolean terminate) {
-        for (ClientEndpoint endpoint : endpointManager.values()) {
+        for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
             try {
                 endpoint.destroy();
             } catch (LoginException e) {
@@ -295,9 +306,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     private final class ClientPacketProcessor implements Runnable {
-        final ClientPacket packet;
+        final Packet packet;
 
-        private ClientPacketProcessor(ClientPacket packet) {
+        private ClientPacketProcessor(Packet packet) {
             this.packet = packet;
         }
 

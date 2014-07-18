@@ -60,6 +60,7 @@ src/Transactions.md
 		src/SampleGlassfishConfiguration.md
 		src/SampleJBossConfiguration.md
 	src/XATransactions.md
+src/JCache.md
 src/IntegratedClustering.md
 	src/WebSessionReplication.md
 		src/TomcatSessionReplication.md

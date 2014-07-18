@@ -177,7 +177,7 @@ abstract class AbstractRecordStore implements RecordStore {
 
     protected RecordStoreLoader createRecordStoreLoader() {
         return mapContainer.getStore() == null
-                ? RecordStoreLoader.EMPTY_LOADER : new DefaultRecordStoreLoader(this);
+                ? RecordStoreLoader.EMPTY_LOADER : new BasicRecordStoreLoader(this);
     }
 
     protected void clearRecordsMap(Map<Data, Record> excludeRecords) {
@@ -205,5 +205,9 @@ abstract class AbstractRecordStore implements RecordStore {
             default:
                 throw new IllegalArgumentException("Unknown storage format: " + inMemoryFormat);
         }
+    }
+
+    protected Data toData(Object value) {
+        return mapServiceContext.toData(value);
     }
 }

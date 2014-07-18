@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.executor.StripedRunnable;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -230,16 +231,28 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return false;
     }
 
-    private boolean registerConnectionEndpoint(TcpIpConnection connection, Address remoteEndPoint, Address thisAddress) {
+    private boolean registerConnectionEndpoint(final TcpIpConnection connection,
+            final Address remoteEndPoint, Address thisAddress) {
+
         if (!remoteEndPoint.equals(thisAddress)) {
             if (!connection.isClient()) {
                 connection.setMonitor(getConnectionMonitor(remoteEndPoint, true));
             }
             connectionsMap.put(remoteEndPoint, connection);
             connectionsInProgress.remove(remoteEndPoint);
-            for (ConnectionListener listener : connectionListeners) {
-                listener.connectionAdded(connection);
-            }
+            ioService.getEventService().executeEventCallback(new StripedRunnable() {
+                @Override
+                public void run() {
+                    for (ConnectionListener listener : connectionListeners) {
+                        listener.connectionAdded(connection);
+                    }
+                }
+
+                @Override
+                public int getKey() {
+                    return remoteEndPoint.hashCode();
+                }
+            });
             return true;
         }
         return false;
@@ -333,7 +346,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public void destroyConnection(Connection connection) {
+    public void destroyConnection(final Connection connection) {
         if (connection == null) {
             return;
         }
@@ -347,9 +360,19 @@ public class TcpIpConnectionManager implements ConnectionManager {
             final Connection existingConn = connectionsMap.get(endPoint);
             if (existingConn == connection && live) {
                 connectionsMap.remove(endPoint);
-                for (ConnectionListener listener : connectionListeners) {
-                    listener.connectionRemoved(connection);
-                }
+                ioService.getEventService().executeEventCallback(new StripedRunnable() {
+                    @Override
+                    public void run() {
+                        for (ConnectionListener listener : connectionListeners) {
+                            listener.connectionRemoved(connection);
+                        }
+                    }
+
+                    @Override
+                    public int getKey() {
+                        return endPoint.hashCode();
+                    }
+                });
             }
         }
         if (connection.live()) {

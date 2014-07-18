@@ -71,35 +71,17 @@ final class PortableSerializer implements StreamSerializer<Portable> {
             throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
         }
 
-        final Portable portable = createNewPortableInstance(factoryId, classId);
-        final DefaultPortableReader reader;
-        final ClassDefinition cd;
-        final BufferObjectDataInput bufferedIn = (BufferObjectDataInput) in;
+        Portable portable = createNewPortableInstance(factoryId, classId);
+        int portableVersion = findPortableVersion(factoryId, classId, portable);
 
-        int effectiveVersion = version;
-        if (version < 0) {
-            effectiveVersion = context.getVersion();
-        }
-
-        int currentVersion = findCurrentVersion(factoryId, classId, portable);
-
-        cd = context.lookup(factoryId, classId, effectiveVersion);
-        if (cd == null) {
-            throw new HazelcastSerializationException("Could not find class-definition for "
-                    + "factory-id: " + factoryId + ", class-id: " + classId + ", version: " + effectiveVersion);
-        }
-
-        if (currentVersion == effectiveVersion) {
-            reader = new DefaultPortableReader(this, bufferedIn, cd);
-        } else {
-            reader = new MorphingPortableReader(this, bufferedIn, cd);
-        }
+        DefaultPortableReader reader = createReader((BufferObjectDataInput) in, factoryId, classId,
+                version, portableVersion);
         portable.readPortable(reader);
         reader.end();
         return portable;
     }
 
-    private int findCurrentVersion(int factoryId, int classId, Portable portable) {
+    private int findPortableVersion(int factoryId, int classId, Portable portable) {
         int currentVersion = context.getClassVersion(factoryId, classId);
         if (currentVersion < 0) {
             currentVersion = PortableVersionHelper.getVersion(portable, context.getVersion());
@@ -126,6 +108,33 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         Portable p = read(in, factoryId, classId, version);
         final ManagedContext managedContext = context.getManagedContext();
         return managedContext != null ? (Portable) managedContext.initialize(p) : p;
+    }
+
+    DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version) {
+        return createReader(in, factoryId, classId, version, version);
+    }
+
+    DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version,
+            int portableVersion) {
+
+        int effectiveVersion = version;
+        if (version < 0) {
+            effectiveVersion = context.getVersion();
+        }
+
+        ClassDefinition cd = context.lookup(factoryId, classId, effectiveVersion);
+        if (cd == null) {
+            throw new HazelcastSerializationException("Could not find class-definition for "
+                    + "factory-id: " + factoryId + ", class-id: " + classId + ", version: " + effectiveVersion);
+        }
+
+        DefaultPortableReader reader;
+        if (portableVersion == effectiveVersion) {
+            reader = new DefaultPortableReader(this, in, cd);
+        } else {
+            reader = new MorphingPortableReader(this, in, cd);
+        }
+        return reader;
     }
 
     public void destroy() {

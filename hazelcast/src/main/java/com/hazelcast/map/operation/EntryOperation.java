@@ -22,10 +22,9 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.EntryViews;
-import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.MapEventPublisher;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -38,6 +37,8 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.AbstractMap;
+
+import static com.hazelcast.map.EntryViews.createSimpleEntryView;
 
 /**
  * GOTCHA : This operation loads missing keys from mapstore, in contrast with PartitionWideEntryOperation.
@@ -124,9 +125,11 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
                 Record record = recordStore.getRecord(dataKey);
-                final Data dataValueAsData = mapServiceContext.toData(dataValue);
-                final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
-                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                if (record != null) {
+                    final Data dataValueAsData = mapServiceContext.toData(dataValue);
+                    final EntryView entryView = createSimpleEntryView(dataKey, dataValueAsData, record);
+                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                }
             }
         }
 

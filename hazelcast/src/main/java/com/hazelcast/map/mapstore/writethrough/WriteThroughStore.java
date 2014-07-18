@@ -48,11 +48,6 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public Object addStagingArea(Data key, Object value, long now) {
-        return value;
-    }
-
-    @Override
     public Object addBackup(Data key, Object value, long time) {
         return value;
     }
@@ -86,6 +81,11 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     @Override
     public Collection<Data> flush() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public Object flush(Data key, Object value, long now) {
+        return value;
     }
 
     @Override

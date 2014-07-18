@@ -1,14 +1,19 @@
 package com.hazelcast.map.mapstore.writebehind;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.map.mapstore.writebehind.WriteBehindQueues.createSafeBoundedArrayWriteBehindQueue;
 import static com.hazelcast.map.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
 import static org.junit.Assert.assertEquals;
 
@@ -34,7 +39,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     @Test(expected = ReachedMaxSizeException.class)
     public void testWBQMaxSizeException() {
-        final WriteBehindQueue<DelayedEntry> queue = createWBQ();
+        final WriteBehindQueue<DelayedEntry> queue = createBoundedWBQ();
         // put total 1001 items. Max allowed is 1000.
         fillQueue(queue, 1001);
     }
@@ -42,10 +47,10 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     @Test(expected = ReachedMaxSizeException.class)
     public void testWBQMaxSizeException_withMultipleWBQ() {
         final AtomicInteger counter = new AtomicInteger(0);
-        final WriteBehindQueue<DelayedEntry> queue1 = createWBQ(counter);
-        final WriteBehindQueue<DelayedEntry> queue2 = createWBQ(counter);
-        final WriteBehindQueue<DelayedEntry> queue3 = createWBQ(counter);
-        final WriteBehindQueue<DelayedEntry> queue4 = createWBQ(counter);
+        final WriteBehindQueue<DelayedEntry> queue1 = createBoundedWBQ(counter);
+        final WriteBehindQueue<DelayedEntry> queue2 = createBoundedWBQ(counter);
+        final WriteBehindQueue<DelayedEntry> queue3 = createBoundedWBQ(counter);
+        final WriteBehindQueue<DelayedEntry> queue4 = createBoundedWBQ(counter);
         // put total 1001 items. Max allowed is 1000.
         fillQueue(queue1, 10);
         fillQueue(queue2, 500);
@@ -56,7 +61,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void testWBQ_counter_is_zero() {
         final AtomicInteger counter = new AtomicInteger(0);
-        final WriteBehindQueue<DelayedEntry> queue = createWBQ(counter);
+        final WriteBehindQueue<DelayedEntry> queue = createBoundedWBQ(counter);
         fillQueue(queue, 100);
         queue.clear();
 
@@ -79,7 +84,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     @Test
     public void testCounter_offer_thenRemove() {
         final AtomicInteger counter = new AtomicInteger(0);
-        final WriteBehindQueue<DelayedEntry> queue = createWBQ(counter);
+        final WriteBehindQueue<DelayedEntry> queue = createBoundedWBQ(counter);
         fillQueue(queue, 1000);
         queue.removeAll();
 
@@ -123,28 +128,32 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
         fillQueue(queue, 1000);
 
-        for (int i = 0; i < 1000; i++) {
-            queue.removeFirst();
-        }
+        queue.removeAll();
 
         assertEquals(0, queue.size());
     }
 
     private void fillQueue(WriteBehindQueue queue, int numberOfItems) {
+        SerializationService ss1 = new SerializationServiceBuilder().build();
+        final long storeTime = Clock.currentTimeMillis();
         for (int i = 0; i < numberOfItems; i++) {
-            final DelayedEntry<Object, Object> e = DelayedEntry.createEmpty();
+            final DelayedEntry<Data, Object> e = DelayedEntry.createWithNullValue(ss1.toData(i), storeTime, i);
             queue.offer(e);
         }
     }
 
-    private WriteBehindQueue createWBQ() {
+    private WriteBehindQueue createBoundedWBQ() {
         final AtomicInteger counter = new AtomicInteger(0);
-        return createWBQ(counter);
+        return createBoundedWBQ(counter);
     }
 
-    private WriteBehindQueue createWBQ(AtomicInteger counter) {
+    private WriteBehindQueue createBoundedWBQ(AtomicInteger counter) {
         final int maxSizePerNode = 1000;
-        return createDefaultWriteBehindQueue(maxSizePerNode, counter);
+        return createSafeBoundedArrayWriteBehindQueue(maxSizePerNode, counter);
+    }
+
+    private WriteBehindQueue createWBQ() {
+        return createDefaultWriteBehindQueue();
     }
 
 }

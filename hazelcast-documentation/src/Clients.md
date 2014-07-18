@@ -21,5 +21,5 @@ There can be hundreds, even thousands of clients connected to the cluster. But, 
 
 Imagine a trading application where all the trading data stored and managed in a Hazelcast cluster with tens of nodes. Swing/Web applications at traders' desktops can use Native  Clients to access and modify the data in the Hazelcast cluster.
 
-Currently, Hazelcast has Native Java, C++ and C\# Clients available.
+Currently, Hazelcast has Native Java, C++ and .NET Clients available.
 

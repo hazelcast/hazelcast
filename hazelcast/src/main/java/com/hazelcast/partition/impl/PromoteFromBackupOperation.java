@@ -26,7 +26,6 @@ import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-
 import java.io.IOException;
 
 // runs locally...
@@ -36,10 +35,18 @@ final class PromoteFromBackupOperation extends AbstractOperation
     @Override
     public void run() throws Exception {
         logPromotingPartition();
+        try {
+            PartitionMigrationEvent event = createPartitionMigrationEvent();
+            sendToAllMigrationAwareServices(event);
+        } finally {
+            clearPartitionMigratingFlag();
+        }
+    }
 
-        PartitionMigrationEvent event = createPartitionMigrationEvent();
-
-        sendToAllMigrationAwareServices(event);
+    private void clearPartitionMigratingFlag() {
+        InternalPartitionServiceImpl service = getService();
+        InternalPartitionImpl partition = service.getPartition(getPartitionId());
+        partition.setMigrating(false);
     }
 
     private void sendToAllMigrationAwareServices(PartitionMigrationEvent event) {

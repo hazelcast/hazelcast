@@ -12,7 +12,7 @@ It is more than simple to start enjoying Hazelcast:
 
 That is all.
 
-Alternatively, Hazelcast can be found in the standard Maven repositories. So, if your project uses Maven, you do not need to add additional repositories to your `pom.xml`. Just add the following lines to the `pom.xml`:
+Alternatively, Hazelcast can be found in standard Maven repositories. So, if your project uses Maven, you do not need to add additional repositories to your `pom.xml`. Just add the following lines to `pom.xml`:
 
 ```xml
 <dependencies>

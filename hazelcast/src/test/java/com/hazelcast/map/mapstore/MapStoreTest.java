@@ -39,10 +39,13 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -510,7 +513,14 @@ public class MapStoreTest extends HazelcastTestSupport {
             map.put(i, "value" + i);
         }
         //wait for all store ops.
-        assertTrue(testMapStore.storeLatch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(testMapStore.storeLatch);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, writeBehindQueueSize(node1, mapName));
+            }
+        });
+
         // init before eviction.
         testMapStore.storeLatch = new CountDownLatch(populationCount);
         //evict.
@@ -550,6 +560,24 @@ public class MapStoreTest extends HazelcastTestSupport {
         testMapStore.deleteLatch.await(10, TimeUnit.SECONDS);
         //check map size
         assertEquals(0, map.size());
+    }
+
+    private int writeBehindQueueSize(HazelcastInstance node, String mapName){
+        int size = 0;
+        final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
+        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        for (int i = 0; i < partitionCount; i++) {
+            final RecordStore recordStore = mapServiceContext.getExistingRecordStore(i, mapName);
+            if(recordStore == null){
+                continue;
+            }
+            final MapDataStore<Data, Object> mapDataStore
+                    =recordStore.getMapDataStore();
+             size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
+        }
+        return size;
     }
 
 
@@ -1362,7 +1390,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
-        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 300, 10);
+        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 300, 100);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackupConfig.setMapStoreConfig(mapStoreConfig);
         // create nodes.
@@ -1499,7 +1527,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int numIterations = 10;
         final int writeDelaySeconds = 3;
         // create map store implementation
-        final RecordingMapStore store = new RecordingMapStore(numIterations, numIterations);
+        final RecordingMapStore store = new RecordingMapStore(0, 1);
         // create hazelcast config
         final Config config = newConfig(mapName, store, writeDelaySeconds);
         // start hazelcast instance

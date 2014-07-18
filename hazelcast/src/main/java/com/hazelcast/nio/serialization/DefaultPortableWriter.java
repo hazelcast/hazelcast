@@ -168,7 +168,7 @@ public class DefaultPortableWriter implements PortableWriter {
         if (raw) {
             throw new HazelcastSerializationException("Cannot write Portable fields after getRawDataOutput() is called!");
         }
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName
                     + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");

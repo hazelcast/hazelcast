@@ -11,7 +11,7 @@ import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntry;
-import com.hazelcast.query.impl.QueryResultEntryImpl;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -49,17 +50,17 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
     }
 
     @Override
-    public QueryResult queryOnPartition(String mapName, Predicate predicate, int partitionId) {
-        final QueryResult result = new QueryResult();
+    public Collection<QueryableEntry> queryOnPartition(String mapName, Predicate predicate, int partitionId) {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
         final RecordStore recordStore = container.getRecordStore(mapName);
-        final Map<Data, Record> records = recordStore.getReadonlyRecordMapByWaitingMapStoreLoad();
         final SerializationService serializationService = nodeEngine.getSerializationService();
         final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         List<QueryEntry> list = new LinkedList<QueryEntry>();
-        for (Record record : records.values()) {
+        final Iterator<Record> iterator = recordStore.loadAwareIterator();
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
             Data key = record.getKey();
-            Object value = record.getValue();
+            Object value = getValueOrCachedValue(record);
             if (value == null) {
                 continue;
             }
@@ -76,11 +77,21 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
                 list.add(queryEntry);
             }
         }
-        list = getPage(list, pagingPredicate);
-        for (QueryEntry entry : list) {
-            result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
+        return getPage(list, pagingPredicate);
+    }
+
+    private Object getValueOrCachedValue(Record record) {
+        Object value = record.getCachedValue();
+        if (value == Record.NOT_CACHED) {
+            value = record.getValue();
+        } else if (value == null) {
+            value = record.getValue();
+            if (value instanceof Data && !((Data) value).isPortable()) {
+                value = nodeEngine.getSerializationService().toObject(value);
+                record.setCachedValue(value);
+            }
         }
-        return result;
+        return value;
     }
 
     /**

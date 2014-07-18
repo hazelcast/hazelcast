@@ -44,15 +44,27 @@ You can declare Hazelcast Objects using the default Spring *beans* namespace. Yo
 
 Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add namespace *xmlns:hz="http://www.hazelcast.com/schema/spring"* to `beans` tag in context file so that *hz* namespace shortcut can be used as a bean declaration.
 
+Here is an example schema definition for Hazelcast 3.3.x:
+
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-                http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
                 http://www.hazelcast.com/schema/spring
                 http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
 ```
+
+***hazelcast-spring*** **XSD Schemas**
+
+Each hazelcast minor release has its own XSD schemas. Below is the list of all available schemas:
+
+- `hazelcast-spring-3.3.xsd`
+- `hazelcast-spring-3.2.xsd`
+- `hazelcast-spring-3.1.xsd`
+- `hazelcast-spring-3.0.xsd`
+
 
 #### Supported Configurations with *hazelcast* Namespace
 
@@ -190,7 +202,7 @@ Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed 
 
 #### SpringAware Examples
 
-- Configure a Hazelcast Instance via Spring Configuration and define *someBean* as Spring Bean.
+- Configure a Hazelcast Instance (3.3.x) via Spring Configuration and define *someBean* as Spring Bean.
 
 
 ```xml
@@ -284,7 +296,7 @@ Assert.assertTrue( value.init );
 
 **ExecutorService Example:**
 
-- Create a Callable Class called SomeTask which contains Spring Bean definitions like ApplicaitonContext, SomeBean.
+- Create a Callable Class called SomeTask which contains Spring Bean definitions like ApplicationContext, SomeBean.
 
 
 ```java
@@ -337,7 +349,9 @@ Assert.assertEquals(bean.value, f2.get().longValue());
 
 ### Spring Cache
 
-As of version 3.1, Spring Framework provides support for adding caching into an existing Spring application. To use Hazelcast as Spring cache provider, you should just define a `com.hazelcast.spring.cache.HazelcastCacheManager` bean and register it as Spring cache manager.
+As of version 3.1, Spring Framework provides support for adding caching into an existing Spring application. 
+
+#### Declarative Spring Cache Configuration
 
 ```xml
 <cache:annotation-driven cache-manager="cacheManager" />
@@ -351,7 +365,39 @@ As of version 3.1, Spring Framework provides support for adding caching into an 
 </bean>
 ```
 
-For more information please see [Spring Cache Abstraction](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html).
+#### Annotation Based Spring Cache Configuration
+
+Annotation Based Configuration does not require any XML definition.
+
+- Implement a `CachingConfiguration` class with related Annotations.
+
+   ```java
+@Configuration
+@EnableCaching
+public class CachingConfiguration implements CachingConfigurer{
+    @Bean
+    public CacheManager cacheManager() {
+        ClientConfig config = new ClientConfig();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+        return new HazelcastCacheManager(client);
+    }
+    @Bean
+    public KeyGenerator keyGenerator() {
+        return null;
+    }
+```
+
+- Launch Application Context and register `CachingConfiguration`.
+
+   ```java
+AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+context.register(CachingConfiguration.class);
+context.refresh();
+```
+
+For an example application, please see [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/spring-data-integration/src/main/java/com/hazelcast/spring/mongodb).
+
+For more information about Spring Cache, please see [Spring Cache Abstraction](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html).
 
 
 

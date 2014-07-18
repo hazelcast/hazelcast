@@ -21,17 +21,26 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
+
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 public class QueryResult implements DataSerializable {
 
     private List<Integer> partitionIds;
-    private final Set<QueryResultEntry> result = new LinkedHashSet<QueryResultEntry>();
+    private final Collection result;
+
+    public QueryResult() {
+        result = new LinkedHashSet<QueryResultEntry>();
+    }
+
+    public QueryResult(Collection<? extends QueryResultEntry> queryableEntries) {
+        result = queryableEntries;
+    }
 
     public List<Integer> getPartitionIds() {
         return partitionIds;
@@ -45,7 +54,7 @@ public class QueryResult implements DataSerializable {
         result.add(resultEntry);
     }
 
-    public Set<QueryResultEntry> getResult() {
+    public Collection<QueryResultEntry> getResult() {
         return result;
     }
 
