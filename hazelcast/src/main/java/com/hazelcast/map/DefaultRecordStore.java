@@ -426,12 +426,17 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             keysToPreserve = recordsToPreserve.keySet();
             updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
         }
-        addToStagingArea(recordsToPreserve);
+        flush(recordsToPreserve);
         clearRecordsMap(recordsToPreserve);
         return keysToPreserve;
     }
 
-    private void addToStagingArea(Map<Data, Record> excludeRecords) {
+    /**
+     * Flushes evicted records to map store.
+     *
+     * @param excludeRecords Records which should not be flushed.
+     */
+    private void flush(Map<Data, Record> excludeRecords) {
         Iterator<Record> iterator = records.values().iterator();
         while (iterator.hasNext()) {
             Record record = iterator.next();
