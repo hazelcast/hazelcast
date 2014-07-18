@@ -15,8 +15,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -142,6 +146,52 @@ public class ConditionTest extends HazelcastTestSupport {
         lock.unlock();
         finalLatch.await(1, TimeUnit.MINUTES);
         assertEquals(k * 2, count.get());
+    }
+
+    /**
+     * Testcase for #3025. Tests that an await with short duration in a highly-contended lock does not generate an
+     * IllegalStateException (previously due to a race condition in the waiter list for the condition).
+     */
+    @Test(timeout = 60000)
+    public void testContendedLockUnlockWithVeryShortAwait() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        String lockName = randomString();
+        String conditionName = randomString();
+        final ILock lock = instance.getLock(lockName);
+        final ICondition condition = lock.newCondition(conditionName);
+        final int k = 50;
+        final List<Exception> awaitExceptions = Collections.synchronizedList(new ArrayList<Exception>());
+
+        final AtomicBoolean running = new AtomicBoolean(true);
+        final CountDownLatch finalLatch = new CountDownLatch(k);
+        for (int i = 0; i < k; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        while (running.get()) {
+                            lock.lock();
+                            try {
+                                condition.await(1, TimeUnit.MILLISECONDS);
+                            } catch (InterruptedException e) {
+                            } catch (IllegalStateException e) {
+                                awaitExceptions.add(e);
+                            } finally {
+                                lock.unlock();
+                            }
+                        }
+                    } finally {
+                        finalLatch.countDown();
+                    }
+                }
+            }).start();
+        }
+
+        Thread.sleep(30000);
+        running.set(false);
+        finalLatch.await(30, TimeUnit.SECONDS);
+        assertEquals("Calls to await() on condition of highly-contented lock threw IllegalStateExceptions", Collections.<Exception>emptyList(), awaitExceptions);
     }
 
     @Test(timeout = 60000)
