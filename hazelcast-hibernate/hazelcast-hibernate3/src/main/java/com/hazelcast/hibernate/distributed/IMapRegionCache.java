@@ -119,12 +119,7 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public void clear() {
-        // clear all cache and destroy proxies
-        // when a new operation done over this proxy
-        // Hazelcast will initialize and create map again.
-        map.destroy();
-        // create Hazelcast internal proxies, has no effect on map operations
-        hazelcastInstance.getMap(name);
+        map.evictAll();
     }
 
     public long size() {
