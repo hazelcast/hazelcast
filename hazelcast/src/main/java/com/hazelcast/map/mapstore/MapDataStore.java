@@ -15,8 +15,6 @@ public interface MapDataStore<K, V> {
 
     void addTransient(K key, long now);
 
-    V addStagingArea(K key, V value, long now);
-
     V addBackup(K key, V value, long now);
 
     void remove(K key, long now);
@@ -42,4 +40,7 @@ public interface MapDataStore<K, V> {
     int notFinishedOperationsCount();
 
     Collection flush();
+
+    V flush(K key, V value, long now);
+
 }

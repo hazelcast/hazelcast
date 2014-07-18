@@ -11,10 +11,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TODO Holds current write behind state and should be included in migrations.
@@ -23,11 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
-    private long writeDelayTime;
+    private final long writeDelayTime;
 
-    private int partitionId;
+    private final int partitionId;
 
-    private WriteBehindQueue<DelayedEntry> writeBehindQueue;
+    private final WriteBehindQueue<DelayedEntry> writeBehindQueue;
 
     private WriteBehindProcessor writeBehindProcessor;
 
@@ -41,36 +41,39 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      * {@link com.hazelcast.map.mapstore.writebehind.WriteBehindQueue} may contain more than one waiting operations
      * on a specific key.
      * <p/>
-     * Method {@link #cleanupEvictionStagingArea} will try to evict this staging area.
+     * Method {@link #cleanupStagingArea} will try to evict this staging area.
      */
-    private final Map<Data, DelayedEntry> evictionStagingArea;
+    private final Map<Data, DelayedEntry> stagingArea;
 
     /**
      * To check if a key has a delayed delete operation or not.
      */
-    private Set<Data> writeBehindWaitingDeletions = new HashSet<Data>();
+    private final Set<Data> writeBehindWaitingDeletions = new HashSet<Data>();
 
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
-    private Iterator<DelayedEntry> evictionStagingAreaIterator;
+    private Iterator<DelayedEntry> stagingAreaIterator;
 
     private long lastCleanupTime;
 
+    private final boolean writeCoalescing;
+
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
-                            long writeDelayTime, int partitionId, int maxPerNodeWriteBehindQueueSize,
-                            AtomicInteger writeBehindItemCounter) {
+                            long writeDelayTime, int partitionId) {
         super(store, serializationService);
         this.writeDelayTime = writeDelayTime;
         this.partitionId = partitionId;
-        this.writeBehindQueue = createWriteBehindQueue(maxPerNodeWriteBehindQueueSize, writeBehindItemCounter);
-        this.evictionStagingArea = createEvictionStagingArea();
+        this.writeBehindQueue = createWriteBehindQueue();
+        this.stagingArea = createStagingArea();
+        this.writeCoalescing = true;
     }
 
+    // TODO when mode is not write-coalescing, clone value objects. this is for EntryProcessors in object memory format.
     @Override
     public Object add(Data key, Object value, long now) {
-        cleanupEvictionStagingArea(now);
+        cleanupStagingArea(now);
         final long writeDelay = this.writeDelayTime;
         final long storeTime = now + writeDelay;
         final DelayedEntry<Data, Object> delayedEntry =
@@ -84,21 +87,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public void addTransient(Data key, long now) {
-        cleanupEvictionStagingArea(now);
+        cleanupStagingArea(now);
         removeFromWaitingDeletions(key);
-    }
-
-    @Override
-    public Object addStagingArea(Data key, Object value, long now) {
-        assert value != null : String.format("value is null");
-        assert now > 0 : String.format("time should be greater than 0, but found %d", now);
-
-        cleanupEvictionStagingArea(now);
-        final long storeTime = now + writeDelayTime;
-        final DelayedEntry<Void, Object> delayedEntry = DelayedEntry.createWithNullKey(value, storeTime);
-        evictionStagingArea.put(key, delayedEntry);
-        removeFromWaitingDeletions(key);
-        return value;
     }
 
     @Override
@@ -108,13 +98,13 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public void remove(Data key, long now) {
-        cleanupEvictionStagingArea(now);
+        cleanupStagingArea(now);
         final long writeDelay = this.writeDelayTime;
         final long storeTime = now + writeDelay;
         final DelayedEntry<Data, Object> delayedEntry =
                 DelayedEntry.createWithNullValue(key, storeTime, partitionId);
         addToWaitingDeletions(key);
-        removeFromEvictionStagingArea(key);
+        removeFromStagingArea(key);
 
         writeBehindQueue.offer(delayedEntry);
     }
@@ -128,7 +118,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     public void reset() {
         writeBehindQueue.clear();
         writeBehindWaitingDeletions.clear();
-        evictionStagingArea.clear();
+        stagingArea.clear();
     }
 
     @Override
@@ -136,7 +126,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         if (hasWaitingWriteBehindDeleteOperation(key)) {
             return null;
         }
-        final Object valueFromStagingArea = getFromEvictionStagingArea(key);
+        final Object valueFromStagingArea = getFromStagingArea(key);
         return valueFromStagingArea == null ? getStore().load(toObject(key))
                 : valueFromStagingArea;
     }
@@ -155,7 +145,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
                 iterator.remove();
                 continue;
             }
-            final Object valueFromStagingArea = getFromEvictionStagingArea(dataKey);
+            final Object valueFromStagingArea = getFromStagingArea(dataKey);
             if (valueFromStagingArea != null) {
                 map.put(dataKey, valueFromStagingArea);
                 iterator.remove();
@@ -183,7 +173,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     @Override
     public boolean loadable(Data key, long lastUpdateTime, long now) {
         if (hasWaitingWriteBehindDeleteOperation(key)
-                || isInEvictionStagingArea(key, now)
+                || isInStagingArea(key, now)
                 || hasOperationInWriteBehindQueue(lastUpdateTime, now)) {
             return false;
         }
@@ -193,6 +183,22 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     @Override
     public int notFinishedOperationsCount() {
         return writeBehindQueue.size();
+    }
+
+    /**
+     * GOTCHA: When {@link #writeCoalescing} is true, you may see more than one write
+     * to store if a flush and {@link StoreWorker} run
+     * falls in a same second window for a specific key. BTW this should not
+     * affect data consistency.
+     */
+    @Override
+    public Object flush(Data key, Object value, long now) {
+        if (writeCoalescing) {
+            return defaultFlush(key);
+        } else {
+            return flushWhenNotWriteCoalescing(key, value, now);
+        }
+
     }
 
     @Override
@@ -208,8 +214,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         writeBehindWaitingDeletions.remove(key);
     }
 
-    private void removeFromEvictionStagingArea(Data key) {
-        evictionStagingArea.remove(key);
+    private void removeFromStagingArea(Data key) {
+        stagingArea.remove(key);
     }
 
     private boolean hasWaitingWriteBehindDeleteOperation(Data key) {
@@ -221,41 +227,43 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return now < scheduledStoreTime;
     }
 
-    private WriteBehindQueue<DelayedEntry> createWriteBehindQueue(int maxPerNodeWriteBehindQueueSize,
-                                                                  AtomicInteger writeBehindItemCounter) {
-        return WriteBehindQueues.createDefaultWriteBehindQueue(maxPerNodeWriteBehindQueueSize, writeBehindItemCounter);
+    private WriteBehindQueue<DelayedEntry> createWriteBehindQueue() {
+        return WriteBehindQueues.createDefaultWriteBehindQueue();
     }
 
-    private Map<Data, DelayedEntry> createEvictionStagingArea() {
+    private Map<Data, DelayedEntry> createStagingArea() {
         return new ConcurrentHashMap<Data, DelayedEntry>();
     }
 
     private void initStagingAreaIterator() {
-        if (evictionStagingAreaIterator == null || !evictionStagingAreaIterator.hasNext()) {
-            evictionStagingAreaIterator = evictionStagingArea.values().iterator();
+        if (stagingAreaIterator == null || !stagingAreaIterator.hasNext()) {
+            stagingAreaIterator = stagingArea.values().iterator();
         }
     }
 
-    public void cleanupEvictionStagingArea(long now) {
-        if (evictionStagingArea.isEmpty() || !inEvictableTimeWindow(now)) {
+    public void cleanupStagingArea(long now) {
+        if (stagingArea.isEmpty() || !inEvictableTimeWindow(now)) {
+            return;
+        }
+        final int size = stagingArea.size();
+        if (size == 0) {
             return;
         }
         final long nextItemsStoreTimeInWriteBehindQueue = getNextItemsStoreTimeInWriteBehindQueue();
-        final int size = evictionStagingArea.size();
         final int evictionPercentage = 20;
         int maxAllowedIterationCount = getMaxIterationCount(size, evictionPercentage);
         initStagingAreaIterator();
-        while (evictionStagingAreaIterator.hasNext()) {
+        while (stagingAreaIterator.hasNext()) {
             if (maxAllowedIterationCount <= 0) {
                 break;
             }
             --maxAllowedIterationCount;
-            final DelayedEntry entry = evictionStagingAreaIterator.next();
+            final DelayedEntry entry = stagingAreaIterator.next();
             if (entry.getStoreTime() < nextItemsStoreTimeInWriteBehindQueue) {
-                evictionStagingAreaIterator.remove();
+                stagingAreaIterator.remove();
             }
             initStagingAreaIterator();
-            if (!evictionStagingAreaIterator.hasNext()) {
+            if (!stagingAreaIterator.hasNext()) {
                 break;
             }
             lastCleanupTime = now;
@@ -264,7 +272,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     private long getNextItemsStoreTimeInWriteBehindQueue() {
-        final DelayedEntry firstEntryInQueue = writeBehindQueue.get(0);
+        final DelayedEntry firstEntryInQueue = writeBehindQueue.getFirst();
         if (firstEntryInQueue == null) {
             return 0L;
         }
@@ -301,8 +309,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return (now - lastCleanupTime) > evictAfterMs;
     }
 
-    private boolean isInEvictionStagingArea(Data key, long now) {
-        final DelayedEntry entry = evictionStagingArea.get(key);
+    private boolean isInStagingArea(Data key, long now) {
+        final DelayedEntry entry = stagingArea.get(key);
         if (entry == null) {
             return false;
         }
@@ -310,8 +318,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return now < storeTime;
     }
 
-    private Object getFromEvictionStagingArea(Data key) {
-        final DelayedEntry entry = evictionStagingArea.get(key);
+    private Object getFromStagingArea(Data key) {
+        final DelayedEntry entry = stagingArea.get(key);
         if (entry == null) {
             return null;
         }
@@ -322,6 +330,30 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             return null;
         }
         return toObject(entry.getValue());
+    }
+
+    private Object defaultFlush(Data key) {
+        DelayedEntry entry = DelayedEntry.createWithNullValue(key, -1, -1);
+        entry = writeBehindQueue.get(entry);
+        if (entry == null) {
+            return null;
+        }
+        writeBehindProcessor.flush(entry);
+        final List<DelayedEntry> entries = Collections.singletonList(entry);
+        writeBehindQueue.removeAll(entries);
+        return entry.getValue();
+    }
+
+    private Object flushWhenNotWriteCoalescing(Data key, Object value, long now) {
+        assert value != null : String.format("value is null");
+        assert now > 0 : String.format("time should be greater than 0, but found %d", now);
+
+        cleanupStagingArea(now);
+        final long storeTime = now + writeDelayTime;
+        final DelayedEntry<Void, Object> delayedEntry = DelayedEntry.createWithNullKey(value, storeTime);
+        stagingArea.put(key, delayedEntry);
+        removeFromWaitingDeletions(key);
+        return value;
     }
 
 

@@ -38,46 +38,46 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientExecutorServiceExecuteTest {
 
-    static final int CLUSTER_SIZE = 3;
-    static HazelcastInstance instance1;
-    static HazelcastInstance instance2;
-    static HazelcastInstance instance3;
+    private static final int CLUSTER_SIZE = 3;
 
-    static HazelcastInstance client;
+    private static HazelcastInstance server1;
+    private static HazelcastInstance server2;
+
+    private static HazelcastInstance client;
 
     @BeforeClass
-    public static void init() {
-        instance1 = Hazelcast.newHazelcastInstance();
-        instance2 = Hazelcast.newHazelcastInstance();
-        instance3 = Hazelcast.newHazelcastInstance();
+    public static void beforeClass() {
+        server1 = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
+        server2 = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
-    public static void destroy() {
-        client.shutdown();
+    public static void afterClass() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void testExecute() {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String mapName = randomString();
+        IExecutorService service = client.getExecutorService(randomString());
+        String mapName = randomString();
 
-        service.execute( new MapPutRunnable(mapName));
-        final IMap map = client.getMap(mapName);
+        service.execute(new MapPutRunnable(mapName));
+        IMap map = client.getMap(mapName);
 
         assertSizeEventually(1, map);
     }
 
     @Test
     public void testExecute_withMemberSelector() {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String mapName = randomString();
-        final MemberSelector selector = new SelectAllMembers();
+        IExecutorService service = client.getExecutorService(randomString());
+        String mapName = randomString();
+        MemberSelector selector = new SelectAllMembers();
 
         service.execute( new MapPutRunnable(mapName), selector);
-        final IMap map = client.getMap(mapName);
+        IMap map = client.getMap(mapName);
 
         assertSizeEventually(1, map);
     }
@@ -85,17 +85,18 @@ public class ClientExecutorServiceExecuteTest {
     @Test(expected = NullPointerException.class)
     public void testExecute_whenTaskNull() {
         IExecutorService service = client.getExecutorService(randomString());
-        service.execute( null );
+
+        service.execute(null);
     }
 
     @Test
     public void testExecuteOnKeyOwner() {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String mapName = randomString();
+        IExecutorService service = client.getExecutorService(randomString());
+        String mapName = randomString();
 
-        final Member member = instance1.getCluster().getLocalMember();
+        Member member = server1.getCluster().getLocalMember();
         final String targetUuid = member.getUuid();
-        final String key = generateKeyOwnedBy(instance1);
+        String key = generateKeyOwnedBy(server1);
 
         service.executeOnKeyOwner(new MapPutRunnable(mapName), key);
 
@@ -116,15 +117,16 @@ public class ClientExecutorServiceExecuteTest {
 
     @Test
     public void testExecuteOnMember(){
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String mapName = randomString();
+        IExecutorService service = client.getExecutorService(randomString());
+        String mapName = randomString();
 
-        final Member member = instance1.getCluster().getLocalMember();
+        Member member = server1.getCluster().getLocalMember();
         final String targetUuid = member.getUuid();
 
         service.executeOnMember(new MapPutRunnable(mapName), member);
 
         final IMap map = client.getMap(mapName);
+
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
                 assertTrue(map.containsKey(targetUuid));
@@ -135,18 +137,19 @@ public class ClientExecutorServiceExecuteTest {
     @Test(expected = NullPointerException.class)
     public void testExecuteOnMember_WhenMemberNull() {
         IExecutorService service = client.getExecutorService(randomString());
+
         service.executeOnMember(new MapPutRunnable("map"), null);
     }
 
     @Test
     public void testExecuteOnMembers() {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String mapName = randomString();
-        final Collection collection = new ArrayList();
-        final Member member1 = instance1.getCluster().getLocalMember();
-        final Member member3 = instance3.getCluster().getLocalMember();
+        IExecutorService service = client.getExecutorService(randomString());
+        String mapName = randomString();
+        Collection<Member> collection = new ArrayList<Member>();
+        final Member member1 = server1.getCluster().getLocalMember();
+        final Member member2 = server2.getCluster().getLocalMember();
         collection.add(member1);
-        collection.add(member3);
+        collection.add(member2);
 
         service.executeOnMembers(new MapPutRunnable(mapName), collection);
 
@@ -154,39 +157,40 @@ public class ClientExecutorServiceExecuteTest {
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
                 assertTrue(map.containsKey(member1.getUuid()));
-                assertTrue(map.containsKey(member3.getUuid()));
+                assertTrue(map.containsKey(member2.getUuid()));
             }
         });
     }
 
     @Test
     public void testExecuteOnMembers_withEmptyCollection() {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String mapName = randomString();
-        final Collection collection = new ArrayList();
+        IExecutorService service = client.getExecutorService(randomString());
+        String mapName = randomString();
+        Collection<Member> collection = new ArrayList<Member>();
 
         service.executeOnMembers(new MapPutRunnable(mapName), collection);
 
-        final IMap map = client.getMap(mapName);
+        IMap map = client.getMap(mapName);
         assertSizeEventually(0, map);
     }
 
     @Test(expected = NullPointerException.class)
     public void testExecuteOnMembers_WhenCollectionNull() {
         IExecutorService service = client.getExecutorService(randomString());
-        Collection collection = null;
+        Collection<Member> collection = null;
+
         service.executeOnMembers(new MapPutRunnable("task"), collection);
     }
 
     @Test
     public void testExecuteOnMembers_withSelector() {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String mapName = randomString();
-        final MemberSelector selector = new SelectAllMembers();
+        IExecutorService service = client.getExecutorService(randomString());
+        String mapName = randomString();
+        MemberSelector selector = new SelectAllMembers();
 
         service.executeOnMembers(new MapPutRunnable(mapName), selector);
 
-        final IMap map = client.getMap(mapName);
+        IMap map = client.getMap(mapName);
         assertSizeEventually(CLUSTER_SIZE, map);
     }
 
@@ -194,17 +198,18 @@ public class ClientExecutorServiceExecuteTest {
     public void testExecuteOnMembers_whenSelectorNull() {
         IExecutorService service = client.getExecutorService(randomString());
         MemberSelector selector = null;
+
         service.executeOnMembers(new MapPutRunnable("task"), selector);
     }
 
     @Test
     public void testExecuteOnAllMembers() {
-        final IExecutorService service = client.getExecutorService(randomString());
-        final String mapName = randomString();
+        IExecutorService service = client.getExecutorService(randomString());
+        String mapName = randomString();
 
         service.executeOnAllMembers(new MapPutRunnable(mapName));
 
-        final IMap map = client.getMap(mapName);
+        IMap map = client.getMap(mapName);
         assertSizeEventually(CLUSTER_SIZE, map);
     }
 }

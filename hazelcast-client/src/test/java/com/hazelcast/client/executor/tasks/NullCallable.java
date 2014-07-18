@@ -14,23 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.client.executor.tasks;
 
-import com.hazelcast.core.HazelcastException;
+import java.io.Serializable;
+import java.util.concurrent.Callable;
 
-/**
- * Exception class for the Query.
- */
-public class QueryException extends HazelcastException {
-    public QueryException(Throwable cause) {
-        super(cause);
-    }
-
-    public QueryException(String message) {
-        super(message);
-    }
-
-    public QueryException(String message, Throwable cause) {
-        super(message, cause);
+public class NullCallable implements Callable<String>, Serializable {
+    @Override
+    public String call() throws Exception {
+        return null;
     }
 }

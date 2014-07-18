@@ -617,7 +617,7 @@
         </profile>
 
         <profile>
-            <id>qa</id>
+            <id>checkstyle</id>
             <build>
                 <plugins>
                     <plugin>
@@ -646,7 +646,14 @@
                             <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
                         </configuration>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
 
+        <profile>
+            <id>findbugs</id>
+            <build>
+                <plugins>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>findbugs-maven-plugin</artifactId>

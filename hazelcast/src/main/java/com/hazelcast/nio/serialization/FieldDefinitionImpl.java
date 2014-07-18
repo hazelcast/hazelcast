@@ -70,6 +70,14 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         return version;
     }
 
+    void setVersionIfNotSet(int version) {
+        if (getVersion() < 0) {
+            if (type == FieldType.PORTABLE || type == FieldType.PORTABLE_ARRAY) {
+                this.version = version;
+            }
+        }
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(index);
         out.writeUTF(fieldName);

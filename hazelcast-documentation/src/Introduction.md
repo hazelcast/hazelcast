@@ -2,7 +2,7 @@
 
 ## Hazelcast Overview
 
-Hazelcast is an open source in-memory data grid. It offers distributed implementation of interfaces from Java such as Map, Queue, ExecutorService, Lock and many more. It is designed to be very lightweight and easy to use. Hazelcast is highly scalable and available. Distributed applications can use Hazelcast for distributed caching, synchronization, clustering, processing, pub/sub messaging and etc. Hazelcast is implemented in Java and has clients for Java, C/C++, C# as well as REST. Hazelcast can also speak memcache protocol.
+Hazelcast is an open source in-memory data grid. It offers distributed implementation of interfaces from Java such as Map, Queue, ExecutorService, Lock and many more. It is designed to be very lightweight and easy to use. Hazelcast is highly scalable and available. Distributed applications can use Hazelcast for distributed caching, synchronization, clustering, processing, pub/sub messaging and etc. Hazelcast is implemented in Java and has clients for Java, C/C++, .NET as well as REST. Hazelcast can also speak memcache protocol.
 
 **Hazelcast is simple**
 
@@ -51,7 +51,7 @@ If you have an application whose main focal point is asynchronous or high perfor
 
 
 
-You can have a cluster of server nodes that can be independently created and scaled. Your clients communicate with these server nodes to reach to the data on them. Hazelcast provides native clients (Java, C# and C++), Memcache clients and REST clients. See the below illustration.
+You can have a cluster of server nodes that can be independently created and scaled. Your clients communicate with these server nodes to reach to the data on them. Hazelcast provides native clients (Java, .NET and C++), Memcache clients and REST clients. See the below illustration.
 
 ![](images/CSCluster.jpg)
 

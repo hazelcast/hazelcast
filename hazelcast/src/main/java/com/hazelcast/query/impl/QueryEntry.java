@@ -17,12 +17,9 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
-
-import java.io.IOException;
+import com.hazelcast.query.QueryException;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
@@ -31,15 +28,12 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
  */
 public class QueryEntry implements QueryableEntry {
 
-    private static final PortableExtractor EXTRACTOR = new PortableExtractor();
-
     private final SerializationService serializationService;
     private final Data indexKey;
     private Data key;
     private Object keyObject;
     private Data value;
     private Object valueObject;
-    private PortableReader reader;
 
     public QueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
         if (indexKey == null) {
@@ -80,30 +74,43 @@ public class QueryEntry implements QueryableEntry {
 
     @Override
     public Comparable getAttribute(String attributeName) throws QueryException {
-        final Data data = getValueData();
-        if (data != null && data.isPortable()) {
-            FieldDefinition fd = data.getClassDefinition().get(attributeName);
-            if (fd != null) {
-                PortableReader reader = getOrCreatePortableReader();
-                return EXTRACTOR.extract(reader, attributeName, fd.getType().getId());
-            }
+        if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
+            return (Comparable) getKey();
+        } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
+            return (Comparable) getValue();
         }
-        return extractViaReflection(attributeName);
+
+        boolean key = attributeName.startsWith(KEY_ATTRIBUTE_NAME);
+        Data data;
+        if (key) {
+            attributeName = attributeName.substring(KEY_ATTRIBUTE_NAME.length() + 1);
+            data = getKeyData();
+        } else {
+            data = getValueData();
+        }
+
+        if (data != null && data.isPortable()) {
+            return extractViaPortable(attributeName, data);
+        }
+        return extractViaReflection(attributeName, key);
     }
 
-    private Comparable extractViaReflection(String attributeName) {
+    private Comparable extractViaPortable(String attributeName, Data data) {
         try {
-            if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
-                return (Comparable) getKey();
-            } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
-                return (Comparable) getValue();
-            }
+            return PortableExtractor.extractValue(serializationService, data, attributeName);
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new QueryException(e);
+        }
+    }
 
-            if (attributeName.startsWith(KEY_ATTRIBUTE_NAME)) {
-                return ReflectionHelper.extractValue(this, attributeName, getKey());
-            } else {
-                return ReflectionHelper.extractValue(this, attributeName, getValue());
-            }
+    private Comparable extractViaReflection(String attributeName, boolean key) {
+        try {
+            Object obj = key ? getKey() : getValue();
+            return ReflectionHelper.extractValue(obj, attributeName);
+        } catch (QueryException e) {
+            throw e;
         } catch (Exception e) {
             throw new QueryException(e);
         }
@@ -111,30 +118,26 @@ public class QueryEntry implements QueryableEntry {
 
     @Override
     public AttributeType getAttributeType(String attributeName) {
-        final Data data = getValueData();
-        if (data != null && data.isPortable()) {
-            FieldDefinition fd = data.getClassDefinition().get(attributeName);
-            if (fd != null) {
-                return AttributeType.getAttributeType(fd.getType().getId());
-            }
-        }
-        return getAttributeTypeViaReflection(attributeName);
-    }
-
-    private AttributeType getAttributeTypeViaReflection(String attributeName) {
-        Class klass;
         if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
-            klass = getKey().getClass();
-        } else {
-            Object value = getValue();
-            if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
-                klass = value.getClass();
-            } else {
-                return ReflectionHelper.getAttributeType(this, attributeName);
-            }
+            return ReflectionHelper.getAttributeType(getKey().getClass());
+        } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
+            return ReflectionHelper.getAttributeType(getValue().getClass());
         }
 
-        return ReflectionHelper.getAttributeType(klass);
+        boolean key = attributeName.startsWith(KEY_ATTRIBUTE_NAME);
+        Data data;
+        if (key) {
+            attributeName = attributeName.substring(KEY_ATTRIBUTE_NAME.length() + 1);
+            data = getKeyData();
+        } else {
+            data = getValueData();
+        }
+
+        if (data != null && data.isPortable()) {
+            PortableContext portableContext = serializationService.getPortableContext();
+            return PortableExtractor.getAttributeType(portableContext, data, attributeName);
+        }
+        return ReflectionHelper.getAttributeType(key ? getKey() : getValue(), attributeName);
     }
 
     @Override
@@ -163,13 +166,6 @@ public class QueryEntry implements QueryableEntry {
         throw new UnsupportedOperationException();
     }
 
-    private PortableReader getOrCreatePortableReader() {
-        if (reader == null) {
-            reader = serializationService.createPortableReader(value);
-        }
-        return reader;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -190,94 +186,4 @@ public class QueryEntry implements QueryableEntry {
         return indexKey.hashCode();
     }
 
-    private static class PortableExtractor {
-        PortableFieldExtractor[] extractors = new PortableFieldExtractor[FieldType.values().length];
-
-        PortableExtractor() {
-            extractors[FieldType.BYTE.getId()] = new PortableByteFieldExtractor();
-            extractors[FieldType.BOOLEAN.getId()] = new PortableBooleanFieldExtractor();
-            extractors[FieldType.LONG.getId()] = new PortableLongFieldExtractor();
-            extractors[FieldType.INT.getId()] = new PortableIntegerFieldExtractor();
-            extractors[FieldType.CHAR.getId()] = new PortableCharFieldExtractor();
-            extractors[FieldType.DOUBLE.getId()] = new PortableDoubleFieldExtractor();
-            extractors[FieldType.SHORT.getId()] = new PortableShortFieldExtractor();
-            extractors[FieldType.FLOAT.getId()] = new PortableFloatFieldExtractor();
-            extractors[FieldType.UTF.getId()] = new PortableUtfFieldExtractor();
-        }
-
-        public Comparable extract(PortableReader reader, String fieldName, byte fieldType) throws QueryException {
-            try {
-                return extractors[fieldType].extract(reader, fieldName);
-            } catch (IOException e) {
-                throw new QueryException(e);
-            }
-        }
-
-        static class PortableIntegerFieldExtractor implements PortableFieldExtractor {
-            @Override
-            public Comparable extract(PortableReader reader, String fieldName) throws IOException {
-                return reader.readInt(fieldName);
-            }
-        }
-
-        static class PortableByteFieldExtractor implements PortableFieldExtractor {
-            @Override
-            public Comparable extract(PortableReader reader, String fieldName) throws IOException {
-                return reader.readByte(fieldName);
-            }
-        }
-
-        static class PortableLongFieldExtractor implements PortableFieldExtractor {
-            @Override
-            public Comparable extract(PortableReader reader, String fieldName) throws IOException {
-                return reader.readLong(fieldName);
-            }
-        }
-
-        static class PortableDoubleFieldExtractor implements PortableFieldExtractor {
-            @Override
-            public Comparable extract(PortableReader reader, String fieldName) throws IOException {
-                return reader.readDouble(fieldName);
-            }
-        }
-
-        static class PortableFloatFieldExtractor implements PortableFieldExtractor {
-            @Override
-            public Comparable extract(PortableReader reader, String fieldName) throws IOException {
-                return reader.readFloat(fieldName);
-            }
-        }
-
-        static class PortableShortFieldExtractor implements PortableFieldExtractor {
-            @Override
-            public Comparable extract(PortableReader reader, String fieldName) throws IOException {
-                return reader.readShort(fieldName);
-            }
-        }
-
-        static class PortableUtfFieldExtractor implements PortableFieldExtractor {
-            @Override
-            public Comparable extract(PortableReader reader, String fieldName) throws IOException {
-                return reader.readUTF(fieldName);
-            }
-        }
-
-        static class PortableCharFieldExtractor implements PortableFieldExtractor {
-            @Override
-            public Comparable extract(PortableReader reader, String fieldName) throws IOException {
-                return reader.readChar(fieldName);
-            }
-        }
-
-        static class PortableBooleanFieldExtractor implements PortableFieldExtractor {
-            @Override
-            public Comparable extract(PortableReader reader, String fieldName) throws IOException {
-                return reader.readBoolean(fieldName);
-            }
-        }
-
-        interface PortableFieldExtractor {
-            Comparable extract(PortableReader reader, String fieldName) throws IOException;
-        }
-    }
 }

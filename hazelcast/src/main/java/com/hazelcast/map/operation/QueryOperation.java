@@ -17,20 +17,15 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.map.MapContextQuerySupport;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapServiceContext;
-import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.QueryResult;
-import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
-import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
@@ -44,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -106,13 +100,12 @@ public class QueryOperation extends AbstractMapOperation {
 
     protected void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final NodeEngine nodeEngine = getNodeEngine();
-        final SerializationService ss = nodeEngine.getSerializationService();
         final ExecutorService executor
                 = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
         final List<Future<Collection<QueryableEntry>>> lsFutures
                 = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
-        for (final Integer partition : initialPartitions) {
-            Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(ss, partition, null));
+        for (Integer partitionId : initialPartitions) {
+            Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(partitionId));
             lsFutures.add(f);
         }
         for (Future<Collection<QueryableEntry>> future : lsFutures) {
@@ -127,15 +120,14 @@ public class QueryOperation extends AbstractMapOperation {
 
     protected void runParallelForPaging(List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final NodeEngine nodeEngine = getNodeEngine();
-        final SerializationService ss = nodeEngine.getSerializationService();
         final ExecutorService executor
                 = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
         final List<Future<Collection<QueryableEntry>>> lsFutures
                 = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
 
         final Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
-        for (final Integer partition : initialPartitions) {
-            Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(ss, partition, wrapperComparator));
+        for (final Integer partitionId : initialPartitions) {
+            Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(partitionId));
             lsFutures.add(f);
         }
         List<QueryableEntry> toMerge = new LinkedList<QueryableEntry>();
@@ -183,66 +175,17 @@ public class QueryOperation extends AbstractMapOperation {
 
     private final class PartitionCallable implements Callable<Collection<QueryableEntry>> {
 
-        int partition;
-        SerializationService ss;
-        Comparator<Map.Entry> wrapperComparator;
+        final int partition;
 
-
-        private PartitionCallable(SerializationService ss, int partition, Comparator<Map.Entry> wrapperComparator) {
-            this.ss = ss;
-            this.partition = partition;
-            this.wrapperComparator = wrapperComparator;
+        private PartitionCallable(int partitionId) {
+            this.partition = partitionId;
         }
 
         public Collection<QueryableEntry> call() throws Exception {
-            final PartitionContainer container = mapService.getMapServiceContext().getPartitionContainer(partition);
-            final RecordStore recordStore = container.getRecordStore(name);
-            LinkedList<QueryableEntry> partitionResult = new LinkedList<QueryableEntry>();
-            final Iterator<Record> iterator = recordStore.loadAwareIterator();
-            while (iterator.hasNext()) {
-                final Record record = iterator.next();
-                final Data key = record.getKey();
-                final Object value = getValueOrCachedValue(record);
-                if (value == null) {
-                    continue;
-                }
-                final QueryEntry queryEntry = new QueryEntry(ss, key, key, value);
-                if (predicate.apply(queryEntry)) {
-                    if (pagingPredicate != null) {
-                        Map.Entry anchor = pagingPredicate.getAnchor();
-                        final Comparator comparator = pagingPredicate.getComparator();
-                        if (anchor != null
-                                &&
-                                SortingUtil.compare(comparator, pagingPredicate.getIterationType(), anchor, queryEntry) >= 0) {
-                            continue;
-                        }
-                    }
-                    partitionResult.add(queryEntry);
-                }
-            }
-            if (pagingPredicate != null) {
-                Collections.sort(partitionResult, wrapperComparator);
-                if (partitionResult.size() > pagingPredicate.getPageSize()) {
-                    return partitionResult.subList(0, pagingPredicate.getPageSize());
-                }
-            }
-            return partitionResult;
+            MapContextQuerySupport mapContextQuerySupport = mapService.getMapServiceContext()
+                    .getMapContextQuerySupport();
+            return mapContextQuerySupport.queryOnPartition(name, predicate, partition);
         }
-
-        private Object getValueOrCachedValue(Record record) {
-            Object value = record.getCachedValue();
-            if (value == Record.NOT_CACHED) {
-                value = record.getValue();
-                if (value != null && value instanceof Data) {
-                    value = ss.toObject(value);
-                }
-            } else {
-                value = ss.toObject(record.getValue());
-                record.setCachedValue(value);
-            }
-            return value;
-        }
-
     }
 
 }

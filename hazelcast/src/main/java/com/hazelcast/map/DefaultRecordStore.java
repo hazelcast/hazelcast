@@ -388,7 +388,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (record != null) {
             value = record.getValue();
             final long lastUpdateTime = record.getLastUpdateTime();
-            mapDataStore.addStagingArea(key, value, lastUpdateTime);
+            mapDataStore.flush(key, value, lastUpdateTime);
             mapServiceContext.interceptRemove(name, value);
             updateSizeEstimator(-calculateRecordHeapCost(record));
             deleteRecord(key);
@@ -426,20 +426,24 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             keysToPreserve = recordsToPreserve.keySet();
             updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
         }
-        addToStagingArea(recordsToPreserve);
+        flush(recordsToPreserve);
         clearRecordsMap(recordsToPreserve);
         return keysToPreserve;
     }
 
-    private void addToStagingArea(Map<Data, Record> excludeRecords) {
-        final long now = getNow();
+    /**
+     * Flushes evicted records to map store.
+     *
+     * @param excludeRecords Records which should not be flushed.
+     */
+    private void flush(Map<Data, Record> excludeRecords) {
         Iterator<Record> iterator = records.values().iterator();
         while (iterator.hasNext()) {
             Record record = iterator.next();
             if (excludeRecords == null || !excludeRecords.containsKey(record.getKey())) {
                 final Data key = record.getKey();
-                final Object value = record.getValue();
-                mapDataStore.addStagingArea(key, value, now);
+                final long lastUpdateTime = record.getLastUpdateTime();
+                mapDataStore.flush(key, record.getValue(), lastUpdateTime);
             }
         }
     }

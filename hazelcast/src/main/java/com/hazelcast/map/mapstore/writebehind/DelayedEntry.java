@@ -51,7 +51,7 @@ public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
      * @param <K>       the key type.
      * @param <V>       the value type.
      * @return new delayed entry object with a null key.
-     * @see WriteBehindStore#evictionStagingArea
+     * @see WriteBehindStore#stagingArea
      */
     public static <K, V> DelayedEntry<K, V> createWithNullKey(V value, long storeTime) {
         return new DelayedEntry<K, V>(null, value, storeTime, 0);
@@ -70,11 +70,14 @@ public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
         return new DelayedEntry<K, V>(key, null, storeTime, partitionId);
     }
 
-    /**
-     * Used for tests.
-     */
-    public static <K, V> DelayedEntry<K, V> createEmpty() {
-        return new DelayedEntry<K, V>(null, null, 0L, 0);
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
     }
 
     @Override
@@ -87,10 +90,5 @@ public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
                 + '}';
     }
 
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (value == null ? 0 : value.hashCode());
-        return result;
-    }
+
 }

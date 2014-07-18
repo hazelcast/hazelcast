@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Pattern;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -35,6 +36,7 @@ import static com.hazelcast.util.ByteUtil.combineToLong;
 final class PortableContextImpl implements PortableContext {
 
     private static final int COMPRESSION_BUFFER_LENGTH = 1024;
+    private static final Pattern NESTED_FIELD_PATTERN = Pattern.compile("\\.");
 
     private final int version;
     private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap =
@@ -101,6 +103,32 @@ final class PortableContextImpl implements PortableContext {
             final ClassDefinitionImpl nestedCD = (ClassDefinitionImpl) classDefinition;
             registerClassDefinition(nestedCD);
         }
+    }
+
+    @Override
+    public FieldDefinition getFieldDefinition(ClassDefinition classDef, String name) {
+        FieldDefinition fd = classDef.getField(name);
+        if (fd == null) {
+            String[] fieldNames = NESTED_FIELD_PATTERN.split(name);
+            if (fieldNames.length > 1) {
+                ClassDefinition currentClassDef = classDef;
+                for (int i = 0; i < fieldNames.length; i++) {
+                    name = fieldNames[i];
+                    fd = currentClassDef.getField(name);
+                    if (i == fieldNames.length - 1) {
+                        break;
+                    }
+                    if (fd == null) {
+                        throw new IllegalArgumentException("Unknown field: " + name);
+                    }
+                    currentClassDef = lookup(fd.getFactoryId(), fd.getClassId(), fd.getVersion());
+                    if (currentClassDef == null) {
+                        throw new IllegalArgumentException("Not a registered Portable field: " + fd);
+                    }
+                }
+            }
+        }
+        return fd;
     }
 
     private ClassDefinitionContext getClassDefContext(int factoryId) {
@@ -177,9 +205,7 @@ final class PortableContextImpl implements PortableContext {
             }
             if (cd instanceof ClassDefinitionImpl) {
                 final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
-                if (cdImpl.getVersion() < 0) {
-                    cdImpl.version = getVersion();
-                }
+                cdImpl.setVersionIfNotSet(getVersion());
                 setClassDefBinary(cdImpl);
                 registerNestedDefinitions(cdImpl);
             }
@@ -189,6 +215,10 @@ final class PortableContextImpl implements PortableContext {
                 return cd;
             }
             if (currentCd instanceof ClassDefinitionImpl) {
+                if (!currentCd.equals(cd)) {
+                    throw new HazelcastSerializationException("Incompatible class-definitions with same class-id: "
+                            + cd + " VS " + currentCd);
+                }
                 return currentCd;
             }
             versionedDefinitions.put(versionedClassId, cd);

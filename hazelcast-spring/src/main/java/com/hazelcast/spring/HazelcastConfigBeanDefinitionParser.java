@@ -79,7 +79,7 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
 /**
  * BeanDefinitionParser for Hazelcast Config Configuration
  * <p/>
- *
+ * <p/>
  * <b>Sample Spring XML for Hazelcast Config:</b>
  * <pre>
  * &lt;hz:config&gt;
@@ -639,7 +639,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);
         }
-        
+
         private void handleMemberAttributes(final Node node) {
             final BeanDefinitionBuilder memberAttributeConfigBuilder = createBeanBuilder(MemberAttributeConfig.class);
             final AbstractBeanDefinition beanDefinition = memberAttributeConfigBuilder.getBeanDefinition();

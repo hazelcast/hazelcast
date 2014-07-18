@@ -196,8 +196,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         MultiExecutionCallbackWrapper multiExecutionCallbackWrapper =
                 new MultiExecutionCallbackWrapper(members.size(), callback);
         for (Member member : members) {
-            final ExecutionCallbackWrapper executionCallback =
-                    new ExecutionCallbackWrapper(multiExecutionCallbackWrapper, member);
+            final ExecutionCallbackWrapper<T> executionCallback =
+                    new ExecutionCallbackWrapper<T>(multiExecutionCallbackWrapper, member);
             submitToMember(task, member, executionCallback);
         }
     }
@@ -240,8 +240,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         MultiExecutionCallbackWrapper multiExecutionCallbackWrapper =
                 new MultiExecutionCallbackWrapper(memberList.size(), callback);
         for (Member member : memberList) {
-            final ExecutionCallbackWrapper executionCallback =
-                    new ExecutionCallbackWrapper(multiExecutionCallbackWrapper, member);
+            final ExecutionCallbackWrapper<T> executionCallback =
+                    new ExecutionCallbackWrapper<T>(multiExecutionCallbackWrapper, member);
             submitToMember(task, member, executionCallback);
         }
     }
@@ -515,19 +515,20 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private static final class MultiExecutionCallbackWrapper implements MultiExecutionCallback {
 
-        private final AtomicInteger members;
         private final MultiExecutionCallback multiExecutionCallback;
         private final Map<Member, Object> values;
+        private final AtomicInteger members;
 
         private MultiExecutionCallbackWrapper(int memberSize, MultiExecutionCallback multiExecutionCallback) {
             this.multiExecutionCallback = multiExecutionCallback;
+            this.values = Collections.synchronizedMap(new HashMap<Member, Object>(memberSize));
             this.members = new AtomicInteger(memberSize);
-            values = new HashMap<Member, Object>(memberSize);
         }
 
         public void onResponse(Member member, Object value) {
             multiExecutionCallback.onResponse(member, value);
             values.put(member, value);
+
             int waitingResponse = members.decrementAndGet();
             if (waitingResponse == 0) {
                 onComplete(values);
@@ -539,7 +540,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private ICompletableFuture invokeFuture(PartitionCallableRequest request, int partitionId) {
+    private <T> ICompletableFuture<T> invokeFuture(PartitionCallableRequest request, int partitionId) {
         try {
             final Address partitionOwner = getPartitionOwner(partitionId);
             return getContext().getInvocationService().invokeOnTarget(request, partitionOwner);
@@ -548,7 +549,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private ICompletableFuture invokeFuture(TargetCallableRequest request) {
+    private <T> ICompletableFuture<T> invokeFuture(TargetCallableRequest request) {
         try {
             return getContext().getInvocationService().invokeOnTarget(request, request.getTarget());
         } catch (Exception e) {
