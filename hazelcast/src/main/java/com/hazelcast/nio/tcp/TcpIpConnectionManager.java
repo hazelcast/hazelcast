@@ -109,13 +109,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final int outboundPortCount;
 
-    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
     // accessed only in synchronized block
+    private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
 
     private final PortableContext portableContext;
 
-    private volatile Thread socketAcceptorThread;
     // accessed only in synchronized block
+    private volatile Thread socketAcceptorThread;
 
     private final NodeInitializer initializer;
 
@@ -465,6 +465,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
             }
         }
         shutdownIOSelectors();
+
+        acceptedSockets.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();
         monitors.clear();

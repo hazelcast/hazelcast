@@ -87,6 +87,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         EventPublishingService<MembershipEvent, MembershipListener> {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
+    private static final String EXECUTOR_NAME = "hz:cluster";
+    private static final int HEARTBEAT_INTERVAL = 500;
+    private static final int PING_INTERVAL = 5000;
 
     private final Node node;
 
@@ -117,9 +120,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
 
     private final AtomicReference<Map<Address, MemberImpl>> membersMapRef
-            = new AtomicReference<Map<Address, MemberImpl>>(Collections.EMPTY_MAP);
+            = new AtomicReference<Map<Address, MemberImpl>>(Collections.<Address, MemberImpl>emptyMap());
 
-    private final AtomicReference<Set<MemberImpl>> membersRef = new AtomicReference<Set<MemberImpl>>(Collections.EMPTY_SET);
+    private final AtomicReference<Set<MemberImpl>> membersRef = new AtomicReference<Set<MemberImpl>>(Collections.<MemberImpl>emptySet());
 
     private final AtomicBoolean preparingToMerge = new AtomicBoolean(false);
 
@@ -156,17 +159,16 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         mergeFirstRunDelay = mergeFirstRunDelay <= 0 ? 100 : mergeFirstRunDelay; // milliseconds
 
         ExecutionService executionService = nodeEngine.getExecutionService();
-        String executorName = "hz:cluster";
-        executionService.register(executorName, 2, 1000, ExecutorType.CACHED);
+        executionService.register(EXECUTOR_NAME, 2, 1000, ExecutorType.CACHED);
 
         long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
-        executionService.scheduleWithFixedDelay(executorName, new SplitBrainHandler(node),
+        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new SplitBrainHandler(node),
                 mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
 
         long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
-        executionService.scheduleWithFixedDelay(executorName, new Runnable() {
+        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 heartBeater();
             }
@@ -174,7 +176,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
         masterConfirmationInterval = masterConfirmationInterval <= 0 ? 1 : masterConfirmationInterval;
-        executionService.scheduleWithFixedDelay(executorName, new Runnable() {
+        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
@@ -182,7 +184,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
         memberListPublishInterval = memberListPublishInterval <= 0 ? 1 : memberListPublishInterval;
-        executionService.scheduleWithFixedDelay(executorName, new Runnable() {
+        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMemberListToOthers();
             }
@@ -225,101 +227,114 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return valid;
     }
 
-    private void logMissingConnection(Address address) {
-        String msg = node.getLocalMember() + " has no connection to " + address;
-        logger.warning(msg);
+    private void logIfConnectionToEndpointIsMissing(MemberImpl member) {
+        Connection conn = node.connectionManager.getOrConnect(member.getAddress());
+        if (conn == null || !conn.live()) {
+            logger.warning("This node does not have a connection to " + member);
+        }
     }
 
-    public final void heartBeater() {
-        if (!node.joined() || !node.isActive()) return;
-        long now = Clock.currentTimeMillis();
-        final Collection<MemberImpl> members = getMemberList();
+    private void heartBeater() {
+        if (!node.joined() || !node.isActive()) {
+            return;
+        }
+
         if (node.isMaster()) {
-            List<Address> deadAddresses = null;
-            for (MemberImpl memberImpl : members) {
-                final Address address = memberImpl.getAddress();
-                if (!thisAddress.equals(address)) {
-                    try {
-                        Connection conn = node.connectionManager.getOrConnect(address);
-                        if (conn != null && conn.live()) {
-                            if ((now - memberImpl.getLastRead()) >= (maxNoHeartbeatMillis)) {
-                                if (deadAddresses == null) {
-                                    deadAddresses = new ArrayList<Address>();
-                                }
-                                logger.warning("Added " + address + " to list of dead addresses because of timeout since last read");
-                                deadAddresses.add(address);
-                            } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
-                                ping(memberImpl);
-                            }
-                            if ((now - memberImpl.getLastWrite()) > 500) {
-                                sendHeartbeat(address);
-                            }
-                            Long lastConfirmation = masterConfirmationTimes.get(memberImpl);
-                            if (lastConfirmation == null ||
-                                    (now - lastConfirmation > maxNoMasterConfirmationMillis)) {
-                                if (deadAddresses == null) {
-                                    deadAddresses = new ArrayList<Address>();
-                                }
-                                logger.warning("Added " + address +
-                                        " to list of dead addresses because it has not sent a master confirmation recently");
-                                deadAddresses.add(address);
-                            }
-                        } else if (conn == null && (now - memberImpl.getLastRead()) > 5000) {
-                            logMissingConnection(address);
-                            memberImpl.didRead();
-                        }
-                    } catch (Exception e) {
-                        logger.severe(e);
-                    }
-                }
-            }
-            if (deadAddresses != null) {
-                for (Address address : deadAddresses) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("No heartbeat should remove " + address);
-                    }
-                    removeAddress(address);
-                }
-            }
+            heartBeaterMaster();
         } else {
-            // send heartbeat to master
-            Address masterAddress = node.getMasterAddress();
-            if (masterAddress != null) {
-                node.connectionManager.getOrConnect(masterAddress);
-                MemberImpl masterMember = getMember(masterAddress);
-                boolean removed = false;
-                if (masterMember != null) {
-                    if ((now - masterMember.getLastRead()) >= (maxNoHeartbeatMillis)) {
-                        logger.warning("Master node has timed out its heartbeat and will be removed");
-                        removeAddress(masterAddress);
-                        removed = true;
-                    } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
-                        ping(masterMember);
+            heartBeaterSlave();
+        }
+    }
+
+    private void heartBeaterMaster() {
+        long now = Clock.currentTimeMillis();
+        Collection<MemberImpl> members = getMemberList();
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                try {
+                    logIfConnectionToEndpointIsMissing(member);
+                    if (removeMemberIfNotHeartBeating(now, member)) {
+                        continue;
                     }
-                }
-                if (!removed) {
-                    sendHeartbeat(masterAddress);
-                }
-            }
-            for (MemberImpl member : members) {
-                if (!member.localMember()) {
-                    Address address = member.getAddress();
-                    Connection conn = node.connectionManager.getOrConnect(address);
-                    if (conn != null) {
-                        sendHeartbeat(address);
-                    } else {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Could not connect to " + address + " to send heartbeat");
-                        }
+
+                    if (removeMemberIfMasterConfirmationExpired(now, member)) {
+                        continue;
                     }
+
+                    pingMemberIfRequired(now, member);
+                    sendHearBeatIfRequired(now, member);
+                } catch (Throwable e) {
+                    logger.severe(e);
                 }
             }
         }
     }
 
+    private boolean removeMemberIfNotHeartBeating(long now, MemberImpl member) {
+        if ((now - member.getLastRead()) > maxNoHeartbeatMillis) {
+            logger.warning("Removing " + member + " because it has not sent any heartbeats for " +
+                    maxNoHeartbeatMillis + " ms.");
+            removeAddress(member.getAddress());
+            return true;
+        }
+        return false;
+    }
+
+    private boolean removeMemberIfMasterConfirmationExpired(long now, MemberImpl member) {
+        Long lastConfirmation = masterConfirmationTimes.get(member);
+        if (lastConfirmation == null ||
+                (now - lastConfirmation > maxNoMasterConfirmationMillis)) {
+            logger.warning("Removing " + member + " because it has not sent any master confirmation " +
+                            " for " + maxNoMasterConfirmationMillis + " ms.");
+            removeAddress(member.getAddress());
+            return true;
+        }
+        return false;
+    }
+
+    private void heartBeaterSlave() {
+        long now = Clock.currentTimeMillis();
+        Collection<MemberImpl> members = getMemberList();
+
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                try {
+                    logIfConnectionToEndpointIsMissing(member);
+
+                    if (isMaster(member)) {
+                        if (removeMemberIfNotHeartBeating(now, member)) {
+                            continue;
+                        }
+                    }
+
+                    pingMemberIfRequired(now, member);
+                    sendHearBeatIfRequired(now, member);
+                } catch (Throwable e) {
+                    logger.severe(e);
+                }
+            }
+        }
+    }
+
+    private boolean isMaster(MemberImpl member) {return member.getAddress().equals(getMasterAddress());}
+
+    private void sendHearBeatIfRequired(long now, MemberImpl member) {
+        if ((now - member.getLastWrite()) > HEARTBEAT_INTERVAL) {
+            sendHeartbeat(member.getAddress());
+        }
+    }
+
+    private void pingMemberIfRequired(long now, MemberImpl member) {
+        if ((now - member.getLastRead()) >= PING_INTERVAL && (now - member.getLastPing()) >= PING_INTERVAL) {
+            ping(member);
+        }
+    }
+
     private void ping(final MemberImpl memberImpl) {
         memberImpl.didPing();
-        if (!icmpEnabled) return;
+        if (!icmpEnabled) {
+            return;
+        }
         nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
             public void run() {
                 try {
@@ -510,10 +525,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     if (node.isMaster() || member.getAddress().equals(node.getMasterAddress())) {
                         logger.warning("New join request has been received from an existing endpoint! => " + member
                                 + " Removing old member and processing join request...");
-                        // If existing connection of endpoint is different from current connection
-                        // destroy it, otherwise keep it.
-//                    final Connection existingConnection = node.connectionManager.getConnection(joinMessage.address);
-//                    final boolean destroyExistingConnection = existingConnection != conn;
                         doRemoveAddress(member.getAddress(), false);
                     }
                 }
@@ -924,13 +935,14 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 setMembersRef(newMembers);
                 node.getPartitionService().memberRemoved(deadMember); // sync call
                 nodeEngine.onMemberLeft(deadMember);                  // sync call
-                sendMembershipEventNotifications(deadMember, unmodifiableSet(new LinkedHashSet<Member>(newMembers.values())), false); // async events
                 if (node.isMaster()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest(deadMember + " is dead. Sending remove to all other members.");
                     }
                     invokeMemberRemoveOperation(deadMember.getAddress());
                 }
+                // async events
+                sendMembershipEventNotifications(deadMember, unmodifiableSet(new LinkedHashSet<Member>(newMembers.values())), false);
             }
         } finally {
             lock.unlock();
