@@ -52,7 +52,7 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
         MapConfig mapConfig = config.getMapConfig(MAP_NAME);
 
         // create shared map store implementation
-        final InMemoryMapStore store = new InMemoryMapStore(true, 50, false);
+        final InMemoryMapStore store = new InMemoryMapStore(50, false);
         store.preload(PRE_LOAD_SIZE);
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -65,17 +65,15 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
-        // call size
-        IMap<String, String> map = instance.getMap(MAP_NAME);
-        int size = map.size();
+        instance.getMap(MAP_NAME);
 
         // print context class loaders
         TreeMap<String, Boolean> contextClassLoaders = store.getContextClassLoaders();
 
         boolean anEmptyCtxClassLoaderExist = false;
         // test if all load threads had a context class loader set
-        for (Boolean hasCtxClassLoader : contextClassLoaders.values()) {
-            if (!hasCtxClassLoader.booleanValue()) {
+        for (boolean hasCtxClassLoader : contextClassLoaders.values()) {
+            if (!hasCtxClassLoader) {
                 anEmptyCtxClassLoaderExist = true;
                 break;
             }
@@ -85,8 +83,6 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
     }
 
     private class InMemoryMapStore implements MapStore<String, String> {
-
-        private final boolean infoOnLoad;
 
         private final int msPerLoad;
 
@@ -98,14 +94,7 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
 
         private final ConcurrentHashMap<String, Boolean> contextClassLoaders = new ConcurrentHashMap<String, Boolean>();
 
-        public InMemoryMapStore() {
-            this.infoOnLoad = true;
-            this.msPerLoad = -1;
-            this.sleepBeforeLoadAllKeys = false;
-        }
-
-        public InMemoryMapStore(boolean infoOnLoad, int msPerLoad, boolean sleepBeforeLoadAllKeys) {
-            this.infoOnLoad = infoOnLoad;
+        public InMemoryMapStore(int msPerLoad, boolean sleepBeforeLoadAllKeys) {
             this.msPerLoad = msPerLoad;
             this.sleepBeforeLoadAllKeys = sleepBeforeLoadAllKeys;
         }
@@ -114,10 +103,6 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
             for (int i = 0; i < size; i++) {
                 store.put("k" + i, "v" + i);
             }
-        }
-
-        public int getCountLoadAllKeys() {
-            return countLoadAllKeys.get();
         }
 
         public TreeMap<String, Boolean> getContextClassLoaders() {
@@ -138,7 +123,7 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
             // remember if context class loader was present
             Thread thread = Thread.currentThread();
             ClassLoader contextClassLoader = thread.getContextClassLoader();
-            contextClassLoaders.putIfAbsent(thread.getName(), new Boolean(contextClassLoader != null));
+            contextClassLoaders.putIfAbsent(thread.getName(), contextClassLoader != null);
 
             return store.get(key);
         }
@@ -153,7 +138,7 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
             // remember if context class loader was present
             Thread thread = Thread.currentThread();
             ClassLoader contextClassLoader = thread.getContextClassLoader();
-            contextClassLoaders.putIfAbsent(thread.getName(), new Boolean(contextClassLoader != null));
+            contextClassLoaders.putIfAbsent(thread.getName(), contextClassLoader != null);
 
             Map<String, String> result = new HashMap<String, String>();
             for (String key : keys) {
