@@ -115,4 +115,6 @@ src/Config.md
 	src/ConfigurationProperties.md
 	src/EnterpriseConfig.md
 #	src/XMLWrapUp.md
+src/NetworkPartitioning.md
+
 src/FAQ.md
