@@ -74,11 +74,34 @@ public class ClientProperties {
      */
     public static final String PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT = "250";
 
+    /**
+     * Number of threads to handle incoming event packets
+     */
+    public static final String PROP_EVENT_THREAD_COUNT = "hazelcast.client.event.thread.count";
+
+    /**
+     * Default value of number of threads to handle incoming event packets
+     */
+    public static final String PROP_EVENT_THREAD_COUNT_DEFAULT = "5";
+
+    /**
+     * Capacity of executor that will handle incoming event packets.
+     */
+    public static final String PROP_EVENT_QUEUE_CAPACITY = "hazelcast.client.event.queue.capacity";
+
+    /**
+     * Default value of capacity of executor that will handle incoming event packets.
+     */
+    public static final String PROP_EVENT_QUEUE_CAPACITY_DEFAULT = "1000000";
+
+
     private final ClientProperty heartbeatTimeout;
     private final ClientProperty heartbeatInterval;
     private final ClientProperty maxFailedHeartbeatCount;
     private final ClientProperty retryCount;
     private final ClientProperty retryWaitTime;
+    private final ClientProperty eventThreadCount;
+    private final ClientProperty eventQueueCapacity;
 
 
     public ClientProperties(ClientConfig clientConfig) {
@@ -88,6 +111,8 @@ public class ClientProperties {
                 , PROP_MAX_FAILED_HEARTBEAT_COUNT, PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
         retryCount = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_COUNT, PROP_REQUEST_RETRY_COUNT_DEFAULT);
         retryWaitTime = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
+        eventThreadCount = new ClientProperty(clientConfig, PROP_EVENT_THREAD_COUNT, PROP_EVENT_THREAD_COUNT_DEFAULT);
+        eventQueueCapacity = new ClientProperty(clientConfig, PROP_EVENT_QUEUE_CAPACITY, PROP_EVENT_QUEUE_CAPACITY_DEFAULT);
     }
 
     public ClientProperty getHeartbeatTimeout() {
@@ -108,6 +133,14 @@ public class ClientProperties {
 
     public ClientProperty getRetryWaitTime() {
         return retryWaitTime;
+    }
+
+    public ClientProperty getEventQueueCapacity() {
+        return eventQueueCapacity;
+    }
+
+    public ClientProperty getEventThreadCount() {
+        return eventThreadCount;
     }
 
     public static class ClientProperty {

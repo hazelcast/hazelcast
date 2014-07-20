@@ -37,7 +37,6 @@ import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
-import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -163,7 +162,7 @@ public final class ProxyManager {
         }
     }
 
-    public ClientProxy getProxy(String service, String id) {
+    public ClientProxy getOrCreateProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
         ClientProxyFuture proxyFuture = proxies.get(ns);
         if (proxyFuture != null) {
@@ -190,9 +189,9 @@ public final class ProxyManager {
         return clientProxy;
     }
 
-    public ClientProxy removeProxy(String service, String id) {
+    public void removeProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
-        return proxies.remove(ns).get();
+        proxies.remove(ns);
     }
 
     private void initialize(ClientProxy clientProxy) throws Exception {
@@ -224,7 +223,7 @@ public final class ProxyManager {
                 ClientProxyFuture future = proxies.get(ns);
                 ClientProxy proxy = future == null ? null : future.get();
                 if (proxy == null) {
-                    proxy = getProxy(e.getServiceName(), e.getName());
+                    proxy = getOrCreateProxy(e.getServiceName(), e.getName());
                 }
 
                 DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
@@ -240,14 +239,12 @@ public final class ProxyManager {
 
             }
         };
-        final ClientContext clientContext = new ClientContext(client, this);
-        return ListenerUtil.listen(clientContext, request, null, eventHandler);
+        return client.getListenerService().listen(request, null, eventHandler);
     }
 
     public boolean removeDistributedObjectListener(String id) {
         final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
-        final ClientContext clientContext = new ClientContext(client, this);
-        return ListenerUtil.stopListening(clientContext, request, id);
+        return client.getListenerService().stopListening(request, id);
     }
 
     private static class ClientProxyFuture {

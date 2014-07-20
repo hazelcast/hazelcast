@@ -28,10 +28,6 @@ import java.util.concurrent.TimeUnit;
  */
 public interface ClientExecutionService {
 
-    void executeInternal(Runnable command);
-
-    <T> ICompletableFuture<T> submitInternal(Callable<T> command);
-
     void execute(Runnable command);
 
     ICompletableFuture<?> submit(Runnable task);

@@ -27,17 +27,15 @@ public class ClientResponse implements IdentifiedDataSerializable {
 
     private Data response;
     private int callId;
-    private boolean isEvent;
     private boolean isError;
 
     public ClientResponse() {
     }
 
-    public ClientResponse(Data response, int callId, boolean isError, boolean isEvent) {
+    public ClientResponse(Data response, int callId, boolean isError) {
         this.response = response;
         this.callId = callId;
         this.isError = isError;
-        this.isEvent = isEvent;
     }
 
     public Data getResponse() {
@@ -46,10 +44,6 @@ public class ClientResponse implements IdentifiedDataSerializable {
 
     public int getCallId() {
         return callId;
-    }
-
-    public boolean isEvent() {
-        return isEvent;
     }
 
     public boolean isError() {
@@ -69,7 +63,6 @@ public class ClientResponse implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(callId);
-        out.writeBoolean(isEvent);
         out.writeBoolean(isError);
         response.writeData(out);
     }
@@ -77,7 +70,6 @@ public class ClientResponse implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         callId = in.readInt();
-        isEvent = in.readBoolean();
         isError = in.readBoolean();
         response = new Data();
         response.readData(in);
