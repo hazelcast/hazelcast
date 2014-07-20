@@ -506,6 +506,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
 
         final Set keys = store.loadAllKeys();
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
         loadAll(keys, replaceExistingValues);
     }
 
