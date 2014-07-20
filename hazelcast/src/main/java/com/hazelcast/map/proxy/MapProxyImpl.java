@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
@@ -499,12 +500,20 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public void loadAll(boolean replaceExistingValues) {
-        final Set keys = getService().getMapServiceContext().getMapContainer(name).getStore().loadAllKeys();
+        final MapStore store = getMapStore();
+        if (store == null) {
+            throw new NullPointerException("First you should configure a map store");
+        }
+
+        final Set keys = store.loadAllKeys();
         loadAll(keys, replaceExistingValues);
     }
 
     @Override
     public void loadAll(Set<K> keys, boolean replaceExistingValues) {
+        if (getMapStore() == null) {
+            throw new NullPointerException("First you should configure a map store");
+        }
         if (keys == null) {
             throw new NullPointerException("Parameter keys should not be null.");
         }
