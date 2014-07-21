@@ -100,7 +100,7 @@ public class MasterMember {
 
 Above, Executor is retrieved from HazelcastInstance and 1000 echo tasks are submitted.
 
-#### Thread Configuration
+#### Executor Thread Configuration
 
 By default, Executor is configured to have 8 threads in the pool. It can be changed through the `pool-size` property using declarative configuration (`hazelcast.xml`). A sample is shown below (using above Executor).
 
