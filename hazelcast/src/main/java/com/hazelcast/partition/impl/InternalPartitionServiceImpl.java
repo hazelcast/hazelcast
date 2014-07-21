@@ -233,20 +233,27 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     return;
                 }
                 PartitionStateGenerator psg = partitionStateGenerator;
-                logger.info("Initializing cluster partition table first arrangement...");
                 final Set<Member> members = node.getClusterService().getMembers();
                 Collection<MemberGroup> memberGroups = memberGroupFactory.createMemberGroups(members);
-                Address[][] newState = psg.initialize(memberGroups, partitionCount);
-
-                if (newState != null) {
-                    for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                        InternalPartitionImpl partition = partitions[partitionId];
-                        Address[] replicas = newState[partitionId];
-                        partition.setPartitionInfo(replicas);
-                    }
-                    initialized = true;
-                    publishPartitionRuntimeState();
+                if (memberGroups.isEmpty()) {
+                    logger.warning("No member group is available to assign partition ownership...");
+                    return;
                 }
+
+                logger.info("Initializing cluster partition table first arrangement...");
+                Address[][] newState = psg.initialize(memberGroups, partitionCount);
+                if (newState.length != partitionCount) {
+                    throw new HazelcastException("Invalid partition count! "
+                            + "Expected: " + partitionCount + ", Actual: " + newState.length);
+                }
+
+                for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                    InternalPartitionImpl partition = partitions[partitionId];
+                    Address[] replicas = newState[partitionId];
+                    partition.setPartitionInfo(replicas);
+                }
+                initialized = true;
+                publishPartitionRuntimeState();
             } finally {
                 lock.unlock();
             }
@@ -845,8 +852,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public InternalPartitionImpl getPartition(int partitionId) {
+        return getPartition(partitionId, true);
+    }
+
+    @Override
+    public InternalPartitionImpl getPartition(int partitionId, boolean triggerOwnerAssignment) {
         InternalPartitionImpl p = getPartitionImpl(partitionId);
-        if (p.getOwnerOrNull() == null) {
+        if (triggerOwnerAssignment && p.getOwnerOrNull() == null) {
             // probably ownerships are not set yet.
             // force it.
             getPartitionOwner(partitionId);
