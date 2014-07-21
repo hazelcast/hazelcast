@@ -70,8 +70,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void checkIfLoaded() {
-        if (!recordStoreLoader.isLoaded()) {
-            throw ExceptionUtil.rethrow(new RetryableHazelcastException("Map is not ready!!!"));
+        Throwable throwable = null;
+        final RecordStoreLoader recordStoreLoader = this.recordStoreLoader;
+        final Throwable exception = recordStoreLoader.getExceptionOrNull();
+        if (exception == null && !recordStoreLoader.isLoaded()) {
+            throwable = new RetryableHazelcastException("Map is not ready!!!");
+        } else if (exception != null) {
+            throwable = exception;
+        }
+        if (throwable != null) {
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
