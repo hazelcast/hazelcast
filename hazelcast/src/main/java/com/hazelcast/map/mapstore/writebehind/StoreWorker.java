@@ -85,7 +85,7 @@ public class StoreWorker implements Runnable {
         List<DelayedEntry> entries = Collections.emptyList();
         boolean createLazy = true;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            final InternalPartition partition = partitionService.getPartition(partitionId);
+            final InternalPartition partition = partitionService.getPartition(partitionId, false);
             final Address owner = partition.getOwnerOrNull();
             final RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
             if (owner == null || recordStore == null) {
@@ -160,7 +160,7 @@ public class StoreWorker implements Runnable {
         final ClusterService clusterService = nodeEngine.getClusterService();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         final Address thisAddress = clusterService.getThisAddress();
-        final InternalPartition partition = partitionService.getPartition(partitionId);
+        final InternalPartition partition = partitionService.getPartition(partitionId, false);
         final Address owner = partition.getOwnerOrNull();
         if (owner != null && !owner.equals(thisAddress)) {
             writeBehindProcessor.callBeforeStoreListeners(delayedEntries);

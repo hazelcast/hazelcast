@@ -27,7 +27,6 @@ import com.hazelcast.util.RandomPicker;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MulticastJoiner extends AbstractJoiner {
@@ -41,12 +40,12 @@ public class MulticastJoiner extends AbstractJoiner {
     }
 
     @Override
-    public void doJoin(AtomicBoolean joined) {
+    public void doJoin() {
         int tryCount = 0;
         long joinStartTime = Clock.currentTimeMillis();
         long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
 
-        while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+        while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
             Address masterAddressNow = getTargetAddress();
             if (masterAddressNow == null) {
                 masterAddressNow = findMasterWithMulticast();
@@ -60,7 +59,7 @@ public class MulticastJoiner extends AbstractJoiner {
             if (node.getMasterAddress() == null || node.getThisAddress().equals(node.getMasterAddress())) {
                 TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
                 if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
-                    doTCP(joined);
+                    doTCP();
                 } else {
                     node.setAsMaster();
                 }
@@ -83,10 +82,10 @@ public class MulticastJoiner extends AbstractJoiner {
         }
     }
 
-    private void doTCP(AtomicBoolean joined) {
+    private void doTCP() {
         node.setMasterAddress(null);
         logger.finest("Multicast couldn't find cluster. Trying TCP/IP");
-        new TcpIpJoiner(node).join(joined);
+        new TcpIpJoiner(node).join();
     }
 
     @Override

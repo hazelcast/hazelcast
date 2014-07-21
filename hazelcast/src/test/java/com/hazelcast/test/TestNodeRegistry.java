@@ -24,7 +24,13 @@ import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
@@ -33,10 +39,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 final class TestNodeRegistry {
 
@@ -264,7 +272,7 @@ final class TestNodeRegistry {
                 super(node);
             }
 
-            public void doJoin(AtomicBoolean joined) {
+            public void doJoin() {
                 NodeEngineImpl nodeEngine = null;
                 synchronized (joinerLock) {
                     for (Address address : addresses) {
