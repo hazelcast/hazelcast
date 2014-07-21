@@ -21,7 +21,7 @@ import java.util.Set;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientMapLoaderExceptionHandling extends HazelcastTestSupport {
+public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
 
     @Test(expected = ClassCastException.class)
     public void test_initial_map_load_propagates_exception_to_client() throws Exception {
