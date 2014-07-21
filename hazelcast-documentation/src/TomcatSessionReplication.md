@@ -122,8 +122,37 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 
 - Add `mapName` attribute into `<Manager>` tag. Its default value is *default Hazelcast Distributed Map*. Use this attribute if you have specially configured map for special cases like WAN Replication, Eviction, MapStore, etc.
 - Add `sticky` attribute into `<Manager>` tag. Its default value is *true*.
+- Add `processExpiresFrequency` attribute into `<Manager>` tag in order to set the frequency of session validity check in seconds. Its default value is *6* and min value to be set is *1*
+- Add `deferredWrite` attribute into `<Manager>` tag. Its default value is *true*.
 
 <br></br>
+
+#### Session Caching and deferredWrite parameter
+
+Tomcat Web Session Replication Module has its own nature of caching. Attribute changes during the HTTP Request/HTTP Response cycle is cached by default. Distributing those changes to the Hazelcast Cluster is costly. Because of that, Session Replication is only done at the end of each request for updated and deleted attributes. The risk in this approach is to lose data in case a Tomcat crash happens in the middle of HTTP Request operation.
+
+You can change that behaviour by setting `deferredWrite=false` in your `<Manager>` tag configuration. By disabling it, all updates that are done on session objects are directly distributed into Hazelcast Cluster.
+
+#### Session Expiry
+
+Based on Tomcat configuration or sessionTimeout setting in web.xml, sessions are expired over time. This requires a cleanup on Hazelcast Cluster as there is no need to keep expired sessions in the cluster. 
+
+`processExpiresFrequency` which is defined in `<Manager>` is the only setting to control the behaviour of session expiry policy in Tomcat Web Sesion Replication Module. By setting this, you can set the frequency of the session expiration checks in the Tomcat Instance.
+
+#### Enabling Session Replication in Multi-App environment
+
+Tomcat can be configured in two ways to enable Session Replication for deployed applications.
+
+- Server Context.xml Configuration
+- Application Context.xml Configuration
+
+***Server Context.xml Configuration***
+
+By configuring `$CATALINA_HOME$/conf/context.xml` , you can enable session replication for all applications deployed in the Tomcat Instance. 
+
+
+***Application Context.xml Configuration***
+By configuring `$CATALINA_HOME/conf/[enginename]/[hostname]/[applicationName].xml`, you can enable Session Replication per deployed application. 
 
 #### Session Affinity 
 
@@ -140,9 +169,15 @@ Non-Sticky Sessions are not good for performance because you need to move sessio
 
 However, load balancing might be super easy with Non-Sticky caches. In case of heavy load, you can distribute the request to the least used Tomcat instance. Hazelcast supports Non-Sticky Sessions as well. 
 
-#### Session Caching
+####Tomcat Failover and JvmRoute Parameter
 
-Tomcat Web Session Replication Module has its own nature of caching attribute changes during the HTTP Request/HTTP Response cycle. Each HTTP Request can change one or more HTTP Session attributes, and distributing those changes to the Hazelcast Cluster is costly. Because of that, Session Replication is only done at the end of each request for updated and deleted attributes. The risk in this approach is to lose data in case a Tomcat crash happens in the middle of HTTP Request operation.
+Each Http Request is redirected to the same Tomcat instance if sticky sessions is enabled. `jvmRoute` parameter is attached to the end of session id to make Load Balancer aware of the target Tomcat instance. When Tomcat Failure happens and Load Balancer cannot redirect the request to owning instance, it sends request to the one of the available Tomcat instance. As JvmRoute parameter of session id is different than the JvmRoute parameter of target Tomcat instance, Hazelcast Session Replication Module updates the sessionid of the session with the new jvmRoute parameter. That actually means that Session is moved to another Tomcat instance and Load Balancer will redirect all subsequent Http Requests to the new Tomcat Instance.
+
+***NOTE:*** if stickySession is enabled, jvmRoute parameter must be set in `$CATALINA_HOME$/conf/server.xml` and unique among Tomcat instances in the cluster. 
+
+```xml
+ <Engine name="Catalina" defaultHost="localhost" jvmRoute="tomcat-8080">
+```
 
 
 <br></br>

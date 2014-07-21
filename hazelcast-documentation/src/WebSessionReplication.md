@@ -185,7 +185,7 @@ When called by the target application, the value of `HttpSession.getId()` is the
 
 Hazelcast automatically removes sessions from the cluster if session is expired on the Web Container. This removal is done by `com.hazelcast.web.SessionListener` which is an implementation of `javax.servlet.http.HttpSessionListener`. 
 
-Default session expiration configuration depends on Java EE Web Container that is being used. You can also define it in your web.xml.
+Default session expiration configuration depends on Servlet Container that is being used. You can also define it in your web.xml.
 
 ```xml
     <session-config>
