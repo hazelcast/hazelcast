@@ -27,7 +27,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     private final int partitionId;
 
-    private final WriteBehindQueue<DelayedEntry> writeBehindQueue;
+    private WriteBehindQueue<DelayedEntry> writeBehindQueue;
 
     private WriteBehindProcessor writeBehindProcessor;
 
@@ -41,7 +41,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      * {@link com.hazelcast.map.mapstore.writebehind.WriteBehindQueue} may contain more than one waiting operations
      * on a specific key.
      * <p/>
-     * Method {@link #cleanupStagingArea} will try to evict this staging area.
+     * NOTE: In case of eviction we do not want to make a huge database load by flushing entries uncontrollably.
+     * This is why we do not use flushing instead of this staging area. Flushing upon eviction is used
+     * when {@link #writeCoalescing} mode is on.
+     *
+     * @see #cleanupStagingArea for how staging area is going to be evicted.
      */
     private final Map<Data, DelayedEntry> stagingArea;
 
@@ -61,13 +65,16 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final boolean writeCoalescing;
 
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
-                            long writeDelayTime, int partitionId) {
+                            long writeDelayTime, int partitionId, boolean writeCoalescing) {
         super(store, serializationService);
         this.writeDelayTime = writeDelayTime;
         this.partitionId = partitionId;
-        this.writeBehindQueue = createWriteBehindQueue();
         this.stagingArea = createStagingArea();
-        this.writeCoalescing = true;
+        this.writeCoalescing = writeCoalescing;
+    }
+
+    public void setWriteBehindQueue(WriteBehindQueue<DelayedEntry> writeBehindQueue) {
+        this.writeBehindQueue = writeBehindQueue;
     }
 
     // TODO when mode is not write-coalescing, clone value objects. this is for EntryProcessors in object memory format.
@@ -174,7 +181,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     public boolean loadable(Data key, long lastUpdateTime, long now) {
         if (hasWaitingWriteBehindDeleteOperation(key)
                 || isInStagingArea(key, now)
-                || hasOperationInWriteBehindQueue(lastUpdateTime, now)) {
+                || hasAnyWaitingOperationInWriteBehindQueue(lastUpdateTime, now)) {
             return false;
         }
         return true;
@@ -222,13 +229,9 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return writeBehindWaitingDeletions.contains(key);
     }
 
-    private boolean hasOperationInWriteBehindQueue(long lastUpdateTime, long now) {
+    private boolean hasAnyWaitingOperationInWriteBehindQueue(long lastUpdateTime, long now) {
         final long scheduledStoreTime = lastUpdateTime + writeDelayTime;
         return now < scheduledStoreTime;
-    }
-
-    private WriteBehindQueue<DelayedEntry> createWriteBehindQueue() {
-        return WriteBehindQueues.createDefaultWriteBehindQueue();
     }
 
     private Map<Data, DelayedEntry> createStagingArea() {

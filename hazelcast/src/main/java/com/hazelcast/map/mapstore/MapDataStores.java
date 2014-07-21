@@ -4,11 +4,16 @@ import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.mapstore.writebehind.WriteBehindProcessor;
+import com.hazelcast.map.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.mapstore.writethrough.WriteThroughStore;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.map.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
+import static com.hazelcast.map.mapstore.writebehind.WriteBehindQueues.createSafeBoundedArrayWriteBehindQueue;
 
 /**
  * Factory class responsible for creating various daa store implementations.
@@ -36,10 +41,21 @@ public final class MapDataStores {
         final SerializationService serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         final int writeDelaySeconds = mapContainer.getMapConfig().getMapStoreConfig().getWriteDelaySeconds();
         final long millis = mapServiceContext.convertTime(writeDelaySeconds, TimeUnit.SECONDS);
+        // TODO writeCoalescing should be configurable.
+        boolean writeCoalescing = true;
         final WriteBehindStore mapDataStore
-                = new WriteBehindStore(store, serializationService, millis, partitionId);
+                = new WriteBehindStore(store, serializationService, millis, partitionId, writeCoalescing);
+        final WriteBehindQueue writeBehindQueue = pickWriteBehindQueue(mapServiceContext, writeCoalescing);
+        mapDataStore.setWriteBehindQueue(writeBehindQueue);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
         return (MapDataStore<K, V>) mapDataStore;
+    }
+
+    private static WriteBehindQueue pickWriteBehindQueue(MapServiceContext mapServiceContext, boolean writeCoalescing) {
+        final int capacity = mapServiceContext.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
+        final AtomicInteger counter = mapServiceContext.getWriteBehindQueueItemCounter();
+        return writeCoalescing ? createDefaultWriteBehindQueue()
+                : createSafeBoundedArrayWriteBehindQueue(capacity, counter);
     }
 
     /**

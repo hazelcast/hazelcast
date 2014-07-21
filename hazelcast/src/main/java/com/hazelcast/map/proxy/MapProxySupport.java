@@ -28,6 +28,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
@@ -1121,6 +1122,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     private MapContextQuerySupport getMapQuerySupport() {
         return getService().getMapServiceContext().getMapContextQuerySupport();
+    }
+
+    protected MapStore getMapStore() {
+        final MapService service = getService();
+        final MapServiceContext mapServiceContext = service.getMapServiceContext();
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+        return mapContainer.getStore();
+
     }
 
     private MapConfig getMapConfig() {

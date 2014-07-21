@@ -23,20 +23,20 @@ import java.util.List;
 
 /**
  * Write behind queue impl. backed by an array list.
- *
- * @param <T> Type of entry to be queued.
+ * Used when non-write-coalescing mode is on.
+ * Means this implementation is used if we need to store all changes on a key.
  */
-class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
+class ArrayWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
     private static final int INITIAL_CAPACITY = 16;
 
-    protected List<T> list;
+    protected List<DelayedEntry> list;
 
     ArrayWriteBehindQueue() {
-        list = new ArrayList<T>(INITIAL_CAPACITY);
+        list = new ArrayList<DelayedEntry>(INITIAL_CAPACITY);
     }
 
-    ArrayWriteBehindQueue(List<T> list) {
+    ArrayWriteBehindQueue(List<DelayedEntry> list) {
         if (list == null) {
             throw new NullPointerException();
         }
@@ -44,18 +44,21 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
-    public boolean offer(T entry) {
+    public boolean offer(DelayedEntry entry) {
         return list.add(entry);
     }
 
     @Override
-    public T get(T t) {
+    public DelayedEntry get(DelayedEntry entry) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public T getFirst() {
-        throw new UnsupportedOperationException();
+    public DelayedEntry getFirst() {
+        if (list.isEmpty()) {
+            return null;
+        }
+        return list.get(0);
     }
 
     @Override
@@ -77,42 +80,51 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
-    public WriteBehindQueue<T> getSnapShot() {
+    public WriteBehindQueue<DelayedEntry> getSnapShot() {
         if (list == null || list.isEmpty()) {
             return WriteBehindQueues.emptyWriteBehindQueue();
         }
-        return new ArrayWriteBehindQueue<T>(new ArrayList<T>(list));
+        return new ArrayWriteBehindQueue(new ArrayList<DelayedEntry>(list));
     }
 
     @Override
-    public void addFront(Collection<T> collection) {
+    public void addFront(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
-        final List<T> newList = new ArrayList<T>();
+        final List<DelayedEntry> newList = new ArrayList<DelayedEntry>();
         newList.addAll(collection);
         newList.addAll(list);
         list = newList;
     }
 
     @Override
-    public void addEnd(Collection<T> collection) {
+    public void addEnd(Collection<DelayedEntry> collection) {
         if (collection == null || collection.isEmpty()) {
             return;
         }
-        for (T e : collection) {
+        for (DelayedEntry e : collection) {
             offer(e);
         }
     }
 
     @Override
-    public void removeAll(Collection<T> collection) {
-        throw new UnsupportedOperationException();
+    public void removeAll(Collection<DelayedEntry> collection) {
+        if (collection == null || collection.isEmpty()) {
+            return;
+        }
+        if (list.isEmpty()) {
+            return;
+        }
+        final int size = collection.size();
+        for (int i = 0; i < size; i++) {
+            list.remove(0);
+        }
     }
 
     @Override
-    public List<T> removeAll() {
-        final List<T> list = asList();
+    public List<DelayedEntry> removeAll() {
+        final List<DelayedEntry> list = asList();
         this.list.clear();
         return list;
     }
@@ -123,16 +135,29 @@ class ArrayWriteBehindQueue<T> implements WriteBehindQueue<T> {
     }
 
     @Override
-    public List<T> asList() {
+    public List<DelayedEntry> asList() {
         if (list.isEmpty()) {
             Collections.emptyList();
         }
-        return new ArrayList<T>(list);
+        return new ArrayList<DelayedEntry>(list);
     }
 
     @Override
-    public List<T> filterItems(long now) {
-        throw new UnsupportedOperationException();
+    public List<DelayedEntry> filterItems(long now) {
+        List<DelayedEntry> delayedEntries = null;
+        final List<DelayedEntry> list = this.list;
+        for (DelayedEntry e : list) {
+            if (delayedEntries == null) {
+                delayedEntries = new ArrayList<DelayedEntry>();
+            }
+            if (e.getStoreTime() <= now) {
+                delayedEntries.add(e);
+            }
+        }
+        if (delayedEntries == null) {
+            return Collections.emptyList();
+        }
+        return delayedEntries;
     }
 
 }
