@@ -10,6 +10,8 @@ import com.hazelcast.map.mapstore.MapStoreTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -23,18 +25,27 @@ import java.util.Set;
 @Category(QuickTest.class)
 public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
 
+    private static final String mapName = randomMapName();
+    private static HazelcastInstance client;
+    private static HazelcastInstance server;
+
+    @BeforeClass
+    public static void init() {
+        final Config config = createNewConfig(mapName);
+        server = Hazelcast.newHazelcastInstance(config);
+        client = HazelcastClient.newHazelcastClient();
+    }
+
+    @AfterClass
+    public static void destroy() {
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
+
     @Test(expected = ClassCastException.class)
     public void test_initial_map_load_propagates_exception_to_client() throws Exception {
-        final String mapName = randomMapName();
-        final Config config = createNewConfig(mapName);
-        final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
         final IMap<Integer, Integer> map = client.getMap(mapName);
-        try {
-            map.get(1);
-        } finally {
-            closeResources(client, server);
-        }
+        map.get(1);
     }
 
     private static Config createNewConfig(String mapName) {
