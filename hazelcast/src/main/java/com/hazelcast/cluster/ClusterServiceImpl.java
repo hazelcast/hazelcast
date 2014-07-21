@@ -126,7 +126,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final AtomicBoolean preparingToMerge = new AtomicBoolean(false);
 
-    private boolean joinInProgress = false;
+    private volatile boolean joinInProgress = false;
 
     private long timeToStartJoin = 0;
 
@@ -192,6 +192,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public boolean isJoinInProgress() {
+        if (joinInProgress) {
+            return true;
+        }
+
         lock.lock();
         try {
             return joinInProgress || !setJoins.isEmpty();
@@ -506,9 +510,30 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
 
+        JoinRequest joinRequest = op.getRequest();
+
+        if (!node.isMaster()) {
+            sendMasterAnswer(joinRequest.getAddress());
+            return;
+        }
+
+        Connection conn = op.getConnection();
+        if (!isValidJoinRequest(joinRequest)) {
+            logger.info("Received an invalid join request from " + joinRequest.getAddress());
+            conn.close();
+            return;
+        }
+
+        if (joinInProgress) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Join is in-progress. Cannot handle join request from "
+                        + joinRequest.getAddress() + " at the moment.");
+            }
+            return;
+        }
+
         lock.lock();
         try {
-            JoinRequest joinRequest = op.getRequest();
             long now = Clock.currentTimeMillis();
             if (logger.isFinestEnabled()) {
                 String msg = "Handling join from " + joinRequest.getAddress() + ", inProgress: " + joinInProgress
@@ -516,56 +541,43 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 logger.finest(msg);
             }
 
-            Connection conn = op.getConnection();
-            if (!isValidJoinRequest(joinRequest)) {
-                logger.info("Received an invalid join request from " + joinRequest.getAddress());
-                conn.close();
-                return;
-            }
-
             if (isJoinRequestFromAnExistingMember(joinRequest)) {
-                return;
-            }
-
-            if (!node.isMaster()) {
-                if (!isMulticastEnabled()) {
-                    sendMasterAnswer(joinRequest.getAddress());
-                }
                 return;
             }
 
             MemberInfo memberInfo = new MemberInfo(joinRequest.getAddress(), joinRequest.getUuid(),
                     joinRequest.getAttributes());
 
-            try {
-                checkSecureLogin(joinRequest, memberInfo);
-            } catch (Exception e) {
-                ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
-                sentAuthenticationFailure(joinRequest.getAddress());
-                securityLogger.severe(e);
-                return;
+            if (!setJoins.contains(memberInfo)) {
+                try {
+                    checkSecureLogin(joinRequest, memberInfo);
+                } catch (Exception e) {
+                    ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
+                    sendAuthenticationFailure(joinRequest.getAddress());
+                    securityLogger.severe(e);
+                    return;
+                }
             }
 
-            if (!joinInProgress) {
-                if (firstJoinRequest == 0) {
-                    firstJoinRequest = now;
+            if (firstJoinRequest == 0) {
+                firstJoinRequest = now;
+            }
+
+            if (setJoins.add(memberInfo)) {
+                sendMasterAnswer(joinRequest.getAddress());
+                if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
+                    timeToStartJoin = now + waitMillisBeforeJoin;
                 }
-                if (setJoins.add(memberInfo)) {
-                    sendMasterAnswer(joinRequest.getAddress());
-                    if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
-                        timeToStartJoin = now + waitMillisBeforeJoin;
-                    }
-                }
-                if (now > timeToStartJoin) {
-                    startJoin();
-                }
+            }
+            if (now > timeToStartJoin) {
+                startJoin();
             }
         } finally {
             lock.unlock();
         }
     }
 
-    private void sentAuthenticationFailure(Address target) {
+    private void sendAuthenticationFailure(Address target) {
         nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), target);
     }
 
@@ -586,10 +598,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 }
             }
         }
-    }
-
-    private boolean isMulticastEnabled() {
-        return node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().isEnabled();
     }
 
     private boolean isJoinRequestFromAnExistingMember(JoinRequest joinRequest) {
