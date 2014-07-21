@@ -30,9 +30,11 @@ public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
         final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
         final IMap<Integer, Integer> map = client.getMap(mapName);
-        map.get(1);
-
-        closeResources(client, server);
+        try {
+            map.get(1);
+        } finally {
+            closeResources(client, server);
+        }
     }
 
     private static Config createNewConfig(String mapName) {
