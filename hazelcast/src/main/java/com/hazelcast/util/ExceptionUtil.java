@@ -90,28 +90,58 @@ public final class ExceptionUtil {
         throw (T) t;
     }
 
-
+    /**
+     * This method changes the given remote cause and adds the also given local stacktrace.<br/>
+     * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non null inner
+     * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
+     * that instead of the given remoteCause itself.
+     *
+     * @param remoteCause the remotely generated exception
+     * @param localSideStackTrace the local stacktrace to add to the exceptions stacktrace
+     */
     public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace) {
-        StackTraceElement[] remoteStackTrace = remoteCause.getStackTrace();
+        Throwable throwable = remoteCause;
+        if (remoteCause instanceof ExecutionException && throwable.getCause() != null) {
+            throwable = throwable.getCause();
+        }
+
+        StackTraceElement[] remoteStackTrace = throwable.getStackTrace();
         StackTraceElement[] newStackTrace = new StackTraceElement[localSideStackTrace.length + remoteStackTrace.length];
         System.arraycopy(remoteStackTrace, 0, newStackTrace, 0, remoteStackTrace.length);
         newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", null, -1);
         System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 1, localSideStackTrace.length - 1);
-        remoteCause.setStackTrace(newStackTrace);
+        throwable.setStackTrace(newStackTrace);
     }
 
-    public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace
-            , String localExceptionMessage) {
+    /**
+     * This method changes the given remote cause and adds the also given local stacktrace separated by the
+     * supplied exception message.<br/>
+     * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non null inner
+     * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
+     * that instead of the given remoteCause itself.
+     *
+     * @param remoteCause the remotely generated exception
+     * @param localSideStackTrace the local stacktrace to add to the exceptions stacktrace
+     * @param localExceptionMessage a special exception message which is added to the stacktrace
+     */
+    public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace,
+                                           String localExceptionMessage) {
+
+        Throwable throwable = remoteCause;
+        if (remoteCause instanceof ExecutionException && throwable.getCause() != null) {
+            throwable = throwable.getCause();
+        }
+
         String msg = EXCEPTION_MESSAGE_SEPARATOR.replace("%MSG%", localExceptionMessage);
-        StackTraceElement[] remoteStackTrace = remoteCause.getStackTrace();
+        StackTraceElement[] remoteStackTrace = throwable.getStackTrace();
         StackTraceElement[] newStackTrace = new StackTraceElement[localSideStackTrace.length + remoteStackTrace.length + 1];
         System.arraycopy(remoteStackTrace, 0, newStackTrace, 0, remoteStackTrace.length);
         newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", null, -1);
         StackTraceElement nextElement = localSideStackTrace[1];
-        newStackTrace[remoteStackTrace.length + 1] = new StackTraceElement(msg, nextElement.getMethodName()
-                , nextElement.getFileName(), nextElement.getLineNumber());
+        newStackTrace[remoteStackTrace.length + 1] = new StackTraceElement(msg, nextElement.getMethodName(),
+                nextElement.getFileName(), nextElement.getLineNumber());
         System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 2, localSideStackTrace.length - 1);
-        remoteCause.setStackTrace(newStackTrace);
+        throwable.setStackTrace(newStackTrace);
     }
 
 }
