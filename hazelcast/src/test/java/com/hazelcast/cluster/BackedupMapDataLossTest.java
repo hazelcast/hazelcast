@@ -128,11 +128,6 @@ public class BackedupMapDataLossTest {
             System.out.println("3 -> "+m.get("ThreeKey"));
         }
 
-     /*   Thread.sleep(10000);
-        assertTrue(latch.await(30, TimeUnit.SECONDS));
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size()); */
     }
 
     private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
@@ -143,3 +138,4 @@ public class BackedupMapDataLossTest {
        n2.clusterService.removeAddress(n1.address);
     }
 }
+
