@@ -7,6 +7,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.map.mapstore.MapStoreTest;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -20,6 +21,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -42,10 +46,24 @@ public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
         Hazelcast.shutdownAll();
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test
     public void test_initial_map_load_propagates_exception_to_client() throws Exception {
         final IMap<Integer, Integer> map = client.getMap(mapName);
-        map.get(1);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Exception exception = null;
+                try {
+                    map.get(1);
+                } catch (Exception e) {
+                    exception = e;
+                }
+                assertNotNull(exception);
+                assertEquals(ClassCastException.class, exception.getClass());
+
+            }
+        });
     }
 
     private static Config createNewConfig(String mapName) {
