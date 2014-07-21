@@ -1,9 +1,11 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -20,6 +22,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -330,5 +334,64 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
     private int getMaxCapacity(HazelcastInstance node) {
         return getNode(node).getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
+    }
+
+
+
+    @Test
+    public void testIssue3023_ME() throws Exception {
+
+        String xml =
+               "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n" +
+                       "                               http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd\"\n" +
+                       "           xmlns=\"http://www.hazelcast.com/schema/config\"\n" +
+                       "           xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                       "\n" +
+                       "    <map name=\"MapStore*\">\n" +
+                       "        <map-store enabled=\"true\">\n" +
+                       "            <class-name>com.hazelcast.stabilizer.tests.map.helpers.MapStoreWithCounter</class-name>\n" +
+                       "            <write-delay-seconds>5</write-delay-seconds>\n" +
+                       "        </map-store>\n" +
+                       "    </map>\n" +
+                       "\n" +
+                       "    <map name=\"MaxSizeMapStore*\">\n" +
+                       "        <in-memory-format>BINARY</in-memory-format>\n" +
+                       "        <backup-count>1</backup-count>\n" +
+                       "        <async-backup-count>0</async-backup-count>\n" +
+                       "        <max-idle-seconds>0</max-idle-seconds>\n" +
+                       "        <eviction-policy>LRU</eviction-policy>\n" +
+                       "        <max-size policy=\"PER_NODE\">10</max-size>\n" +
+                       "        <eviction-percentage>50</eviction-percentage>\n" +
+                       "\n" +
+                       "        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n" +
+                       "\n" +
+                       "        <map-store enabled=\"true\">\n" +
+                       "            <class-name>com.hazelcast.client.map.helpers.AMapStore</class-name>\n" +
+                       "            <write-delay-seconds>5</write-delay-seconds>\n" +
+                       "        </map-store>\n" +
+                       "    </map>\n" +
+                       "\n" +
+                       "</hazelcast>";
+
+
+        Config config = buildConfig(xml);
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        IMap map = client.getMap("MaxSizeMapStore1");
+        map.put(1,1);
+
+        AMapStore store = (AMapStore) (hz.getConfig().getMapConfig("MaxSizeMapStore1").getMapStoreConfig().getImplementation());
+
+        Thread.sleep(10000);
+
+        System.out.println( "store size = " + store.store.size() );
+    }
+
+    private Config buildConfig(String xml) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        return configBuilder.build();
     }
 }
