@@ -11,9 +11,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AMapStore implements MapStore<Object, Object> {
-    private Random random = new Random();
-
-
     public final Map store = new ConcurrentHashMap();
 
     public AMapStore(){}
