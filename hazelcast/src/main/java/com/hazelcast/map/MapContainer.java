@@ -273,9 +273,9 @@ public class MapContainer extends MapContainerSupport {
         }
         final RecordStatistics statistics = record.getStatistics();
         if (statistics != null) {
-            // when ttl is zero, entry should remain eternally.
-            final long expirationTime = (ttl == 0 ? Long.MAX_VALUE : (now + ttl));
-            record.getStatistics().setExpirationTime(expirationTime);
+            final long ttlOnRecord = record.getTtl();
+            final long expirationTime = mapServiceContext.getExpirationTime(ttlOnRecord, now);
+            statistics.setExpirationTime(expirationTime);
         }
         return record;
     }
