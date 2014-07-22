@@ -54,7 +54,6 @@ import static junit.framework.Assert.assertTrue;
 public class ClientSortLimitTest extends HazelcastTestSupport {
 
     static HazelcastInstance client;
-
     static HazelcastInstance server1;
     static HazelcastInstance server2;
 
