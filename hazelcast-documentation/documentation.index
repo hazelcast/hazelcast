@@ -45,7 +45,7 @@ src/DistributedComputing.md
 		src/ExecutionCancellation.md
 		src/ExecutionCallback.md
 	src/EntryProcessor.md
-#	src/UserDefinedServices.md
+	src/UserDefinedServices.md
 src/DistributedQuery.md
 	src/Query.md
 	src/MapReduce.md
