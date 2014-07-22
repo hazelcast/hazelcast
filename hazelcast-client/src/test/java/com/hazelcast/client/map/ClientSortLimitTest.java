@@ -23,6 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.SampleObjects;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ProblematicTest;
@@ -41,6 +42,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
@@ -326,6 +328,103 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         assertTrue( values.contains(0) );
     }
 
+    @Test
+    @Category(ProblematicTest.class)
+    public void play(){
+
+        Predicate  pred = Predicates.between("this", 1, 5);
+        PagingPredicate predicate = new PagingPredicate(pred, 5);
+
+        String name = map.getName();
+        IMap server_map = server1.getMap(name);
+
+
+        Collection<Integer> values;
+        do{
+            values = map.values(predicate);
+
+            predicate.nextPage();
+
+            System.out.println(values);
+
+            server_map.put(0, 2);
+            map.put(6, 2);
+
+            map.put(60, 3);
+
+        }while(! values.isEmpty());
+    }
+
+
+
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void play2(){
+        final Random random = new Random();
+        final IMap<Integer, Employee> map = server1.getMap("playMap1");
+
+        for(int i=0; i<100; i++){
+            map.put(i, new Employee(i));
+        }
+
+        map.addIndex( "salary", true );
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(true){
+                    Employee e = map.get(random.nextInt(map.size()));
+                    e.setInfo();
+                    map.put(e.id, e);
+
+                }
+
+            }
+        }).start();
+
+        Predicate  pred = Predicates.between("salary", 250.0, 750.0);
+        PagingPredicate predicate = new PagingPredicate(pred, 5);
+        Collection<Employee> values;
+        do{
+            values = map.values(predicate);
+            predicate.nextPage();
+
+            System.out.println(values.size());
+        }while(! values.isEmpty());
+    }
+
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void play3(){
+        final IMap<Integer, Employee> map = server1.getMap("playMap1");
+
+        for(int i=0; i<100; i++){
+            map.put(i, new Employee(i));
+        }
+
+        map.addIndex("id", true );
+
+
+        Predicate  pred = Predicates.between("id", 10, 15);
+        PagingPredicate predicate = new PagingPredicate(pred, 5);
+        Collection<Employee> values;
+
+        do{
+            values = map.values(predicate);
+            predicate.nextPage();
+
+            for(Employee e : values){
+                System.out.println(e);
+            }
+            System.out.println(values.size());
+
+        }while(! values.isEmpty());
+    }
+
+
+
 
     static class TestComparator implements Comparator<Map.Entry>, Serializable {
 
@@ -359,5 +458,67 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
             }
         }
     }
+
+
+
+
+    public static class Employee implements Serializable {
+
+        public static final int MAX_AGE=75;
+        public static final double MAX_SALARY=1000.0;
+
+        public static final String[] names = {"aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"};
+        public static Random random = new Random();
+
+        private int id;
+        private String name;
+        private int age;
+        private boolean active;
+        private double salary;
+
+
+        public Employee(int id) {
+            this.id = id;
+            setInfo();
+        }
+
+        public Employee() {
+        }
+
+        public void setInfo(){
+            name = names[random.nextInt(names.length)];
+            age = random.nextInt(MAX_AGE);
+            active = random.nextBoolean();
+            salary = random.nextDouble() * MAX_SALARY;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public double getSalary() {
+            return salary;
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+
+        @Override
+        public String toString() {
+            return "Employee{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", age=" + age +
+                    ", active=" + active +
+                    ", salary=" + salary +
+                    '}';
+        }
+    }
+
 
 }
