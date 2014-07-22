@@ -397,6 +397,35 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
 
+    @Test
+    @Category(ProblematicTest.class)
+    public void loopingForEver_OrVeryVeryLong(){
+        final IMap<Integer, Employee> map = server1.getMap("playMap1");
+
+        for(int i=0; i<1000; i++){
+            map.put(i, new Employee(i));
+        }
+
+        map.addIndex("id", true );
+
+
+        Predicate  pred = Predicates.between("id", 0, 50);
+
+        PagingPredicate predicate = new PagingPredicate(pred, 5);
+        Collection<Employee> values;
+
+        do{
+            values = map.values(predicate);
+            predicate.nextPage();
+
+            for(Employee e : values){
+                System.out.println(e);
+            }
+            System.out.println(values.size());
+
+        }while(! values.isEmpty());
+    }
+
 
 
     static class TestComparator implements Comparator<Map.Entry>, Serializable {
