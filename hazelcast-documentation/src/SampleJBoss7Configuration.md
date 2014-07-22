@@ -76,3 +76,6 @@ public class ExampleBean implements ExampleInterface {
     }
 }
 ```
+
+#### Known Issues
+- There is a regression in JBoss EAP 6.1.0 causing failure during Hazelcast Resource Adapter deployment. The issue is fixed in JBoss EAP 6.1.1. See [this](https://bugzilla.redhat.com/show_bug.cgi?id=976294) for additional details.  
