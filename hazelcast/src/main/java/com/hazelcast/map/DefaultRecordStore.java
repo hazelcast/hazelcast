@@ -85,7 +85,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void flush() {
-        checkIfLoaded();
         final Collection<Data> processedKeys = mapDataStore.flush();
         for (Data key : processedKeys) {
             final Record record = records.get(key);
