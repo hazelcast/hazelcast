@@ -12,6 +12,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.map.mapstore.writebehind.ReachedMaxSizeException;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -339,22 +340,23 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testIssue3023_ME() throws Exception {
+    public void testIssue3023_testWithSubStringMapNames() throws Exception {
+        String mapNameWithStore = "MapStore*";
+        String mapNameWithStoreAndSize = "MapStoreMaxSize*";
 
-        String xml =
-               "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n" +
+        String xml ="<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n" +
                        "                               http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd\"\n" +
                        "           xmlns=\"http://www.hazelcast.com/schema/config\"\n" +
                        "           xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
                        "\n" +
-                       "    <map name=\"MapStore*\">\n" +
+                       "    <map name=\""+mapNameWithStore+"\">\n" +
                        "        <map-store enabled=\"true\">\n" +
-                       "            <class-name>com.hazelcast.stabilizer.tests.map.helpers.MapStoreWithCounter</class-name>\n" +
+                       "            <class-name>com.will.cause.problem.if.used</class-name>\n" +
                        "            <write-delay-seconds>5</write-delay-seconds>\n" +
                        "        </map-store>\n" +
                        "    </map>\n" +
                        "\n" +
-                       "    <map name=\"MaxSizeMapStore*\">\n" +
+                       "    <map name=\""+mapNameWithStoreAndSize+"\">\n" +
                        "        <in-memory-format>BINARY</in-memory-format>\n" +
                        "        <backup-count>1</backup-count>\n" +
                        "        <async-backup-count>0</async-backup-count>\n" +
@@ -373,20 +375,21 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
                        "\n" +
                        "</hazelcast>";
 
-
         Config config = buildConfig(xml);
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
-        IMap map = client.getMap("MaxSizeMapStore1");
+        IMap map = client.getMap(mapNameWithStoreAndSize+"1");
         map.put(1,1);
 
-        AMapStore store = (AMapStore) (hz.getConfig().getMapConfig("MaxSizeMapStore1").getMapStoreConfig().getImplementation());
+        final AMapStore store = (AMapStore) (hz.getConfig().getMapConfig(mapNameWithStoreAndSize+"1").getMapStoreConfig().getImplementation());
 
-        Thread.sleep(10000);
-
-        System.out.println( "store size = " + store.store.size() );
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals( 1,  store.store.get(1));
+            }
+        });
     }
 
     private Config buildConfig(String xml) {
