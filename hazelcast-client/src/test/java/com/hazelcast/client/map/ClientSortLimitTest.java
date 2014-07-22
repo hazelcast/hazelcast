@@ -328,34 +328,6 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         assertTrue( values.contains(0) );
     }
 
-    @Test
-    @Category(ProblematicTest.class)
-    public void play(){
-
-        Predicate  pred = Predicates.between("this", 1, 5);
-        PagingPredicate predicate = new PagingPredicate(pred, 5);
-
-        String name = map.getName();
-        IMap server_map = server1.getMap(name);
-
-
-        Collection<Integer> values;
-        do{
-            values = map.values(predicate);
-
-            predicate.nextPage();
-
-            System.out.println(values);
-
-            server_map.put(0, 2);
-            map.put(6, 2);
-
-            map.put(60, 3);
-
-        }while(! values.isEmpty());
-    }
-
-
 
 
     @Test
@@ -408,6 +380,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
 
 
         Predicate  pred = Predicates.between("id", 10, 15);
+
         PagingPredicate predicate = new PagingPredicate(pred, 5);
         Collection<Employee> values;
 
