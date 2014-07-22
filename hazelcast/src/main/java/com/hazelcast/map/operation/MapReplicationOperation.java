@@ -28,7 +28,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,7 +41,6 @@ import java.util.Set;
 public class MapReplicationOperation extends AbstractOperation {
 
     private Map<String, Set<RecordReplicationInfo>> data;
-    private Map<String, Boolean> mapInitialLoadInfo;
 
     public MapReplicationOperation() {
     }
@@ -50,7 +48,6 @@ public class MapReplicationOperation extends AbstractOperation {
     public MapReplicationOperation(MapService mapService, PartitionContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
-        mapInitialLoadInfo = new HashMap<String, Boolean>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
             RecordStore recordStore = entry.getValue();
             MapContainer mapContainer = recordStore.getMapContainer();
@@ -60,10 +57,6 @@ public class MapReplicationOperation extends AbstractOperation {
             }
 
             String name = entry.getKey();
-            // adding if initial data is loaded for the only maps that has mapstore behind
-            if (mapContainer.getStore() != null) {
-                mapInitialLoadInfo.put(name, replicaIndex > 0 || recordStore.isLoaded());
-            }
             // now prepare data to migrate records
             Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>();
             for (Entry<Data, Record> recordEntry : recordStore.getReadonlyRecordMap().entrySet()) {
@@ -96,12 +89,7 @@ public class MapReplicationOperation extends AbstractOperation {
                     updateSizeEstimator(-calculateRecordSize(existingRecord, sizeEstimator), sizeEstimator);
                     updateSizeEstimator(calculateRecordSize(newRecord, sizeEstimator), sizeEstimator);
                 }
-            }
-        }
-        if (mapInitialLoadInfo != null) {
-            for (String mapName : mapInitialLoadInfo.keySet()) {
-                RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
-                recordStore.setLoaded(mapInitialLoadInfo.get(mapName));
+                recordStore.setLoaded(true);
             }
         }
     }
@@ -123,13 +111,6 @@ public class MapReplicationOperation extends AbstractOperation {
             }
             data.put(name, recordReplicationInfos);
         }
-        size = in.readInt();
-        mapInitialLoadInfo = new HashMap<String, Boolean>(size);
-        for (int i = 0; i < size; i++) {
-            String name = in.readUTF();
-            boolean loaded = in.readBoolean();
-            mapInitialLoadInfo.put(name, loaded);
-        }
     }
 
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
@@ -141,11 +122,6 @@ public class MapReplicationOperation extends AbstractOperation {
             for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                 out.writeObject(recordReplicationInfo);
             }
-        }
-        out.writeInt(mapInitialLoadInfo.size());
-        for (Entry<String, Boolean> entry : mapInitialLoadInfo.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeBoolean(entry.getValue());
         }
     }
 
