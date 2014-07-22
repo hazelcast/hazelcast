@@ -90,4 +90,4 @@ clientConfig.getNetworkConfig().setAwsConfig( clientAwsConfig );
 HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 ```
 
-***Note:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private adresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
+***Note:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private addresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*

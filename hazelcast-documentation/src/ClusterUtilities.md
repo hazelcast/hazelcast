@@ -35,7 +35,7 @@ for ( Member member : setMembers ) {
 
 
 ### Member Attributes
-You can define various member attribues on your Hazelcast members. You can use member attributes to tag your members as your business logic requirements.
+You can define various member attributes on your Hazelcast members. You can use member attributes to tag your members as your business logic requirements.
 
 In order to define member attribute on a member you can either
 

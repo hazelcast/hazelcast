@@ -35,7 +35,7 @@ public class PrintMember {
     MultiMap <String, String > map = hazelcastInstance.getMultiMap( "map" );
     for ( String key : map.keySet() ){
       Collection <String > values = map.get( key );
-      System.out.println( "%s -> %s\n",k ey, values );
+      System.out.println( "%s -> %s\n",key, values );
     }
   }
 }

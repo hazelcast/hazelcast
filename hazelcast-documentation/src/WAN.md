@@ -8,7 +8,7 @@ There are cases where you need to synchronize multiple clusters to the same stat
 WAN (Wide Area Network) Replication , it is mainly used for replicating stats of different clusters over WAN environments like
 the Internet. 
 
-Imagine you have different datacenters in New York, London and Tokyo each running an independent Hazelcast cluster. Every cluster
+Imagine you have different data centers in New York, London and Tokyo each running an independent Hazelcast cluster. Every cluster
 would be operating at native speed in their own LAN (Local Area Network) settings but you also want some or all recordsets in
 these clusters replicated to each other. So, updates to Tokyo cluster also go to London and New York, in the meantime updates
 from New York cluster are synchronized to Tokyo and London.
