@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 function delete {
 	echo "Deleting created files"
 	$(rm -rf "./$MANIFEST_FILE_NAME")
