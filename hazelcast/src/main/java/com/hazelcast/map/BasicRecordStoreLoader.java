@@ -7,6 +7,7 @@ import com.hazelcast.map.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -16,7 +17,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -77,6 +77,9 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (isLoaded()) {
             return;
         }
+        if (isMigrating()) {
+            return;
+        }
         if (!isOwner()) {
             setLoaded(true);
             return;
@@ -92,6 +95,12 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     @Override
     public Throwable getExceptionOrNull() {
         return throwable;
+    }
+
+    private boolean isMigrating() {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+        return partition.isMigrating();
     }
 
     private boolean isOwner() {
@@ -342,8 +351,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
                     decrementCounterAndMarkAsLoaded();
                     return;
                 }
-
-                MapEntrySet entrySet = new MapEntrySet();
+                final MapEntrySet entrySet = new MapEntrySet();
                 for (Data dataKey : keys.keySet()) {
                     Object key = keys.get(dataKey);
                     Object value = values.get(key);
@@ -353,22 +361,17 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
                     }
                 }
                 PutAllOperation operation = new PutAllOperation(name, entrySet, true);
-                operation.setNodeEngine(nodeEngine);
-                operation.setResponseHandler(new ResponseHandler() {
-                    @Override
-                    public void sendResponse(Object obj) {
-                        decrementCounterAndMarkAsLoaded();
-                    }
-
-                    public boolean isLocal() {
-                        return true;
-                    }
-                });
-                operation.setPartitionId(partitionId);
-                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-                operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-                operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().executeOperation(operation);
+                final OperationService operationService = nodeEngine.getOperationService();
+                operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId)
+                        .setCallback(new Callback<Object>() {
+                            @Override
+                            public void notify(Object obj) {
+                                if (obj instanceof Throwable) {
+                                    return;
+                                }
+                                decrementCounterAndMarkAsLoaded();
+                            }
+                        }).invoke();
             } catch (Throwable t) {
                 decrementCounterAndMarkAsLoaded();
                 logger.warning("Exception while load all task:" + t.toString());

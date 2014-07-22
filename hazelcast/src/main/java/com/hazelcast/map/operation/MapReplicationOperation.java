@@ -74,7 +74,7 @@ public class MapReplicationOperation extends AbstractOperation {
             String name = entry.getKey();
             // adding if initial data is loaded for the only maps that has mapstore behind
             if (mapContainer.getStore() != null) {
-                mapInitialLoadInfo.put(name, replicaIndex > 0 || recordStore.isLoaded());
+                mapInitialLoadInfo.put(name, replicaIndex > 0 || true);
             }
             // now prepare data to migrate records
             Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
