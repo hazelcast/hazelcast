@@ -43,7 +43,6 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -77,6 +76,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -86,9 +86,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.MigrationEvent.MigrationStatus;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public class InternalPartitionServiceImpl implements InternalPartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> {
+
+    private static final String EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT = "Partition state sync invocation timed out";
 
     private static final int DEFAULT_PAUSE_MILLIS = 1000;
     private static final int DEFAULT_SLEEP_MILLIS = 10;
@@ -470,26 +474,27 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             OperationService operationService = nodeEngine.getOperationService();
 
             List<Future> calls = firePartitionStateOperation(members, partitionState, operationService);
-            for (Future f : calls) {
-                try {
-                    f.get(3, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    logger.info("Partition state sync invocation timed out: " + e);
-                }
+
+            try {
+                waitWithDeadline(calls, 3, logAllExceptions(EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.INFO));
+            } catch (TimeoutException e) {
+                logger.finest(e);
             }
         } finally {
             lock.unlock();
         }
     }
 
-    private List<Future> firePartitionStateOperation(Collection<MemberImpl> members, PartitionRuntimeState partitionState,
-                                                     OperationService operationService) {
+    private List<Future> firePartitionStateOperation(Collection<MemberImpl> members,
+                                                                        PartitionRuntimeState partitionState,
+                                                                        OperationService operationService) {
         List<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
+                    Address address = member.getAddress();
                     PartitionStateOperation operation = new PartitionStateOperation(partitionState, true);
-                    Future<Object> f = operationService.invokeOnTarget(SERVICE_NAME, operation, member.getAddress());
+                    Future<Object> f = operationService.invokeOnTarget(SERVICE_NAME, operation, address);
                     calls.add(f);
                 } catch (Exception e) {
                     logger.finest(e);
@@ -980,7 +985,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     final int partitionId = partition.getPartitionId();
                     final long replicaVersion = getCurrentReplicaVersion(replicaIndex, partitionId);
                     final Operation operation = createReplicaSyncStateOperation(replicaVersion, partitionId);
-                    final InternalCompletableFuture future = invoke(operation, replicaIndex, partitionId);
+                    final Future future = invoke(operation, replicaIndex, partitionId);
                     futures.add(future);
                 }
             }
@@ -1014,7 +1019,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return sync;
     }
 
-    private InternalCompletableFuture invoke(Operation operation, int replicaIndex, int partitionId) {
+    private Future invoke(Operation operation, int replicaIndex, int partitionId) {
         final OperationService operationService = nodeEngine.getOperationService();
         return operationService.createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, partitionId)
                 .setTryCount(3)

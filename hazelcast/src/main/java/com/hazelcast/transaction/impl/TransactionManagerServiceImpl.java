@@ -39,6 +39,8 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.ExceptionUtil;
+
+import javax.transaction.xa.Xid;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,9 +55,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import javax.transaction.xa.Xid;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
         MembershipAwareService, ClientAwareService {
@@ -214,12 +220,13 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                 Future f = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
                 futures.add(f);
             }
-            for (Future future : futures) {
-                try {
-                    future.get(TransactionOptions.getDefault().getTimeoutMillis(), TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    logger.warning("Error while rolling-back tx!");
-                }
+
+            try {
+                long timeoutMillis = TransactionOptions.getDefault().getTimeoutMillis();
+                ExceptionHandler exceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
+                waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, exceptionHandler);
+            } catch (TimeoutException e) {
+                logger.warning("Timeout while rolling-back tx!", e);
             }
         } else {
             if (log.state == State.COMMITTING && log.xid != null) {

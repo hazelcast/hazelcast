@@ -52,7 +52,10 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.logging.Level;
 
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.UuidUtil.buildRandomUuidString;
 
 public class ExecutorServiceProxy
@@ -547,18 +550,15 @@ public class ExecutorServiceProxy
                 calls.add(f);
             }
         }
-        for (Future f : calls) {
-            try {
-                f.get(1, TimeUnit.SECONDS);
-            } catch (Exception exception) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest(exception);
-                }
-            }
+
+        try {
+            waitWithDeadline(calls, 1, logAllExceptions("Exception while ExecutorService shutdown", Level.FINEST));
+        } catch (TimeoutException e) {
+            logger.finest(e);
         }
     }
 
-    private Future submitShutdownOperation(OperationService operationService, MemberImpl member) {
+    private InternalCompletableFuture submitShutdownOperation(OperationService operationService, MemberImpl member) {
         ShutdownOperation op = new ShutdownOperation(name);
         return operationService.invokeOnTarget(getServiceName(), op, member.getAddress());
     }

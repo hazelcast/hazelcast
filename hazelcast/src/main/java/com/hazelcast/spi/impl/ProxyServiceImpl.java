@@ -33,12 +33,14 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedRunnable;
 
@@ -50,7 +52,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
@@ -130,6 +133,7 @@ public class ProxyServiceImpl
         if (name == null) {
             throw new NullPointerException("Object name is required!");
         }
+        OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
@@ -137,20 +141,18 @@ public class ProxyServiceImpl
                 continue;
             }
 
-            Future f = nodeEngine.getOperationService()
-                    .createInvocationBuilder(SERVICE_NAME, new DistributedObjectDestroyOperation(serviceName, name),
-                            member.getAddress()).setTryCount(TRY_COUNT).invoke();
+            DistributedObjectDestroyOperation operation = new DistributedObjectDestroyOperation(serviceName, name);
+            Future f = operationService.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress())
+                                                          .setTryCount(TRY_COUNT).invoke();
             calls.add(f);
         }
 
         destroyLocalDistributedObject(serviceName, name, true);
 
-        for (Future f : calls) {
-            try {
-                f.get(TIME, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                logger.finest(e);
-            }
+        try {
+            FutureUtil.waitWithDeadline(calls, TIME, FutureUtil.logAllExceptions(Level.FINEST));
+        } catch (TimeoutException e) {
+            logger.finest(e);
         }
     }
 

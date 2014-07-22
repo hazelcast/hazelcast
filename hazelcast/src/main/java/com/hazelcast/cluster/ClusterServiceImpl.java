@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster;
 
-
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -77,9 +76,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
@@ -803,16 +805,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     }
                 }
                 updateMembers(memberInfos);
-                for (Future future : calls) {
-                    try {
-                        future.get(10, TimeUnit.SECONDS);
-                    } catch (TimeoutException ignored) {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Finalize join call timed-out: " + future);
-                        }
-                    } catch (Exception e) {
-                        logger.warning("While waiting finalize join calls...", e);
-                    }
+
+                try {
+                    waitWithDeadline(calls, 10, logAllExceptions("While waiting finalize join calls...", Level.WARNING));
+                } catch (TimeoutException e) {
+                    logger.warning("While waiting finalize join calls...", e);
                 }
             } finally {
                 node.getPartitionService().resumeMigration();

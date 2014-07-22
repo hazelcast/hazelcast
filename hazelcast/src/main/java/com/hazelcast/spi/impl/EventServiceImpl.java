@@ -35,9 +35,11 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 import com.hazelcast.util.executor.TimeoutRunnable;
@@ -59,6 +61,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 
 public class EventServiceImpl implements EventService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
@@ -68,6 +71,12 @@ public class EventServiceImpl implements EventService {
     private static final int SEND_RETRY_COUNT = 50;
     private static final int SEND_EVENT_TIMEOUT_SECONDS = 3;
     private static final int DEREGISTER_TIMEOUT_SECONDS = 5;
+
+    private static final String LOG_MSG_MEM_LEFT_DEREGISTER = "Member left while de-registering listener...";
+    private static final String LOG_MSG_MEM_LEFT_REGISTER = "Member left while registering listener...";
+
+    private final ExceptionHandler registrationExceptionHandler = new FutureUtilExceptionHandler(LOG_MSG_MEM_LEFT_REGISTER);
+    private final ExceptionHandler deregistrationExceptionHandler = new FutureUtilExceptionHandler(LOG_MSG_MEM_LEFT_DEREGISTER);
 
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
@@ -187,52 +196,40 @@ public class EventServiceImpl implements EventService {
     }
 
     private void invokeRegistrationOnOtherNodes(String serviceName, Registration reg) {
+        OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
-                        new RegistrationOperation(reg), member.getAddress());
+                RegistrationOperation operation = new RegistrationOperation(reg);
+                Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());
                 calls.add(f);
             }
         }
-        for (Future f : calls) {
-            try {
-                f.get(REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-                ignore(ignored);
-            } catch (TimeoutException ignored) {
-                ignore(ignored);
-            } catch (MemberLeftException e) {
-                logger.finest("Member left while registering listener...", e);
-            } catch (ExecutionException e) {
-                throw new HazelcastException(e);
-            }
+
+        try {
+            FutureUtil.waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, deregistrationExceptionHandler);
+        } catch (TimeoutException e) {
+            logger.finest(e);
         }
     }
 
     private void invokeDeregistrationOnOtherNodes(String serviceName, String topic, String id) {
+        OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
-                        new DeregistrationOperation(topic, id), member.getAddress());
+                DeregistrationOperation operation = new DeregistrationOperation(topic, id);
+                Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());
                 calls.add(f);
             }
         }
-        for (Future f : calls) {
-            try {
-                f.get(DEREGISTER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-                ignore(ignored);
-            } catch (TimeoutException ignored) {
-                ignore(ignored);
-            } catch (MemberLeftException e) {
-                logger.finest("Member left while de-registering listener...", e);
-            } catch (ExecutionException e) {
-                throw new HazelcastException(e);
-            }
+
+        try {
+            FutureUtil.waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, deregistrationExceptionHandler);
+        } catch (TimeoutException e) {
+            logger.finest(e);
         }
     }
 
@@ -1036,6 +1033,24 @@ public class EventServiceImpl implements EventService {
                     registrations.add(reg);
                     reg.readData(in);
                 }
+            }
+        }
+    }
+
+    private final class FutureUtilExceptionHandler implements FutureUtil.ExceptionHandler {
+
+        private final String message;
+
+        private FutureUtilExceptionHandler(String message) {
+            this.message = message;
+        }
+
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable instanceof MemberLeftException) {
+                logger.finest(message, throwable);
+            } else if (throwable instanceof ExecutionException) {
+                throw new HazelcastException(throwable);
             }
         }
     }
