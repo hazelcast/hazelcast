@@ -25,6 +25,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
 import org.junit.After;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * Used for testing {@link PagingPredicate}
@@ -52,14 +54,18 @@ import static junit.framework.Assert.assertEquals;
 public class ClientSortLimitTest extends HazelcastTestSupport {
 
     static HazelcastInstance client;
+
+    static HazelcastInstance server1;
+    static HazelcastInstance server2;
+
     static IMap map;
     static int pageSize = 5;
     static int size = 50;
 
     @BeforeClass
     public static void createInstances(){
-        Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
+        server1 = Hazelcast.newHazelcastInstance();
+        server2 = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
@@ -229,6 +235,98 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         values = map.values(predicate);
         assertEquals(0, values.size());
     }
+
+
+    @Test
+    public void test_whilePageingPredicateRunning_Controle(){
+        final Predicate lessEqual = Predicates.lessEqual("this", 5);
+        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
+
+        Collection<Integer> values = map.values(predicate);
+        for(int i=0; i<5; i++){
+            assertTrue(values.contains(i));
+        }
+
+        predicate.nextPage();
+        values = map.values(predicate);
+        assertTrue(values.contains(5));
+        assertEquals(1, values.size());
+    }
+
+    @Test
+    public void test_whilePageingPredicateRunning_changeValueToFailePredicate(){
+        final Predicate lessEqual = Predicates.lessEqual("this", 5);
+        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
+
+        Collection<Integer> values = map.values(predicate);
+        for(int i=0; i<5; i++){
+            assertTrue(values.contains(i));
+        }
+
+        map.put(5, 500);
+
+        predicate.nextPage();
+        values = map.values(predicate);
+        assertTrue(values.isEmpty());
+    }
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void test_whilePageingPredicateRunning_changeValueToPassPredicate(){
+        final Predicate lessEqual = Predicates.lessEqual("this", 5);
+        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
+
+        Collection<Integer> values = map.values(predicate);
+        for(int i=0; i<5; i++){
+            assertTrue( values.contains(i) );
+        }
+
+        map.put(5, 0);
+        predicate.nextPage();
+        values = map.values(predicate);
+        assertTrue( values.contains(0) );
+    }
+
+    @Test
+    public void test_whilePageingPredicateRunning_changeValueToFailePredicate_fromDiffMap(){
+        final Predicate lessEqual = Predicates.lessEqual("this", 5);
+        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
+
+        Collection<Integer> values = map.values(predicate);
+        for(int i=0; i<5; i++){
+            assertTrue(values.contains(i));
+        }
+
+        String name = map.getName();
+        IMap server_map = server1.getMap(name);
+        server_map.put(5, 500);
+
+
+        predicate.nextPage();
+        values = map.values(predicate);
+        assertTrue(values.isEmpty());
+    }
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void test_whilePageingPredicateRunning_changeValueToPassPredicate_fromDiffMap(){
+        final Predicate lessEqual = Predicates.lessEqual("this", 5);
+        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
+
+        Collection<Integer> values = map.values(predicate);
+        for(int i=0; i<5; i++){
+            assertTrue( values.contains(i) );
+        }
+
+        String name = map.getName();
+        IMap server_map = server1.getMap(name);
+        server_map.put(5, 0);
+
+        predicate.nextPage();
+        values = map.values(predicate);
+        assertTrue( values.contains(0) );
+    }
+
 
     static class TestComparator implements Comparator<Map.Entry>, Serializable {
 
