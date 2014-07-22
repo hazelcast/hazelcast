@@ -48,7 +48,7 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
         }
         final long expirationTime = now + ttl;
         // detect potential overflow.
-        if (!((now ^ expirationTime) >= 0)) {
+        if (expirationTime < 0L) {
             return Long.MAX_VALUE;
         }
         return expirationTime;
