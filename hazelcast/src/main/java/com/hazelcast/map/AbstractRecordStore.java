@@ -137,8 +137,7 @@ abstract class AbstractRecordStore implements RecordStore {
         }
         record.setTtl(ttl);
         if (record.getStatistics() != null) {
-            // when ttl is zero, entry should remain eternally.
-            final long expirationTime = ttl == 0 ? Long.MAX_VALUE : (getNow() + ttl);
+            final long expirationTime = mapServiceContext.getExpirationTime(ttl, getNow());
             record.getStatistics().setExpirationTime(expirationTime);
         }
     }

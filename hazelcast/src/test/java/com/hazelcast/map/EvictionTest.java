@@ -23,6 +23,7 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
@@ -31,6 +32,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -861,6 +863,19 @@ public class EvictionTest extends HazelcastTestSupport {
         final Set<Map.Entry<Integer, Integer>> entries = map.entrySet();
 
         assertEquals(0, entries.size());
+    }
+
+    @Test
+    public void test_get_expiration_from_EntryView() throws Exception {
+        final long now = Clock.currentTimeMillis();
+        final String mapName = randomMapName();
+        HazelcastInstance instance = createHazelcastInstance();
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+        map.put(1, 1, 100, TimeUnit.MILLISECONDS);
+        final EntryView<Integer, Integer> entryView = map.getEntryView(1);
+        final long expirationTime = entryView.getExpirationTime();
+
+        assertTrue(expirationTime > now);
     }
 
     private IMap<Integer, Integer> getMapWithExpiredKeys() {
