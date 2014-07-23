@@ -13,7 +13,6 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
@@ -48,9 +47,8 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class QueryBasicTest extends HazelcastTestSupport {
 
-    @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
-    public void testInPredicateWithEmptyArray() {
+    @Test(timeout = 1000 * 60)
+    public void testInPredicateWitNullValueContainedArray() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
@@ -59,10 +57,12 @@ public class QueryBasicTest extends HazelcastTestSupport {
             final Value v = new Value("name" + i, new ValueType("type" + i), i);
             map.put("" + i, v);
         }
-        String[] emptyArray = new String[2];
-        final Predicate predicate = new PredicateBuilder().getEntryObject().get("name").in(emptyArray);
+        String[] arrayIncludesNullValues = new String[3];
+        // add a not null value.
+        arrayIncludesNullValues[2] = "name3";
+        final Predicate predicate = new PredicateBuilder().getEntryObject().get("name").in(arrayIncludesNullValues);
         final Collection<Value> values = map.values(predicate);
-        assertEquals(values.size(), 0);
+        assertEquals(1, values.size());
     }
 
     @Test(timeout = 1000 * 60)

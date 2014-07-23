@@ -258,11 +258,6 @@ public class PredicatesTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testInNullWithNullArgument() {
-        Predicates.in("", null, 2, "value");
-    }
-
-    @Test(expected = NullPointerException.class)
     public void testInNullWithNullArray() {
         Predicates.in("", null);
     }
