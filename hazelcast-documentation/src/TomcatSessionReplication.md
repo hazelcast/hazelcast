@@ -54,7 +54,7 @@ This type of deployment is the simplest approach. You can just configure your To
 ***Sample P2P Configuration to use Hazelcast Session Replication***
 
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
-- Unzip the Hazelcast Enteprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
+- Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
 - Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-all-`<*version*>`-ee.jar`, `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` and `hazelcast.xml` to the folder `$CATALINA_HOME/lib/`.
 
@@ -100,7 +100,7 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 ***Sample Client/Server Configuration to use Hazelcast Session Replication***
 
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
-- Unzip the Hazelcast Enteprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
+- Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar` and `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` to the folder `$CATALINA_HOME/lib/`.
 
 - Update `<Manager>` tag in the `$CATALINA_HOME$/conf/context.xml` as shown below.
@@ -137,7 +137,7 @@ You can change that behavior by setting `deferredWrite=false` in your `<Manager>
 
 Based on Tomcat configuration or `sessionTimeout` setting in `web.xml`, sessions are expired over time. This requires a cleanup on Hazelcast Cluster as there is no need to keep expired sessions in the cluster. 
 
-`processExpiresFrequency` which is defined in `<Manager>` is the only setting to control the behavior of session expiry policy in Tomcat Web Sesion Replication Module. By setting this, you can set the frequency of the session expiration checks in the Tomcat Instance.
+`processExpiresFrequency` which is defined in `<Manager>` is the only setting to control the behavior of session expiry policy in Tomcat Web Session Replication Module. By setting this, you can set the frequency of the session expiration checks in the Tomcat Instance.
 
 #### Enabling Session Replication in Multi-App environment
 

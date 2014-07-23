@@ -41,17 +41,17 @@ This counter will have the below features:
 
 All these features are going to be realized with the steps below. In each step, a new functionality to this counter is added.
 
-1. Creating the class
-2. Enabling the class
-3. Adding properties
-4. Starting the service
-5. Placing a remote call
-5. Creating a container
-6. 
+1. Create the class.
+2. Enable the class.
+3. Add properties.
+5. Place a remote call.
+5. Create the containers.
+6. Enable partition migration.
+6. Create the backups.
 
 
 
-#### Creating the class
+#### Create the Class
 
 To have the counter as a functioning distributed object, we need a class. This class (namely CounterService in our sample) will be the gateway between Hazelcast internals and the counter, so that we can add features to the counter. In this step the CounterService is created. Its lifecycle will be managed by Hazelcast. 
 
@@ -92,7 +92,7 @@ As can be seen from the code, below methods are implemented.
 - `shutdown`: This is called when CounterService is shutdown. It cleans up the resources.
 - `reset`: This is called when cluster members face with Split-Brain issue. This occurs when disconnected members that have created their own cluster are merged back into the main cluster. Services can also implement the SplitBrainHandleService to indicate that they can take part in the merge process. For the CounterService we are going to implement as a no-op.
 
-#### Enabling the Class
+#### Enable the Class
 
 Now, we need to enable the class `CounterService`. Declarative way of doing this is shown below.
 
@@ -116,7 +116,7 @@ Now, we need to enable the class `CounterService`. Declarative way of doing this
 
 Moreover, note that multicast is enabled as the join mechanism. In the later sections, we will see why.
 
-#### Adding Properties
+#### Add Properties
 
 Remember that the `init` method takes `Properties` object as an argument. This means we can add properties to the service. These properties are passed to the method `init`. Adding properties can be done declaratively as shown below.
 
@@ -132,7 +132,7 @@ Remember that the `init` method takes `Properties` object as an argument. This m
 
 If you want to parse a more complex XML, the interface `com.hazelcast.spi.ServiceConfigurationParser` can be used. It gives you access to the XML DOM tree.
 
-#### Starting the Service
+#### Start the Service
 
 Now, let's start a HazelcastInstance as shown below, which will eagerly start the CounterService.
 
@@ -155,7 +155,7 @@ Once the HazelcastInstance is shutdown (for example with Ctrl+C), below output w
 
 `CounterService.shutdown`
 
-#### Placing a Remote Call - Proxy
+#### Place a Remote Call - Proxy
 
 Until so far, we accomplished only to start `CounterService` as part of a HazelcastInstance startup.
 
@@ -351,7 +351,7 @@ class IncOperation extends AbstractOperation implements PartitionAwareOperation 
 }
 ```
 
-The method `run` does the actual execution. Since `IncOperation` will return a response, the method `returnsResponse` returns `true`. If your method is asynchrononous and does not need to return a response, it is better to return `false` since it will be faster. Actual response is stored in the field `returnValue` field and it is retrieved by the method `getResponse`.
+The method `run` does the actual execution. Since `IncOperation` will return a response, the method `returnsResponse` returns `true`. If your method is asynchronous and does not need to return a response, it is better to return `false` since it will be faster. Actual response is stored in the field `returnValue` field and it is retrieved by the method `getResponse`.
 
 You see two other methods in the above code: `writeInternal` and `readInternal`. Since `IncOperation` needs to be serialized, these two methods should be overwritten. Hence, `objectId` and `amount` will be serialized and available when the operation is executed. For the deserialization, note that the operation must have a *no-arg* constructor.
 
@@ -404,15 +404,13 @@ Once run, you will see the output as below.
 
 As you see, counters are stored in different cluster members. Also note that, increment is not in its real action for now since the value remains as **0**. 
 
-So, until now, we have made the basics up and running. In the next section, we will make the counter   
+So, until now, we have made the basics up and running. In the next section, we will make a more real counter, cache the proxy instances and deal with proxy instance destruction.
 
-In this example we managed to get the basics up and running, but there are somethings not correctly implemented. For example, in the current code always a new proxy is returned instead of a cached one. And also the destroy is not correctly implemented on the CounterService. In the next examples we'll see these issues resolved.
 
-#### Container
+#### Create the Containers
 
-In this section we are going to upgrade the functionality so that it features a real distributed counter. So some kind of data-structure will hold an integer value and can be incremented and we'll also cache the proxy instances and deal with proxy instance destruction.
+First, let's create a Container for every partition in the system, that will contain all counters and proxies.
 
-The first thing we do is for every partition there is in the system, we are going to create a Container which will contain all counters and proxies for a given partition:
 
 ```java
 import java.util.HashMap;
@@ -443,31 +441,11 @@ class Container {
 }
 ```
 
-Hazelcast will give the guarantee that within a single partition, only a single thread will be active. So we don't need to deal with concurrency control while accessing a container.
+Hazelcast guarantees that a single thread will be active in a single partition. So, when accessing a container, concurrency control will not be an issue. 
 
-For this chapter I rely on Container instance per partition, but you have complete freedom how to go about it. A different approach used in the Hazelcast is that the Container is dropped and the CounterService has a map of counters:
+This section uses Container instance per partition approach. In this way, there will not be any mutable shared state between partitions. It also makes operations on partitions simpler since you do not need to filter out data that does not belong to a certain partition.
 
-```java
-final ConcurrentMap<String, Integer> counters = 
-   new ConcurrentHashMap<String, Integer>();
-```
-
-The id of the counter can be used as key and an Integer as value. The only thing you need to take care of is that if operations for a specific partition are executed, you only select the values for that specific partition. This can be as simple as: 
-
-```java
-for(Map.Entry<String,Integer> entry: counters.entrySet()){
-   String id = entry.getKey();
-   int partitinId = nodeEngine.getPartitionService().getPartitionId(id); 
-   if(partitionid == requiredPartitionId){
-      ...do operation	
-   }
-}
-```
-
-
-Its a personal taste which solution is preferred. Personally I like the container approach since there will not be any mutable shared state between partitions. It also makes operations on partitions simpler since you don't need to filter out data that doesn't belong to a certain partition.
-
-The next step is to integrate the Container in the CounterService:
+Now, let's integrate the Container in the CounterService, as shown below.
 
 ```java
 import com.hazelcast.spi.ManagedService;
@@ -529,10 +507,10 @@ public class CounterService implements ManagedService, RemoteService {
 ```
     
 
-In the 'init' method you can see that a container is created for every partition. The next step is 'createDistributedObject'; apart from creating the proxy, we also initialize the value for that given
-proxy to '0', so that we don't run into a NullPointerException. The last part is the 'destroyDistributedObject' where the value for the object is removed. If we don't clean up, we'll end up with memory that isn't remove and potentially can lead to an OOME.
+As you see, a container for every partition is created with the method `init`. Then, we create the proxy with the method `createDistributedObject`. And finally, we need to remove the value of the object, using the method `destroyDistributedObject`. Otherwise, we may get OutOfMemory exception.
 
-The last step is connecting the IncOperation.run to the container:
+
+And now, as the last step in creating a Container, we will connect the method `IncOperation.run` to the Container, as shown below.
 
 ```java
 import com.hazelcast.nio.ObjectDataInput;
@@ -594,9 +572,9 @@ class IncOperation extends AbstractOperation implements PartitionAwareOperation 
 }
 ```
 
-The container can easily be retrieved using the partitionId since the range or partitionId's is 0 to partitionCount (exclusive) so it can be used as an index on the container array. Once the container has been retrieved we can access the value. In this example I have moved all 'inc' logic in the IncOperation, but it could be that you prefer to move the logic to the CounterService or to the Partition. 
+`partitionId` has a range between **0** and **partitionCount** and can be used as an index for the container array. Therefore, `partitionId` can easily be used to retrieve the container. And once the container has been retrieved, we can access the value. 
 
-When we run the following example code:
+Let's run the below sample code.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -626,7 +604,7 @@ public class Member {
 }
 ```
 
-We get the following output:
+The output will be seen as follows.
 
 ```
 Round 1
@@ -651,13 +629,12 @@ Finished
 ```
 
 
-This means that we now have a basic distributed counter up and running.
+Above output indicates that we have now a basic distributed counter up and running.
 
 #### Partition Migration
 
-In our previous phase we managed to create real distributed counters. The only problem is that when members are leaving or joining the cluster, that the content of the partition containers is not migrating to different members. In this section we are going to just that: partition migration.
+In the previous section, we created a real distributed counter. Now, we need to make sure that the content of partition containers is migrated to different cluster members, when a member is joining to or leaving the cluster. To make this happen, first we need to add three new methods (`applyMigrationData`, `toMigrationData` and `clear`) to the Container, as shown below.
 
-The first thing we are going to do is to add 3 new operations to the Container:
 
 
 ```java
@@ -699,12 +676,11 @@ class Container {
 }
 ```
 
-- `toMigrationData`: this method is going to be called when Hazelcast wants to get started with the migration of the partition on the member that currently owns the partition. The result of the toMigrationData is data of the partition in a form so that it can be serialized to another member.
-- `applyMigrationData`: this method is called when the migrationData that is created by the toMigrationData method is going to be applied to member that is going to be the new partition owner.
-- `clear`: is going to be called for 2 reasons: when the partition migration has succeeded and the old partition owner can get rid of all the data in the partition. And also when the partition migration operation fails and given the 'new' partition owner needs to roll back its changes.
+- `toMigrationData`: This is called when Hazelcast wants to start the partition migration from the member owning the partition. The result of this method is the partition data in a form so that it can be serialized to another member.
+- `applyMigrationData`: This is called when `migrationData` (created by the method `toMigrationData`) is going to be applied to the member that is going to be the new partition owner.
+- `clear`: This is called when the partition migration is successfully completed and the old partition owner gets rid of all data in the partition. This method is called also when the partition migration operation fails and to-be-the-new partition owner needs to roll back its changes.
 
-
-The next step is to create a CounterMigrationOperation that will be responsible for transferring the migrationData from one machine to another and to call the 'applyMigrationData' on the correct partition of the new partition owner.
+After these three methods are added to the Container, we need to create a `CounterMigrationOperation` class that transfers `migrationData` from one member to another and calls the method `applyMigrationData` on the correct partition of the new partition owner. A sample is shown below.
 
 ```java
 import com.hazelcast.nio.ObjectDataInput;
@@ -752,9 +728,12 @@ public class CounterMigrationOperation extends AbstractOperation {
 }
 ```
 
-During the execution of a migration no other operations will be running in that partition. So you don't need to deal with thread-safety.
 
-The last part is connecting all the pieces. This is done by adding an additional MigrationAwareService interface on the CounterService which will signal Hazelcast that our service is able to participate in partition migration:
+<br></br>
+***NOTE:*** *During a partition migration, no other operations are executed on the related partition.*
+<br></br>
+
+Now, we need to make our CounterService class to also implement  `MigrationAwareService` interface. By this way, Hazelcast knows that the CounterService will be able to perform partition migration. See the below code.
 
 ```java
 import com.hazelcast.core.DistributedObject;
@@ -842,13 +821,9 @@ public class CounterService implements ManagedService, RemoteService, MigrationA
 ```
 
 
-By implementing the MigrationAwareService some additional methods are exposed:
+With the `MigrationAwareService` interface, some additional methods are exposed. For example, the method `prepareMigrationOperation` returns all the data of the partition that is going to be moved.
 
-- `beforeMigration`: this is called before we any migration is done. It is useful if you need to .. In our case we do nothing.
-- `prepareMigrationOperation`: method will return all the data of the partition that is going to be moved.
-- `commitMigration`: commits the data. In this case committing means that we are going to clear the container for the partition of the old owner. Even though we don't have any complex resources like threads, database connections etc, clearing the container is advisable to prevent memory issues.is this method called on both the primary and backup? [mehmet: yes] if this node is source side of migration (means partition is migrating FROM this node) and migration type is MOVE (means partition is migrated completely not copied to a backup node) then remove partition data from this node. If this node is destination or migration type is copy then nothing to do.is this method called on both the primary and backup? [mehmet: yes][mehmet: if this node is destination side of migration (means partition is migrating TO this node) then remove partition data from this node.If this node is source then nothing to do.
-
-- `rollbackMigration`: ???
+The method `commitMigration` commits the data, meaning in this case, clears the partition container of the old owner. 
 
 
 ```java
@@ -887,7 +862,7 @@ public class Member {
 }
 ```
 
-If we execute the example, we'll get output like this:
+Once we run the above code, the output will be seen as follows.
 
 ```
 Executing 0counter.inc() on: Address[192.168.1.103]:5702
@@ -918,12 +893,11 @@ Executing backup 3counter.inc() on: Address[192.168.1.103]:5705
 Finished
 ```
 
-As you can see the counters have moved: '0counter' moved from from '192.168.1.103:5702' to '192.168.1.103:5705' but its is incremented correctly. So our counters are now able to move around in the cluster. If you need to have more capacity, add a machine and the counters are redistributed. If you have surplus capacity, shutdown the instance and the counters are redistributed.
+As it can be seen the counters have moved. `0counter` moved from *192.168.1.103:5702* to *192.168.1.103:5705* and it is incremented correctly. as a result, our counters are now able to move around in the cluster. You will see the the counters will be redistributed once you add or remove a cluster member.
 
-#### Backups
+#### Create the Backups
 
-In this last phase we are going to deal with backups; so make sure that when a member fails that the data of the counter is available on another node. This is done through replicating that change to another member in the cluster. With the SPI this can be done by letting the operation implement the com.hazelcast.spi.BackupAwareOperaton interface. Below you can see this interface being implemented
-on the IncOperation:
+In this last phase, we make sure that the data of counter is available on another node when a member goes down. We need to have `IncOperation` class to implement `BackupAwareOperation` interface contained in SPI package. See the below code.
 
 ```java
 class IncOperation extends AbstractOperation 
@@ -952,11 +926,15 @@ class IncOperation extends AbstractOperation
 }
 ```
 
-As you can see some additional methods need to be implemented. The getAsyncBackupCount and getSyncBackupCount signals how many asynchronous and synchronous backups there need to be. In our case we only want a single synchronous backup and no asynchronous backups. Here the number of backups is hard coded, but you could also pass the number of backups as parameters to the IncOperation, or by letting the methods access the CounterService. The shouldBackup method tells Hazelcast that our Operation needs a backup. In our case we are always going to make a backup; even if there is no change. But in practice you only want to make a backup if there is actually a change: in case of the IncOperation you want to make a backup if 'amount' is null. 
+The methods `getAsyncBackupCount` and `getSyncBackupCount` specifies the count of asynchronous and synchronous backups. For our sample, it is just one synchronous backup and no asynchronous backups. In the above code, counts of backups are hard coded, but they can also be passed to `IncOperation` as parameters. 
 
-The last method is the 'getBackupOperation' which returns the actual operation that is going to make the backup; so the backup itself is an operation and will run on the same infrastructure. If a backup should be made and e.g. 'getSyncBackupCount' return 3, then 3 IncBackupOperation instances are created and send to the 3 machines containing the backup partition. If there are less machines available than backups need to be created, Hazelcast will just send a smaller number of operations. But it could be that a too small cluster, you don't get the same high availability guarantees you specified. 
+The method `shouldBackup` specifies whether our Operation needs a backup or not. For our sample, it returns `true`, meaning the Operation will always have a backup even if there are no changes. Of course, in real systems, we want to have backups if there is a change. For `IncOperation` for example, having a backup when `amount` is null would be a good practice.
 
-So lets have a look at the IncBackupOperation:
+The method `getBackupOperation` returns the operation (`IncBackupOperation`) that actually performs the backup creation; as you noticed now, the backup itself is an operation and will run on the same infrastructure. 
+
+If, for example, a backup should be made and `getSyncBackupCount` returns **3**, then three `IncBackupOperation` instances are created and sent to the three machines containing the backup partition. If there are less machines available, then backups need to be created. Hazelcast will just send a smaller number of operations. 
+
+Now, let's have a look at the `IncBackupOperation`.
 
 ```java
 public class IncBackupOperation 
@@ -997,9 +975,11 @@ public class IncBackupOperation
 }
 ```
 
-Hazelcast will also make sure that a new IncOperation for that particular key will not be executing before the (synchronous) backup operation has completed.
+<br></br>
 
-Of course we also want to see the backup functionality in action.
+***NOTE:*** *Hazelcast will also make sure that a new IncOperation for that particular key will not be executed before the (synchronous) backup operation has completed.*
+
+Let's see the backup functionality in action with the below code.
 
 ```java
 public class Member {
@@ -1016,7 +996,7 @@ public class Member {
 }
 ```
 
-When we run this Member we'll get the following output:
+Once it is run, the following output will be seen.
 
 ```
 Executing counter0.inc() on: Address[192.168.1.103]:5702
@@ -1024,4 +1004,4 @@ Executing backup counter0.inc() on: Address[192.168.1.103]:5701
 Finished
 ```
 
-As you can see, not only the IncOperation has executed, also the backup operation is executed. You can also see that the operations have been executed on different cluster members to guarantee high availability. One of the experiments you could do it to modify the test code so you have a cluster of members in different JVMs and see what happens with the counters when you kill one of the JVM's. 
+As it can be seen, both `IncOperation` and `IncBackupOperation` are executed. Notice that these operations have been executed on different cluster members to guarantee high availability.

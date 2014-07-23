@@ -20,7 +20,7 @@ fill up operation is finished. This way should be used with caution since it mig
 
 **Replication delay**
 
-By default, the replication of values is delayed by 100 millis when no current waiting replication is found. This is used
+By default, the replication of values is delayed by 100 milliseconds when no current waiting replication is found. This is used
 to collect multiple updates and to minimize the operations overhead on replication. A hard limit of 1000 replications
 is built into the system to prevent `OutOfMemory` situations where you put lots of data into the replicated map in a really
 short time.

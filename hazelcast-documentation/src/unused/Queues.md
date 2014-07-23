@@ -5,7 +5,7 @@ Using the menu item **Queues**, you can monitor your queues data structure. When
 ![](images/Queues-Home.jpg)
 
 
-On top of the page, there are small charts to monitor the size, offers and polls of the selected queue in real-time. All charts' X-axis shows the current system time. And a chart can be opened as a separate dialog by clicking on the ![](images/Maximizechart.jpg) button placed at top right of each chart. Below monitoring charts are available:
+On top of the page, there are small charts to monitor the size, offers and polls of the selected queue in real-time. All charts' X-axis shows the current system time. And a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart. Below monitoring charts are available:
 
 -	**Size**: Monitors the size of the queue. Y-axis is the entry count (should be multiplied by 1000).
 -	**Offers**: Monitors the offers sent to the selected queue. Y-axis is the offer count.

@@ -30,7 +30,7 @@ There is a striped executor in each node to control and dispatch received events
 
 Order guarantee is achieved by making only one thread responsible for a particular set of events (entry events of a key in a map, item events of a collection, etc.) in `StripedExecutor`.
 
-If event queue reaches the capacity (`hazelcast.event.queue.capacity`) and last item cannot be put to the event queue for timeout millis (`hazelcast.event.queue.timeout.millis`), these events will be dropped with a warning message like "EventQueue overloaded".
+If event queue reaches the capacity (`hazelcast.event.queue.capacity`) and last item cannot be put to the event queue for the period specified in  `hazelcast.event.queue.timeout.millis`, these events will be dropped with a warning message like "EventQueue overloaded".
 
 If listeners are doing a computation that requires a long time, this can cause event queue to reach its maximum capacity and lost of events. For map and multimap, `hazelcast.event.thread.count` can be configured to a higher value so that less collision occurs for keys, therefore worker threads will not block each other in `StripedExecutor`. For list, set,  topic and queue, heavy work should be offloaded to another thread. Notice that, in order to preserve order guarantee, the user should implement similar logic with `StripedExecutor` in offloaded thread pool.
 <br> </br>

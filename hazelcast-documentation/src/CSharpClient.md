@@ -27,7 +27,7 @@ namespace Hazelcast.Client.Example
       clientConfig.GetNetworkConfig().AddAddress( "10.0.0.1" );
       clientConfig.GetNetworkConfig().AddAddress( "10.0.0.2:5702" );
 
-      // Portable Serialization setup up for Customer CLass
+      // Portable Serialization setup up for Customer Class
       clientConfig.GetSerializationConfig()
           .AddPortableFactory( MyPortableFactory.FactoryId, new MyPortableFactory() );
 
