@@ -381,6 +381,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
         protected ReadOnlyRecordIterator(Collection<Record> values) {
             this.iterator = values.iterator();
+
             advance();
         }
 
