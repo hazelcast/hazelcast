@@ -39,10 +39,12 @@ public class CacheGetAndRemoveRequest extends AbstractCacheRequest {
         this.key = key;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.GET_AND_REMOVE;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -52,12 +54,14 @@ public class CacheGetAndRemoveRequest extends AbstractCacheRequest {
         return new CacheGetAndRemoveOperation(name, key);
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();

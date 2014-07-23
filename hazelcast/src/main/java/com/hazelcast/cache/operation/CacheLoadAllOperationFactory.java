@@ -34,7 +34,6 @@ public class CacheLoadAllOperationFactory implements OperationFactory, Identifie
     private Set<Data> keys;
     private boolean replaceExistingValues;
 
-
     public CacheLoadAllOperationFactory(String name, Set<Data> keys, boolean replaceExistingValues) {
         this.name = name;
         this.keys = keys;
@@ -42,7 +41,6 @@ public class CacheLoadAllOperationFactory implements OperationFactory, Identifie
     }
 
     public CacheLoadAllOperationFactory() { }
-
 
     @Override
     public int getFactoryId() {

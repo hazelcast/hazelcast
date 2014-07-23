@@ -89,6 +89,7 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         return new DataSerializableFactory() {
             public IdentifiedDataSerializable create(int typeId) {
+                //TODO: Don't use an if/else chain. use a switch case or the ArrayDataSerializableFactory.
                 if (typeId == GET) {
                     return new CacheGetOperation();
                 } else if (typeId == CONTAINS_KEY) {

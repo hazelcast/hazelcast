@@ -25,9 +25,6 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 06/02/14
- */
 public class CacheStatisticsOperationFactory implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;

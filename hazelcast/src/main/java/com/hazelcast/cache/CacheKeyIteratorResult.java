@@ -29,9 +29,7 @@ public class CacheKeyIteratorResult implements IdentifiedDataSerializable {
 
     private int segmentIndex;
     private int tableIndex;
-
     private Set<Data> keySet;
-
 
     public CacheKeyIteratorResult() {
     }
@@ -73,7 +71,6 @@ public class CacheKeyIteratorResult implements IdentifiedDataSerializable {
         for (Data o : keySet) {
             o.writeData(out);
         }
-
     }
 
     @Override

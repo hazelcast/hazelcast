@@ -31,11 +31,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author mdogan 05/02/14
- */
 public class CachePutAllBackupOperation extends AbstractNamedOperation implements BackupOperation, IdentifiedDataSerializable {
-
 
     private Map<Data, CacheRecord> cacheRecords;
     private transient ICacheRecordStore cache;
@@ -53,7 +49,6 @@ public class CachePutAllBackupOperation extends AbstractNamedOperation implement
         CacheService service = getService();
         cache = service.getOrCreateCache(name, getPartitionId());
     }
-
 
     @Override
     public void run() throws Exception {

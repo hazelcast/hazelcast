@@ -55,9 +55,6 @@ public class HazelcastCachingProvider implements CachingProvider {
         this.cacheManagers = new WeakHashMap<ClassLoader, HashMap<URI, CacheManager>>();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public synchronized CacheManager getCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
         URI managerURI = uri == null ? getDefaultURI() : uri;
@@ -75,7 +72,7 @@ public class HazelcastCachingProvider implements CachingProvider {
         if (cacheManager == null) {
             try {
 
-                Config config = null;
+                Config config;
                 if (managerURI.equals(getDefaultURI())) {
                     config = new Config();
                 } else {
@@ -115,17 +112,11 @@ public class HazelcastCachingProvider implements CachingProvider {
 
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ClassLoader getDefaultClassLoader() {
         return getClass().getClassLoader();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public URI getDefaultURI() {
         try {
@@ -135,33 +126,21 @@ public class HazelcastCachingProvider implements CachingProvider {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Properties getDefaultProperties() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public CacheManager getCacheManager(URI uri, ClassLoader classLoader) {
         return getCacheManager(uri, classLoader, getDefaultProperties());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public CacheManager getCacheManager() {
         return getCacheManager(getDefaultURI(), getDefaultClassLoader(), null);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public synchronized void close() {
         final Set<ClassLoader> classLoaderSet = new HashSet<ClassLoader>(this.cacheManagers.keySet());
@@ -170,9 +149,6 @@ public class HazelcastCachingProvider implements CachingProvider {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public synchronized void close(ClassLoader classLoader) {
         final HashMap<URI, CacheManager> uriCacheManagerHashMap = this.cacheManagers.get(classLoader);
@@ -183,9 +159,6 @@ public class HazelcastCachingProvider implements CachingProvider {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public synchronized void close(URI uri, ClassLoader classLoader) {
         final HashMap<URI, CacheManager> uriCacheManagerHashMap = this.cacheManagers.get(classLoader);
@@ -197,9 +170,6 @@ public class HazelcastCachingProvider implements CachingProvider {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isSupported(OptionalFeature optionalFeature) {
         switch (optionalFeature) {
@@ -208,7 +178,6 @@ public class HazelcastCachingProvider implements CachingProvider {
         }
         return false;
     }
-
 
     public synchronized void releaseCacheManager(URI uri, ClassLoader classLoader) {
         URI managerURI = uri == null ? getDefaultURI() : uri;

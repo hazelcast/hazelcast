@@ -8,9 +8,6 @@ import com.hazelcast.util.Counter;
 
 import java.io.IOException;
 
-/**
- * @author enesakar 2/19/14
- */
 public class CacheStatsImpl implements DataSerializable, CacheStats {
 
     private final Counter hits = new Counter();

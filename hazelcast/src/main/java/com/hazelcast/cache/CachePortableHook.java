@@ -25,9 +25,6 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-/**
- * @author enesakar 2/11/14
- */
 public class CachePortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_PORTABLE_FACTORY, -24);

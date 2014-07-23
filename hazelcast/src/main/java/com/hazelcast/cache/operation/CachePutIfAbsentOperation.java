@@ -28,9 +28,6 @@ import com.hazelcast.spi.Operation;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
-/**
- * @author mdogan 05/02/14
- */
 public class CachePutIfAbsentOperation extends AbstractCacheOperation implements BackupAwareOperation {
 
     private Data value;
@@ -65,7 +62,6 @@ public class CachePutIfAbsentOperation extends AbstractCacheOperation implements
         return new CachePutBackupOperation(name, key, backupRecord);
     }
 
-
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
@@ -80,7 +76,6 @@ public class CachePutIfAbsentOperation extends AbstractCacheOperation implements
         value = new Data();
         value.readData(in);
     }
-
 
     @Override
     public int getId() {

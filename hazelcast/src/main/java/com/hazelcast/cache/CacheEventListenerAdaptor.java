@@ -40,7 +40,8 @@ public class CacheEventListenerAdaptor<K, V> {
 
     public CacheEventListenerAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         this.source = source;
-        final CacheEntryListener<? super K, ? super V> cacheEntryListener = cacheEntryListenerConfiguration.getCacheEntryListenerFactory().create();
+        final CacheEntryListener<? super K, ? super V> cacheEntryListener
+                = cacheEntryListenerConfiguration.getCacheEntryListenerFactory().create();
         if (cacheEntryListener instanceof CacheEntryCreatedListener) {
             this.cacheEntryCreatedListener = (CacheEntryCreatedListener) cacheEntryListener;
         } else {
@@ -63,31 +64,31 @@ public class CacheEventListenerAdaptor<K, V> {
         }
     }
 
-
     public void handleEvent(NodeEngine nodeEngine, String cacheName, EventType eventType, K key, V newValue, V oldValue) {
         if (source == null) {
-            this.source = nodeEngine.getHazelcastInstance().getDistributedObject(CacheService.SERVICE_NAME, cacheName);
+            source = nodeEngine.getHazelcastInstance().getDistributedObject(CacheService.SERVICE_NAME, cacheName);
         }
+
         final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
         switch (eventType) {
             case CREATED:
-                if (this.cacheEntryCreatedListener != null) {
-                    this.cacheEntryCreatedListener.onCreated(createEventWrapper(event));
+                if (cacheEntryCreatedListener != null) {
+                    cacheEntryCreatedListener.onCreated(createEventWrapper(event));
                 }
                 break;
             case UPDATED:
-                if (this.cacheEntryUpdatedListener != null) {
-                    this.cacheEntryUpdatedListener.onUpdated(createEventWrapper(event));
+                if (cacheEntryUpdatedListener != null) {
+                    cacheEntryUpdatedListener.onUpdated(createEventWrapper(event));
                 }
                 break;
             case REMOVED:
-                if (this.cacheEntryRemovedListener != null) {
-                    this.cacheEntryRemovedListener.onRemoved(createEventWrapper(event));
+                if (cacheEntryRemovedListener != null) {
+                    cacheEntryRemovedListener.onRemoved(createEventWrapper(event));
                 }
                 break;
             case EXPIRED:
-                if (this.cacheEntryExpiredListener != null) {
-                    this.cacheEntryExpiredListener.onExpired(createEventWrapper(event));
+                if (cacheEntryExpiredListener != null) {
+                    cacheEntryExpiredListener.onExpired(createEventWrapper(event));
                 }
                 break;
             default:

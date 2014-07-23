@@ -32,9 +32,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @author mdogan 06/02/14
- */
 public class CacheClearOperation extends PartitionWideCacheOperation implements BackupAwareOperation {
 
     private boolean isRemoveAll;
@@ -98,10 +95,12 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
         return shouldBackup;
     }
 
+    @Override
     public final int getSyncBackupCount() {
         return cache != null ? cache.getConfig().getBackupCount() : 0;
     }
 
+    @Override
     public final int getAsyncBackupCount() {
         return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
     }
@@ -110,5 +109,4 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
     public Operation getBackupOperation() {
         return new CacheClearBackupOperation(name, backupKeys);
     }
-
 }

@@ -32,10 +32,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * date: 13/03/14
- * author: eminn
- */
 public class CachePushStatsRequest extends CallableClientRequest {
 
     private TimedClientState clientState;
@@ -81,7 +77,6 @@ public class CachePushStatsRequest extends CallableClientRequest {
         clientState = new TimedClientState();
         clientState.readData(in);
     }
-
 
     @Override
     public String getServiceName() {

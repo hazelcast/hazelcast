@@ -60,7 +60,6 @@ public interface ICache<K, V> extends DistributedObject, javax.cache.Cache<K, V>
     Future<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy);
     //endregion
 
-
     //region method with expirypolicy
     V get(K key, ExpiryPolicy expiryPolicy);
 

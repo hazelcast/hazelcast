@@ -871,7 +871,6 @@ public class CacheRecordStore implements ICacheRecordStore {
         }
     }
 
-
     private boolean compare(Object v1, Object v2) {
         if (v1 == null && v2 == null) {
             return true;
@@ -885,6 +884,4 @@ public class CacheRecordStore implements ICacheRecordStore {
         return v1.equals(v2);
 
     }
-
-
 }

@@ -98,6 +98,4 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
             }
         }
     }
-
-
 }

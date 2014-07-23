@@ -28,7 +28,8 @@ public class HazelcastCacheManager implements CacheManager {
     private boolean closeTriggered=false;
 
 
-    public HazelcastCacheManager(HazelcastCachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri, ClassLoader classLoader, Properties properties) {
+    public HazelcastCacheManager(HazelcastCachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri,
+                                 ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
             throw new NullPointerException("CachingProvider missing");
         }
@@ -49,7 +50,6 @@ public class HazelcastCacheManager implements CacheManager {
         }
         this.classLoaderReference = new WeakReference<ClassLoader>(classLoader);
         this.properties = properties == null ? new Properties() : new Properties(properties);
-
     }
 
     @Override

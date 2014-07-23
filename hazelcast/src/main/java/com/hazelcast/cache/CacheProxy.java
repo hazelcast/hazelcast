@@ -69,10 +69,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-
-/**
- * @author mdogan 05/02/14
- */
 final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> implements ICache<K, V>, InitializingObject {
 
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
@@ -274,7 +270,9 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         final Data v = serializationService.toData(value);
 
         final Operation op = new CacheGetAndReplaceOperation(name, k, v, expiryPolicy);
-        final InternalCompletableFuture<Object> f = engine.getOperationService().invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
+        OperationService operationService = engine.getOperationService();
+        int partitionId = getPartitionId(engine, k);
+        final InternalCompletableFuture<Object> f = operationService.invokeOnPartition(getServiceName(), op, partitionId);
         return new DelegatingFuture<V>(f, serializationService);
     }
 

@@ -42,10 +42,12 @@ public class CacheGetRequest extends AbstractCacheRequest {
         this.expiryPolicy = expiryPolicy;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.GET;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -55,14 +57,15 @@ public class CacheGetRequest extends AbstractCacheRequest {
         return new CacheGetOperation(name, key,expiryPolicy);
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         out.writeObject(expiryPolicy);
-
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
@@ -70,5 +73,4 @@ public class CacheGetRequest extends AbstractCacheRequest {
         key.readData(in);
         this.expiryPolicy = in.readObject();
     }
-
 }

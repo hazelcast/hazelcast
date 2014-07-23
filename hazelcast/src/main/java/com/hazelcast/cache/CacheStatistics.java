@@ -29,7 +29,6 @@ public class CacheStatistics implements DataSerializable {
 
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
-
     private final AtomicLong removals = new AtomicLong();
     private final AtomicLong expiries = new AtomicLong();
     private final AtomicLong puts = new AtomicLong();

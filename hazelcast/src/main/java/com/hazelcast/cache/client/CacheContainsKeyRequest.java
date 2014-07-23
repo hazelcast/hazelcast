@@ -39,10 +39,12 @@ public class CacheContainsKeyRequest extends AbstractCacheRequest {
         this.key = key;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.CONTAINS_KEY;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -52,12 +54,14 @@ public class CacheContainsKeyRequest extends AbstractCacheRequest {
         return new CacheContainsKeyOperation(name, key);
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();

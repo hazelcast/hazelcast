@@ -38,7 +38,6 @@ import java.util.Set;
 public class CacheLoadAllOperation extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable, BackupAwareOperation {
 
-
     private Set<Data> keys;
     private boolean replaceExistingValues;
 

@@ -24,7 +24,6 @@ import java.io.IOException;
 
 public class CacheClearResponse implements IdentifiedDataSerializable {
 
-
     private Object response;
 
     public CacheClearResponse() {
@@ -57,5 +56,4 @@ public class CacheClearResponse implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         response = in.readObject();
     }
-
 }

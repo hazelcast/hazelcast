@@ -27,9 +27,6 @@ import com.hazelcast.spi.Operation;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
-/**
- * @author mdogan 05/02/14
- */
 public class CacheReplaceOperation extends AbstractCacheOperation implements BackupAwareOperation {
 
     private Data value;
@@ -72,7 +69,6 @@ public class CacheReplaceOperation extends AbstractCacheOperation implements Bac
         return new CachePutBackupOperation(name, key, backupRecord);
     }
 
-
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
@@ -94,5 +90,4 @@ public class CacheReplaceOperation extends AbstractCacheOperation implements Bac
     public int getId() {
         return CacheDataSerializerHook.REPLACE;
     }
-
 }

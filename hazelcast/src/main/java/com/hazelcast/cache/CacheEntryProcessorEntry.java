@@ -25,7 +25,6 @@ import javax.cache.processor.MutableEntry;
 
 public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
 
-
     private K key;
     private V value;
 
@@ -40,16 +39,13 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
     private final long start;
     private final ExpiryPolicy expiryPolicy;
 
-
     public CacheEntryProcessorEntry(Data keyData, CacheRecord record, CacheRecordStore cacheRecordStore, long now) {
         this.keyData = keyData;
         this.record = record;
         this.cacheRecordStore = cacheRecordStore;
         this.now = now;
         this.start = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? System.nanoTime() : 0;
-        ;
         this.expiryPolicy = cacheRecordStore.cacheConfig.getExpiryPolicyFactory().create();
-
     }
 
     @Override
@@ -60,7 +56,11 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
     @Override
     public void remove() {
         this.value = null;
-        this.state = (this.state == State.CREATE || this.state == State.LOAD) ? State.NONE : State.REMOVE;
+        if (this.state == State.CREATE || this.state == State.LOAD) {
+            this.state = State.NONE;
+        } else {
+            this.state = State.REMOVE;
+        }
     }
 
     @Override
@@ -171,6 +171,5 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
 
     private enum State {
         NONE, ACCESS, UPDATE, LOAD, CREATE, REMOVE
-
     }
 }
