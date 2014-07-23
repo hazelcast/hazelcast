@@ -23,7 +23,6 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 public class CacheStatisticsOperation extends PartitionWideCacheOperation implements ReadonlyOperation {
 
-
     public CacheStatisticsOperation() {
     }
 

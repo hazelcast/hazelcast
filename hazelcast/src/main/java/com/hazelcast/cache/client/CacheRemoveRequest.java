@@ -33,7 +33,6 @@ public class CacheRemoveRequest extends AbstractCacheRequest {
     protected Data key;
     protected Data currentValue = null;
 
-
     public CacheRemoveRequest() {
     }
 
@@ -48,10 +47,12 @@ public class CacheRemoveRequest extends AbstractCacheRequest {
         this.currentValue = currentValue;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.REMOVE;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -61,6 +62,7 @@ public class CacheRemoveRequest extends AbstractCacheRequest {
         return new CacheRemoveOperation(name, key, currentValue);
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -68,6 +70,7 @@ public class CacheRemoveRequest extends AbstractCacheRequest {
         IOUtil.writeNullableData(out, currentValue);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();

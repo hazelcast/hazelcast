@@ -25,9 +25,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by asim on 28.04.2014.
- */
+//todo: Unused and untested
 public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable {
 
     private Duration create;
@@ -35,12 +33,17 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     private Duration update;
 
     public HazelcastExpiryPolicy(long createMillis, long accessMillis, long updateMillis) {
-        this(new Duration(TimeUnit.MILLISECONDS, createMillis), new Duration(TimeUnit.MILLISECONDS, accessMillis), new Duration(TimeUnit.MILLISECONDS, updateMillis));
+        this(new Duration(TimeUnit.MILLISECONDS, createMillis),
+                new Duration(TimeUnit.MILLISECONDS, accessMillis),
+                new Duration(TimeUnit.MILLISECONDS, updateMillis));
     }
 
 
-    public HazelcastExpiryPolicy(long createDurationAmount, long accessDurationAmount, long updateDurationAmount, TimeUnit timeUnit) {
-        this(new Duration(timeUnit, createDurationAmount), new Duration(timeUnit, accessDurationAmount), new Duration(timeUnit, updateDurationAmount));
+    public HazelcastExpiryPolicy(long createDurationAmount, long accessDurationAmount, long updateDurationAmount,
+                                 TimeUnit timeUnit) {
+        this(new Duration(timeUnit, createDurationAmount),
+                new Duration(timeUnit, accessDurationAmount),
+                new Duration(timeUnit, updateDurationAmount));
     }
 
     public HazelcastExpiryPolicy(ExpiryPolicy expiryPolicy) {

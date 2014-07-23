@@ -27,9 +27,6 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 05/02/14
- */
 public class CachePutBackupOperation extends AbstractCacheOperation implements BackupOperation {
 
     private CacheRecord cacheRecord;

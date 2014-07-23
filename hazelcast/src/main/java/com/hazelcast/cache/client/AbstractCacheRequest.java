@@ -28,7 +28,6 @@ abstract class AbstractCacheRequest extends KeyBasedClientRequest implements Ret
 
     protected String name;
 
-
     public AbstractCacheRequest() {
     }
 
@@ -36,10 +35,12 @@ abstract class AbstractCacheRequest extends KeyBasedClientRequest implements Ret
         this.name = name;
     }
 
+    @Override
     public final int getFactoryId() {
         return CachePortableHook.F_ID;
     }
 
+    @Override
     public final String getServiceName() {
         return CacheService.SERVICE_NAME;
     }
@@ -48,5 +49,4 @@ abstract class AbstractCacheRequest extends KeyBasedClientRequest implements Ret
     public Permission getRequiredPermission() {
         return null;
     }
-
 }

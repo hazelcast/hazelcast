@@ -43,10 +43,12 @@ public class CacheGetAndReplaceRequest extends AbstractCacheRequest {
         this.value = value;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.GET_AND_REPLACE;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -56,7 +58,7 @@ public class CacheGetAndReplaceRequest extends AbstractCacheRequest {
         return new CacheGetAndReplaceOperation(name, key, value,expiryPolicy);
     }
 
-
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -65,6 +67,7 @@ public class CacheGetAndReplaceRequest extends AbstractCacheRequest {
         out.writeObject(expiryPolicy);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();

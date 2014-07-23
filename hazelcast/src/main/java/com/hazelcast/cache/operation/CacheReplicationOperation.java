@@ -33,9 +33,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/**
- * @author mdogan 05/02/14
- */
 public final class CacheReplicationOperation extends AbstractOperation {
 
     Map<String, Map<Data, CacheRecord>> data;
@@ -45,6 +42,7 @@ public final class CacheReplicationOperation extends AbstractOperation {
     }
 
     public CacheReplicationOperation(CachePartitionSegment segment, int replicaIndex) {
+        //TODO: Why isn't this pulled into the initialization of the data field?
         data = new HashMap<String, Map<Data, CacheRecord>>();
 
         Iterator<ICacheRecordStore> iter = segment.cacheIterator();
@@ -55,11 +53,6 @@ public final class CacheReplicationOperation extends AbstractOperation {
                 data.put(next.getName(), next.getReadOnlyRecords());
             }
         }
-    }
-
-    @Override
-    public final void beforeRun() throws Exception {
-
     }
 
     @Override
@@ -144,5 +137,4 @@ public final class CacheReplicationOperation extends AbstractOperation {
     public boolean isEmpty() {
         return data == null || data.isEmpty();
     }
-
 }

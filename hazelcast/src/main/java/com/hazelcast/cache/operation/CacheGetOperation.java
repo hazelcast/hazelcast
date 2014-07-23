@@ -25,9 +25,6 @@ import com.hazelcast.spi.ReadonlyOperation;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
-/**
- * @author mdogan 05/02/14
- */
 public class CacheGetOperation extends AbstractCacheOperation implements ReadonlyOperation {
 
     private ExpiryPolicy expiryPolicy;
@@ -44,7 +41,6 @@ public class CacheGetOperation extends AbstractCacheOperation implements Readonl
     public void run() throws Exception {
         response = cache != null ? cache.get(key, expiryPolicy) : null;
     }
-
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {

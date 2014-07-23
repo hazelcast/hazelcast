@@ -26,9 +26,6 @@ import com.hazelcast.spi.Operation;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
-/**
- * @author mdogan 05/02/14
- */
 public class CachePutOperation extends AbstractCacheOperation implements BackupAwareOperation {
 
     private Data value;
@@ -38,6 +35,7 @@ public class CachePutOperation extends AbstractCacheOperation implements BackupA
     public CachePutOperation() {
     }
 
+    //TODO: Unused
     public CachePutOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
         super(name, key);
         this.value = value;
@@ -94,5 +92,4 @@ public class CachePutOperation extends AbstractCacheOperation implements BackupA
     public int getId() {
         return CacheDataSerializerHook.PUT;
     }
-
 }

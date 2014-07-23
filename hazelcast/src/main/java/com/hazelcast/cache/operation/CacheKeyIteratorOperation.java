@@ -63,5 +63,4 @@ public class CacheKeyIteratorOperation extends AbstractCacheOperation implements
         segmentIndex = in.readInt();
         tableIndex = in.readInt();
     }
-
 }

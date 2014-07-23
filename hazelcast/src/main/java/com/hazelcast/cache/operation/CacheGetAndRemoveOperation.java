@@ -21,9 +21,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
-/**
- * @author mdogan 05/02/14
- */
 public class CacheGetAndRemoveOperation extends AbstractCacheOperation implements BackupAwareOperation {
 
     public CacheGetAndRemoveOperation() {

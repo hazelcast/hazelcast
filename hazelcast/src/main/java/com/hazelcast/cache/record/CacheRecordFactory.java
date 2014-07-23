@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 
 public class CacheRecordFactory {
 
-
     private InMemoryFormat inMemoryFormat;
     private SerializationService serializationService;
 
@@ -62,5 +61,4 @@ public class CacheRecordFactory {
     public static boolean isExpiredAt(long expirationTime, long now) {
         return expirationTime > -1 && expirationTime <= now;
     }
-
 }

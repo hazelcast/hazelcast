@@ -29,7 +29,6 @@ import java.io.IOException;
 
 public class CacheEntryProcessorOperation extends AbstractCacheOperation implements BackupAwareOperation {
 
-
     private EntryProcessor entryProcessor;
     private Object[] arguments;
 
@@ -38,7 +37,8 @@ public class CacheEntryProcessorOperation extends AbstractCacheOperation impleme
     public CacheEntryProcessorOperation() {
     }
 
-    public CacheEntryProcessorOperation(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor, Object... arguments) {
+    public CacheEntryProcessorOperation(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor,
+                                        Object... arguments) {
         super(name, key);
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;

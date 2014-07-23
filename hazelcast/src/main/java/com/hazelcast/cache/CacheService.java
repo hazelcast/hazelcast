@@ -43,10 +43,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-
-/**
- * @author mdogan 05/02/14
- */
 public class CacheService implements ManagedService, RemoteService, MigrationAwareService
         , EventPublishingService<CacheEventData, CacheEventListenerAdaptor> {
 

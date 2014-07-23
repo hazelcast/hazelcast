@@ -26,9 +26,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 05/02/14
- */
 public class CacheRemoveOperation extends AbstractCacheOperation implements BackupAwareOperation {
 
     private Data currentValue; // if same
@@ -36,6 +33,7 @@ public class CacheRemoveOperation extends AbstractCacheOperation implements Back
     public CacheRemoveOperation() {
     }
 
+    //TODO: Unused
     public CacheRemoveOperation(String name, Data key) {
         super(name, key);
     }
@@ -67,7 +65,6 @@ public class CacheRemoveOperation extends AbstractCacheOperation implements Back
     public Operation getBackupOperation() {
         return new CacheRemoveBackupOperation(name, key);
     }
-
 
     @Override
     public int getId() {

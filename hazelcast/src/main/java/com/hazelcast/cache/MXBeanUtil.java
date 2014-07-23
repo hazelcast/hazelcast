@@ -48,7 +48,6 @@ public class MXBeanUtil {
         }
     }
 
-
     static boolean isRegistered(ICache cache, boolean stats) {
 
         Set<ObjectName> registeredObjectNames = null;
@@ -59,9 +58,7 @@ public class MXBeanUtil {
         return !registeredObjectNames.isEmpty();
     }
 
-
     public static void unregisterCacheObject(ICache cache, boolean stats) {
-
         Set<ObjectName> registeredObjectNames = null;
 
         ObjectName objectName = calculateObjectName(cache, stats);

@@ -40,6 +40,7 @@ public class CacheSizeRequest extends AllPartitionsClientRequest implements Retr
         this.name = name;
     }
 
+    @Override
     public String getServiceName() {
         return CacheService.SERVICE_NAME;
     }
@@ -49,14 +50,17 @@ public class CacheSizeRequest extends AllPartitionsClientRequest implements Retr
         return CachePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.SIZE;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
     }
