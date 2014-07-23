@@ -59,6 +59,7 @@ src/Transactions.md
 		src/ResourceAdapterConfiguration.md
 		src/SampleGlassfishConfiguration.md
 		src/SampleJBossConfiguration.md
+		src/SampleJBoss7Configuration.md
 	src/XATransactions.md
 src/JCache.md
 src/IntegratedClustering.md
@@ -71,7 +72,7 @@ src/Clients.md
 		src/JavaClient.md
 		src/CPlusClient.md
 		src/CSharpClient.md
-	src/RESTClient.md
+	src/RestClient.md
 	src/MemcacheClient.md
 src/Serialization.md
 	src/Serializable.md

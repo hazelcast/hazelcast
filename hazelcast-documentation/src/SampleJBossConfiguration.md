@@ -1,6 +1,6 @@
 
 
-### Sample JBoss Web Application Configuration
+### Sample JBoss AS 5 Web Application Configuration
 
 - Place the `hazelcast-`*version*`.jar` and `hazelcast-jca-`*version*`.jar` into `JBOSS_HOME/server/deploy/default/lib` directory.
 - Place the `hazelcast-jca-rar-`*version*`.rar` into `JBOSS_HOME/server/deploy/default/deploy` directory

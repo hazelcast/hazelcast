@@ -103,6 +103,16 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar` and `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` to the folder `$CATALINA_HOME/lib/`.
 
+- Put `<Listener>` tag into the `$CATALINA_HOME$/conf/server.xml` as shown below.
+
+ ```xml
+<Server>
+	...
+    <Listener className="com.hazelcast.session.ClientServerLifecycleListener"/>
+    ...
+</Server>
+```
+
 - Update `<Manager>` tag in the `$CATALINA_HOME$/conf/context.xml` as shown below.
 
   ```xml
@@ -115,6 +125,11 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 
 - Start Tomcat instances with a configured load balancer and deploy web application.
 
+
+
+***Optional Listener Tag Parameters***
+
+- Add `configLocation` attribute into `<Listener>` tag. It is optional. If not provided, `hazelcast-client-default.xml` in the hazelcast-client-`<*version*>`.jar file is used by default. Any client XML file in the classpath, URL or full filesystem path as a `configLocation` value is also supported.
 
 #### Optional Manager Tag Parameters
 
