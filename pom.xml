@@ -75,6 +75,7 @@
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
+        <sonar.projectName>JCache Preview</sonar.projectName>
         <animal.sniffer.plugin.version>1.11</animal.sniffer.plugin.version>
         <jsr107.api.version>1.0.0</jsr107.api.version>
     </properties>
