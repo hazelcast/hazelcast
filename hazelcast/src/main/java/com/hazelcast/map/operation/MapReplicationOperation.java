@@ -54,7 +54,6 @@ import static com.hazelcast.map.record.Records.applyRecordInfo;
 public class MapReplicationOperation extends AbstractOperation {
 
     private Map<String, Set<RecordReplicationInfo>> data;
-    private Map<String, Boolean> mapInitialLoadInfo;
     private Map<String, List<DelayedEntry>> delayedEntries;
 
     public MapReplicationOperation() {
@@ -63,7 +62,6 @@ public class MapReplicationOperation extends AbstractOperation {
     public MapReplicationOperation(MapService mapService, PartitionContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
-        mapInitialLoadInfo = new HashMap<String, Boolean>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
             RecordStore recordStore = entry.getValue();
             MapContainer mapContainer = recordStore.getMapContainer();
@@ -72,10 +70,6 @@ public class MapReplicationOperation extends AbstractOperation {
                 continue;
             }
             String name = entry.getKey();
-            // adding if initial data is loaded for the only maps that has mapstore behind
-            if (mapContainer.getStore() != null) {
-                mapInitialLoadInfo.put(name, true);
-            }
             // now prepare data to migrate records
             Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
             final Iterator<Record> iterator = recordStore.iterator();
@@ -124,13 +118,8 @@ public class MapReplicationOperation extends AbstractOperation {
                     applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
                 }
-            }
-        }
-        if (mapInitialLoadInfo != null) {
-            for (Entry<String, Boolean> entry : mapInitialLoadInfo.entrySet()) {
-                final String mapName = entry.getKey();
-                RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), mapName);
-                recordStore.setLoaded(entry.getValue());
+                recordStore.setLoaded(true);
+
             }
         }
         for (Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
@@ -160,13 +149,6 @@ public class MapReplicationOperation extends AbstractOperation {
             data.put(name, recordReplicationInfos);
         }
         size = in.readInt();
-        mapInitialLoadInfo = new HashMap<String, Boolean>(size);
-        for (int i = 0; i < size; i++) {
-            String name = in.readUTF();
-            boolean loaded = in.readBoolean();
-            mapInitialLoadInfo.put(name, loaded);
-        }
-        size = in.readInt();
         delayedEntries = new HashMap<String, List<DelayedEntry>>(size);
         for (int i = 0; i < size; i++) {
             final String mapName = in.readUTF();
@@ -194,11 +176,6 @@ public class MapReplicationOperation extends AbstractOperation {
             for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                 out.writeObject(recordReplicationInfo);
             }
-        }
-        out.writeInt(mapInitialLoadInfo.size());
-        for (Entry<String, Boolean> entry : mapInitialLoadInfo.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeBoolean(entry.getValue());
         }
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();

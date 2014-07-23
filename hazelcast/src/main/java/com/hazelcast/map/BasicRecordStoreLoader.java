@@ -7,7 +7,6 @@ import com.hazelcast.map.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -77,9 +76,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (isLoaded()) {
             return;
         }
-        if (isMigrating()) {
-            return;
-        }
         if (!isOwner()) {
             setLoaded(true);
             return;
@@ -95,12 +91,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     @Override
     public Throwable getExceptionOrNull() {
         return throwable;
-    }
-
-    private boolean isMigrating() {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
-        return partition.isMigrating();
     }
 
     private boolean isOwner() {
