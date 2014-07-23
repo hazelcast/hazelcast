@@ -1,18 +1,19 @@
 
 
 ### Sample JBoss AS 7 / EAP 6 Web Application Configuration
-Deployment on JBoss AS 7 or JBoss EAP 6 is a fairly straightforward process. The only non-trivial step is a creation of a new JBoss module with Hazelcast libraries.     
 
-- Create a new directory `<jboss_home>/modules/system/layers/base/com/hazelcast/main`
-- Place the `hazelcast-`*version*`.jar` and `hazelcast-jca-`*version*`.jar` into the directory you created in a previous step
-- Create a new file `module.xml` and place it to the same directory. This file should have this content:
+Deployment on JBoss AS 7 or JBoss EAP 6 is a fairly straightforward process, steps of which are shown below. The only non-trivial step is the creation of a new JBoss module with Hazelcast libraries.     
 
-```xml
+- Create the directory `<jboss_home>/modules/system/layers/base/com/hazelcast/main`.
+- Place the `hazelcast-`<*version*>`.jar` and `hazelcast-jca-`<*version*>`.jar` into the directory you created in the previous step.
+- Create the file `module.xml` and place it to the same directory. This file should have the below content.
+
+  ```xml
 <module xmlns="urn:jboss:module:1.0" name="com.hazelcast">
   <resources>
     <resource-root path="."/>
-    <resource-root path="hazelcast-*version*.jar"/>
-    <resource-root path="hazelcast-jca-*version*.jar"/>
+    <resource-root path="hazelcast-<version>.jar"/>
+    <resource-root path="hazelcast-jca-<version>.jar"/>
   </resources>
   <dependencies>
     <module name="javax.api"/>
@@ -23,9 +24,9 @@ Deployment on JBoss AS 7 or JBoss EAP 6 is a fairly straightforward process. The
 </module>
 ```
 
-At this point you have a new JBoss module with Hazelcast created. You can now start JBoss and deploy the `hazelcast-jca-rar-`*version*`.rar` file via JBoss CLI or Administration Console.
+At this point, you have a new JBoss module with Hazelcast in it. You can now start JBoss and deploy the `hazelcast-jca-rar-`<*version*>`.rar` file via JBoss CLI or Administration Console.
 
-Once the Hazelcast Resource Adapter is deployed you can start using it. The easiest way is to let a container inject `ConnectionFactory` into your beans. 
+Once the Hazelcast Resource Adapter is deployed, you can start using it. The easiest way is to let a container inject `ConnectionFactory` into your beans. 
     
 ```java
 package com.hazelcast.examples.rar;
@@ -78,4 +79,5 @@ public class ExampleBean implements ExampleInterface {
 ```
 
 #### Known Issues
+
 - There is a regression in JBoss EAP 6.1.0 causing failure during Hazelcast Resource Adapter deployment. The issue is fixed in JBoss EAP 6.1.1. See [this](https://bugzilla.redhat.com/show_bug.cgi?id=976294) for additional details.  
