@@ -45,7 +45,7 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
         return new ManagedThread(r, name, id);
     }
 
-    private class ManagedThread extends Thread {
+    private class ManagedThread extends HazelcastManagedThread {
 
         protected final int id;
 
@@ -54,16 +54,11 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
             this.id = id;
         }
 
-        public void run() {
+        @Override
+        protected void afterRun() {
             try {
-                super.run();
-            } catch (OutOfMemoryError e) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-            } finally {
-                try {
-                    idQ.offer(id);
-                } catch (Throwable ignored) {
-                }
+                idQ.offer(id);
+            } catch (Throwable ignored) {
             }
         }
     }

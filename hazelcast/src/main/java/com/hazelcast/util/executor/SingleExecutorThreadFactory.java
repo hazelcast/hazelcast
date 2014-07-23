@@ -34,18 +34,10 @@ public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFac
         return new ManagedThread(r);
     }
 
-    private class ManagedThread extends Thread {
+    private class ManagedThread extends HazelcastManagedThread {
 
         public ManagedThread(Runnable target) {
             super(threadGroup, target, threadName);
-        }
-
-        public void run() {
-            try {
-                super.run();
-            } catch (OutOfMemoryError e) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-            }
         }
     }
 }

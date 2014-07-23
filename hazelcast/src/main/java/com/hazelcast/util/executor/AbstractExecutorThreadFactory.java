@@ -30,17 +30,21 @@ public abstract class AbstractExecutorThreadFactory implements ThreadFactory {
 
     public final Thread newThread(Runnable r) {
         final Thread t = createThread(r);
-        ClassLoader cl = classLoader != null ? classLoader : Thread.currentThread().getContextClassLoader();
-        // If classloader of current thread is null (means that caller class is loaded by bootloader),
-        // at first try to use classloader of current class.
-        if (cl == null) {
-            cl = getClass().getClassLoader();
+        t.setContextClassLoader(classLoader);
+        // If context classloader of created thread is still null
+        if (t.getContextClassLoader() == null) {
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            // If classloader of current thread is null (means that caller class is loaded by bootloader),
+            // at first try to use classloader of current class.
+            if (cl == null) {
+                cl = getClass().getClassLoader();
+            }
+            // If classloader is still null (this might not be possible), use system classloader as current classloader
+            if (cl == null) {
+                cl = ClassLoader.getSystemClassLoader();
+            }
+            t.setContextClassLoader(cl);
         }
-        // If classloader is still null (this might not be possible), use system classloader as current classloader
-        if (cl == null) {
-            cl = ClassLoader.getSystemClassLoader();
-        }
-        t.setContextClassLoader(cl);
         if (t.isDaemon()) {
             t.setDaemon(false);
         }
