@@ -256,13 +256,13 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (record == null) {
             return null;
         }
-        if (isLocked(record.getKey())) {
+        final Data key = record.getKey();
+        if (isLocked(key)) {
             return record;
         }
         if (isReachable(record)) {
             return record;
         }
-        final Data key = record.getKey();
         final Object value = record.getValue();
         evict(key);
         doPostEvictionOperations(key, value);
@@ -275,6 +275,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private boolean isReachable(Record record, long time) {
+        if (record == null) {
+            return false;
+        }
         final Record idleExpired = isIdleExpired(record, time);
         if (idleExpired == null) {
             return false;
@@ -378,6 +381,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
         protected ReadOnlyRecordIterator(Collection<Record> values) {
             this.iterator = values.iterator();
+
             advance();
         }
 
@@ -398,14 +402,14 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("remove() not supported");
+            throw new UnsupportedOperationException("remove not supported by this iterator");
         }
 
         private void advance() {
             while (iterator.hasNext()) {
                 nextRecord = iterator.next();
-                nextRecord = nullIfExpired(nextRecord);
-                if (nextRecord != null) {
+                boolean reachable = isReachable(nextRecord);
+                if (reachable && nextRecord != null) {
                     return;
                 }
             }

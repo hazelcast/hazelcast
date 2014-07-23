@@ -741,17 +741,16 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(NightlyTest.class)
     public void testIssue1085EvictionBackup() throws InterruptedException {
+        final String mapName = randomMapName();
+        int entryCount = 10;
         Config config = new Config();
-        config.getMapConfig("testIssue1085EvictionBackup").setTimeToLiveSeconds(3);
+        config.getMapConfig(mapName).setTimeToLiveSeconds(3);
+        HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);
 
-        HazelcastInstance[] instances = createHazelcastInstanceFactory(3).newInstances(config);
+        final CountDownLatch latch = new CountDownLatch(entryCount);
 
-        int size = 1000;
-        final CountDownLatch latch = new CountDownLatch(size);
-
-        final IMap map = instances[0].getMap("testIssue1085EvictionBackup");
+        final IMap map = instances[0].getMap(mapName);
         map.addEntryListener(new EntryAdapter() {
             @Override
             public void entryEvicted(EntryEvent event) {
@@ -759,20 +758,27 @@ public class EvictionTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         }, false);
-
         // put some sample data
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < entryCount; i++) {
             map.put(i, i);
         }
-
-        // shutdown instances so we can check eviction happens in case backup process
-        instances[1].shutdown();
-        instances[2].shutdown();
-
         //wait until eviction is complete
         assertOpenEventually(latch);
-
         assertSizeEventually(0, map);
+        assertHeapCostsZeroEventually(mapName, instances);
+    }
+
+
+    private void assertHeapCostsZeroEventually(final String mapName, final HazelcastInstance... nodes) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (HazelcastInstance node : nodes) {
+                    final long heapCostOfNode = node.getMap(mapName).getLocalMapStats().getHeapCost();
+                    assertEquals(0L, heapCostOfNode);
+                }
+            }
+        });
     }
 
     /**
