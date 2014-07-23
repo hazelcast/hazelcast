@@ -16,6 +16,13 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.wan.impl.WanNoDelayReplication;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +31,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -204,10 +205,15 @@ public class WanReplicationTest extends HazelcastTestSupport {
         return true;
     }
 
-    private void assertDataSize(final HazelcastInstance[] cluster, String mapName, int size) {
-        HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        assertEquals(size, m.size());
+    private void assertDataSizeEventually(final HazelcastInstance[] cluster, final String mapName, final int size) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                HazelcastInstance node = getNode(cluster);
+                IMap m = node.getMap(mapName);
+                assertEquals(size, m.size());
+            }
+        });
     }
 
 
@@ -265,7 +271,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         removeDataIn(clusterB, "map", 1000, 1500);
 
         assertKeysNotIn(clusterC, "map", 0, 2000);
-        assertDataSize(clusterC, "map", 0);
+        assertDataSizeEventually(clusterC, "map", 0);
     }
 
 
@@ -337,13 +343,13 @@ public class WanReplicationTest extends HazelcastTestSupport {
         createDataIn(clusterB, "map", 0, 1000);
         assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
 
-        assertDataSize(clusterC, "map", 2000);
+        assertDataSizeEventually(clusterC, "map", 2000);
 
         removeDataIn(clusterA, "map", 0, 1000);
         removeDataIn(clusterB, "map", 1000, 2000);
 
         assertKeysNotIn(clusterC, "map", 0, 2000);
-        assertDataSize(clusterC, "map", 0);
+        assertDataSizeEventually(clusterC, "map", 0);
     }
 
 
@@ -360,7 +366,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         createDataIn(clusterB, "map", 0, 1000);
         assertDataInFrom(clusterC, "map", 0, 1000, clusterB);
 
-        assertDataSize(clusterC, "map", 1000);
+        assertDataSizeEventually(clusterC, "map", 1000);
 
         removeDataIn(clusterA, "map", 0, 500);
         assertKeysNotIn(clusterC, "map", 0, 500);
@@ -368,7 +374,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         removeDataIn(clusterB, "map", 500, 1000);
         assertKeysNotIn(clusterC, "map", 500, 1000);
 
-        assertDataSize(clusterC, "map", 0);
+        assertDataSizeEventually(clusterC, "map", 0);
     }
 
 
@@ -415,8 +421,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertKeysNotIn(clusterB, "map", 0, 1000);
         assertKeysNotIn(clusterC, "map", 0, 1000);
 
-        assertDataSize(clusterB, "map", 0);
-        assertDataSize(clusterC, "map", 0);
+        assertDataSizeEventually(clusterB, "map", 0);
+        assertDataSizeEventually(clusterC, "map", 0);
     }
 
 
@@ -444,8 +450,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertKeysIn(clusterA, "map", 500, 1500);
         assertKeysIn(clusterB, "map", 500, 1500);
 
-        assertDataSize(clusterA, "map", 1000);
-        assertDataSize(clusterB, "map", 1000);
+        assertDataSizeEventually(clusterA, "map", 1000);
+        assertDataSizeEventually(clusterB, "map", 1000);
     }
 
     @Test
@@ -492,8 +498,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertKeysNotIn(clusterA, "map", 0, 1500);
         assertKeysNotIn(clusterB, "map", 0, 1500);
 
-        assertDataSize(clusterA, "map", 0);
-        assertDataSize(clusterB, "map", 0);
+        assertDataSizeEventually(clusterA, "map", 0);
+        assertDataSizeEventually(clusterB, "map", 0);
     }
 
 
@@ -525,10 +531,10 @@ public class WanReplicationTest extends HazelcastTestSupport {
         createDataIn(clusterA, "map", 0, 1000);
 
         assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSize(clusterB, "map", 1000);
+        assertDataSizeEventually(clusterB, "map", 1000);
 
         assertKeysIn(clusterC, "map", 0, 1000);
-        assertDataSize(clusterC, "map", 1000);
+        assertDataSizeEventually(clusterC, "map", 1000);
     }
 
     @Test
@@ -541,7 +547,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         removeAndCreateDataIn(clusterA, "map", 0, 1000);
 
         assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSize(clusterB, "map", 1000);
+        assertDataSizeEventually(clusterB, "map", 1000);
     }
 
     private void removeAndCreateDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
@@ -566,10 +572,10 @@ public class WanReplicationTest extends HazelcastTestSupport {
         createDataIn(clusterA, "map", 0, 1000);
 
         assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSize(clusterB, "map", 1000);
+        assertDataSizeEventually(clusterB, "map", 1000);
 
         assertKeysIn(clusterC, "map", 0, 1000);
-        assertDataSize(clusterC, "map", 1000);
+        assertDataSizeEventually(clusterC, "map", 1000);
     }
 
 
