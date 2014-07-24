@@ -17,9 +17,11 @@
 package com.hazelcast.wm.test;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -27,9 +29,13 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
+@Category(QuickTest.class)
 public class WebFilterTest extends AbstractWebFilterTest {
 
     @Parameters(name = "Executing: {0}")
