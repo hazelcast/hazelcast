@@ -17,6 +17,7 @@ src/Distributed_Data_Structures.md
 		src/Map-Persistence.md
 		src/Map-Interceptors.md
 		src/Map-NearCache.md
+		src/Map-Locks.md
 		src/Map-EntryStatistics.md
 		src/Map-EntryListener.md
 	src/Queue.md
