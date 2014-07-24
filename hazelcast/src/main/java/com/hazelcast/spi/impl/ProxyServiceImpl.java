@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -232,10 +233,14 @@ public class ProxyServiceImpl
     public Operation getPostJoinOperation() {
         Collection<ProxyInfo> proxies = new LinkedList<ProxyInfo>();
         for (ProxyRegistry registry : registries.values()) {
-            for (DistributedObjectFuture future : registry.proxies.values()) {
-                DistributedObject distributedObject = future.get();
+            for (Map.Entry<String, DistributedObjectFuture> entry : registry.proxies.entrySet()) {
+                final DistributedObjectFuture future = entry.getValue();
+                if (!future.isSet()) {
+                    continue;
+                }
+                final DistributedObject distributedObject = future.get();
                 if (distributedObject instanceof InitializingObject) {
-                    proxies.add(new ProxyInfo(registry.serviceName, distributedObject.getName()));
+                    proxies.add(new ProxyInfo(registry.serviceName, entry.getKey()));
                 }
             }
         }
@@ -356,6 +361,10 @@ public class ProxyServiceImpl
     private static class DistributedObjectFuture {
 
         volatile DistributedObject proxy;
+
+        boolean isSet() {
+            return proxy != null;
+        }
 
         DistributedObject get() {
             if (proxy == null) {
