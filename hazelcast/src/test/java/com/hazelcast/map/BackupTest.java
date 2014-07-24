@@ -30,7 +30,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
 import org.junit.Before;
