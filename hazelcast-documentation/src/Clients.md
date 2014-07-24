@@ -11,10 +11,6 @@ There are currently three ways to connect to a running Hazelcast cluster:
 
 
 
-
-
-## Native Clients
-
 Native Clients enable you to perform almost all Hazelcast operations without being a member of the cluster. It connects to one of the cluster members and delegates all cluster wide operations to it (*dummy client*) or connects to all of them and delegate operations smartly (*smart client*). When the relied cluster member dies, client will transparently switch to another live member.
 
 There can be hundreds, even thousands of clients connected to the cluster. But, by default there are ***core count*** \* ***10*** threads on the server side that will handle all the requests (e.g. if the server has 4 cores, it will be 40).

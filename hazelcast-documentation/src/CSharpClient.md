@@ -1,7 +1,7 @@
 
 	
 
-### .NET Client
+## .NET Client
 
 ![](images/enterprise-onlycopy.jpg)
 
@@ -99,13 +99,13 @@ namespace Hazelcast.Client.Example
 ```
 
 
-#### Client Configuration
+### Client Configuration
 Hazelcast .NET client can be configured via API or XML. To start the client, a configuration can be passed or can be left empty to use default values.
 
 ***NOTE***: *.NET and Java clients are similar in terms of configuration. Therefore, you can refer to [Java Client](#java-client) section for configuration aspects. For information on .NET API documentation, please refer to the API document provided along with the Hazelcast Enterprise license*.
 
 
-#### Client Startup
+### Client Startup
 After configuration, one can obtain a client using one of the static methods of Hazelcast like as shown below.
 
 
