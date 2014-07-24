@@ -65,6 +65,8 @@ public class CustomDataSourceMapReduceTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(new CustomKeyValueSource());

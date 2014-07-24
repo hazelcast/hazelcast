@@ -62,13 +62,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000, expected = ExecutionException.class)
-    public void testExceptionDistribution()
-            throws Exception {
+    public void testExceptionDistribution() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -92,13 +95,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000, expected = CancellationException.class)
-    public void testInProcessCancellation()
-            throws Exception {
+    public void testInProcessCancellation() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -123,13 +129,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testMapper()
-            throws Exception {
+    public void testMapper() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -150,13 +159,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testMapperReducer()
-            throws Exception {
+    public void testMapperReducer() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -184,13 +196,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testMapperCollator()
-            throws Exception {
+    public void testMapperCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -212,13 +227,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testKeyedMapperCollator()
-            throws Exception {
+    public void testKeyedMapperCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -236,13 +254,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testKeyPredicateMapperCollator()
-            throws Exception {
+    public void testKeyPredicateMapperCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -261,13 +282,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testMapperReducerCollator()
-            throws Exception {
+    public void testMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -294,13 +318,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testAsyncMapper()
-            throws Exception {
+    public void testAsyncMapper() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -338,13 +365,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testKeyedAsyncMapper()
-            throws Exception {
+    public void testKeyedAsyncMapper() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -382,13 +412,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testAsyncMapperReducer()
-            throws Exception {
+    public void testAsyncMapperReducer() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -433,13 +466,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testAsyncMapperCollator()
-            throws Exception {
+    public void testAsyncMapperCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -483,13 +519,16 @@ public class ClientMapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testAsyncMapperReducerCollator()
-            throws Exception {
+    public void testAsyncMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);

@@ -57,9 +57,7 @@ public class MapReduceTest
     private static final String MAP_NAME = "default";
 
     @Test(timeout = 30000)
-    public void testPartitionPostpone()
-            throws Exception {
-
+    public void testPartitionPostpone() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -67,6 +65,8 @@ public class MapReduceTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -88,9 +88,7 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000, expected = ExecutionException.class)
-    public void testExceptionDistributionWithCollator()
-            throws Exception {
-
+    public void testExceptionDistributionWithCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -98,6 +96,8 @@ public class MapReduceTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -127,9 +127,7 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000, expected = ExecutionException.class)
-    public void testExceptionDistribution()
-            throws Exception {
-
+    public void testExceptionDistribution() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -137,6 +135,8 @@ public class MapReduceTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -159,9 +159,7 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000, expected = CancellationException.class)
-    public void testInProcessCancellation()
-            throws Exception {
-
+    public void testInProcessCancellation() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -169,6 +167,8 @@ public class MapReduceTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -192,9 +192,7 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testMapper()
-            throws Exception {
-
+    public void testMapper() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -202,6 +200,8 @@ public class MapReduceTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -221,14 +221,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testKeyedMapperCollator()
-            throws Exception {
-
+    public void testKeyedMapperCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
@@ -245,14 +247,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testKeyPredicateMapperCollator()
-            throws Exception {
-
+    public void testKeyPredicateMapperCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
@@ -270,14 +274,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testMapperComplexMapping()
-            throws Exception {
-
+    public void testMapperComplexMapping() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -295,14 +301,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testMapperReducer()
-            throws Exception {
-
+    public void testMapperReducer() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -329,9 +337,7 @@ public class MapReduceTest
     }
 
     @Test(timeout = 60000)
-    public void testMapperReducerChunked()
-            throws Exception {
-
+    public void testMapperReducerChunked() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -339,6 +345,8 @@ public class MapReduceTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         final IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
@@ -377,14 +385,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testMapperCollator()
-            throws Exception {
-
+    public void testMapperCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -409,14 +419,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testMapperReducerCollator()
-            throws Exception {
-
+    public void testMapperReducerCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -442,14 +454,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testAsyncMapper()
-            throws Exception {
-
+    public void testAsyncMapper() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -489,14 +503,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testKeyedAsyncMapper()
-            throws Exception {
-
+    public void testKeyedAsyncMapper() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -536,14 +552,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testAsyncMapperReducer()
-            throws Exception {
-
+    public void testAsyncMapperReducer() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -590,14 +608,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testAsyncMapperCollator()
-            throws Exception {
-
+    public void testAsyncMapperCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -642,14 +662,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testAsyncMapperReducerCollator()
-            throws Exception {
-
+    public void testAsyncMapperReducerCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -695,14 +717,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testNullFromObjectCombiner()
-            throws Exception {
-
+    public void testNullFromObjectCombiner() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -728,14 +752,16 @@ public class MapReduceTest
     }
 
     @Test(timeout = 30000)
-    public void testDataSerializableIntermediateObject()
-            throws Exception {
-
+    public void testDataSerializableIntermediateObject() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
