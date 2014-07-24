@@ -21,13 +21,16 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -46,6 +49,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -65,21 +69,20 @@ public class BackupTest extends HazelcastTestSupport {
         Runtime.getRuntime().gc();
     }
 
-    private void waitForTermination(HazelcastInstance instance) {
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    private void waitForTermination(final HazelcastInstance instance) {
+        final Node node = TestUtil.getNode(instance);
+        if (node != null) {
+            assertTrueEventually(new AssertTask() {
+                public void run() {
+                    assertFalse(node.isActive());
+                }
+            });
         }
-        while (true) {
-            final Node node = TestUtil.getNode(instance);
-            if (node == null || !node.isActive()) {
-                break;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        sleepSeconds(3);
+        // Wait others to migrate data from this node necessary
+        for (HazelcastInstance hz : HazelcastInstanceFactory.getAllHazelcastInstances()) {
+            if (hz != instance) {
+                waitForMigration(instance);
             }
         }
     }
@@ -91,13 +94,13 @@ public class BackupTest extends HazelcastTestSupport {
 
     private void waitForMigration(HazelcastInstance instance) {
         final Node node = TestUtil.getNode(instance);
-        final InternalPartitionService ps = node.getPartitionService();
-        while (ps.hasOnGoingMigration()) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        if (node != null) {
+            final InternalPartitionService ps = node.getPartitionService();
+            assertTrueEventually(new AssertTask() {
+                public void run() {
+                    assertFalse(ps.hasOnGoingMigration());
+                }
+            });
         }
     }
 
@@ -298,9 +301,7 @@ public class BackupTest extends HazelcastTestSupport {
             TestUtil.terminateInstance(instances[ix]);
             instances[ix] = null;
             checkMapSizes(mapSize, backupCount, instances);
-
         }
-
     }
 
     private static void checkMapSizes(final int expectedSize, int backupCount, HazelcastInstance... instances)
