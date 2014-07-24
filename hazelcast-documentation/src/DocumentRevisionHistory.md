@@ -11,6 +11,7 @@
 ||[Queue](#queue)|Section improved with new subsections.|
 |[Chapter 6 - Distributed Query](#distributed-query)||Query section improved by adding 'how it works' information. Also, [Continuous Query](#continuous-query) section re-written and sample codes added. [Aggregators](#aggregators) added as a new section.|
 |[Chapter 7 - Transactions](#transactions)|[XA Transactions](#xa-transactions)|Added as a new section.|
+||[Sample JBoss AS 7 - EAP 6 Web Application Configuration](#sample-JBoss-AS-7-EAP-6-web-application-configuration)| Added as a new section.|
 |[Chapter 8 - Integrated Clustering](#integrated-clustering)|[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Added as a new section (Enterprise Only feature).|
 |[Chapter 9 - Hazelcast JCache Implementation](#hazelcast-jcache-implementation)||Added as a new chapter.|
 |[Chapter 11 - Clients](#clients)|[Java Client](#java-client)|Client configuration related to AWS added.|
