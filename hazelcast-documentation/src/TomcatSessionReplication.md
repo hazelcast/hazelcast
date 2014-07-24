@@ -58,7 +58,7 @@ This type of deployment is the simplest approach. You can just configure your To
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
 - Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-all-`<*version*>`-ee.jar`, `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` and `hazelcast.xml` to the folder `$CATALINA_HOME/lib/`.
 
-- Put `<Listener>` tag into the `$CATALINA_HOME$/conf/server.xml` as shown below.
+- Put `<Listener>` tag into the file `$CATALINA_HOME$/conf/server.xml` as shown below.
 
  ```xml
 <Server>
@@ -68,7 +68,7 @@ This type of deployment is the simplest approach. You can just configure your To
 </Server>
 ```
 
-- Put `<Manager>` tag into the `$CATALINA_HOME$/conf/context.xml` as shown below.
+- Put `<Manager>` tag into the file `$CATALINA_HOME$/conf/context.xml` as shown below.
 
  ```xml
 <Context>
@@ -101,7 +101,7 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar` and `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` to the folder `$CATALINA_HOME/lib/`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar`,`$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-`<*version*>`-ee.jar` and `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` to the folder `$CATALINA_HOME/lib/`.
 
 - Put `<Listener>` tag into the `$CATALINA_HOME$/conf/server.xml` as shown below.
 
@@ -129,7 +129,7 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 
 ***Optional Listener Tag Parameters***
 
-- Add `configLocation` attribute into `<Listener>` tag. It is optional. If not provided, `hazelcast-client-default.xml` in the hazelcast-client-`<*version*>`.jar file is used by default. Any client XML file in the classpath, URL or full filesystem path as a `configLocation` value is also supported.
+- Add `configLocation` attribute into `<Listener>` tag. It is optional. If not provided, `hazelcast-client-default.xml` in `hazelcast-client-`<*version*>`.jar` file is used by default. Any client XML file in the classpath, URL or full filesystem path as a `configLocation` value is also supported.
 
 #### Optional Manager Tag Parameters
 
