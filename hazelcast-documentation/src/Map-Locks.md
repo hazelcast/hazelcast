@@ -8,20 +8,20 @@ Let's work on a sample case as shown below.
 
 ```java
 public class RacyUpdateMember {
-    public static void main(String[] args) throws Exception {
+    public static void main( String[] args ) throws Exception {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        IMap<String, Value> map = hz.getMap("map");
+        IMap<String, Value> map = hz.getMap( "map" );
         String key = "1";
-        map.put(key, new Value());
-        System.out.println("Starting");
-        for (int k = 0; k < 1000; k++) {
-            if (k % 100 == 0) System.out.println("At: " + k);
-            Value value = map.get(key);
-            Thread.sleep(10);
+        map.put( key, new Value() );
+        System.out.println( "Starting" );
+        for ( int k = 0; k < 1000; k++ ) {
+            if ( k % 100 == 0 ) System.out.println( "At: " + k );
+            Value value = map.get( key );
+            Thread.sleep( 10 );
             value.amount++;
-            map.put(key, value);
+            map.put( key, value );
         }
-        System.out.println("Finished! Result = " + map.get(key).amount);
+        System.out.println( "Finished! Result = " + map.get(key).amount );
     }
 
     static class Value implements Serializable {
@@ -38,24 +38,24 @@ One usual way to solve this race issue is using the lock mechanism provided by H
 
 ```java
 public class PessimisticUpdateMember {
-    public static void main(String[] args) throws Exception {
+    public static void main( String[] args ) throws Exception {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        IMap<String, Value> map = hz.getMap("map");
+        IMap<String, Value> map = hz.getMap( "map" );
         String key = "1";
-        map.put(key, new Value());
-        System.out.println("Starting");
-        for (int k = 0; k < 1000; k++) {
-            map.lock(key);
+        map.put( key, new Value() );
+        System.out.println( "Starting" );
+        for ( int k = 0; k < 1000; k++ ) {
+            map.lock( key );
             try {
-                Value value = map.get(key);
-                Thread.sleep(10);
+                Value value = map.get( key );
+                Thread.sleep( 10 );
                 value.amount++;
-                map.put(key, value);
+                map.put( key, value );
             } finally {
-                map.unlock(key);
+                map.unlock( key );
             }
         }
-        System.out.println("Finished! Result = " + map.get(key).amount);
+        System.out.println( "Finished! Result = " + map.get( key ).amount );
     }
 
     static class Value implements Serializable {
@@ -72,24 +72,24 @@ Hazelcast way of optimistic locking is to use `map.replace` method. See the belo
 
 ```java
 public class OptimisticMember {
-    public static void main(String[] args) throws Exception {
+    public static void main( String[] args ) throws Exception {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        IMap<String, Value> map = hz.getMap("map");
+        IMap<String, Value> map = hz.getMap( "map" );
         String key = "1";
-        map.put(key, new Value());
-        System.out.println("Starting");
-        for (int k = 0; k < 1000; k++) {
-            if (k % 10 == 0) System.out.println("At: " + k);
+        map.put( key, new Value() );
+        System.out.println( "Starting" );
+        for ( int k = 0; k < 1000; k++ ) {
+            if ( k % 10 == 0 ) System.out.println( "At: " + k );
             for (; ; ) {
-                Value oldValue = map.get(key);
-                Value newValue = new Value(oldValue);
-                Thread.sleep(10);
+                Value oldValue = map.get( key );
+                Value newValue = new Value( oldValue );
+                Thread.sleep( 10 );
                 newValue.amount++;
-                if (map.replace(key, oldValue, newValue))
+                if ( map.replace( key, oldValue, newValue ) )
                     break;
             }
         }
-        System.out.println("Finished! Result = " + map.get(key).amount);
+        System.out.println( "Finished! Result = " + map.get( key ).amount );
     }
 
     static class Value implements Serializable {
@@ -98,19 +98,21 @@ public class OptimisticMember {
         public Value() {
         }
 
-        public Value(Value that) {
+        public Value( Value that ) {
             this.amount = that.amount;
         }
 
-        public boolean equals(Object o) {
-            if (o == this) return true;
-            if (!(o instanceof Value)) return false;
-            Value that = (Value) o;
+        public boolean equals( Object o ) {
+            if ( o == this ) return true;
+            if ( !( o instanceof Value ) ) return false;
+            Value that = ( Value ) o;
             return that.amount == this.amount;
         }
     }
 }
 ```
+
+***NOTE:*** *Above sample code is intentionally broken.*
 
 #### Pessimistic vs. Optimistic Locking
 
