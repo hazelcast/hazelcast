@@ -28,18 +28,28 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
-
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -144,7 +154,6 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     public void flush() {
-        checkIfLoaded();
         Set<Data> keys = new HashSet<Data>();
         for (Record record : records.values()) {
             keys.add(record.getKey());
@@ -289,8 +298,9 @@ public class DefaultRecordStore implements RecordStore {
     public boolean containsValue(Object value) {
         checkIfLoaded();
         for (Record record : records.values()) {
-            if (mapService.compare(name, value, record.getValue()))
+            if (mapService.compare(name, value, record.getValue())) {
                 return true;
+            }
         }
         return false;
     }
@@ -536,8 +546,9 @@ public class DefaultRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
-            if (oldValue == null)
+            if (oldValue == null) {
                 return false;
+            }
         } else {
             oldValue = record.getValue();
         }
@@ -802,8 +813,9 @@ public class DefaultRecordStore implements RecordStore {
     public boolean replace(Data dataKey, Object testValue, Object newValue) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        if (record == null)
+        if (record == null) {
             return false;
+        }
         if (mapService.compare(name, record.getValue(), testValue)) {
             newValue = mapService.interceptPut(name, record.getValue(), newValue);
             newValue = writeMapStore(dataKey, newValue, record);
@@ -1029,25 +1041,21 @@ public class DefaultRecordStore implements RecordStore {
                         entrySet.add(dataKey, dataValue);
                     }
                 }
-                PutAllOperation operation = new PutAllOperation(name, entrySet, true);
-                operation.setNodeEngine(nodeEngine);
-                operation.setResponseHandler(new ResponseHandler() {
-                    @Override
-                    public void sendResponse(Object obj) {
-                        if (checkIfMapLoaded.decrementAndGet() == 0) {
-                            loaded.set(true);
-                        }
-                    }
 
-                    public boolean isLocal() {
-                        return true;
-                    }
-                });
-                operation.setPartitionId(partitionId);
-                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-                operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-                operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().executeOperation(operation);
+                PutAllOperation operation = new PutAllOperation(name, entrySet, true);
+                final OperationService operationService = nodeEngine.getOperationService();
+                operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId)
+                        .setCallback(new Callback<Object>() {
+                            @Override
+                            public void notify(Object obj) {
+                                if (obj instanceof Throwable) {
+                                    return;
+                                }
+                                if (checkIfMapLoaded.decrementAndGet() == 0) {
+                                    loaded.set(true);
+                                }
+                            }
+                        }).invoke();
             } catch (Exception e) {
                 logger.warning("Exception while load all task:" + e.toString());
             }

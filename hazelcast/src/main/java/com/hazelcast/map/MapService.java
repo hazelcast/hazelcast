@@ -179,7 +179,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         for (PartitionContainer partitionContainer : partitionContainers) {
             for (String mapName : mapContainers.keySet()) {
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
-                recordStore.setLoaded(true);
                 recordStore.flush();
             }
         }
