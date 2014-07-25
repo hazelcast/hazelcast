@@ -839,6 +839,22 @@ public class MapService implements ManagedService, MigrationAwareService,
        return simpleEntryView;
     }
 
+    public static <K, V> EntryView<K, V> createLazyEntryView(K key, V value, Record record
+            , SerializationService serializationService, MapMergePolicy mergePolicy) {
+        final LazyEntryView lazyEntryView = new LazyEntryView(key, value, serializationService, mergePolicy);
+        lazyEntryView.setCost(record.getCost());
+        lazyEntryView.setVersion(record.getVersion());
+        lazyEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
+        final RecordStatistics statistics = record.getStatistics();
+        if (statistics != null) {
+            lazyEntryView.setHits(statistics.getHits());
+            lazyEntryView.setExpirationTime(statistics.getExpirationTime());
+            lazyEntryView.setLastStoredTime(statistics.getLastStoredTime());
+        }
+        return lazyEntryView;
+    }
+
+
     public long findDelayMillis(ScheduledEntry entry) {
         final long timeElapsedUntilNow = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - entry.getScheduleStartTimeInNanos());
         final long remainingTime = entry.getScheduledDelayMillis() - timeElapsedUntilNow;
