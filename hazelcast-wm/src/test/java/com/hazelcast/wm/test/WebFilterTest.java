@@ -17,6 +17,7 @@
 package com.hazelcast.wm.test;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
@@ -139,6 +140,7 @@ public class WebFilterTest extends AbstractWebFilterTest {
     }
 
     @Test(timeout = 60000)
+    @Category(ProblematicTest.class)
     public void testAttributeReloadSession() throws Exception {
         IMap<String, Object> map = hz.getMap("default");
         CookieStore cookieStore = new BasicCookieStore();
