@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 
-import com.hazelcast.cache.CacheKeyIteratorResult;
+import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.EnumSet;

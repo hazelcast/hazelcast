@@ -16,21 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.cache.CacheService;
-import com.hazelcast.cache.CacheStatsImpl;
-import com.hazelcast.cache.client.CachePushStatsRequest;
-import com.hazelcast.client.proxy.ClientCacheProxy;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.monitor.TimedClientState;
-import com.hazelcast.util.ExceptionUtil;
-
-import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.concurrent.Future;
 
 /**
  * date: 13/03/14
