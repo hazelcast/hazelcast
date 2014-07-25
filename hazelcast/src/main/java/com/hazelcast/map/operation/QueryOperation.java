@@ -116,6 +116,7 @@ public class QueryOperation extends AbstractMapOperation {
                 }
             }
         }
+        result.setPartitionIds(initialPartitions);
     }
 
     protected void runParallelForPaging(List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
