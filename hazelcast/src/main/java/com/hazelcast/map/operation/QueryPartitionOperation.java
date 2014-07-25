@@ -23,8 +23,11 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class QueryPartitionOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
@@ -46,6 +49,8 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
         for (QueryableEntry entry : queryableEntries) {
             result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getIndexKey(), entry.getValueData()));
         }
+        final List<Integer> partitions = Collections.singletonList(getPartitionId());
+        result.setPartitionIds(partitions);
     }
 
     @Override
