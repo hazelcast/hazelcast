@@ -532,7 +532,7 @@ public class WebFilter implements Filter {
             };
         }
 
-        public HazelcastHttpSession fetchHazelcastSession() {
+        public HazelcastHttpSession fetchHazelcastSession(boolean create) {
             if (requestedSessionId == null) {
                 requestedSessionId = getSessionCookie(this);
                 if (requestedSessionId == null) {
@@ -545,7 +545,7 @@ public class WebFilter implements Filter {
                 if (hazelcastSession == null) {
                     final Boolean existing = (Boolean) getClusterMap()
                             .executeOnKey(requestedSessionId, new ReferenceSessionEntryProcessor());
-                    if (existing != null && existing) {
+                    if (existing != null && existing && create) {
                         // we already have the session in the cluster, so "copy" it to this node
                         hazelcastSession = createNewSession(RequestWrapper.this, requestedSessionId);
                     }
@@ -581,7 +581,7 @@ public class WebFilter implements Filter {
                 originalSession.invalidate();
             }
 
-            hazelcastSession = fetchHazelcastSession();
+            hazelcastSession = fetchHazelcastSession(create);
             if (hazelcastSession == null && create) {
                 hazelcastSession = createNewSession(RequestWrapper.this, null);
             }

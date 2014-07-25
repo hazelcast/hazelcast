@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Category(QuickTest.class)
-public class WebFilterTest extends AbstractWebFilterTest {
+public class JettyWebFilterTest extends AbstractWebFilterTest {
 
     @Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
@@ -48,7 +48,7 @@ public class WebFilterTest extends AbstractWebFilterTest {
         );
     }
 
-    public WebFilterTest(String name, String serverXml1, String serverXml2) {
+    public JettyWebFilterTest(String name, String serverXml1, String serverXml2) {
         super(serverXml1, serverXml2);
     }
 
@@ -180,4 +180,8 @@ public class WebFilterTest extends AbstractWebFilterTest {
         assertEquals("value-updated", executeRequest("update-and-read-same-request", serverPort1, cookieStore));
     }
 
+    @Override
+    protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception{
+        return new JettyServer(port,sourceDir,serverXml);
+    }
 }
