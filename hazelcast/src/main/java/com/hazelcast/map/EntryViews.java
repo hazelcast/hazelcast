@@ -46,4 +46,23 @@ public final class EntryViews {
     public static <K, V> EntryView<K, V> createSimpleEntryView() {
         return new SimpleEntryView<K, V>();
     }
+
+    public static <K, V> EntryView<K, V> createLazyEntryView(K key, V value, Record record) {
+        final LazyEntryView lazyEntryView = new LazyEntryView(key, value);
+        lazyEntryView.setCost(record.getCost());
+        lazyEntryView.setVersion(record.getVersion());
+        lazyEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
+        lazyEntryView.setLastAccessTime(record.getLastAccessTime());
+        lazyEntryView.setLastUpdateTime(record.getLastUpdateTime());
+        lazyEntryView.setTtl(record.getTtl());
+        lazyEntryView.setCreationTime(record.getCreationTime());
+
+        final RecordStatistics statistics = record.getStatistics();
+        if (statistics != null) {
+            lazyEntryView.setHits(statistics.getHits());
+            lazyEntryView.setExpirationTime(statistics.getExpirationTime());
+            lazyEntryView.setLastStoredTime(statistics.getLastStoredTime());
+        }
+        return lazyEntryView;
+    }
 }
