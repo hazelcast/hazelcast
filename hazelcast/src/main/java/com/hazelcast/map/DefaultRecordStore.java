@@ -761,12 +761,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         final long now = getNow();
         earlyWriteCleanup(now);
-
         Record record = records.get(key);
         Object newValue;
         if (record == null) {
             final Object notExistingKey = mapServiceContext.toObject(key);
-            final EntryView<Object, Object> nullEntryView = EntryViews.createNullEntryView(notExistingKey);
+            final EntryView nullEntryView = EntryViews.createNullEntryView(notExistingKey);
             newValue = mergePolicy.merge(name, mergingEntry, nullEntryView);
             if (newValue == null) {
                 return false;
@@ -777,8 +776,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
             Object oldValue = record.getValue();
-            EntryView existingEntry = EntryViews.createSimpleEntryView(mapServiceContext.toObject(record.getKey()),
-                    mapServiceContext.toObject(record.getValue()), record);
+            EntryView existingEntry = EntryViews.createLazyEntryView(record.getKey(), record.getValue(),
+                    record, serializationService, mergePolicy);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {
