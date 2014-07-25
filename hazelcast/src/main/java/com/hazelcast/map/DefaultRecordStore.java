@@ -67,6 +67,7 @@ public class DefaultRecordStore implements RecordStore {
     private final Set<Data> toBeRemovedKeys = new HashSet<Data>();
     private final MapContainer mapContainer;
     private final MapService mapService;
+    private final SerializationService serializationService;
     private final LockStore lockStore;
     private final RecordFactory recordFactory;
     private final ILogger logger;
@@ -82,6 +83,7 @@ public class DefaultRecordStore implements RecordStore {
         this.partitionId = partitionId;
         this.mapService = mapService;
         this.mapContainer = mapService.getMapContainer(name);
+        this.serializationService = mapService.getSerializationService();
         this.logger = mapService.getNodeEngine().getLogger(this.getName());
         recordFactory = mapContainer.getRecordFactory();
         NodeEngine nodeEngine = mapService.getNodeEngine();
@@ -766,8 +768,8 @@ public class DefaultRecordStore implements RecordStore {
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             Object oldValue = record.getValue();
-            EntryView existingEntry = mapService.createSimpleEntryView(mapService.toObject(record.getKey()),
-                    mapService.toObject(record.getValue()), record);
+            EntryView existingEntry = mapService.createLazyEntryView(record.getKey(), record.getValue(),
+                    record, serializationService, mergePolicy);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) { // existing entry will be removed
                 removeIndex(dataKey);
