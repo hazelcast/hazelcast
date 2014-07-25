@@ -49,11 +49,16 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
     }
 
     public V getValue() {
-        if (mergePolicy instanceof PutIfAbsentMapMergePolicy || mergePolicy instanceof PassThroughMergePolicy) {
+        if (validMergePolicyForValueNullCheck(mergePolicy)) {
             return value;
         }
         value = serializationService.toObject(value);
         return value;
+    }
+
+    private boolean validMergePolicyForValueNullCheck(MapMergePolicy mergePolicy) {
+        return mergePolicy instanceof PutIfAbsentMapMergePolicy
+                || mergePolicy instanceof PassThroughMergePolicy ? true : false;
     }
 
     public void setValue(V value) {
