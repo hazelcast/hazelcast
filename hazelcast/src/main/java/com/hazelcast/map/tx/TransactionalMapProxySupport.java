@@ -140,6 +140,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data putIfAbsentInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue.value != null) {
+            TxnUnlockOperation operation = new TxnUnlockOperation(name, key, versionedValue.version);
+            tx.addTransactionLog(new MapTransactionLog(name, key, operation, versionedValue.version, tx.getOwnerUuid()));
             return versionedValue.value;
         }
 
