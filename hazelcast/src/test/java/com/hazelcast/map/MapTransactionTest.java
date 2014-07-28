@@ -57,11 +57,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -638,6 +634,46 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("value", map1.get("1"));
         assertEquals("value", map2.get("1"));
     }
+
+    @Test
+    public void testTxnPutIfAbsentParallel() throws InterruptedException {
+        final String TEST_MAP = "testMap";
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance sharedDataService = factory.newHazelcastInstance(new Config());
+        final Object[] v = new Object[1];
+        Thread contender = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                TransactionContext transactionContext = sharedDataService.newTransactionContext();
+                transactionContext.beginTransaction();
+                TransactionalMap<String, Object> map = transactionContext.getMap(TEST_MAP);
+                v[0] = map.putIfAbsent("k", "t");
+                transactionContext.commitTransaction();
+            }
+        });
+
+        TransactionContext transactionContext;
+        TransactionalMap<String, Object> map;
+        transactionContext = sharedDataService.newTransactionContext();
+        transactionContext.beginTransaction();
+        map = transactionContext.getMap(TEST_MAP);
+        map.put("k", "v");
+        transactionContext.commitTransaction();
+
+
+        contender.start();
+        contender.join(1000);
+        assertFalse("Contender thread finished", contender.isAlive());
+        assertNotNull(v[0]);
+
+        transactionContext = sharedDataService.newTransactionContext();
+        transactionContext.beginTransaction();
+        map = transactionContext.getMap(TEST_MAP);
+        map.delete("k");
+        transactionContext.commitTransaction();
+
+    }
+
 
     @Test
     public void testTxnReplace() throws TransactionException {
