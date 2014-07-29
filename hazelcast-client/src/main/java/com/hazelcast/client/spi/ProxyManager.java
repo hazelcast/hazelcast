@@ -64,7 +64,7 @@ import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
-import com.hazelcast.topic.TopicService;
+import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.lang.reflect.Constructor;

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic.client;
+package com.hazelcast.topic.impl.client;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.topic.TopicPortableHook;
+import com.hazelcast.topic.impl.TopicPortableHook;
 
 import java.io.IOException;
 

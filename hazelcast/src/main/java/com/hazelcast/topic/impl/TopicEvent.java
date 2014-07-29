@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic;
+package com.hazelcast.topic.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;

@@ -30,7 +30,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
-import com.hazelcast.topic.TopicService;
+import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
 

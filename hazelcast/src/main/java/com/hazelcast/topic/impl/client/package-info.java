@@ -15,9 +15,8 @@
  */
 
 /**
- * <p>This package contains ITopic functionality for Hazelcast.<br/>
- * With the ITopic it is possible to create publish subscribe solutions similar to JMS Topics.
+ * <p>This package contains client requests for the ITopic.<br/>
  *
  * @since 2
  */
-package com.hazelcast.topic;
+package com.hazelcast.topic.impl.client;

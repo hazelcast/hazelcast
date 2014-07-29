@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic.client;
+package com.hazelcast.topic.impl.client;
 
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.PartitionClientRequest;
@@ -28,9 +28,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.topic.PublishOperation;
-import com.hazelcast.topic.TopicPortableHook;
-import com.hazelcast.topic.TopicService;
+import com.hazelcast.topic.impl.PublishOperation;
+import com.hazelcast.topic.impl.TopicPortableHook;
+import com.hazelcast.topic.impl.TopicService;
 
 import java.io.IOException;
 import java.security.Permission;
