@@ -205,6 +205,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
 
 
+        @Override
         public String readLine() throws Exception {
             return in.readLine();
         }
@@ -263,6 +264,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             for (int i = 0; i < fork; i++) {
                 final int threadID = i;
                 pool.submit(new Runnable() {
+                    @Override
                     public void run() {
                         String command = threadCommand;
                         String[] threadArgs = command.replaceAll("\\$t", "" + threadID).trim()
@@ -1652,7 +1654,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
             config.addExecutorConfig(new ExecutorConfig("e" + k).setPoolSize(k));
         }
-        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
+        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
         testApp.start(args);
     }
 
