@@ -14,31 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.executor.impl;
 
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.util.concurrent.Callable;
 
-public final class MemberCallableTaskOperation extends BaseCallableTaskOperation
-        implements IdentifiedDataSerializable {
+public final class CallableTaskOperation extends BaseCallableTaskOperation implements IdentifiedDataSerializable {
 
-    public MemberCallableTaskOperation() {
+    public CallableTaskOperation() {
     }
 
-    public MemberCallableTaskOperation(String name, String uuid, Callable callable) {
+    public CallableTaskOperation(String name, String uuid, Callable callable) {
         super(name, uuid, callable);
-    }
-
-    @Override
-    public ExceptionAction onException(Throwable throwable) {
-        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
-            return ExceptionAction.THROW_EXCEPTION;
-        }
-        return super.onException(throwable);
     }
 
     @Override
@@ -48,6 +36,6 @@ public final class MemberCallableTaskOperation extends BaseCallableTaskOperation
 
     @Override
     public int getId() {
-        return ExecutorDataSerializerHook.MEMBER_CALLABLE_TASK;
+        return ExecutorDataSerializerHook.CALLABLE_TASK;
     }
 }

@@ -14,28 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.executor.impl;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.spi.Callback;
 
-import java.util.concurrent.Callable;
+public final class ExecutionCallbackAdapter implements Callback<Object> {
 
-public final class CallableTaskOperation extends BaseCallableTaskOperation implements IdentifiedDataSerializable {
+    private final ExecutionCallback executionCallback;
 
-    public CallableTaskOperation() {
-    }
-
-    public CallableTaskOperation(String name, String uuid, Callable callable) {
-        super(name, uuid, callable);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ExecutorDataSerializerHook.F_ID;
+    public ExecutionCallbackAdapter(ExecutionCallback executionCallback) {
+        this.executionCallback = executionCallback;
     }
 
     @Override
-    public int getId() {
-        return ExecutorDataSerializerHook.CALLABLE_TASK;
+    public void notify(Object response) {
+        if (response instanceof Throwable) {
+            executionCallback.onFailure((Throwable) response);
+        } else {
+            //noinspection unchecked
+            executionCallback.onResponse(response);
+        }
     }
 }

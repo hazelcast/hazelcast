@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.executor.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;

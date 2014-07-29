@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.executor.impl;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.instance.HazelcastInstanceImpl;

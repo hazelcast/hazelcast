@@ -14,26 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.executor.impl;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public final class ExecutionCallbackAdapter implements Callback<Object> {
+public final class ShutdownOperation extends AbstractNamedOperation {
 
-    private final ExecutionCallback executionCallback;
+    public ShutdownOperation() {
+    }
 
-    public ExecutionCallbackAdapter(ExecutionCallback executionCallback) {
-        this.executionCallback = executionCallback;
+    public ShutdownOperation(String name) {
+        super(name);
     }
 
     @Override
-    public void notify(Object response) {
-        if (response instanceof Throwable) {
-            executionCallback.onFailure((Throwable) response);
-        } else {
-            //noinspection unchecked
-            executionCallback.onResponse(response);
-        }
+    public void run() throws Exception {
+        DistributedExecutorService service = getService();
+        service.shutdownExecutor(getName());
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
     }
 }
