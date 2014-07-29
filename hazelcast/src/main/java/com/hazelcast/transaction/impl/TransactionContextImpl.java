@@ -26,7 +26,7 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.map.MapService;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.queue.QueueService;
+import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;

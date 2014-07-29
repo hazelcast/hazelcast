@@ -60,7 +60,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.queue.QueueService;
+import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;

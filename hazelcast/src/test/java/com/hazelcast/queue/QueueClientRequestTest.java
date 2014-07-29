@@ -25,7 +25,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
-import com.hazelcast.queue.client.*;
+import com.hazelcast.queue.impl.client.*;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
