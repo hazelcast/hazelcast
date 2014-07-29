@@ -75,7 +75,7 @@ public class TopicTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                boolean containsStats = topicService.statsMap.containsKey(topic.getName());
+                boolean containsStats = topicService.getStatsMap().containsKey(topic.getName());
                 assertFalse(containsStats);
             }
         });

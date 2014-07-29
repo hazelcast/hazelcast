@@ -46,7 +46,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     public static final String SERVICE_NAME = "hz:impl:topicService";
     public static final int ORDERING_LOCKS_LENGTH = 1000;
 
-    final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
+    private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
     private final Lock[] orderingLocks = new Lock[ORDERING_LOCKS_LENGTH];
     private NodeEngine nodeEngine;
 
@@ -67,6 +67,11 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         }
         eventService = nodeEngine.getEventService();
         this.logger = nodeEngine.getLogger(TopicService.class);
+    }
+
+    //only for testing
+    public ConcurrentMap<String, LocalTopicStatsImpl> getStatsMap() {
+        return statsMap;
     }
 
     @Override
