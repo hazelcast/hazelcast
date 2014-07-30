@@ -21,7 +21,6 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.ArrayList;
@@ -41,7 +40,7 @@ import java.util.logging.Level;
 public final class FutureUtil {
 
     /**
-     * Ignores <b>all</b> exceptions
+     * Just rethrows <b>all</b> exceptions
      */
     public static final ExceptionHandler RETHROW_EVERYTHING = new ExceptionHandler() {
         @Override
@@ -51,7 +50,7 @@ public final class FutureUtil {
     };
 
     /**
-     * Ignores <b>all</b> exceptions
+     * Ignores <b>all</b> exceptions but logs {@link com.hazelcast.core.MemberLeftException} using Level.FINEST
      */
     public static final ExceptionHandler IGNORE_ALL_EXCEPTIONS = new ExceptionHandler() {
         @Override
@@ -180,21 +179,6 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long timeout)
-            throws TimeoutException {
-
-        return returnWithDeadline(futures, timeout, TimeUnit.SECONDS, MEMBER_LEFT_ONLY);
-    }
-
-    @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long timeout,
-                                                       ExceptionHandler exceptionHandler)
-            throws TimeoutException {
-
-        return returnWithDeadline(futures, timeout, TimeUnit.SECONDS, exceptionHandler);
-    }
-
-    @PrivateApi
     public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit)
             throws TimeoutException {
 
@@ -207,22 +191,6 @@ public final class FutureUtil {
             throws TimeoutException {
 
         return returnWithDeadline(futures, timeout, timeUnit, timeout, timeUnit, exceptionHandler);
-    }
-
-    @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long overallTimeout, long perFutureTimeout)
-            throws TimeoutException {
-
-        return returnWithDeadline(futures, overallTimeout, TimeUnit.SECONDS, perFutureTimeout, TimeUnit.SECONDS);
-    }
-
-    @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long overallTimeout, long perFutureTimeout,
-                                                       ExceptionHandler exceptionHandler)
-            throws TimeoutException {
-
-        return returnWithDeadline(futures, overallTimeout, TimeUnit.SECONDS, perFutureTimeout, TimeUnit.SECONDS,
-                exceptionHandler);
     }
 
     @PrivateApi
@@ -271,20 +239,6 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long timeout)
-            throws TimeoutException {
-
-        waitWithDeadline(futures, timeout, TimeUnit.SECONDS, MEMBER_LEFT_ONLY);
-    }
-
-    @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long timeout, ExceptionHandler exceptionHandler)
-            throws TimeoutException {
-
-        waitWithDeadline(futures, timeout, TimeUnit.SECONDS, exceptionHandler);
-    }
-
-    @PrivateApi
     public static void waitWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit)
             throws TimeoutException {
 
@@ -297,21 +251,6 @@ public final class FutureUtil {
             throws TimeoutException {
 
         waitWithDeadline(futures, timeout, timeUnit, timeout, timeUnit, exceptionHandler);
-    }
-
-    @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long overallTimeout, long perFutureTimeout)
-            throws TimeoutException {
-
-        waitWithDeadline(futures, overallTimeout, TimeUnit.SECONDS, perFutureTimeout, TimeUnit.SECONDS);
-    }
-
-    @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long overallTimeout, long perFutureTimeout,
-                                        ExceptionHandler exceptionHandler)
-            throws TimeoutException {
-
-        waitWithDeadline(futures, overallTimeout, TimeUnit.SECONDS, perFutureTimeout, TimeUnit.SECONDS, exceptionHandler);
     }
 
     @PrivateApi

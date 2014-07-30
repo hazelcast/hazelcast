@@ -70,6 +70,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     public static final int RECOVER_TIMEOUT = 5000;
 
+    private final ExceptionHandler finalizeExceptionHandler;
+
     private final NodeEngineImpl nodeEngine;
 
     private final ILogger logger;
@@ -82,7 +84,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     public TransactionManagerServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        logger = nodeEngine.getLogger(TransactionManagerService.class);
+        this.logger = nodeEngine.getLogger(TransactionManagerService.class);
+        this.finalizeExceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
     }
 
     public String getGroupName() {
@@ -223,8 +226,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
             try {
                 long timeoutMillis = TransactionOptions.getDefault().getTimeoutMillis();
-                ExceptionHandler exceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
-                waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, exceptionHandler);
+                waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, finalizeExceptionHandler);
             } catch (TimeoutException e) {
                 logger.warning("Timeout while rolling-back tx!", e);
             }

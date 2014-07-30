@@ -208,7 +208,7 @@ public class EventServiceImpl implements EventService {
         }
 
         try {
-            FutureUtil.waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, deregistrationExceptionHandler);
+            FutureUtil.waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS, deregistrationExceptionHandler);
         } catch (TimeoutException e) {
             logger.finest(e);
         }
@@ -227,7 +227,7 @@ public class EventServiceImpl implements EventService {
         }
 
         try {
-            FutureUtil.waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, deregistrationExceptionHandler);
+            FutureUtil.waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS, deregistrationExceptionHandler);
         } catch (TimeoutException e) {
             logger.finest(e);
         }

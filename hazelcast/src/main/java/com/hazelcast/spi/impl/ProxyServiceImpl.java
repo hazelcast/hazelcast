@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
@@ -64,6 +65,9 @@ public class ProxyServiceImpl
         implements ProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {
 
     static final String SERVICE_NAME = "hz:core:proxyService";
+
+    private static final FutureUtil.ExceptionHandler DESTROY_PROXY_EXCEPTION_HANDLER = FutureUtil.logAllExceptions(Level.FINEST);
+
     private static final int TRY_COUNT = 10;
     private static final long TIME = 3;
 
@@ -150,7 +154,7 @@ public class ProxyServiceImpl
         destroyLocalDistributedObject(serviceName, name, true);
 
         try {
-            FutureUtil.waitWithDeadline(calls, TIME, FutureUtil.logAllExceptions(Level.FINEST));
+            FutureUtil.waitWithDeadline(calls, TIME, TimeUnit.SECONDS, DESTROY_PROXY_EXCEPTION_HANDLER);
         } catch (TimeoutException e) {
             logger.finest(e);
         }

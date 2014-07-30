@@ -86,6 +86,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.MigrationEvent.MigrationStatus;
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -93,6 +94,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         EventPublishingService<MigrationEvent, MigrationListener> {
 
     private static final String EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT = "Partition state sync invocation timed out";
+    private static final ExceptionHandler PARTITION_STATE_SYNC_TIMEOUT_HANDLER =
+            logAllExceptions(EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.INFO);
 
     private static final int DEFAULT_PAUSE_MILLIS = 1000;
     private static final int DEFAULT_SLEEP_MILLIS = 10;
@@ -476,7 +479,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             List<Future> calls = firePartitionStateOperation(members, partitionState, operationService);
 
             try {
-                waitWithDeadline(calls, 3, logAllExceptions(EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.INFO));
+                waitWithDeadline(calls, 3, TimeUnit.SECONDS, PARTITION_STATE_SYNC_TIMEOUT_HANDLER);
             } catch (TimeoutException e) {
                 logger.finest(e);
             }

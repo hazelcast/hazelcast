@@ -34,15 +34,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public abstract class AbstractJoiner implements Joiner {
+    private static final ExceptionHandler WHILE_WAIT_MERGE_EXCEPTION_HANDLER =
+            logAllExceptions("While waiting merge response...", Level.FINEST);
+
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
     private final AtomicInteger tryCount = new AtomicInteger(0);
     protected final Config config;
@@ -235,7 +240,7 @@ public abstract class AbstractJoiner implements Joiner {
         }
 
         try {
-            waitWithDeadline(calls, 1, logAllExceptions("While waiting merge response...", Level.FINEST));
+            waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_WAIT_MERGE_EXCEPTION_HANDLER);
         } catch (TimeoutException e) {
             logger.warning("While waiting merge response...", e);
         }

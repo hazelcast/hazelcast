@@ -80,6 +80,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static java.util.Collections.unmodifiableMap;
@@ -89,6 +90,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         EventPublishingService<MembershipEvent, MembershipListener> {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
+
+    private static final ExceptionHandler WHILE_FINALIZE_JOINS_EXCEPTION_HANDLER =
+            logAllExceptions("While waiting finalize join calls...", Level.WARNING);
+
     private static final String EXECUTOR_NAME = "hz:cluster";
     private static final int HEARTBEAT_INTERVAL = 500;
     private static final int PING_INTERVAL = 5000;
@@ -807,7 +812,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 updateMembers(memberInfos);
 
                 try {
-                    waitWithDeadline(calls, 10, logAllExceptions("While waiting finalize join calls...", Level.WARNING));
+                    waitWithDeadline(calls, 10, TimeUnit.SECONDS, WHILE_FINALIZE_JOINS_EXCEPTION_HANDLER);
                 } catch (TimeoutException e) {
                     logger.warning("While waiting finalize join calls...", e);
                 }
