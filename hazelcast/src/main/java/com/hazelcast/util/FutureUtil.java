@@ -225,14 +225,15 @@ public final class FutureUtil {
                     results.add(value);
                 }
             } catch (TimeoutException e) {
-                // If deadline is passed just cancel everything and rethrow the TimeoutException
-                if (deadline - System.nanoTime() <= 0) {
-                    cancelAllFutures(futures);
-                    throw (TimeoutException) e;
-                }
+                cancelAllFutures(futures);
+                throw (TimeoutException) e;
+            } catch (RuntimeException e) {
+                cancelAllFutures(futures);
+                throw (RuntimeException) e;
+
             } catch (Exception e) {
                 cancelAllFutures(futures);
-                ExceptionUtil.sneakyThrow(e);
+                throw new RuntimeException(e);
             }
         }
         return results;
@@ -279,14 +280,15 @@ public final class FutureUtil {
                 long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, deadline);
                 executeWithDeadline(future, timeoutNanos, exceptionHandler);
             } catch (TimeoutException e) {
-                // If deadline is passed just cancel everything and rethrow the TimeoutException
-                if (deadline - System.nanoTime() <= 0) {
-                    cancelAllFutures(futures);
-                    throw (TimeoutException) e;
-                }
+                cancelAllFutures(futures);
+                throw (TimeoutException) e;
+            } catch (RuntimeException e) {
+                cancelAllFutures(futures);
+                throw (RuntimeException) e;
+
             } catch (Exception e) {
                 cancelAllFutures(futures);
-                ExceptionUtil.sneakyThrow(e);
+                throw new RuntimeException(e);
             }
         }
     }
