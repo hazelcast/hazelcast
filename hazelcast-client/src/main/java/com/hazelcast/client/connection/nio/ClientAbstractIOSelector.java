@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.tcp.IOSelector;
@@ -33,9 +34,9 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class ClientAbstractIOSelector extends Thread implements IOSelector {
 
-    private static final int TIMEOUT = 3;
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 3;
 
-    private static final int WAIT_TIME = 5000;
+    private static final int SELECT_WAIT_TIME_MILLIS = 5000;
 
     protected final ILogger logger;
 
@@ -49,17 +50,22 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
 
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
+    /**
+     * Creates a ClientAbstractIOSelector
+     *
+     * @param threadGroup
+     * @param threadName
+     * @throws com.hazelcast.core.HazelcastException if no Selector could be opened.
+     */
     protected ClientAbstractIOSelector(ThreadGroup threadGroup, String threadName) {
         super(threadGroup, threadName);
         this.logger = Logger.getLogger(getClass().getName());
-        this.waitTime = WAIT_TIME;
-        Selector selectorTemp = null;
+        this.waitTime = SELECT_WAIT_TIME_MILLIS;
         try {
-            selectorTemp = Selector.open();
+            selector = Selector.open();
         } catch (final IOException e) {
-            handleSelectorException(e);
+            throw new HazelcastException("Failed to open a Selector", e);
         }
-        this.selector = selectorTemp;
     }
 
     @Override
@@ -97,7 +103,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
     @Override
     public void awaitShutdown() {
         try {
-            shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
+            shutdownLatch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
             EmptyStatement.ignore(ignored);
         }
@@ -130,13 +136,14 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
                 try {
                     selectedKeyCount = selector.select(waitTime);
                 } catch (Throwable e) {
-                    logger.warning(e.toString());
+                    handleSelectFailure(e);
                     continue;
                 }
+
                 if (selectedKeyCount == 0) {
                     continue;
                 }
-                selectKeys();
+                handleSelectionKeys();
             }
         } catch (Throwable e) {
             logger.warning("Unhandled exception in " + getName(), e);
@@ -152,24 +159,37 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         }
     }
 
-    private void selectKeys() {
+    private void handleSelectFailure(Throwable e) {
+        logger.warning(e.toString(), e);
+
+        // If we don't wait, it can be that a subsequent call will run into an IOException immediately. This can lead to a very
+        // hot loop and we don't want that. The same approach is used in Netty.
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException i) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void handleSelectionKeys() {
         final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
         final Iterator<SelectionKey> it = setSelectedKeys.iterator();
         while (it.hasNext()) {
             final SelectionKey sk = it.next();
+            it.remove();
+
             try {
-                it.remove();
                 handleSelectionKey(sk);
             } catch (Throwable e) {
-                handleSelectorException(e);
+                handleSelectionKeyFailure(e);
             }
         }
     }
 
     protected abstract void handleSelectionKey(SelectionKey sk);
 
-    private void handleSelectorException(final Throwable e) {
-        String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
+    private void handleSelectionKeyFailure(final Throwable e) {
+        String msg = "SelectionKey exception at  " + getName() + ", cause= " + e.toString();
         logger.warning(msg, e);
     }
 }
