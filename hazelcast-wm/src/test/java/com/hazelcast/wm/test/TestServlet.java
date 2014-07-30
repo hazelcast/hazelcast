@@ -43,6 +43,10 @@ public class TestServlet extends HttpServlet {
             session.removeAttribute("key");
             resp.getWriter().write("true");
 
+        } else if (req.getRequestURI().endsWith("remove_set_null")) {
+            session.setAttribute("key", null);
+            resp.getWriter().write("true");
+
         } else if (req.getRequestURI().endsWith("invalidate")) {
             session.invalidate();
             resp.getWriter().write("true");
@@ -51,6 +55,7 @@ public class TestServlet extends HttpServlet {
             session.setAttribute("key", "value-updated");
             Object value = session.getAttribute("key");
             resp.getWriter().write(value == null ? "null" : value.toString());
+
         } else if (req.getRequestURI().endsWith("update")) {
             session.setAttribute("key", "value-updated");
             resp.getWriter().write("true");
