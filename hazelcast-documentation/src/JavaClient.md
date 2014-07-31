@@ -445,29 +445,31 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 
 #### Load Balancer
 
-`LoadBalancer` allows you to send operations to one of a number of endpoints(Members). It's main purpose is to determine the next `Member` if queried.  It is up to the implementation to use different load balancing policies. The interface `com.hazelcast.client.LoadBalancer` sould be implemented for that purpose.
+`LoadBalancer` allows you to send operations to one of a number of endpoints(Members). Its main purpose is to determine the next `Member` if queried.  It is up to the implementation to use different load balancing policies. The interface `com.hazelcast.client.LoadBalancer` sould be implemented for that purpose.
 
-If Client is configured as smart client only the operations that are not key based will be router to the endpoint returned by the LoadBalancer. If it is not smart client, `LoadBalancer` will be ignored.
+If the client is configured as a smart one, only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is not a smart client, `LoadBalancer` will be ignored.
 
 ### Security
 TODO
 
 
 ### Near Cache
-Hazelcast distributed map has Near Cache feature to reduce network latencies. As client always requests data from the cluster nodes, it can be helpful for some use cases to configure a near cache on client side.
-Client just supports the exact same near cache used in hazelcast map. 
+Hazelcast distributed map has a Near Cache feature to reduce network latencies. As the client always requests data from the cluster nodes, it can be helpful for some use cases to configure a near cache on the client side.
+The client supports the exact same near cache used in Hazelcast distributed map. 
 
 ### SSLConfig
 
-If SSL is desired to be enabled for the client-cluster connection, this parameter should be set. Once set, the connection (socket) is established out of an SSL factory defined either by a factory class name or factory implementation (please see [SSLConfig](/docs/$VERSION$/javadoc/com/hazelcast/config/SSLConfig.html)).
+If SSL is desired to be enabled for the client-cluster connection, this parameter should be set. Once set, the connection (socket) is established out of an SSL factory defined either by a factory class name or factory implementation. Please see SSLConfig class in `com.hazelcast.config` package at the JavaDocs page of [Hazelcast Documentation](http://www.hazelcast.org/documentation/) web page.
 
 
 ### Java Client Configuration
-Hazelcast client can be configured in two way.
+
+Hazelcast Java client can be configured in two ways, declaratively or programmatically.
 
 #### Java Client Declarative Configuration
-Using an XML configuration file, it can be configured.
-Here is a generic template of an xml configuration
+
+Java client can be configured using an XML configuration file. 
+Below is a generic template of a declarative configuration.
 
 ```xml
 
@@ -539,16 +541,19 @@ Here is a generic template of an xml configuration
 
 
 #### Java Client Programmatic Configuration
-Using the configuration API, a ClientConfig configured as required. Please refer to the related parts and API doc for details.
+
+Using the configuration API, a `ClientConfig` configured as required. Please refer to the related sections and JavaDocs for more information.
 
 ##### ClientNetworkConfig
 
+ClientNetworkConfig includes the below listed configuration options, which are explained under [Network Configuration Options](#network-configuration-options) section.
+
 * addressList
-* smartRouting (default is  true)
+* smartRouting
 * redoOperation
-* connectionTimeout (default is 5000)
-* connectionAttemptLimit (default is  2)
-* connectionAttemptPeriod (default is  3000)
+* connectionTimeout
+* connectionAttemptLimit
+* connectionAttemptPeriod
 * SocketInterceptorConfig
 * SocketOptions
 * SSLConfig
@@ -557,27 +562,29 @@ Using the configuration API, a ClientConfig configured as required. Please refer
 
 ##### GroupConfig
 Clients should provide group name and password in order to connect to the cluster.
-It can be configured using `GroupConfig`
+It can be configured using `GroupConfig`, as shown below.
 
 ```java
 clientConfig.setGroupConfig(new GroupConfig("dev","dev-pass"));
 ```
 
 ##### Client Properties 
-TODO
+To Do
 
 ##### ClientSecurityConfig
-In the cases where the security established with `GroupConfig` is not enough and you want your clients connecting securely to the cluster, `ClientSecurityConfig` can be used. This configuration has a `credentials` parameter with which IP address and UID are set (please see [ClientSecurityConfig.java](#com/hazelcast/client/config/ClientSecurityConfig.java)).
+
+In the cases where the security established with `GroupConfig` is not enough and you want your clients connecting securely to the cluster, `ClientSecurityConfig` can be used. This configuration has a `credentials` parameter with which IP address and UID are set. Please see `ClientSecurityConfig.java` in our code.
 
 
 ##### SerializationConfig
-For client side seriliazation, hazelcast configuration is used. Please refer to [Serialiazation](#) 
+
+For the client side serialization, Hazelcast configuration is used. Please refer to [Serialiazation](#serialization) chapter.
 
 ##### LoadBalancer
-TODO
+To Do
 
 ##### ListenerConfig
-Global event listeners can be configured using ListenerConfig as
+Global event listeners can be configured using ListenerConfig as shown below.
 
 
 ```java
@@ -599,7 +606,7 @@ There are three types of event listeners that can be added.
 
 
 ##### NearCacheConfig
-To configure a near cache on client side by providing a configuration per map name.
+A near cache on the client side can be configured by providing a configuration per map name, as shown below.
 
 ```java
 ClientConfig clientConfig = new ClientConfig();
@@ -608,7 +615,7 @@ nearCacheConfig.setName("mapName");
 clientConfig.addNearCacheConfig(nearCacheConfig);
 ```
 
-Wildcards can be used for name as,
+Wildcards can be used for the map name. See below samples.
 
 ```java
 nearCacheConfig.setName("map*");
@@ -617,17 +624,21 @@ nearCacheConfig.setName("*map");
 ```
 
 ##### ClassLoader
-A custom classLoader can be configured. It will be used by serialiazation service , and to load any class configured in configuration like event listeners or ProxyFactories.
+A custom `classLoader` can be configured. It will be used by serialization service and to load any class configured in configuration like event listeners or ProxyFactories.
 
 ##### ExecutorPoolSize
 Hazelcast has an internal executor service (different from the data structure *Executor Service*) that has threads and queues to perform internal operations such as handling responses. This parameter specifies the size of the pool of threads which perform these operations laying in the executor's queue. If not configured, this parameter has the value as **5 \* *core size of the client*** (i.e. it is 20 for a machine that has 4 cores).
 
 ##### ProxyFactoryConfig
-TODO, advance
+
+To Do (advanced)
+
 ##### ManagedContext
-TODO, advance
+
+To Do (advanced)
 
 ### Examples
-REFER TO CODE SAMPLES
+
+Please refer to [Client Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/clients).
 
 
