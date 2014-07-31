@@ -30,6 +30,7 @@ import com.hazelcast.map.record.ObjectRecordFactory;
 import com.hazelcast.map.record.OffHeapRecordFactory;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordFactory;
+import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -269,6 +270,12 @@ public class MapContainer extends MapContainerSupport {
             record.setTtl(configTTLMillis);
         } else if (ttl > 0L) {
             record.setTtl(ttl);
+        }
+        final RecordStatistics statistics = record.getStatistics();
+        if (statistics != null) {
+            final long ttlOnRecord = record.getTtl();
+            final long expirationTime = mapServiceContext.getExpirationTime(ttlOnRecord, now);
+            statistics.setExpirationTime(expirationTime);
         }
         return record;
     }

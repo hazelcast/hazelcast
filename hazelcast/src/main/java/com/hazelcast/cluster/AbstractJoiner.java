@@ -34,7 +34,6 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -55,11 +54,11 @@ public abstract class AbstractJoiner implements Joiner {
         this.config = node.config;
     }
 
-    public abstract void doJoin(AtomicBoolean joined);
+    public abstract void doJoin();
 
     @Override
-    public void join(AtomicBoolean joined) {
-        doJoin(joined);
+    public void join() {
+        doJoin();
         postJoin();
     }
 

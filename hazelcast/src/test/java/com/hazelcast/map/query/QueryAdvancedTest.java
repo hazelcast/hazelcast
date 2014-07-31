@@ -469,7 +469,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testSecondMemberAfterAddingIndexes() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -637,7 +636,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
      * see zendesk ticket #82
      */
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testQueryWithIndexDuringJoin() throws InterruptedException {
         final String name = "test";
         final String FIND_ME = "find-me";

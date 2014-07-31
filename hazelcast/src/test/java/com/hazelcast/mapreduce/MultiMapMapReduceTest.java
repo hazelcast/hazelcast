@@ -51,9 +51,7 @@ public class MultiMapMapReduceTest
     };
 
     @Test(timeout = 60000)
-    public void testMapReduceWithMultiMap()
-            throws Exception {
-
+    public void testMapReduceWithMultiMap() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -61,6 +59,8 @@ public class MultiMapMapReduceTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         MultiMap<Integer, Integer> multiMap = h1.getMultiMap("default");
         for (int i = 0; i < 1000; i++) {

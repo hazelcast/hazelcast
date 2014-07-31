@@ -18,11 +18,9 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 public interface Joiner {
 
-    void join(AtomicBoolean joined);
+    void join();
 
     void searchForOtherClusters();
 

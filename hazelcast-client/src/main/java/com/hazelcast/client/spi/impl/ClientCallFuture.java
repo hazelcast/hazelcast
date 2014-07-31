@@ -64,6 +64,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private final ClientInvocationServiceImpl invocationService;
 
+    private final ClientListenerServiceImpl clientListenerService;
+
     private final SerializationService serializationService;
 
     private final EventHandler handler;
@@ -88,6 +90,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.serializationService = client.getSerializationService();
         this.request = request;
         this.handler = handler;
@@ -174,7 +177,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             if (this.response != null && !(response instanceof Throwable)) {
                 String uuid = serializationService.toObject(this.response);
                 String alias = serializationService.toObject(response);
-                invocationService.reRegisterListener(uuid, alias, request.getCallId());
+                clientListenerService.reRegisterListener(uuid, alias, request.getCallId());
                 return;
             }
             this.response = response;
@@ -277,7 +280,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                 invocationService.reSend(ClientCallFuture.this);
             } catch (Exception e) {
                 if (handler != null) {
-                    invocationService.registerFailedListener(ClientCallFuture.this);
+                    clientListenerService.registerFailedListener(ClientCallFuture.this);
                 } else {
                     setResponse(e);
                 }

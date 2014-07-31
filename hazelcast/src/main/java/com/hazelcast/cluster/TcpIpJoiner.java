@@ -42,7 +42,6 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 
@@ -56,7 +55,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         super(node);
     }
 
-    private void joinViaTargetMember(AtomicBoolean joined, Address targetAddress, long maxJoinMillis) {
+    private void joinViaTargetMember(Address targetAddress, long maxJoinMillis) {
         try {
             if (targetAddress == null) {
                 throw new IllegalArgumentException("Invalid target address -> NULL");
@@ -69,8 +68,8 @@ public class TcpIpJoiner extends AbstractJoiner {
                 return;
             }
             long joinStartTime = Clock.currentTimeMillis();
-            Connection connection = null;
-            while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+            Connection connection;
+            while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 connection = node.connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
                     //noinspection BusyWait
@@ -125,8 +124,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
-    //todo: why are we passing argument if not used?
-    private void joinViaPossibleMembers(AtomicBoolean joined) {
+    private void joinViaPossibleMembers() {
         try {
             node.getFailedConnections().clear();
             final Collection<Address> colPossibleAddresses = getPossibleAddresses();
@@ -220,7 +218,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                                 }
                                 long t = Clock.currentTimeMillis();
                                 try {
-                                    allApprovedAsMaster &= response.get(1, TimeUnit.SECONDS);
+                                    allApprovedAsMaster = response.get(1, TimeUnit.SECONDS);
                                 } catch (Exception e) {
                                     logger.finest(e);
                                     allApprovedAsMaster = false;
@@ -331,20 +329,20 @@ public class TcpIpJoiner extends AbstractJoiner {
         return null;
     }
 
-    public void doJoin(AtomicBoolean joined) {
+    public void doJoin() {
         final Address targetAddress = getTargetAddress();
         if (targetAddress != null) {
             long maxJoinMergeTargetMillis = node.getGroupProperties().MAX_JOIN_MERGE_TARGET_SECONDS.getInteger() * 1000;
-            joinViaTargetMember(joined, targetAddress, maxJoinMergeTargetMillis);
-            if (!joined.get()) {
-                joinViaPossibleMembers(joined);
+            joinViaTargetMember(targetAddress, maxJoinMergeTargetMillis);
+            if (!node.joined()) {
+                joinViaPossibleMembers();
             }
         } else if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
             Address requiredMember = getRequiredMemberAddress();
             long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-            joinViaTargetMember(joined, requiredMember, maxJoinMillis);
+            joinViaTargetMember(requiredMember, maxJoinMillis);
         } else {
-            joinViaPossibleMembers(joined);
+            joinViaPossibleMembers();
         }
     }
 

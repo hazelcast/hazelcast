@@ -17,9 +17,11 @@
 package com.hazelcast.wm.test;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -27,22 +29,26 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-public class WebFilterTest extends AbstractWebFilterTest {
+@Category(QuickTest.class)
+public class JettyWebFilterTest extends AbstractWebFilterTest {
 
     @Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(
-                new Object[] { "node - not deferred", "node1-node.xml", "node2-node.xml" }, //
-                new Object[] { "node - deferred", "node1-node-deferred.xml", "node2-node-deferred.xml" }, //
-                new Object[] { "client - not deferred", "node1-client.xml", "node2-client.xml" }, //
-                new Object[] { "client - deferred", "node1-client-deferred.xml", "node2-client-deferred.xml" } //
+                new Object[]{"node - not deferred", "node1-node.xml", "node2-node.xml"}, //
+                new Object[]{"node - deferred", "node1-node-deferred.xml", "node2-node-deferred.xml"}, //
+                new Object[]{"client - not deferred", "node1-client.xml", "node2-client.xml"}, //
+                new Object[]{"client - deferred", "node1-client-deferred.xml", "node2-client-deferred.xml"} //
         );
     }
 
-    public WebFilterTest(String name, String serverXml1, String serverXml2) {
+    public JettyWebFilterTest(String name, String serverXml1, String serverXml2) {
         super(serverXml1, serverXml2);
     }
 
@@ -157,14 +163,14 @@ public class WebFilterTest extends AbstractWebFilterTest {
     }
 
     @Test
-    public void testUpdateAndReadSameRequest() throws Exception{
+    public void testUpdateAndReadSameRequest() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
         assertEquals("value-updated", executeRequest("update-and-read-same-request", serverPort2, cookieStore));
     }
 
     @Test
-    public void testUpdateAndReadSameRequestWithRestart() throws Exception{
+    public void testUpdateAndReadSameRequestWithRestart() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
 
@@ -174,4 +180,8 @@ public class WebFilterTest extends AbstractWebFilterTest {
         assertEquals("value-updated", executeRequest("update-and-read-same-request", serverPort1, cookieStore));
     }
 
+    @Override
+    protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception{
+        return new JettyServer(port,sourceDir,serverXml);
+    }
 }

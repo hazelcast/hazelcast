@@ -245,9 +245,7 @@ public class MemcacheTest extends HazelcastTestSupport {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final MemcachedClient client = getMemcacheClient(instance);
         try {
-            OperationFuture<Boolean> future = client.set(String.valueOf(0), 10, 10);
-            future.get();
-            assertEquals(10, client.get(String.valueOf(0)));
+            client.set(String.valueOf(0), 5, 10).get();
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {

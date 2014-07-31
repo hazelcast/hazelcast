@@ -25,7 +25,7 @@ work with the Java generics; on Java 6 and 7 the generics resolving process is n
 upcoming Java versions. In addition, the whole Aggregations API has full Java 8 Project Lambda (or Closure, 
 [JSR 335](https://jcp.org/en/jsr/detail?id=335)) support.
 
-For illustration of the differences in Java 6 and 7 in comparison to Java 8, we  will have a quick look at both sourcecode
+For illustration of the differences in Java 6 and 7 in comparison to Java 8, we  will have a quick look at both source code
 examples. After that, the documentation will focus on using Java 8 syntax to keep examples short and easy to understand but still
 offer some hints as to what it looks like in Java 6 or 7.
 
@@ -48,7 +48,7 @@ With our demo data prepared we can have a look at how to produce the sums in dif
 Since Java 6 and 7, as mentioned earlier, are not as strong on resolving generics as Java 8 we need to be a bit more verbose
 with what we write or you might want to consider using raw types but breaking the type safety to ease this process.
 
-For a short introduction on what the following lines mean have a quick look at the sourcecode comments. We will dig deeper into
+For a short introduction on what the following lines mean have a quick look at the source code comments. We will dig deeper into
 the different options in a bit. 
 
 ```java
@@ -346,7 +346,7 @@ For `IMap` aggregation calls the naming spec is created as:
 
 For `MultiMap` it is very similar:
 
-- `hz::aggregation-multimap-` and concatenated the name of the multimap
+- `hz::aggregation-multimap-` and concatenated the name of the MultiMap
 
 knowing that (the specification of the name), we can configure the `JobTracker` as expected 
 (as described in the Jobtracker section) using the naming spec we just learned For more information on configuration of the 
@@ -541,7 +541,7 @@ for ( String office : officeAssignment.keySet() ) {
 #### Simple Count Example
 
 After the previous example, we want to fade out from this section by executing one final, easy but nice aggregation. We
-just want to know how many employees we currently have on a worldwide basis. Before reading the next lines of sourcecode, you
+just want to know how many employees we currently have on a worldwide basis. Before reading the next lines of source code, you
 can try to do it on your own to see if you understood the way of executing aggregations.
 
 As said, this is again a very basic example but it is the perfect closing point for this section:

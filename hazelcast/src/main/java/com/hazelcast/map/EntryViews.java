@@ -1,8 +1,10 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordStatistics;
+import com.hazelcast.nio.serialization.SerializationService;
 
 /**
  * A class providing static factory methods that create various entry view objects.
@@ -46,4 +48,24 @@ public final class EntryViews {
     public static <K, V> EntryView<K, V> createSimpleEntryView() {
         return new SimpleEntryView<K, V>();
     }
+
+    public static <K, V> EntryView<K, V> createLazyEntryView(K key, V value, Record record
+            , SerializationService serializationService, MapMergePolicy mergePolicy) {
+        final LazyEntryView lazyEntryView = new LazyEntryView(key, value, serializationService, mergePolicy);
+        lazyEntryView.setCost(record.getCost());
+        lazyEntryView.setVersion(record.getVersion());
+        lazyEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
+        lazyEntryView.setLastAccessTime(record.getLastAccessTime());
+        lazyEntryView.setLastUpdateTime(record.getLastUpdateTime());
+        lazyEntryView.setTtl(record.getTtl());
+        lazyEntryView.setCreationTime(record.getCreationTime());
+        final RecordStatistics statistics = record.getStatistics();
+        if (statistics != null) {
+            lazyEntryView.setHits(statistics.getHits());
+            lazyEntryView.setExpirationTime(statistics.getExpirationTime());
+            lazyEntryView.setLastStoredTime(statistics.getLastStoredTime());
+        }
+        return lazyEntryView;
+    }
+
 }

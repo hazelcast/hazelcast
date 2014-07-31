@@ -4,7 +4,7 @@
 
 ## Serializable & Externalizable
 
-Oftenly, a class needs to implement `java.io.Serializable` interface and therefore native Java serialization is the easiest way for serialization. Let's take a look at the sample code below.
+Often, a class needs to implement `java.io.Serializable` interface and therefore native Java serialization is the easiest way for serialization. Let's take a look at the sample code below.
 
 ```java
 public class Employee implements Serializable { 

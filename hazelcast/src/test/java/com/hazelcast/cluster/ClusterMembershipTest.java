@@ -18,23 +18,38 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EventObject;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -59,6 +74,29 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
 
         assertEventuallySizeAtLeast(listener.events, 2);
         assertMembershipRemovedEvent(listener.events.get(1), member2, hz1.getCluster().getLocalMember());
+    }
+
+    @Test
+    public void testNodesAbleToJoinFromMultipleThreads() throws InterruptedException {
+        final int instanceCount = 6;
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(instanceCount);
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        final String mapName = randomMapName();
+        // index config is added since it was blocking post join operations.
+        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
+        ExecutorService ex = Executors.newFixedThreadPool(instanceCount);
+        final CountDownLatch latch = new CountDownLatch(instanceCount);
+        for (int i = 0; i < instanceCount; i++) {
+            ex.execute(new Runnable() {
+                public void run() {
+                    final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+                    hz.getMap(mapName);
+                    latch.countDown();
+                }
+            });
+        }
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
     }
 
     @Test

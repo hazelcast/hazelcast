@@ -33,7 +33,7 @@ public class Fibonacci<Long> implements Callable<Long>, Serializable {
 }
 ```
 
-The callable class above calculates the Fibonacci number for a given number. In the `calculate` method, we are checking to see if the current thread is interrupted so that code can be responsive to cancellations once the execution is started. Below `fib()` method submits the Fibonacci calculation task for number 'n' and waits maximum 3 seconds for result. If the execution does not completed in 3 seconds, `future.get()` will throw `TimeoutException` and upon catching, it we interruptibly cancel the execution for saving some CPU cycles.
+The callable class above calculates the Fibonacci number for a given number. In the `calculate` method, we are checking to see if the current thread is interrupted so that code can be responsive to cancellations once the execution is started. Below `fib()` method submits the Fibonacci calculation task for number 'n' and waits maximum 3 seconds for result. If the execution does not completed in 3 seconds, `future.get()` will throw `TimeoutException` and upon catching it, we cancel the execution for saving some CPU cycles.
 
 ```java
 long fib( int n ) throws Exception {

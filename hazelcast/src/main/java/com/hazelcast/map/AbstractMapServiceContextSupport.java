@@ -39,6 +39,22 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
     }
 
     @Override
+    public long getExpirationTime(long ttl, long now) {
+        if (ttl < 0 || now < 0) {
+            throw new IllegalArgumentException("ttl and now parameters can not have negative values");
+        }
+        if (ttl == 0) {
+            return Long.MAX_VALUE;
+        }
+        final long expirationTime = now + ttl;
+        // detect potential overflow.
+        if (expirationTime < 0L) {
+            return Long.MAX_VALUE;
+        }
+        return expirationTime;
+    }
+
+    @Override
     public Object toObject(Object data) {
         if (data == null) {
             return null;

@@ -28,12 +28,14 @@ import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.txn.ClientTransactionManager;
@@ -136,6 +138,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientPartitionServiceImpl partitionService;
     private final ClientInvocationServiceImpl invocationService;
     private final ClientExecutionServiceImpl executionService;
+    private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManager transactionManager;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
@@ -151,8 +154,7 @@ public final class HazelcastClient implements HazelcastInstance {
         clientProperties = new ClientProperties(config);
         serializationService = initSerializationService(config);
         proxyManager = new ProxyManager(this);
-        executionService = new ClientExecutionServiceImpl(instanceName, threadGroup,
-                Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
+        executionService = initExecutorService();
         transactionManager = new ClientTransactionManager(this);
         LoadBalancer lb = config.getLoadBalancer();
         if (lb == null) {
@@ -162,9 +164,21 @@ public final class HazelcastClient implements HazelcastInstance {
         connectionManager = createClientConnectionManager();
         clusterService = new ClientClusterServiceImpl(this);
         invocationService = new ClientInvocationServiceImpl(this);
+        listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
         proxyManager.init(config);
         partitionService = new ClientPartitionServiceImpl(this);
+    }
+
+    private ClientListenerServiceImpl initListenerService() {
+        int eventQueueCapacity = clientProperties.getEventQueueCapacity().getInteger();
+        int eventThreadCount = clientProperties.getEventThreadCount().getInteger();
+        return new ClientListenerServiceImpl(this, eventThreadCount, eventQueueCapacity);
+    }
+
+    private ClientExecutionServiceImpl initExecutorService() {
+        return new ClientExecutionServiceImpl(instanceName, threadGroup,
+                config.getClassLoader(), config.getExecutorPoolSize());
     }
 
     private SerializationServiceImpl initSerializationService(ClientConfig config) {
@@ -478,6 +492,10 @@ public final class HazelcastClient implements HazelcastInstance {
         return invocationService;
     }
 
+    public ClientListenerService getListenerService() {
+        return listenerService;
+    }
+
     public ThreadGroup getThreadGroup() {
         return threadGroup;
     }
@@ -494,6 +512,8 @@ public final class HazelcastClient implements HazelcastInstance {
         clusterService.stop();
         transactionManager.shutdown();
         connectionManager.shutdown();
+        invocationService.shutdown();
+        listenerService.shutdown();
         proxyManager.destroy();
         serializationService.destroy();
     }
