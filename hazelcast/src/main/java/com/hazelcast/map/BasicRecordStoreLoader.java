@@ -68,7 +68,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         setLoaded(false);
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.submit("hz:map-loadAllKeys", new LoadAllKeysTask(keys, replaceExistingValues));
+        executionService.submit(ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR, new LoadAllKeysTask(keys, replaceExistingValues));
     }
 
     @Override
@@ -306,7 +306,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             Map<Data, Object> chunkedKeys;
             while ((chunkedKeys = chunks.poll()) != null) {
                 final Callback<Throwable> callback = createCallbackForThrowable();
-                executionService.submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded, callback));
+                executionService.submit(ExecutionService.MAP_LOADER_EXECUTOR, new MapLoadAllTask(chunkedKeys, checkIfMapLoaded, callback));
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
