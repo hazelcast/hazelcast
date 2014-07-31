@@ -1,18 +1,18 @@
 ## Java Client
 
-### Overview
+### Java Cient Overview
 
-Java client is the most full featured client. It is distributed with both hazelcast and hazelcst Enterprise. Main idea behind the java client is to provide the same hazelcast functionality by proxying each operation through a hazelcast node. 
-It can be used to access and change distributed data or listen distributed events of an already established hazelcast cluster from another Java application. 
+Java client is the most full featured client. It is offered both with Hazelcast and Hazelcast Enterprise. Main idea behind the Java client is to provide the same Hazelcast functionality by proxying each operation through a Hazelcast node. 
+It can be used to access and change distributed data or listen distributed events of an already established Hazelcast cluster from another Java application. 
 
 
-### Dependencies
+### Java Client Dependencies
 
-There are two dependencies that you should include in your classpath to start using hazelcast client which are basicly hazelcast.jar and hazelcast-client.jar.
+There are two dependencies that you should include in your classpath to start using Hazelcast client: `hazelcast.jar` and `hazelcast-client.jar`.
 
-After adding these dependencies you can start using hazelcast client as if you are using hazelcast API.  The differences will be reviewed throughout this documentation.
+After adding these dependencies, you can start using Hazelcast client as if you are using Hazelcast API. The differences will be extracted throughout the below sections.
 
-If you prefer to use maven, simply add these to your pom.
+If you prefer to use maven, simply add below lines to your `pom.xml`.
 
 ```xml
 <dependency>
@@ -27,9 +27,9 @@ If you prefer to use maven, simply add these to your pom.
 </dependency>
 ```
 
-### Getting started with Client API 
+### Getting Started with Client API 
 
-First step is configuration. Java client can be configured using either XML or API. We will use API throughout this tutorial. Please refer  to [XML Configuration](xml-configuration) for details.
+First step is configuration. Java client can be configured declaratively or programmatically. We will use the programmatic approach throughout this tutorial. Please refer to [Java Client Declarative Configuration](#java-client-declarative-configuration) for details.
 
 ```java
 ClientConfig clientConfig = new ClientConfig();
@@ -37,7 +37,7 @@ clientConfig.getGroupConfig().setName("dev").setPassword("dev-pass");
 clientConfig.getNetworkConfig().addAddress("10.90.0.1", "10.90.0.2:5702");
 ```
 
-Second step, "HazelcastInstance should be initialized to connect to the cluster".
+Second step is the initialization of HazelcastInstance to be connected to the cluster.
 
 ```java
 HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
@@ -45,7 +45,7 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
 *This client interface is your gateway to access all Hazelcast distributed objects.*
 
-Let's create a map and popupate with some data;
+Let's create a map and populate with some data;
 
 ```java
 
@@ -57,7 +57,7 @@ mapCustomers.put("3", new Customer("Avi", "Noyan"));
 
 ```
 
-As a final step if you are done your client, you can just shut it down. This will release all used resources and close connections to cluster.
+As a final step, if you are done with your client, you can just shut it down as shown below. This will release all used resources and close connections to cluster.
 
 ```java
 
@@ -65,63 +65,63 @@ client.shutdown();
 
 ```
 
-### Operation modes
+### Java Client Operation modes
 
 Client has two operation modes because of the distributed nature of the data and cluster. 
 
 #### Smart Client
 
-In this mode, clients connect to each cluster node. As each data partition is well known using consistent hashing algorithm, each client can send operation to the relevant cluster node which will increase the overall throughput and efficiency. This mode is the default.
+In this mode, clients connect to each cluster node. As each data partition uses the well known consistent hashing algorithm, each client can send operation to the relevant cluster node which will increase the overall throughput and efficiency. This mode is the default.
 
 
 #### Dummy Client
 
-For some cases, the clients can be required to connect to a single node instead of each node in the cluster. Firewalls, security or some custom networking issue can be the reason for that.  
-In this mode, client will only connect to one of the configured addresses. This single node will behave as a gateway to other nodes. For any operation requested form the client, it will redirect the request to the relevant node and return the response back to client returned from this node.
+For some cases, the clients can be required to connect to a single node instead of each node in the cluster. Firewalls, security or some custom networking issues can be the reason for that. 
+ 
+In this mode, client will only connect to one of the configured addresses. This single node will behave as a gateway to other nodes. For any operation requested from the client, it will redirect the request to the relevant node and return the response back to the client returned from this node.
 
 ### Fail Case Handling
 
-There are two main failing cases to be aware of and configured to achieve a proper behavior.
+There are two main failure cases to be aware of and configured to achieve a proper behavior.
 
-#### Client connection failure
-
-
-While client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList` , all might be not available. Instead of giving up, throwing Exception and stopping client, it will attempt to retry as much as `connectionAttemptLimit` times.   
-
-Client execute each operation through the already established connection to cluster. If this connection(s) disconnects or drops, client will try to reconnect as configured. 
+#### Client Connection Failure
 
 
-#### Retryable operation failure
+While client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all members might be not available. Instead of giving up, throwing an exception and stopping the client, it will attempt to retry as much as `connectionAttemptLimit` times. Please see [Connection Attempt Limit](#connection-attempt-limit).
 
-While sending the requests to related nodes it is possible that operation fails due to various reasons. For any readonly operation, you can configure client to retry to send the operation with `redoOpertion`
+Client executes each operation through the already established connection to cluster. If this connection(s) disconnects or drops, client will try to reconnect as configured. 
 
-`ClientProperties` `"hazelcast.client.retry.count"`. Refer to [Client Properties](client-properties) for detail. It will resend the request as many as RETRY-COUNT then it will throw an exception.
+
+#### Retry-able Operation Failure
+
+While sending the requests to related nodes, it is possible that operation fails due to various reasons. For any read only operations, you can have your client retrying to send the operation by enabling `redoOperation`. Please see [Redo Operation](#redo-operation).
+
+And, the number of retries is given with the property  `hazelcast.client.retry.count` in `ClientProperties`. It will resend the request as many as RETRY-COUNT then it will throw an exception. Please see [Client Properties](#client-properties).
 
 
 ### Distributed Data Structures
 
-Most of Distributed Data Structures are supported by client (Please check for the exceptions for other language clients).
+Most of the Distributed Data Structures are supported by the client. Please check for the exceptions for the clients in other languages.
 
-As a general rule, these data structures are configured on the server side and just accessed through a proxy on the client side. 
+As a general rule, these data structures are configured on the server side and simply accessed through a proxy on the client side.
 
 #### Map
 
-You can use any [IMap](IMap) object with client as;
+You can use any [Distributed Map](#map) object with client as shown below.
 
 ```java
-
 Imap<Integer, String> map = client.getMap(“myMap”);
 
 map.put(1, “Ali”);
 String value= map.get(1);
 map.remove(1); 
-
 ```
 
-As Locality is ambiguous for client, addEntryListener , localKeySet are not supported.
-Please refer to [IMap](#)
+As Locality is ambiguous for the client, `addEntryListener` and `localKeySet` are not supported. Please see [Distributed Map](#map) for more information.
 
 #### MultiMap
+
+A sample usage is shown below.
 
 
 ```java
@@ -131,75 +131,64 @@ multiMap.put(1,”ali”);
 multiMap.put(1,”veli”);
 
 Collection<String> values = multiMap.get(1);
-
 ```
 
-As Locality is ambiguous for client, addEntryListener , localKeySet, getLocalMultiMapStats are not supported.
-
-Please refer to [MultiMap](#)
-
-
-#### ReplicatedMap
-Same as Hazelcast List. Please refer to [ReplicatedMap](#)
-
-#### MapReduce
-Same as Hazelcast List. Please refer to [MapReduce](#)
+As Locality is ambiguous for the client, `addEntryListener`, `localKeySet` and  `getLocalMultiMapStats` are not supported. Please see [Distributed MultiMap](#multimap) for more information.
 
 #### Queue
+
+A sample usage is shown below.
+
 
 ```java
 IQueue<String> myQueue = client.getQueue(“theQueue”);
 myQueue.offer(“ali”)
 ```
 
-`getLocalQueueStats` is not supported as locality is ambiguous for client.
+`getLocalQueueStats` is not supported as locality is ambiguous for the client. Please see [Distributed Queue](#queue) for more information.
 
 #### Topic
 
-`getLocalTopicStats` is not supported as locality is ambiguous for client.
+`getLocalTopicStats` is not supported as locality is ambiguous for the client.
 
-#### List
-Same as Hazelcast List. Please refer to [IList](#)
+#### Other Supported Distributed Structures
 
-#### Set
-Same as Hazelcast Set. Please refer to [ISet](#)
+Below distributed data structures are also supported by the client. Since their logic is the same in both the node side and client side, you can refer to their sections as listed below.
 
-#### AtomicLong
-Same as Hazelcast AtomicLong. Please refer to [AtomicLong](#)
+- [Replicated Map](#replicated-map-beta)
+- [MapReduce](#mapreduce)
+- [List](#list)
+- [Set](#set)
+- [IAtomicLong](#iatomiclong)
+- [IAtomicReference](#iatomicreference)
+- [ICountDownLatch](#icountdownlatch)
+- [ISemaphore](#isemaphore)
+- [IdGenerator](#idgenerator)
+- [Lock](#lock)
 
-#### AtomicReference
-Same as Hazelcast AtomicReference. Please refer to [AtomicReference](#)
 
-#### CountDownLatch
-Same as Hazelcast CountDownLatch. Please refer to [CountDownLatch](#)
-
-#### Semaphore
-Same as Hazelcast Semaphore. Please refer to [Semaphore](#)
-
-#### IdGenerator
-Same as Hazelcast IdGenerator. Please refer to [IdGenerator](#)
-
-#### Lock
-Same as Hazelcast Lock. Please refer to [Lock](#)
 
 ### Client Services
-There are services provided for some common functionality on client side.
+
+Below services are provided for some common functionalities on the client side.
 
 #### Distributed Executor Service
-This service is for distributed computing. It can be used to execute tasks on the cluster on designated partition or even on all partition. It can also be used to process entries. 
-Please refer to [IExecutorService](#) for details.
+
+This service is for distributed computing. It can be used to execute tasks on the cluster on designated partition or even on all partitions. It can also be used to process entries.  Please see [Distributed Executor Service](#executor-service) for more information.
 
 ```java
 IExecutorService executorService = client.getExecutorService("default");
-
 ```
-After getting an instance of `IExecutorService` , it can be used as the interface with the one provided on server side. Please refer to Distributed Computing chapter for detailed usage.
 
-This service is only supported by Java client.
+
+After getting an instance of `IExecutorService`, it can be used as the interface with the one provided on the server side. Please see [Distributed Computing](#distributed-computing) chapter for detailed usage.
+
+***NOTE:*** *This service is only supported by the Java client.*
+
   
 #### Client Service
 
-If you need to track clients and want to listener their connection events, 
+If you need to track clients and want to listen their connection events, see the below code.
 
 ```java
 final ClientService clientService = client.getClientService();
@@ -216,12 +205,11 @@ clientService.addClientListener(new ClientListener() {
       //Handle client disconnected event
     }
 });
-
 ```
 
 #### Partition Service
 
-Partition service is used to find the partition of a key. It will return all partitions.
+Partition service is used to find the partition of a key. It will return all partitions. See the below code.
 
 ```java
 PartitionService partitionService = client.getPartitionService();
@@ -231,17 +219,17 @@ Partition partition = partitionService.getPartition(key);
 
 //all partitions
 Set<Partition> partitions = partitionService.getPartitions();
-
 ```
+
 
 #### Lifecycle Service
 
-Lifecycle handling is for
+Lifecycle handling is to;
 
-*checking the client is running
-*shutting down the client gracefully
-*terminating the client ungracefully (forced shutdown)
-*add/remove lifecycle listeners
+- check the client is running,
+- shutdown the client gracefully,
+- terminate the client ungracefully (forced shutdown), and
+- add/remove lifecycle listeners.
 
 
 ```java
@@ -258,75 +246,74 @@ lifecycleService.shutdown();
 
 ### Listeners
 
-Listeners can be configured to listen on various event types on client side. Global events not relating to any distributed object can be configured through [ListenerConfig](#). Whereas distributed object listeners like map entry listeners or list item listeners should be configured through their proxies. Please refer to [Listeners](#) for more information about listeners.
+Listeners can be configured to listen to various event types on the client side. Global events not relating to any distributed object can be configured through [ListenerConfig](#listenerconfig). Whereas, distributed object listeners like map entry listeners or list item listeners should be configured through their proxies. You can refer to the related sections under each distributed data structure in this reference manual.
 
 ### Transactions
 
-Transactional distributed object are supported on client side. Please refer to [Transactions] on how to use them
+Transactional distributed objects are supported on the client side. Please see [Transactions](#transactions) chapter on how to use them.
 
 
 ### Network Configuration Options
 
 ```java
-
 ClientConfig clientConfig = new ClientConfig();
 ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-
 ```
   
 #### Address List
 Address List is the initial list of cluster addresses to which the client will connect. Client uses this list to find an alive node. Although it may be enough to give only one address of a node in the cluster (since all nodes communicate with each other), it is recommended to give all nodes’ addresses.
 
-If the port part is omitted then 5701, 5702, and 5703 will be tried in random order.
+If the port part is omitted then 5701, 5702, and 5703 will be tried in a random order.
 
 ```java
 clientConfig.getNetworkConfig().addAddress("10.1.1.21", "10.1.1.22:5703");
 ```
 
-You can provide multiple addresses with ports provided or not as seen above. The provided list is shuffled to try them in random order.
+You can provide multiple addresses with ports provided or not as seen above. The provided list is shuffled to try them in a random order.
 
-Default value is “localhost”.
+Default value is *localhost*.
   
 #### Smart Routing
 
-This parameter sets smart client or dummy client.
+This parameter defines whether the client is smart or a dummy one.
 
 ```java
 //sets client to dummy client mode
 clientConfig.getNetworkConfig().setSmartRouting(false);
 ```
-Default is smart client mode.
+Default is *smart client* mode.
 
 #### Redo Operation
 
-Enables/disables redo-able operations as described in [Retryable operation failure](Retryable operation failure)
+Enables/disables redo-able operations as described in [Retry-able Operation Failure](#retry-able-operation-failure).
 
 ```java
 //enables redo 
 clientConfig.getNetworkConfig().setRedoOperation(true);
 ```
-Default is disabled.
+Default is *disabled*.
 
 #### Connection Timeout
-Timeout value in milliseconds for nodes to accept client connection requests. Default value is 5000 milliseconds.
+
+Timeout value in milliseconds for nodes to accept client connection requests. 
 
 ```java
 //enables redo 
 clientConfig.getNetworkConfig().setConnectionTimeout(1000);
 ```
 
-Default is 60000.
+Default value is *5000* milliseconds.
 
 #### Connection Attempt Limit
 
-While client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all might be not available. Instead of giving up, throwing Exception and stopping client, it will attempt to retry as much as `ClientNetworkConfig.connectionAttemptLimit` times
+While client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all might be not available. Instead of giving up, throwing exception and stopping the client, it will attempt to retry as much as `ClientNetworkConfig.connectionAttemptLimit` times.
 
 ```java
 //enables redo 
 clientConfig.getNetworkConfig().setConnectionAttemptLimit(5);
 ```
 
-Default is 2.
+Default value is *2*.
 
 #### Connection Attempt Period
 
@@ -337,7 +324,7 @@ The duration in milliseconds between connection attempts defined by `ClientNetwo
 clientConfig.getNetworkConfig().setConnectionAttemptPeriod(5000);
 ```
 
-Default is 3000.
+Default value is *3000*.
 
 #### Socket Interceptor
 
@@ -353,7 +340,7 @@ public interface SocketInterceptor {
 }
 ```
 
-Socket interceptor has two steps. First it will be initialize by the configured properties. Secondly it will informed just after socket is connected using `onConnect`
+Socket interceptor has two steps. First, it will be initialized by the configured properties. Second, it will be informed just after socket is connected using `onConnect`.
 
 
 ```java
@@ -365,7 +352,7 @@ socketInterceptorConfig.setEnabled(true);
 socketInterceptorConfig.setImplementation(myClientSocketInterceptor);
 ```
 
-if you want to configure it with a class name instead of an instance;
+If you want to configure it with a class name instead of an instance;
 
 ```java
 SocketInterceptorConfig socketInterceptorConfig = clientConfig.getNetworkConfig().getSocketInterceptorConfig();
@@ -381,21 +368,21 @@ socketInterceptorConfig.setProperty("kerberos-config-file","kerb.conf");
 socketInterceptorConfig.setClassName(myClientSocketInterceptor);
 ```
 
-For details refer to chapter [13.1 Socket Interceptors]
+Please see [Socket Interceptor](#socket-interceptor) section for more information.
 
 #### Socket Options
 
-Network socket options can be configured using `SocketOptions`.
+Network socket options can be configured using `SocketOptions`. It has below methods.
 
-`socketOptions.setKeepAlive(x)` : Enable/disable SO_KEEPALIVE socket option. Default is `true`.
+- `socketOptions.setKeepAlive(x)`: Enables/disables *SO_KEEPALIVE* socket option. Default is `true`.
 
-`socketOptions.setTcpNoDelay(x)` : Enable/disable TCP_NODELAY socket option. Default is `true`.
+- `socketOptions.setTcpNoDelay(x)`: Enables/disables *TCP_NODELAY* socket option. Default is `true`.
 
-`socketOptions.setReuseAddress(x)` : Enable/disable the SO_REUSEADDR socket option. Default is `true`.
+- `socketOptions.setReuseAddress(x)`: Enables/disables *SO_REUSEADDR* socket option. Default is `true`.
 
-`socketOptions.setLingerSeconds(x)` : Enable/disable SO_LINGER with the specified linger time in seconds. Default is `3`.
+- `socketOptions.setLingerSeconds(x)`: Enables/disables *SO_LINGER* with the specified linger time in seconds. Default is `3`.
 
-`socketOptions.setBufferSize(x)` : Sets the SO_SNDBUF and SO_RCVBUF options to the specified value in KB for this Socket. Default is `32`.
+- `socketOptions.setBufferSize(x)`: Sets the *SO_SNDBUF* and *SO_RCVBUF* options to the specified value in KB for this Socket. Default is `32`.
 
 
 ```java
@@ -408,11 +395,11 @@ socketOptions.setLingerSeconds(3);
 ```
 
 #### SSL
-SSL can be used to secure the connection between client and the nodes. Refer to [SSLConfig](sslconfig) on how to configure it.
+SSL can be used to secure the connection between client and the nodes. Please see  [SSLConfig](#sslconfig) section on how to configure it.
 
 #### Configuration for AWS
 
-Below sample XML and programmatic configurations show how to configure a Java client for connecting to a Hazelcast cluster in AWS. 
+Below sample declarative and programmatic configurations show how to configure a Java client for connecting to a Hazelcast cluster in AWS. 
 
 Declarative Configuration:
 
@@ -475,10 +462,10 @@ Client just supports the exact same near cache used in hazelcast map.
 If SSL is desired to be enabled for the client-cluster connection, this parameter should be set. Once set, the connection (socket) is established out of an SSL factory defined either by a factory class name or factory implementation (please see [SSLConfig](/docs/$VERSION$/javadoc/com/hazelcast/config/SSLConfig.html)).
 
 
-### Configuration
+### Java Client Configuration
 Hazelcast client can be configured in two way.
 
-#### XML Configuration
+#### Java Client Declarative Configuration
 Using an XML configuration file, it can be configured.
 Here is a generic template of an xml configuration
 
@@ -551,7 +538,7 @@ Here is a generic template of an xml configuration
 ```
 
 
-#### API Configuration
+#### Java Client Programmatic Configuration
 Using the configuration API, a ClientConfig configured as required. Please refer to the related parts and API doc for details.
 
 ##### ClientNetworkConfig
