@@ -20,9 +20,8 @@ import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -30,13 +29,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,9 +39,7 @@ import java.net.URL;
 import java.util.Map.Entry;
 import java.util.Random;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
-public abstract class AbstractWebfilterTestCase {
+public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
 
     static {
         final String logging = "hazelcast.logging.type";
@@ -71,6 +63,11 @@ public abstract class AbstractWebfilterTestCase {
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
     }
 
+    protected AbstractWebFilterTest(String serverXml1, String serverXml2) {
+        this.serverXml1 = serverXml1;
+        this.serverXml2 = serverXml2;
+    }
+
     protected static final String HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR = "::hz::";
     
     protected String serverXml1;
@@ -78,8 +75,8 @@ public abstract class AbstractWebfilterTestCase {
     
     protected int serverPort1;
     protected int serverPort2;
-    protected Server server1;
-    protected Server server2;
+    protected ServletContainer server1;
+    protected ServletContainer server2;
     protected HazelcastInstance hz;
 
     @Before
@@ -90,8 +87,8 @@ public abstract class AbstractWebfilterTestCase {
         hz = Hazelcast.newHazelcastInstance(new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
         serverPort1 = availablePort();
         serverPort2 = availablePort();
-        server1 = buildServer(serverPort1, sourceDir, serverXml1);
-        server2 = buildServer(serverPort2, sourceDir, serverXml2);
+        server1 = getServletContainer(serverPort1, sourceDir, serverXml1);
+        server2 = getServletContainer(serverPort2, sourceDir, serverXml2);
     }
 
     @After
@@ -122,7 +119,7 @@ public abstract class AbstractWebfilterTestCase {
         }
         return null;
     }
-    
+
     protected String executeRequest(String context, int serverPort, CookieStore cookieStore) throws Exception {
         HttpClient client = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build();
         HttpGet request = new HttpGet("http://localhost:" + serverPort + "/" + context);
@@ -131,25 +128,14 @@ public abstract class AbstractWebfilterTestCase {
         return EntityUtils.toString(entity);
     }
 
-    private Server buildServer(int port, String sourceDir, String webXmlFile) throws Exception {
-        Server server = new Server();
-
-        SelectChannelConnector connector = new SelectChannelConnector();
-        connector.setPort(port);
-        server.addConnector(connector);
-
-        WebAppContext context = new WebAppContext();
-        context.setResourceBase(sourceDir);
-        context.setDescriptor(sourceDir + "/WEB-INF/" + webXmlFile);
-        context.setLogUrlOnStart(true);
-        context.setContextPath("/");
-        context.setParentLoaderPriority(true);
-
-        server.setHandler(context);
-
-        server.start();
-
-        return server;
+    protected HttpResponse request(String context, int serverPort, CookieStore cookieStore) throws Exception {
+        HttpClient client = HttpClientBuilder.create().disableRedirectHandling().setDefaultCookieStore(cookieStore).build();
+        HttpGet request = new HttpGet("http://localhost:" + serverPort + "/" + context);
+        HttpResponse response = client.execute(request);
+        return response;
     }
+
+    protected abstract ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception;
+
 
 }

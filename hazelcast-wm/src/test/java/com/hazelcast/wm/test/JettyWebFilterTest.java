@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 @Category(QuickTest.class)
-public class WebfilterTestCase extends AbstractWebfilterTestCase {
+public class JettyWebFilterTest extends AbstractWebFilterTest {
 
     @Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
@@ -47,9 +47,8 @@ public class WebfilterTestCase extends AbstractWebfilterTestCase {
                 });
     }
 
-    public WebfilterTestCase(String name, String serverXml1, String serverXml2) {
-        this.serverXml1 = serverXml1;
-        this.serverXml2 = serverXml2;
+    public JettyWebFilterTest(String name, String serverXml1, String serverXml2) {
+        super(serverXml1,serverXml2);
     }
 
     @Test(timeout = 60000)
@@ -225,4 +224,8 @@ public class WebfilterTestCase extends AbstractWebfilterTestCase {
     }
 
 
+    @Override
+    protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception{
+        return new JettyServer(port,sourceDir,serverXml);
+    }
 }
