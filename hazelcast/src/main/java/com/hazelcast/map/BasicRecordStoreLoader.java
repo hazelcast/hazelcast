@@ -306,7 +306,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             Map<Data, Object> chunkedKeys;
             while ((chunkedKeys = chunks.poll()) != null) {
                 final Callback<Throwable> callback = createCallbackForThrowable();
-                executionService.submit(ExecutionService.MAP_LOADER_EXECUTOR, new MapLoadAllTask(chunkedKeys, checkIfMapLoaded, callback));
+                MapLoadAllTask task = new MapLoadAllTask(chunkedKeys, checkIfMapLoaded, callback);
+                executionService.submit(ExecutionService.MAP_LOADER_EXECUTOR, task);
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
