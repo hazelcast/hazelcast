@@ -30,7 +30,7 @@ public class RacyUpdateMember {
 }
 ```
 
-If the above code is run by more than cluster members simultaneously, there will be likely a race condition.
+If the above code is run by more than one cluster members simultaneously, there will be likely a race condition.
 
 #### Pessimistic Locking
 
