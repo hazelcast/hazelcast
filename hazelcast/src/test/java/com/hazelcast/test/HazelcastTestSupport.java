@@ -61,6 +61,19 @@ public abstract class HazelcastTestSupport {
             }
         }.start();
     }
+    
+    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance) {
+        assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals("the size of the cluster is not correct", expectedSize, instance.getCluster().getMembers().size());
+            }
+        }, timeoutSeconds);
+    }
 
     public static void assertIterableEquals(Iterable iter, Object... values) {
         int counter = 0;

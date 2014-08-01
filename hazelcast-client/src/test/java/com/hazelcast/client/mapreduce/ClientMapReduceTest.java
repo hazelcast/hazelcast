@@ -70,6 +70,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -99,6 +103,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -131,6 +139,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -159,6 +171,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -196,6 +212,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -226,6 +246,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
@@ -253,6 +277,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
         for (int i = 0; i < 10000; i++) {
@@ -279,6 +307,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -314,6 +346,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -359,6 +395,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -406,6 +446,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -460,6 +504,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -510,6 +558,10 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
