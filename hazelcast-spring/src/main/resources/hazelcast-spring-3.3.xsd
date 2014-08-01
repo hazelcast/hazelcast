@@ -984,10 +984,14 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:simpleType name="intMin1">
-        <xs:restriction base="xs:int">
-            <xs:minInclusive value="1"/>
+    <xs:simpleType name="parameterizedValueType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(\$|\#)\{([^=^:]+)\}"/>
         </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="intMin1">
+        <xs:union memberTypes="xs:positiveInteger parameterizedValueType"/>
     </xs:simpleType>
 
     <xs:complexType name="listeners">
