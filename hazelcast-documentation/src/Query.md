@@ -234,6 +234,8 @@ And, the following is the Spring declarative configuration for the same sample.
   </hz:indexes>
 </hz:map>
 ```
+<br></br>
+***ATTENTION:*** *Non-primitive types to be indexed should implement *`Comparable`*.*
 
 ### Query Thread Configuration
 
