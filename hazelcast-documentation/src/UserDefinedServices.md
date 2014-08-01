@@ -4,22 +4,6 @@
 
 In the case of special/custom needs, Hazelcast's SPI (Service Provider Interface) module offers the users to develop their own distributed data structures and services.
 
-### What Can Be Accomplished
-
-List the most famous things that a user can do using SPI:
-
-- ???
-- ???
-- ???
-
-
-### Creating a Custom DDS
-???Steps for creating a custom distributed data structure???
-
-
-
-### Creating a Custom Service
-???Steps for creating a custom service???
 
 ### Sample Case
 
