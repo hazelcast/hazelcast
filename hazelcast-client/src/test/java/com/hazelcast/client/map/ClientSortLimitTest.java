@@ -23,7 +23,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SampleObjects;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ProblematicTest;
@@ -238,192 +237,88 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
 
-    @Test
-    public void test_whilePageingPredicateRunning_Controle(){
-        final Predicate lessEqual = Predicates.lessEqual("this", 5);
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
-
-        Collection<Integer> values = map.values(predicate);
-        for(int i=0; i<5; i++){
-            assertTrue(values.contains(i));
-        }
-
-        predicate.nextPage();
-        values = map.values(predicate);
-        assertTrue(values.contains(5));
-        assertEquals(1, values.size());
-    }
 
     @Test
-    public void test_whilePageingPredicateRunning_changeValueToFailePredicate(){
-        final Predicate lessEqual = Predicates.lessEqual("this", 5);
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
-
-        Collection<Integer> values = map.values(predicate);
-        for(int i=0; i<5; i++){
-            assertTrue(values.contains(i));
-        }
-
-        map.put(5, 500);
-
-        predicate.nextPage();
-        values = map.values(predicate);
-        assertTrue(values.isEmpty());
+    @Category(ProblematicTest.class)
+    public void mapPagingPredicate_EmployObject_WithOrderedIndex_smalltest(){
+        mapPagingPredicate_EmployObject_WithOrderedIndex(10);
     }
 
     @Test
     @Category(ProblematicTest.class)
-    public void test_whilePageingPredicateRunning_changeValueToPassPredicate(){
-        final Predicate lessEqual = Predicates.lessEqual("this", 5);
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
-
-        Collection<Integer> values = map.values(predicate);
-        for(int i=0; i<5; i++){
-            assertTrue( values.contains(i) );
-        }
-
-        map.put(5, 0);
-        predicate.nextPage();
-        values = map.values(predicate);
-        assertTrue( values.contains(0) );
-    }
-
-    @Test
-    public void test_whilePageingPredicateRunning_changeValueToFailePredicate_fromDiffMap(){
-        final Predicate lessEqual = Predicates.lessEqual("this", 5);
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
-
-        Collection<Integer> values = map.values(predicate);
-        for(int i=0; i<5; i++){
-            assertTrue(values.contains(i));
-        }
-
-        String name = map.getName();
-        IMap server_map = server1.getMap(name);
-        server_map.put(5, 500);
-
-
-        predicate.nextPage();
-        values = map.values(predicate);
-        assertTrue(values.isEmpty());
-    }
-
-    @Test
-    @Category(ProblematicTest.class)
-    public void test_whilePageingPredicateRunning_changeValueToPassPredicate_fromDiffMap(){
-        final Predicate lessEqual = Predicates.lessEqual("this", 5);
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, 5);
-
-        Collection<Integer> values = map.values(predicate);
-        for(int i=0; i<5; i++){
-            assertTrue( values.contains(i) );
-        }
-
-        String name = map.getName();
-        IMap server_map = server1.getMap(name);
-        server_map.put(5, 0);
-
-        predicate.nextPage();
-        values = map.values(predicate);
-        assertTrue( values.contains(0) );
+    public void mapPagingPredicate_EmployObject_WithOrderedIndex_largetest(){
+        mapPagingPredicate_EmployObject_WithOrderedIndex(5000);
     }
 
 
+    private void mapPagingPredicate_EmployObject_WithOrderedIndex(int maxEmployee){
 
-    @Test
-    @Category(ProblematicTest.class)
-    public void play2(){
-        final Random random = new Random();
-        final IMap<Integer, Employee> map = server1.getMap("playMap1");
+        final IMap<Integer, Employee> map = makeEmployeMap(maxEmployee);
 
-        for(int i=0; i<100; i++){
-            map.put(i, new Employee(i));
-        }
+        map.addIndex( "id", true );
 
-        map.addIndex( "salary", true );
+        Predicate  pred = Predicates.lessThan("id", 2);
+        PagingPredicate predicate = new PagingPredicate(pred, 2);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(true){
-                    Employee e = map.get(random.nextInt(map.size()));
-                    e.setInfo();
-                    map.put(e.id, e);
-
-                }
-
-            }
-        }).start();
-
-        Predicate  pred = Predicates.between("salary", 250.0, 750.0);
-        PagingPredicate predicate = new PagingPredicate(pred, 5);
-        Collection<Employee> values;
-        do{
-            values = map.values(predicate);
-            predicate.nextPage();
-
-            System.out.println(values.size());
-        }while(! values.isEmpty());
-    }
-
-
-    @Test
-    @Category(ProblematicTest.class)
-    public void play3(){
-        final IMap<Integer, Employee> map = server1.getMap("playMap1");
-
-        for(int i=0; i<100; i++){
-            map.put(i, new Employee(i));
-        }
-
-        map.addIndex("id", true );
-
-
-        Predicate  pred = Predicates.between("id", 10, 15);
-
-        PagingPredicate predicate = new PagingPredicate(pred, 5);
         Collection<Employee> values;
 
-        do{
-            values = map.values(predicate);
-            predicate.nextPage();
+        values = map.values(predicate);
+        System.out.println(values);
+        assertEquals(2, values.size());
 
-            for(Employee e : values){
-                System.out.println(e);
-            }
-            System.out.println(values.size());
+        predicate.nextPage();
 
-        }while(! values.isEmpty());
+        values = map.values(predicate);
+        System.out.println(values);
+        assertEquals(0, values.size());
     }
 
 
-    @Test
+    @Test(timeout = 60000)
     @Category(ProblematicTest.class)
-    public void loopingForEver_OrVeryVeryLong(){
-        final IMap<Integer, Employee> map = server1.getMap("playMap1");
+    public void betweenPaginPred_withEmploye_test(){
+        IMap<Integer, Employee> map = makeEmployeMap(1000);
+        Predicate p = Predicates.between("id", 10, 15);
+        pagingPredicat_withEmployeeObject_test(map, p, 5);
+    }
 
-        for(int i=0; i<1000; i++){
-            map.put(i, new Employee(i));
+    @Test(timeout = 60000)
+    @Category(ProblematicTest.class)
+    public void lessThanPred_withEmploye_test(){
+        IMap<Integer, Employee> map = makeEmployeMap(1000);
+        Predicate p = Predicates.lessThan("id", 500);
+        pagingPredicat_withEmployeeObject_test(map, p, 5);
+    }
+
+    @Test(timeout = 60000)
+    @Category(ProblematicTest.class)
+    public void equalsPred_withEmploye_test(){
+        IMap<Integer, Employee> map = makeEmployeMap(1000);
+        Predicate p = Predicates.equal("name", Employee.getRandomName());
+        pagingPredicat_withEmployeeObject_test(map, p, 5);
+    }
+
+    private IMap<Integer, Employee> makeEmployeMap(int maxEmployees){
+        final IMap<Integer, Employee> map = server1.getMap(randomString());
+        for(int i=0; i<maxEmployees; i++){
+            Employee e = new Employee(i);
+            map.put(e.id, e);
         }
+        return map;
+    }
 
-        map.addIndex("id", true );
+    private void pagingPredicat_withEmployeeObject_test(IMap<Integer, Employee> map, Predicate predicate, int pageSize){
 
-
-        Predicate  pred = Predicates.between("id", 0, 50);
-
-        PagingPredicate predicate = new PagingPredicate(pred, 5);
-        Collection<Employee> values;
-
+        PagingPredicate pagingPredicate = new PagingPredicate(predicate, pageSize);
+        Set<Map.Entry<Integer, Employee>> set;
         do{
-            values = map.values(predicate);
-            predicate.nextPage();
+            set = map.entrySet();
 
-            for(Employee e : values){
-                System.out.println(e);
+            for(Map.Entry<Integer, Employee> e: set){
+                //assertTrue(predicate.apply(e));
             }
-            System.out.println(values.size());
-
-        }while(! values.isEmpty());
+            pagingPredicate.nextPage();
+        }while(! set.isEmpty());
     }
 
 
@@ -481,17 +376,21 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
 
         public Employee(int id) {
             this.id = id;
-            setInfo();
+            setAtributesRandomly();
         }
 
         public Employee() {
         }
 
-        public void setInfo(){
+        public void setAtributesRandomly(){
             name = names[random.nextInt(names.length)];
             age = random.nextInt(MAX_AGE);
             active = random.nextBoolean();
             salary = random.nextDouble() * MAX_SALARY;
+        }
+
+        public static String getRandomName(){
+            return names[random.nextInt(names.length)];
         }
 
         public String getName() {
