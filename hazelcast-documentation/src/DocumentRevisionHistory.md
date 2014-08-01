@@ -26,7 +26,8 @@
 ||[EC2 Auto Discovery](#ec2-auto-discovery)|Section improved by adding AWSClient Class description, Debugging information and more detailed tag explanations.|
 ||[Ports](#ports)|Added as a new section explaining how to configure ports which Hazelcast uses to communicate between nodes. Also existing "Restricting Outbound Ports" moved under this new section with the heading "Outbound Ports".|
 ||[System Property](#system-property)|Updated by adding the descriptions of missing system properties.|
-|[Chapter 18 - FAQ](#frequently-asked-questions)||Updated with new questions.|
+|[Chapter 18 - Network Partitioning](#network-partitioning-split-brain-syndrome)||Added as a new chapter.|
+|[Chapter 19 - FAQ](#frequently-asked-questions)||Updated with new questions.|
 
 
 
