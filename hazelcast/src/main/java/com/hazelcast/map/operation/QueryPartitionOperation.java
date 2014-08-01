@@ -20,10 +20,14 @@ import com.hazelcast.map.QueryResult;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class QueryPartitionOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
@@ -41,7 +45,12 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
     public void run() {
         Collection<QueryableEntry> queryableEntries = mapService.getMapServiceContext().getMapContextQuerySupport()
                 .queryOnPartition(name, predicate, getPartitionId());
-        result = new QueryResult(queryableEntries);
+        result = new QueryResult();
+        for (QueryableEntry entry : queryableEntries) {
+            result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getIndexKey(), entry.getValueData()));
+        }
+        final List<Integer> partitions = Collections.singletonList(getPartitionId());
+        result.setPartitionIds(partitions);
     }
 
     @Override

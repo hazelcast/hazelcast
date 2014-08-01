@@ -2,7 +2,7 @@
 
 
 
-### C++ Client
+## C++ Client
 
 ![](images/enterprise-onlycopy.jpg)
 
@@ -17,7 +17,7 @@ Features of C++ Clients are:
 - Distributed synchronization mechanisms with ILock, ISemaphore and ICountDownLatch.
 
 
-#### How to Setup
+### How to Setup
 
 Hazelcast C++ Client is shipped with 32/64 bit, shared and static libraries. Compiled static libraries of dependencies are also available in the release. Dependencies are **zlib** and **shared_ptr** from the boost libraries. 
 
@@ -48,10 +48,10 @@ And each of the folders above contains the following:
 
 
 
-#### Platform Specific Installation Guides
+### Platform Specific Installation Guides
 C++ Client is tested on Linux 32/64, Mac 64 and Windows 32/64 bit machines. For each of the headers above, it is assumed that you are in the correct folder for your platform. Folders are Mac_64, Windows_32, Windows_64, Linux_32 or Linux_64.
 
-##### Linux
+#### Linux
 
 For Linux, there are two distributions; 32 bit and 64 bit.
 
@@ -63,7 +63,7 @@ Sample script to build with shared library:
 
 `g++ main.cpp -lpthread -Wl,–no-as-needed -lrt -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/libz.a`
 
-##### Mac
+#### Mac
 For Mac, there is only one distribution which is 64 bit.
 
 Sample script to build with static library:
@@ -74,13 +74,13 @@ Sample script to build with shared library:
 
 `g++ main.cpp -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/darwin/libz.a`
 
-##### Windows
+#### Windows
 For Windows, there are two distributions; 32 bit and 64 bit. Current release have only Visual Studio 2010 compatible libraries. For others, please contact with [support@hazelcast.com](support@hazelcast.com).
 
-#### Code Examples
+### Code Examples
 A Hazelcast node should be running to make below sample codes work.
 
-##### Map Example
+#### Map Example
 
 ```cpp
 #include <hazelcast/client/HazelcastAll.h>
@@ -106,7 +106,7 @@ int main() {
 }
 ```
 
-##### Queue Example
+#### Queue Example
 
 ```cpp
 #include <hazelcast/client/HazelcastAll.h>
@@ -132,7 +132,7 @@ int main() {
 }
 ```
 
-##### Entry Listener Example
+#### Entry Listener Example
 
 ```cpp
 #include "hazelcast/client/ClientConfig.h"
@@ -199,7 +199,7 @@ int main( int argc, char **argv ) {
 };
 ```
 
-##### Serialization Example
+#### Serialization Example
 Assume that you have the following two classes in Java and you want to use it with C++ client. 
 
 ```java

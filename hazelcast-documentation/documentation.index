@@ -17,6 +17,7 @@ src/Distributed_Data_Structures.md
 		src/Map-Persistence.md
 		src/Map-Interceptors.md
 		src/Map-NearCache.md
+		src/Map-Locks.md
 		src/Map-EntryStatistics.md
 		src/Map-EntryListener.md
 	src/Queue.md
@@ -45,7 +46,7 @@ src/DistributedComputing.md
 		src/ExecutionCancellation.md
 		src/ExecutionCallback.md
 	src/EntryProcessor.md
-#	src/UserDefinedServices.md
+	src/UserDefinedServices.md
 src/DistributedQuery.md
 	src/Query.md
 	src/MapReduce.md
@@ -59,6 +60,7 @@ src/Transactions.md
 		src/ResourceAdapterConfiguration.md
 		src/SampleGlassfishConfiguration.md
 		src/SampleJBossConfiguration.md
+		src/SampleJBoss7Configuration.md
 	src/XATransactions.md
 src/JCache.md
 src/IntegratedClustering.md
@@ -71,7 +73,7 @@ src/Clients.md
 		src/JavaClient.md
 		src/CPlusClient.md
 		src/CSharpClient.md
-	src/RESTClient.md
+	src/RestClient.md
 	src/MemcacheClient.md
 src/Serialization.md
 	src/Serializable.md

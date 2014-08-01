@@ -23,7 +23,7 @@ To provide data safety, Hazelcast allows you to specify the number of backup cop
 
 When this count is 1, it means that a map entry will have its backup on another node in the cluster. If it is set as 2, then it will have its backup on two other nodes. It can be set as 0, if you do not want your entries to be backed up, e.g. if performance is more important than backing up. Maximum value for this property is 6.
 
-Hazelcast supports both synchronous and asynchronous backups. By default, backup operations are snychronous (configured with `backup-count`). In this case, backup operations block operations until backups are successfully copied to backups nodes (or deleted from backup nodes in case of remove) and acknowledgements are received. Therefore, for example, you can be sure that backups are updated before a `put` operation is completed. Of course, sync backup operations have a blocking cost which may lead to latency issues.
+Hazelcast supports both synchronous and asynchronous backups. By default, backup operations are synchronous (configured with `backup-count`). In this case, backup operations block operations until backups are successfully copied to backups nodes (or deleted from backup nodes in case of remove) and acknowledgements are received. Therefore, for example, you can be sure that backups are updated before a `put` operation is completed. Of course, sync backup operations have a blocking cost which may lead to latency issues.
 
 #### Async Backup
 

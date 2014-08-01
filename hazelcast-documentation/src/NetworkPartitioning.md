@@ -19,7 +19,7 @@ This overwrite scenario represents potential data loss, and thus the database de
 If the network to the database is not available, then based on the configured or coded consistency level or transaction, entry updates are just held in cache or updates are rejected (fully synchronous and consistent).
 When held in cache, the updates will be considered dirty and will be written to the database when it becomes available. Dirty entry counts per cluster member can be viewed in the Management Center web console.
 
-Since it is a network failure, there is no way to avoid it programatically and your application will run as two separate independent clusters.
+Since it is a network failure, there is no way to avoid it programmatically and your application will run as two separate independent clusters.
 But we should be able to answer the following questions: "What will happen after the network failure is fixed and connectivity is restored between these two clusters?
 Will these two clusters merge into one again? If they do, how are the data conflicts resolved, because you might end up having two different values for the same key in the same map?"
 

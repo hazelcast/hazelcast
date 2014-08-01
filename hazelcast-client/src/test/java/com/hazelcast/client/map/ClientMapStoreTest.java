@@ -116,7 +116,12 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         assertEquals(SimpleMapStore.MAX_KEYS, client2.mapSize);
     }
 
+    // Default impl. of write-behind-queue has no capacity it is bounded by number of elements in a map.
+    // we can open this test, when we have a configuration parameter for write-coalescing.
+    // for now this test should be ignored since default mode is write-coalescing.
+    // please see https://github.com/hazelcast/hazelcast/issues/3056 for additional details
     @Test
+    @Ignore
     public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();

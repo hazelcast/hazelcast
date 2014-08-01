@@ -41,9 +41,7 @@ public class ListSetMapReduceTest
         extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
-    public void testMapReduceWithList()
-            throws Exception {
-
+    public void testMapReduceWithList() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -51,6 +49,8 @@ public class ListSetMapReduceTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         int expectedResult = 0;
         IList<Integer> list = h1.getList("default");
@@ -78,21 +78,16 @@ public class ListSetMapReduceTest
 
     @Test(timeout = 60000)
     @Category(ProblematicTest.class)
-    public void testMapReduceWithSet()
-            throws Exception {
-
+    public void testMapReduceWithSet() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(3, h1.getCluster().getMembers().size());
-            }
-        });
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         int expectedResult = 0;
         ISet<Integer> set = h1.getSet("default");

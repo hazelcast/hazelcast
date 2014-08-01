@@ -17,6 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -26,6 +27,7 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
@@ -37,6 +39,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -48,12 +52,19 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 final class TransactionImpl implements Transaction, TransactionSupport {
 
     private static final ThreadLocal<Boolean> THREAD_FLAG = new ThreadLocal<Boolean>();
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
     private static final int COMMIT_TIMEOUT_MINUTES = 5;
+
+    private final ExceptionHandler commitExceptionHandler;
+    private final ExceptionHandler rollbackExceptionHandler;
+    private final ExceptionHandler rollbackTxExceptionHandler;
 
     private final TransactionManagerServiceImpl transactionManagerService;
     private final NodeEngine nodeEngine;
@@ -81,6 +92,11 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         this.transactionType = options.getTransactionType();
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
         this.checkThreadAccess = txOwnerUuid != null;
+
+        ILogger logger = nodeEngine.getLogger(getClass());
+        this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
+        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
+        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.WARNING);
     }
 
     // used by tx backups
@@ -97,6 +113,11 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         this.state = PREPARED;
         this.txOwnerUuid = txOwnerUuid;
         this.checkThreadAccess = false;
+
+        ILogger logger = nodeEngine.getLogger(getClass());
+        this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
+        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
+        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.WARNING);
     }
 
     public void setXid(SerializableXID xid) {
@@ -231,9 +252,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             for (TransactionLog txLog : txLogs) {
                 futures.add(txLog.prepare(nodeEngine));
             }
-            for (Future future : futures) {
-                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-            }
+            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, FutureUtil.RETHROW_EVERYTHING);
             futures.clear();
             state = PREPARED;
             if (durability > 0) {
@@ -255,9 +274,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 futures.add(f);
             }
         }
-        for (Future future : futures) {
-            future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-        }
+        waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, FutureUtil.RETHROW_EVERYTHING);
         futures.clear();
     }
 
@@ -277,6 +294,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 for (TransactionLog txLog : txLogs) {
                     futures.add(txLog.commit(nodeEngine));
                 }
+                waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES, commitExceptionHandler);
                 for (Future future : futures) {
                     try {
                         future.get(COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES);
@@ -319,13 +337,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                     final TransactionLog txLog = iter.previous();
                     futures.add(txLog.rollback(nodeEngine));
                 }
-                for (Future future : futures) {
-                    try {
-                        future.get(ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES);
-                    } catch (Throwable e) {
-                        nodeEngine.getLogger(getClass()).warning("Error during rollback!", e);
-                    }
-                }
+                waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
                 // purge tx backup
                 purgeTxBackups();
             } catch (Throwable e) {
@@ -351,12 +363,12 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                     futures.add(f);
                 }
             }
-            for (Future future : futures) {
-                try {
-                    future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-                } catch (Throwable e) {
-                    nodeEngine.getLogger(getClass()).warning("Error during tx rollback backup!", e);
-                }
+
+            try {
+                waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, rollbackTxExceptionHandler);
+            } catch (TimeoutException e) {
+                ILogger logger = nodeEngine.getLogger(getClass());
+                logger.warning("Timeout during tx rollback backup!", e);
             }
             futures.clear();
         }

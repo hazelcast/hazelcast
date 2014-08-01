@@ -211,7 +211,7 @@ double getRatio();
 ### Multimap Statistics
 
 The `MultiMap` interface has a `getLocalMultiMapStats()` method which returns a
-`LocalMultiMapStats` object that holds local multimap statistics.
+`LocalMultiMapStats` object that holds local MultiMap statistics.
 ```java
 HazelcastInstance node = Hazelcast.newHazelcastInstance();
 MultiMap<String, Customer> customers = node.getMultiMap( "customers" );

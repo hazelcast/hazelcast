@@ -16,7 +16,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -343,7 +342,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
                     return;
                 }
 
-                MapEntrySet entrySet = new MapEntrySet();
+                final MapEntrySet entrySet = new MapEntrySet();
                 for (Data dataKey : keys.keySet()) {
                     Object key = keys.get(dataKey);
                     Object value = values.get(key);
@@ -352,23 +351,19 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
                         entrySet.add(dataKey, dataValue);
                     }
                 }
-                PutAllOperation operation = new PutAllOperation(name, entrySet, true);
-                operation.setNodeEngine(nodeEngine);
-                operation.setResponseHandler(new ResponseHandler() {
-                    @Override
-                    public void sendResponse(Object obj) {
-                        decrementCounterAndMarkAsLoaded();
-                    }
 
-                    public boolean isLocal() {
-                        return true;
-                    }
-                });
-                operation.setPartitionId(partitionId);
-                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-                operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-                operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().executeOperation(operation);
+                PutAllOperation operation = new PutAllOperation(name, entrySet, true);
+                final OperationService operationService = nodeEngine.getOperationService();
+                operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId)
+                        .setCallback(new Callback<Object>() {
+                            @Override
+                            public void notify(Object obj) {
+                                if (obj instanceof Throwable) {
+                                    return;
+                                }
+                                decrementCounterAndMarkAsLoaded();
+                            }
+                        }).invoke();
             } catch (Throwable t) {
                 decrementCounterAndMarkAsLoaded();
                 logger.warning("Exception while load all task:" + t.toString());
