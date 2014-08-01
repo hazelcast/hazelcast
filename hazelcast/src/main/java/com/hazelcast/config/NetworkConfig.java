@@ -136,6 +136,22 @@ public class NetworkConfig {
         return reuseAddress;
     }
 
+    /**
+     * Sets the reuse address.
+     *
+     * When should setReuseAddress(true) be used?
+     *
+     * When the member is shutdown the server socket port will be in TIME_WAIT state for the next 2 minutes or so. If you
+     * start the member right after shutting it down you may not be able to bind to the same port because it is in TIME_WAIT
+     * state. if you set reuseAddress=true then TIME_WAIT will be ignored and you will be able to bind to the same port again.
+     *
+     * This property should not be set to true on windows platform: see
+     * <ol>
+     * <li>http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6421091</li>
+     * <li>http://www.hsc.fr/ressources/articles/win_net_srv/multiple_bindings.html</li>
+     * </ol>
+     * By default if the OS is Windows then reuseAddress will be false.
+     */
     public NetworkConfig setReuseAddress(boolean reuseAddress) {
         this.reuseAddress = reuseAddress;
         return this;
