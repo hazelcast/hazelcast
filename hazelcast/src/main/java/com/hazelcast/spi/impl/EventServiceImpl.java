@@ -417,7 +417,7 @@ public class EventServiceImpl implements EventService {
         }
         private boolean hasRegistrations(String topic) {
             Collection<Registration> topicRegistrations = registrations.get(topic);
-            return !(topicRegistrations == null && topicRegistrations.isEmpty());
+            return !(topicRegistrations == null || topicRegistrations.isEmpty());
         }
 
 
