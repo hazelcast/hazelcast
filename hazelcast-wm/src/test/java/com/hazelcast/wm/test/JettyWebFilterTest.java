@@ -180,6 +180,18 @@ public class JettyWebFilterTest extends AbstractWebFilterTest {
         assertEquals("value-updated", executeRequest("update-and-read-same-request", serverPort1, cookieStore));
     }
 
+    @Test
+    public void testIssue3132() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        assertEquals("true", executeRequest("isNew", serverPort1, cookieStore));
+        assertEquals("false", executeRequest("isNew", serverPort2, cookieStore));
+        server1.stop();
+        server1.start();
+
+        assertEquals("false", executeRequest("isNew", serverPort1, cookieStore));
+        assertEquals("false", executeRequest("isNew", serverPort2, cookieStore));
+    }
+
     @Override
     protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception{
         return new JettyServer(port,sourceDir,serverXml);

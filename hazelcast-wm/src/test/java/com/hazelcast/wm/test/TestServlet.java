@@ -86,5 +86,9 @@ public class TestServlet extends HttpServlet {
             session.setMaxInactiveInterval(1);
             resp.getWriter().write("true");
         }
+        else if (req.getRequestURI().endsWith("isNew")) {
+            session = req.getSession();
+            resp.getWriter().write(session.isNew() == true ? "true" : "false");
+        }
     }
 }
