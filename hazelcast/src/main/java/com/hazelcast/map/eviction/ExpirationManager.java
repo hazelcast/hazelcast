@@ -74,7 +74,7 @@ public class ExpirationManager {
             boolean createLazy = true;
             int currentlyRunningCleanupOperationsCount = 0;
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
                 if (partition.isOwnerOrBackup(nodeEngine.getThisAddress())) {
                     final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
                     if (isContainerEmpty(partitionContainer)) {

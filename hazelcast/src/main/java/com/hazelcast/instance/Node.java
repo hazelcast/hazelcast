@@ -580,7 +580,7 @@ public class Node {
         for (; ; ) {
             final long joinStartTime = joiner.getStartTime();
             try {
-                joiner.join(joined);
+                joiner.join();
                 return;
             } catch (Exception e) {
                 rejoinCount++;

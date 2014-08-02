@@ -32,6 +32,7 @@ abstract class AbstractRecordStore implements RecordStore {
     protected final String name;
     protected final MapContainer mapContainer;
     protected final MapServiceContext mapServiceContext;
+    protected final SerializationService serializationService;
     protected final int partitionId;
     private final SizeEstimator sizeEstimator;
 
@@ -39,6 +40,7 @@ abstract class AbstractRecordStore implements RecordStore {
         this.mapContainer = mapContainer;
         this.partitionId = partitionId;
         this.mapServiceContext = mapContainer.getMapServiceContext();
+        this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         this.name = mapContainer.getName();
         this.recordFactory = mapContainer.getRecordFactory();
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
@@ -137,8 +139,7 @@ abstract class AbstractRecordStore implements RecordStore {
         }
         record.setTtl(ttl);
         if (record.getStatistics() != null) {
-            // when ttl is zero, entry should remain eternally.
-            final long expirationTime = ttl == 0 ? Long.MAX_VALUE : (getNow() + ttl);
+            final long expirationTime = mapServiceContext.getExpirationTime(ttl, getNow());
             record.getStatistics().setExpirationTime(expirationTime);
         }
     }

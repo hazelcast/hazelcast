@@ -29,6 +29,7 @@ import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -318,7 +319,8 @@ public final class EvictionHelper {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
         final Address thisAddress = nodeEngine.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            if (nodeEngine.getPartitionService().getPartition(i).isOwnerOrBackup(thisAddress)) {
+            InternalPartition partition = nodeEngine.getPartitionService().getPartition(i, false);
+            if (partition.isOwnerOrBackup(thisAddress)) {
                 final PartitionContainer container = mapService.getMapServiceContext().getPartitionContainer(i);
                 if (container == null) {
                     return -1L;

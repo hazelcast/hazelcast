@@ -53,7 +53,7 @@ public interface IOService {
 
     void handleMemberPacket(Packet p);
 
-    void handleClientPacket(ClientPacket p);
+    void handleClientPacket(Packet p);
 
     TextCommandService getTextCommandService();
 

@@ -82,4 +82,9 @@ public class WebFilterSessionCleanupTest extends AbstractWebFilterTest {
         Thread.sleep(TimeUnit.SECONDS.toMillis(30L));
         assertTrue("Session timeout on both nodes should have removed the IMap entries", map.isEmpty());
     }
+
+    @Override
+    protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception {
+        return new JettyServer(port,sourceDir,serverXml);
+    }
 }

@@ -47,9 +47,7 @@ public class MapReduceManagedContextTest
     private static final String MAP_NAME = "default";
 
     @Test
-    public void testManagedContextMapper()
-            throws Exception {
-
+    public void testManagedContextMapper() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -57,6 +55,8 @@ public class MapReduceManagedContextTest
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IMap<String, Integer> m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {

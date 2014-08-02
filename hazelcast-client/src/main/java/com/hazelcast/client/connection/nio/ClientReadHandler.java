@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.util.Clock;
@@ -32,7 +32,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
 
     private volatile long lastHandle;
 
-    private ClientPacket packet;
+    private Packet packet;
 
     public ClientReadHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
         super(connection, ioSelector);
@@ -87,7 +87,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
         while (buffer.hasRemaining()) {
             if (packet == null) {
                 final SerializationService ss = connection.getSerializationService();
-                packet = new ClientPacket(ss.getPortableContext());
+                packet = new Packet(ss.getPortableContext());
             }
             boolean complete = packet.readFrom(buffer);
             if (complete) {

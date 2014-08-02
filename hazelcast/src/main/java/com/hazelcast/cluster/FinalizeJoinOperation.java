@@ -22,8 +22,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.FutureUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,9 +33,10 @@ import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
+
+    private FutureUtil.ExceptionHandler exceptionHandler = new PostJoinFutureUtilExceptionHandler();
 
     private PostJoinOperation postJoinOp;
 
@@ -56,15 +59,17 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             final ClusterServiceImpl clusterService = getService();
             final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
             final Operation[] postJoinOperations = nodeEngine.getPostJoinOperations();
+            final OperationService operationService = nodeEngine.getOperationService();
+
             Collection<Future> calls = null;
             if (postJoinOperations != null && postJoinOperations.length > 0) {
                 final Collection<MemberImpl> members = clusterService.getMemberList();
                 calls = new ArrayList<Future>(members.size());
                 for (MemberImpl member : members) {
                     if (!member.localMember()) {
-                        Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                                new PostJoinOperation(postJoinOperations), member.getAddress())
-                                .setTryCount(10).setTryPauseMillis(100).invoke();
+                        PostJoinOperation operation = new PostJoinOperation(postJoinOperations);
+                        Future f = operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+                                operation, member.getAddress()).setTryCount(10).setTryPauseMillis(100).invoke();
                         calls.add(f);
                     }
                 }
@@ -75,23 +80,11 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                 OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
                 OperationAccessor.setConnection(postJoinOp, getConnection());
                 postJoinOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                nodeEngine.getOperationService().runOperationOnCallingThread(postJoinOp);
+                operationService.runOperationOnCallingThread(postJoinOp);
             }
 
             if (calls != null) {
-                for (Future f : calls) {
-                    try {
-                        f.get(1, TimeUnit.SECONDS);
-                    } catch (InterruptedException ignored) {
-                    } catch (TimeoutException ignored) {
-                    } catch (ExecutionException e) {
-                        final ILogger logger = nodeEngine.getLogger(FinalizeJoinOperation.class);
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Error while executing post-join operations -> "
-                                    + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
-                        }
-                    }
-                }
+                FutureUtil.waitWithDeadline(calls, 1, TimeUnit.SECONDS, exceptionHandler);
             }
         }
     }
@@ -113,6 +106,22 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         if (hasPJOp) {
             postJoinOp = new PostJoinOperation();
             postJoinOp.readData(in);
+        }
+    }
+
+    private class PostJoinFutureUtilExceptionHandler implements FutureUtil.ExceptionHandler {
+
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable instanceof ExecutionException) {
+                final ClusterServiceImpl clusterService = getService();
+                final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+                final ILogger logger = nodeEngine.getLogger(FinalizeJoinOperation.class);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Error while executing post-join operations -> "
+                            + throwable.getClass().getSimpleName() + "[" + throwable.getMessage() + "]", throwable);
+                }
+            }
         }
     }
 }

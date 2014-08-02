@@ -28,13 +28,12 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
@@ -175,7 +174,7 @@ public class ClientConnection implements Connection, Closeable {
         final int totalSize = data.totalSize();
         final int bufferSize = SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
         final ByteBuffer buffer = ByteBuffer.allocate(totalSize > bufferSize ? bufferSize : totalSize);
-        final DataAdapter packet = new DataAdapter(data);
+        final Packet packet = new Packet(data, serializationService.getPortableContext());
         boolean complete = false;
         while (!complete) {
             complete = packet.writeTo(buffer);
@@ -190,7 +189,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public Data read() throws IOException {
-        ClientPacket packet = new ClientPacket(serializationService.getPortableContext());
+        Packet packet = new Packet(serializationService.getPortableContext());
         while (true) {
             if (readFromSocket) {
                 int readBytes = socketChannelWrapper.read(readBuffer);
@@ -303,7 +302,7 @@ public class ClientConnection implements Connection, Closeable {
         }
         if (connectionManager.isLive()) {
             try {
-                executionService.executeInternal(new CleanResourcesTask());
+                executionService.execute(new CleanResourcesTask());
             } catch (RejectedExecutionException e) {
                 logger.warning("Execution rejected ", e);
             }
@@ -396,8 +395,10 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     void heartBeatingSucceed() {
-        if (failedHeartBeat != 0) {
-            if (failedHeartBeat >= connectionManager.maxFailedHeartbeatCount) {
+        final int lastFailedHeartBeat = failedHeartBeat;
+        failedHeartBeat = 0;
+        if (lastFailedHeartBeat != 0) {
+            if (lastFailedHeartBeat >= connectionManager.maxFailedHeartbeatCount) {
                 try {
                     final RemoveAllListeners request = new RemoveAllListeners();
                     final ICompletableFuture future = invocationService.send(request, ClientConnection.this);
@@ -406,7 +407,6 @@ public class ClientConnection implements Connection, Closeable {
                     logger.warning("Clearing listeners upon recovering from heart-attack failed", e);
                 }
             }
-            failedHeartBeat = 0;
         }
     }
 

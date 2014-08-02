@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.3-RC3-SNAPSHOT</version>
+    <version>3.3-RC4-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -71,7 +71,7 @@
         <main.basedir>${project.basedir}</main.basedir>
         <jacoco.version>0.7.0.201403182114</jacoco.version>
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
-        <sonar.phase>post-integration-test</sonar.phase>
+        <!--<sonar.phase>post-integration-test</sonar.phase>-->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
@@ -617,7 +617,7 @@
         </profile>
 
         <profile>
-            <id>qa</id>
+            <id>checkstyle</id>
             <build>
                 <plugins>
                     <plugin>
@@ -646,7 +646,14 @@
                             <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
                         </configuration>
                     </plugin>
+                </plugins>
+            </build>
+        </profile>
 
+        <profile>
+            <id>findbugs</id>
+            <build>
+                <plugins>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>findbugs-maven-plugin</artifactId>

@@ -7,6 +7,7 @@ import com.hazelcast.map.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -15,7 +16,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +40,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     private final MapDataStore mapDataStore;
     private final RecordStore recordStore;
     private final int partitionId;
+    private volatile Throwable throwable;
 
     public BasicRecordStoreLoader(RecordStore recordStore) {
         this.recordStore = recordStore;
@@ -85,6 +86,11 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             return;
         }
         doChunkedLoad(loadedKeys, mapServiceContext.getNodeEngine());
+    }
+
+    @Override
+    public Throwable getExceptionOrNull() {
+        return throwable;
     }
 
     private boolean isOwner() {
@@ -271,6 +277,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         final int mapLoadChunkSize = getLoadBatchSize();
         final Queue<Map> chunks = new LinkedList<Map>();
         Map<Data, Object> partitionKeys = new HashMap<Data, Object>();
+        final int partitionId = this.partitionId;
         Iterator<Map.Entry<Data, Object>> iterator = loadedKeys.entrySet().iterator();
         while (iterator.hasNext()) {
             final Map.Entry<Data, Object> entry = iterator.next();
@@ -293,25 +300,37 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             return;
         }
         try {
+            this.throwable = null;
             final AtomicInteger checkIfMapLoaded = new AtomicInteger(chunks.size());
             ExecutionService executionService = nodeEngine.getExecutionService();
             Map<Data, Object> chunkedKeys;
             while ((chunkedKeys = chunks.poll()) != null) {
-                executionService.submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
+                final Callback<Throwable> callback = createCallbackForThrowable();
+                executionService.submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded, callback));
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
+    private Callback<Throwable> createCallbackForThrowable() {
+        return new Callback<Throwable>() {
+            @Override
+            public void notify(Throwable throwable) {
+                BasicRecordStoreLoader.this.throwable = throwable;
+            }
+        };
+    }
 
     private final class MapLoadAllTask implements Runnable {
         private final Map<Data, Object> keys;
         private final AtomicInteger checkIfMapLoaded;
+        private final Callback callback;
 
-        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger checkIfMapLoaded) {
+        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger checkIfMapLoaded, Callback callback) {
             this.keys = keys;
             this.checkIfMapLoaded = checkIfMapLoaded;
+            this.callback = callback;
         }
 
         public void run() {
@@ -319,13 +338,11 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             try {
                 Map values = mapDataStore.loadAll(keys.values());
                 if (values == null || values.isEmpty()) {
-                    if (checkIfMapLoaded.decrementAndGet() == 0) {
-                        setLoaded(true);
-                    }
+                    decrementCounterAndMarkAsLoaded();
                     return;
                 }
 
-                MapEntrySet entrySet = new MapEntrySet();
+                final MapEntrySet entrySet = new MapEntrySet();
                 for (Data dataKey : keys.keySet()) {
                     Object key = keys.get(dataKey);
                     Object value = values.get(key);
@@ -334,27 +351,29 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
                         entrySet.add(dataKey, dataValue);
                     }
                 }
-                PutAllOperation operation = new PutAllOperation(name, entrySet, true);
-                operation.setNodeEngine(nodeEngine);
-                operation.setResponseHandler(new ResponseHandler() {
-                    @Override
-                    public void sendResponse(Object obj) {
-                        if (checkIfMapLoaded.decrementAndGet() == 0) {
-                            setLoaded(true);
-                        }
-                    }
 
-                    public boolean isLocal() {
-                        return true;
-                    }
-                });
-                operation.setPartitionId(partitionId);
-                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-                operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-                operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().executeOperation(operation);
-            } catch (Exception e) {
-                logger.warning("Exception while load all task:" + e.toString());
+                PutAllOperation operation = new PutAllOperation(name, entrySet, true);
+                final OperationService operationService = nodeEngine.getOperationService();
+                operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId)
+                        .setCallback(new Callback<Object>() {
+                            @Override
+                            public void notify(Object obj) {
+                                if (obj instanceof Throwable) {
+                                    return;
+                                }
+                                decrementCounterAndMarkAsLoaded();
+                            }
+                        }).invoke();
+            } catch (Throwable t) {
+                decrementCounterAndMarkAsLoaded();
+                logger.warning("Exception while load all task:" + t.toString());
+                callback.notify(t);
+            }
+        }
+
+        private void decrementCounterAndMarkAsLoaded() {
+            if (checkIfMapLoaded.decrementAndGet() == 0) {
+                setLoaded(true);
             }
         }
     }

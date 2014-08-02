@@ -31,7 +31,7 @@ Let's describe each property.
 	
 		`<max-size policy="PER_NODE">5000</max-size>`
 		
-	- **`PER_PARTITION`**: Maximum number of map entries within each partition. Storage size depends on the partition count in a JVM. So, this attribute may not be used oftenly. If the cluster is small it will be hosting more partitions and therefore map entries, than that of a larger cluster.
+	- **`PER_PARTITION`**: Maximum number of map entries within each partition. Storage size depends on the partition count in a JVM. So, this attribute may not be used often. If the cluster is small it will be hosting more partitions and therefore map entries, than that of a larger cluster.
 	
 		`<max-size policy="PER_PARTITION">27100</max-size>`
 

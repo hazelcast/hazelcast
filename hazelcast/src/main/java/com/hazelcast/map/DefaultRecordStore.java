@@ -70,14 +70,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void checkIfLoaded() {
-        if (!recordStoreLoader.isLoaded()) {
-            throw ExceptionUtil.rethrow(new RetryableHazelcastException("Map is not ready!!!"));
+        Throwable throwable = null;
+        final RecordStoreLoader recordStoreLoader = this.recordStoreLoader;
+        final Throwable exception = recordStoreLoader.getExceptionOrNull();
+        if (exception == null && !recordStoreLoader.isLoaded()) {
+            throwable = new RetryableHazelcastException("Map is not ready!!!");
+        } else if (exception != null) {
+            throwable = exception;
+        }
+        if (throwable != null) {
+            throw ExceptionUtil.rethrow(throwable);
         }
     }
 
     @Override
     public void flush() {
-        checkIfLoaded();
         final Collection<Data> processedKeys = mapDataStore.flush();
         for (Data key : processedKeys) {
             final Record record = records.get(key);
@@ -426,12 +433,17 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             keysToPreserve = recordsToPreserve.keySet();
             updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
         }
-        addToStagingArea(recordsToPreserve);
+        flush(recordsToPreserve);
         clearRecordsMap(recordsToPreserve);
         return keysToPreserve;
     }
 
-    private void addToStagingArea(Map<Data, Record> excludeRecords) {
+    /**
+     * Flushes evicted records to map store.
+     *
+     * @param excludeRecords Records which should not be flushed.
+     */
+    private void flush(Map<Data, Record> excludeRecords) {
         Iterator<Record> iterator = records.values().iterator();
         while (iterator.hasNext()) {
             Record record = iterator.next();
@@ -749,12 +761,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         final long now = getNow();
         earlyWriteCleanup(now);
-
         Record record = records.get(key);
         Object newValue;
         if (record == null) {
             final Object notExistingKey = mapServiceContext.toObject(key);
-            final EntryView<Object, Object> nullEntryView = EntryViews.createNullEntryView(notExistingKey);
+            final EntryView nullEntryView = EntryViews.createNullEntryView(notExistingKey);
             newValue = mergePolicy.merge(name, mergingEntry, nullEntryView);
             if (newValue == null) {
                 return false;
@@ -765,8 +776,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
             Object oldValue = record.getValue();
-            EntryView existingEntry = EntryViews.createSimpleEntryView(mapServiceContext.toObject(record.getKey()),
-                    mapServiceContext.toObject(record.getValue()), record);
+            EntryView existingEntry = EntryViews.createLazyEntryView(record.getKey(), record.getValue(),
+                    record, serializationService, mergePolicy);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {

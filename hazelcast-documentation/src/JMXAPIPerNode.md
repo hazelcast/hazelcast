@@ -243,7 +243,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Thread count of the pool ( `poolSize` )
  *  Maximum thread count of the pool ( `maximumPoolSize` )
  *  Remaining capacity of the work queue ( `remainingQueueCapacity` )
- *  Is shutdown ( `isShutdowm` )
+ *  Is shutdown ( `isShutdown` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
 * **Operation Executor ( `HazelcastInstance.ManagedExecutorService` )**
@@ -252,7 +252,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Thread count of the pool ( `poolSize` )
  *  Maximum thread count of the pool ( `maximumPoolSize` )
  *  Remaining capacity of the work queue ( `remainingQueueCapacity` )
- *  Is shutdown ( `isShutdowm` )
+ *  Is shutdown ( `isShutdown` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
 * **Async Executor (`HazelcastInstance.ManagedExecutorService`)**
@@ -261,7 +261,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Thread count of the pool ( `poolSize` )
  *  Maximum thread count of the pool ( `maximumPoolSize` )
  *  Remaining capacity of the work queue ( `remainingQueueCapacity` )
- *  Is shutdown ( `isShutdowm` )
+ *  Is shutdown ( `isShutdown` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
 * **Scheduled Executor ( `HazelcastInstance.ManagedExecutorService` )**
@@ -270,7 +270,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Thread count of the pool ( `poolSize` )
  *  Maximum thread count of the pool ( `maximumPoolSize` )
  *  Remaining capacity of the work queue ( `remainingQueueCapacity` )
- *  Is shutdown ( `isShutdowm` )
+ *  Is shutdown ( `isShutdown` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
 * **Client Executor ( `HazelcastInstance.ManagedExecutorService` )**
@@ -279,7 +279,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Thread count of the pool ( `poolSize` )
  *  Maximum thread count of the pool ( `maximumPoolSize` )
  *  Remaining capacity of the work queue ( `remainingQueueCapacity` )
- *  Is shutdown ( `isShutdowm` )
+ *  Is shutdown ( `isShutdown` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
 * **Query Executor ( `HazelcastInstance.ManagedExecutorService` )**
@@ -288,7 +288,7 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Thread count of the pool ( `poolSize` )
  *  Maximum thread count of the pool ( `maximumPoolSize` )
  *  Remaining capacity of the work queue ( `remainingQueueCapacity` )
- *  Is shutdown ( `isShutdowm` )
+ *  Is shutdown ( `isShutdown` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )
 * **IO Executor ( `HazelcastInstance.ManagedExecutorService` )**
@@ -297,6 +297,6 @@ You can find the JMX API definition below with descriptions and the API methods 
  *  Thread count of the pool ( `poolSize` )
  *  Maximum thread count of the pool ( `maximumPoolSize` )
  *  Remaining capacity of the work queue ( `remainingQueueCapacity` )
- *  Is shutdown ( `isShutdowm` )
+ *  Is shutdown ( `isShutdown` )
  *  Is terminated ( `isTerminated` )
  *  Completed task count ( `completedTaskCount` )

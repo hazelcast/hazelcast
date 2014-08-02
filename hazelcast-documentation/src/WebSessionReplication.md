@@ -174,6 +174,27 @@ Hazelcast Session Replication works as P2P by default. You need to set `use-clie
 
 If the value for `deferred-write` is set as **true**, Hazelcast will cache the session locally and will update the local session on set or deletion of an attribute. Only at the end of request, it will update the distributed map with all the updates. So, it will not be updating the distributed map on each attribute update. It will only call it once at the end of request. It will be also caching it, i.e. whenever there is a read for the attribute, it will read it from the cache. If `deferred-write` is **false**, you will not have the attributes cached on any server.
 
+#### SessionId Generation
+
+SessionId generation is done by Hazelcast Web Session Module if session replication is configured in the web application. Default cookie name for the sessionId is `hazelcast.sessionId` and this is configurable with `cookie-name` parameter in the `web.xml` file of the application.
+`hazelcast.sessionId` is just a UUID prefixed with “HZ” character and without “-“ character, e.g. `HZ6F2D036789E4404893E99C05D8CA70C7`.
+
+When called by the target application, the value of `HttpSession.getId()` is the same as the value of `hazelcast.sessionId`.
+
+#### Session Expiry
+
+Hazelcast automatically removes sessions from the cluster if session is expired on the Web Container. This removal is done by `com.hazelcast.web.SessionListener` which is an implementation of `javax.servlet.http.HttpSessionListener`. 
+
+Default session expiration configuration depends on Servlet Container that is being used. You can also define it in your web.xml.
+
+```xml
+    <session-config>
+        <session-timeout>60</session-timeout>
+    </session-config>
+```
+
+If you want to override session expiry configuration with Hazelcast specific configuration, `session-ttl-seconds` can be used to specify TTL on Hazelcast Session Replication Distributed Map.
+
 #### sticky-session
 
 Hazelcast holds whole session attributes in a distributed map and in local HTTP session. Local session is required for fast access to data and distributed map is needed for fail-safety.

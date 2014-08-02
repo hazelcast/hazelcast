@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
@@ -34,11 +35,19 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public abstract class AbstractJoiner implements Joiner {
+    private static final ExceptionHandler WHILE_WAIT_MERGE_EXCEPTION_HANDLER =
+            logAllExceptions("While waiting merge response...", Level.FINEST);
+
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
     private final AtomicInteger tryCount = new AtomicInteger(0);
     protected final Config config;
@@ -55,11 +64,11 @@ public abstract class AbstractJoiner implements Joiner {
         this.config = node.config;
     }
 
-    public abstract void doJoin(AtomicBoolean joined);
+    public abstract void doJoin();
 
     @Override
-    public void join(AtomicBoolean joined) {
-        doJoin(joined);
+    public void join() {
+        doJoin();
         postJoin();
     }
 
@@ -223,19 +232,19 @@ public abstract class AbstractJoiner implements Joiner {
         final Collection<Future> calls = new ArrayList<Future>();
         for (MemberImpl member : memberList) {
             if (!member.localMember()) {
+                Operation operation = new PrepareMergeOperation(targetAddress);
                 Future f = operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                        new PrepareMergeOperation(targetAddress), member.getAddress())
-                        .setTryCount(3).invoke();
+                        operation, member.getAddress()).setTryCount(3).invoke();
                 calls.add(f);
             }
         }
-        for (Future f : calls) {
-            try {
-                f.get(1, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                logger.finest("While waiting merge response...", e);
-            }
+
+        try {
+            waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_WAIT_MERGE_EXCEPTION_HANDLER);
+        } catch (TimeoutException e) {
+            logger.warning("While waiting merge response...", e);
         }
+
         final PrepareMergeOperation prepareMergeOperation = new PrepareMergeOperation(targetAddress);
         prepareMergeOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
                 .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());

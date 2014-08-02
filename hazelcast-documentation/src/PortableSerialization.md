@@ -5,13 +5,13 @@
 
 As an alternative to the existing serialization methods, Hazelcast offers a language/platform independent Portable serialization that have the following advantages:
 
--   Support multiversion of the same object type.
+-   Support multi-version of the same object type.
 -   Fetching individual fields without having to rely on reflection.
 -   Querying and indexing support without de-serialization and/or reflection.
 
 In order to support these features, a serialized Portable object is offered containing meta information like the version and the concrete location of the each field in the binary data. This way Hazelcast is able to navigate in the `byte[]` and de-serialize only the required field without actually de-serializing the whole object which improves the Query performance.
 
-With multiversion support, you can have two nodes where each of them having different versions of the same object and Hazelcast will store both meta information and use the correct one to serialize and de-serialize Portable objects depending on the node. This is very helpful when you are doing a rolling upgrade without shutting down the cluster.
+With multi-version support, you can have two nodes where each of them having different versions of the same object and Hazelcast will store both meta information and use the correct one to serialize and de-serialize Portable objects depending on the node. This is very helpful when you are doing a rolling upgrade without shutting down the cluster.
 
 Also note that, Portable serialization is totally language independent and is used as the binary protocol between Hazelcast server and clients.
 

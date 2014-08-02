@@ -29,8 +29,8 @@ public final class WriteBehindQueues {
     private WriteBehindQueues() {
     }
 
-    public static <T> WriteBehindQueue<T> createBoundedArrayWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
-        return new BoundedArrayWriteBehindQueue<T>(maxSizePerNode, counter);
+    public static WriteBehindQueue createSafeBoundedArrayWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
+        return createSafeWriteBehindQueue(new BoundedArrayWriteBehindQueue(maxSizePerNode, counter));
     }
 
     public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue() {

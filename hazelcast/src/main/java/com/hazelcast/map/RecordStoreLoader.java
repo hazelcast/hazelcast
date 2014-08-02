@@ -31,6 +31,11 @@ interface RecordStoreLoader {
         public void loadAllKeys() {
 
         }
+
+        @Override
+        public Throwable getExceptionOrNull() {
+            return null;
+        }
     };
 
     /**
@@ -55,5 +60,13 @@ interface RecordStoreLoader {
      * Loads all keys.
      */
     void loadAllKeys();
+
+    /**
+     * Picks and returns any one of throwables during load all process.
+     * Returns null if there is no exception occurred.
+     *
+     * @return exception or null.
+     */
+    Throwable getExceptionOrNull();
 
 }

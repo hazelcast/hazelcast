@@ -33,11 +33,10 @@ import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.SSLConfig;
@@ -53,7 +52,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ClientPacket;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -120,7 +119,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private volatile ClientPrincipal principal;
     private final AtomicInteger callIdIncrementer = new AtomicInteger();
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
-    private final ClientExecutionService executionService;
+    private final ClientExecutionServiceImpl executionService;
     private ClientInvocationServiceImpl invocationService;
     private final AddressTranslator addressTranslator;
 
@@ -151,7 +150,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
 
         smartRouting = networkConfig.isSmartRouting();
-        executionService = client.getClientExecutionService();
+        executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         credentials = initCredentials(config);
         router = new Router(loadBalancer);
         inSelector = new ClientInSelectorImpl(client.getThreadGroup());
@@ -486,61 +485,20 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return false;
     }
 
-    public void handlePacket(ClientPacket packet) {
+    public void handlePacket(Packet packet) {
         final ClientConnection conn = (ClientConnection) packet.getConn();
         conn.incrementPacketCount();
-        executionService.execute(new ClientPacketProcessor(packet));
+        if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
+            final ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+            listenerService.handleEventPacket(packet);
+        } else {
+            invocationService.handlePacket(packet);
+        }
     }
 
     public int newCallId() {
         return callIdIncrementer.incrementAndGet();
     }
-
-    private class ClientPacketProcessor implements Runnable {
-
-        final ClientPacket packet;
-
-        ClientPacketProcessor(ClientPacket packet) {
-            this.packet = packet;
-        }
-
-        @Override
-        public void run() {
-            final ClientConnection conn = (ClientConnection) packet.getConn();
-            final ClientResponse clientResponse = getSerializationService().toObject(packet.getData());
-            final int callId = clientResponse.getCallId();
-            final Data response = clientResponse.getResponse();
-            if (clientResponse.isEvent()) {
-                handleEvent(response, callId, conn);
-            } else {
-                handlePacket(response, clientResponse.isError(), callId, conn);
-            }
-            conn.decrementPacketCount();
-        }
-
-        private void handlePacket(Object response, boolean isError, int callId, ClientConnection conn) {
-            final ClientCallFuture future = conn.deRegisterCallId(callId);
-            if (future == null) {
-                LOGGER.warning("No call for callId: " + callId + ", response: " + response);
-                return;
-            }
-            if (isError) {
-                response = getSerializationService().toObject(response);
-            }
-            future.notify(response);
-        }
-
-        private void handleEvent(Data event, int callId, ClientConnection conn) {
-            final EventHandler eventHandler = conn.getEventHandler(callId);
-            final Object eventObject = getSerializationService().toObject(event);
-            if (eventHandler == null) {
-                LOGGER.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
-                return;
-            }
-            eventHandler.handle(eventObject);
-        }
-    }
-
 
     public class ManagerAuthenticator implements Authenticator {
 

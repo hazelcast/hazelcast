@@ -24,6 +24,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -40,12 +41,14 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
 
     private static final int AWAIT_COMPLETION_TIMEOUT_SECONDS = 30;
 
+    private final FutureUtil.ExceptionHandler exceptionHandler;
     private final NodeEngine nodeEngine;
     private final ObjectNamespace namespace;
 
     public LockEvictionProcessor(NodeEngine nodeEngine, ObjectNamespace namespace) {
         this.nodeEngine = nodeEngine;
         this.namespace = namespace;
+        this.exceptionHandler = new AwaitCompletionExceptionHandler(nodeEngine, getClass());
     }
 
     @Override
@@ -76,16 +79,11 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
     }
 
     private void awaitCompletion(Collection<Future> futures) {
-        ILogger logger = nodeEngine.getLogger(getClass());
-
-        for (Future future : futures) {
-            try {
-                future.get(AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            } catch (TimeoutException e) {
-                logger.finest(e);
-            } catch (Exception e) {
-                logger.warning(e);
-            }
+        try {
+            FutureUtil.waitWithDeadline(futures, AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS, exceptionHandler);
+        } catch (TimeoutException e) {
+            ILogger logger = nodeEngine.getLogger(getClass());
+            logger.finest(e);
         }
     }
 
@@ -93,5 +91,22 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         OperationService operationService = nodeEngine.getOperationService();
         return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+    }
+
+    private static final class AwaitCompletionExceptionHandler implements FutureUtil.ExceptionHandler {
+        private final ILogger logger;
+
+        private AwaitCompletionExceptionHandler(NodeEngine nodeEngine, Class<?> type) {
+            this.logger = nodeEngine.getLogger(type);
+        }
+
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable instanceof TimeoutException) {
+                logger.finest(throwable);
+            } else if (throwable instanceof Exception) {
+                logger.warning(throwable);
+            }
+        }
     }
 }
