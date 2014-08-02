@@ -52,7 +52,7 @@
         <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
         <hz:network connection-attempt-limit="${client.connection.attemptLimit}"
                     connection-attempt-period="${client.connection.attemptPeriod}"
-                    connection-timeout="${client.connection.timeout}">
+                    connection-timeout="1000">
         </hz:network>
     </hz:client>
 
