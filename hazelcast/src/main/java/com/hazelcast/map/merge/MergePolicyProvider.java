@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Creates merge policies.
+ * A provider for {@link com.hazelcast.map.merge.MergePolicyProvider} instances.
  */
 public final class MergePolicyProvider {
 
@@ -34,7 +34,6 @@ public final class MergePolicyProvider {
         MapMergePolicy mergePolicy = mergePolicyMap.get(mergePolicyName);
         if (mergePolicy == null && mergePolicyName != null) {
             try {
-
                 // check if user has entered custom class name instead of policy name
                 mergePolicy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mergePolicyName);
                 mergePolicyMap.put(mergePolicyName, mergePolicy);

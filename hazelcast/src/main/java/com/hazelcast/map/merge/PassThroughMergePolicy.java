@@ -23,17 +23,8 @@ import java.io.IOException;
 
 
 /**
- * Built-in MergePolicy implementation.
- * <p/>
  * PassThroughMergePolicy causes the merging entry to be merged from source to destination map
  * unless merging entry is null.
- * <p/>
- * <p/>
- *
- * @see com.hazelcast.map.merge.MapMergePolicy
- * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
- * @see com.hazelcast.map.merge.HigherHitsMapMergePolicy
- * @see com.hazelcast.map.merge.LatestUpdateMapMergePolicy
  */
 public class PassThroughMergePolicy implements MapMergePolicy {
 
