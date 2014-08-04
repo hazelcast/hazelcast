@@ -30,7 +30,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
     protected void beforeResponse() {
     }
 
-    protected void afterResponse(){
+    protected void afterResponse() {
     }
 
     @Override
