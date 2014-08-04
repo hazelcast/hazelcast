@@ -1248,7 +1248,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        latch1.await(30, TimeUnit.SECONDS);
+        assertOpenEventually(latch1);
 
         final AtomicReference reference1 = new AtomicReference();
         final AtomicReference reference2 = new AtomicReference();
@@ -1280,7 +1280,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        latch2.await(30, TimeUnit.SECONDS);
+        assertOpenEventually(latch2);
         assertEquals("success", reference1.get());
         assertEquals("success", reference2.get());
     }
