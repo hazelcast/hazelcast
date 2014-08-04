@@ -111,8 +111,11 @@ public class IndexImpl implements Index {
             try {
                 // Take lock or wait before initializing attribute type
                 attributeTypeLock.lock();
-                // Initialize attribute type by using entry index
-                attributeType = e.getAttributeType(attribute);
+                // Check again, attribute type may be updated between first check and taking lock
+                if (attributeType == null) {
+                    // Initialize attribute type by using entry index
+                    attributeType = e.getAttributeType(attribute);
+                }
             } finally {
                 // Release lock after initializing attribute type
                 attributeTypeLock.unlock();
