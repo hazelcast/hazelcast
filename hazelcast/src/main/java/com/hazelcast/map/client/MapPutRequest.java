@@ -82,7 +82,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     }
 
     @Override
-    protected void afterResponse() {
+    protected void afterProcess() {
         final long latency = System.currentTimeMillis() - startTime;
         final MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
