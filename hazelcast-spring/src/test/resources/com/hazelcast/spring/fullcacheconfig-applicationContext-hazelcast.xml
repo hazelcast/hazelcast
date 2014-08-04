@@ -82,6 +82,8 @@
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>
                 </hz:interfaces>
+
+
                 <hz:ssl enabled="false" factory-class-name="com.hazelcast.spring.DummySSLContextFactory"
                         factory-implementation="dummySSLContextFactory" />
                 <hz:socket-interceptor enabled="false" class-name="com.hazelcast.spring.DummySocketInterceptor"
@@ -91,6 +93,7 @@
                                          salt="thesalt"
                                          password="thepass"
                                          iteration-count="19"/>
+                <hz:reuse-address>false</hz:reuse-address>
             </hz:network>
             <hz:partition-group enabled="true" group-type="CUSTOM">
                 <hz:member-group>
