@@ -601,7 +601,8 @@ public class WebFilter implements Filter {
         final HttpSession originalSession;
         private final Map<String, LocalCacheEntry> localCache;
         private final boolean deferredWrite;
-        private boolean clusterWideNew;
+        // only true if session is created first time in the cluster
+        private volatile boolean clusterWideNew;
 
         public HazelcastHttpSession(final String sessionId, final HttpSession originalSession,
                                     final boolean deferredWrite) {
