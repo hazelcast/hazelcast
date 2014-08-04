@@ -568,8 +568,6 @@ It can be configured using `GroupConfig`, as shown below.
 clientConfig.setGroupConfig(new GroupConfig("dev","dev-pass"));
 ```
 
-##### Client Properties 
-To Do
 
 ##### ClientSecurityConfig
 
@@ -584,7 +582,7 @@ For the client side serialization, Hazelcast configuration is used. Please refer
 To Do
 
 ##### ListenerConfig
-Global event listeners can be configured using ListenerConfig as shown below.
+Global event listeners can be configured using `ListenerConfig` as shown below.
 
 
 ```java
@@ -600,10 +598,16 @@ clientConfig.addListenerConfig(listenerConfig);
 ```
 
 There are three types of event listeners that can be added.
-* LifecycleListener ( refer to [com.hazelcast.core.LifecycleListener](#) )
-* MembershipListener ( refer to [com.hazelcast.core.MembershipListener](#) )
-* DistributedObjectListener ( refer to [com.hazelcast.core.DistributedObjectListener](#) )
 
+- LifecycleListener
+- MembershipListener
+- DistributedObjectListener
+
+
+***RELATED INFORMATION***
+
+*Please refer to Hazelcast JavaDocs and see LifecycleListener, MembershipListener and DistributedObjectListener in `com.hazelcast.core` package.*
+<br></br>
 
 ##### NearCacheConfig
 A near cache on the client side can be configured by providing a configuration per map name, as shown below.
@@ -620,7 +624,6 @@ Wildcards can be used for the map name. See below samples.
 ```java
 nearCacheConfig.setName("map*");
 nearCacheConfig.setName("*map");
-
 ```
 
 ##### ClassLoader
@@ -636,6 +639,19 @@ To Do (advanced)
 ##### ManagedContext
 
 To Do (advanced)
+
+##### Client Properties 
+
+There are some advanced client configuration properties to tune some aspects of Hazelcast Client. These can be set as property name and value pairs through declarative configuration, programmatic configuration or JVM system property. Please see [Advanced Configuration Properties](#advanced-configuration-properties) section to learn how to set these properties.
+
+Below table lists the client configuration properties with their descriptions.
+
+Property Name | Default Value | Type | Description
+:--------------|:---------------|:------|:------------
+`hazelcast.client.heartbeat.timeout`|60000|string|Timeout for the heartbeat messages sent by the client to members. If there is no any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
+`hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to members.
+`hazelcast.client.max.failed.heartbeat.count`|3|string|Maximum count of the failed heartbeats with which the member is deemed as dead.
+
 
 ### Examples
 
