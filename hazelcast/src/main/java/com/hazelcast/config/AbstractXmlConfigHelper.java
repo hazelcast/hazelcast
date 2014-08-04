@@ -80,9 +80,11 @@ public abstract class AbstractXmlConfigHelper {
                     }
                     return false;
                 }
+
                 public boolean hasNext() {
                     return findNext();
                 }
+
                 public Node next() {
                     if (findNext()) {
                         index++;
@@ -90,6 +92,7 @@ public abstract class AbstractXmlConfigHelper {
                     }
                     throw new NoSuchElementException();
                 }
+
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }
@@ -190,6 +193,17 @@ public abstract class AbstractXmlConfigHelper {
         } catch (final Exception e) {
             LOGGER.info(parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
+            LOGGER.warning(e);
+            return defaultValue;
+        }
+    }
+
+    protected long getLongValue(final String parameterName, final String value, final int defaultValue) {
+        try {
+            return Long.parseLong(value);
+        } catch (final Exception e) {
+            LOGGER.info(parameterName + " parameter value, [" + value
+                    + "], is not a proper long. Default value, [" + defaultValue + "], will be used!");
             LOGGER.warning(e);
             return defaultValue;
         }

@@ -218,6 +218,12 @@
             get evicted.
         -->
         <eviction-percentage>25</eviction-percentage>
+        <!--
+            Minimum time in milliseconds which should pass before checking
+            if a partition of this map is evictable or not.
+            Default value is 0.
+        -->
+        <check-if-evictable-after-millis>0</check-if-evictable-after-millis>
 
         <!--
             While recovering from split-brain (network partitioning),
@@ -327,7 +333,8 @@
     <serialization>
         <portable-version>0</portable-version>
         <data-serializable-factories>
-            <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory</data-serializable-factory>
+            <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
+            </data-serializable-factory>
         </data-serializable-factories>
         <portable-factories>
             <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
@@ -335,7 +342,8 @@
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
             <serializer type-class="com.hazelcast.examples.DummyType">
-                com.hazelcast.examples.SerializerFactory</serializer>
+                com.hazelcast.examples.SerializerFactory
+            </serializer>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
@@ -421,15 +429,15 @@
         </client-permissions>
     </security>
 
-	<member-attributes>
-		<attribute name="attribute.string">hazelcast</attribute>
-		<attribute name="attribute.int" type="int">123</attribute>
-		<attribute name="attribute.long" type="long">456</attribute>
-		<attribute name="attribute.short" type="short">789</attribute>
-		<attribute name="attribute.byte" type="byte">111</attribute>
-		<attribute name="attribute.boolean" type="boolean">true</attribute>
-		<attribute name="attribute.double" type="double">0.0d</attribute>
-		<attribute name="attribute.float" type="float">1234.5678</attribute>
-     </member-attributes>
+    <member-attributes>
+        <attribute name="attribute.string">hazelcast</attribute>
+        <attribute name="attribute.int" type="int">123</attribute>
+        <attribute name="attribute.long" type="long">456</attribute>
+        <attribute name="attribute.short" type="short">789</attribute>
+        <attribute name="attribute.byte" type="byte">111</attribute>
+        <attribute name="attribute.boolean" type="boolean">true</attribute>
+        <attribute name="attribute.double" type="double">0.0d</attribute>
+        <attribute name="attribute.float" type="float">1234.5678</attribute>
+    </member-attributes>
 
 </hazelcast>

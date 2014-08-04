@@ -44,7 +44,12 @@ import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 //it needs to run serial because some tests are relying on System properties they are setting themselves.
 @RunWith(HazelcastSerialClassRunner.class)
@@ -70,13 +75,13 @@ public class XMLConfigBuilderTest {
     public void testSecurityInterceptorConfig() {
         String xml =
                 "<hazelcast>" +
-                    "<security enabled=\"true\">" +
+                        "<security enabled=\"true\">" +
                         "<security-interceptors>" +
-                            "<interceptor class-name=\"foo\"/>" +
-                            "<interceptor class-name=\"bar\"/>" +
+                        "<interceptor class-name=\"foo\"/>" +
+                        "<interceptor class-name=\"bar\"/>" +
                         "</security-interceptors>" +
-                    "</security>" +
-                "</hazelcast>";
+                        "</security>" +
+                        "</hazelcast>";
 
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
@@ -390,6 +395,31 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
+    public void testMapConfigCheckIfEvictableAfterMillis() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<map name=\"mymap\">" +
+                        "<check-if-evictable-after-millis>123456789</check-if-evictable-after-millis>" +
+                        "</map>" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final MapConfig mapConfig = config.getMapConfig("mymap");
+        assertEquals(123456789L, mapConfig.getCheckIfEvictableAfterMillis());
+    }
+
+    @Test
+    public void testMapConfigCheckIfEvictableAfterMillis__default_value() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<map name=\"mymap\">" +
+                        "</map>" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final MapConfig mapConfig = config.getMapConfig("mymap");
+        assertEquals(MapConfig.DEFAULT_CHECK_IF_EVICTABLE_AFTER_MILLIS, mapConfig.getCheckIfEvictableAfterMillis());
+    }
+
+    @Test
     public void testMapStoreInitialModeEager() {
         String xml =
                 "<hazelcast>\n" +
@@ -453,13 +483,13 @@ public class XMLConfigBuilderTest {
         String mapName = "mapStoreImpObjTest";
         String xml =
                 "<hazelcast>\n" +
-                    "<map name=\""+ mapName +"\">\n" +
+                        "<map name=\"" + mapName + "\">\n" +
                         "<map-store enabled=\"true\">\n" +
-                            "<class-name>com.hazelcast.config.helpers.DummyMapStore</class-name>\n" +
-                            "<write-delay-seconds>5</write-delay-seconds>\n" +
+                        "<class-name>com.hazelcast.config.helpers.DummyMapStore</class-name>\n" +
+                        "<write-delay-seconds>5</write-delay-seconds>\n" +
                         "</map-store>\n" +
-                    "</map>\n" +
-                "</hazelcast>\n";
+                        "</map>\n" +
+                        "</hazelcast>\n";
 
         Config config = buildConfig(xml);
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);

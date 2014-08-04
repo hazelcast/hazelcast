@@ -62,8 +62,8 @@
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>
         </interfaces>
-        <ssl enabled="false" />
-        <socket-interceptor enabled="false" />
+        <ssl enabled="false"/>
+        <socket-interceptor enabled="false"/>
         <symmetric-encryption enabled="false">
             <!--
                encryption algorithm such as
@@ -168,6 +168,12 @@
         -->
         <eviction-percentage>25</eviction-percentage>
         <!--
+            Minimum time in milliseconds which should pass before checking
+            if a partition of this map is evictable or not.
+            Default value is 0.
+        -->
+        <check-if-evictable-after-millis>0</check-if-evictable-after-millis>
+        <!--
             While recovering from split-brain (network partitioning),
             map entries in the small cluster will merge into the bigger cluster
             based on the policy set here. When an entry merge into the
@@ -224,6 +230,6 @@
         <portable-version>0</portable-version>
     </serialization>
 
-    <services enable-defaults="true" />
+    <services enable-defaults="true"/>
 
 </hazelcast>

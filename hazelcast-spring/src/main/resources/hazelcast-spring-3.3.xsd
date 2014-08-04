@@ -141,6 +141,7 @@
                                 <xs:attribute name="max-size-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="max-idle-seconds" use="optional" type="xs:string"/>
                                 <xs:attribute name="eviction-percentage" use="optional" type="xs:string"/>
+                                <xs:attribute name="check-if-evictable-after-millis" use="optional" type="xs:string"/>
                                 <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="merge-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
