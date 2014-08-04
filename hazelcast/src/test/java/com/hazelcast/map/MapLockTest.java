@@ -321,9 +321,10 @@ public class MapLockTest extends HazelcastTestSupport {
             }
         }.start();
 
+        assertOpenEventually(cleared);
+
         node2.getLifecycleService().terminate();
 
-        assertOpenEventually(cleared);
         assertEquals("unlocked keys not removed", 1, map.size());
         assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(key));
     }
