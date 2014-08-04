@@ -218,6 +218,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSocketInterceptorConfig(child, networkConfigBuilder);
                 } else if ("outbound-ports".equals(nodeName)) {
                     handleOutboundPorts(child, networkConfigBuilder);
+                }else if("reuse-address".equals(nodeName)){
+                    handleReuseAddress(child, networkConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
@@ -300,6 +302,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             networkConfigBuilder.addPropertyValue("outboundPortDefinitions", outboundPorts);
+        }
+
+        private void handleReuseAddress(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
+            String value = node.getTextContent();
+            networkConfigBuilder.addPropertyValue("reuseAddress", value);
         }
 
         private void handleSSLConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
