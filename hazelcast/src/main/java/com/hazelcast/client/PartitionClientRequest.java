@@ -27,7 +27,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
     protected void beforeProcess() {
     }
 
-    protected void afterResponse() {
+    protected void afterProcess() {
     }
 
     @Override
@@ -65,8 +65,8 @@ public abstract class PartitionClientRequest extends ClientRequest {
 
         @Override
         public void notify(Object object) {
+            afterProcess();
             endpoint.sendResponse(filter(object), getCallId());
-            afterResponse();
         }
     }
 }
