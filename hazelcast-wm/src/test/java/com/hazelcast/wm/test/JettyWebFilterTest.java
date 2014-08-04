@@ -184,6 +184,7 @@ public class JettyWebFilterTest extends AbstractWebFilterTest {
     public void testIssue3132() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         assertEquals("true", executeRequest("isNew", serverPort1, cookieStore));
+        assertEquals("false", executeRequest("isNew", serverPort1, cookieStore));
         assertEquals("false", executeRequest("isNew", serverPort2, cookieStore));
         server1.stop();
         server1.start();
