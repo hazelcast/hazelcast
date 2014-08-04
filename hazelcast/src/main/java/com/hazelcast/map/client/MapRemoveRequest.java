@@ -69,7 +69,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
     }
 
     @Override
-    protected void afterProcess() {
+    protected void beforeResponse() {
         final long latency = System.currentTimeMillis() - startTime;
         final MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapContainer(name);
