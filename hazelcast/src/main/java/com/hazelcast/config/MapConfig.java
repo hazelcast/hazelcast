@@ -313,7 +313,7 @@ public class MapConfig {
      * <p/>
      * Default value is {@value #DEFAULT_CHECK_IF_EVICTABLE_AFTER_MILLIS} milliseconds.
      *
-     * @return Number of milliseconds should pass before asking next eviction.
+     * @return number of milliseconds should pass before asking next eviction.
      * @since 3.3
      */
     public long getCheckIfEvictableAfterMillis() {
@@ -330,7 +330,7 @@ public class MapConfig {
      */
     public void setCheckIfEvictableAfterMillis(long checkIfEvictableAfterMillis) {
         if (checkIfEvictableAfterMillis < 0) {
-            throw new IllegalArgumentException("Parameter checkIfEvictableAfterMillis must be greater or equal than 0");
+            throw new IllegalArgumentException("Parameter checkIfEvictableAfterMillis can not get a negative value");
         }
         this.checkIfEvictableAfterMillis = checkIfEvictableAfterMillis;
     }
