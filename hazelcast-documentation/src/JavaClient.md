@@ -96,7 +96,7 @@ Client executes each operation through the already established connection to clu
 
 While sending the requests to related nodes, it is possible that operation fails due to various reasons. For any read only operations, you can have your client retrying to send the operation by enabling `redoOperation`. Please see [Redo Operation](#redo-operation).
 
-And, the number of retries is given with the property  `hazelcast.client.retry.count` in `ClientProperties`. It will resend the request as many as RETRY-COUNT then it will throw an exception. Please see [Client Properties](#client-properties).
+And, the number of retries is given with the property  `hazelcast.client.request.retry.count` in `ClientProperties`. It will resend the request as many as RETRY-COUNT then it will throw an exception. Please see [Client Properties](#client-properties).
 
 
 ### Distributed Data Structures
@@ -650,7 +650,11 @@ Property Name | Default Value | Type | Description
 :--------------|:---------------|:------|:------------
 `hazelcast.client.heartbeat.timeout`|60000|string|Timeout for the heartbeat messages sent by the client to members. If there is no any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
 `hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to members.
-`hazelcast.client.max.failed.heartbeat.count`|3|string|Maximum count of the failed heartbeats with which the member is deemed as dead.
+`hazelcast.client.max.failed.heartbeat.count`|3|string|When the count of failed heartbeats sent to members reaches this value, the cluster is deemed as dead by the client.
+`hazelcast.client.request.retry.count`|20|string|The retry count of the connection requests by the client to the members.
+`hazelcast.client.request.retry.wait.time`|250|string|The frequency of the connection retries.
+`hazelcast.client.event.thread.count`|5|string|Thread count for handling incoming event packets.
+`hazelcast.client.event.queue.capacity`|1000000|string|Default value of the capacity of executor that handles incoming event packets.
 
 
 ### Examples
