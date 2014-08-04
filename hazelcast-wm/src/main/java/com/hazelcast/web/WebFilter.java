@@ -678,13 +678,7 @@ public class WebFilter implements Filter {
         }
 
         public boolean isNew() {
-            boolean sessionStatus = originalSession.isNew();
-
-            if (sessionStatus == true && clusterWideNew) {
-                    return true;
-            }
-
-            return false;
+            return originalSession.isNew() && clusterWideNew;
         }
 
         public void putValue(final String name, final Object value) {
