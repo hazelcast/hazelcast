@@ -70,6 +70,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
         public void notify(Object object) {
             beforeResponse();
             endpoint.sendResponse(filter(object), getCallId());
+            afterResponse();
         }
     }
 }
