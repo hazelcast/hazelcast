@@ -58,7 +58,7 @@ public class MapConfig {
      * Minimum time in milliseconds which should pass before asking
      * if a partition of this map is evictable or not.
      */
-    public static final int DEFAULT_CHECK_IF_EVICTABLE_AFTER_MILLIS = 0;
+    public static final long DEFAULT_CHECK_IF_EVICTABLE_AFTER_MILLIS = 0L;
 
     /**
      * The number of default Time to Live seconds
