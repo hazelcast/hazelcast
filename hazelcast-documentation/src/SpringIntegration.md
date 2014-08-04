@@ -8,15 +8,15 @@
 
 ### Spring Configuration
 
-#### Classpath Configuration: 
-
-Hazelcast-Spring integration requires one of the following jar files in the classpath:
-
-- `hazelcast-spring-`<*version*>`.jar`
-- `hazelcast-all-`<*version*>`.jar`
-
-
 #### Bean Declaration by Spring *beans* Namespace 
+
+***Classpath Configuration*** 
+
+This configuration requires following jar file in the classpath:
+
+- `hazelcast-`<*version*>`.jar`
+
+***Bean Declaration*** 
 
 You can declare Hazelcast Objects using the default Spring *beans* namespace. You can find an example usage of Hazelcast Instance declaration as follows:
 
@@ -42,7 +42,20 @@ You can declare Hazelcast Objects using the default Spring *beans* namespace. Yo
 
 #### Bean Declaration by *hazelcast* Namespace 
 
-Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add namespace *xmlns:hz="http://www.hazelcast.com/schema/spring"* to `beans` tag in context file so that *hz* namespace shortcut can be used as a bean declaration.
+***Classpath Configuration*** 
+
+Hazelcast-Spring integration requires following jar files in the classpath:
+
+- `hazelcast-spring-`<*version*>`.jar`
+- `hazelcast-`<*version*>`.jar`
+
+or
+
+- `hazelcast-all-`<*version*>`.jar`
+
+***Bean Declaration*** 
+
+Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add namespace declaration *xmlns:hz="http://www.hazelcast.com/schema/spring"* to `beans` tag in context file so that *hz* namespace shortcut can be used as a bean declaration.
 
 Here is an example schema definition for Hazelcast 3.3.x:
 
