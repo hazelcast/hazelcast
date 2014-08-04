@@ -49,12 +49,12 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     protected boolean evictionEnabled;
 
-    private long checkIfEvictableAfterMillis;
-
     /**
      * Last run time of cleanup operation.
      */
     protected long lastEvictionTime;
+
+    private long checkIfEvictableAfterMillis;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);

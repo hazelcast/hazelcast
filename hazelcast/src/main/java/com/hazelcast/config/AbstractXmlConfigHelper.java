@@ -65,10 +65,8 @@ public abstract class AbstractXmlConfigHelper {
 
         public Iterator<Node> iterator() {
             return new Iterator<Node>() {
-
                 private int index;
                 private Node next;
-
                 private boolean findNext() {
                     next = null;
                     for (; index < maximum; index++) {
@@ -84,7 +82,6 @@ public abstract class AbstractXmlConfigHelper {
                 public boolean hasNext() {
                     return findNext();
                 }
-
                 public Node next() {
                     if (findNext()) {
                         index++;
@@ -92,7 +89,6 @@ public abstract class AbstractXmlConfigHelper {
                     }
                     throw new NoSuchElementException();
                 }
-
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }
