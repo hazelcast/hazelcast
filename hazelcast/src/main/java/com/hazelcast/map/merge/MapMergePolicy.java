@@ -19,6 +19,15 @@ package com.hazelcast.map.merge;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 
+/**
+ * A policy for merging maps after a splitbrain was detected and the different network partitions need
+ * to be merged.
+ *
+ * @see com.hazelcast.map.merge.MapMergePolicy
+ * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
+ * @see com.hazelcast.map.merge.LatestUpdateMapMergePolicy
+ * @see com.hazelcast.map.merge.PassThroughMergePolicy
+ */
 public interface MapMergePolicy extends DataSerializable {
 
     /**

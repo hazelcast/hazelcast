@@ -20,24 +20,17 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+
 import java.io.IOException;
 
 
 /**
- * Built-in MergePolicy implementation.
- * <p/>
  * HigherHitsMapMergePolicy causes the merging entry to be merged from source to destination map
- * if source entry has higher hits than the destination one.
- * <p/>
- * <p/>
- *
- * @see com.hazelcast.map.merge.MapMergePolicy
- * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
- * @see com.hazelcast.map.merge.LatestUpdateMapMergePolicy
- * @see com.hazelcast.map.merge.PassThroughMergePolicy
+ * if source entry has more hits than the destination one.
  */
 public class HigherHitsMapMergePolicy implements MapMergePolicy, DataSerializable {
 
+    @Override
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
         if (mergingEntry.getHits() >= existingEntry.getHits()) {
             return mergingEntry.getValue();
