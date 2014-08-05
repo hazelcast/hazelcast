@@ -35,9 +35,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class ClientAbstractIOSelector extends Thread implements IOSelector {
 
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 3;
-
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
-    public static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
+    private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
     protected final ILogger logger;
 
