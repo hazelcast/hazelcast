@@ -35,6 +35,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 3;
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
+    private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
     protected final ILogger logger;
 
@@ -186,7 +187,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         // If we don't wait, it can be that a subsequent call will run into an IOException immediately. This can lead to a very
         // hot loop and we don't want that. The same approach is used in Netty.
         try {
-            Thread.sleep(1000);
+            Thread.sleep(SELECT_FAILURE_PAUSE_MILLIS);
         } catch (InterruptedException i) {
             Thread.currentThread().interrupt();
         }
