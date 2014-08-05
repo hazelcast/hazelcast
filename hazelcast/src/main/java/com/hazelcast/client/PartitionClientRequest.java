@@ -20,6 +20,9 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
+/**
+ * Base class for partition based client requests.
+ */
 public abstract class PartitionClientRequest extends ClientRequest {
 
     private static final int TRY_COUNT = 100;
