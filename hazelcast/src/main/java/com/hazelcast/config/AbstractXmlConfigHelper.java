@@ -194,7 +194,7 @@ public abstract class AbstractXmlConfigHelper {
         }
     }
 
-    protected long getLongValue(final String parameterName, final String value, final int defaultValue) {
+    protected long getLongValue(final String parameterName, final String value, final long defaultValue) {
         try {
             return Long.parseLong(value);
         } catch (final Exception e) {
