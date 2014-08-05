@@ -638,40 +638,66 @@ public class MapTransactionTest extends HazelcastTestSupport {
     @Test
     public void testTxnPutIfAbsentParallel() throws InterruptedException {
         final String TEST_MAP = "testMap";
+        final String key = "k";
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance sharedDataService = factory.newHazelcastInstance(new Config());
-        final Object[] v = new Object[1];
-        Thread contender = new Thread(new Runnable() {
+        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(new Config());
+
+        IMap<String, Object> map = hazelcastInstance.getMap(TEST_MAP);
+        map.put(key, "v");
+
+        hazelcastInstance.executeTransaction(new TransactionalTask<Object>() {
             @Override
-            public void run() {
-                TransactionContext transactionContext = sharedDataService.newTransactionContext();
-                transactionContext.beginTransaction();
+            public Object execute(TransactionalTaskContext transactionContext) throws TransactionException {
                 TransactionalMap<String, Object> map = transactionContext.getMap(TEST_MAP);
-                v[0] = map.putIfAbsent("k", "t");
-                transactionContext.commitTransaction();
+                map.putIfAbsent(key, "t");
+                return null;
             }
         });
+        assertFalse("Key is not locked", map.isLocked(key));
+    }
 
-        TransactionContext transactionContext;
-        TransactionalMap<String, Object> map;
-        transactionContext = sharedDataService.newTransactionContext();
-        transactionContext.beginTransaction();
-        map = transactionContext.getMap(TEST_MAP);
-        map.put("k", "v");
-        transactionContext.commitTransaction();
+    @Test
+    public void testTxnRemoveParallel() throws InterruptedException {
+        final String TEST_MAP = "testMap";
+        final String key = "k";
+        final String value = "v";
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(new Config());
 
+        IMap<String, Object> map = hazelcastInstance.getMap(TEST_MAP);
+        map.put(key, value);
 
-        contender.start();
-        contender.join(1000);
-        assertFalse("Contender thread finished", contender.isAlive());
-        assertNotNull(v[0]);
+        hazelcastInstance.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext transactionContext) throws TransactionException {
+                TransactionalMap<String, Object> map = transactionContext.getMap(TEST_MAP);
+                map.remove(key, value + "other");
+                return null;
+            }
+        });
+        assertFalse("Key is not locked", map.isLocked(key));
+    }
 
-        transactionContext = sharedDataService.newTransactionContext();
-        transactionContext.beginTransaction();
-        map = transactionContext.getMap(TEST_MAP);
-        map.delete("k");
-        transactionContext.commitTransaction();
+    @Test
+    public void testTxnReplaceParallel() throws InterruptedException {
+        final String TEST_MAP = "testMap";
+        final String key = "k";
+        final String value = "v";
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(new Config());
 
+        IMap<String, Object> map = hazelcastInstance.getMap(TEST_MAP);
+        map.put(key, value);
+
+        hazelcastInstance.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext transactionContext) throws TransactionException {
+                TransactionalMap<String, Object> map = transactionContext.getMap(TEST_MAP);
+                map.replace(key, value + "other", value);
+                return null;
+            }
+        });
+        assertFalse("Key is not locked", map.isLocked(key));
     }
 
 
