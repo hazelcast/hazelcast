@@ -21,13 +21,14 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -72,8 +73,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
     //unfortunately the bug can't be detected by a unit test since the exception is thrown in a background thread (and logged)
     @Test
     public void issue_1056s() throws InterruptedException {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
 
         final CountDownLatch latch = new CountDownLatch(1);
         final Thread t = new Thread() {
@@ -968,6 +970,41 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         h1.shutdown();
         h2.shutdown();
+    }
+
+    @Test
+    public void testPortableKeysetAndValuesWithPredicates() throws Exception {
+        final String mapName = randomString();
+        final Config config = new Config();
+        config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
+            public Portable create(int classId) {
+                return new SampleObjects.PortableEmployee();
+            }
+        });
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        IMap map = instance.getMap(mapName);
+
+        final SampleObjects.PortableEmployee emp1 = new SampleObjects.PortableEmployee(34, "abc-123-xvz");
+        final SampleObjects.PortableEmployee emp2 = new SampleObjects.PortableEmployee(20, "abc-123-xvz");
+
+        map.put(emp1, emp1);
+
+        final TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap txMap = context.getMap(mapName);
+
+        assertNull(txMap.put(emp2, emp2));
+        assertEquals(2, txMap.size());
+        assertEquals(2, txMap.keySet().size());
+        assertEquals(0, txMap.keySet(new SqlPredicate("a = 10")).size());
+        assertEquals(0, txMap.values(new SqlPredicate("a = 10")).size());
+        assertEquals(2, txMap.keySet(new SqlPredicate("a >= 10")).size());
+        assertEquals(2, txMap.values(new SqlPredicate("a >= 10")).size());
+
+        context.commitTransaction();
+
+        assertEquals(2, map.size());
+        assertEquals(2, map.values().size());
     }
 
     @Test
