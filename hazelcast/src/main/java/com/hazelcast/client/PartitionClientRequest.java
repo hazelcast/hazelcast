@@ -28,22 +28,19 @@ public abstract class PartitionClientRequest extends ClientRequest {
     private static final int TRY_COUNT = 100;
 
     /**
-     * + * Called on node side, before starting any operation.
-     * +
+     * Called on node side, before starting any operation.
      */
     protected void beforeProcess() {
     }
 
     /**
-     * + * Called on node side, after process is run and right before sending the response to the client.
-     * +
+     * Called on node side, after process is run and right before sending the response to the client.
      */
     protected void beforeResponse() {
     }
 
     /**
-     * + * Called on node side, after sending the response to the client.
-     * +
+     * Called on node side, after sending the response to the client.
      */
     protected void afterResponse() {
     }
