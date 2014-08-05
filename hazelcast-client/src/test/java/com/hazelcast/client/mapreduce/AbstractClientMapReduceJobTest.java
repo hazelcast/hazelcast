@@ -20,8 +20,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.test.HazelcastTestSupport;
 
-public abstract class AbstractClientMapReduceJobTest {
+public abstract class AbstractClientMapReduceJobTest extends HazelcastTestSupport {
 
     protected ClientConfig buildClientConfig()
     {

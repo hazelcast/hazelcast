@@ -393,7 +393,7 @@ public class WebFilter implements Filter {
                 hazelcastSession = getSessionWithId(requestedSessionId);
                 if (hazelcastSession == null) {
                     final Boolean existing = (Boolean) getClusterMap().get(requestedSessionId);
-                    if (existing != null && existing) {
+                    if (existing != null && existing && create) {
                         // we already have the session in the cluster loading it...
                         hazelcastSession = createNewSession(RequestWrapper.this, requestedSessionId);
                     }
@@ -535,7 +535,8 @@ public class WebFilter implements Filter {
                 throw new NullPointerException("name must not be null");
             }
             if (value == null) {
-                throw new IllegalArgumentException("value must not be null");
+                removeAttribute(name);
+                return;
             }
             if (deferredWrite) {
                 LocalCacheEntry entry = localCache.get(name);

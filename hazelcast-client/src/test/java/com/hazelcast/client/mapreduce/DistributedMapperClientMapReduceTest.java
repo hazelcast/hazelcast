@@ -66,6 +66,10 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -103,6 +107,10 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
         for (int i = 0; i < 100; i++) {
@@ -138,6 +146,10 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
@@ -195,6 +207,10 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
         IMap<Integer, Integer> m1 = client.getMap(MAP_NAME);
