@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOSelector;
@@ -48,13 +49,11 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         super(threadGroup, threadName);
         this.logger = Logger.getLogger(getClass().getName());
         this.waitTime = 5000;
-        Selector selectorTemp = null;
         try {
-            selectorTemp = Selector.open();
+            selector = Selector.open();
         } catch (final IOException e) {
-            handleSelectorException(e);
+            throw new HazelcastException("Failed to open a Selector", e);
         }
-        this.selector = selectorTemp;
     }
 
     public Selector getSelector() {
@@ -116,9 +115,10 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
                 try {
                     selectedKeyCount = selector.select(waitTime);
                 } catch (Throwable e) {
-                    logger.warning(e.toString());
+                    handleSelectFailure(e);
                     continue;
                 }
+
                 if (selectedKeyCount == 0) {
                     continue;
                 }
@@ -130,7 +130,7 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
                         it.remove();
                         handleSelectionKey(sk);
                     } catch (Throwable e) {
-                        handleSelectorException(e);
+                        logException(e);
                     }
                 }
             }
@@ -147,9 +147,21 @@ public abstract class ClientAbstractIOSelector extends Thread implements IOSelec
         }
     }
 
+    private void handleSelectFailure(Throwable e) {
+        logger.warning(e.toString(), e);
+
+        // If we don't wait, it can be that a subsequent call will run into an IOException immediately. This can lead to a very
+        // hot loop and we don't want that. The same approach is used in Netty.
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException i) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     protected abstract void handleSelectionKey(SelectionKey sk);
 
-    private void handleSelectorException(final Throwable e) {
+    private void logException(final Throwable e) {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
         logger.warning(msg, e);
     }

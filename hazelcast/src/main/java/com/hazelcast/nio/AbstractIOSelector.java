@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
@@ -27,7 +28,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 abstract class AbstractIOSelector extends Thread implements IOSelector {
 
@@ -48,13 +48,11 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         this.ioService = ioService;
         this.logger = ioService.getLogger(getClass().getName());
         this.waitTime = 5000;  // WARNING: This value has significant effect on idle CPU usage!
-        Selector selectorTemp = null;
         try {
-            selectorTemp = Selector.open();
+            selector = Selector.open();
         } catch (final IOException e) {
-            handleSelectorException(e);
+            throw new HazelcastException("Failed to open a Selector", e);
         }
-        this.selector = selectorTemp;
     }
 
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
@@ -111,7 +109,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                 try {
                     selectedKeyCount = selector.select(waitTime);
                 } catch (Throwable e) {
-                    logger.warning(e.toString());
+                    handleSelectFailure(e);
                     continue;
                 }
                 if (selectedKeyCount == 0) {
@@ -125,7 +123,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                         it.remove();
                         handleSelectionKey(sk);
                     } catch (Throwable e) {
-                        handleSelectorException(e);
+                        logException(e);
                     }
                 }
             }
@@ -146,7 +144,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     protected abstract void handleSelectionKey(SelectionKey sk);
 
-    private void handleSelectorException(final Throwable e) {
+    private void logException(final Throwable e) {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
         logger.warning(msg, e);
         if (e instanceof OutOfMemoryError) {
@@ -160,5 +158,17 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     public final void wakeup() {
         selector.wakeup();
+    }
+
+    private void handleSelectFailure(Throwable e) {
+        logger.warning(e.toString(), e);
+
+        // If we don't wait, it can be that a subsequent call will run into an IOException immediately. This can lead to a very
+        // hot loop and we don't want that. The same approach is used in Netty.
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException i) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
