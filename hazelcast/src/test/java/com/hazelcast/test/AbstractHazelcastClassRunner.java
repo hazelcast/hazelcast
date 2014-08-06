@@ -35,9 +35,9 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
 
     static {
         final String logging = "hazelcast.logging.type";
-        System.setProperty(logging, "log4j");
+        System.setProperty(logging, "log4j2");
         if (System.getProperty(logging) == null) {
-            System.setProperty(logging, "log4j");
+            System.setProperty(logging, "log4j2");
         }
         if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
             System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");

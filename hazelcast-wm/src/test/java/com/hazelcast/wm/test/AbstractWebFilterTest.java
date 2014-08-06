@@ -44,7 +44,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
     static {
         final String logging = "hazelcast.logging.type";
         if (System.getProperty(logging) == null) {
-            System.setProperty(logging, "log4j");
+            System.setProperty(logging, "log4j2");
         }
         if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
             System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");

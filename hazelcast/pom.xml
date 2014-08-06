@@ -109,6 +109,8 @@
                                     !org.junit,
                                     sun.misc;resolution:=optional,
                                     org.apache.log4j;resolution:=optional,
+                                    org.apache.logging.log4j;resolution:=optional,
+                                    org.apache.logging.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,
                                     org.codehaus.groovy.jsr223;resolution:=optional,
                                     org.jruby.embed.jsr223;resolution:=optional,
@@ -209,6 +211,21 @@
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>${log4j.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>

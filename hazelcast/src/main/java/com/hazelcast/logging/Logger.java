@@ -55,6 +55,8 @@ public final class Logger {
             if (loggerType != null) {
                 if ("log4j".equals(loggerType)) {
                     loggerFactory = loadLoggerFactory("com.hazelcast.logging.Log4jFactory");
+                } else if ("log4j2".equals(loggerType)) {
+                    loggerFactory = loadLoggerFactory("com.hazelcast.logging.Log4j2Factory");
                 } else if ("slf4j".equals(loggerType)) {
                     loggerFactory = loadLoggerFactory("com.hazelcast.logging.Slf4jFactory");
                 } else if ("jdk".equals(loggerType)) {
