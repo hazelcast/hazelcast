@@ -16,6 +16,11 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -25,6 +30,42 @@ import java.util.Date;
  * @author mdogan 6/6/13
  */
 public final class SampleObjects {
+
+    public static class PortableEmployee implements Portable {
+        private int age;
+        private String name;
+
+        public PortableEmployee() {
+
+        }
+
+        public PortableEmployee(int age, String name) {
+            this.age = age;
+            this.name = name;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 666;
+        }
+
+        @Override
+        public int getClassId() {
+            return 2;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeUTF("n", name);
+            writer.writeInt("a", age);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            name = reader.readUTF("n");
+            age = reader.readInt("a");
+        }
+    }
 
     public static class ValueType implements Serializable {
         String typeName;
@@ -145,7 +186,7 @@ public final class SampleObjects {
         BigDecimal bigDecimal = new BigDecimal("1.23E3");
 
         public Employee(long id, String name, int age, boolean live, double salary, State state) {
-            this(id,name,age,live,salary);
+            this(id, name, age, live, salary);
             this.state = state;
         }
 

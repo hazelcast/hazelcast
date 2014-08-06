@@ -309,6 +309,8 @@ public class TestFullApplicationContext {
         assertEquals("sample-group", aws.getSecurityGroupName());
         assertEquals("sample-tag-key", aws.getTagKey());
         assertEquals("sample-tag-value", aws.getTagValue());
+
+        assertFalse("reuse-address", networkConfig.isReuseAddress());
     }
 
 //    @Test
