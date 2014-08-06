@@ -31,12 +31,11 @@ public class TestServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
 
-		if (req.getRequestURI().endsWith("redirect"))
-		{
-			//Don't touch session before redirect
-			resp.sendRedirect("/");
-			return;
-		}
+        if (req.getRequestURI().endsWith("redirect")) {
+            //Don't touch session before redirect
+            resp.sendRedirect("/");
+            return;
+        }
 
         HttpSession session = req.getSession();
         if (req.getRequestURI().endsWith("write")) {
@@ -80,11 +79,13 @@ public class TestServlet extends HttpServlet {
             session.setAttribute("first-key", "first-value");
             session.setAttribute("second-key", "second-value");
             resp.getWriter().write("true");
-        }
-        else if (req.getRequestURI().endsWith("timeout")) {
+        } else if (req.getRequestURI().endsWith("timeout")) {
             session = req.getSession();
             session.setMaxInactiveInterval(1);
             resp.getWriter().write("true");
+        } else if (req.getRequestURI().endsWith("isNew")) {
+            session = req.getSession();
+            resp.getWriter().write(session.isNew() == true ? "true" : "false");
         }
     }
 }
