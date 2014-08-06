@@ -47,6 +47,10 @@ public class QueueConfigReadOnly extends QueueConfig {
         return queueStoreConfig.getAsReadOnly();
     }
 
+    public QueueConfig setName(String name) {
+        throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+    }
+
     public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {
         throw new UnsupportedOperationException("This config is read-only queue: " + getName());
     }

@@ -57,7 +57,7 @@ public class QueueConfigTest {
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlySetName() {
         String name = "a test name";
-        QueueConfig queueConfig = new QueueConfig().setName(name);
+        QueueConfig queueConfig = new QueueConfigReadOnly(new QueueConfig()).setName(name);
     }
 
 
