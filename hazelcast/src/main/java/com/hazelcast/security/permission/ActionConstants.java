@@ -24,13 +24,13 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
-import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.queue.QueueService;
-import com.hazelcast.replicatedmap.ReplicatedMapService;
-import com.hazelcast.topic.TopicService;
+import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 
 import java.security.Permission;
 

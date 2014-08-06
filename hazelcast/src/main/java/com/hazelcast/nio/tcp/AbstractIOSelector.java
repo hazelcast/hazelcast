@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOService;
@@ -32,8 +33,9 @@ import java.util.concurrent.TimeUnit;
 
 abstract class AbstractIOSelector extends Thread implements IOSelector {
 
-    private static final int TIMEOUT = 3;
-    private static final int WAIT_TIME = 5000;
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 3;
+    private static final int SELECT_WAIT_TIME_MILLIS = 5000;
+    private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
     protected final ILogger logger;
 
@@ -54,14 +56,12 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         this.ioService = ioService;
         this.logger = ioService.getLogger(getClass().getName());
         // WARNING: This value has significant effect on idle CPU usage!
-        this.waitTime = WAIT_TIME;
-        Selector selectorTemp = null;
+        this.waitTime = SELECT_WAIT_TIME_MILLIS;
         try {
-            selectorTemp = Selector.open();
+            selector = Selector.open();
         } catch (final IOException e) {
-            handleSelectorException(e);
+            throw new HazelcastException("Failed to open a Selector", e);
         }
-        this.selector = selectorTemp;
     }
 
     @Override
@@ -84,7 +84,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
     @Override
     public final void awaitShutdown() {
         try {
-            shutdownLatch.await(TIMEOUT, TimeUnit.SECONDS);
+            shutdownLatch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException t) {
             Logger.getLogger(AbstractIOSelector.class).finest("Exception while waiting for shutdown", t);
         }
@@ -123,13 +123,13 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                 try {
                     selectedKeyCount = selector.select(waitTime);
                 } catch (Throwable e) {
-                    logger.warning(e.toString());
+                    handleSelectFailure(e);
                     continue;
                 }
                 if (selectedKeyCount == 0) {
                     continue;
                 }
-                selectKeys(selector);
+                handleSelectionKeys();
             }
         } catch (OutOfMemoryError e) {
             ioService.onOutOfMemory(e);
@@ -149,21 +149,21 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     protected abstract void handleSelectionKey(SelectionKey sk);
 
-    private void selectKeys(Selector selector) {
+    private void handleSelectionKeys() {
         final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
         final Iterator<SelectionKey> it = setSelectedKeys.iterator();
         while (it.hasNext()) {
             final SelectionKey sk = it.next();
+            it.remove();
             try {
-                it.remove();
                 handleSelectionKey(sk);
             } catch (Throwable e) {
-                handleSelectorException(e);
+                handleSelectionKeyFailure(e);
             }
         }
     }
 
-    private void handleSelectorException(final Throwable e) {
+    private void handleSelectionKeyFailure(final Throwable e) {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
         logger.warning(msg, e);
         if (e instanceof OutOfMemoryError) {
@@ -179,5 +179,17 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
     @Override
     public final void wakeup() {
         selector.wakeup();
+    }
+
+    private void handleSelectFailure(Throwable e) {
+        logger.warning(e.toString(), e);
+
+        // If we don't wait, it can be that a subsequent call will run into an IOException immediately. This can lead to a very
+        // hot loop and we don't want that. The same approach is used in Netty.
+        try {
+            Thread.sleep(SELECT_FAILURE_PAUSE_MILLIS);
+        } catch (InterruptedException i) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

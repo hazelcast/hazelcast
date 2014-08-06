@@ -155,10 +155,9 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
 
     <!-- Queue -->
-    <suppress checks="" files="com.hazelcast.queue.QueuePortableHook"/>
-    <suppress checks="" files="com.hazelcast.queue.QueueDataSerializerHook"/>
-    <suppress checks="MethodCount" files="com.hazelcast.queue.QueueContainer"/>
-
+    <suppress checks="" files="com.hazelcast.queue.impl.QueuePortableHook"/>
+    <suppress checks="" files="com.hazelcast.queue.impl.QueueDataSerializerHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.queue.impl.QueueContainer"/>
 
     <!-- jca -->
     <suppress checks="JavadocMethod" files="com.hazelcast.jca[\\/]"/>
@@ -285,12 +284,12 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.partition.impl.PartitionStateGeneratorImpl"/>
 
     <!-- Topic -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.topic[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.topic[\\/]"/>
-    <suppress checks="VisibilityModifier" files="com.hazelcast.topic.TopicEvent"/>
-    <suppress checks="Todo" files="com.hazelcast.topic.TopicEvent"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.topic.impl[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.topic.impl[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.topic.impl[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.topic.impl[\\/]"/>
+    <suppress checks="VisibilityModifier" files="com.hazelcast.topic.impl.TopicEvent"/>
+    <suppress checks="Todo" files="com.hazelcast.topic.impl.TopicEvent"/>
 
     <!-- Ascii-->
 
@@ -306,15 +305,15 @@
     <suppress checks="MethodCount" files="com.hazelcast.ascii.memcache.Stats"/>
 
     <!-- Executor -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.executor[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.executor[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.executor[\\/]"/>
-    <suppress checks="MethodCount" files="com.hazelcast.executor.ExecutorServiceProxy"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.executor.ExecutorServiceProxy"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.executor.impl[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.executor.impl[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.executor.impl[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.executor.impl[\\/]"/>
+    <suppress checks="MethodCount" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
     <!-- the invokeAll is so scary that Peter doesn't dare to touch it. Need get someone involved who write it-->
-    <suppress checks="" files="com.hazelcast.executor.ExecutorServiceProxy"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.executor.ExecutorPortableHook"/>
+    <suppress checks="" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.executor.impl.ExecutorPortableHook"/>
 
     <!-- Collections -->
     <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>
@@ -329,7 +328,6 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
     <suppress checks="DeclarationOrder" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
-
 
     <!-- List -->
     <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>

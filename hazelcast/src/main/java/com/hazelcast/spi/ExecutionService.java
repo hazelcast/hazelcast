@@ -64,6 +64,18 @@ public interface ExecutionService {
      */
     String IO_EXECUTOR = "hz:io";
 
+    /**
+     * Name of the map-loader executor that loads the {@link com.hazelcast.core.MapLoader#loadAll(java.util.Collection)}.
+     *
+     * This is the executor you want to configure when you want to load more data from the database in parallel.
+     */
+    String MAP_LOADER_EXECUTOR = "hz:map-load";
+
+    /**
+     * The name of the executor that loads the {@link com.hazelcast.core.MapLoader#loadAllKeys()}
+     */
+    String MAP_LOAD_ALL_KEYS_EXECUTOR = "hz:map-loadAllKeys";
+
     ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type);
 
     ManagedExecutorService getExecutor(String name);
