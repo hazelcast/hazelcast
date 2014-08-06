@@ -164,7 +164,6 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         //init caller thread
         if (threadId == null) {
             threadId = Thread.currentThread().getId();
-            setThreadFlag(Boolean.TRUE);
         }
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
@@ -197,6 +196,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             }
         }
         state = ACTIVE;
+        setThreadFlag(Boolean.TRUE);
     }
 
     private void setThreadFlag(Boolean flag) {
