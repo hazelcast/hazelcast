@@ -19,11 +19,7 @@ package com.hazelcast.query;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.ReflectionHelper;
+import com.hazelcast.query.impl.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,21 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
-import static com.hazelcast.query.Predicates.AndPredicate;
-import static com.hazelcast.query.Predicates.EqualPredicate;
-import static com.hazelcast.query.Predicates.and;
-import static com.hazelcast.query.Predicates.between;
-import static com.hazelcast.query.Predicates.equal;
-import static com.hazelcast.query.Predicates.greaterEqual;
-import static com.hazelcast.query.Predicates.greaterThan;
-import static com.hazelcast.query.Predicates.ilike;
-import static com.hazelcast.query.Predicates.in;
-import static com.hazelcast.query.Predicates.lessEqual;
-import static com.hazelcast.query.Predicates.lessThan;
-import static com.hazelcast.query.Predicates.like;
-import static com.hazelcast.query.Predicates.notEqual;
-import static com.hazelcast.query.Predicates.or;
-import static com.hazelcast.query.Predicates.regex;
+import static com.hazelcast.query.Predicates.*;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.Value;
 import static java.lang.Boolean.FALSE;
@@ -231,6 +213,13 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(ilike(null, "java%ld"), "Java World");
         assertPredicateTrue(ilike(null, "%world"), "Java World");
         assertPredicateFalse(ilike(null, "Java_World"), "gava World");
+    }
+
+    @Test
+    public void testIsInstanceOf() {
+        assertTrue(instanceOf(Long.class).apply(new DummyEntry(1L)));
+        assertFalse(instanceOf(Long.class).apply(new DummyEntry("Java")));
+        assertTrue(instanceOf(Number.class).apply(new DummyEntry(4)));
     }
 
     @Test
