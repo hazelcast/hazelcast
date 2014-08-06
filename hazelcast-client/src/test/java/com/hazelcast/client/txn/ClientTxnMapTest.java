@@ -42,8 +42,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 6/10/13
@@ -70,7 +73,7 @@ public class ClientTxnMapTest {
     @Test
     public void testUnlockAfterRollback() {
         final String mapName = randomString();
-        final String key ="key";
+        final String key = "key";
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
@@ -315,6 +318,7 @@ public class ClientTxnMapTest {
         assertEquals(2, map.size());
         assertEquals(2, map.values().size());
     }
+
 
     @Test
     public void testPutAndRoleBack() throws Exception {
