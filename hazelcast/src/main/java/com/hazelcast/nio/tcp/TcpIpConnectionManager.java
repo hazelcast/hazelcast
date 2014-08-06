@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.cluster.BindOperation;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.NodeInitializer;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -397,12 +398,27 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
+        OutOfMemoryPolicy oomePolicy = new OutOfMemoryPolicy() {
+            @Override
+            public void handle(OutOfMemoryError error) {
+                ioService.onOutOfMemory(error);
+            }
+        };
         for (int i = 0; i < inSelectors.length; i++) {
-            inSelectors[i] = new InSelectorImpl(ioService, i);
-            outSelectors[i] = new OutSelectorImpl(ioService, i);
+            inSelectors[i] = new InSelectorImpl(
+                    ioService.getThreadGroup(),
+                    ioService.getThreadPrefix() + "in-" + i,
+                    ioService.getLogger(InSelectorImpl.class.getName()),
+                    oomePolicy);
+            outSelectors[i] = new OutSelectorImpl(
+                    ioService.getThreadGroup(),
+                    ioService.getThreadPrefix() + "out-" + i,
+                    ioService.getLogger(OutSelectorImpl.class.getName()),
+                    oomePolicy);
             inSelectors[i].start();
             outSelectors[i].start();
         }
+
         if (serverSocketChannel != null) {
             if (socketAcceptorThread != null) {
                 logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");

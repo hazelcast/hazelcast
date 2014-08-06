@@ -40,7 +40,6 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
     }
 
     @Override
-
     public void run() {
         registerOp(SelectionKey.OP_READ);
     }
