@@ -14,5 +14,5 @@ com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook
 com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook
 com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook
 com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook
-com.hazelcast.replicatedmap.operation.ReplicatedMapDataSerializerHook
+com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook
 com.hazelcast.mapreduce.aggregation.impl.AggregationsDataSerializerHook
