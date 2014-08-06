@@ -19,7 +19,6 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.cluster.BindOperation;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.NodeInitializer;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

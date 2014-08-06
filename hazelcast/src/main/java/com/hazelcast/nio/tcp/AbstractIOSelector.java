@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -45,9 +44,9 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     protected final Selector selector;
 
-    private final OutOfMemoryPolicy oomePolicy;
-
     protected boolean live = true;
+
+    private final OutOfMemoryPolicy oomePolicy;
 
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
@@ -168,7 +167,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
         logger.warning(msg, e);
         if (e instanceof OutOfMemoryError) {
-            oomePolicy.handle((OutOfMemoryError)e);
+            oomePolicy.handle((OutOfMemoryError) e);
         }
     }
 

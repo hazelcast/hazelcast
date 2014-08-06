@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-public class ClientReadHandler extends ClientAbstractSelectionHandler {
+public class ClientReadHandler extends AbstractClientSelectionHandler {
 
     private final ByteBuffer buffer;
 
