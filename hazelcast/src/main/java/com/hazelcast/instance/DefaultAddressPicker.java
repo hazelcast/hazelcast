@@ -69,21 +69,7 @@ class DefaultAddressPicker implements AddressPicker {
             final boolean reuseAddress = networkConfig.isReuseAddress();
             final boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
             final int portCount = networkConfig.getPortCount();
-            /**
-             * why setReuseAddress(true)?
-             * when the member is shutdown,
-             * the server socket port will be in TIME_WAIT state for the next
-             * 2 minutes or so. If you start the member right after shutting it down
-             * you may not be able to bind to the same port because it is in TIME_WAIT
-             * state. if you set reuseAddress=true then TIME_WAIT will be ignored and
-             * you will be able to bind to the same port again.
-             *
-             * this will cause problem on windows
-             * see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6421091
-             * http://www.hsc.fr/ressources/articles/win_net_srv/multiple_bindings.html
-             *
-             * By default if the OS is Windows then reuseAddress will be false.
-             */
+
             log(Level.FINEST, "inet reuseAddress:" + reuseAddress);
             InetSocketAddress inetSocketAddress;
             ServerSocket serverSocket = null;

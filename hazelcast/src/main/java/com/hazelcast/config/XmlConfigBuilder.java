@@ -362,7 +362,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleNetwork(final org.w3c.dom.Node node) throws Exception {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());
-            if ("port".equals(nodeName)) {
+            if ("reuse-address".equals(nodeName)) {
+                String value = getTextContent(child).trim();
+                config.getNetworkConfig().setReuseAddress(checkTrue(value));
+            } else if ("port".equals(nodeName)) {
                 handlePort(child);
             } else if ("outbound-ports".equals(nodeName)) {
                 handleOutboundPorts(child);
