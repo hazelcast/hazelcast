@@ -65,5 +65,4 @@ public class MapStoreConfigReadOnly extends MapStoreConfig {
     public MapStoreConfig setProperties(Properties properties) {
         throw new UnsupportedOperationException("This config is read-only");
     }
-
 }
