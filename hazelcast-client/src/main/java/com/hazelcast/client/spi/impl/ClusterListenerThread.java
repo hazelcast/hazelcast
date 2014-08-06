@@ -96,7 +96,7 @@ class ClusterListenerThread extends Thread {
                     }
                 }
 
-                connectionManager.markOwnerConnectionAsClosed();
+                connectionManager.onCloseOwnerConnection();
                 IOUtil.closeResource(conn);
                 conn = null;
                 clusterService.fireConnectionEvent(true);
@@ -108,10 +108,6 @@ class ClusterListenerThread extends Thread {
                 break;
             }
         }
-    }
-
-    private ClientInvocationServiceImpl getInvocationService() {
-        return (ClientInvocationServiceImpl) client.getInvocationService();
     }
 
     private Collection<InetSocketAddress> getSocketAddresses() throws Exception {

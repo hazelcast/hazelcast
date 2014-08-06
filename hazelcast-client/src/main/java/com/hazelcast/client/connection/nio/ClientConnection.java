@@ -382,7 +382,7 @@ public class ClientConnection implements Connection, Closeable {
     void heartBeatingFailed() {
         failedHeartBeat++;
         if (failedHeartBeat == connectionManager.maxFailedHeartbeatCount) {
-            connectionManager.connectionMarkedAsNotResponsive(this);
+            connectionManager.onDetectingUnresponsiveConnection(this);
             final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
             final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
 
