@@ -1,6 +1,6 @@
 package com.hazelcast.nio.tcp;
 
-public interface OutOfMemoryPolicy {
+public interface IOSelectorOutOfMemoryHandler {
 
     void handle(OutOfMemoryError error);
 }

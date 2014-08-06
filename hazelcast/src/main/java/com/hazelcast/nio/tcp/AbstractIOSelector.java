@@ -46,15 +46,15 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     protected boolean live = true;
 
-    private final OutOfMemoryPolicy oomePolicy;
+    private final IOSelectorOutOfMemoryHandler oomeHandler;
 
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     public AbstractIOSelector(ThreadGroup threadGroup, String tname, ILogger logger,
-                              OutOfMemoryPolicy oomePolicy) {
+                              IOSelectorOutOfMemoryHandler oomeHandler) {
         super(threadGroup, tname);
         this.logger = logger;
-        this.oomePolicy = oomePolicy;
+        this.oomeHandler = oomeHandler;
         // WARNING: This value has significant effect on idle CPU usage!
         this.waitTime = SELECT_WAIT_TIME_MILLIS;
         try {
@@ -132,7 +132,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
                 handleSelectionKeys();
             }
         } catch (OutOfMemoryError e) {
-            oomePolicy.handle(e);
+            oomeHandler.handle(e);
         } catch (Throwable e) {
             logger.warning("Unhandled exception in " + getName(), e);
         } finally {
@@ -167,7 +167,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
         logger.warning(msg, e);
         if (e instanceof OutOfMemoryError) {
-            oomePolicy.handle((OutOfMemoryError) e);
+            oomeHandler.handle((OutOfMemoryError) e);
         }
     }
 

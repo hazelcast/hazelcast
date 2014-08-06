@@ -61,8 +61,8 @@ import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapper;
 import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.InSelectorImpl;
-import com.hazelcast.nio.tcp.OutOfMemoryPolicy;
 import com.hazelcast.nio.tcp.OutSelectorImpl;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.security.Credentials;
@@ -100,7 +100,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private static final int RETRY_COUNT = 20;
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    private final static OutOfMemoryPolicy OUT_OF_MEMORY_POLICY = new OutOfMemoryPolicy() {
+    private final static IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             LOGGER.severe(error);
@@ -168,12 +168,12 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 client.getThreadGroup(),
                 "InSelector",
                 Logger.getLogger(InSelectorImpl.class),
-                OUT_OF_MEMORY_POLICY);
+                OUT_OF_MEMORY_HANDLER);
         outSelector = new OutSelectorImpl(
                 client.getThreadGroup(),
                 "OutSelector",
                 Logger.getLogger(OutSelectorImpl.class),
-                OUT_OF_MEMORY_POLICY);
+                OUT_OF_MEMORY_HANDLER);
 
         socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
         socketOptions = networkConfig.getSocketOptions();

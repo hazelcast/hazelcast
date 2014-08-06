@@ -397,7 +397,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
-        OutOfMemoryPolicy oomePolicy = new OutOfMemoryPolicy() {
+        IOSelectorOutOfMemoryHandler oomeHandler = new IOSelectorOutOfMemoryHandler() {
             @Override
             public void handle(OutOfMemoryError error) {
                 ioService.onOutOfMemory(error);
@@ -408,12 +408,12 @@ public class TcpIpConnectionManager implements ConnectionManager {
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "in-" + i,
                     ioService.getLogger(InSelectorImpl.class.getName()),
-                    oomePolicy);
+                    oomeHandler);
             outSelectors[i] = new OutSelectorImpl(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "out-" + i,
                     ioService.getLogger(OutSelectorImpl.class.getName()),
-                    oomePolicy);
+                    oomeHandler);
             inSelectors[i].start();
             outSelectors[i].start();
         }

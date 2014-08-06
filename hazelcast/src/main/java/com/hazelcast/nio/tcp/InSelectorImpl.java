@@ -22,8 +22,8 @@ import java.nio.channels.SelectionKey;
 
 public final class InSelectorImpl extends AbstractIOSelector {
 
-    public InSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger, OutOfMemoryPolicy oomePolicy) {
-        super(threadGroup, tname, logger, oomePolicy);
+    public InSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
+        super(threadGroup, tname, logger, oomeHandler);
     }
 
     @Override
