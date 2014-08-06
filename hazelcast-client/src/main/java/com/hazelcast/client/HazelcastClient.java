@@ -90,7 +90,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
-import com.hazelcast.queue.QueueService;
+import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.topic.impl.TopicService;

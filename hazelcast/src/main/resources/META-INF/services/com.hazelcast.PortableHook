@@ -3,7 +3,7 @@ com.hazelcast.partition.PartitionPortableHook
 com.hazelcast.client.ClientPortableHook
 com.hazelcast.client.txn.ClientTxnPortableHook
 com.hazelcast.map.MapPortableHook
-com.hazelcast.queue.QueuePortableHook
+com.hazelcast.queue.impl.QueuePortableHook
 com.hazelcast.multimap.MultiMapPortableHook
 com.hazelcast.collection.CollectionPortableHook
 com.hazelcast.topic.impl.TopicPortableHook

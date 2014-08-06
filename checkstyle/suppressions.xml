@@ -155,10 +155,9 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
 
     <!-- Queue -->
-    <suppress checks="" files="com.hazelcast.queue.QueuePortableHook"/>
-    <suppress checks="" files="com.hazelcast.queue.QueueDataSerializerHook"/>
-    <suppress checks="MethodCount" files="com.hazelcast.queue.QueueContainer"/>
-
+    <suppress checks="" files="com.hazelcast.queue.impl.QueuePortableHook"/>
+    <suppress checks="" files="com.hazelcast.queue.impl.QueueDataSerializerHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.queue.impl.QueueContainer"/>
 
     <!-- jca -->
     <suppress checks="JavadocMethod" files="com.hazelcast.jca[\\/]"/>

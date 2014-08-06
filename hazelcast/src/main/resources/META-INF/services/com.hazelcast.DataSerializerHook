@@ -3,7 +3,7 @@ com.hazelcast.spi.impl.SpiDataSerializerHook
 com.hazelcast.partition.PartitionDataSerializerHook
 com.hazelcast.client.ClientDataSerializerHook
 com.hazelcast.map.MapDataSerializerHook
-com.hazelcast.queue.QueueDataSerializerHook
+com.hazelcast.queue.impl.QueueDataSerializerHook
 com.hazelcast.multimap.MultiMapDataSerializerHook
 com.hazelcast.collection.CollectionDataSerializerHook
 com.hazelcast.topic.impl.TopicDataSerializerHook
