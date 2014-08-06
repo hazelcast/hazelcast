@@ -55,4 +55,8 @@ public class NearCacheConfigReadOnly extends NearCacheConfig {
     public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
         throw new UnsupportedOperationException("This config is read-only");
     }
+
+    public NearCacheConfig setCacheLocalEntries(boolean cacheLocalEntries) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
 }
