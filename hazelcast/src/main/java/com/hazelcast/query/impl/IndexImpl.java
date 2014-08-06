@@ -82,9 +82,9 @@ public class IndexImpl implements Index {
     public void clear() {
         recordValues.clear();
         indexStore.clear();
+        // Take lock or wait before clearing attribute type
+        attributeTypeLock.lock();
         try {
-            // Take lock or wait before clearing attribute type
-            attributeTypeLock.lock();
             // Clear attribute type
             attributeType = null;
         } finally {
@@ -108,9 +108,9 @@ public class IndexImpl implements Index {
          */
         if (attributeType == null) {
             // Note that, synchronization is required only in cases when attribute type is null
+            // Take lock or wait before initializing attribute type
+            attributeTypeLock.lock();
             try {
-                // Take lock or wait before initializing attribute type
-                attributeTypeLock.lock();
                 // Check again, attribute type may be updated between first check and taking lock
                 if (attributeType == null) {
                     // Initialize attribute type by using entry index
@@ -142,9 +142,8 @@ public class IndexImpl implements Index {
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable[] values) {
-        boolean attributeTypeLocked = false;
+        boolean attributeTypeLocked = lockIfNeeded();
         try {
-            attributeTypeLocked = lockIfNeeded();
             if (values.length == 1) {
                 return indexStore.getRecords(convert(values[0]));
             } else {
@@ -165,9 +164,8 @@ public class IndexImpl implements Index {
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
-        boolean attributeTypeLocked = false;
+        boolean attributeTypeLocked = lockIfNeeded();
         try {
-            attributeTypeLocked = lockIfNeeded();
             return indexStore.getRecords(convert(value));
         } finally {
             if (attributeTypeLocked) {
@@ -178,9 +176,8 @@ public class IndexImpl implements Index {
 
     @Override
     public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
-        boolean attributeTypeLocked = false;
+        boolean attributeTypeLocked = lockIfNeeded();
         try {
-            attributeTypeLocked = lockIfNeeded();
             MultiResultSet results = new MultiResultSet();
             indexStore.getSubRecordsBetween(results, convert(from), convert(to));
             return results;
@@ -193,9 +190,8 @@ public class IndexImpl implements Index {
 
     @Override
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
-        boolean attributeTypeLocked = false;
+        boolean attributeTypeLocked = lockIfNeeded();
         try {
-            attributeTypeLocked = lockIfNeeded();
             MultiResultSet results = new MultiResultSet();
             indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
             return results;
