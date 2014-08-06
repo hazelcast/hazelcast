@@ -187,17 +187,19 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         if (THREAD_FLAG.get() != null) {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
-        //init caller thread
-        if (threadId == null) {
-            threadId = Thread.currentThread().getId();
-            setThreadFlag(Boolean.TRUE);
-        }
+
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
 
         if (durability > 0 && backupAddresses != null && transactionType == TransactionType.TWO_PHASE) {
             List<Future> futures = startTxBackup();
             awaitTxBackupCompletion(futures);
+        }
+
+        //init caller thread
+        if (threadId == null) {
+            threadId = Thread.currentThread().getId();
+            setThreadFlag(Boolean.TRUE);
         }
         state = ACTIVE;
     }
