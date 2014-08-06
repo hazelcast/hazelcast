@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<web-app
+        xmlns="http://java.sun.com/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        version="2.5"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+    <display-name>Hazelcast-Spring Test</display-name>
+
+    <filter>
+        <filter-name>hazelcast-filter</filter-name>
+        <filter-class>com.hazelcast.web.spring.SpringAwareWebFilter</filter-class>
+        <init-param>
+            <param-name>map-name</param-name>
+            <param-value>default</param-value>
+        </init-param>
+        <init-param>
+            <param-name>debug</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>config-location</param-name>
+            <param-value>/WEB-INF/hazelcast.xml</param-value>
+        </init-param>
+        <init-param>
+            <param-name>instance-name</param-name>
+            <param-value>hazelcast-spring-node</param-value>
+        </init-param>
+        <init-param>
+            <param-name>shutdown-on-destroy</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>client-config-location</param-name>
+            <param-value>/WEB-INF/hazelcast-client.xml</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>hazelcast-filter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>FORWARD</dispatcher>
+        <dispatcher>INCLUDE</dispatcher>
+        <dispatcher>REQUEST</dispatcher>
+    </filter-mapping>
+    <listener>
+        <listener-class>com.hazelcast.web.SessionListener</listener-class>
+    </listener>
+
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>
+            /WEB-INF/spring/application-context.xml
+            /WEB-INF/spring/security-context.xml
+        </param-value>
+    </context-param>
+
+    <servlet>
+        <servlet-name>appServlet</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>/WEB-INF/spring/servlet-context.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>appServlet</servlet-name>z
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+
+    <filter>
+        <filter-name>springSecurityFilterChain</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy
+        </filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>springSecurityFilterChain</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+
+    <session-config>
+        <session-timeout>10</session-timeout>
+    </session-config>
+
+</web-app>
