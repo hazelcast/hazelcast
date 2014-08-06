@@ -6,8 +6,8 @@ com.hazelcast.map.MapPortableHook
 com.hazelcast.queue.QueuePortableHook
 com.hazelcast.multimap.MultiMapPortableHook
 com.hazelcast.collection.CollectionPortableHook
-com.hazelcast.executor.ExecutorPortableHook
 com.hazelcast.topic.impl.TopicPortableHook
+com.hazelcast.executor.impl.ExecutorPortableHook
 com.hazelcast.concurrent.lock.client.LockPortableHook
 com.hazelcast.concurrent.semaphore.client.SemaphorePortableHook
 com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook

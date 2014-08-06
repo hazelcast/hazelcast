@@ -50,7 +50,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;

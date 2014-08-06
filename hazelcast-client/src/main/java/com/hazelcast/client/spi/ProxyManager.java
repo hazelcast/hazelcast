@@ -52,7 +52,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapService;

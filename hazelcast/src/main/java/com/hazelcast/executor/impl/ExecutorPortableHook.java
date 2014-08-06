@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.executor.impl;
 
-import com.hazelcast.executor.client.CancellationRequest;
-import com.hazelcast.executor.client.IsShutdownRequest;
-import com.hazelcast.executor.client.PartitionCallableRequest;
-import com.hazelcast.executor.client.ShutdownRequest;
-import com.hazelcast.executor.client.TargetCallableRequest;
+import com.hazelcast.executor.impl.client.CancellationRequest;
+import com.hazelcast.executor.impl.client.IsShutdownRequest;
+import com.hazelcast.executor.impl.client.PartitionCallableRequest;
+import com.hazelcast.executor.impl.client.ShutdownRequest;
+import com.hazelcast.executor.impl.client.TargetCallableRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor.client;
+package com.hazelcast.executor.impl.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.executor.ExecutorPortableHook;
+import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.executor.impl.ExecutorPortableHook;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor.client;
+package com.hazelcast.executor.impl.client;
 
 import com.hazelcast.client.InvocationClientRequest;
-import com.hazelcast.executor.CancellationOperation;
-import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.executor.ExecutorPortableHook;
+import com.hazelcast.executor.impl.CancellationOperation;
+import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.executor.impl.ExecutorPortableHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
