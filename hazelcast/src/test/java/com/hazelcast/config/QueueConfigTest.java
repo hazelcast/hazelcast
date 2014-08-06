@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,4 +50,15 @@ public class QueueConfigTest {
         QueueConfig queueConfig = new QueueConfig().setName(name);
         assertEquals(name, queueConfig.getName());
     }
+
+    /**
+     * Test method for {@link com.hazelcast.config.QueueConfig#setName(java.lang.String)}.
+     */
+    @Test(expected = java.lang.UnsupportedOperationException.class)
+    public void testReadOnlySetName() {
+        String name = "a test name";
+        QueueConfig queueConfig = new QueueConfig().setName(name);
+    }
+
+
 }
