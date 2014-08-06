@@ -179,7 +179,7 @@ public interface IMap<K, V>
      * <p/>
      * <p>The map will not contain a mapping for the specified key once the
      * call returns.
-     *
+     * <p/>
      * <p><b>Warning:</b></p>
      * This method breaks the contract of EntryListener.
      * When an entry is removed by delete(), it fires an EntryEvent with a null oldValue.
@@ -247,7 +247,8 @@ public interface IMap<K, V>
      * This method clears the map and invokes {@link MapStore#deleteAll}deleteAll on MapStore which,
      * if connected to a database, will delete the records from that database.
      * <p/>
-     * Clear does not notify listeners.
+     * The MAP_CLEARED event is fired for any registered listeners.
+     * See {@link com.hazelcast.core.EntryListener#mapCleared(MapEvent)}.
      * <p/>
      * To clear a map without calling {@link MapStore#deleteAll} use {@link #evictAll}.
      * If you wish to clear the map only without calling deleteAll, use
@@ -349,7 +350,7 @@ public interface IMap<K, V>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
-     *
+     * <p/>
      * <p><b>Warning 2:</b></p>
      * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
      *
@@ -441,7 +442,7 @@ public interface IMap<K, V>
      * This method returns a clone of previous value, not the original (identically equal) value
      * previously put into map.
      * </p>
-     *
+     * <p/>
      * <p><b>Warning 3:</b></p>
      * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
      *
@@ -464,7 +465,7 @@ public interface IMap<K, V>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
-     *
+     * <p/>
      * <p><b>Warning 2:</b></p>
      * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
      *
@@ -509,7 +510,7 @@ public interface IMap<K, V>
      * This method returns a clone of previous value, not the original (identically equal) value
      * previously put into map.
      * </p>
-     *
+     * <p/>
      * <p><b>Warning 3:</b></p>
      * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
      *
@@ -583,7 +584,7 @@ public interface IMap<K, V>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
-     *
+     * <p/>
      * <p><b>Warning 2:</b></p>
      * Time resolution for TTL is seconds. Given TTL value is rounded to next closest second value.
      *
@@ -914,6 +915,7 @@ public interface IMap<K, V>
      * If you do want to deleteAll to be called use the {@link #clear()} method.
      * <p/>
      * The EVICT_ALL event is fired for any registered listeners.
+     * See {@link com.hazelcast.core.EntryListener#mapEvicted(MapEvent)} .
      *
      * @see #clear()
      * @since 3.3
