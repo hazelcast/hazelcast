@@ -53,18 +53,8 @@ Here is an example schema definition for Hazelcast 3.3.x:
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                 http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
                 http://www.hazelcast.com/schema/spring
-                http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
+                http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 ```
-
-***hazelcast-spring*** **XSD Schemas**
-
-Each hazelcast minor release has its own XSD schemas. Below is the list of all available schemas:
-
-- `hazelcast-spring-3.3.xsd`
-- `hazelcast-spring-3.2.xsd`
-- `hazelcast-spring-3.1.xsd`
-- `hazelcast-spring-3.0.xsd`
-
 
 #### Supported Configurations with *hazelcast* Namespace
 
@@ -215,7 +205,7 @@ Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed 
                 http://www.springframework.org/schema/context
                 http://www.springframework.org/schema/context/spring-context-3.0.xsd
                 http://www.hazelcast.com/schema/spring
-                http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
+                http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
   <context:annotation-config />
 
