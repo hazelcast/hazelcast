@@ -42,6 +42,8 @@
     </wan-replication>
     <network>
         <port auto-increment="true" port-count="100">5701</port>
+        <!-- If the address should be reused. See NetworkConfig.setReuseAddress for more information. -->
+        <reuse-address>false</reuse-address>
         <outbound-ports>
             <ports>33000-35000</ports>
             <ports>37000,37001,37002,37003</ports>
