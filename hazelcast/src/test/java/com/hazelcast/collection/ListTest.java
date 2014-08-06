@@ -54,10 +54,11 @@ public class ListTest extends HazelcastTestSupport {
         final int insCount = 2;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
-
+        assertTrue(getList(instances, name).isEmpty());
         for (int i=0; i<count; i++){
             assertTrue(getList(instances, name).add("item"+i));
         }
+        assertFalse(getList(instances, name).isEmpty());
 
 //        Iterator iter = getList(instances, name).iterator();
 //        int item = 0;
