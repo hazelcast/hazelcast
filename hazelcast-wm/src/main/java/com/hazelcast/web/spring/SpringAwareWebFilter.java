@@ -23,8 +23,6 @@ import org.springframework.security.web.session.HttpSessionCreatedEvent;
 import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import java.util.logging.Level;
-
 public class SpringAwareWebFilter extends WebFilter {
 
     protected volatile SessionRegistry sessionRegistry;
@@ -70,9 +68,9 @@ public class SpringAwareWebFilter extends WebFilter {
                      * it will be just updated.
                      */
                     appContext.publishEvent(new HttpSessionCreatedEvent(session));
-                    if (LOGGER.isLoggable(Level.FINEST)) {
-                        LOGGER.finest("Published create session event for Spring: " + session);
-                    }
+
+                    LOGGER.finest("Published create session event for Spring for session with id " +
+                            session.getId());
                 }
             }
         }
@@ -98,9 +96,9 @@ public class SpringAwareWebFilter extends WebFilter {
                      * So Spring clears information about our Hazelcast session.
                      */
                     appContext.publishEvent(new HttpSessionDestroyedEvent(session));
-                    if (LOGGER.isLoggable(Level.FINEST)) {
-                        LOGGER.finest("Published destroy session event for Spring: " + session);
-                    }
+
+                    LOGGER.finest("Published destroy session event for Spring for session with id " +
+                            session.getId());
                 }
             }
         }
