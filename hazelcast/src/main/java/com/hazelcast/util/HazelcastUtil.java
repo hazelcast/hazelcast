@@ -33,36 +33,29 @@ public final class HazelcastUtil {
 
     //CHECKSTYLE:OFF
     static {
-        String version = System.getProperty("hazelcast.version", "unknown");
-        String build = System.getProperty("hazelcast.build", "unknown");
-        int buildNumber = 0;
-        if ("unknown".equals(version) || "unknown".equals(build)) {
-            try {
-                final InputStream inRuntimeProperties =
-                        NodeInitializer.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
-                if (inRuntimeProperties != null) {
-                    Properties runtimeProperties = new Properties();
-                    runtimeProperties.load(inRuntimeProperties);
-                    inRuntimeProperties.close();
-                    version = runtimeProperties.getProperty("hazelcast.version");
-                    build = runtimeProperties.getProperty("hazelcast.build");
-                }
-            } catch (Exception ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-        }
+        final InputStream inRuntimeProperties =
+                NodeInitializer.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+        Properties runtimeProperties = new Properties();
         try {
-            buildNumber = Integer.getInteger("hazelcast.build", -1);
-            if (buildNumber == -1) {
-                buildNumber = Integer.parseInt(build);
+            if (inRuntimeProperties != null) {
+                runtimeProperties.load(inRuntimeProperties);
+                inRuntimeProperties.close();
             }
         } catch (Exception ignored) {
             EmptyStatement.ignore(ignored);
         }
-        VERSION = version;
-        BUILD = build;
+
+        VERSION = runtimeProperties.getProperty("hazelcast.version");
+        BUILD = runtimeProperties.getProperty("hazelcast.build");
+        String distribution = runtimeProperties.getProperty("hazelcast.distribution");
+        ENTERPRISE = "Hazelcast".equals(distribution) ? false : true;
+
+        // override BUILD_NUMBER with a system property
+        Integer buildNumber = Integer.getInteger("hazelcast.build", -1);
+        if (buildNumber == -1) {
+            buildNumber = Integer.parseInt(BUILD);
+        }
         BUILD_NUMBER = buildNumber;
-        ENTERPRISE = version.endsWith("-ee");
     }
     //CHECKSTYLE:ON
 
