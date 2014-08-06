@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic.client;
+package com.hazelcast.topic.impl.client;
 
 import com.hazelcast.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
-import com.hazelcast.topic.TopicPortableHook;
-import com.hazelcast.topic.TopicService;
+import com.hazelcast.topic.impl.TopicPortableHook;
+import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
 

@@ -285,12 +285,12 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.partition.impl.PartitionStateGeneratorImpl"/>
 
     <!-- Topic -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.topic[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.topic[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.topic[\\/]"/>
-    <suppress checks="VisibilityModifier" files="com.hazelcast.topic.TopicEvent"/>
-    <suppress checks="Todo" files="com.hazelcast.topic.TopicEvent"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.topic.impl[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.topic.impl[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.topic.impl[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.topic.impl[\\/]"/>
+    <suppress checks="VisibilityModifier" files="com.hazelcast.topic.impl.TopicEvent"/>
+    <suppress checks="Todo" files="com.hazelcast.topic.impl.TopicEvent"/>
 
     <!-- Ascii-->
 

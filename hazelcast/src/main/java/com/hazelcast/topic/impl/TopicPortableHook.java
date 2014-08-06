@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic;
+package com.hazelcast.topic.impl;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.topic.client.AddMessageListenerRequest;
-import com.hazelcast.topic.client.PortableMessage;
-import com.hazelcast.topic.client.PublishRequest;
-import com.hazelcast.topic.client.RemoveMessageListenerRequest;
+import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
+import com.hazelcast.topic.impl.client.PortableMessage;
+import com.hazelcast.topic.impl.client.PublishRequest;
+import com.hazelcast.topic.impl.client.RemoveMessageListenerRequest;
 
 import java.util.Collection;
 

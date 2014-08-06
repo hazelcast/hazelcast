@@ -27,10 +27,10 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.topic.client.AddMessageListenerRequest;
-import com.hazelcast.topic.client.PortableMessage;
-import com.hazelcast.topic.client.PublishRequest;
-import com.hazelcast.topic.client.RemoveMessageListenerRequest;
+import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
+import com.hazelcast.topic.impl.client.PortableMessage;
+import com.hazelcast.topic.impl.client.PublishRequest;
+import com.hazelcast.topic.impl.client.RemoveMessageListenerRequest;
 
 public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 

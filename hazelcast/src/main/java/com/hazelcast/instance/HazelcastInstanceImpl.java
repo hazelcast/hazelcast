@@ -64,7 +64,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.replicatedmap.ReplicatedMapService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.topic.TopicService;
+import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionManagerService;
