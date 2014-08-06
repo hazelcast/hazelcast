@@ -24,8 +24,6 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -42,11 +40,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 6/10/13
@@ -73,7 +73,7 @@ public class ClientTxnMapTest {
     @Test
     public void testUnlockAfterRollback() {
         final String mapName = randomString();
-        final String key ="key";
+        final String key = "key";
 
         final TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
@@ -318,6 +318,7 @@ public class ClientTxnMapTest {
         assertEquals(2, map.size());
         assertEquals(2, map.values().size());
     }
+
 
     @Test
     public void testPutAndRoleBack() throws Exception {
