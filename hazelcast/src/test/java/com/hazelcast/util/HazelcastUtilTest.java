@@ -1,7 +1,9 @@
 package com.hazelcast.util;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -10,23 +12,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HazelcastUtilTest {
 
-    @Test
-    public void testReadValues() {
-
-        String version = HazelcastUtil.getVersion();
-        String build = HazelcastUtil.getBuild();
-        int buildNumber = HazelcastUtil.getBuildNumber();
-
-        assertEquals("3.3",version);
-        assertEquals("1",build);
-        assertEquals(1,buildNumber);
-        assertFalse(HazelcastUtil.isEnterprise());
-
-    }
 
     @Test
     public void testOverrideBuildNumber() {
@@ -42,6 +31,26 @@ public class HazelcastUtilTest {
         assertEquals(2,buildNumber);
         assertFalse(HazelcastUtil.isEnterprise());
 
+    }
+
+    @Test
+    public void testReadValues() {
+
+        String version = HazelcastUtil.getVersion();
+        String build = HazelcastUtil.getBuild();
+        int buildNumber = HazelcastUtil.getBuildNumber();
+
+        assertEquals("3.3",version);
+        assertEquals("1",build);
+        assertEquals(1,buildNumber);
+        assertFalse(HazelcastUtil.isEnterprise());
+
+    }
+
+    @Before
+    @After
+    public void cleanup() {
+        System.clearProperty("hazelcast.build");
     }
 
 }
