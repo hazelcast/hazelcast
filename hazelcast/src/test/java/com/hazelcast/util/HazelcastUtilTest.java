@@ -3,7 +3,6 @@ package com.hazelcast.util;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -21,6 +20,7 @@ public class HazelcastUtilTest {
     public void testOverrideBuildNumber() {
 
         System.setProperty("hazelcast.build","2");
+        HazelcastUtil.init();
 
         String version = HazelcastUtil.getVersion();
         String build = HazelcastUtil.getBuild();
@@ -47,7 +47,6 @@ public class HazelcastUtilTest {
 
     }
 
-    @Before
     @After
     public void cleanup() {
         System.clearProperty("hazelcast.build");

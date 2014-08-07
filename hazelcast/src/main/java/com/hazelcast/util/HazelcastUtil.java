@@ -26,13 +26,38 @@ import java.util.Properties;
  */
 public final class HazelcastUtil {
 
-    private static final String VERSION;
-    private static final boolean ENTERPRISE;
-    private static final String BUILD;
-    private static final int BUILD_NUMBER;
+    private static  String VERSION;
+    private static  boolean ENTERPRISE;
+    private static  String BUILD;
+    private static  int BUILD_NUMBER;
 
     //CHECKSTYLE:OFF
     static {
+        init();
+    }
+
+    //CHECKSTYLE:ON
+
+    private HazelcastUtil() {
+    }
+
+    public static String getVersion() {
+        return VERSION;
+    }
+
+    public static String getBuild() {
+        return BUILD;
+    }
+
+    public static int getBuildNumber() {
+        return BUILD_NUMBER;
+    }
+
+    public static boolean isEnterprise() {
+        return ENTERPRISE;
+    }
+
+    public static void init() {
         final InputStream inRuntimeProperties =
                 NodeInitializer.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
         Properties runtimeProperties = new Properties();
@@ -57,26 +82,6 @@ public final class HazelcastUtil {
             BUILD = String.valueOf(buildNumber);
         }
         BUILD_NUMBER = Integer.valueOf(BUILD);
-    }
-    //CHECKSTYLE:ON
-
-    private HazelcastUtil() {
-    }
-
-    public static String getVersion() {
-        return VERSION;
-    }
-
-    public static String getBuild() {
-        return BUILD;
-    }
-
-    public static int getBuildNumber() {
-        return BUILD_NUMBER;
-    }
-
-    public static boolean isEnterprise() {
-        return ENTERPRISE;
     }
 
 }
