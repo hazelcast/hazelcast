@@ -46,16 +46,17 @@ public final class HazelcastUtil {
         }
 
         VERSION = runtimeProperties.getProperty("hazelcast.version");
-        BUILD = runtimeProperties.getProperty("hazelcast.build");
         String distribution = runtimeProperties.getProperty("hazelcast.distribution");
         ENTERPRISE = "Hazelcast".equals(distribution) ? false : true;
 
         // override BUILD_NUMBER with a system property
         Integer buildNumber = Integer.getInteger("hazelcast.build", -1);
         if (buildNumber == -1) {
-            buildNumber = Integer.parseInt(BUILD);
+            BUILD = runtimeProperties.getProperty("hazelcast.build");
+        } else {
+            BUILD = String.valueOf(buildNumber);
         }
-        BUILD_NUMBER = buildNumber;
+        BUILD_NUMBER = Integer.valueOf(BUILD);
     }
     //CHECKSTYLE:ON
 
