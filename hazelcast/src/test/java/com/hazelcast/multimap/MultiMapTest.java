@@ -133,6 +133,78 @@ public class MultiMapTest extends HazelcastTestSupport {
 
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testMultiMapGetNullIsNotAllowed() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.get(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testMultiMapPutKeyNullIsNotAllowed() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put(null, "someVal");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testMultiMapPutValueNullIsNotAllowed() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put("someVal", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testMultiMapLockNullIsNotAllowed() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.lock(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testMultiMapUnLockNullIsNotAllowed() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.unlock(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsKeyMultiMapNullIsNotAllowed() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsKey(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsValueMultiMapNullIsNotAllowed() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsValue(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsEntryKeyMultiMapNullIsNotAllowed() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsEntry(null, "someVal");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsEntryValueMultiMapNullIsNotAllowed() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsEntry("someVal", null);
+    }
+
     @Test
     public void testPutGetRemoveWhileCollectionTypeList() throws InterruptedException {
         Config config = new Config();
