@@ -319,18 +319,33 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
+    // it must throw ClassCastException wrapped by HazelcastException
+    @Test(expected = HazelcastException.class)
+    public void testAggregateMultiMap_differentDataTypes() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap<Object, Object> multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put(1, "fail");
+        multiMap.put(2, 75);
+
+        Integer aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
+
+        assertEquals(50, aggregate.intValue());
+    }
+
     @Test
-    public void testAggregateMultiMap() throws InterruptedException {
-        Config config = new Config();
-        final String name = randomString();
-        final int insCount = 2;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-        MultiMap<Object, Object> multiMap = instances[0].getMultiMap(name);
+    public void testAggregateMultiMap() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap<Object, Object> multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        Integer aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
+        assertEquals(0, aggregate.intValue());
+
         multiMap.put(1, 25);
         multiMap.put(2, 75);
 
-        assertEquals(50, multiMap.aggregate(Supplier.all(), Aggregations.integerAvg()).intValue());
+        aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
+        assertEquals(50, aggregate.intValue());
     }
 
 
