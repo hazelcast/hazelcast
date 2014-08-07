@@ -39,7 +39,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -61,7 +60,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -856,27 +854,9 @@ public class ClientMapTest {
             map.remove(i);
         }
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("put count", operationCount, localMapStats.getPutOperationCount());
-            }
-        });
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("get count", operationCount, localMapStats.getGetOperationCount());
-            }
-        });
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
-            }
-        });
-
+        assertEquals("put count", operationCount, localMapStats.getPutOperationCount());
+        assertEquals("get count", operationCount, localMapStats.getGetOperationCount());
+        assertEquals("remove count", operationCount, localMapStats.getRemoveOperationCount());
         assertTrue("put latency", 0 < localMapStats.getTotalPutLatency());
         assertTrue("get latency", 0 < localMapStats.getTotalGetLatency());
         assertTrue("remove latency", 0 < localMapStats.getTotalRemoveLatency());

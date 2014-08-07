@@ -19,7 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.replicatedmap.ReplicatedMapProxy;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;

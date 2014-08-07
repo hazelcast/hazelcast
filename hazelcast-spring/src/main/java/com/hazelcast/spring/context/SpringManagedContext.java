@@ -17,7 +17,7 @@
 package com.hazelcast.spring.context;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.executor.RunnableAdapter;
+import com.hazelcast.executor.impl.RunnableAdapter;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;

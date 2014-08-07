@@ -44,7 +44,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -173,7 +172,6 @@ public class ClientIssueTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testOperationRedo() throws Exception {
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();

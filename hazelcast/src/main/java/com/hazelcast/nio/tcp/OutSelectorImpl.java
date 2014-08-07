@@ -16,14 +16,14 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.IOService;
+import com.hazelcast.logging.ILogger;
 
 import java.nio.channels.SelectionKey;
 
-final class OutSelectorImpl extends AbstractIOSelector {
+public final class OutSelectorImpl extends AbstractIOSelector {
 
-    OutSelectorImpl(IOService ioService, int id) {
-        super(ioService, ioService.getThreadPrefix() + "out-" + id);
+    public OutSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
+        super(threadGroup, tname, logger, oomeHandler);
     }
 
     @Override

@@ -305,9 +305,11 @@ public class WebFilter implements Filter {
         HttpSession originalSession = requestWrapper.getOriginalSession(true);
         HazelcastHttpSession hazelcastSession = new HazelcastHttpSession(id, originalSession, deferredWrite);
         if (existingSessionId == null) {
+            hazelcastSession.setClusterWideNew(true);
             // If the session is being created for the first time, add its initial reference in the cluster-wide map.
             getClusterMap().executeOnKey(id, new AddSessionEntryProcessor());
         }
+
         updateSessionMaps(id, originalSession, hazelcastSession);
         addSessionCookie(requestWrapper, id);
 
@@ -599,6 +601,8 @@ public class WebFilter implements Filter {
         final HttpSession originalSession;
         private final Map<String, LocalCacheEntry> localCache;
         private final boolean deferredWrite;
+        // only true if session is created first time in the cluster
+        private volatile boolean clusterWideNew;
 
         public HazelcastHttpSession(final String sessionId, final HttpSession originalSession,
                                     final boolean deferredWrite) {
@@ -675,7 +679,7 @@ public class WebFilter implements Filter {
         }
 
         public boolean isNew() {
-            return originalSession.isNew();
+            return originalSession.isNew() && clusterWideNew;
         }
 
         public void putValue(final String name, final Object value) {
@@ -821,6 +825,10 @@ public class WebFilter implements Filter {
                 }
             }
             return keys;
+        }
+
+        public void setClusterWideNew(boolean clusterWideNew) {
+            this.clusterWideNew = clusterWideNew;
         }
     } // END of HazelSession
 } // END of WebFilter

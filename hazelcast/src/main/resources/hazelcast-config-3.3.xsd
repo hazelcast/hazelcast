@@ -410,6 +410,7 @@
         <xs:sequence>
             <xs:element name="public-address" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="port" type="port" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
             <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
             <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>

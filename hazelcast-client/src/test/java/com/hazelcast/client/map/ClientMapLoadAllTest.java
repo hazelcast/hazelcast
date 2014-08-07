@@ -1,5 +1,6 @@
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -21,12 +22,42 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapLoadAllTest extends HazelcastTestSupport {
+
+    @Test(timeout = 60000)
+    public void testGetMap_issue_3031() throws Exception {
+        final int itemCount = 1000;
+        final String mapName = randomMapName();
+
+        final AtomicBoolean breakMe = new AtomicBoolean(false);
+
+        final Config config = createNewConfig(mapName, new BrokenLoadSimpleStore(breakMe));
+        final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+
+        try {
+            final IMap<Object, Object> map = server.getMap(mapName);
+            populateMap(map, itemCount);
+            map.clear();
+        } catch (Exception e) {
+            fail();
+        }
+
+        breakMe.set(true);
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        try {
+            client.getMap(mapName);
+        } finally {
+            closeResources(client, server);
+        }
+    }
 
     @Test
     public void testLoadAll_givenKeys() throws Exception {
@@ -63,8 +94,11 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
     }
 
     private static Config createNewConfig(String mapName) {
-        final SimpleStore simpleStore = new SimpleStore();
-        return MapStoreTest.newConfig(mapName, simpleStore, 0);
+        return createNewConfig(mapName, new SimpleStore());
+    }
+
+    private static Config createNewConfig(String mapName, MapStore mapStore) {
+        return MapStoreTest.newConfig(mapName, mapStore, 0);
     }
 
     private static void populateMap(IMap map, int itemCount) {
@@ -144,6 +178,34 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
         @Override
         public Set loadAllKeys() {
             return store.keySet();
+        }
+    }
+
+    private static class BrokenLoadSimpleStore extends SimpleStore {
+
+        private final AtomicBoolean breakMe;
+
+        private BrokenLoadSimpleStore(AtomicBoolean breakMe) {
+            this.breakMe = breakMe;
+        }
+
+        @Override
+        public Object load(Object key) {
+            testClientRequest();
+            return null;
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            testClientRequest();
+            return null;
+        }
+
+        private boolean testClientRequest() {
+            if (breakMe.get()) {
+                throw new ClassCastException();
+            }
+            return false;
         }
     }
 

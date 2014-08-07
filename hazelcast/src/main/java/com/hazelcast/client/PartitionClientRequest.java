@@ -20,13 +20,28 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
+/**
+ * Base class for partition based client requests.
+ */
 public abstract class PartitionClientRequest extends ClientRequest {
 
     private static final int TRY_COUNT = 100;
 
+    /**
+     * Called on node side, before starting any operation.
+     */
     protected void beforeProcess() {
     }
 
+    /**
+     * Called on node side, after process is run and right before sending the response to the client.
+     */
+    protected void beforeResponse() {
+    }
+
+    /**
+     * Called on node side, after sending the response to the client.
+     */
     protected void afterResponse() {
     }
 
@@ -65,6 +80,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
 
         @Override
         public void notify(Object object) {
+            beforeResponse();
             endpoint.sendResponse(filter(object), getCallId());
             afterResponse();
         }

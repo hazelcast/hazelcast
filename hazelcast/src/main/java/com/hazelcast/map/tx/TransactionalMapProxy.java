@@ -20,6 +20,7 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
@@ -295,8 +296,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 final Object value = entry.getValue().value instanceof Data
                         ? mapServiceContext.toObject(entry.getValue().value) : entry.getValue().value;
 
-                final QueryEntry queryEntry
-                        = new QueryEntry(null, mapServiceContext.toData(entry.getKey()), entry.getKey(), value);
+                final SerializationService ss = getNodeEngine().getSerializationService();
+                final QueryEntry queryEntry =
+                        new QueryEntry(ss, mapServiceContext.toData(entry.getKey()), entry.getKey(), value);
                 // apply predicate on txMap.
                 if (predicate.apply(queryEntry)) {
                     keySet.add(entry.getKey());
@@ -359,7 +361,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 final Object objectValue = entryValue instanceof Data
                         ? mapServiceContext.toObject(entryValue) : entryValue;
                 Data dataKey = mapServiceContext.toData(objectKey);
-                final QueryEntry queryEntry = new QueryEntry(null, dataKey, objectKey, objectValue);
+                final SerializationService serializationService = getNodeEngine().getSerializationService();
+                final QueryEntry queryEntry = new QueryEntry(serializationService, dataKey, objectKey, objectValue);
                 if (predicate.apply(queryEntry)) {
                     valueSet.add(entryValue);
                 }

@@ -19,7 +19,7 @@ package com.hazelcast.client.util;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.executor.client.CancellationRequest;
+import com.hazelcast.executor.impl.client.CancellationRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.executor.DelegatingFuture;
 
