@@ -2,9 +2,16 @@
 
 # Frequently Asked Questions
 
+
+
+
 ## Why 271 as the default partition count
 
 The partition count 271, being a prime number, is a good choice since it will be distributed to the nodes almost evenly. For a small to medium sized cluster, the count 271 gives almost even partition distribution and optimal sized partitions.  As your cluster becomes bigger, this count should be made bigger to have evenly distributed partitions.
+
+## Is Hazelcast thread safe
+
+Yes. All Hazelcast data structures are thread safe.
 
 ## How do nodes discover each other
 
@@ -171,21 +178,20 @@ HazelcastInstance h2 = Hazelcast.newHazelcastInstance( configApp2 );
 HazelcastInstance h3 = Hazelcast.newHazelcastInstance( configApp2 );
 ```
 
+## Does Hazelcast support hundreds of nodes
 
+Yes. Hazelcast performed a successful test on Amazon EC2 with 200 nodes.
 
-## When RuntimeInterruptedException is thrown
-
-Most of the Hazelcast operations throw an `RuntimeInterruptedException` (which is unchecked version of `InterruptedException`) if a user thread is interrupted while waiting a response. Hazelcast uses RuntimeInterruptedException to pass InterruptedException up through interfaces that do not have InterruptedException in their signatures. The users should be able to catch and handle `RuntimeInterruptedException` in such cases as if their threads are interrupted on a blocking operation.
-
-## When ConcurrentModificationException is thrown
-
-Some of Hazelcast operations can throw `ConcurrentModificationException` under transaction while trying to acquire a resource, although operation signatures do not define such an exception. Exception is thrown if resource cannot be acquired in a specific time. The users should be able to catch and handle `ConcurrentModificationException` while they are using Hazelcast transactions.
 
 ## Does Hazelcast support thousands of clients
 
 Yes. However, there are some points to be considered. First of all, the environment should be LAN with a high stability and the network speed should be 10 Gbps or higher. If number of nodes are high, client type should be selected as Dummy (not Smart Client). In the case of Smart Clients, since each client will open a connection to the nodes, these nodes should be powerful enough (e.g. more cores) to handle hundreds or thousands of connections and client requests. Also, using near caches in clients should be considered to lower the network traffic. And finally, the Hazelcast releases with the NIO implementation should be used (which starts with 3.2).
 
 Also, the clients should be configured attentively. Please refer to [Java Clients](#java-client) section for configuration notes.
+
+## What is the difference between old LiteMember and new Smart Client
+
+LiteMember supports task execution (distributed executor service), smart client does not. Also LiteMember is highly coupled with cluster, smart client is not.
 
 ## How do you give support
 
@@ -275,3 +281,22 @@ if (partitionService().isLocalMemberSafe()) {
   hazelcastInstance.shutdown(); // or terminate
 }
 ```
+
+
+## When do I need Off-heap solutions
+
+Off-heap solutions can be preferred;
+
+- When the amount of data per node is large enough to create significant garbage collection pauses,
+- When your application requires predictable latency.
+
+
+## Is there any disadvantage of using near-cache
+
+The only disadvantage when using near-cache is that it may cause stale reads.
+
+## Is Hazelcast secure
+
+Hazelcast supports symmetric encryption, secure sockets layer (SSL) and Java Authentication and Authorization Service (JAAS). Please see [Security](#security) chapter for more information.
+
+
