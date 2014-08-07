@@ -27,6 +27,7 @@ import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.map.MapService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
@@ -136,7 +137,9 @@ final class TransactionContextImpl implements TransactionContext {
 
         final Object service = nodeEngine.getService(serviceName);
         if (service instanceof TransactionalService) {
-            nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+            if (service instanceof RemoteService) {
+                nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+            }
             obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
             txnObjectMap.put(key, obj);
         } else {

@@ -32,6 +32,8 @@ public interface LockStore {
 
     boolean isLocked(Data key);
 
+    boolean isTransactionallyLocked(Data key);
+
     boolean isLockedBy(Data key, String caller, long threadId);
 
     int getLockCount(Data key);

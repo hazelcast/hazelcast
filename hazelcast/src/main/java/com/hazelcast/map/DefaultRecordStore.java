@@ -246,6 +246,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
+    public boolean isTransactionallyLocked(Data key) {
+        return lockStore != null && lockStore.isTransactionallyLocked(key);
+    }
+
+    @Override
     public boolean canAcquireLock(Data key, String caller, long threadId) {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
