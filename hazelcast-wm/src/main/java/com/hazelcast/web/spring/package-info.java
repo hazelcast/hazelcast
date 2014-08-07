@@ -40,14 +40,18 @@
  * <p/>
  *
  * <p>
- * {@link com.hazelcast.web.spring.SpringAwareWebFilter SpringAwareWebFilter} should be <i>first</i> in the filter chain to ensure session
- * actions performed in other filters in the chain are replicated. Additionally, note that <i>both</i> the
- * {@link com.hazelcast.web.spring.SpringAwareWebFilter SpringAwareWebFilter} and {@link com.hazelcast.web.SessionListener SessionListener}
+ * {@link com.hazelcast.web.spring.SpringAwareWebFilter SpringAwareWebFilter} should be <i>first</i>
+ * in the filter chain to ensure session actions performed in other filters in the chain are replicated.
+ * Additionally, note that <i>both</i> the
+ * {@link com.hazelcast.web.spring.SpringAwareWebFilter SpringAwareWebFilter} and
+ * {@link com.hazelcast.web.SessionListener SessionListener}
  * must be registered for clustered sessions to work properly. The {@code SessionListener} informs the
  * {@code SpringAwareWebFilter} of session timeouts so it can update the cluster accordingly and
- * declaring {@code org.springframework.security.web.session.HttpSessionEventPublisher HttpSessionEventPublisher}
+ * declaring
+ * {@code org.springframework.security.web.session.HttpSessionEventPublisher HttpSessionEventPublisher}
  * as listener, which is used by Spring to be aware of session events, is not needed anymore
- * since {@link com.hazelcast.web.spring.SpringAwareWebFilter SpringAwareWebFilter} already publishes events for Spring.
+ * since {@link com.hazelcast.web.spring.SpringAwareWebFilter SpringAwareWebFilter}
+ * already publishes events for Spring.
  * <p/>
  *
  * <p>
