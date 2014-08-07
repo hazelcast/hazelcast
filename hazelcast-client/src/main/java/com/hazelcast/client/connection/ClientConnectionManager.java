@@ -16,16 +16,32 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Packet;
 
 /**
  * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
  */
 public interface ClientConnectionManager {
 
+    /**
+     * Shutdown clientConnectionManager
+     */
     void shutdown();
 
+    /**
+     * Check if client connection manager is live.
+     * ClientConnectionManager is not live only when client is closing.
+     *
+     * @return true if live, false otherwise.
+     */
+    boolean isLive();
+
+    /**
+     * Start clientConnectionManager
+     */
     void start();
 
     /**
@@ -53,10 +69,59 @@ public interface ClientConnectionManager {
     void onCloseOwnerConnection();
 
     /**
+     * @return unique uuid of local client if available, null otherwise
+     */
+    String getUuid();
+
+    /**
+     * Called when an connection is closed.
+     * Clears related resources of given clientConnection.
+     *
+     * @param clientConnection closed connection
+     */
+    void onConnectionClose(ClientConnection clientConnection);
+
+    /**
      * Removes event handler corresponding to callId from responsible ClientConnection
      *
      * @param callId of event handler registration request
      * @return true if found and removed, false otherwise
      */
     boolean removeEventHandler(Integer callId);
+
+    /**
+     * Handles incoming network package
+     *
+     * @param packet to be processed
+     */
+    void handlePacket(Packet packet);
+
+    /**
+     * Next unique call id for request
+     *
+     * @return new unique callId
+     */
+    int newCallId();
+
+    /**
+     * Sends request and waits for response
+     *
+     * @param request    to be send
+     * @param connection to send the request over
+     * @return response of request
+     * @throws Exception if a network connection occurs or response is an exception
+     */
+    Object sendAndReceive(ClientRequest request, ClientConnection connection) throws Exception;
+
+    /**
+     * Called heartbeat timeout is detected on a connection.
+     *
+     * @param connection to be marked.
+     */
+    void onDetectingUnresponsiveConnection(ClientConnection connection);
+
+    /**
+     * @return number of max allowed heart beat failures
+     */
+    int getMaxFailedHeartbeatCount();
 }

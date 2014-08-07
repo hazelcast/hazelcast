@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
+import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.tcp.IOSelector;
@@ -32,7 +33,7 @@ public abstract class ClientAbstractSelectionHandler implements SelectionHandler
 
     protected final ClientConnection connection;
 
-    protected final ClientConnectionManagerImpl connectionManager;
+    protected final ClientConnectionManager connectionManager;
 
     protected final IOSelector ioSelector;
 

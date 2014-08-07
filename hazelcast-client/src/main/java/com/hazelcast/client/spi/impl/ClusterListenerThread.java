@@ -5,8 +5,8 @@ import com.hazelcast.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
+import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
@@ -47,7 +47,7 @@ class ClusterListenerThread extends Thread {
     private final CountDownLatch latch = new CountDownLatch(1);
     private final Collection<AddressProvider> addressProviders;
     private HazelcastClient client;
-    private ClientConnectionManagerImpl connectionManager;
+    private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
 
 
@@ -58,7 +58,7 @@ class ClusterListenerThread extends Thread {
 
     public void init(HazelcastClient client) {
         this.client = client;
-        this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
+        this.connectionManager = client.getConnectionManager();
         this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
     }

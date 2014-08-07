@@ -100,7 +100,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private final int connectionTimeout;
     private final int heartBeatInterval;
     private final int heartBeatTimeout;
-    final int maxFailedHeartbeatCount;
+    private final int maxFailedHeartbeatCount;
 
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
@@ -216,6 +216,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return implementation;
     }
 
+    @Override
     public boolean isLive() {
         return live;
     }
@@ -251,6 +252,11 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         connectionLockMap.clear();
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         clusterService.addMembershipListenerWithoutInit(this);
+    }
+
+    @Override
+    public int getMaxFailedHeartbeatCount() {
+        return maxFailedHeartbeatCount;
     }
 
     @Override
@@ -307,8 +313,10 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return address;
     }
 
-    public ClientPrincipal getPrincipal() {
-        return principal;
+    @Override
+    public String getUuid() {
+        final ClientPrincipal cp = principal;
+        return cp != null ? cp.getUuid() : null;
     }
 
     private boolean isMember(Address target) {
@@ -343,7 +351,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                     }
                     ClientConnection current = connections.putIfAbsent(address, clientConnection);
                     if (current != null) {
-                        clientConnection.innerClose();
+                        clientConnection.close();
                         clientConnection = current;
                     }
                 }
@@ -410,7 +418,8 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         }
     }
 
-    public void destroyConnection(ClientConnection clientConnection) {
+    @Override
+    public void onConnectionClose(ClientConnection clientConnection) {
         Address endpoint = clientConnection.getRemoteEndpoint();
         if (endpoint != null) {
             connections.remove(clientConnection.getRemoteEndpoint());
@@ -430,6 +439,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         return false;
     }
 
+    @Override
     public void handlePacket(Packet packet) {
         final ClientConnection conn = (ClientConnection) packet.getConn();
         conn.incrementPacketCount();
@@ -441,6 +451,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         }
     }
 
+    @Override
     public int newCallId() {
         return callIdIncrementer.incrementAndGet();
     }
@@ -487,6 +498,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         throw new AuthenticationException();
     }
 
+    @Override
     public Object sendAndReceive(ClientRequest request, ClientConnection connection) throws Exception {
         final SerializationService ss = client.getSerializationService();
         connection.write(ss.toData(request));
@@ -604,11 +616,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         }
     }
 
-    /**
-     * Called heartbeat timeout is detected on a connection.
-     *
-     * @param connection to be marked.
-     */
+    @Override
     public void onDetectingUnresponsiveConnection(ClientConnection connection) {
         if (smartRouting) {
             //closing the owner connection if unresponsive so that it can be switched to a healthy one.
