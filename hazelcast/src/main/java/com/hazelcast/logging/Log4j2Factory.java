@@ -81,6 +81,8 @@ public class Log4j2Factory extends LoggerFactorySupport {
             }
         }
 
+        // need more than 5 returns from this method
+        //CHECKSTYLE:OFF
         private org.apache.logging.log4j.Level getLevel(Level level) {
             if (Level.SEVERE == level) {
                 return org.apache.logging.log4j.Level.ERROR;
@@ -100,5 +102,6 @@ public class Log4j2Factory extends LoggerFactorySupport {
                 return org.apache.logging.log4j.Level.INFO;
             }
         }
+        //CHECKSTYLE:ON
     }
 }
