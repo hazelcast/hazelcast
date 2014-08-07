@@ -228,13 +228,13 @@ public class ClientListTest {
     }
 
     @Test
-    public void testIsEmpty() {
+    public void testIsEmpty_whenEmpty() {
         assertTrue(list.isEmpty());
         assertEquals(0,list.size());
     }
 
     @Test
-    public void testNotIsEmpty() {
+    public void testIsEmpty_whenNotEmpty() {
         list.add("item");
         assertFalse(list.isEmpty());
         assertEquals(1,list.size());

@@ -191,13 +191,13 @@ public class ClientSetTest {
     }
 
     @Test
-    public void testIsEmpty() {
+    public void testIsEmpty_whenEmpty() {
         assertTrue(set.isEmpty());
         assertEquals(0,set.size());
     }
 
     @Test
-    public void testNotIsEmpty() {
+    public void testIsEmpty_whenNotEmpty() {
         set.add("item");
         assertFalse(set.isEmpty());
         assertEquals(1,set.size());
