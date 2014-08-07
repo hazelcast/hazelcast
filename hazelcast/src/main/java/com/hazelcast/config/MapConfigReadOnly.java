@@ -108,7 +108,7 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public void setCheckIfEvictableAfterMillis(long checkIfEvictableAfterMillis) {
+    public void setMinEvictionCheckMillis(long checkIfEvictableAfterMillis) {
         throw new UnsupportedOperationException("This config is read-only map: " + getName());
     }
 

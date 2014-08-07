@@ -163,7 +163,7 @@ public class TimedMemberStateFactory {
         map.put("seconds.upTime", runtimeMxBean.getUptime());
         map.put("memory.maxMemory", runtime.maxMemory());
         map.put("memory.freeMemory", runtime.freeMemory());
-        map.put("memory.totalMemory", runtime.totalMemory());
+        map.put("memory.totalMemoryForTests", runtime.totalMemory());
         map.put("memory.heapMemoryMax", heapMemory.getMax());
         map.put("memory.heapMemoryUsed", heapMemory.getUsed());
         map.put("memory.nonHeapMemoryMax", nonHeapMemory.getMax());

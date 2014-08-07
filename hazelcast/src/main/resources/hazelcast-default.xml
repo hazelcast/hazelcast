@@ -172,7 +172,7 @@
             if a partition of this map is evictable or not.
             Default value is 0.
         -->
-        <check-if-evictable-after-millis>0</check-if-evictable-after-millis>
+        <min-eviction-check-millis>0</min-eviction-check-millis>
         <!--
             While recovering from split-brain (network partitioning),
             map entries in the small cluster will merge into the bigger cluster

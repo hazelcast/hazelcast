@@ -132,7 +132,7 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="check-if-evictable-after-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1"
+            <xs:element name="min-eviction-check-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1"
                         default="0">
                 <xs:annotation>
                     <xs:documentation>

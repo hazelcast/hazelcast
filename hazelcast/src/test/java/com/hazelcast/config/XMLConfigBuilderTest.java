@@ -395,20 +395,20 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
-    public void testMapConfigCheckIfEvictableAfterMillis() {
+    public void testMapConfig_minEvictionCheckMillis() {
         String xml =
                 "<hazelcast>\n" +
                         "<map name=\"mymap\">" +
-                        "<check-if-evictable-after-millis>123456789</check-if-evictable-after-millis>" +
+                        "<min-eviction-check-millis>123456789</min-eviction-check-millis>" +
                         "</map>" +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final MapConfig mapConfig = config.getMapConfig("mymap");
-        assertEquals(123456789L, mapConfig.getCheckIfEvictableAfterMillis());
+        assertEquals(123456789L, mapConfig.getMinEvictionCheckMillis());
     }
 
     @Test
-    public void testMapConfigCheckIfEvictableAfterMillis__default_value() {
+    public void testMapConfig_minEvictionCheckMillis_defaultValue() {
         String xml =
                 "<hazelcast>\n" +
                         "<map name=\"mymap\">" +
@@ -416,7 +416,7 @@ public class XMLConfigBuilderTest {
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final MapConfig mapConfig = config.getMapConfig("mymap");
-        assertEquals(MapConfig.DEFAULT_CHECK_IF_EVICTABLE_AFTER_MILLIS, mapConfig.getCheckIfEvictableAfterMillis());
+        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, mapConfig.getMinEvictionCheckMillis());
     }
 
     @Test

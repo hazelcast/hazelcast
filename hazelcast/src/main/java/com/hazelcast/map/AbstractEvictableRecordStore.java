@@ -47,19 +47,19 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      */
     protected long lruAccessSequenceNumber;
 
-    protected boolean evictionEnabled;
-
     /**
      * Last run time of cleanup operation.
      */
     protected long lastEvictionTime;
 
-    private long checkIfEvictableAfterMillis;
+    private final boolean evictionEnabled;
+
+    private final long minEvictionCheckMillis;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
         final MapConfig mapConfig = mapContainer.getMapConfig();
-        this.checkIfEvictableAfterMillis = mapConfig.getCheckIfEvictableAfterMillis();
+        this.minEvictionCheckMillis = mapConfig.getMinEvictionCheckMillis();
         this.evictionEnabled
                 = !MapConfig.EvictionPolicy.NONE.equals(mapConfig.getEvictionPolicy());
         this.expirable = isRecordStoreExpirable();
@@ -221,14 +221,14 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
 
     /**
-     * Eviction waits at least {@link #checkIfEvictableAfterMillis} milliseconds to run.
+     * Eviction waits at least {@link #minEvictionCheckMillis} milliseconds to run.
      *
      * @return <code>true</code> if in that time window,
      * otherwise <code>false</code>
      */
     private boolean inEvictableTimeWindow(long now) {
-        return checkIfEvictableAfterMillis == 0L
-                || (now - lastEvictionTime) > checkIfEvictableAfterMillis;
+        return minEvictionCheckMillis == 0L
+                || (now - lastEvictionTime) > minEvictionCheckMillis;
     }
 
     private boolean isEvictable() {

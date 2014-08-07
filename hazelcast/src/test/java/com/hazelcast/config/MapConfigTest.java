@@ -83,11 +83,11 @@ public class MapConfigTest {
     }
 
     /**
-     * Test method for {@link MapConfig#getCheckIfEvictableAfterMillis()}.
+     * Test method for {@link MapConfig#getMinEvictionCheckMillis()}.
      */
     @Test
-    public void testCheckIfEvictableAfterMillis() throws Exception {
-        assertEquals(MapConfig.DEFAULT_CHECK_IF_EVICTABLE_AFTER_MILLIS, new MapConfig().getCheckIfEvictableAfterMillis());
+    public void testMinEvictionCheckMillis() throws Exception {
+        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, new MapConfig().getMinEvictionCheckMillis());
     }
 
     /**

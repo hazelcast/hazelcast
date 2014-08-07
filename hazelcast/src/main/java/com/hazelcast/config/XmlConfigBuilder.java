@@ -834,9 +834,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
                         MapConfig.DEFAULT_EVICTION_PERCENTAGE));
-            } else if ("check-if-evictable-after-millis".equals(nodeName)) {
-                mapConfig.setCheckIfEvictableAfterMillis(getLongValue("check-if-evictable-after-millis", value,
-                        MapConfig.DEFAULT_CHECK_IF_EVICTABLE_AFTER_MILLIS));
+            } else if ("min-eviction-check-millis".equals(nodeName)) {
+                mapConfig.setMinEvictionCheckMillis(getLongValue("min-eviction-check-millis", value,
+                        MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS));
             } else if ("time-to-live-seconds".equals(nodeName)) {
                 mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value,
                         MapConfig.DEFAULT_TTL_SECONDS));

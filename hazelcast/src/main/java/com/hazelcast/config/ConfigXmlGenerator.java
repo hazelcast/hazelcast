@@ -304,8 +304,8 @@ public class ConfigXmlGenerator {
                     .append("\">").append(m.getMaxSizeConfig().getSize())
                     .append("</max-size>");
             xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
-            xml.append("<check-if-evictable-after-millis>")
-                    .append(m.getCheckIfEvictableAfterMillis()).append("</check-if-evictable-after-millis>");
+            xml.append("<min-eviction-check-millis>")
+                    .append(m.getMinEvictionCheckMillis()).append("</min-eviction-check-millis>");
             xml.append("<merge-policy>").append(m.getMergePolicy())
                     .append("</merge-policy>");
             xml.append("<read-backup-data>").append(m.isReadBackupData())

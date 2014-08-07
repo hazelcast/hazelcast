@@ -127,7 +127,7 @@
                     backup-count="2"
                     max-size="0"
                     eviction-percentage="30"
-                    check-if-evictable-after-millis="1000"
+                    min-eviction-check-millis="1000"
                     read-backup-data="true"
                     eviction-policy="NONE"
                     merge-policy="PUT_IF_ABSENT"
