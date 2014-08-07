@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static junit.framework.Assert.assertEquals;
 
@@ -48,7 +49,7 @@ public class ClientMapStoreTest {
     }
 
     @After
-    public void tearDown(){
+    public void tearDown() {
         Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
     }
@@ -68,7 +69,7 @@ public class ClientMapStoreTest {
     public void testTwoClient_KickOffMapStoreLoad() throws InterruptedException {
         Hazelcast.newHazelcastInstance(nodeConfig);
         ClientThread[] clientThreads = new ClientThread[2];
-        for(int i=0; i<clientThreads.length; i++){
+        for (int i = 0; i < clientThreads.length; i++) {
             ClientThread client1 = new ClientThread();
             client1.start();
             clientThreads[i] = client1;
@@ -76,13 +77,13 @@ public class ClientMapStoreTest {
 
         HazelcastTestSupport.assertJoinable(clientThreads);
 
-        for(ClientThread c : clientThreads){
+        for (ClientThread c : clientThreads) {
             assertEquals(SimpleMapStore.MAX_KEYS, c.mapSize);
         }
     }
 
     @Test
-    public void testOneClientKickOffMapStoreLoad_ThenNodeJoins(){
+    public void testOneClientKickOffMapStoreLoad_ThenNodeJoins() {
         Hazelcast.newHazelcastInstance(nodeConfig);
 
         ClientThread client1 = new ClientThread();
@@ -96,22 +97,14 @@ public class ClientMapStoreTest {
     }
 
     @Test
-    public void testForIssue2112(){
+    public void testForIssue2112() {
         Hazelcast.newHazelcastInstance(nodeConfig);
-
-        ClientThread client1 = new ClientThread();
-        client1.start();
+        IMap<String, String> map = HazelcastClient.newHazelcastClient().getMap(ClientMapStoreTest.MAP_NAME);
+        assertSizeEventually(SimpleMapStore.MAX_KEYS, map);
 
         Hazelcast.newHazelcastInstance(nodeConfig);
-
-        ClientThread client2 = new ClientThread();
-        client2.start();
-
-        HazelcastTestSupport.assertJoinable(client1);
-        HazelcastTestSupport.assertJoinable(client2);
-
-        assertEquals(SimpleMapStore.MAX_KEYS, client1.mapSize);
-        assertEquals(SimpleMapStore.MAX_KEYS, client2.mapSize);
+        map = HazelcastClient.newHazelcastClient().getMap(ClientMapStoreTest.MAP_NAME);
+        assertSizeEventually(SimpleMapStore.MAX_KEYS, map);
     }
 
     static class SimpleMapStore implements MapStore<String, String>, MapLoader<String, String> {
@@ -122,7 +115,7 @@ public class ClientMapStoreTest {
         @Override
         public String load(String key) {
             sleepSeconds(DELAY_SECONDS_PER_KEY);
-            return key+"value";
+            return key + "value";
         }
 
         @Override
@@ -138,8 +131,8 @@ public class ClientMapStoreTest {
         public Set<String> loadAllKeys() {
             Set<String> keys = new HashSet();
 
-            for(int k=0; k<MAX_KEYS; k++)
-                keys.add("key"+k);
+            for (int k = 0; k < MAX_KEYS; k++)
+                keys.add("key" + k);
 
             return keys;
         }
@@ -171,7 +164,7 @@ public class ClientMapStoreTest {
 
     class ClientThread extends Thread {
 
-        public volatile int mapSize=0;
+        public volatile int mapSize = 0;
 
         public void run() {
             HazelcastInstance client = HazelcastClient.newHazelcastClient();

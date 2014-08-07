@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
@@ -52,16 +53,16 @@ public abstract class HazelcastTestSupport {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
     }
 
-    public static void interruptCurrentThread(final int delaysMs){
+    public static void interruptCurrentThread(final int delaysMs) {
         final Thread currentThread = Thread.currentThread();
-        new Thread(){
-            public void run(){
+        new Thread() {
+            public void run() {
                 sleepMillis(delaysMs);
                 currentThread.interrupt();
             }
         }.start();
     }
-    
+
     public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance) {
         assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
@@ -188,6 +189,15 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void assertSizeEventually(final int size, final IMap<String, String> map) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(size, map.size());
+            }
+        });
+    }
+
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
 
@@ -269,7 +279,7 @@ public abstract class HazelcastTestSupport {
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        for (;;) {
+        for (; ; ) {
             String id = UUID.randomUUID().toString();
             Partition partition = partitionService.getPartition(id);
             if (localMember.equals(partition.getOwner())) {
@@ -281,7 +291,7 @@ public abstract class HazelcastTestSupport {
     public static String generateKeyNotOwnedBy(HazelcastInstance instance) {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        for (;;) {
+        for (; ; ) {
             String id = UUID.randomUUID().toString();
             Partition partition = partitionService.getPartition(id);
             if (!localMember.equals(partition.getOwner())) {
