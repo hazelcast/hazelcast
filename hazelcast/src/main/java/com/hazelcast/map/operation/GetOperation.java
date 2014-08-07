@@ -53,7 +53,7 @@ public final class GetOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public final WaitNotifyKey getWaitKey() {
+    public WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
     }
 
