@@ -250,9 +250,10 @@
     <suppress checks="JavadocType" files="com.hazelcast.security[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.security[\\/]"/>
-    <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission[\\/]"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.security.permission.ActionConstants"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.security.permission.ActionConstants"/>
+    <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission.QueuePermission"/>
+    <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission.ReplicatedMapPermission"/>
+    <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission.MapPermission"/>
+    <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission.ListPermission"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.security.permission.InstancePermission"/>
 
     <!-- Logging -->
@@ -386,6 +387,7 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="IllegalType" files="com.hazelcast.nio.serialization.serializers.ArrayListSerializerHook"/>
     <suppress checks="IllegalType" files="com.hazelcast.nio.serialization.serializers.LinkedListSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
 
     <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataInput"/>
     <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataOutput"/>

@@ -237,6 +237,16 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
+    public void networkReuseAddress() {
+       Config config = buildConfig("<hazelcast>\n" +
+                "    <network>\n" +
+                "        <reuse-address>true</reuse-address>\n" +
+                "    </network>\n" +
+                "</hazelcast>");
+        assertTrue(config.getNetworkConfig().isReuseAddress());
+    }
+
+    @Test
     public void readSemaphoreConfig() {
         String xml =
                 "<hazelcast>\n" +

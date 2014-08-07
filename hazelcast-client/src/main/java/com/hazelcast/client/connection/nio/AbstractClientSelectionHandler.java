@@ -24,7 +24,7 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 
 import java.nio.channels.SelectionKey;
 
-public abstract class ClientAbstractSelectionHandler implements SelectionHandler, Runnable {
+public abstract class AbstractClientSelectionHandler implements SelectionHandler, Runnable {
 
     protected final ILogger logger;
 
@@ -38,7 +38,7 @@ public abstract class ClientAbstractSelectionHandler implements SelectionHandler
 
     private SelectionKey sk;
 
-    public ClientAbstractSelectionHandler(final ClientConnection connection, IOSelector ioSelector) {
+    public AbstractClientSelectionHandler(final ClientConnection connection, IOSelector ioSelector) {
         this.connection = connection;
         this.ioSelector = ioSelector;
         this.socketChannel = connection.getSocketChannelWrapper();

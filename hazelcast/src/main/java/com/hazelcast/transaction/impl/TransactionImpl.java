@@ -91,7 +91,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         this.durability = options.getDurability();
         this.transactionType = options.getTransactionType();
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
-        this.checkThreadAccess = txOwnerUuid != null;
+        this.checkThreadAccess = txOwnerUuid == null;
 
         ILogger logger = nodeEngine.getLogger(getClass());
         this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
@@ -175,7 +175,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     }
 
     private void checkThread() {
-        if (!checkThreadAccess && threadId != null && threadId.longValue() != Thread.currentThread().getId()) {
+        if (checkThreadAccess && threadId != null && threadId.longValue() != Thread.currentThread().getId()) {
             throw new IllegalStateException("Transaction cannot span multiple threads!");
         }
     }
@@ -187,17 +187,18 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         if (THREAD_FLAG.get() != null) {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
-        //init caller thread
-        if (threadId == null) {
-            threadId = Thread.currentThread().getId();
-            setThreadFlag(Boolean.TRUE);
-        }
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
 
         if (durability > 0 && backupAddresses != null && transactionType == TransactionType.TWO_PHASE) {
             List<Future> futures = startTxBackup();
             awaitTxBackupCompletion(futures);
+        }
+
+        //init caller thread
+        if (threadId == null) {
+            threadId = Thread.currentThread().getId();
+            setThreadFlag(Boolean.TRUE);
         }
         state = ACTIVE;
     }
@@ -235,7 +236,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     }
 
     private void setThreadFlag(Boolean flag) {
-        if (!checkThreadAccess) {
+        if (checkThreadAccess) {
             THREAD_FLAG.set(flag);
         }
     }

@@ -57,6 +57,7 @@ public static void main( String[] args )throws Exception{
   config.setSecurityGroupName( ... );
   config.setTagKey( ... );
   config.setTagValue( ... );
+  config.setEnabled("true");
   AWSClient client = new AWSClient( config );
   List<String> ipAddresses = client.getPrivateIpAddresses();
   System.out.println( "addresses found:" + ipAddresses ); 
