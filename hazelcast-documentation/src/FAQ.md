@@ -46,7 +46,6 @@ When you store a key & value in a distributed Map, Hazelcast serializes the key 
 
 Implementing `equals` and `hashCode` is not enough, it is also important that the object is always serialized into the same byte array. All primitive types like String, Long, Integer, etc. are good candidates for keys to be used in Hazelcast. An unsorted Set is an example of a very bad candidate because Java Serialization may serialize the same unsorted set in two different byte arrays.
 
-Note that the distributed Set and List store their entries as the keys in a distributed Map. So the notes above apply to the objects you store in Set and List.
 
 ## How do I reflect value modifications
 
@@ -249,3 +248,30 @@ Then set the log level to "Debug" in properties file. Below is a sample content.
 
 The line `log4j.logger.com.hazelcast=debug` is used to see debug logs for all Hazelcast operations. Below this line, you can select to see specific logs (cluster, partition, hibernate, etc.).
 
+## What is the difference between client-server and embedded topologies
+
+In the embedded topology, nodes include both the data and application. This type of topology is the most useful if your application focuses on high performance computing and many task executions. Since application is close to data, this topology supports data locality. 
+
+In the client-server topology, you create a cluster of nodes and scale the cluster independently. And your applications are hosted on the clients, that communicate with the nodes in the cluster to reach data. 
+
+Client-server topology fits better, if there are multiple applications sharing the same data or if application deployment is significantly greater than the cluster size (e.g. 500 application servers vs. 10 node cluster).
+
+## How do I know it is safe to kill the second node
+
+Programmatically:
+
+```java
+PartitionService partitionService = hazelcastInstance.getPartitionService().isClusterSafe()
+if (partitionService().isClusterSafe()) {
+  hazelcastInstance.shutdown(); // or terminate
+}
+```
+
+OR 
+
+```java
+PartitionService partitionService = hazelcastInstance.getPartitionService().isClusterSafe()
+if (partitionService().isLocalMemberSafe()) {
+  hazelcastInstance.shutdown(); // or terminate
+}
+```
