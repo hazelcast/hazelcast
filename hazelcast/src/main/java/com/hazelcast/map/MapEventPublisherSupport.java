@@ -103,9 +103,6 @@ class MapEventPublisherSupport implements MapEventPublisher {
     }
 
     private Data pickDataValue(EntryEventType eventType, Data dataOldValue, Data dataValue) {
-        if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
-            return dataValue != null ? dataValue : dataOldValue;
-        }
         return dataValue;
     }
 
