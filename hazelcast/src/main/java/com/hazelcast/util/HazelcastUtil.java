@@ -26,10 +26,10 @@ import java.util.Properties;
  */
 public final class HazelcastUtil {
 
-    private static  String VERSION;
-    private static  boolean ENTERPRISE;
-    private static  String BUILD;
-    private static  int BUILD_NUMBER;
+    private static String version;
+    private static boolean enterprise;
+    private static String build;
+    private static int buildNumber;
 
     //CHECKSTYLE:OFF
     static {
@@ -42,19 +42,19 @@ public final class HazelcastUtil {
     }
 
     public static String getVersion() {
-        return VERSION;
+        return version;
     }
 
     public static String getBuild() {
-        return BUILD;
+        return build;
     }
 
     public static int getBuildNumber() {
-        return BUILD_NUMBER;
+        return buildNumber;
     }
 
     public static boolean isEnterprise() {
-        return ENTERPRISE;
+        return enterprise;
     }
 
     public static void init() {
@@ -70,18 +70,18 @@ public final class HazelcastUtil {
             EmptyStatement.ignore(ignored);
         }
 
-        VERSION = runtimeProperties.getProperty("hazelcast.version");
+        version = runtimeProperties.getProperty("hazelcast.version");
         String distribution = runtimeProperties.getProperty("hazelcast.distribution");
-        ENTERPRISE = "Hazelcast".equals(distribution) ? false : true;
+        enterprise = "Hazelcast".equals(distribution) ? false : true;
 
         // override BUILD_NUMBER with a system property
-        Integer buildNumber = Integer.getInteger("hazelcast.build", -1);
-        if (buildNumber == -1) {
-            BUILD = runtimeProperties.getProperty("hazelcast.build");
+        Integer hazelcastBuild = Integer.getInteger("hazelcast.build", -1);
+        if (hazelcastBuild == -1) {
+            build = runtimeProperties.getProperty("hazelcast.build");
         } else {
-            BUILD = String.valueOf(buildNumber);
+            build = String.valueOf(hazelcastBuild);
         }
-        BUILD_NUMBER = Integer.valueOf(BUILD);
+        buildNumber = Integer.valueOf(build);
     }
 
 }
