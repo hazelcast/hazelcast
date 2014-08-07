@@ -83,7 +83,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;

@@ -4,7 +4,7 @@ com.hazelcast.client.ClientPortableHook
 com.hazelcast.client.txn.ClientTxnPortableHook
 com.hazelcast.map.MapPortableHook
 com.hazelcast.queue.impl.QueuePortableHook
-com.hazelcast.multimap.MultiMapPortableHook
+com.hazelcast.multimap.impl.MultiMapPortableHook
 com.hazelcast.collection.CollectionPortableHook
 com.hazelcast.topic.impl.TopicPortableHook
 com.hazelcast.executor.impl.ExecutorPortableHook
