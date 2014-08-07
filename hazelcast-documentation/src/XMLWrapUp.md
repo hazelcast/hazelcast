@@ -2,6 +2,185 @@
 
 ## Default Hazelcast.xml Wrap Up
 
+In Hazelcast, below configuration elements are available.
+
+- group
+- management-center
+- network
+- partition-group
+- executor-service
+- queue
+- map
+- multimap
+- list
+- set
+- jobtracker
+- semaphore
+- serialization
+- services
+
+
+
+### `group` Tag
+
+This configuration is for ???. It has below sub-tags.
+
+- name:
+- password:
+
+
+### `management-center` Tag
+
+This configuration is for ???. It only has the attribute `enabled`.
+
+### `network` Tag
+
+This configuration is for ???. It has below sub-tags.
+
+- port:
+- outbound-ports:
+- join:
+- interfaces:
+- ssl:
+- socket-interceptor:
+- symmetric-encryption:
+- public-address:
+
+### `partition-group` Tag
+
+This configuration is for ???. It only has the attribute `enabled`.
+
+### `executor-service` Tag
+
+This configuration is for ???. It has below attributes.
+
+- pool-size:
+- queue-capacity:
+
+
+### `queue` Tag
+
+This configuration is for ???. It has below attributes.
+
+- max-size:
+- backup-count:
+- async-backup-count:
+- empty-queue-ttl:
+- item-listeners:
+- queue-store:
+- statistics-enabled:
+
+### `map` Tag
+
+This configuration is for ???. It has below attributes.
+
+- in-memory-format:
+- backup-count:
+- async-backup-count:
+- read-backup-data:
+- time-to-live-seconds:
+- max-idle-seconds:
+- eviction-policy:
+- max-size:
+- eviction-percentage:
+- merge-policy:
+- statistics-enabled:
+- map-store:
+- near-cache:
+- wan-replication-ref:
+- indexes:
+- entry-listeners:
+- partition-strategy:
+
+
+### `multimap` Tag
+
+This configuration is for ???. It has below attributes.
+
+- backup-count:
+- async-backup-count:
+- statistics-enabled:
+- value-collection-type:
+- entry-listeners:
+- partition-strategy:
+
+
+### `topic` Tag
+
+This configuration is for ???. It has below attributes.
+
+- statistics-enabled:
+- global-ordering-enabled:
+- message-listeners:
+
+
+### `list` Tag
+
+This configuration is for ???. It has below attributes.
+
+- backup-count:
+- async-backup-count:
+- statistics-enabled:
+- max-size:
+- item-listeners:
+- statistics-enabled:
+
+### `set` Tag
+
+This configuration is for ???. It has below attributes.
+
+- backup-count:
+- async-backup-count:
+- statistics-enabled:
+- max-size:
+- item-listeners:
+- statistics-enabled:
+
+
+
+
+### `jobtracker` Tag
+
+This configuration is for ???. It has below attributes.
+
+- max-thread-size:
+- queue-size:
+- retry-count:
+- chunk-size:
+- communicate-stats:
+- topology-changed-strategy:
+
+
+### `semaphore` Tag
+
+This configuration is for ???. It has below attributes.
+
+- initial-permits:
+- backup-count:
+- async-backup-count:
+
+
+### `serialization` Tag
+
+This configuration is for ???. It has below attributes.
+
+- portable-version:
+
+### `services` Tag
+
+This configuration is for ???. It only has the attribute `enabled`.
+
+
+
+
+
+
+
+
+
+
+
+
 Below is the `hazelcast.xml` configuration file that comes with the release, located at `bin` folder.
 
 ```xml
