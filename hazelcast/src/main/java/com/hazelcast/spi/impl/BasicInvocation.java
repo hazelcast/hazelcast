@@ -153,7 +153,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
-        this.invocationFuture = new BasicInvocationFuture(this, callback);
+        this.invocationFuture = new BasicInvocationFuture(operationService, this, callback);
         this.executorName = executorName;
         this.resultDeserialized = resultDeserialized;
     }
@@ -293,7 +293,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         long callId = operationService.registerInvocation(this);
         boolean sent = operationService.send(op, invTarget);
         if (!sent) {
-            operationService.deregisterInvocation(callId);
+            operationService.deregisterInvocation(this);
             notify(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
