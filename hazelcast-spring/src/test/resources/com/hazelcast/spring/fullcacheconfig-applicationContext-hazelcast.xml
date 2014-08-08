@@ -93,7 +93,7 @@
                                          salt="thesalt"
                                          password="thepass"
                                          iteration-count="19"/>
-                <hz:reuse-address>false</hz:reuse-address>
+                <hz:reuse-address>true</hz:reuse-address>
             </hz:network>
             <hz:partition-group enabled="true" group-type="CUSTOM">
                 <hz:member-group>
