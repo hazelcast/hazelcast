@@ -358,8 +358,8 @@ final class BasicOperationService implements InternalOperationService {
         return callId;
     }
 
-    public void deregisterInvocation(long id) {
-        invocations.remove(id);
+    public void deregisterInvocation(BasicInvocation invocation) {
+        invocations.remove(invocation.op.getCallId());
     }
 
     @PrivateApi

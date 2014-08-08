@@ -36,9 +36,11 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     private BasicInvocation basicInvocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
     private volatile Object response;
+    private final BasicOperationService operationService;
 
-    BasicInvocationFuture(BasicInvocation basicInvocation, final Callback<E> callback) {
+    BasicInvocationFuture(BasicOperationService operationService, BasicInvocation basicInvocation, final Callback<E> callback) {
         this.basicInvocation = basicInvocation;
+        this.operationService = operationService;
 
         if (callback != null) {
             ExecutorCallbackAdapter<E> adapter = new ExecutorCallbackAdapter<E>(callback);
@@ -126,9 +128,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             notifyAll();
         }
 
-        BasicOperationService operationService = (BasicOperationService) basicInvocation.nodeEngine.operationService;
-        operationService.deregisterInvocation(basicInvocation.op.getCallId());
-
+        operationService.deregisterInvocation(basicInvocation);
         notifyCallbacks(callbackChain);
     }
 
