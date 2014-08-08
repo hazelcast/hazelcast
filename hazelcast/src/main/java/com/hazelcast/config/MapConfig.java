@@ -330,7 +330,7 @@ public class MapConfig {
     /**
      * Maximum number of seconds for each entry to stay idle in the map. Entries that are
      * idle(not touched) for more than maxIdleSeconds will get
-     * automatically evicted from the map. Entry is touched if get, put or
+     * automatically evicted from the map. Entry is touched if get, getAll, put or
      * containsKey is called.
      * Any integer between 0 and Integer.MAX_VALUE.
      * 0 means infinite. Default is 0.
