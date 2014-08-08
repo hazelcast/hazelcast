@@ -25,6 +25,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
 import org.junit.After;
@@ -40,9 +41,11 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * Used for testing {@link PagingPredicate}
@@ -52,14 +55,17 @@ import static junit.framework.Assert.assertEquals;
 public class ClientSortLimitTest extends HazelcastTestSupport {
 
     static HazelcastInstance client;
+    static HazelcastInstance server1;
+    static HazelcastInstance server2;
+
     static IMap map;
     static int pageSize = 5;
     static int size = 50;
 
     @BeforeClass
     public static void createInstances(){
-        Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
+        server1 = Hazelcast.newHazelcastInstance();
+        server2 = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
@@ -230,6 +236,93 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         assertEquals(0, values.size());
     }
 
+
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void mapPagingPredicate_EmployObject_WithOrderedIndex_smalltest(){
+        mapPagingPredicate_EmployObject_WithOrderedIndex(10);
+    }
+
+    @Test
+    @Category(ProblematicTest.class)
+    public void mapPagingPredicate_EmployObject_WithOrderedIndex_largetest(){
+        mapPagingPredicate_EmployObject_WithOrderedIndex(5000);
+    }
+
+
+    private void mapPagingPredicate_EmployObject_WithOrderedIndex(int maxEmployee){
+
+        final IMap<Integer, Employee> map = makeEmployeMap(maxEmployee);
+
+        map.addIndex( "id", true );
+
+        Predicate  pred = Predicates.lessThan("id", 2);
+        PagingPredicate predicate = new PagingPredicate(pred, 2);
+
+        Collection<Employee> values;
+
+        values = map.values(predicate);
+        System.out.println(values);
+        assertEquals(2, values.size());
+
+        predicate.nextPage();
+
+        values = map.values(predicate);
+        System.out.println(values);
+        assertEquals(0, values.size());
+    }
+
+
+    @Test(timeout = 60000)
+    @Category(ProblematicTest.class)
+    public void betweenPaginPred_withEmploye_test(){
+        IMap<Integer, Employee> map = makeEmployeMap(1000);
+        Predicate p = Predicates.between("id", 10, 15);
+        pagingPredicat_withEmployeeObject_test(map, p, 5);
+    }
+
+    @Test(timeout = 60000)
+    @Category(ProblematicTest.class)
+    public void lessThanPred_withEmploye_test(){
+        IMap<Integer, Employee> map = makeEmployeMap(1000);
+        Predicate p = Predicates.lessThan("id", 500);
+        pagingPredicat_withEmployeeObject_test(map, p, 5);
+    }
+
+    @Test(timeout = 60000)
+    @Category(ProblematicTest.class)
+    public void equalsPred_withEmploye_test(){
+        IMap<Integer, Employee> map = makeEmployeMap(1000);
+        Predicate p = Predicates.equal("name", Employee.getRandomName());
+        pagingPredicat_withEmployeeObject_test(map, p, 5);
+    }
+
+    private IMap<Integer, Employee> makeEmployeMap(int maxEmployees){
+        final IMap<Integer, Employee> map = server1.getMap(randomString());
+        for(int i=0; i<maxEmployees; i++){
+            Employee e = new Employee(i);
+            map.put(e.id, e);
+        }
+        return map;
+    }
+
+    private void pagingPredicat_withEmployeeObject_test(IMap<Integer, Employee> map, Predicate predicate, int pageSize){
+
+        PagingPredicate pagingPredicate = new PagingPredicate(predicate, pageSize);
+        Set<Map.Entry<Integer, Employee>> set;
+        do{
+            set = map.entrySet();
+
+            for(Map.Entry<Integer, Employee> e: set){
+                //assertTrue(predicate.apply(e));
+            }
+            pagingPredicate.nextPage();
+        }while(! set.isEmpty());
+    }
+
+
+
     static class TestComparator implements Comparator<Map.Entry>, Serializable {
 
         int ascending = 1;
@@ -262,5 +355,71 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
             }
         }
     }
+
+
+
+
+    public static class Employee implements Serializable {
+
+        public static final int MAX_AGE=75;
+        public static final double MAX_SALARY=1000.0;
+
+        public static final String[] names = {"aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"};
+        public static Random random = new Random();
+
+        private int id;
+        private String name;
+        private int age;
+        private boolean active;
+        private double salary;
+
+
+        public Employee(int id) {
+            this.id = id;
+            setAtributesRandomly();
+        }
+
+        public Employee() {
+        }
+
+        public void setAtributesRandomly(){
+            name = names[random.nextInt(names.length)];
+            age = random.nextInt(MAX_AGE);
+            active = random.nextBoolean();
+            salary = random.nextDouble() * MAX_SALARY;
+        }
+
+        public static String getRandomName(){
+            return names[random.nextInt(names.length)];
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public double getSalary() {
+            return salary;
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+
+        @Override
+        public String toString() {
+            return "Employee{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    ", age=" + age +
+                    ", active=" + active +
+                    ", salary=" + salary +
+                    '}';
+        }
+    }
+
 
 }
