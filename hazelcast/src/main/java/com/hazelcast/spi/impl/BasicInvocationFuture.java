@@ -198,14 +198,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             pollCount++;
 
             try {
-                //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
-                if (pollTimeoutMs > 0) {
-                    synchronized (this) {
-                        if (response == null || response == BasicInvocation.WAIT_RESPONSE) {
-                            wait(pollTimeoutMs);
-                        }
-                    }
-                }
+                pollResponse(pollTimeoutMs);
                 lastPollTime = Clock.currentTimeMillis() - startMs;
                 timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
 
@@ -242,6 +235,20 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             }
         }
         return BasicInvocation.TIMEOUT_RESPONSE;
+    }
+
+    private void pollResponse(final long pollTimeoutMs) throws InterruptedException {
+        //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
+        if (pollTimeoutMs > 0) {
+            long currentTimeoutMs = pollTimeoutMs;
+            final long waitStart = Clock.currentTimeMillis();
+            synchronized (this) {
+                while (currentTimeoutMs > 0 && (response == null || response == BasicInvocation.WAIT_RESPONSE)) {
+                    wait(currentTimeoutMs);
+                    currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
+                }
+            }
+        }
     }
 
     private long getMaxCallTimeoutMs() {
