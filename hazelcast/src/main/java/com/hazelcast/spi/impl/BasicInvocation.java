@@ -290,7 +290,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     private void doInvokeRemote() {
-        long callId = operationService.registerInvocation(this);
+        operationService.registerInvocation(this);
         boolean sent = operationService.send(op, invTarget);
         if (!sent) {
             operationService.deregisterInvocation(this);
