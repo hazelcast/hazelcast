@@ -20,17 +20,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.State;
@@ -823,6 +813,24 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.addIndex("name", true);
         map.addIndex("city", true);
         testMultipleOrPredicates(map);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIssue3130() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(new Config());
+        IMap<Integer, SampleObjects.Employee> map = instance.getMap("default");
+        map.put(5, new SampleObjects.Employee(5, "Employee-1", 25, true, 1000));
+        map.put(25, new SampleObjects.Employee(25, "Employee-2", 35, true, 2000));
+        map.put(55, new SampleObjects.Employee(55, "Employee-3", 45, true, 3000));
+        Predicate  pred = Predicates.between("id", 10, 50);
+        Collection<Employee> values = map.values(pred);
+
+        for(Employee e : values){
+            Map.Entry<Integer, Employee> entry = new AbstractMap.SimpleEntry(e.getId(), e);
+            assertTrue( pred.apply(entry) );
+        }
     }
 
     private void testMultipleOrPredicates(IMap<Integer, SampleObjects.Employee> map) {
