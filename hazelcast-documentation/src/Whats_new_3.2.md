@@ -27,34 +27,55 @@ Please see the list of all enhancement issues [here](https://github.com/hazelcas
 
 ### Fixes
 
+**3.2.5 Fixes**
+
+This section lists issues solved for Hazelcast 3.2.5 release.
+
+-	Txn map keyset and values with portable entries is not working correctly. [[#3152]](https://github.com/hazelcast/hazelcast/issues/3152)
+-	`TransactionalMap.{putIfAbsent(k, v), replace(k, v), replace(k, v1, v2), remove(k, v)}` methods never release lock after transaction ends. [[#3149]](https://github.com/hazelcast/hazelcast/issues/3149)
+- Test failure at `ClientMapTest.testMapStatistics`. [[#3138]](https://github.com/hazelcast/hazelcast/issues/3138)
+- `NetworkConfig.setReuseAddress` is not available in the XML. [[#3122]](https://github.com/hazelcast/hazelcast/issues/3122)
+- When a selector fails to open, the `AbstractSelector` does not throw an exception, but logs it and then continues. Also, when `select` throws an IOException, this exception is not dealt correctly. [[#3105]](https://github.com/hazelcast/hazelcast/issues/3105)
+- Test failure at `QueryBasicTest.testInPredicateWithEmptyArray`. [[#3060]](https://github.com/hazelcast/hazelcast/issues/3060)
+- Hibernate cache flush leaves ClientMapProxy in an inconsistent state. This cache flush triggers `IMapRegionCache.clear()` and the implementation here does not look correct since it leaves the "map" field in the inconsistent state (*context = null*) and prevents any further use of it. [[#3004]](https://github.com/hazelcast/hazelcast/issues/3004)
+- Fixes operation execution/invocation on IO threads issue. [[#2994]](https://github.com/hazelcast/hazelcast/pull/2994)
+- Node cannot recover from `MergeOperation` if target node exits the cluster. [[#2937]](https://github.com/hazelcast/hazelcast/issues/2937)
+- Client fails to run due to the lack of `ClientTestApp` class. [[#2817]](https://github.com/hazelcast/hazelcast/issues/2817)
+- Using Hazelcast Queue, assume that there is a system in which messages are actively being consumed by one consumer. When a second Hazelcast instance is started (i.e. second consumer for the same queue), Hazelcast throws an exception, then continues normally and there are two competing consumers on the same queue. [[#2805]](https://github.com/hazelcast/hazelcast/issues/2805)
+- `IMap.submitToKey` and `IMap.executeOnKey` in combination with nodes joining/leaving the cluster result in data loss. [[#2785]](https://github.com/hazelcast/hazelcast/issues/2785)
+- Too much delay for deciding heartbeat timeout. [[#2766]](https://github.com/hazelcast/hazelcast/issues/2766)
+- When multiple predicates are combined by an `AndPredicate`, the first `IndexAwarePredicate` that is not indexed will be added to the "no index" list twice. [[#2531]](https://github.com/hazelcast/hazelcast/issues/2531)
+- There appears to be a leak in the memory in `SecondsBasedEntryTaskScheduler` when idle timeout is enabled on a map. [[#2343]](https://github.com/hazelcast/hazelcast/issues/2343)
+
+
 **3.2.2 Fixes**
 
 This section lists issues solved for Hazelcast 3.2.2 release.
 
--	Client security callable fix: https://github.com/hazelcast/hazelcast/pull/2561
--	Updating a key in a transaction gives listeners an entryAdded() callback instead of entryUpdated() https://github.com/hazelcast/hazelcast/issues/2542
--	Client ssl engine doesn't need keyStore and keyStorePassword https://github.com/hazelcast/hazelcast/pull/2525
--	Added support for Mapper, Combiner, Reducer, KeyValueSource to implement HazelcastInstanceAware https://github.com/hazelcast/hazelcast/pull/2502
--	Fixed alter function https://github.com/hazelcast/hazelcast/pull/2496
--	Return cached value upon IMap.get() if near cache is enabled https://github.com/hazelcast/hazelcast/pull/2482
--	Exception initialising hz:client https://github.com/hazelcast/hazelcast/issues/2480
--	Fixed portable serialization between different services versions https://github.com/hazelcast/hazelcast/pull/2478
--	Resolves a data race in the client proxy that can lead to an NPE. https://github.com/hazelcast/hazelcast/pull/2474
--	Fixed partition group hostname matching https://github.com/hazelcast/hazelcast/pull/2470
--	Client shutdown issue: Improve logging https://github.com/hazelcast/hazelcast/issues/2442
--	Unnecessary synchronized lock when invoking com.hazelcast.instance.LifecycleServiceImpl.isRunning() https://github.com/hazelcast/hazelcast/issues/2454
--	If MapStoreFactory throws exception, instance hangs https://github.com/hazelcast/hazelcast/issues/2445
--	Semaphore is given to the thread that is coming late https://github.com/hazelcast/hazelcast/issues/2443
--	Lots of exceptions when shutting down connection https://github.com/hazelcast/hazelcast/issues/2441
--	Migration fails when statistics are disabled https://github.com/hazelcast/hazelcast/issues/2436
--	3.2.1 regression: nested transactions are not caught and prevented. https://github.com/hazelcast/hazelcast/issues/2404
--	Client proxy init synced https://github.com/hazelcast/hazelcast/pull/2376
--	Fixes hostname matching problem when interface has wildcards https://github.com/hazelcast/hazelcast/pull/2398
--	Fix weblogic shutdown backport https://github.com/hazelcast/hazelcast/pull/2391
--	NotWritablePropertyException connectionAttemptLimit with ssl client config https://github.com/hazelcast/hazelcast/issues/2335
--	Map-Reduce Operation fails, when another instance tries to form a cluster with an instance running a map reduce task https://github.com/hazelcast/hazelcast/issues/2354
--	EntryEvent getMember returning null when a node leaves the cluster https://github.com/hazelcast/hazelcast/issues/2358
--	NullPointerException in Bundle Activator https://github.com/hazelcast/hazelcast/issues/2489
+-	Client security callable fix. [[#2561]](https://github.com/hazelcast/hazelcast/pull/2561)
+-	Updating a key in a transaction gives listeners an `entryAdded()` callback instead of `entryUpdated()`. [[#2542]](https://github.com/hazelcast/hazelcast/issues/2542)
+-	Client SSL engine does not need `keyStore` and `keyStorePassword`. [[#2525]](https://github.com/hazelcast/hazelcast/pull/2525)
+-	Added support for Mapper, Combiner, Reducer, KeyValueSource to implement HazelcastInstanceAware. [[#2502]](https://github.com/hazelcast/hazelcast/pull/2502)
+-	Fixed alter function. [[#2496]](https://github.com/hazelcast/hazelcast/pull/2496)
+-	Return cached value upon `IMap.get()` if near cache is enabled. [[#2482]](https://github.com/hazelcast/hazelcast/pull/2482)
+-	Exception initialising `hz:client`. [[#2480]](https://github.com/hazelcast/hazelcast/issues/2480)
+-	Fixed portable serialization between different service versions. [[#2478]](https://github.com/hazelcast/hazelcast/pull/2478)
+-	Resolves a data race in the client proxy that can lead to an NPE. [[#2474]](https://github.com/hazelcast/hazelcast/pull/2474)
+-	Fixed partition group hostname matching. [[#2470]](https://github.com/hazelcast/hazelcast/pull/2470)
+-	Client shutdown issue, improve logging. [[#2442]](https://github.com/hazelcast/hazelcast/issues/2442)
+-	Unnecessary synchronized lock when invoking `com.hazelcast.instance.LifecycleServiceImpl.isRunning()`. [[#2454]](https://github.com/hazelcast/hazelcast/issues/2454)
+-	If MapStoreFactory throws exception, instance hangs. [[#2445]](https://github.com/hazelcast/hazelcast/issues/2445)
+-	Semaphore is given to the thread that is coming late. [[#2443]](https://github.com/hazelcast/hazelcast/issues/2443)
+-	Lots of exceptions when shutting down connection. [[#2441]](https://github.com/hazelcast/hazelcast/issues/2441)
+-	Migration fails when statistics are disabled. [[#2436]](https://github.com/hazelcast/hazelcast/issues/2436)
+-	3.2.1 regression: nested transactions are not caught and prevented. [[#2404]](https://github.com/hazelcast/hazelcast/issues/2404)
+-	Client proxy init synced. [[#2376]](https://github.com/hazelcast/hazelcast/pull/2376)
+-	Fixes hostname matching problem when interface has wildcards. [[#2398]](https://github.com/hazelcast/hazelcast/pull/2398)
+-	Fix weblogic shutdown backport. [[#2391]](https://github.com/hazelcast/hazelcast/pull/2391)
+-	`NotWritablePropertyException`, connectionAttemptLimit with SSL client config. [[#2335]](https://github.com/hazelcast/hazelcast/issues/2335)
+-	Map-Reduce Operation fails, when another instance tries to form a cluster with an instance running a map reduce task. [[#2354]](https://github.com/hazelcast/hazelcast/issues/2354)
+-	EntryEvent getMember returning null when a node leaves the cluster. [[#2358]](https://github.com/hazelcast/hazelcast/issues/2358)
+-	NullPointerException in Bundle Activator. [[#2489]](https://github.com/hazelcast/hazelcast/issues/2489)
 
 Please see [here](https://github.com/hazelcast/hazelcast/issues?labels=&milestone=46&page=1&state=closed) for the full list of solved issues.
 
