@@ -131,7 +131,7 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
                 cacheRecordStore.accessRecord(record, expiryPolicy, now);
                 break;
             case UPDATE:
-                cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now);
+                cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false);
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
                     statistics.addGetTimeNano(System.nanoTime() - start);

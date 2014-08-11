@@ -37,6 +37,9 @@ public class CacheEventFilterAdaptor<K, V> implements EventFilter, DataSerializa
 
     private String cacheName;
 
+    public CacheEventFilterAdaptor() {
+    }
+
     public CacheEventFilterAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
 
         this.source = source;

@@ -21,16 +21,20 @@ import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
 import java.util.Set;
 
 //FIXME Move this into ManagementService
 public class MXBeanUtil {
 
     //ensure everything gets put in one MBeanServer
-    private static MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
+//    private static MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
+
+//    private static MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
     public static void registerCacheObject(ICache cache, boolean stats) {
         //these can change during runtime, so always look it up
+        MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
         ObjectName registeredObjectName = calculateObjectName(cache, stats);
         try {
             if (!stats) {
@@ -50,7 +54,7 @@ public class MXBeanUtil {
 
 
     static boolean isRegistered(ICache cache, boolean stats) {
-
+        MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
         Set<ObjectName> registeredObjectNames = null;
 
         ObjectName objectName = calculateObjectName(cache, stats);
@@ -61,7 +65,7 @@ public class MXBeanUtil {
 
 
     public static void unregisterCacheObject(ICache cache, boolean stats) {
-
+        MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
         Set<ObjectName> registeredObjectNames = null;
 
         ObjectName objectName = calculateObjectName(cache, stats);
