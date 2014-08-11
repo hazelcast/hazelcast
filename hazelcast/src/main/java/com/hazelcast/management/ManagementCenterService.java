@@ -323,7 +323,7 @@ public class ManagementCenterService {
                     writer.flush();
                     outputStream.flush();
                     post(connection);
-                    if(manCenterConnectionLost) {
+                    if (manCenterConnectionLost) {
                         logger.info("Connection to management center restored.");
                     }
                     manCenterConnectionLost = false;
@@ -332,7 +332,7 @@ public class ManagementCenterService {
                     closeResource(outputStream);
                 }
             } catch (ConnectException e) {
-                if(!manCenterConnectionLost) {
+                if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
                     if (logger.isFinestEnabled()) {
                         logger.finest("Failed to connect to:" + url, e);
@@ -450,13 +450,13 @@ public class ManagementCenterService {
                     task.fromJson(getObject(innerRequest, "request"));
                     processTaskAndSendResponse(taskId, task);
                 }
-                if(manCenterConnectionLost) {
+                if (manCenterConnectionLost) {
                     logger.info("Connection to management center restored.");
                 }
                 manCenterConnectionLost = false;
 
             } catch (ConnectException e) {
-                if(!manCenterConnectionLost) {
+                if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
                     if (logger.isFinestEnabled()) {
                         logger.finest("Failed to connect to management center", e);
