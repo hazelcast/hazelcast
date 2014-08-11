@@ -5,11 +5,10 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.NodeEngine;
-
-import java.util.logging.Level;
 
 /**
  * Contains map service event publishing service functionality.
@@ -51,10 +50,7 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
 
     private void dispatchMapEventData(EventData eventData, EntryListener listener) {
         final MapEventData mapEventData = (MapEventData) eventData;
-        final Member member = getMemberOrNull(eventData);
-        if (member == null) {
-            return;
-        }
+        final Member member = getMember(eventData);
         final MapEvent event = createMapEvent(mapEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);
@@ -67,19 +63,16 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
 
     private void dispatchEntryEventData(EventData eventData, EntryListener listener) {
         final EntryEventData entryEventData = (EntryEventData) eventData;
-        final Member member = getMemberOrNull(eventData);
-
+        final Member member = getMember(eventData);
         final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);
     }
 
-    private Member getMemberOrNull(EventData eventData) {
-        final Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
+    private Member getMember(EventData eventData) {
+        Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
         if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping event " + eventData + " from unknown address:" + eventData.getCaller());
-            }
+            member = new MemberImpl(eventData.getCaller(), false);
         }
         return member;
     }

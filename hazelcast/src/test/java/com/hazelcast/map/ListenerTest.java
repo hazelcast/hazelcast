@@ -31,18 +31,18 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -92,6 +92,28 @@ public class ListenerTest extends HazelcastTestSupport {
         int k = 3;
         putDummyData(map1, k);
         checkCountWithExpected(k * 3, 0, k * 2);
+    }
+    @Test
+    public void testEntryEventGetMemberNotNull() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        final String mapName = randomMapName();
+        final IMap<Object, Object> map = h1.getMap(mapName);
+        final IMap<Object, Object> map2 = h2.getMap(mapName);
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<Object, Object>(){
+            @Override
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                assertNotNull(event.getMember());
+                latch.countDown();
+            }
+        },false);
+        final String key = generateKeyOwnedBy(h2);
+        final String value = randomString();
+        map2.put(key, value);
+        h2.getLifecycleService().terminate();
+        assertOpenEventually(latch);
     }
 
     @Test
@@ -359,7 +381,7 @@ public class ListenerTest extends HazelcastTestSupport {
             public void run() {
 
                 for (int i = 0; i < replaceTotal; i++) {
-                    assertEquals( oldVal, map.get(i));
+                    assertEquals(oldVal, map.get(i));
                 }
 
                 assertEquals(putTotal, listener.addCount.get());
