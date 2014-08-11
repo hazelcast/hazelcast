@@ -549,7 +549,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         Record record = records.get(key);
         Object oldValue = null;
         if (record == null) {
-            if(loadMissingKeysFromMapStore) {
+            if (loadMissingKeysFromMapStore) {
                 oldValue = mapDataStore.load(key);
             }
 
