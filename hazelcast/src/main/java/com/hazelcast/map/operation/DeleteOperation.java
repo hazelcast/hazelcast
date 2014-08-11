@@ -29,7 +29,7 @@ public class DeleteOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-        success = recordStore.remove(dataKey) != null;
+        success = recordStore.delete(dataKey) != null;
     }
 
     @Override

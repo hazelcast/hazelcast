@@ -28,7 +28,6 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -39,6 +38,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -153,6 +153,11 @@ public class DefaultRecordStore implements RecordStore {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public Object remove(Data dataKey) {
+        return removeInternal(dataKey, true);
     }
 
     public void flush() {
@@ -484,17 +489,24 @@ public class DefaultRecordStore implements RecordStore {
         resetAccessSequenceNumber();
     }
 
+    @Override
+    public Object delete(Data dataKey) {
+        return removeInternal(dataKey, false);
+    }
+
     private void resetAccessSequenceNumber() {
         lruAccessSequenceNumber = 0L;
     }
 
-    public Object remove(Data dataKey) {
+    public Object removeInternal(Data dataKey, boolean loadMissingKeysFromMapStore) {
         checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
             if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
+                if (loadMissingKeysFromMapStore) {
+                    oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
+                }
                 if (oldValue != null) {
                     removeIndex(dataKey);
                     mapStoreDelete(null, dataKey);
