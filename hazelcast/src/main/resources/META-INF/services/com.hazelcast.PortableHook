@@ -1,7 +1,7 @@
 com.hazelcast.spi.impl.SpiPortableHook
 com.hazelcast.partition.PartitionPortableHook
-com.hazelcast.client.ClientPortableHook
-com.hazelcast.client.txn.ClientTxnPortableHook
+com.hazelcast.client.client.ClientPortableHook
+client.txn.ClientTxnPortableHook
 com.hazelcast.map.MapPortableHook
 com.hazelcast.queue.impl.QueuePortableHook
 com.hazelcast.multimap.impl.MultiMapPortableHook

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;
@@ -57,7 +57,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * The replicated map client side proxy implementation proxying all requests to a member node
+ * The replicated map client side proxy implementation proxying all client to a member node
  *
  * @param <K> key type
  * @param <V> value type

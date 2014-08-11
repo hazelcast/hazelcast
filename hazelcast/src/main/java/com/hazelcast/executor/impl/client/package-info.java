@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains client requests for the IExecutorService.<br/>
+ * <p>This package contains client client for the IExecutorService.<br/>
  *
  * @since 1
  */

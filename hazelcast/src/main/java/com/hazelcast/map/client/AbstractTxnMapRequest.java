@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.txn.BaseTransactionRequest;
+import com.hazelcast.client.client.txn.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapPortableHook;

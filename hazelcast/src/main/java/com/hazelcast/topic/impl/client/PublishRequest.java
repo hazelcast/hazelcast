@@ -17,8 +17,8 @@
 package com.hazelcast.topic.impl.client;
 
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.PartitionClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.client.PartitionClientRequest;
+import com.hazelcast.client.client.SecureRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains client requests for the ITopic.<br/>
+ * <p>This package contains client client for the ITopic.<br/>
  *
  * @since 2
  */

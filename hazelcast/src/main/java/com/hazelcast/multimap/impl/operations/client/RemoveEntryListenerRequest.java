@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations.client;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.security.permission.ActionConstants;

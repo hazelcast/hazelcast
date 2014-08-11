@@ -19,7 +19,7 @@ package com.hazelcast.security;
 import java.security.AccessControlException;
 
 /**
- * This interface allows to intercept requests which produced by an API call like map.put, queue.offer ...
+ * This interface allows to intercept client which produced by an API call like map.put, queue.offer ...
  */
 public interface SecurityInterceptor {
 

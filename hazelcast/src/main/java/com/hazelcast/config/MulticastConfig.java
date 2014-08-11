@@ -178,7 +178,7 @@ public class MulticastConfig {
     /**
      * Sets the trusted interfaces.
      * <p/>
-     * By default, so when the set of trusted interfaces is empty, a Hazelcast member will accept join-requests
+     * By default, so when the set of trusted interfaces is empty, a Hazelcast member will accept join-client
      * from every member. With a trusted interface you can control the members you want to receive join request
      * from.
      * <p/>

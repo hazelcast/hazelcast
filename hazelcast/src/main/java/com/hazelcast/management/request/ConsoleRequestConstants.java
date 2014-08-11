@@ -17,7 +17,7 @@
 package com.hazelcast.management.request;
 
 /**
- * Constants to identify serialized requests.
+ * Constants to identify serialized client.
  */
 public final class ConsoleRequestConstants {
 

@@ -16,8 +16,8 @@
 
 package com.hazelcast.queue.impl.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.client.CallableClientRequest;
+import com.hazelcast.client.client.RetryableRequest;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.impl.QueueContainer;

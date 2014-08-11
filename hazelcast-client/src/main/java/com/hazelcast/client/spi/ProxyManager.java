@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.ClientCreateRequest;
-import com.hazelcast.client.DistributedObjectListenerRequest;
+import com.hazelcast.client.client.ClientCreateRequest;
+import com.hazelcast.client.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.RemoveDistributedObjectListenerRequest;
+import com.hazelcast.client.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.partition.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.ClientPortableHook;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.client.CallableClientRequest;
+import com.hazelcast.client.client.ClientPortableHook;
+import com.hazelcast.client.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;

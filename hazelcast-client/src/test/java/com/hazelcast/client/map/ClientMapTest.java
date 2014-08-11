@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.AuthenticationRequest;
+import com.hazelcast.client.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;

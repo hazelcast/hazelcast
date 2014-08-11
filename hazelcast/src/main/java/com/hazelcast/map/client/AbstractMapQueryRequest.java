@@ -17,9 +17,10 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.InvocationClientRequest;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.client.InvocationClientRequest;
+import com.hazelcast.client.client.RetryableRequest;
+import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;

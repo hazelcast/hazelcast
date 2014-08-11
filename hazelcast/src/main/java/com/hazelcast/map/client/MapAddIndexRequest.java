@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.client.AllPartitionsClientRequest;
+import com.hazelcast.client.client.SecureRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.AddIndexOperationFactory;

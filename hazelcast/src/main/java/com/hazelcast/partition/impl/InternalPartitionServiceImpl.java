@@ -689,7 +689,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     oldMigration = currentMigrationInfo;
                     newMigration = migrationInfo;
                 } else {
-                    String message = "Something is seriously wrong! There are two migration requests for the "
+                    String message = "Something is seriously wrong! There are two migration client for the "
                             + "same partition! First-> " + currentMigrationInfo + ", Second -> " + migrationInfo;
                     IllegalStateException error = new IllegalStateException(message);
                     logger.severe(message, error);
@@ -1124,7 +1124,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 int replicaSyncProcesses = replicaSyncProcessCount.get();
                 if (replicaSyncProcesses > 0) {
                     if (logger.isLoggable(level)) {
-                        logger.log(level, "Processing replica sync requests: " + replicaSyncProcesses);
+                        logger.log(level, "Processing replica sync client: " + replicaSyncProcesses);
                     }
                     return true;
                 }

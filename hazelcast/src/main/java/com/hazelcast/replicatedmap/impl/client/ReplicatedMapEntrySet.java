@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * An implementation of a portable implementing entry set for client results on entrySet requests
+ * An implementation of a portable implementing entry set for client results on entrySet client
  *
  * @param <K> key type
  * @param <V> value type

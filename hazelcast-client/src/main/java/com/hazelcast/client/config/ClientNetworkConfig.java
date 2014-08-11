@@ -125,7 +125,7 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * Timeout value in millis for nodes to accept client connection requests.
+     * Timeout value in millis for nodes to accept client connection client.
      *
      * @return connection timeout value in millis
      */
@@ -134,7 +134,7 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * @param connectionTimeout Timeout value in millis for nodes to accept client connection requests.
+     * @param connectionTimeout Timeout value in millis for nodes to accept client connection client.
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig setConnectionTimeout(int connectionTimeout) {

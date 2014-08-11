@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.impl.operations.client;
 
-import com.hazelcast.client.SecureRequest;
-import com.hazelcast.client.txn.BaseTransactionRequest;
+import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.client.txn.BaseTransactionRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;

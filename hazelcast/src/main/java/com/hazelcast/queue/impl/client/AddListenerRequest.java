@@ -16,10 +16,11 @@
 
 package com.hazelcast.queue.impl.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.client.CallableClientRequest;
+import com.hazelcast.client.client.RetryableRequest;
+import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;

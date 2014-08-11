@@ -16,8 +16,8 @@
 
 package com.hazelcast.queue.impl.client;
 
-import com.hazelcast.client.PartitionClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.client.PartitionClientRequest;
+import com.hazelcast.client.client.SecureRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.security.Permission;
 
 /**
- * This class contains methods for all Queue requests
+ * This class contains methods for all Queue client
  * such as {@link com.hazelcast.queue.impl.client.ClearRequest}.
  */
 public abstract class QueueRequest extends PartitionClientRequest implements Portable, SecureRequest {

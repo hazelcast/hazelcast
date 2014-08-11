@@ -16,7 +16,7 @@
 
 package com.hazelcast.queue.impl.client;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.security.permission.ActionConstants;

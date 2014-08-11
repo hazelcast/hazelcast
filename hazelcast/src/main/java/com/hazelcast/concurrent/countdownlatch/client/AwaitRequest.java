@@ -16,8 +16,8 @@
 
 package com.hazelcast.concurrent.countdownlatch.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.client.KeyBasedClientRequest;
+import com.hazelcast.client.client.SecureRequest;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.countdownlatch.operations.AwaitOperation;
 import com.hazelcast.nio.serialization.Portable;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.nearcache;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.InMemoryFormat;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.cluster.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.ClientPortableHook;
+import com.hazelcast.client.client.CallableClientRequest;
+import com.hazelcast.client.client.ClientPortableHook;
 
 import java.security.Permission;
 

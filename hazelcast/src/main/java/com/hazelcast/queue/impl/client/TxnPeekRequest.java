@@ -17,7 +17,8 @@
 package com.hazelcast.queue.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.txn.BaseTransactionRequest;
+import com.hazelcast.client.client.txn.BaseTransactionRequest;
+import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

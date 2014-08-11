@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.client.ClientEngineImpl;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;

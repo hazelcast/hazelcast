@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * Response class for client replicated map get requests
+ * Response class for client replicated map get client
  */
 public class ReplicatedMapGetResponse
         implements Portable {

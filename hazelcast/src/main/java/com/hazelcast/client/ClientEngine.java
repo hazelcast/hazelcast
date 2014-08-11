@@ -37,6 +37,7 @@ public interface ClientEngine {
 
     EventService getEventService();
 
+    // TODO: This method is not used.
     TransactionManagerService getTransactionManagerService();
 
     ProxyService getProxyService();
@@ -52,5 +53,4 @@ public interface ClientEngine {
     MemberImpl getLocalMember();
 
     SecurityContext getSecurityContext();
-
 }

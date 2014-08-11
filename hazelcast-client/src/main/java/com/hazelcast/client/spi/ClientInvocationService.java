@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.client.ClientRequest;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
 

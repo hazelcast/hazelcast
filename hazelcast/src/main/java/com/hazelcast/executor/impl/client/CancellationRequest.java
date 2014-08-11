@@ -16,7 +16,7 @@
 
 package com.hazelcast.executor.impl.client;
 
-import com.hazelcast.client.InvocationClientRequest;
+import com.hazelcast.client.client.InvocationClientRequest;
 import com.hazelcast.executor.impl.CancellationOperation;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;

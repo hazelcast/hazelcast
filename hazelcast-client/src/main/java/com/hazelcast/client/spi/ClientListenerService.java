@@ -1,7 +1,7 @@
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.client.ClientRequest;
 
 /**
  * Client service to add/remove remote listeners.

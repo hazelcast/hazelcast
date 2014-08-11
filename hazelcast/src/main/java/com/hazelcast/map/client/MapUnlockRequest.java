@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.client.SecureRequest;
 import com.hazelcast.concurrent.lock.client.AbstractUnlockRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;

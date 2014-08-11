@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.client.AllPartitionsClientRequest;
+import com.hazelcast.client.client.RetryableRequest;
+import com.hazelcast.client.client.SecureRequest;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;

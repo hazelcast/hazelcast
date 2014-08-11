@@ -17,8 +17,8 @@
 package com.hazelcast.concurrent.atomicreference.client;
 
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.PartitionClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.client.PartitionClientRequest;
+import com.hazelcast.client.client.SecureRequest;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
