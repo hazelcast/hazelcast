@@ -507,6 +507,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
+    public Object remove(Data dataKey) {
+        return removeInternal(dataKey, true);
+    }
+
+    @Override
     public boolean remove(Data key, Object testValue) {
         checkIfLoaded();
         final long now = getNow();
@@ -536,16 +541,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return removed;
     }
 
-    @Override
-    public Object remove(Data key) {
+    public Object removeInternal(Data key, boolean loadMissingKeysFromMapStore) {
         checkIfLoaded();
         final long now = getNow();
         earlyWriteCleanup(now);
 
         Record record = records.get(key);
-        Object oldValue;
+        Object oldValue = null;
         if (record == null) {
-            oldValue = mapDataStore.load(key);
+            if(loadMissingKeysFromMapStore) {
+                oldValue = mapDataStore.load(key);
+            }
+
             if (oldValue != null) {
                 removeIndex(key);
                 mapDataStore.remove(key, now);
@@ -563,6 +570,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             deleteRecord(key);
         }
         return oldValue;
+    }
+
+    @Override
+    public Object delete(Data dataKey) {
+        return removeInternal(dataKey, false);
     }
 
     @Override
