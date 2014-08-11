@@ -27,6 +27,27 @@ Please see the list of all enhancement issues [here](https://github.com/hazelcas
 
 ### Fixes
 
+**3.2.5 Fixes**
+
+This section lists issues solved for Hazelcast 3.2.5 release.
+
+-	Txn map keyset and values with portable entries is not working correctly. [[#3152]](https://github.com/hazelcast/hazelcast/issues/3152)
+-	`TransactionalMap.{putIfAbsent(k, v), replace(k, v), replace(k, v1, v2), remove(k, v)}` methods never release lock after transaction ends. [[#3149]](https://github.com/hazelcast/hazelcast/issues/3149)
+- Test failure at `ClientMapTest.testMapStatistics`. [[#3138]](https://github.com/hazelcast/hazelcast/issues/3138)
+- `NetworkConfig.setReuseAddress` is not available in the XML. [[#3122]](https://github.com/hazelcast/hazelcast/issues/3122)
+- When a selector fails to open, the `AbstractSelector` does not throw an exception, but logs it and then continues. Also, when `select` throws an IOException, this exception is not dealt correctly. [[#3105]](https://github.com/hazelcast/hazelcast/issues/3105)
+- Test failure at `QueryBasicTest.testInPredicateWithEmptyArray`. [[#3060]](https://github.com/hazelcast/hazelcast/issues/3060)
+- Hibernate cache flush leaves ClientMapProxy in an inconsistent state. This cache flush triggers `IMapRegionCache.clear()` and the implementation here does not look correct since it leaves the "map" field in the inconsistent state (*context = null*) and prevents any further use of it. [[#3004]](https://github.com/hazelcast/hazelcast/issues/3004)
+- Fixes operation execution/invocation on IO threads issue. [[#2994]](https://github.com/hazelcast/hazelcast/pull/2994)
+- Node cannot recover from `MergeOperation` if target node exits the cluster. [[#2937]](https://github.com/hazelcast/hazelcast/issues/2937)
+- Client fails to run due to the lack of `ClientTestApp` class. [[#2817]](https://github.com/hazelcast/hazelcast/issues/2817)
+- Using Hazelcast Queue, assume that there is a system in which messages are actively being consumed by one consumer. When a second Hazelcast instance is started (i.e. second consumer for the same queue), Hazelcast throws an exception, then continues normally and there are two competing consumers on the same queue. [[#2805]](https://github.com/hazelcast/hazelcast/issues/2805)
+- `IMap.submitToKey` and `IMap.executeOnKey` in combination with nodes joining/leaving the cluster result in data loss. [[#2785]](https://github.com/hazelcast/hazelcast/issues/2785)
+- Too much delay for deciding heartbeat timeout. [[#2766]](https://github.com/hazelcast/hazelcast/issues/2766)
+- When multiple predicates are combined by an `AndPredicate`, the first `IndexAwarePredicate` that is not indexed will be added to the "no index" list twice. [[#2531]](https://github.com/hazelcast/hazelcast/issues/2531)
+- There appears to be a leak in the memory in `SecondsBasedEntryTaskScheduler` when idle timeout is enabled on a map. [[#2343]](https://github.com/hazelcast/hazelcast/issues/2343)
+
+
 **3.2.2 Fixes**
 
 This section lists issues solved for Hazelcast 3.2.2 release.
