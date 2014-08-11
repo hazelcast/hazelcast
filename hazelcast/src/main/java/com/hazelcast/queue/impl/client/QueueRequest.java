@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.security.Permission;
 
 /**
- * This class contains methods for all Queue client
+ * This class contains methods for all Queue requests
  * such as {@link com.hazelcast.queue.impl.client.ClearRequest}.
  */
 public abstract class QueueRequest extends PartitionClientRequest implements Portable, SecureRequest {

@@ -15,7 +15,7 @@
  */
 
 /**
- * <p>This package contains client client for the ISemaphore.<br/>
+ * <p>This package contains client requests for the ISemaphore.<br/>
  *
  * @since 2
  */

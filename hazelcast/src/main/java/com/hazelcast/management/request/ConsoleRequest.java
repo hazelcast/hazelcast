@@ -22,7 +22,7 @@ import com.hazelcast.management.ManagementCenterService;
 import java.io.IOException;
 
 /**
- *  Represents client sent from Management Center.
+ *  Represents request sent from Management Center.
  */
 public interface ConsoleRequest extends JsonSerializable {
 

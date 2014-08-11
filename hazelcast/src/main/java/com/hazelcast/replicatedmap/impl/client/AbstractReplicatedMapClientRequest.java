@@ -27,7 +27,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import java.io.IOException;
 
 /**
- * Base class for all ReplicatedMap client client
+ * Base class for all ReplicatedMap client request.
  */
 public abstract class AbstractReplicatedMapClientRequest
         extends CallableClientRequest

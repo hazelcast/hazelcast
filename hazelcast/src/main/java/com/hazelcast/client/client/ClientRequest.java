@@ -37,7 +37,7 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
     protected transient ClientEndpoint endpoint;
 
     /**
-     * Some request needs to use a single connection like transaction client and
+     * Some request needs to use a single connection like transaction request and
      * {@link com.hazelcast.cluster.client.ClientPingRequest}
      * if true then request will not be retried
      */
@@ -120,7 +120,7 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
     }
 
     /**
-     * Version for internal client.
+     * Version for internal requests.
      * This version can be configured per class by overriding this method.
      * <p/>
      * <p>

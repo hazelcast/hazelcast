@@ -22,7 +22,7 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 /**
- * Base class for partition based client client.
+ * Base class for partition based client request.
  */
 public abstract class PartitionClientRequest extends ClientRequest {
 

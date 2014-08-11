@@ -79,13 +79,13 @@ import java.util.logging.Level;
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
- * Class that client, listeners from client handled in node side.
+ * Class that requests, listeners from client handled in node side.
  */
 public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwareService,
         ManagedService, MembershipAwareService, EventPublishingService<ClientEndpointImpl, ClientListener> {
 
     /**
-     * Service Name of clientEngine to be used in client
+     * Service Name of clientEngine to be used in requests
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
     private static final int ENDPOINT_REMOVE_DELAY_MS = 10;

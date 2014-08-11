@@ -359,7 +359,7 @@ public class ManagementCenterService {
     }
 
     /**
-     * Thread for polling tasks/client from  Management Center.
+     * Thread for polling tasks/requests from  Management Center.
      */
     private final class TaskPollThread extends Thread {
         private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests =

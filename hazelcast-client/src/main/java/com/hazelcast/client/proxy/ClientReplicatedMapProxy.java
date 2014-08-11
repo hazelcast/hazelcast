@@ -57,7 +57,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * The replicated map client side proxy implementation proxying all client to a member node
+ * The replicated map client side proxy implementation proxying all requests to a member node
  *
  * @param <K> key type
  * @param <V> value type

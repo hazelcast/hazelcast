@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains client client for Hazelcast MultiMap module.
+ * Contains client requests for Hazelcast MultiMap module.
  */
 package com.hazelcast.multimap.impl.operations.client;

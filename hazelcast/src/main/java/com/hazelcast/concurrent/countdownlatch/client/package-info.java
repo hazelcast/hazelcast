@@ -15,8 +15,8 @@
  */
 
 /**
- * <p>This package contains client client for the ICountDownLatch.<br/>
- * This package contains all the client client object to operate on the
+ * <p>This package contains client requests for the ICountDownLatch.<br/>
+ * This package contains all the client requests object to operate on the
  * ICountDownLatch that are send by the client. This is done to reduce tight
  * coupling between client and server.
  *

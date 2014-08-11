@@ -51,7 +51,7 @@ public class ClientProperties {
     public static final String PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT = "3";
 
     /**
-     * Client will retry client which either inherently retryable(idempotent client)
+     * Client will retry requests which either inherently retryable(idempotent client)
      * or {@link ClientNetworkConfig#redoOperation} is set to true.
      * <p/>
      * This property is to configure retry count before client give up retrying.
@@ -63,7 +63,7 @@ public class ClientProperties {
     public static final String PROP_REQUEST_RETRY_COUNT_DEFAULT = "20";
 
     /**
-     * Client will retry client which either inherently retryable(idempotent client)
+     * Client will retry requests which either inherently retryable(idempotent client)
      * or {@link ClientNetworkConfig#redoOperation} is set to true.
      * <p/>
      * Time delay in milisecond between retries.

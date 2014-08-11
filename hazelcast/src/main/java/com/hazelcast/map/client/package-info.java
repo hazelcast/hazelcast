@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains client client for the {@link com.hazelcast.core.IMap}
+ * Contains client requests for the {@link com.hazelcast.core.IMap}
  */
 package com.hazelcast.map.client;

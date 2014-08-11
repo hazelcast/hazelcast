@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 import static java.util.Collections.synchronizedSet;
 
 /**
- * Base class for client client that will be send more than one member
+ * Base class for client request that will be send more than one member
  */
 public abstract class MultiTargetClientRequest extends ClientRequest {
 

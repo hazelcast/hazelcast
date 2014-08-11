@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.partition.client.GetPartitionsRequest;
 
 /**
- * Factory class for central client client
+ * Factory class for central client request
  */
 public class ClientPortableFactory implements PortableFactory {
 

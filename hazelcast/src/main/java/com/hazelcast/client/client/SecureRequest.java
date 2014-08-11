@@ -38,7 +38,7 @@ public interface SecureRequest {
      * Used for {@link com.hazelcast.security.SecurityInterceptor}
      * Method name which called via a distributedObject
      * for map.put, methodName will be 'put'
-     * For client which do not produced via a distributedObject should return null, for example internal client.
+     * For requests which do not produced via a distributedObject should return null, for example internal client.
      * @return
      */
     String getMethodName();

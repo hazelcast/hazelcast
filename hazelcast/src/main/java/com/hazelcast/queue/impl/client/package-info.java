@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains client client for the IQueue.<br/>
+ * <p>This package contains client requests for the IQueue.<br/>
  */
 package com.hazelcast.queue.impl.client;

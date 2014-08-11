@@ -23,7 +23,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.util.Map;
 
 /**
- * Base class for client client that will run on all partitions.
+ * Base class for client request that will run on all partitions.
  */
 public abstract class AllPartitionsClientRequest extends ClientRequest {
 
