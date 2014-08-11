@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -293,6 +294,50 @@ public class ListenerTest extends HazelcastTestSupport {
                 assertTrue(globalCount.get() == 1);
             }
         });
+    }
+
+    /**
+     * test for issue 3198
+     */
+    @Test
+    public void testEntryListenerEvent_getValueWhenEntryRemoved() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
+        IMap<String, String> map = h1.getMap(name);
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryRemoved(EntryEvent<String, String> event) {
+                System.out.println(event.getValue());
+                System.out.println(event.getOldValue());
+                assertNull(event.getValue());
+                assertEquals("value", event.getOldValue());
+                latch.countDown();
+            }
+        }, true);
+
+        map.put("key", "value");
+        map.remove("key");
+        assertOpenEventually(latch, 10);
+    }
+
+    @Test
+    public void testEntryListenerEvent_getValueWhenEntryEvicted() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
+        IMap<String, String> map = h1.getMap(name);
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                assertNull(event.getValue());
+                assertEquals("value", event.getOldValue());
+                latch.countDown();
+            }
+        }, true);
+
+        map.put("key","value",1,TimeUnit.SECONDS);
+        assertOpenEventually(latch, 10);
     }
 
 
