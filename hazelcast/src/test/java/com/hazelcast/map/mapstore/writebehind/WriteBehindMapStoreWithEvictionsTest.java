@@ -1,7 +1,6 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -10,7 +9,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,7 +16,6 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -155,39 +152,6 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         assertEquals(100, map.get(1));
     }
 
-    @Test
-    public void testMapStoreLoad_whenCalledDelete() throws Exception {
-        final FailingLoadMapStore mapStore = new FailingLoadMapStore();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
-                .withMapStore(mapStore)
-                .withNodeCount(1)
-                .withBackupCount(0)
-                .withWriteDelaySeconds(1)
-                .withPartitionCount(1)
-                .build();
-
-        try {
-            map.delete(1);
-        } catch (IllegalStateException e) {
-            fail();
-        }
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testMapStoreLoad_whenCalledRemove() throws Exception {
-        final FailingLoadMapStore mapStore = new FailingLoadMapStore();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
-                .withMapStore(mapStore)
-                .withNodeCount(1)
-                .withBackupCount(0)
-                .withWriteDelaySeconds(1)
-                .withPartitionCount(1)
-                .build();
-
-        map.remove(1);
-    }
-
-
     private void assertFinalValueEquals(final int expected, final int actual) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -219,43 +183,6 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     private void assertFinalValueEqualsForEachEntry(IMap map, int numberOfItems) {
         for (int i = 0; i < numberOfItems; i++) {
             assertFinalValueEquals(i, (Integer) map.get(i));
-        }
-    }
-
-    class FailingLoadMapStore implements MapStore {
-        @Override
-        public void store(Object key, Object value) {
-
-        }
-
-        @Override
-        public void storeAll(Map map) {
-
-        }
-
-        @Override
-        public void delete(Object key) {
-
-        }
-
-        @Override
-        public void deleteAll(Collection keys) {
-
-        }
-
-        @Override
-        public Object load(Object key) {
-            throw new IllegalStateException();
-        }
-
-        @Override
-        public Map loadAll(Collection keys) {
-            return null;
-        }
-
-        @Override
-        public Set loadAllKeys() {
-            return null;
         }
     }
 
