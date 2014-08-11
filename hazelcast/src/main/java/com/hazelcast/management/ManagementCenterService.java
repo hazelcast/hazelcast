@@ -98,6 +98,7 @@ public class ManagementCenterService {
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
+    private volatile boolean manCenterConnectionLost;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -322,15 +323,22 @@ public class ManagementCenterService {
                     writer.flush();
                     outputStream.flush();
                     post(connection);
+                    if(manCenterConnectionLost) {
+                        logger.info("Connection to management center restored.");
+                    }
+                    manCenterConnectionLost = false;
                 } finally {
                     closeResource(writer);
                     closeResource(outputStream);
                 }
             } catch (ConnectException e) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest(e);
-                } else {
-                    logger.info("Failed to connect to:" + url);
+                if(!manCenterConnectionLost) {
+                    manCenterConnectionLost = true;
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Failed to connect to:" + url, e);
+                    } else {
+                        logger.info("Failed to connect to:" + url);
+                    }
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -442,7 +450,20 @@ public class ManagementCenterService {
                     task.fromJson(getObject(innerRequest, "request"));
                     processTaskAndSendResponse(taskId, task);
                 }
+                if(manCenterConnectionLost) {
+                    logger.info("Connection to management center restored.");
+                }
+                manCenterConnectionLost = false;
 
+            } catch (ConnectException e) {
+                if(!manCenterConnectionLost) {
+                    manCenterConnectionLost = true;
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Failed to connect to management center", e);
+                    } else {
+                        logger.info("Failed to connect to management center");
+                    }
+                }
             } catch (Exception e) {
                 logger.warning(e);
             } finally {
