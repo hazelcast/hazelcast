@@ -134,7 +134,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testMultiMapGetNullIsNotAllowed() {
+    public void testGet_whenNullKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -142,7 +142,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testMultiMapPutKeyNullIsNotAllowed() {
+    public void testPut_whenNullKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -150,7 +150,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testMultiMapPutValueNullIsNotAllowed() {
+    public void testPut_whenNullValue() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -158,7 +158,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testMultiMapLockNullIsNotAllowed() {
+    public void testLock_whenNullKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -166,7 +166,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testMultiMapUnLockNullIsNotAllowed() {
+    public void testUnlock_whenNullKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -174,7 +174,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsKeyMultiMapNullIsNotAllowed() throws InterruptedException {
+    public void testContainsKey_whenNullKey() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -182,7 +182,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsValueMultiMapNullIsNotAllowed() throws InterruptedException {
+    public void testContainsValue_whenNullKey() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -190,7 +190,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsEntryKeyMultiMapNullIsNotAllowed() throws InterruptedException {
+    public void testContainsEntry_whenNullKey() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
@@ -198,7 +198,7 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testContainsEntryValueMultiMapNullIsNotAllowed() throws InterruptedException {
+    public void testContainsEntry_whenNullValue() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
 
