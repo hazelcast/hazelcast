@@ -243,7 +243,7 @@
     <suppress checks="JavadocType" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.transaction[\\/]"/>
-    <suppress checks="" files="com.hazelcast.transaction.client.ClientTxnPortableHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.transaction.client.ClientTxnPortableHook"/>
 
     <!-- Security -->
     <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
