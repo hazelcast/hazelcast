@@ -125,7 +125,6 @@
 
     <!-- client -->
     <suppress checks="" files="com.hazelcast.client.client.ClientPortableHook"/>
-    <suppress checks="" files="com.hazelcast.client.client.txn.ClientTxnPortableHook"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientQueueProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMultiMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMapProxy"/>
@@ -244,6 +243,7 @@
     <suppress checks="JavadocType" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.transaction[\\/]"/>
+    <suppress checks="" files="com.hazelcast.transaction.client.ClientTxnPortableHook"/>
 
     <!-- Security -->
     <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
