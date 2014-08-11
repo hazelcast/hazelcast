@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -110,6 +111,30 @@ public class ListenerTest extends HazelcastTestSupport {
         putDummyData(map2, k);
         checkCountWithExpected(0, 0, 0);
     }
+
+    @Test
+    public void testEntryEventGetMemberNotNull() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        final String mapName = randomMapName();
+        final IMap<Object, Object> map = h1.getMap(mapName);
+        final IMap<Object, Object> map2 = h2.getMap(mapName);
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<Object, Object>(){
+            @Override
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                assertNotNull(event.getMember());
+                latch.countDown();
+            }
+        },false);
+        final String key = generateKeyOwnedBy(h2);
+        final String value = randomString();
+        map2.put(key, value);
+        h2.getLifecycleService().terminate();
+        assertOpenEventually(latch);
+    }
+
 
     @Test
     public void localListenerTest() throws InterruptedException {

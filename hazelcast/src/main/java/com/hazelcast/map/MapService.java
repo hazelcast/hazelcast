@@ -293,7 +293,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
                         public void run() {
-                            final SimpleEntryView entryView = createSimpleEntryView(record.getKey(), toData(record.getValue()),record);
+                            final SimpleEntryView entryView = createSimpleEntryView(record.getKey(), toData(record.getValue()), record);
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
                             try {
                                 int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
@@ -490,8 +490,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
-                if (member.localMember())
+                if (member.localMember()) {
                     continue;
+                }
                 Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(SERVICE_NAME);
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
@@ -526,8 +527,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
-                if (member.localMember())
+                if (member.localMember()) {
                     continue;
+                }
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 logger.warning(throwable);
@@ -676,8 +678,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
-        if (candidates.isEmpty())
+        if (candidates.isEmpty()) {
             return;
+        }
         Object key = null;
         Object value = null;
         Object oldValue = null;
@@ -713,8 +716,9 @@ public class MapService implements ManagedService, MigrationAwareService,
                 }
             }
         }
-        if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
+        if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty()) {
             return;
+        }
         String source = nodeEngine.getThisAddress().toString();
         if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
             dataValue = dataValue != null ? dataValue : dataOldValue;
@@ -820,7 +824,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         return -1;
     }
 
-    public <K,V> SimpleEntryView<K,V> createSimpleEntryView(K key, V value, Record record) {
+    public <K, V> SimpleEntryView<K, V> createSimpleEntryView(K key, V value, Record record) {
         final SimpleEntryView simpleEntryView = new SimpleEntryView(key, value);
         simpleEntryView.setCost(record.getCost());
         simpleEntryView.setVersion(record.getVersion());
@@ -835,7 +839,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             simpleEntryView.setLastStoredTime(statistics.getLastStoredTime());
             simpleEntryView.setLastUpdateTime(statistics.getLastUpdateTime());
         }
-       return simpleEntryView;
+        return simpleEntryView;
     }
 
     public static <K, V> EntryView<K, V> createLazyEntryView(K key, V value, Record record
@@ -861,8 +865,9 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Object toObject(Object data) {
-        if (data == null)
+        if (data == null) {
             return null;
+        }
         if (data instanceof Data) {
             return nodeEngine.toObject(data);
         } else {
@@ -871,8 +876,9 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Data toData(Object object, PartitioningStrategy partitionStrategy) {
-        if (object == null)
+        if (object == null) {
             return null;
+        }
         if (object instanceof Data) {
             return (Data) object;
         } else {
@@ -881,8 +887,9 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Data toData(Object object) {
-        if (object == null)
+        if (object == null) {
             return null;
+        }
         if (object instanceof Data) {
             return (Data) object;
         } else {
@@ -907,7 +914,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     @SuppressWarnings("unchecked")
     public void dispatchEvent(EventData eventData, EntryListener listener) {
-        Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
+        Member member = getMember(eventData);
         EntryEvent event = new DataAwareEntryEvent(member, eventData.getEventType(), eventData.getMapName(),
                 eventData.getDataKey(), eventData.getDataNewValue(), eventData.getDataOldValue(), getSerializationService());
         switch (event.getEventType()) {
@@ -930,6 +937,14 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             getLocalMapStatsImpl(eventData.getMapName()).incrementReceivedEvents();
         }
+    }
+
+    private Member getMember(EventData eventData) {
+        Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
+        if (member == null) {
+            member = new MemberImpl(eventData.getCaller(), false);
+        }
+        return member;
     }
 
     public void scheduleIdleEviction(String mapName, Data key, long delay) {
