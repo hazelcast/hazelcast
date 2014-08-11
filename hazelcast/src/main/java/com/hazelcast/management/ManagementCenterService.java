@@ -334,11 +334,7 @@ public class ManagementCenterService {
             } catch (ConnectException e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Failed to connect to:" + url, e);
-                    } else {
-                        logger.info("Failed to connect to:" + url);
-                    }
+                    log("Failed to connect to:" + url, e);
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -458,11 +454,7 @@ public class ManagementCenterService {
             } catch (ConnectException e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Failed to connect to management center", e);
-                    } else {
-                        logger.info("Failed to connect to management center");
-                    }
+                    log("Failed to connect to management center", e);
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -522,8 +514,16 @@ public class ManagementCenterService {
                     + ":" + localAddress.getPort() + "&cluster=" + groupConfig.getName();
             return new URL(urlString);
         }
+
     }
 
+    private void log(String msg, Throwable t) {
+        if (logger.isFinestEnabled()) {
+            logger.finest(msg, t);
+        } else {
+            logger.info(msg);
+        }
+    }
 
     /**
      * LifecycleListener for listening for LifecycleState.STARTED event to start
