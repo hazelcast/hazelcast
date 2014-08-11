@@ -19,7 +19,7 @@ package com.hazelcast.client.client.txn.proxy;
 import com.hazelcast.client.client.ClientDestroyRequest;
 import com.hazelcast.client.client.ClientRequest;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
-import com.hazelcast.client.client.txn.BaseTransactionRequest;
+import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.client.client.txn.TransactionContextProxy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;

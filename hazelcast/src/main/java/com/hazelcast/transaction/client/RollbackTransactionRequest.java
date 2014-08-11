@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.client.txn;
+package com.hazelcast.transaction.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngineImpl;

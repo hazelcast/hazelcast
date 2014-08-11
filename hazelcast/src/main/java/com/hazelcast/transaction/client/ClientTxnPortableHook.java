@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.client.txn;
+package com.hazelcast.transaction.client;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;

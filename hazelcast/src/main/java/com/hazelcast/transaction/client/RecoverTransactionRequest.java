@@ -14,48 +14,43 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.client.txn;
+package com.hazelcast.transaction.client;
 
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.client.CallableClientRequest;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.TransactionPermission;
-import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionAccessor;
+import com.hazelcast.transaction.impl.SerializableXID;
+import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
 import java.security.Permission;
 
-public class CommitTransactionRequest extends BaseTransactionRequest {
+public class RecoverTransactionRequest extends CallableClientRequest {
 
-    private boolean prepareAndCommit;
+    private boolean commit;
+    private SerializableXID sXid;
 
-    public CommitTransactionRequest() {
+    public RecoverTransactionRequest() {
     }
 
-    public CommitTransactionRequest(boolean prepareAndCommit) {
-        this.prepareAndCommit = prepareAndCommit;
+    public RecoverTransactionRequest(SerializableXID sXid, boolean commit) {
+        this.sXid = sXid;
+        this.commit = commit;
     }
 
     @Override
-    public Object innerCall() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
-        TransactionContext transactionContext = endpoint.getTransactionContext(txnId);
-        if (prepareAndCommit) {
-            transactionContext.commitTransaction();
-        } else {
-            Transaction transaction = TransactionAccessor.getTransaction(transactionContext);
-            transaction.commit();
-        }
-        endpoint.removeTransactionContext(txnId);
+    public Object call() throws Exception {
+        TransactionManagerServiceImpl service = getService();
+        service.recoverClientTransaction(sXid, commit);
         return null;
     }
 
-    @Override
+    @Deprecated
     public String getServiceName() {
-        return ClientEngineImpl.SERVICE_NAME;
+        return TransactionManagerServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -65,19 +60,22 @@ public class CommitTransactionRequest extends BaseTransactionRequest {
 
     @Override
     public int getClassId() {
-        return ClientTxnPortableHook.COMMIT;
+        return ClientTxnPortableHook.RECOVER;
     }
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        super.write(writer);
-        writer.writeBoolean("pc", prepareAndCommit);
+        writer.writeBoolean("c", commit);
+        ObjectDataOutput out = writer.getRawDataOutput();
+        sXid.writeData(out);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
-        super.read(reader);
-        prepareAndCommit = reader.readBoolean("pc");
+        commit = reader.readBoolean("c");
+        ObjectDataInput in = reader.getRawDataInput();
+        sXid = new SerializableXID();
+        sXid.readData(in);
     }
 
     @Override

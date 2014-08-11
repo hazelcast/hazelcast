@@ -16,4 +16,4 @@
 /**
  * <p>This package contains client transaction code</p>
  */
-package com.hazelcast.client.client.txn;
+package com.hazelcast.transaction.client;
