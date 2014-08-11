@@ -13,6 +13,9 @@ import javax.cache.spi.CachingProvider;
 import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Properties;
 
@@ -25,7 +28,7 @@ public class HazelcastCacheManager implements CacheManager {
     private final WeakReference<ClassLoader> classLoaderReference;
     private final Properties properties;
 
-    private boolean closeTriggered=false;
+    private volatile boolean closeTriggered=false;
 
 
     public HazelcastCacheManager(HazelcastCachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri, ClassLoader classLoader, Properties properties) {
@@ -157,18 +160,20 @@ public class HazelcastCacheManager implements CacheManager {
 
     @Override
     public Iterable<String> getCacheNames() {
-//        if (isClosed()) {
-//            throw new IllegalStateException();
-//        }
-        final Collection<String> names = new LinkedList<String>();
-        final HazelcastInstance hz = hazelcastInstance;
-        Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
-        for (DistributedObject distributedObject : distributedObjects) {
-            if (distributedObject instanceof ICache) {
-                names.add(distributedObject.getName());
+        final Collection<String> names;
+        if (isClosed()) {
+            names = Collections.emptySet();
+        } else {
+            names = new LinkedHashSet<String>();
+            final HazelcastInstance hz = hazelcastInstance;
+            Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
+            for (DistributedObject distributedObject : distributedObjects) {
+                if (distributedObject instanceof ICache) {
+                    names.add(distributedObject.getName());
+                }
             }
         }
-        return names;
+        return Collections.unmodifiableCollection(names);
     }
 
     @Override
@@ -195,23 +200,26 @@ public class HazelcastCacheManager implements CacheManager {
         if (cacheName == null) {
             throw new NullPointerException();
         }
-        final ICache<Object, Object> cache = getCache(cacheName);
+        final ICache<Object, Object> cache = getCacheObject(cacheName);
         cache.setStatisticsEnabled(enabled);
+        final CacheConfig configuration = cache.getConfiguration(CacheConfig.class);
+        configuration.setStatisticsEnabled(true);
     }
 
     @Override
     public void close() {
-        closeTriggered=true;
-
-        HazelcastInstance hz = hazelcastInstance;
-        Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
-        for (DistributedObject distributedObject : distributedObjects) {
-            if (distributedObject instanceof ICache) {
-                distributedObject.destroy();
+        if(!closeTriggered){
+            HazelcastInstance hz = hazelcastInstance;
+            Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
+            for (DistributedObject distributedObject : distributedObjects) {
+                if (distributedObject instanceof ICache) {
+                    distributedObject.destroy();
+                }
             }
+            hz.shutdown();
+            cachingProvider.releaseCacheManager(uri,classLoaderReference.get());
         }
-        hz.shutdown();
-        cachingProvider.releaseCacheManager(uri,classLoaderReference.get());
+        closeTriggered=true;
     }
 
     @Override

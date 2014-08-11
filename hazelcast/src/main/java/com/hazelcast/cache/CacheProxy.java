@@ -476,12 +476,12 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
 
     @Override
     public void setStatisticsEnabled(boolean enabled) {
-        throw new UnsupportedOperationException();
-//        if (enabled) {
-//            MXBeanUtil.registerCacheObject(this, true);
-//        } else {
-//            MXBeanUtil.unregisterCacheObject(this, true);
-//        }
+//        throw new UnsupportedOperationException();
+        if (enabled) {
+            MXBeanUtil.registerCacheObject(this, true);
+        } else {
+            MXBeanUtil.unregisterCacheObject(this, true);
+        }
     }
 
     public V get(Data key) {
