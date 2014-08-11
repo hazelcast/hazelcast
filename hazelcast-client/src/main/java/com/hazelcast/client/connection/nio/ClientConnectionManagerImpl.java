@@ -208,8 +208,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private Address waitForOwnerConnection() throws RetryableIOException {
-        if (ownerConnection != null) {
-            return ownerConnection.getRemoteEndpoint();
+        final ClientConnection currentOwnerConnection = ownerConnection;
+        if (currentOwnerConnection != null) {
+            return currentOwnerConnection.getRemoteEndpoint();
         }
 
         synchronized (ownerConnectionLock) {
@@ -236,11 +237,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
         ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
         try {
-            ownerConnection = future.get(5, TimeUnit.SECONDS);
             synchronized (ownerConnectionLock) {
+                ownerConnection = future.get(5, TimeUnit.SECONDS);
                 ownerConnectionLock.notifyAll();
+                return ownerConnection;
             }
-            return ownerConnection;
         } catch (Exception e) {
             future.cancel(true);
             throw new RetryableIOException(e);
@@ -400,6 +401,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (endpoint.equals(currentOwnerConnection.getRemoteEndpoint())) {
             try {
                 currentOwnerConnection.close();
+                markOwnerAddressAsClosed();
             } catch (Exception ignored) {
             }
         }
