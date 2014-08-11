@@ -17,13 +17,13 @@
 package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.multimap.operations.client.TxnMultiMapGetRequest;
-import com.hazelcast.multimap.operations.client.TxnMultiMapRemoveAllRequest;
-import com.hazelcast.multimap.operations.client.TxnMultiMapSizeRequest;
-import com.hazelcast.multimap.operations.client.TxnMultiMapPutRequest;
-import com.hazelcast.multimap.operations.client.TxnMultiMapRemoveRequest;
-import com.hazelcast.multimap.operations.client.TxnMultiMapValueCountRequest;
+import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.multimap.impl.operations.client.TxnMultiMapGetRequest;
+import com.hazelcast.multimap.impl.operations.client.TxnMultiMapRemoveAllRequest;
+import com.hazelcast.multimap.impl.operations.client.TxnMultiMapSizeRequest;
+import com.hazelcast.multimap.impl.operations.client.TxnMultiMapPutRequest;
+import com.hazelcast.multimap.impl.operations.client.TxnMultiMapRemoveRequest;
+import com.hazelcast.multimap.impl.operations.client.TxnMultiMapValueCountRequest;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;

@@ -6,6 +6,8 @@ Hazelcast ISemaphore is the distributed implementation of `java.util.concurrent.
 
 ***ATTENTION:*** *Semaphore with a single permit may be considered as a lock. But, unlike the locks, when semaphores are used any thread can release the permit and also semaphores can have multiple permits.*
 
+***ATTENTION:*** *Hazelcast Semaphore does not support fairness.*
+
 When a permit is acquired on ISemaphore:
 
 -	if there are permits, number of permits in the semaphore is decreased by one and calling thread performs its activity. If there is contention, the longest waiting thread will acquire the permit before all other threads.

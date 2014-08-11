@@ -313,7 +313,7 @@ public class TestFullApplicationContext {
         assertEquals("sample-tag-key", aws.getTagKey());
         assertEquals("sample-tag-value", aws.getTagValue());
 
-        assertFalse("reuse-address", networkConfig.isReuseAddress());
+        assertTrue("reuse-address", networkConfig.isReuseAddress());
     }
 
 //    @Test

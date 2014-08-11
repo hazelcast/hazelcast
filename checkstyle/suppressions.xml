@@ -341,13 +341,14 @@
     <suppress checks="JavadocType" files="com.hazelcast.multimap[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.multimap[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.multimap[\\/]"/>
-    <suppress checks="MethodLength" files="com.hazelcast.multimap.MultiMapDataSerializerHook"/>
-    <suppress checks="MethodCount" files="com.hazelcast.multimap.MultiMapDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.MultiMapDataSerializerHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.multimap.MultiMapPortableHook"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.MultiMapPortableHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.multimap.MultiMapService"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.multimap.operations.MultiMapOperationFactory"/>
+    <suppress checks="MethodLength" files="com.hazelcast.multimap.impl.MultiMapDataSerializerHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.multimap.impl.MultiMapDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.impl.MultiMapDataSerializerHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.multimap.impl.MultiMapPortableHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.impl.MultiMapPortableHook"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.multimap.impl.operations.MultiMapOperationFactory"/>
+    <!-- todo: needs to be fixed -->
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.multimap.impl.MultiMapService"/>
 
     <!-- Util -->
     <!-- /*

@@ -193,10 +193,9 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     /**
-     * GOTCHA: When {@link #writeCoalescing} is true, you may see more than one write
-     * to store if a flush and {@link StoreWorker} run
-     * falls in a same second window for a specific key. BTW this should not
-     * affect data consistency.
+     * GOTCHA: When {@link #writeCoalescing} is true, you may see more than one write operations
+     * to map store, e.g. if a flush during eviction and {@link StoreWorker} fetch the operation on same
+     * key, order of operations may be reflected differently to map store.
      */
     @Override
     public Object flush(Data key, Object value, long now) {

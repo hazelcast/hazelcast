@@ -11,7 +11,7 @@ import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.test.HazelcastSerialClassRunner;

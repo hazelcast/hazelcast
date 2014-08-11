@@ -100,20 +100,11 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     @Test
     public void testForIssue2112() {
         Hazelcast.newHazelcastInstance(nodeConfig);
-
-        ClientThread client1 = new ClientThread();
-        client1.start();
-
+        IMap<String, String> map = HazelcastClient.newHazelcastClient().getMap(ClientMapStoreTest.MAP_NAME);
+        assertSizeEventually(SimpleMapStore.MAX_KEYS, map);
         Hazelcast.newHazelcastInstance(nodeConfig);
-
-        ClientThread client2 = new ClientThread();
-        client2.start();
-
-        HazelcastTestSupport.assertJoinable(client1);
-        HazelcastTestSupport.assertJoinable(client2);
-
-        assertEquals(SimpleMapStore.MAX_KEYS, client1.mapSize);
-        assertEquals(SimpleMapStore.MAX_KEYS, client2.mapSize);
+        map = HazelcastClient.newHazelcastClient().getMap(ClientMapStoreTest.MAP_NAME);
+        assertSizeEventually(SimpleMapStore.MAX_KEYS, map);
     }
 
     // Default impl. of write-behind-queue has no capacity it is bounded by number of elements in a map.
