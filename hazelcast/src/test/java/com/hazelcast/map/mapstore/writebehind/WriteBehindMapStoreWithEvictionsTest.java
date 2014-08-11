@@ -173,6 +173,20 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         }
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void testMapStoreLoad_whenCalledRemove() throws Exception {
+        final FailingLoadMapStore mapStore = new FailingLoadMapStore();
+        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .withBackupCount(0)
+                .withWriteDelaySeconds(1)
+                .withPartitionCount(1)
+                .build();
+
+        map.remove(1);
+    }
+
 
     private void assertFinalValueEquals(final int expected, final int actual) {
         assertTrueEventually(new AssertTask() {
