@@ -19,7 +19,6 @@ package com.hazelcast.multimap.impl.operations.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.client.CallableClientRequest;
 import com.hazelcast.client.client.RetryableRequest;
-import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;

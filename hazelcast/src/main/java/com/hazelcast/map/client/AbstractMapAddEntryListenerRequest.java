@@ -19,7 +19,6 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.client.CallableClientRequest;
 import com.hazelcast.client.client.RetryableRequest;
-import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -35,6 +34,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.PortableEntryEvent;
+
 import java.security.Permission;
 
 /**
@@ -61,6 +61,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
     protected abstract Predicate getPredicate();
 
+    @Override
     public Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService();
@@ -101,14 +102,17 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         return registrationId;
     }
 
+    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return MapPortableHook.F_ID;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_LISTEN);
     }

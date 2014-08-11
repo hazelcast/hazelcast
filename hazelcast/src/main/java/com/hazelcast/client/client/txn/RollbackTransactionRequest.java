@@ -17,7 +17,6 @@
 package com.hazelcast.client.client.txn;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.security.permission.TransactionPermission;
 

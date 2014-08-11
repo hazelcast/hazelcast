@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.client;
 
-import com.hazelcast.client.client.ClientPortableFactory;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.FactoryIdHelper;

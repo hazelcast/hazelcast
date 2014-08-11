@@ -19,7 +19,6 @@ package com.hazelcast.client.client.txn;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.client.InvocationClientRequest;
-import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;

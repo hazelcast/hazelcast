@@ -17,9 +17,8 @@
 package com.hazelcast.client.client.txn;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEndpointImpl;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;

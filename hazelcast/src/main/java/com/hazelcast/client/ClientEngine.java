@@ -25,7 +25,6 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
-import com.hazelcast.transaction.TransactionManagerService;
 
 public interface ClientEngine {
 
@@ -36,9 +35,6 @@ public interface ClientEngine {
     ClusterService getClusterService();
 
     EventService getEventService();
-
-    // TODO: This method is not used.
-    TransactionManagerService getTransactionManagerService();
 
     ProxyService getProxyService();
 

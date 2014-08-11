@@ -2,7 +2,6 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.client.InvocationClientRequest;
-import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;

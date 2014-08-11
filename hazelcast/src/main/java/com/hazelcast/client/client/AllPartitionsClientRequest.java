@@ -17,7 +17,6 @@
 package com.hazelcast.client.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.spi.OperationFactory;
 

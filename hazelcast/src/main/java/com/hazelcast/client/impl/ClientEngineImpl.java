@@ -175,11 +175,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     @Override
-    public TransactionManagerService getTransactionManagerService() {
-        return nodeEngine.getTransactionManagerService();
-    }
-
-    @Override
     public Address getMasterAddress() {
         return node.getMasterAddress();
     }
@@ -214,7 +209,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     public void bind(final ClientEndpoint ce) {
-        ClientEndpointImpl endpoint = (ClientEndpointImpl)ce;
+        ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
         final Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
             Address address = new Address(conn.getRemoteSocketAddress());
@@ -314,6 +309,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     public void removeOwnershipMapping(String clientUuid) {
         ownershipMappings.remove(clientUuid);
+    }
+
+    public TransactionManagerService getTransactionManagerService() {
+        return node.nodeEngine.getTransactionManagerService();
     }
 
     private final class ClientPacketProcessor implements Runnable {

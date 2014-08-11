@@ -20,7 +20,6 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.client.InvocationClientRequest;
 import com.hazelcast.client.client.RetryableRequest;
 import com.hazelcast.client.client.SecureRequest;
-import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -36,6 +35,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
