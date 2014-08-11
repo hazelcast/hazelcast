@@ -30,7 +30,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -208,7 +207,6 @@ public class ReplicatedMapTest
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testAddTtlObjectDelay0()
             throws Exception {
 
@@ -216,7 +214,6 @@ public class ReplicatedMapTest
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testAddTtlObjectDelayDefault()
             throws Exception {
 
@@ -224,7 +221,6 @@ public class ReplicatedMapTest
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testAddTtlBinaryDelay0()
             throws Exception {
 
@@ -232,7 +228,6 @@ public class ReplicatedMapTest
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testAddTtlBinaryDelayDefault()
             throws Exception {
 
@@ -489,7 +484,6 @@ public class ReplicatedMapTest
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testRemoveObjectDelayDefault()
             throws Exception {
 
@@ -497,7 +491,6 @@ public class ReplicatedMapTest
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testRemoveBinaryDelay0()
             throws Exception {
 
@@ -505,7 +498,6 @@ public class ReplicatedMapTest
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testRemoveBinaryDelayDefault()
             throws Exception {
 
