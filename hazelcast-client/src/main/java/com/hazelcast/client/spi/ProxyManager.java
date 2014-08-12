@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.cache.CacheService;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.ClientCreateRequest;
 import com.hazelcast.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.HazelcastClient;

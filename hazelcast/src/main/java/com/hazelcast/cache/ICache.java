@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.annotation.Beta;
 
