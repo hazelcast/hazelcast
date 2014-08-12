@@ -36,7 +36,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import static org.junit.Assert.assertNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,6 +43,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -94,6 +94,7 @@ public class ListenerTest extends HazelcastTestSupport {
         putDummyData(map1, k);
         checkCountWithExpected(k * 3, 0, k * 2);
     }
+
     @Test
     public void testEntryEventGetMemberNotNull() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -220,10 +221,9 @@ public class ListenerTest extends HazelcastTestSupport {
      */
     @Test
     public void replaceFiresUpdatedEvent() throws InterruptedException {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<Object, Object> map = h1.getMap("map");
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        IMap<Object, Object> map = h1.getMap(randomMapName());
         map.put(1, 1);
         final AtomicInteger updateCount = new AtomicInteger(0);
         final AtomicInteger addCount = new AtomicInteger(0);
@@ -243,8 +243,8 @@ public class ListenerTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(addCount.get(), 0);
-                assertEquals(updateCount.get(), 1);
+                assertEquals(0, addCount.get());
+                assertEquals(1, updateCount.get());
             }
         });
     }
@@ -266,7 +266,7 @@ public class ListenerTest extends HazelcastTestSupport {
                 addLatch.countDown();
             }
 
-           @Override
+            @Override
             public void entryUpdated(EntryEvent<Object, Object> event) {
                 updateLatch.countDown();
             }
@@ -415,7 +415,7 @@ public class ListenerTest extends HazelcastTestSupport {
         map.remove("key");
         assertOpenEventually(latch);
         assertNull(value[0]);
-        assertEquals("value",oldValue[0]);
+        assertEquals("value", oldValue[0]);
     }
 
     @Test
@@ -435,10 +435,10 @@ public class ListenerTest extends HazelcastTestSupport {
             }
         }, true);
 
-        map.put("key","value",1,TimeUnit.SECONDS);
+        map.put("key", "value", 1, TimeUnit.SECONDS);
         assertOpenEventually(latch);
         assertNull(value[0]);
-        assertEquals("value",oldValue[0]);
+        assertEquals("value", oldValue[0]);
     }
 
     @Test
@@ -522,7 +522,8 @@ public class ListenerTest extends HazelcastTestSupport {
         public final AtomicLong updateCount = new AtomicLong();
         public final AtomicLong evictCount = new AtomicLong();
 
-        public CounterEntryListener( ) { }
+        public CounterEntryListener() {
+        }
 
         @Override
         public void entryAdded(EntryEvent<Object, Object> objectObjectEntryEvent) {
