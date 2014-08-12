@@ -16,7 +16,14 @@
 
 /**
  * <p>
- *     Hazelcast Cache implementations
+ *     Hazelcast JSR-107 aka JCache implementation
+ * </p>
+ * <p>
+ *     Missing spec features:
+ *     *CacheManager via classLoader
+ *     *sync EventListener
+ *     *cluster wide dynamic cache configuration
+ *
  * </p>
  */
-package com.hazelcast.cache;
+package com.hazelcast.cache.jsr107;
