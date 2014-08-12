@@ -30,9 +30,7 @@ import com.hazelcast.spi.OperationService;
  */
 public interface InternalOperationService extends OperationService {
 
-    void receive(Packet packet);
-
-    void onMemberLeft(MemberImpl member);
+     void onMemberLeft(MemberImpl member);
 
     boolean isCallTimedOut(Operation op);
 

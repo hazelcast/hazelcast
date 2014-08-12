@@ -189,6 +189,11 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public void execute(Runnable task, int partitionId) {
+        scheduler.execute(task, partitionId);
+    }
+
+    @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         if (partitionId < 0) {
             throw new IllegalArgumentException("Partition id cannot be negative!");
@@ -206,7 +211,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @PrivateApi
     @Override
-    public void receive(final Packet packet) {
+    public void executeOperation(final Packet packet) {
         scheduler.execute(packet);
     }
 
