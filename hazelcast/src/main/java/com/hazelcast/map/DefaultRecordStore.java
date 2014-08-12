@@ -507,8 +507,33 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public Object remove(Data dataKey) {
-        return removeInternal(dataKey, true);
+    public Object remove(Data key) {
+        checkIfLoaded();
+        final long now = getNow();
+        earlyWriteCleanup(now);
+
+        Record record = records.get(key);
+        Object oldValue;
+        if (record == null) {
+            oldValue = mapDataStore.load(key);
+
+            if (oldValue != null) {
+                removeIndex(key);
+                mapDataStore.remove(key, now);
+            }
+        } else {
+            oldValue = record.getValue();
+            oldValue = mapServiceContext.interceptRemove(name, oldValue);
+            if (oldValue != null) {
+                removeIndex(key);
+                mapDataStore.remove(key, now);
+                onStore(record);
+            }
+            // reduce size
+            updateSizeEstimator(-calculateRecordHeapCost(record));
+            deleteRecord(key);
+        }
+        return oldValue;
     }
 
     @Override
@@ -541,7 +566,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return removed;
     }
 
-    public Object removeInternal(Data key, boolean loadMissingKeysFromMapStore) {
+    @Override
+    public boolean delete(Data key) {
         checkIfLoaded();
         final long now = getNow();
         earlyWriteCleanup(now);
@@ -549,14 +575,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         Record record = records.get(key);
         Object oldValue = null;
         if (record == null) {
-            if (loadMissingKeysFromMapStore) {
-                oldValue = mapDataStore.load(key);
-            }
-
-            if (oldValue != null) {
-                removeIndex(key);
-                mapDataStore.remove(key, now);
-            }
+            removeIndex(key);
+            mapDataStore.remove(key, now);
+            onStore(record);
         } else {
             oldValue = record.getValue();
             oldValue = mapServiceContext.interceptRemove(name, oldValue);
@@ -569,12 +590,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(-calculateRecordHeapCost(record));
             deleteRecord(key);
         }
-        return oldValue;
-    }
-
-    @Override
-    public Object delete(Data dataKey) {
-        return removeInternal(dataKey, false);
+        return oldValue != null;
     }
 
     @Override
