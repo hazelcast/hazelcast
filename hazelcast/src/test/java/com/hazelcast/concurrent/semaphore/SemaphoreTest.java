@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -55,6 +56,19 @@ public class SemaphoreTest extends HazelcastTestSupport {
         assertEquals(semaphore.availablePermits(), 0);
     }
 
+    @Test(expected = IllegalStateException.class, timeout = 30000)
+    public void testAcquire_whenInstanceShutdown() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore(randomString());
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                hz.shutdown();
+            }
+        };
+        thread.start();
+        semaphore.acquire();
+    }
+
     @Test(timeout = 30000)
     public void testRelease() {
         final ISemaphore semaphore = hz.getSemaphore(randomString());
@@ -66,6 +80,17 @@ public class SemaphoreTest extends HazelcastTestSupport {
         }
 
         assertEquals(semaphore.availablePermits(), numberOfPermits);
+    }
+
+    @Test(timeout = 30000)
+    public void testRelease_whenArgumentNegative() {
+        final ISemaphore semaphore = hz.getSemaphore("testRelease_whenArgumentNegative");
+        try {
+            semaphore.release(-5);
+            fail();
+        } catch (IllegalArgumentException expected) {
+        }
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test(timeout = 30000)
@@ -120,6 +145,18 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
+    public void testReduce_whenArgumentNegative() {
+        final ISemaphore semaphore = hz.getSemaphore("testReduce_whenArgumentNegative");
+        try {
+            semaphore.reducePermits(-5);
+            fail();
+        } catch (IllegalArgumentException expected) {
+        }
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+
+    @Test(timeout = 30000)
     public void testTryAcquire() {
         final ISemaphore semaphore = hz.getSemaphore(randomMapName());
         int numberOfPermits = 20;
@@ -146,6 +183,30 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
         assertEquals(semaphore.availablePermits(), 0);
     }
+
+    @Test(expected = IllegalArgumentException.class, timeout = 30000)
+    public void testTryAcquireMultiple_whenArgumentNegative() {
+        final ISemaphore semaphore = hz.getSemaphore(randomString());
+        int numberOfPermits = 10;
+        int negativePermits = -5;
+
+        assertTrue(semaphore.init(numberOfPermits));
+        for (int i = 0; i < numberOfPermits; i += 5) {
+            assertEquals(numberOfPermits - i, semaphore.availablePermits());
+            assertEquals(semaphore.tryAcquire(negativePermits), true);
+        }
+    }
+
+    @Test(timeout = 30000)
+    public void testTryAcquire_whenNotEnoughPermits() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore(randomString());
+        int numberOfPermits = 10;
+
+        assertTrue(semaphore.init(numberOfPermits));
+        semaphore.acquire(10);
+        assertFalse(semaphore.tryAcquire(1));
+    }
+
 
     @Test(timeout = 30000)
     public void testInit_whenNotIntialized() {
