@@ -817,20 +817,12 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void testIssue3130() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance = factory.newHazelcastInstance(new Config());
-        factory.newHazelcastInstance(new Config());
-        IMap<Integer, SampleObjects.Employee> map = instance.getMap("default");
-        map.put(5, new SampleObjects.Employee(5, "Employee-1", 25, true, 1000));
-        map.put(25, new SampleObjects.Employee(25, "Employee-2", 35, true, 2000));
-        map.put(55, new SampleObjects.Employee(55, "Employee-3", 45, true, 3000));
         Predicate  pred = Predicates.between("id", 10, 50);
-        Collection<Employee> values = map.values(pred);
-
-        for(Employee e : values){
-            Map.Entry<Integer, Employee> entry = new AbstractMap.SimpleEntry(e.getId(), e);
-            assertTrue( pred.apply(entry) );
-        }
+        AbstractMap.SimpleEntry entry =
+            new AbstractMap.SimpleEntry(
+                25,
+                new SampleObjects.Employee(25, "Employee", 25, true, 1000));
+        pred.apply(entry);
     }
 
     private void testMultipleOrPredicates(IMap<Integer, SampleObjects.Employee> map) {
