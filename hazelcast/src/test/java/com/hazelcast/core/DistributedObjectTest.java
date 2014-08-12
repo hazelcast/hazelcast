@@ -181,7 +181,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testInitialization2() {
+    public void testInitialization_whenEachNodeExecutesPostJoinOperations() {
         int nodeCount = 4;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         Config config = new Config();
@@ -262,6 +262,31 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         }
         @Override
         public void destroy() {
+        }
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testFailingInitialization() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        Config config = new Config();
+        config.getServicesConfig().addServiceConfig(
+                new ServiceConfig().setServiceImpl(new FailingInitializingObjectService())
+                        .setEnabled(true).setName(FailingInitializingObjectService.NAME)
+        );
+
+        String serviceName = FailingInitializingObjectService.NAME;
+        String objectName = "test-object";
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        hz.getDistributedObject(serviceName, objectName);
+    }
+
+    private static class FailingInitializingObjectService implements RemoteService {
+        static final String NAME = "FailingInitializingObjectService";
+        public DistributedObject createDistributedObject(String objectName) {
+            throw new HazelcastException("Object creation is not allowed!");
+        }
+        public void destroyDistributedObject(final String objectName) {
         }
     }
 }
