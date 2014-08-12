@@ -202,7 +202,7 @@ public class MultiMapPortableHook implements PortableHook {
                 return new TxnMultiMapRemoveAllRequest();
             }
         };
-        constructors[KEY_BASED_CONTAINS]=new ConstructorFunction<Integer, Portable>() {
+        constructors[KEY_BASED_CONTAINS] = new ConstructorFunction<Integer, Portable>() {
             @Override
             public Portable createNew(Integer arg) {
                 return new KeyBasedContainsRequest();
