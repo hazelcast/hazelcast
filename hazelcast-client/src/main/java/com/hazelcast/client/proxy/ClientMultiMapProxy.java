@@ -40,7 +40,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.multimap.impl.operations.client.AddEntryListenerRequest;
 import com.hazelcast.multimap.impl.operations.client.ClearRequest;
-import com.hazelcast.multimap.impl.operations.client.ContainsValueRequest;
+import com.hazelcast.multimap.impl.operations.client.ContainsRequest;
 import com.hazelcast.multimap.impl.operations.client.CountRequest;
 import com.hazelcast.multimap.impl.operations.client.EntrySetRequest;
 import com.hazelcast.multimap.impl.operations.client.GetAllRequest;
@@ -145,14 +145,14 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     public boolean containsKey(K key) {
         Data keyData = toData(key);
-        ContainsValueRequest request = new ContainsValueRequest(name, keyData, null);
+        ContainsRequest request = new ContainsRequest(name, keyData, null);
         Boolean result = invoke(request, keyData);
         return result;
     }
 
     public boolean containsValue(Object value) {
         Data valueData = toData(value);
-        ContainsValueRequest request = new ContainsValueRequest(name, null, valueData);
+        ContainsRequest request = new ContainsRequest(name, null, valueData);
         Boolean result = invoke(request);
         return result;
     }
@@ -160,7 +160,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public boolean containsEntry(K key, V value) {
         Data keyData = toData(key);
         Data valueData = toData(value);
-        ContainsValueRequest request = new ContainsValueRequest(name, keyData, valueData);
+        ContainsRequest request = new ContainsRequest(name, keyData, valueData);
         Boolean result = invoke(request, keyData);
         return result;
     }
