@@ -77,7 +77,6 @@ class MapEventPublisherSupport implements MapEventPublisher {
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty()) {
             return;
         }
-        dataValue = pickDataValue(eventType, dataOldValue, dataValue);
         final EntryEventData eventData = createEntryEventData(mapName, caller,
                 dataKey, dataValue, dataOldValue, eventType.getType());
         final int orderKey = pickOrderKey(dataKey);
@@ -100,10 +99,6 @@ class MapEventPublisherSupport implements MapEventPublisher {
 
     private int pickOrderKey(Data key) {
         return key == null ? -1 : key.hashCode();
-    }
-
-    private Data pickDataValue(EntryEventType eventType, Data dataOldValue, Data dataValue) {
-        return dataValue;
     }
 
 
