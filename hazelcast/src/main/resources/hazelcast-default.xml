@@ -170,9 +170,9 @@
         <!--
             Minimum time in milliseconds which should pass before checking
             if a partition of this map is evictable or not.
-            Default value is 0.
+            Default value is 100 millis.
         -->
-        <min-eviction-check-millis>0</min-eviction-check-millis>
+        <min-eviction-check-millis>100</min-eviction-check-millis>
         <!--
             While recovering from split-brain (network partitioning),
             map entries in the small cluster will merge into the bigger cluster
