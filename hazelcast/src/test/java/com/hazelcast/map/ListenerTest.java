@@ -29,6 +29,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import static org.junit.Assert.assertNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -296,6 +297,56 @@ public class ListenerTest extends HazelcastTestSupport {
                 assertTrue(globalCount.get() > eventPerPartitionMin && globalCount.get() < eventPerPartitionMax);
             }
         });
+    }
+
+    /**
+     * test for issue 3198
+     */
+    @Test
+    public void testEntryListenerEvent_getValueWhenEntryRemoved() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
+        IMap<String, String> map = h1.getMap(name);
+        final Object[] value = new Object[1];
+        final Object[] oldValue = new Object[1];
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryRemoved(EntryEvent<String, String> event) {
+                value[0] = event.getValue();
+                oldValue[0] = event.getOldValue();
+                latch.countDown();
+            }
+        }, true);
+
+        map.put("key", "value");
+        map.remove("key");
+        assertOpenEventually(latch);
+        assertNull(value[0]);
+        assertEquals("value",oldValue[0]);
+    }
+
+    @Test
+    public void testEntryListenerEvent_getValueWhenEntryEvicted() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
+        IMap<String, String> map = h1.getMap(name);
+        final Object[] value = new Object[1];
+        final Object[] oldValue = new Object[1];
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                value[0] = event.getValue();
+                oldValue[0] = event.getOldValue();
+                latch.countDown();
+            }
+        }, true);
+
+        map.put("key","value",1,TimeUnit.SECONDS);
+        assertOpenEventually(latch);
+        assertNull(value[0]);
+        assertEquals("value",oldValue[0]);
     }
 
     @Test

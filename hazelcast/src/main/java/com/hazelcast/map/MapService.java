@@ -721,7 +721,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
         String source = nodeEngine.getThisAddress().toString();
         if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
-            dataValue = dataValue != null ? dataValue : dataOldValue;
+            dataValue = null;
         }
         EventData event = new EventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType.getType());
         int orderKey = dataKey.hashCode();

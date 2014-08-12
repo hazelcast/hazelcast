@@ -237,11 +237,11 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latch2 = new CountDownLatch(1);
         map.addEntryListener(new EntryAdapter<String, String>() {
             public void entryEvicted(EntryEvent<String, String> event) {
-                if (value1.equals(event.getValue())) {
-                    newList.add(event.getValue());
+                if (value1.equals(event.getOldValue())) {
+                    newList.add(event.getOldValue());
                     latch1.countDown();
-                } else if (value2.equals(event.getValue())) {
-                    newList.add(event.getValue());
+                } else if (value2.equals(event.getOldValue())) {
+                    newList.add(event.getOldValue());
                     latch2.countDown();
                 }
             }
@@ -272,7 +272,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
             public void entryRemoved(EntryEvent event) {
                 assertEquals("hello", event.getKey());
-                assertEquals("new world", event.getValue());
+                assertEquals(null, event.getValue());
                 latchRemoved.countDown();
             }
 

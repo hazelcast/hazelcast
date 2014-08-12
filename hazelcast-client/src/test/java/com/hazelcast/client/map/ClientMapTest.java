@@ -115,7 +115,7 @@ public class ClientMapTest {
             public void entryEvicted(EntryEvent event) {
                 final Object value = event.getValue();
                 final Object oldValue = event.getOldValue();
-                if (value != null) {
+                if (value == null) {
                     nullLatch.countDown();
                 }
                 if (oldValue != null) {
