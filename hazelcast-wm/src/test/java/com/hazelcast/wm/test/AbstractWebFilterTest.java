@@ -145,25 +145,29 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
         return EntityUtils.toString(entity);
     }
 
-    protected String executeRequest(String context, int serverPort, CookieStore cookieStore) throws Exception {
+    protected String executeRequest(String context,
+                                    int serverPort,
+                                    CookieStore cookieStore) throws Exception {
         return responseToString(request(context, serverPort, cookieStore));
     }
 
-    protected HttpResponse request(String context, int serverPort, CookieStore cookieStore) throws Exception {
+    protected HttpResponse request(String context,
+                                   int serverPort,
+                                   CookieStore cookieStore) throws Exception {
         return request(DEFAULT_REQUEST_TYPE, context, serverPort, cookieStore);
     }
 
     protected String executeRequest(RequestType reqType,
-                                            String context,
-                                            int serverPort,
-                                            CookieStore cookieStore) throws Exception {
+                                    String context,
+                                    int serverPort,
+                                    CookieStore cookieStore) throws Exception {
         return responseToString(request(reqType, context, serverPort, cookieStore));
     }
 
     protected HttpResponse request(RequestType reqType,
-                                           String context,
-                                           int serverPort,
-                                           CookieStore cookieStore) throws Exception {
+                                   String context,
+                                   int serverPort,
+                                   CookieStore cookieStore) throws Exception {
         if (reqType == null) {
             throw new IllegalArgumentException("Request type paramater cannot be empty !");
         }
