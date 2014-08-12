@@ -133,12 +133,12 @@
                 </xs:simpleType>
             </xs:element>
             <xs:element name="min-eviction-check-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1"
-                        default="0">
+                        default="100">
                 <xs:annotation>
                     <xs:documentation>
                         Minimum time in milliseconds which should pass before checking
                         if a partition of this map is evictable or not.
-                        Default value is 0.
+                        Default value is 100 millis.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
