@@ -68,6 +68,7 @@ public class ManagementCenterService {
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged = false;
     private volatile boolean versionMismatch = false;
+    private volatile boolean manCenterConnectionLost;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -389,14 +390,17 @@ public class ManagementCenterService {
                     timedMemberState.writeData(out);
                     outputStream.flush();
                     post(connection);
+                    if (manCenterConnectionLost) {
+                        logger.info("Connection to management center restored.");
+                    }
+                    manCenterConnectionLost = false;
                 } finally {
                     closeResource(outputStream);
                 }
             } catch (ConnectException e) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest(e);
-                } else {
-                    logger.info("Failed to connect to:" + url);
+                if (!manCenterConnectionLost) {
+                    manCenterConnectionLost = true;
+                    log("Failed to connect to:" + url, e);
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -533,6 +537,15 @@ public class ManagementCenterService {
 
                 ConsoleRequest task = newTask(inputStream);
                 processTaskAndPostResponse(taskId, task);
+                if (manCenterConnectionLost) {
+                    logger.info("Connection to management center restored.");
+                }
+                manCenterConnectionLost = false;
+            } catch (ConnectException e) {
+                if (!manCenterConnectionLost) {
+                    manCenterConnectionLost = true;
+                    log("Failed to connect to management center", e);
+                }
             } catch (Exception e) {
                 //todo: even if there is an internal error with the task, we don't see it. That is kinda shitty
                 logger.finest(e);
@@ -593,6 +606,13 @@ public class ManagementCenterService {
         }
     }
 
+    private void log(String msg, Throwable t) {
+        if (logger.isFinestEnabled()) {
+            logger.finest(msg, t);
+        } else {
+            logger.info(msg);
+        }
+    }
 
     private class LifecycleListenerImpl implements LifecycleListener {
 
