@@ -22,6 +22,7 @@ import com.hazelcast.multimap.impl.operations.client.ContainsRequest;
 import com.hazelcast.multimap.impl.operations.client.CountRequest;
 import com.hazelcast.multimap.impl.operations.client.EntrySetRequest;
 import com.hazelcast.multimap.impl.operations.client.GetAllRequest;
+import com.hazelcast.multimap.impl.operations.client.KeyBasedContainsRequest;
 import com.hazelcast.multimap.impl.operations.client.KeySetRequest;
 import com.hazelcast.multimap.impl.operations.client.MultiMapIsLockedRequest;
 import com.hazelcast.multimap.impl.operations.client.MultiMapLockRequest;
@@ -78,14 +79,14 @@ public class MultiMapPortableHook implements PortableHook {
     public static final int TXN_MM_SIZE = 23;
     public static final int REMOVE_ENTRY_LISTENER = 24;
     public static final int TXN_MM_REMOVEALL = 25;
-
+    public static final int KEY_BASED_CONTAINS = 26;
 
     public int getFactoryId() {
         return F_ID;
     }
 
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[TXN_MM_REMOVEALL + 1];
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[KEY_BASED_CONTAINS + 1];
         constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new ClearRequest();
@@ -201,7 +202,12 @@ public class MultiMapPortableHook implements PortableHook {
                 return new TxnMultiMapRemoveAllRequest();
             }
         };
-
+        constructors[KEY_BASED_CONTAINS]=new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new KeyBasedContainsRequest();
+            }
+        };
 
         return new ArrayPortableFactory(constructors);
     }
