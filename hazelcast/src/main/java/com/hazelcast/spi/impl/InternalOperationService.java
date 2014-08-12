@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
@@ -30,7 +29,7 @@ import com.hazelcast.spi.OperationService;
  */
 public interface InternalOperationService extends OperationService {
 
-     void onMemberLeft(MemberImpl member);
+    void onMemberLeft(MemberImpl member);
 
     boolean isCallTimedOut(Operation op);
 
