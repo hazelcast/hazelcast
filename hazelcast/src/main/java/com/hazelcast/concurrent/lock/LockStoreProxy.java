@@ -62,6 +62,12 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
+    public boolean isTransactionallyLocked(Data key) {
+        LockStore lockStore = getLockStore();
+        return lockStore.isTransactionallyLocked(key);
+    }
+
+    @Override
     public boolean isLockedBy(Data key, String caller, long threadId) {
         LockStore lockStore = getLockStore();
         return lockStore.isLockedBy(key, caller, threadId);
