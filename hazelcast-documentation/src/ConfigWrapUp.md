@@ -1,8 +1,8 @@
 
 
-## Default Hazelcast.xml Wrap Up
+## Hazelcast Configuration Wrap Up
 
-In Hazelcast, below configuration elements are available.
+In Hazelcast.xml, below configuration elements are available.
 
 - group
 - management-center
@@ -21,21 +21,59 @@ In Hazelcast, below configuration elements are available.
 
 
 
-### `group` Tag
+### `group` Configuration
 
-This configuration is for ???. It has below sub-tags.
+This configuration is to create multiple Hazelcast clusters. Each cluster will have its own group and it will not interfere with other clusters. Sample configurations are shown below.
 
-- name:
-- password:
+```xml
+<group>
+   <name>MyGroup</name>
+   <password>5551234</password>
+</group>
+```
+
+```java
+Config config = new Config();
+config.getGroupConfig().setName( "MyGroup" ).setPassword( "5551234" );
+```
+   
+
+It has below tags.
 
 
-### `management-center` Tag
+- `name`: Name of the group to be created.
+- `password`: Password of the group to be created.
 
-This configuration is for ???. It only has the attribute `enabled`.
 
-### `network` Tag
+### `management-center` Configuration
 
-This configuration is for ???. It has below sub-tags.
+This configuration is used to enable/disable Hazelcast Management Center and specify a time frequency for which the tool is updated with the cluster information. Sample configurations are shown below.
+
+
+```xml
+<management-center enabled="true">http://localhost:8080/mancenter</management-center>
+```
+
+```java
+Config config = new Config();
+config.getManagementCenterConfig().setEnabled( "true" ).
+                setUrl( "http://localhost:8080/mancenter" ).
+                setUpdateInterval( "3" );
+```
+   
+
+It has below attributes and tags.
+
+
+- `enabled`: This attribute should be set to `true` to be enable to run Management Center.
+- `url`: It is the URL where Management Center will work.
+- `updateInterval`: It specifies the time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
+
+
+
+### `network` Configuration
+
+This configuration is for ???. It has below tags.
 
 - port:
 - outbound-ports:
@@ -54,18 +92,19 @@ This configuration is for ???. It only has the attribute `enabled`.
 
 This configuration is for ???. It has below attributes.
 
-- pool-size:
-- queue-capacity:
+- pool-size: The number of executor threads per Member for the Executor.
+- queue-capacity: Capacity of the queue.
+- statistics-enabled:
 
 
 ### `queue` Tag
 
 This configuration is for ???. It has below attributes.
 
-- max-size:
-- backup-count:
-- async-backup-count:
-- empty-queue-ttl:
+- max-size: Value of maximum size of Queue.
+- backup-count: Value of synchronous backup count.
+- async-backup-count: Value of asynchronous backup count.
+- empty-queue-ttl: Value of time to live to empty the Queue
 - item-listeners:
 - queue-store:
 - statistics-enabled:

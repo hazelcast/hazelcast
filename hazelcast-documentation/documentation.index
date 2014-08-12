@@ -117,7 +117,7 @@ src/Config.md
 	src/Logging.md
 	src/ConfigurationProperties.md
 	src/EnterpriseConfig.md
-#	src/XMLWrapUp.md
+	src/ConfigWrapUp.md
 src/NetworkPartitioning.md
 
 src/FAQ.md
