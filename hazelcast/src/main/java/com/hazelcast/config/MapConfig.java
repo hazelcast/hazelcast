@@ -328,11 +328,12 @@ public class MapConfig {
      * @param minEvictionCheckMillis time in millis.
      * @since 3.3
      */
-    public void setMinEvictionCheckMillis(long minEvictionCheckMillis) {
+    public MapConfig setMinEvictionCheckMillis(long minEvictionCheckMillis) {
         if (minEvictionCheckMillis < 0) {
             throw new IllegalArgumentException("Parameter minEvictionCheckMillis can not get a negative value");
         }
         this.minEvictionCheckMillis = minEvictionCheckMillis;
+        return this;
     }
 
     /**
