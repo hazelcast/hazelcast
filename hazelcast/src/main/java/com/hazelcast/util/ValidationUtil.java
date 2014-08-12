@@ -26,7 +26,7 @@ public final class ValidationUtil {
     private ValidationUtil() {
     }
 
-    public static void checkIfNull(Object argument, String message) {
+    public static void checkNotNull(Object argument, String message) {
         if (argument == null) {
             throw new NullPointerException(message);
         }

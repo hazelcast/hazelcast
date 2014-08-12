@@ -99,8 +99,8 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public boolean put(K key, V value) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        ValidationUtil.checkIfNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -109,7 +109,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public Collection<V> get(K key) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -118,8 +118,8 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public boolean remove(Object key, Object value) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        ValidationUtil.checkIfNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -128,7 +128,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public Collection<V> remove(Object key) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -176,7 +176,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public boolean containsKey(K key) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -184,7 +184,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public boolean containsValue(Object value) {
-        ValidationUtil.checkIfNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data valueKey = nodeEngine.toData(value);
@@ -192,8 +192,8 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public boolean containsEntry(K key, V value) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        ValidationUtil.checkIfNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -202,7 +202,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public int valueCount(K key) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -228,7 +228,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public void lock(K key) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -236,7 +236,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         shouldBePositive(leaseTime, "leaseTime");
         final NodeEngine nodeEngine = getNodeEngine();
@@ -245,7 +245,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public boolean isLocked(K key) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -253,7 +253,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public boolean tryLock(K key) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         try {
             return tryLock(key, 0, TimeUnit.MILLISECONDS);
@@ -264,7 +264,7 @@ public class ObjectMultiMapProxy<K, V>
 
     public boolean tryLock(K key, long time, TimeUnit timeunit)
             throws InterruptedException {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -272,7 +272,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public void unlock(K key) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
@@ -280,7 +280,7 @@ public class ObjectMultiMapProxy<K, V>
     }
 
     public void forceUnlock(K key) {
-        ValidationUtil.checkIfNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
