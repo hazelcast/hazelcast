@@ -112,7 +112,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private final IOSelector inSelector;
     private final IOSelector outSelector;
     private final boolean smartRouting;
-    private final OwnerConnectionHolder ownerConnectionHolder = new OwnerConnectionHolder();
+    private final OwnerConnectionFuture ownerConnectionFuture = new OwnerConnectionFuture();
 
     private final Credentials credentials;
     private volatile ClientPrincipal principal;
@@ -262,7 +262,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     @Override
     public void onCloseOwnerConnection() {
         //mark the owner connection as closed so that operations requiring owner connection can be waited.
-        ownerConnectionHolder.markAsClosed();
+        ownerConnectionFuture.markAsClosed();
     }
 
     @Override
@@ -271,7 +271,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         if (translatedAddress == null) {
             throw new RetryableIOException(address + " can not be translated! ");
         }
-        return ownerConnectionHolder.createNew(translatedAddress);
+        return ownerConnectionFuture.createNew(translatedAddress);
     }
 
     @Override
@@ -326,7 +326,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
     private ClientConnection getOrConnect(Address target, Authenticator authenticator) throws Exception {
         if (!smartRouting) {
-            target = ownerConnectionHolder.getOrWaitForCreation().getEndPoint();
+            target = ownerConnectionFuture.getOrWaitForCreation().getEndPoint();
         }
 
         Address address = addressTranslator.translate(target);
@@ -423,7 +423,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         Address endpoint = clientConnection.getRemoteEndpoint();
         if (endpoint != null) {
             connections.remove(clientConnection.getRemoteEndpoint());
-            ownerConnectionHolder.closeIfAddressMatches(endpoint);
+            ownerConnectionFuture.closeIfAddressMatches(endpoint);
         }
     }
 
@@ -620,18 +620,18 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     public void onDetectingUnresponsiveConnection(ClientConnection connection) {
         if (smartRouting) {
             //closing the owner connection if unresponsive so that it can be switched to a healthy one.
-            ownerConnectionHolder.closeIfAddressMatches(connection.getEndPoint());
+            ownerConnectionFuture.closeIfAddressMatches(connection.getEndPoint());
             // we do not close connection itself since we will continue to send heartbeat ping to this connection.
             // IOUtil.closeResource(connection);
             return;
         }
 
         //close both owner and operation connection
-        ownerConnectionHolder.close();
+        ownerConnectionFuture.close();
         IOUtil.closeResource(connection);
     }
 
-    private class OwnerConnectionHolder {
+    private class OwnerConnectionFuture {
 
         private final Object ownerConnectionLock = new Object();
         private volatile ClientConnection ownerConnection;
