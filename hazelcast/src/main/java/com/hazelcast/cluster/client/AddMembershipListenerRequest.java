@@ -17,9 +17,9 @@
 package com.hazelcast.cluster.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.client.CallableClientRequest;
-import com.hazelcast.client.client.ClientPortableHook;
-import com.hazelcast.client.client.RetryableRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.ClientPortableHook;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.MemberAttributeEvent;

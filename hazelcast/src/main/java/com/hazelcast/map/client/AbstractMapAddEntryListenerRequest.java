@@ -17,8 +17,8 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.client.CallableClientRequest;
-import com.hazelcast.client.client.RetryableRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;

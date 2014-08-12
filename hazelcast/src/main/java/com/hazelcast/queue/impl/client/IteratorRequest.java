@@ -16,7 +16,7 @@
 
 package com.hazelcast.queue.impl.client;
 
-import com.hazelcast.client.client.RetryableRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.impl.IteratorOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;

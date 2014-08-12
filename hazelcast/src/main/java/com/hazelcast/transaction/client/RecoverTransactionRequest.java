@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.client;
 
-import com.hazelcast.client.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;

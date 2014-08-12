@@ -1,8 +1,8 @@
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.client.ClientRequest;
-import com.hazelcast.client.client.ClientResponse;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;

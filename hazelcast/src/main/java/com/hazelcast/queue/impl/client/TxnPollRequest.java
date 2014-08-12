@@ -17,7 +17,7 @@
 package com.hazelcast.queue.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Portable;

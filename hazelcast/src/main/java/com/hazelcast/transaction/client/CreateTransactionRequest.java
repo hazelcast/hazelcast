@@ -17,7 +17,7 @@
 package com.hazelcast.transaction.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

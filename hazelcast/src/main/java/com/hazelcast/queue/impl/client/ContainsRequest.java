@@ -16,7 +16,7 @@
 
 package com.hazelcast.queue.impl.client;
 
-import com.hazelcast.client.client.RetryableRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

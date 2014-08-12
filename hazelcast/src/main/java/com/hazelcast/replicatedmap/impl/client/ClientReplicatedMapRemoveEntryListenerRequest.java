@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.client.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;

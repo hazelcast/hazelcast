@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations.client;
 
-import com.hazelcast.client.client.RetryableRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.IOUtil;

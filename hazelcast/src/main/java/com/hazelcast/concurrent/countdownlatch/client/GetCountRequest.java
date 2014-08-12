@@ -16,9 +16,9 @@
 
 package com.hazelcast.concurrent.countdownlatch.client;
 
-import com.hazelcast.client.client.KeyBasedClientRequest;
-import com.hazelcast.client.client.RetryableRequest;
-import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.countdownlatch.operations.GetCountOperation;
 import com.hazelcast.nio.serialization.Portable;

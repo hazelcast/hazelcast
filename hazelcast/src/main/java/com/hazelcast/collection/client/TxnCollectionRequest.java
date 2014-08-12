@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.IOUtil;

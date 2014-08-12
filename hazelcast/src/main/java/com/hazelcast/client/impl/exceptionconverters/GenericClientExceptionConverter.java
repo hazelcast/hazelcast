@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.exceptionconverters;
 
-import com.hazelcast.client.client.GenericError;
+import com.hazelcast.client.impl.client.GenericError;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.client.ClientPrincipal;
+import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.exceptionconverters.ClientExceptionConverter;
 import com.hazelcast.client.impl.exceptionconverters.ClientExceptionConverters;
 import com.hazelcast.core.Client;

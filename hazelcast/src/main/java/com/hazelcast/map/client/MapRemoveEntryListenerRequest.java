@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.security.permission.ActionConstants;

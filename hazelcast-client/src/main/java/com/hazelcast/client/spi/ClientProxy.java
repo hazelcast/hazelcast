@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.client.ClientDestroyRequest;
-import com.hazelcast.client.client.ClientRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.ClientDestroyRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;

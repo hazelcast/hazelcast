@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.client.PartitionClientRequest;
-import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.impl.client.PartitionClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.client.AllPartitionsClientRequest;
-import com.hazelcast.client.client.SecureRequest;
+import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapPortableHook;

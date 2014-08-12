@@ -1,6 +1,6 @@
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.client.ClientResponse;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
