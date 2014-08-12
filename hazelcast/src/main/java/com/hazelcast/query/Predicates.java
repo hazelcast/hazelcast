@@ -759,6 +759,9 @@ public final class Predicates {
         }
 
         protected Comparable readAttribute(Map.Entry entry) {
+            if (!(entry instanceof QueryableEntry)) {
+                throw new IllegalArgumentException("Entry must be QueryableEntry");
+            }
             QueryableEntry queryableEntry = (QueryableEntry) entry;
             Comparable val = queryableEntry.getAttribute(attribute);
             if (val != null && val.getClass().isEnum()) {

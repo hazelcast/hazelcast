@@ -20,17 +20,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.State;
@@ -823,6 +813,16 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.addIndex("name", true);
         map.addIndex("city", true);
         testMultipleOrPredicates(map);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIssue3130() {
+        Predicate  pred = Predicates.between("id", 10, 50);
+        AbstractMap.SimpleEntry entry =
+            new AbstractMap.SimpleEntry(
+                25,
+                new SampleObjects.Employee(25, "Employee", 25, true, 1000));
+        pred.apply(entry);
     }
 
     private void testMultipleOrPredicates(IMap<Integer, SampleObjects.Employee> map) {
