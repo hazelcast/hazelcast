@@ -52,7 +52,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     }
 
     public boolean setCount(String name, int count) {
-        if (count <= 0) {
+        if (count < 0) {
             latches.remove(name);
             return false;
         } else {
@@ -66,7 +66,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     }
 
     public void setCountDirect(String name, int count) {
-        if (count <= 0) {
+        if (count < 0) {
             latches.remove(name);
         } else {
             CountDownLatchInfo latch = latches.get(name);
