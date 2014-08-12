@@ -82,7 +82,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
     @Override
     public boolean trySetCount(int count) {
-        if(count < 0) {
+        if (count < 0) {
             throw new IllegalArgumentException("count can't be negative");
         }
         SetCountOperation op = new SetCountOperation(name, count);
