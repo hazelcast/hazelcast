@@ -132,7 +132,7 @@ final class ServiceManager {
             ClassLoader classLoader = nodeEngine.getConfigClassLoader();
             Class _theClass = ClassLoaderUtil.loadClass(classLoader, _className);
             if(_theClass != null){
-                final Object serviceObject = createServiceObject("com.hazelcast.cache.CacheService");
+                final Object serviceObject = createServiceObject("com.hazelcast.cache.jsr107.CacheService");
                 registerService(CacheService.SERVICE_NAME, serviceObject);
             }
         } catch (ClassNotFoundException e) {

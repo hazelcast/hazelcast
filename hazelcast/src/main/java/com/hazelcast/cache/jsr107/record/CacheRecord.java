@@ -14,9 +14,23 @@
  * limitations under the License.
  */
 
-/**
- * <p>
- *     Hazelcast Cache implementations
- * </p>
- */
-package com.hazelcast.cache;
+package com.hazelcast.cache.jsr107.record;
+
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+public interface CacheRecord<V> extends DataSerializable {
+
+    Data getKey();
+
+    V getValue();
+
+    void setValue(V value);
+
+    long getExpirationTime();
+
+    void setExpirationTime(long expirationTime);
+
+    boolean isExpiredAt(long now);
+
+}

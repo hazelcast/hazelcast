@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-/**
- * <p>
- *     Hazelcast Cache implementations
- * </p>
- */
-package com.hazelcast.cache;
+package com.hazelcast.cache.jsr107.record;
+
+import com.hazelcast.nio.serialization.Data;
+
+public class CacheObjectRecord extends AbstractCacheRecord<Object> {
+
+    CacheObjectRecord(Data key, Object value, long expiryTime) {
+        super(key, value, expiryTime);
+    }
+
+}
