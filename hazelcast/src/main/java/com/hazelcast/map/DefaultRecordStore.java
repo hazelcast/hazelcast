@@ -157,7 +157,30 @@ public class DefaultRecordStore implements RecordStore {
 
     @Override
     public Object remove(Data dataKey) {
-        return removeInternal(dataKey, true);
+        checkIfLoaded();
+        Record record = records.get(dataKey);
+        Object oldValue = null;
+        if (record == null) {
+            if (mapContainer.getStore() != null) {
+                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
+                if (oldValue != null) {
+                    removeIndex(dataKey);
+                    mapStoreDelete(null, dataKey);
+                }
+            }
+        } else {
+            oldValue = record.getValue();
+            oldValue = mapService.interceptRemove(name, oldValue);
+            if (oldValue != null) {
+                removeIndex(dataKey);
+                mapStoreDelete(record, dataKey);
+            }
+            // reduce size
+            updateSizeEstimator(-calculateRecordSize(record));
+            deleteRecord(dataKey);
+            cancelAssociatedSchedulers(dataKey);
+        }
+        return oldValue;
     }
 
     public void flush() {
@@ -490,27 +513,14 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     @Override
-    public Object delete(Data dataKey) {
-        return removeInternal(dataKey, false);
-    }
-
-    private void resetAccessSequenceNumber() {
-        lruAccessSequenceNumber = 0L;
-    }
-
-    public Object removeInternal(Data dataKey, boolean loadMissingKeysFromMapStore) {
+    public boolean delete(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                if (loadMissingKeysFromMapStore) {
-                    oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
-                }
-                if (oldValue != null) {
-                    removeIndex(dataKey);
-                    mapStoreDelete(null, dataKey);
-                }
+            if(mapContainer.getStore() != null) {
+                removeIndex(dataKey);
+                mapStoreDelete(null, dataKey);
             }
         } else {
             oldValue = record.getValue();
@@ -519,12 +529,16 @@ public class DefaultRecordStore implements RecordStore {
                 removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
             }
-            // reduce size
+
             updateSizeEstimator(-calculateRecordSize(record));
             deleteRecord(dataKey);
             cancelAssociatedSchedulers(dataKey);
         }
-        return oldValue;
+        return oldValue != null;
+    }
+
+    private void resetAccessSequenceNumber() {
+        lruAccessSequenceNumber = 0L;
     }
 
     private void removeIndex(Data key) {
