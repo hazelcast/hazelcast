@@ -123,7 +123,6 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         return result;
     }
 
-
     private class MemberShipEventLoger implements MembershipListener {
 
         private List<MembershipEvent> events = new Vector<MembershipEvent>();
