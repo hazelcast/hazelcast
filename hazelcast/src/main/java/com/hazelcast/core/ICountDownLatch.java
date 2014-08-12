@@ -118,6 +118,6 @@ public interface ICountDownLatch extends DistributedObject {
      *         count is not zero
      * @throws IllegalArgumentException if {@code count} is negative
      */
-    boolean trySetCount(int count) throws IllegalArgumentException;
+    boolean trySetCount(int count);
 
 }
