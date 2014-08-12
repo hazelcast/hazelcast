@@ -53,6 +53,9 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
     }
 
     public boolean trySetCount(int count) {
+        if(count < 0) {
+            throw new IllegalArgumentException("count can't be negative");
+        }
         SetCountRequest request = new SetCountRequest(getName(), count);
         Boolean result = invoke(request);
         return result;
