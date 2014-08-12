@@ -25,12 +25,16 @@ In Hazelcast.xml, below configuration elements are available.
 
 This configuration is to create multiple Hazelcast clusters. Each cluster will have its own group and it will not interfere with other clusters. Sample configurations are shown below.
 
+**Declarative:**
+
 ```xml
 <group>
    <name>MyGroup</name>
    <password>5551234</password>
 </group>
 ```
+
+**Programmatic:**
 
 ```java
 Config config = new Config();
@@ -49,10 +53,13 @@ It has below tags.
 
 This configuration is used to enable/disable Hazelcast Management Center and specify a time frequency for which the tool is updated with the cluster information. Sample configurations are shown below.
 
+**Declarative:**
 
 ```xml
-<management-center enabled="true">http://localhost:8080/mancenter</management-center>
+<management-center enabled="true" update-interval="3">http://localhost:8080/mancenter</management-center>
 ```
+
+**Programmatic:**
 
 ```java
 Config config = new Config();
@@ -74,6 +81,54 @@ It has below attributes and tags.
 ### `network` Configuration
 
 This configuration is for ???. It has below tags.
+
+**Declarative:**
+
+
+```xml
+   <network>
+        <port auto-increment="true" port-count="100">5701</port>
+        <outbound-ports>
+            <ports>0</ports>
+        </outbound-ports>
+        <join>
+            <multicast enabled="true">
+                <multicast-group>224.2.2.3</multicast-group>
+                <multicast-port>54327</multicast-port>
+            </multicast>
+            <tcp-ip enabled="false">
+                <interface>127.0.0.1</interface>
+            </tcp-ip>
+            <aws enabled="false">
+                <access-key>my-access-key</access-key>
+                <secret-key>my-secret-key</secret-key>
+                <region>us-west-1</region>
+                <host-header>ec2.amazonaws.com</host-header>
+                <security-group-name>hazelcast-sg</security-group-name>
+                <tag-key>type</tag-key>
+                <tag-value>hz-nodes</tag-value>
+            </aws>
+        </join>
+        <interfaces enabled="false">
+            <interface>10.10.1.*</interface>
+        </interfaces>
+        <ssl enabled="false" />
+        <socket-interceptor enabled="false" />
+        <symmetric-encryption enabled="false">
+            <algorithm>PBEWithMD5AndDES</algorithm>
+            <salt>thesalt</salt>
+            <password>thepass</password>
+            <iteration-count>19</iteration-count>
+        </symmetric-encryption>
+    </network>   
+```
+
+**Programmatic:**
+
+```java
+NetworkConfig config = new Config();
+
+
 
 - port:
 - outbound-ports:
