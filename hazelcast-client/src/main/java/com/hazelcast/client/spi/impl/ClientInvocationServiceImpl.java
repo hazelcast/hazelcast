@@ -65,9 +65,13 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     public <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception {
         ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
-        final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
+        int partitionId = partitionService.getPartitionId(key);
+        final Address owner = partitionService.getPartitionOwner(partitionId);
         if (owner != null) {
-            return invokeOnTarget(request, owner);
+            final ClientConnection connection = connectionManager.tryToConnect(owner);
+            final ClientCallFuture future = new ClientCallFuture(client, request, null);
+            sendInternal(future, connection, partitionId);
+            return future;
         }
         return invokeOnRandomTarget(request);
     }
@@ -100,7 +104,7 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     public Future reSend(ClientCallFuture future) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(null);
-        sendInternal(future, connection);
+        sendInternal(future, connection, -1);
         return future;
     }
 
@@ -133,16 +137,17 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     private ICompletableFuture doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
         final ClientCallFuture future = new ClientCallFuture(client, request, handler);
-        sendInternal(future, connection);
+        sendInternal(future, connection, -1);
         return future;
     }
 
-    private void sendInternal(ClientCallFuture future, ClientConnection connection) {
+    private void sendInternal(ClientCallFuture future, ClientConnection connection, int partitionId) {
         connection.registerCallId(future);
         future.setConnection(connection);
         final SerializationService ss = client.getSerializationService();
         final Data data = ss.toData(future.getRequest());
-        if (!connection.write(new Packet(data, ss.getPortableContext()))) {
+        Packet packet = new Packet(data, partitionId, ss.getPortableContext());
+        if (!connection.write(packet)) {
             final int callId = future.getRequest().getCallId();
             connection.deRegisterCallId(callId);
             connection.deRegisterEventHandler(callId);

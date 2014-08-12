@@ -29,16 +29,15 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public class ContainsEntryRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
+public class ContainsValueRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     Data key;
-
     Data value;
 
-    public ContainsEntryRequest() {
+    public ContainsValueRequest() {
     }
 
-    public ContainsEntryRequest(String name, Data key, Data value) {
+    public ContainsValueRequest(String name, Data key, Data value) {
         super(name);
         this.key = key;
         this.value = value;

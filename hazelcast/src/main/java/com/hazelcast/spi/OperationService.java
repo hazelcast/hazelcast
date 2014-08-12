@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.Response;
 
 import java.util.Collection;
@@ -49,6 +50,10 @@ public interface OperationService {
     int getGenericOperationThreadCount();
 
     long getExecutedOperationCount();
+
+    void execute(Runnable task, int partitionId);
+
+    void executeOperation(Packet packet);
 
     /**
      * Runs operation in calling thread.

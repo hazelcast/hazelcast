@@ -18,7 +18,7 @@ package com.hazelcast.multimap.impl;
 
 import com.hazelcast.multimap.impl.operations.client.AddEntryListenerRequest;
 import com.hazelcast.multimap.impl.operations.client.ClearRequest;
-import com.hazelcast.multimap.impl.operations.client.ContainsEntryRequest;
+import com.hazelcast.multimap.impl.operations.client.ContainsValueRequest;
 import com.hazelcast.multimap.impl.operations.client.CountRequest;
 import com.hazelcast.multimap.impl.operations.client.EntrySetRequest;
 import com.hazelcast.multimap.impl.operations.client.GetAllRequest;
@@ -93,7 +93,7 @@ public class MultiMapPortableHook implements PortableHook {
         };
         constructors[CONTAINS_ENTRY] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new ContainsEntryRequest();
+                return new ContainsValueRequest();
             }
         };
         constructors[COUNT] = new ConstructorFunction<Integer, Portable>() {
