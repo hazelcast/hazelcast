@@ -39,6 +39,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedRunnable;
 
@@ -288,19 +289,27 @@ public class ProxyServiceImpl
                 }
                 DistributedObjectFuture proxyFuture = new DistributedObjectFuture();
                 if (proxies.putIfAbsent(name, proxyFuture) == null) {
-                    DistributedObject proxy = service.createDistributedObject(name);
-                    if (initialize && proxy instanceof InitializingObject) {
-                        try {
-                            ((InitializingObject) proxy).initialize();
-                        } catch (Exception e) {
-                            logger.warning("Error while initializing proxy: " + proxy, e);
+                    DistributedObject proxy;
+                    try {
+                        proxy = service.createDistributedObject(name);
+                        if (initialize && proxy instanceof InitializingObject) {
+                            try {
+                                ((InitializingObject) proxy).initialize();
+                            } catch (Exception e) {
+                                logger.warning("Error while initializing proxy: " + proxy, e);
+                            }
                         }
+                        proxyFuture.set(proxy);
+                    } catch (Throwable e) {
+                        // proxy creation or initialization failed
+                        // deregister future to avoid infinite hang on future.get()
+                        proxies.remove(name);
+                        throw ExceptionUtil.rethrow(e);
                     }
                     nodeEngine.eventService.executeEventCallback(new ProxyEventProcessor(CREATED, serviceName, proxy));
                     if (publishEvent) {
                         publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
                     }
-                    proxyFuture.set(proxy);
                     return proxyFuture;
                 }
             }
@@ -330,6 +339,9 @@ public class ProxyServiceImpl
 
         void destroy() {
             for (DistributedObjectFuture future : proxies.values()) {
+                if (!future.isSet()) {
+                    continue;
+                }
                 DistributedObject distributedObject = future.get();
                 if (distributedObject instanceof AbstractDistributedObject) {
                     ((AbstractDistributedObject) distributedObject).invalidate();
