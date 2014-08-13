@@ -21,7 +21,7 @@
     <display-name>demo</display-name>
     <filter>
         <filter-name>hazelcast-filter</filter-name>
-        <filter-class>com.hazelcast.web.WebFilter</filter-class>
+        <filter-class>com.hazelcast.wm.test.TestWebFilter</filter-class>
         <init-param>
             <param-name>map-name</param-name>
             <param-value>default</param-value>
