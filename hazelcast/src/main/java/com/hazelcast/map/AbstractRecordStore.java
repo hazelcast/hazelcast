@@ -34,7 +34,7 @@ abstract class AbstractRecordStore implements RecordStore {
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
     protected final int partitionId;
-    private final SizeEstimator sizeEstimator;
+    private SizeEstimator sizeEstimator;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.mapContainer = mapContainer;
@@ -210,5 +210,9 @@ abstract class AbstractRecordStore implements RecordStore {
 
     protected Data toData(Object value) {
         return mapServiceContext.toData(value);
+    }
+
+    public void setSizeEstimator(SizeEstimator sizeEstimator) {
+        this.sizeEstimator = sizeEstimator;
     }
 }
