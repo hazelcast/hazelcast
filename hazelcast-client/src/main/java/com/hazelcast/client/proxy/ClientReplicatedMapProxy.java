@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;

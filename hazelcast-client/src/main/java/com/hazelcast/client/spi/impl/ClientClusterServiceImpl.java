@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.ClientImpl;
-import com.hazelcast.client.ClientPrincipal;
+import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientAwsConfig;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.GetRemainingLeaseTimeOperation;
