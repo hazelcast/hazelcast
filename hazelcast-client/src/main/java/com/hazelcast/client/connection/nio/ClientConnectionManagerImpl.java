@@ -636,19 +636,27 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         private final Object ownerConnectionLock = new Object();
         private volatile ClientConnection ownerConnection;
 
-        private ClientConnection getOrWaitForCreation() throws RetryableIOException {
+        private ClientConnection getOrWaitForCreation() throws IOException {
             ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
             int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
             int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
             int waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+            final ClientConnection currentOwnerConnection = ownerConnection;
+            if (currentOwnerConnection != null) {
+                return currentOwnerConnection;
+            }
             synchronized (ownerConnectionLock) {
-                while (ownerConnection == null) {
+                long endTime = System.currentTimeMillis() + waitTime;
+                while (ownerConnection == null && endTime > System.currentTimeMillis()) {
                     try {
                         ownerConnectionLock.wait(waitTime);
                     } catch (InterruptedException e) {
-                        LOGGER.warning("Wait for owner connection is timed out");
-                        throw new RetryableIOException(e);
+                        throw new IOException(e);
                     }
+                }
+                if (ownerConnection == null) {
+                    LOGGER.warning("Wait for owner connection is timed out");
+                    throw new IOException("Wait for owner connection is timed out");
                 }
                 return ownerConnection;
             }
@@ -659,11 +667,12 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
             ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
             try {
+                ClientConnection conn = future.get(connectionTimeout + TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
                 synchronized (ownerConnectionLock) {
-                    ownerConnection = future.get(connectionTimeout + TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
+                    ownerConnection = conn;
                     ownerConnectionLock.notifyAll();
                 }
-                return ownerConnection;
+                return conn;
             } catch (Exception e) {
                 future.cancel(true);
                 throw new RetryableIOException(e);
@@ -671,9 +680,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         }
 
         private void markAsClosed() {
-            synchronized (ownerConnectionLock) {
-                ownerConnection = null;
-            }
+            ownerConnection = null;
         }
 
         private void closeIfAddressMatches(Address address) {
