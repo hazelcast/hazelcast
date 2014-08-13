@@ -522,17 +522,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 mapDataStore.remove(key, now);
             }
         } else {
-            oldValue = record.getValue();
-            oldValue = mapServiceContext.interceptRemove(name, oldValue);
-            if (oldValue != null) {
-                removeIndex(key);
-                mapDataStore.remove(key, now);
-                onStore(record);
-            }
-            // reduce size
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            deleteRecord(key);
+            oldValue = removeRecord(key, record, now);
         }
+        return oldValue;
+    }
+
+    public Object removeRecord(Data key, Record record, long now) {
+        Object oldValue = record.getValue();
+        oldValue = mapServiceContext.interceptRemove(name, oldValue);
+        if (oldValue != null) {
+            removeIndex(key);
+            mapDataStore.remove(key, now);
+            onStore(record);
+        }
+        // reduce size
+        updateSizeEstimator(-calculateRecordHeapCost(record));
+        deleteRecord(key);
         return oldValue;
     }
 
@@ -579,16 +584,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             mapDataStore.remove(key, now);
             onStore(record);
         } else {
-            oldValue = record.getValue();
-            oldValue = mapServiceContext.interceptRemove(name, oldValue);
-            if (oldValue != null) {
-                removeIndex(key);
-                mapDataStore.remove(key, now);
-                onStore(record);
-            }
-            // reduce size
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            deleteRecord(key);
+            removeRecord(key, record, now);
         }
         return oldValue != null;
     }

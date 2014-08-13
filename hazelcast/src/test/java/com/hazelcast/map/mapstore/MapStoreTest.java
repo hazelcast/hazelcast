@@ -1418,7 +1418,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testMapStoreLoad_whenCalledDelete() throws Exception {
+    public void testMapDelete_whenLoadFails() throws Exception {
         final FailingLoadMapStore mapStore = new FailingLoadMapStore();
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
@@ -1433,7 +1433,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testMapStoreLoad_whenCalledRemove() throws Exception {
+    public void testMapRemove_whenMapStoreLoadFails() throws Exception {
         final FailingLoadMapStore mapStore = new FailingLoadMapStore();
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
@@ -2402,40 +2402,10 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    class FailingLoadMapStore implements MapStore {
-        @Override
-        public void store(Object key, Object value) {
-
-        }
-
-        @Override
-        public void storeAll(Map map) {
-
-        }
-
-        @Override
-        public void delete(Object key) {
-
-        }
-
-        @Override
-        public void deleteAll(Collection keys) {
-
-        }
-
+    class FailingLoadMapStore extends MapStoreAdapter {
         @Override
         public Object load(Object key) {
             throw new IllegalStateException();
-        }
-
-        @Override
-        public Map loadAll(Collection keys) {
-            return null;
-        }
-
-        @Override
-        public Set loadAllKeys() {
-            return null;
         }
     }
 
