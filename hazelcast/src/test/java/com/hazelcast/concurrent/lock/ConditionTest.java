@@ -15,15 +15,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
@@ -160,13 +162,15 @@ public class ConditionTest extends HazelcastTestSupport {
         String conditionName = randomString();
         final ILock lock = instance.getLock(lockName);
         final ICondition condition = lock.newCondition(conditionName);
-        final int k = 50;
-        final List<Exception> awaitExceptions = Collections.synchronizedList(new ArrayList<Exception>());
 
         final AtomicBoolean running = new AtomicBoolean(true);
-        final CountDownLatch finalLatch = new CountDownLatch(k);
-        for (int i = 0; i < k; i++) {
-            new Thread(new Runnable() {
+        final AtomicReference<Exception> errorRef = new AtomicReference<Exception>();
+        final int numberOfThreads = 8;
+        final CountDownLatch finalLatch = new CountDownLatch(numberOfThreads);
+        ExecutorService ex = Executors.newCachedThreadPool();
+
+        for (int i = 0; i < numberOfThreads; i++) {
+            ex.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -174,9 +178,10 @@ public class ConditionTest extends HazelcastTestSupport {
                             lock.lock();
                             try {
                                 condition.await(1, TimeUnit.MILLISECONDS);
-                            } catch (InterruptedException e) {
+                            } catch (InterruptedException ignored) {
                             } catch (IllegalStateException e) {
-                                awaitExceptions.add(e);
+                                errorRef.set(e);
+                                running.set(false);
                             } finally {
                                 lock.unlock();
                             }
@@ -185,13 +190,23 @@ public class ConditionTest extends HazelcastTestSupport {
                         finalLatch.countDown();
                     }
                 }
-            }).start();
+            });
         }
 
-        Thread.sleep(30000);
-        running.set(false);
-        finalLatch.await(30, TimeUnit.SECONDS);
-        assertEquals("Calls to await() on condition of highly-contented lock threw IllegalStateExceptions", Collections.<Exception>emptyList(), awaitExceptions);
+        ex.execute(new Runnable() {
+            @Override
+            public void run() {
+                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(10));
+                running.set(false);
+            }
+        });
+
+        try {
+            finalLatch.await(30, TimeUnit.SECONDS);
+            assertNull("await() on condition threw IllegalStateException!", errorRef.get());
+        } finally {
+            ex.shutdownNow();
+        }
     }
 
     @Test(timeout = 60000)
