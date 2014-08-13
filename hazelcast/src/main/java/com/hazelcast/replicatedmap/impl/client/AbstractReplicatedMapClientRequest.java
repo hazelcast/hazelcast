@@ -16,8 +16,8 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -27,7 +27,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import java.io.IOException;
 
 /**
- * Base class for all ReplicatedMap client requests
+ * Base class for all ReplicatedMap client request.
  */
 public abstract class AbstractReplicatedMapClientRequest
         extends CallableClientRequest

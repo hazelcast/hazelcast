@@ -13,8 +13,6 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
@@ -32,7 +30,6 @@ import static org.junit.Assert.assertTrue;
 public class QuerySlowTest extends HazelcastTestSupport {
 
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testIndexPerformanceUsingPredicate() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -75,7 +72,6 @@ public class QuerySlowTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testIndexSQLPerformance() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -114,7 +110,6 @@ public class QuerySlowTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testRangeIndexSQLPerformance() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
@@ -173,7 +168,6 @@ public class QuerySlowTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testIndexPerformance() {
         Config cfg = new Config();
         final MapConfig mapConfig = cfg.getMapConfig("employees2");

@@ -27,12 +27,14 @@ import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.queue.impl.QueueService;
-import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class ActionConstants {
 
@@ -56,42 +58,124 @@ public final class ActionConstants {
     public static final String LISTENER_MEMBER = "member";
     public static final String LISTENER_MIGRATION = "migration";
 
+    private static final Map<String, PermissionFactory> PERMISSION_FACTORY_MAP = new HashMap<String, PermissionFactory>();
+
+    static {
+        PERMISSION_FACTORY_MAP.put(QueueService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new QueuePermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(MapService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new MapPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(MultiMapService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new MultiMapPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(ListService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new ListPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(SetService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new SetPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(AtomicLongService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new AtomicLongPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(CountDownLatchService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new CountDownLatchPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(SemaphoreService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new SemaphorePermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(TopicService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new TopicPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(LockService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new LockPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(DistributedExecutorService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new ExecutorServicePermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(IdGeneratorService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME + name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(MapReduceService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new MapReducePermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(ReplicatedMapService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new ReplicatedMapPermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(AtomicReferenceService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new AtomicReferencePermission(name, actions);
+            }
+        });
+    }
+
     private ActionConstants() {
     }
 
+    private interface PermissionFactory {
+        Permission create(String name, String... actions);
+    }
+
+    /**
+     * Creates a permission
+     *
+     * @param name
+     * @param serviceName
+     * @param actions
+     * @return the created Permission
+     * @throws java.lang.IllegalArgumentException if there is no service found with the given serviceName.
+     */
     public static Permission getPermission(String name, String serviceName, String... actions) {
-        if (QueueService.SERVICE_NAME.equals(serviceName)) {
-            return new QueuePermission(name, actions);
-        } else if (MapService.SERVICE_NAME.equals(serviceName)) {
-            return new MapPermission(name, actions);
-        } else if (MultiMapService.SERVICE_NAME.equals(serviceName)) {
-            return new MultiMapPermission(name, actions);
-        } else if (ListService.SERVICE_NAME.equals(serviceName)) {
-            return new ListPermission(name, actions);
-        } else if (SetService.SERVICE_NAME.equals(serviceName)) {
-            return new SetPermission(name, actions);
-        } else if (AtomicLongService.SERVICE_NAME.equals(serviceName)) {
-            return new AtomicLongPermission(name, actions);
-        } else if (CountDownLatchService.SERVICE_NAME.equals(serviceName)) {
-            return new CountDownLatchPermission(name, actions);
-        } else if (SemaphoreService.SERVICE_NAME.equals(serviceName)) {
-            return new SemaphorePermission(name, actions);
-        } else if (TopicService.SERVICE_NAME.equals(serviceName)) {
-            return new TopicPermission(name, actions);
-        } else if (LockService.SERVICE_NAME.equals(serviceName)) {
-            return new LockPermission(name, actions);
-        } else if (DistributedExecutorService.SERVICE_NAME.equals(serviceName)) {
-            return new ExecutorServicePermission(name, actions);
-        } else if (IdGeneratorService.SERVICE_NAME.equals(serviceName)) {
-            return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME + name, actions);
-        } else if (MapReduceService.SERVICE_NAME.equals(serviceName)) {
-            return new MapReducePermission(name, actions);
-        } else if (ReplicatedMapService.SERVICE_NAME.equals(serviceName)) {
-            return new ReplicatedMapPermission(name, actions);
-        } else if (AtomicReferenceService.SERVICE_NAME.equals(serviceName)) {
-            return new AtomicReferencePermission(name, actions);
+        PermissionFactory permissionFactory = PERMISSION_FACTORY_MAP.get(serviceName);
+        if (permissionFactory == null) {
+            throw new IllegalArgumentException("No permissions found for service: " + serviceName);
         }
-        throw new IllegalArgumentException("No service matched!!!");
+
+        return permissionFactory.create(name, actions);
     }
 
 }

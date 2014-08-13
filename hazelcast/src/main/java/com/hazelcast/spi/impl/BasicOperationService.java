@@ -346,7 +346,7 @@ final class BasicOperationService implements InternalOperationService {
         return nodeEngine.send(packet, connection);
     }
 
-    public long registerInvocation(BasicInvocation invocation) {
+    public void registerInvocation(BasicInvocation invocation) {
         long callId = callIdGen.getAndIncrement();
         Operation op = invocation.op;
         if (op.getCallId() != 0) {
@@ -355,11 +355,10 @@ final class BasicOperationService implements InternalOperationService {
 
         invocations.put(callId, invocation);
         setCallId(invocation.op, callId);
-        return callId;
     }
 
-    public void deregisterInvocation(long id) {
-        invocations.remove(id);
+    public void deregisterInvocation(BasicInvocation invocation) {
+        invocations.remove(invocation.op.getCallId());
     }
 
     @PrivateApi

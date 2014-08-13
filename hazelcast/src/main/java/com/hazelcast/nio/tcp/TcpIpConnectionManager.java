@@ -397,12 +397,27 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
+        IOSelectorOutOfMemoryHandler oomeHandler = new IOSelectorOutOfMemoryHandler() {
+            @Override
+            public void handle(OutOfMemoryError error) {
+                ioService.onOutOfMemory(error);
+            }
+        };
         for (int i = 0; i < inSelectors.length; i++) {
-            inSelectors[i] = new InSelectorImpl(ioService, i);
-            outSelectors[i] = new OutSelectorImpl(ioService, i);
+            inSelectors[i] = new InSelectorImpl(
+                    ioService.getThreadGroup(),
+                    ioService.getThreadPrefix() + "in-" + i,
+                    ioService.getLogger(InSelectorImpl.class.getName()),
+                    oomeHandler);
+            outSelectors[i] = new OutSelectorImpl(
+                    ioService.getThreadGroup(),
+                    ioService.getThreadPrefix() + "out-" + i,
+                    ioService.getLogger(OutSelectorImpl.class.getName()),
+                    oomeHandler);
             inSelectors[i].start();
             outSelectors[i].start();
         }
+
         if (serverSocketChannel != null) {
             if (socketAcceptorThread != null) {
                 logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");

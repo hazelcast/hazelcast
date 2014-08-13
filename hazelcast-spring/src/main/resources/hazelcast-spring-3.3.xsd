@@ -141,6 +141,7 @@
                                 <xs:attribute name="max-size-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="max-idle-seconds" use="optional" type="xs:string"/>
                                 <xs:attribute name="eviction-percentage" use="optional" type="xs:string"/>
+                                <xs:attribute name="min-eviction-check-millis" use="optional" type="xs:string"/>
                                 <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="merge-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
@@ -415,6 +416,7 @@
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
         </xs:sequence>
         <xs:attribute name="public-address" type="xs:string" use="optional"/>
         <xs:attribute name="port" type="xs:string" use="required"/>

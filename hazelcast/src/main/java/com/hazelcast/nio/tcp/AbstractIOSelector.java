@@ -19,7 +19,6 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.IOService;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -31,7 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-abstract class AbstractIOSelector extends Thread implements IOSelector {
+public abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 3;
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
@@ -41,20 +40,21 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
 
-    protected final IOService ioService;
-
     protected final int waitTime;
 
     protected final Selector selector;
 
     protected boolean live = true;
 
+    private final IOSelectorOutOfMemoryHandler oomeHandler;
+
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
-    protected AbstractIOSelector(IOService ioService, String tname) {
-        super(ioService.getThreadGroup(), tname);
-        this.ioService = ioService;
-        this.logger = ioService.getLogger(getClass().getName());
+    public AbstractIOSelector(ThreadGroup threadGroup, String tname, ILogger logger,
+                              IOSelectorOutOfMemoryHandler oomeHandler) {
+        super(threadGroup, tname);
+        this.logger = logger;
+        this.oomeHandler = oomeHandler;
         // WARNING: This value has significant effect on idle CPU usage!
         this.waitTime = SELECT_WAIT_TIME_MILLIS;
         try {
@@ -132,7 +132,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                 handleSelectionKeys();
             }
         } catch (OutOfMemoryError e) {
-            ioService.onOutOfMemory(e);
+            oomeHandler.handle(e);
         } catch (Throwable e) {
             logger.warning("Unhandled exception in " + getName(), e);
         } finally {
@@ -167,7 +167,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
         logger.warning(msg, e);
         if (e instanceof OutOfMemoryError) {
-            ioService.onOutOfMemory((OutOfMemoryError) e);
+            oomeHandler.handle((OutOfMemoryError) e);
         }
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.client.ClientServiceProxy;
+import com.hazelcast.client.impl.ClientServiceProxy;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -58,7 +58,7 @@ import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;

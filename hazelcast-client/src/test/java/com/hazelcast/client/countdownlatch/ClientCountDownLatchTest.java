@@ -77,4 +77,10 @@ public class ClientCountDownLatchTest {
 
         assertTrue(l.await(5, TimeUnit.SECONDS));
     }
+
+    @Test (expected = IllegalArgumentException.class)
+    public void testTrySetCount_whenArgumentNegative() {
+        ICountDownLatch latch = hz.getCountDownLatch("test");
+        latch.trySetCount(-20);
+    }
 }

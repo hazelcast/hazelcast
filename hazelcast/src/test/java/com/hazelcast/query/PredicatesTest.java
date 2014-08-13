@@ -45,6 +45,7 @@ import static com.hazelcast.query.Predicates.greaterEqual;
 import static com.hazelcast.query.Predicates.greaterThan;
 import static com.hazelcast.query.Predicates.ilike;
 import static com.hazelcast.query.Predicates.in;
+import static com.hazelcast.query.Predicates.instanceOf;
 import static com.hazelcast.query.Predicates.lessEqual;
 import static com.hazelcast.query.Predicates.lessThan;
 import static com.hazelcast.query.Predicates.like;
@@ -231,6 +232,13 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(ilike(null, "java%ld"), "Java World");
         assertPredicateTrue(ilike(null, "%world"), "Java World");
         assertPredicateFalse(ilike(null, "Java_World"), "gava World");
+    }
+
+    @Test
+    public void testIsInstanceOf() {
+        assertTrue(instanceOf(Long.class).apply(new DummyEntry(1L)));
+        assertFalse(instanceOf(Long.class).apply(new DummyEntry("Java")));
+        assertTrue(instanceOf(Number.class).apply(new DummyEntry(4)));
     }
 
     @Test

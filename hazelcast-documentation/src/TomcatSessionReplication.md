@@ -56,7 +56,7 @@ This type of deployment is the simplest approach. You can just configure your To
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-all-`<*version*>`-ee.jar`, `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` and `hazelcast.xml` to the folder `$CATALINA_HOME/lib/`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`, `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*tomcatversion*>`-`<*version*>`.jar` and `hazelcast.xml` to the folder `$CATALINA_HOME/lib/`.
 
 - Put `<Listener>` tag into the file `$CATALINA_HOME$/conf/server.xml` as shown below.
 
@@ -101,7 +101,7 @@ In this deployment type, Tomcat instances work as clients to an existing Hazelca
 
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar`,`$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-`<*version*>`-ee.jar` and `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-sessions-`<*version*>`.jar` to the folder `$CATALINA_HOME/lib/`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar`,`$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*version*>`.jar` and `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*tomcatversion*>`-`<*version*>`.jar` to the folder `$CATALINA_HOME/lib/`.
 
 - Put `<Listener>` tag into the `$CATALINA_HOME$/conf/server.xml` as shown below.
 

@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastException;
 public class AuthenticationException extends HazelcastException {
 
     public AuthenticationException() {
-        super("Wrong group name and password.");
+        super("Wrong group name or password.");
     }
 
     public AuthenticationException(String message) {

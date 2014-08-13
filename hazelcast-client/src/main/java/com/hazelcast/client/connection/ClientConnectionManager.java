@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 

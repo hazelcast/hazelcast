@@ -47,18 +47,21 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      */
     protected long lruAccessSequenceNumber;
 
-    protected boolean evictionEnabled;
-
-
     /**
      * Last run time of cleanup operation.
      */
     protected long lastEvictionTime;
 
+    private final boolean evictionEnabled;
+
+    private final long minEvictionCheckMillis;
+
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
+        final MapConfig mapConfig = mapContainer.getMapConfig();
+        this.minEvictionCheckMillis = mapConfig.getMinEvictionCheckMillis();
         this.evictionEnabled
-                = !MapConfig.EvictionPolicy.NONE.equals(mapContainer.getMapConfig().getEvictionPolicy());
+                = !MapConfig.EvictionPolicy.NONE.equals(mapConfig.getEvictionPolicy());
         this.expirable = isRecordStoreExpirable();
     }
 
@@ -76,7 +79,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         int loop = 0;
         int evictedEntryCount = 0;
         while (true) {
-            evictedEntryCount += evictExpiredEntries0(maxIterationCount, now, ownerPartition);
+            evictedEntryCount += evictExpiredEntriesInternal(maxIterationCount, now, ownerPartition);
             if (evictedEntryCount >= maxIterationCount) {
                 break;
             }
@@ -109,7 +112,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return Math.round(maxIterationCount);
     }
 
-    private int evictExpiredEntries0(int maxIterationCount, long now, boolean ownerPartition) {
+    private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean ownerPartition) {
         int evictedCount = 0;
         int checkedEntryCount = 0;
         initExpirationIterator();
@@ -218,14 +221,14 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
 
     /**
-     * Eviction waits at least 1000 milliseconds to run.
+     * Eviction waits at least {@link #minEvictionCheckMillis} milliseconds to run.
      *
      * @return <code>true</code> if in that time window,
      * otherwise <code>false</code>
      */
     private boolean inEvictableTimeWindow(long now) {
-        final int evictAfterMs = 1000;
-        return (now - lastEvictionTime) > evictAfterMs;
+        return minEvictionCheckMillis == 0L
+                || (now - lastEvictionTime) > minEvictionCheckMillis;
     }
 
     private boolean isEvictable() {

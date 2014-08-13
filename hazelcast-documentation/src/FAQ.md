@@ -2,9 +2,16 @@
 
 # Frequently Asked Questions
 
+
+
+
 ## Why 271 as the default partition count
 
 The partition count 271, being a prime number, is a good choice since it will be distributed to the nodes almost evenly. For a small to medium sized cluster, the count 271 gives almost even partition distribution and optimal sized partitions.  As your cluster becomes bigger, this count should be made bigger to have evenly distributed partitions.
+
+## Is Hazelcast thread safe
+
+Yes. All Hazelcast data structures are thread safe.
 
 ## How do nodes discover each other
 
@@ -46,7 +53,6 @@ When you store a key & value in a distributed Map, Hazelcast serializes the key 
 
 Implementing `equals` and `hashCode` is not enough, it is also important that the object is always serialized into the same byte array. All primitive types like String, Long, Integer, etc. are good candidates for keys to be used in Hazelcast. An unsorted Set is an example of a very bad candidate because Java Serialization may serialize the same unsorted set in two different byte arrays.
 
-Note that the distributed Set and List store their entries as the keys in a distributed Map. So the notes above apply to the objects you store in Set and List.
 
 ## How do I reflect value modifications
 
@@ -172,21 +178,20 @@ HazelcastInstance h2 = Hazelcast.newHazelcastInstance( configApp2 );
 HazelcastInstance h3 = Hazelcast.newHazelcastInstance( configApp2 );
 ```
 
+## Does Hazelcast support hundreds of nodes
 
+Yes. Hazelcast performed a successful test on Amazon EC2 with 200 nodes.
 
-## When RuntimeInterruptedException is thrown
-
-Most of the Hazelcast operations throw an `RuntimeInterruptedException` (which is unchecked version of `InterruptedException`) if a user thread is interrupted while waiting a response. Hazelcast uses RuntimeInterruptedException to pass InterruptedException up through interfaces that do not have InterruptedException in their signatures. The users should be able to catch and handle `RuntimeInterruptedException` in such cases as if their threads are interrupted on a blocking operation.
-
-## When ConcurrentModificationException is thrown
-
-Some of Hazelcast operations can throw `ConcurrentModificationException` under transaction while trying to acquire a resource, although operation signatures do not define such an exception. Exception is thrown if resource cannot be acquired in a specific time. The users should be able to catch and handle `ConcurrentModificationException` while they are using Hazelcast transactions.
 
 ## Does Hazelcast support thousands of clients
 
 Yes. However, there are some points to be considered. First of all, the environment should be LAN with a high stability and the network speed should be 10 Gbps or higher. If number of nodes are high, client type should be selected as Dummy (not Smart Client). In the case of Smart Clients, since each client will open a connection to the nodes, these nodes should be powerful enough (e.g. more cores) to handle hundreds or thousands of connections and client requests. Also, using near caches in clients should be considered to lower the network traffic. And finally, the Hazelcast releases with the NIO implementation should be used (which starts with 3.2).
 
 Also, the clients should be configured attentively. Please refer to [Java Clients](#java-client) section for configuration notes.
+
+## What is the difference between old LiteMember and new Smart Client
+
+LiteMember supports task execution (distributed executor service), smart client does not. Also LiteMember is highly coupled with cluster, smart client is not.
 
 ## How do you give support
 
@@ -248,4 +253,50 @@ Then set the log level to "Debug" in properties file. Below is a sample content.
 `#log4j.logger.com.hazelcast.hibernate=debug`
 
 The line `log4j.logger.com.hazelcast=debug` is used to see debug logs for all Hazelcast operations. Below this line, you can select to see specific logs (cluster, partition, hibernate, etc.).
+
+## What is the difference between client-server and embedded topologies
+
+In the embedded topology, nodes include both the data and application. This type of topology is the most useful if your application focuses on high performance computing and many task executions. Since application is close to data, this topology supports data locality. 
+
+In the client-server topology, you create a cluster of nodes and scale the cluster independently. And your applications are hosted on the clients, that communicate with the nodes in the cluster to reach data. 
+
+Client-server topology fits better, if there are multiple applications sharing the same data or if application deployment is significantly greater than the cluster size (e.g. 500 application servers vs. 10 node cluster).
+
+## How do I know it is safe to kill the second node
+
+Programmatically:
+
+```java
+PartitionService partitionService = hazelcastInstance.getPartitionService().isClusterSafe()
+if (partitionService().isClusterSafe()) {
+  hazelcastInstance.shutdown(); // or terminate
+}
+```
+
+OR 
+
+```java
+PartitionService partitionService = hazelcastInstance.getPartitionService().isClusterSafe()
+if (partitionService().isLocalMemberSafe()) {
+  hazelcastInstance.shutdown(); // or terminate
+}
+```
+
+
+## When do I need Off-heap solutions
+
+Off-heap solutions can be preferred;
+
+- When the amount of data per node is large enough to create significant garbage collection pauses,
+- When your application requires predictable latency.
+
+
+## Is there any disadvantage of using near-cache
+
+The only disadvantage when using near-cache is that it may cause stale reads.
+
+## Is Hazelcast secure
+
+Hazelcast supports symmetric encryption, secure sockets layer (SSL) and Java Authentication and Authorization Service (JAAS). Please see [Security](#security) chapter for more information.
+
 

@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.ClientCreateRequest;
-import com.hazelcast.client.DistributedObjectListenerRequest;
+import com.hazelcast.client.impl.client.ClientCreateRequest;
+import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.RemoveDistributedObjectListenerRequest;
+import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
@@ -57,7 +57,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;

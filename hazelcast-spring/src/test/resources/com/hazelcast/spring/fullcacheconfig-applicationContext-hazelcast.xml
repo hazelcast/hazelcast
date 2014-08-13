@@ -22,10 +22,10 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.3.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
-          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE" >
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
         <property name="locations">
             <list>
                 <value>classpath:/hazelcast-default.properties</value>
@@ -40,7 +40,7 @@
                     name="${cluster.group.name}"
                     password="${cluster.group.password}"/>
             <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
-            <hz:management-center enabled="true" url="myserver:80" update-interval="4" />
+            <hz:management-center enabled="true" url="myserver:80" update-interval="4"/>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -82,15 +82,18 @@
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>
                 </hz:interfaces>
+
+
                 <hz:ssl enabled="false" factory-class-name="com.hazelcast.spring.DummySSLContextFactory"
-                        factory-implementation="dummySSLContextFactory" />
+                        factory-implementation="dummySSLContextFactory"/>
                 <hz:socket-interceptor enabled="false" class-name="com.hazelcast.spring.DummySocketInterceptor"
-                        implementation="dummySocketInterceptor" />
+                                       implementation="dummySocketInterceptor"/>
                 <hz:symmetric-encryption enabled="true"
                                          algorithm="PBEWithMD5AndDES"
                                          salt="thesalt"
                                          password="thepass"
                                          iteration-count="19"/>
+                <hz:reuse-address>true</hz:reuse-address>
             </hz:network>
             <hz:partition-group enabled="true" group-type="CUSTOM">
                 <hz:member-group>
@@ -105,14 +108,14 @@
             <hz:executor-service name="testExec"
                                  pool-size="2"
                                  queue-capacity="100"
-                                 />
+                    />
             <hz:executor-service name="testExec2"
                                  pool-size="5"
                                  queue-capacity="300"
-                                 />
+                    />
             <hz:queue name="testQ"
                       max-size="1000"
-                      >
+                    >
 
                 <hz:item-listeners>
                     <hz:item-listener class-name="com.hazelcast.spring.DummyItemListener" include-value="true"/>
@@ -127,11 +130,13 @@
                     backup-count="2"
                     max-size="0"
                     eviction-percentage="30"
+                    min-eviction-check-millis="1000"
                     read-backup-data="true"
                     eviction-policy="NONE"
                     merge-policy="PUT_IF_ABSENT"
                     in-memory-format="BINARY">
-                <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0" initial-mode="EAGER" write-batch-size="10"/>
+                <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"
+                              initial-mode="EAGER" write-batch-size="10"/>
                 <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60" eviction-policy="LRU" max-size="5000"
                                invalidate-on-change="true"/>
 
@@ -148,7 +153,8 @@
                     read-backup-data="true"
                     eviction-policy="NONE"
                     merge-policy="PUT_IF_ABSENT">
-                <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0" initial-mode="LAZY"/>
+                <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"
+                              initial-mode="LAZY"/>
                 <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"/>
 
                 <hz:entry-listeners>
@@ -219,33 +225,37 @@
                               enable-compression="false"
                               enable-shared-object="false"
                               portable-version="13"
-                              use-native-byte-order="false" >
+                              use-native-byte-order="false">
 
                 <hz:data-serializable-factories>
-                    <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
+                    <hz:data-serializable-factory factory-id="1"
+                                                  class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
                 </hz:data-serializable-factories>
                 <hz:portable-factories>
-                    <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.serialization.DummyPortableFactory" />
+                    <hz:portable-factory factory-id="2"
+                                         class-name="com.hazelcast.spring.serialization.DummyPortableFactory"/>
                 </hz:portable-factories>
                 <hz:serializers>
-                    <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject1" class-name="com.hazelcast.spring.serialization.DummySerializer"/>
-                    <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject2" implementation="dummySerializer"/>
+                    <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject1"
+                                   class-name="com.hazelcast.spring.serialization.DummySerializer"/>
+                    <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject2"
+                                   implementation="dummySerializer"/>
                 </hz:serializers>
             </hz:serialization>
             <hz:member-attributes>
-		<hz:attribute name="cluster.group.name">spring-group</hz:attribute>
-		<hz:attribute name="cluster.port.int" type="int">5700</hz:attribute>
-		<hz:attribute name="cluster.port.long" type="long">5700</hz:attribute>
-		<hz:attribute name="cluster.port.short" type="short">5700</hz:attribute>
-		<hz:attribute name="attribute.byte" type="byte">111</hz:attribute>
-		<hz:attribute name="attribute.boolean" type="boolean">true</hz:attribute>
-		<hz:attribute name="attribute.double" type="double">0.0d</hz:attribute>
-		<hz:attribute name="attribute.float" type="float">1234.5678</hz:attribute>
+                <hz:attribute name="cluster.group.name">spring-group</hz:attribute>
+                <hz:attribute name="cluster.port.int" type="int">5700</hz:attribute>
+                <hz:attribute name="cluster.port.long" type="long">5700</hz:attribute>
+                <hz:attribute name="cluster.port.short" type="short">5700</hz:attribute>
+                <hz:attribute name="attribute.byte" type="byte">111</hz:attribute>
+                <hz:attribute name="attribute.boolean" type="boolean">true</hz:attribute>
+                <hz:attribute name="attribute.double" type="double">0.0d</hz:attribute>
+                <hz:attribute name="attribute.float" type="float">1234.5678</hz:attribute>
             </hz:member-attributes>
         </hz:config>
     </hz:hazelcast>
 
-    <bean id="dummySerializer" class="com.hazelcast.spring.serialization.DummySerializer" />
+    <bean id="dummySerializer" class="com.hazelcast.spring.serialization.DummySerializer"/>
 
     <hz:map id="map1" instance-ref="instance" name="map1"/>
     <hz:map id="map2" instance-ref="instance" name="map2"/>

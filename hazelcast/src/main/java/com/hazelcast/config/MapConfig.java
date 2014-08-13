@@ -55,6 +55,12 @@ public class MapConfig {
     public static final int MAX_EVICTION_PERCENTAGE = 100;
 
     /**
+     * Minimum time in milliseconds which should pass before asking
+     * if a partition of this map is evictable or not.
+     */
+    public static final long DEFAULT_MIN_EVICTION_CHECK_MILLIS = 100L;
+
+    /**
      * The number of default Time to Live seconds
      */
     public static final int DEFAULT_TTL_SECONDS = 0;
@@ -87,6 +93,8 @@ public class MapConfig {
     private int asyncBackupCount = MIN_BACKUP_COUNT;
 
     private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
+
+    private long minEvictionCheckMillis = DEFAULT_MIN_EVICTION_CHECK_MILLIS;
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
@@ -150,6 +158,7 @@ public class MapConfig {
         this.backupCount = config.backupCount;
         this.asyncBackupCount = config.asyncBackupCount;
         this.evictionPercentage = config.evictionPercentage;
+        this.minEvictionCheckMillis = config.minEvictionCheckMillis;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
         this.maxSizeConfig = config.maxSizeConfig != null ? new MaxSizeConfig(config.maxSizeConfig) : null;
@@ -296,6 +305,34 @@ public class MapConfig {
             throw new IllegalArgumentException("eviction percentage must be smaller or equal than 100");
         }
         this.evictionPercentage = evictionPercentage;
+        return this;
+    }
+
+    /**
+     * Returns minimum milliseconds which should pass before asking if a partition of this map is evictable or not.
+     * <p/>
+     * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
+     *
+     * @return number of milliseconds should pass before asking next eviction.
+     * @since 3.3
+     */
+    public long getMinEvictionCheckMillis() {
+        return minEvictionCheckMillis;
+    }
+
+    /**
+     * Sets the minimum time in millis which should pass before asking if a partition of this map is evictable or not.
+     * <p/>
+     * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
+     *
+     * @param minEvictionCheckMillis time in millis.
+     * @since 3.3
+     */
+    public MapConfig setMinEvictionCheckMillis(long minEvictionCheckMillis) {
+        if (minEvictionCheckMillis < 0) {
+            throw new IllegalArgumentException("Parameter minEvictionCheckMillis can not get a negative value");
+        }
+        this.minEvictionCheckMillis = minEvictionCheckMillis;
         return this;
     }
 
@@ -495,6 +532,7 @@ public class MapConfig {
                 && this.backupCount == other.backupCount
                 && this.asyncBackupCount == other.asyncBackupCount
                 && this.evictionPercentage == other.evictionPercentage
+                && this.minEvictionCheckMillis == other.minEvictionCheckMillis
                 && this.maxIdleSeconds == other.maxIdleSeconds
                 && (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize()
                 || (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
@@ -510,6 +548,7 @@ public class MapConfig {
         result = prime * result + this.backupCount;
         result = prime * result + this.asyncBackupCount;
         result = prime * result + this.evictionPercentage;
+        result = prime * result + (int) (minEvictionCheckMillis ^ (minEvictionCheckMillis >>> 32));
         result = prime
                 * result
                 + ((this.evictionPolicy == null) ? 0 : this.evictionPolicy
@@ -548,6 +587,7 @@ public class MapConfig {
                         && this.backupCount == other.backupCount
                         && this.asyncBackupCount == other.asyncBackupCount
                         && this.evictionPercentage == other.evictionPercentage
+                        && this.minEvictionCheckMillis == other.minEvictionCheckMillis
                         && this.maxIdleSeconds == other.maxIdleSeconds
                         && this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize()
                         && this.timeToLiveSeconds == other.timeToLiveSeconds
@@ -575,6 +615,7 @@ public class MapConfig {
         sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
         sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
         sb.append(", evictionPercentage=").append(evictionPercentage);
+        sb.append(", minEvictionCheckMillis=").append(minEvictionCheckMillis);
         sb.append(", maxSizeConfig=").append(maxSizeConfig);
         sb.append(", readBackupData=").append(readBackupData);
         sb.append(", nearCacheConfig=").append(nearCacheConfig);
