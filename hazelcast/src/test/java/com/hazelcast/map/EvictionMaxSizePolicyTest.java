@@ -12,7 +12,9 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.sun.xml.internal.bind.v2.model.annotation.Quick;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ import java.util.List;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category(Quick.class)
 public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     private static final int PARTITION_COUNT = 271;
