@@ -50,6 +50,13 @@ public class GroupProperties {
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND_ANY = "hazelcast.socket.client.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND = "hazelcast.socket.client.bind";
+    /**
+     * The number of threads the client engine has available for processing requests that are not partition specific.
+     * Most of the request e.g. map.put/map.get are partition specific and will use a partition-operation-thread, but
+     * there are also request that can't be executed on a partition-specific operation-thread, e.g. multimap.contain(value)
+     * because it needs to access all partitions on a given member.
+     */
+    public static final String PROP_CLIENT_ENGINE_THREAD_COUNT = "hazelcast.clientengine.thread.count";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
     public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
     public static final String PROP_SOCKET_LINGER_SECONDS = "hazelcast.socket.linger.seconds";
@@ -100,7 +107,10 @@ public class GroupProperties {
     public static final String PROP_ENTERPRISE_WAN_REP_QUEUESIZE = "hazelcast.enterprise.wanrep.queuesize";
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
 
+    public final GroupProperty CLIENT_ENGINE_THREAD_COUNT;
+
     public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;
+
     public final GroupProperty GENERIC_OPERATION_THREAD_COUNT;
 
     public final GroupProperty EVENT_THREAD_COUNT;
@@ -231,7 +241,7 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_WAN_REP_QUEUESIZE;
 
-    public final GroupProperty CLIENT_MAX_NO_HEARTBEAT_SECONDS;
+    public final GroupProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
 
     /**
      * @param config
@@ -249,6 +259,8 @@ public class GroupProperties {
         EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");
         EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "1000000");
         EVENT_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EVENT_QUEUE_TIMEOUT_MILLIS, "250");
+        CLIENT_ENGINE_THREAD_COUNT = new GroupProperty(config, PROP_CLIENT_ENGINE_THREAD_COUNT, "-1");
+
         CONNECT_ALL_WAIT_SECONDS = new GroupProperty(config, PROP_CONNECT_ALL_WAIT_SECONDS, "120");
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");
@@ -309,7 +321,7 @@ public class GroupProperties {
         MAP_WRITE_BEHIND_QUEUE_CAPACITY
                 = new GroupProperty(config, PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY, "50000");
         ENTERPRISE_WAN_REP_QUEUESIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUESIZE, "100000");
-        CLIENT_MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "60");
+        CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "60");
     }
 
     public static class GroupProperty {
